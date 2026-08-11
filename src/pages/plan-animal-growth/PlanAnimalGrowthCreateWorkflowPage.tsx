@@ -40,8 +40,8 @@ import {
 } from "reactflow";
 import { useLocation, useParams } from "wouter";
 import { useDialogBugWorkaround } from "../../shared/hooks/useDialogBugWorkaround";
-import usePlanStore, { type Plan } from "../../stores/usePlanStore";
-import useWorkflowStore from "../../stores/useWorkflowStore";
+import useAnimalGrowthPlanStore, { type Plan } from "../../stores/useAnimalGrowthPlanStore";
+import useAnimalGrowthWorkflowStore from "../../stores/useAnimalGrowthWorkflowStore";
 import {
   WorkflowCardNode,
   type WorkflowActionItem,
@@ -486,11 +486,11 @@ export default function PlanAnimalGrowthCreateWorkflowPage() {
   const params = useParams<{ workflowId?: string }>();
   const { toast } = useToast();
   const { regions } = useRegionStore();
-  const plans = usePlanStore((state) => state.plans);
-  const addPlan = usePlanStore((state) => state.addPlan);
-  const updatePlan = usePlanStore((state) => state.updatePlan);
-  const deletePlan = usePlanStore((state) => state.deletePlan);
-  const upsertWorkflow = useWorkflowStore((state) => state.upsertWorkflow);
+  const plans = useAnimalGrowthPlanStore((state) => state.plans);
+  const addPlan = useAnimalGrowthPlanStore((state) => state.addPlan);
+  const updatePlan = useAnimalGrowthPlanStore((state) => state.updatePlan);
+  const deletePlan = useAnimalGrowthPlanStore((state) => state.deletePlan);
+  const upsertWorkflow = useAnimalGrowthWorkflowStore((state) => state.upsertWorkflow);
 
   const nodes = useAnimalGrowthWorkflowDraftStore((state) => state.nodes);
   const edges = useAnimalGrowthWorkflowDraftStore((state) => state.edges);
@@ -525,7 +525,7 @@ export default function PlanAnimalGrowthCreateWorkflowPage() {
     // plan/stage/detail sub-route routes back to this same bare path).
     if (!workflowId || workflowId === activeWorkflowId) return;
 
-    const saved = useWorkflowStore.getState().getWorkflowById(workflowId);
+    const saved = useAnimalGrowthWorkflowStore.getState().getWorkflowById(workflowId);
     if (!saved) return;
 
     loadWorkflow({
@@ -564,7 +564,7 @@ export default function PlanAnimalGrowthCreateWorkflowPage() {
 
   const createPlanNode = (sourceNodeId?: string, planName = "") => {
     addPlan(createEmptyPlanDraft(planName));
-    const created = usePlanStore.getState().plans.at(-1);
+    const created = useAnimalGrowthPlanStore.getState().plans.at(-1);
     if (!created) return;
 
     const id = createNodeId("plan");
@@ -744,7 +744,7 @@ export default function PlanAnimalGrowthCreateWorkflowPage() {
       title: "Đã lưu quy trình",
       description: "Sơ đồ quy trình chăn nuôi đã được lưu lại.",
     });
-    // Already persisted to useWorkflowStore above — clear the draft so a
+    // Already persisted to useAnimalGrowthWorkflowStore above — clear the draft so a
     // later bare "/create/workflow" visit doesn't reopen this canvas.
     resetDraft();
     setLocation("/plan-animal-growth");

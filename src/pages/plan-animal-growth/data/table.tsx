@@ -22,7 +22,7 @@ import {
   Trash2,
   Workflow,
 } from "lucide-react";
-import type { Plan } from "../../../stores/usePlanStore";
+import type { Plan } from "../../../stores/useAnimalGrowthPlanStore";
 import { getPlanStatusBadge } from "../utils/status";
 
 function formatDate(value?: string) {

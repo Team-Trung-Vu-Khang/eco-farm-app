@@ -1,15 +1,15 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
 import { useToast } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import usePlanStore from "../../../stores/usePlanStore";
+import useAnimalGrowthPlanStore from "../../../stores/useAnimalGrowthPlanStore";
 
 export function useAnimalGrowthPage(basePath = "/plan-animal-growth") {
   const { toast } = useToast();
   const [, setLocation] = useLocation();
 
-  const plans = usePlanStore((state) => state.plans);
-  const deletePlan = usePlanStore((state) => state.deletePlan);
-  const getStatistics = usePlanStore((state) => state.getStatistics);
+  const plans = useAnimalGrowthPlanStore((state) => state.plans);
+  const deletePlan = useAnimalGrowthPlanStore((state) => state.deletePlan);
+  const getStatistics = useAnimalGrowthPlanStore((state) => state.getStatistics);
 
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleteItem, setDeleteItem] = useState<{
@@ -32,7 +32,7 @@ export function useAnimalGrowthPage(basePath = "/plan-animal-growth") {
   };
 
   const handleDuplicate = (item: { id: number; name: string }) => {
-    usePlanStore.getState().duplicatePlan(item.id);
+    useAnimalGrowthPlanStore.getState().duplicatePlan(item.id);
     toast({ title: "Thành công", description: "Đã nhân bản kế hoạch" });
   };
 

@@ -2,7 +2,7 @@ import type {
   MaterialAllocation as StoreMaterialAllocation,
   Plan,
   TaskAllocation as StoreTaskAllocation,
-} from "../../stores/usePlanStore";
+} from "../../stores/useAnimalGrowthPlanStore";
 
 export interface GeographicalSelection {
   id: string;

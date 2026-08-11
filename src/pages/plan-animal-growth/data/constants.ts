@@ -9,7 +9,7 @@ export interface Season {
 export interface GrowthCycle {
   id: string;
   name: string;
-  crop: string; // e.g., "Heo thịt"
+  crop: string;
   durationDays: number;
   stages: string[];
   description: string;
@@ -17,22 +17,22 @@ export interface GrowthCycle {
 
 export const SEASONS: Season[] = [
   {
-    id: "S2025-SPRING",
-    name: "Vụ Xuân 2025",
+    id: "ANIMAL-2025-PIG",
+    name: "Lứa heo thịt 2025",
     startDate: "2025-01-01",
     endDate: "2025-04-30",
     status: "active",
   },
   {
-    id: "S2025-SUMMER",
-    name: "Vụ Hè 2025",
+    id: "ANIMAL-2025-HEN",
+    name: "Lứa gà đẻ 2025",
     startDate: "2025-05-01",
     endDate: "2025-08-31",
     status: "upcoming",
   },
   {
-    id: "S2025-AUTUMN",
-    name: "Vụ Thu 2025",
+    id: "ANIMAL-2025-CATTLE",
+    name: "Lứa bò thịt 2025",
     startDate: "2025-09-01",
     endDate: "2025-12-31",
     status: "upcoming",
@@ -41,49 +41,47 @@ export const SEASONS: Season[] = [
 
 export const GROWTH_CYCLES: GrowthCycle[] = [
   {
-    id: "GC-DURIAN-STD",
-    name: "Quy trình Heo thịt chuẩn (VietGAP)",
+    id: "GC-PIG-STD",
+    name: "Quy trình Heo thịt chuẩn (VietGAHP)",
     crop: "Heo thịt",
     durationDays: 120,
     stages: [
-      "Phục hồi sau xuất bán",
-      "Kích thích ra đọt",
-      "Làm bông (Ra hoa)",
-      "Xổ nhụy (Đậu trái)",
-      "Nuôi trái (Giai đoạn 1)",
-      "Nuôi trái (Giai đoạn 2)",
+      "Chuẩn bị chuồng",
+      "Nhập đàn",
+      "Úm và thích nghi",
+      "Nuôi tăng trọng",
+      "Phòng bệnh định kỳ",
       "Xuất bán",
     ],
-    description: "Quy trình chuẩn cho cây sầu riêng kinh doanh",
+    description: "Quy trình chuẩn cho đàn heo thịt thương phẩm",
   },
   {
-    id: "GC-MANGO-STD",
+    id: "GC-HEN-STD",
     name: "Quy trình Gà đẻ Lương Phượng",
     crop: "Gà đẻ",
     durationDays: 90,
     stages: [
-      "Tỉa cành tạo tán",
-      "Kích thích ra hoa",
-      "Đậu trái non",
-      "Bao trái",
-      "Xuất bán",
+      "Nuôi hậu bị",
+      "Vào đẻ",
+      "Tối ưu sản lượng trứng",
+      "Vệ sinh ổ đẻ",
+      "Loại thải và tái đàn",
     ],
-    description: "Tập trung vào chất lượng trái thương phẩm",
+    description: "Tập trung ổn định sản lượng và chất lượng trứng",
   },
   {
-    id: "GC-POMELO-STD",
+    id: "GC-CATTLE-STD",
     name: "Quy trình Bò thịt Brahman",
     crop: "Bò thịt",
     durationDays: 150,
     stages: [
-      "Chăm sóc sau xuất bán",
-      "Xiết nước làm bông",
-      "Ra hoa đậu quả",
-      "Nuôi quả non",
-      "Nuôi quả giai đoạn đường hóa",
+      "Tiếp nhận bê giống",
+      "Nuôi nền",
+      "Vỗ béo",
+      "Chăm sóc thú y",
       "Xuất bán",
     ],
-    description: "Quy trình thâm canh năng suất cao",
+    description: "Quy trình vỗ béo bò thịt theo dõi tăng trọng",
   },
 ];
 

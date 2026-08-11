@@ -7,8 +7,7 @@ import {
 import { ArrowLeft, Workflow } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Link, useParams } from "wouter";
-import useWorkflowStore from "@/stores/useWorkflowStore";
-import type { Plan } from "@/stores/usePlanStore";
+import useAnimalGrowthWorkflowStore from "@/stores/useAnimalGrowthWorkflowStore";
 import {
   createPlanAnimalGrowthColumns,
   animalGrowthFilters,
@@ -18,53 +17,6 @@ import { useAnimalGrowthPage } from "./hooks/useAnimalGrowthPage";
 
 interface PlanAnimalGrowthWorkflowPlansPageProps {
   basePath?: string;
-}
-
-function toAnimalGrowthText(value?: string) {
-  if (!value) return value;
-
-  return value
-    .replaceAll("Quy trình canh tác", "Quy trình chăn nuôi")
-    .replaceAll("quy trình canh tác", "quy trình chăn nuôi")
-    .replaceAll("canh tác", "chăn nuôi")
-    .replaceAll("Canh tác", "Chăn nuôi")
-    .replaceAll("mùa vụ", "lứa nuôi")
-    .replaceAll("Mùa vụ", "Lứa nuôi")
-    .replaceAll("Vụ ", "Lứa ")
-    .replaceAll("vụ ", "lứa ")
-    .replaceAll("vùng trồng", "khu chăn nuôi")
-    .replaceAll("Vùng trồng", "Khu chăn nuôi")
-    .replaceAll("cây trồng", "vật nuôi")
-    .replaceAll("Cây trồng", "Vật nuôi")
-    .replaceAll("Sầu riêng", "Heo thịt")
-    .replaceAll("sầu riêng", "heo thịt")
-    .replaceAll("Xoài", "Gà đẻ")
-    .replaceAll("Bưởi", "Bò thịt")
-    .replaceAll("Ri6", "Yorkshire")
-    .replaceAll("Monthong", "Duroc")
-    .replaceAll("Cát Hòa Lộc", "Lương Phượng")
-    .replaceAll("Da Xanh", "Brahman")
-    .replaceAll("Thuốc BVTV", "Thuốc thú y")
-    .replaceAll("Phân bón", "Thức ăn")
-    .replaceAll("Thu hoạch", "Xuất bán")
-    .replaceAll("thu hoạch", "xuất bán")
-    .replaceAll("Cải tạo đất", "Cải tạo chuồng trại")
-    .replaceAll("cải tạo đất", "cải tạo chuồng trại");
-}
-
-function toAnimalGrowthPlan(plan: Plan): Plan {
-  return {
-    ...plan,
-    name: toAnimalGrowthText(plan.name) || plan.name,
-    description: toAnimalGrowthText(plan.description) || plan.description,
-    seasonName: toAnimalGrowthText(plan.seasonName) || plan.seasonName,
-    cultivationRegion:
-      toAnimalGrowthText(plan.cultivationRegion) || plan.cultivationRegion,
-    zone: toAnimalGrowthText(plan.zone) || plan.zone,
-    plot: toAnimalGrowthText(plan.plot) || plan.plot,
-    crop: toAnimalGrowthText(plan.crop) || plan.crop,
-    variety: toAnimalGrowthText(plan.variety) || plan.variety,
-  };
 }
 
 export default function PlanAnimalGrowthWorkflowPlansPage({
@@ -84,18 +36,16 @@ export default function PlanAnimalGrowthWorkflowPlansPage({
     goToEdit,
   } = useAnimalGrowthPage(basePath);
 
-  const workflow = useWorkflowStore((state) =>
+  const workflow = useAnimalGrowthWorkflowStore((state) =>
     state.workflows.find((item) => item.id === workflowId),
   );
   const isUnassigned = workflowId === UNASSIGNED_WORKFLOW_ID;
 
   const workflowPlans = useMemo(
     () =>
-      plans
-        .filter((plan) =>
-          isUnassigned ? !plan.workflowId : plan.workflowId === workflowId,
-        )
-        .map(toAnimalGrowthPlan),
+      plans.filter((plan) =>
+        isUnassigned ? !plan.workflowId : plan.workflowId === workflowId,
+      ),
     [plans, workflowId, isUnassigned],
   );
 
@@ -137,10 +87,10 @@ export default function PlanAnimalGrowthWorkflowPlansPage({
 
   const title = isUnassigned
     ? "Kế hoạch chưa gắn sơ đồ"
-    : toAnimalGrowthText(workflow?.name) || "Sơ đồ quy trình chăn nuôi";
+    : workflow?.name || "Sơ đồ quy trình chăn nuôi";
   const description = isUnassigned
     ? "Kế hoạch được tạo trước khi lưu sơ đồ quy trình hoặc chưa bấm Lưu quy trình."
-    : toAnimalGrowthText(workflow?.description) ||
+    : workflow?.description ||
       "Danh sách kế hoạch chăn nuôi thuộc sơ đồ quy trình này";
 
   return (

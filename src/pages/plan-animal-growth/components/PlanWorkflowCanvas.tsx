@@ -13,7 +13,7 @@ import {
 } from "reactflow";
 import { Copy, Eye, PencilLine, Workflow } from "lucide-react";
 import { useEffect, useMemo } from "react";
-import type { Plan } from "../../../stores/usePlanStore";
+import type { Plan } from "../../../stores/useAnimalGrowthPlanStore";
 import { WorkflowCardNode } from "../../growth-cycle/components/workflow/WorkflowCardNode";
 import type {
   WorkflowCardNodeData,

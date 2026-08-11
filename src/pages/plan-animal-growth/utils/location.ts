@@ -1,4 +1,4 @@
-import type { Plan } from "../../../stores/usePlanStore";
+import type { Plan } from "../../../stores/useAnimalGrowthPlanStore";
 import type {
   GeographicalSelection,
   PlanFormData,

@@ -3,7 +3,7 @@ import { Button, DataTable } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { Plus } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useLocation } from "wouter";
-import useWorkflowStore from "@/stores/useWorkflowStore";
+import useAnimalGrowthWorkflowStore from "@/stores/useAnimalGrowthWorkflowStore";
 import { useAnimalGrowthWorkflowDraftStore } from "./hooks/useAnimalGrowthWorkflowDraftStore";
 import {
   createWorkflowColumns,
@@ -23,7 +23,7 @@ export default function PlanAnimalGrowthPage({
   const [search, setSearch] = useState("");
   const [, setLocation] = useLocation();
   const { plans, statistics } = useAnimalGrowthPage(basePath);
-  const workflows = useWorkflowStore((state) => state.workflows);
+  const workflows = useAnimalGrowthWorkflowStore((state) => state.workflows);
   const resetWorkflowDraft = useAnimalGrowthWorkflowDraftStore(
     (state) => state.resetDraft,
   );

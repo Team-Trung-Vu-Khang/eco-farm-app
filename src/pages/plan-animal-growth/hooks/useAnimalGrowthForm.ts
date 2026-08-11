@@ -5,7 +5,7 @@ import useGrowthCycleStore from "@/stores/useGrowthCycleStore";
 import useRegionStore from "@/stores/useRegionStore";
 import useSeasonStore from "@/stores/useSeasonStore";
 import usePersonnelStore from "@/stores/usePersonnelStore";
-import usePlanStore from "../../../stores/usePlanStore";
+import useAnimalGrowthPlanStore from "../../../stores/useAnimalGrowthPlanStore";
 import { useTreatmentStore } from "../../../stores/useTreatmentStore";
 import { useAmendmentRegimenStore } from "../../../stores/useAmendmentRegimenStore";
 import type {
@@ -169,9 +169,9 @@ export function useAnimalGrowthForm(
     ? (infoNodes.find((node) => node.isActive) ?? infoNodes[0])
     : undefined;
 
-  const addPlan = usePlanStore((state) => state.addPlan);
-  const updatePlan = usePlanStore((state) => state.updatePlan);
-  const getPlanById = usePlanStore((state) => state.getPlanById);
+  const addPlan = useAnimalGrowthPlanStore((state) => state.addPlan);
+  const updatePlan = useAnimalGrowthPlanStore((state) => state.updatePlan);
+  const getPlanById = useAnimalGrowthPlanStore((state) => state.getPlanById);
   const seasons = useSeasonStore((state) => state.seasons);
   const personnel = usePersonnelStore((state) => state.personnel);
   const { regions } = useRegionStore();
@@ -486,7 +486,7 @@ export function useAnimalGrowthForm(
       description: `Đã tạo kế hoạch ${formData.name}`,
     });
     if (options?.onSaved) {
-      const created = usePlanStore.getState().plans.at(-1);
+      const created = useAnimalGrowthPlanStore.getState().plans.at(-1);
       if (created) {
         options.onSaved(created.id);
         return;
