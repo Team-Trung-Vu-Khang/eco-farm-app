@@ -41,6 +41,7 @@ import {
 } from "reactflow";
 import { useLocation, useParams } from "wouter";
 import usePlanStore, { type Plan } from "../../stores/usePlanStore";
+import { usePlanWorkflowDraftStore } from "./hooks/usePlanWorkflowDraftStore";
 import type { Region } from "../region-chart/constants";
 import type {
   WorkflowCardNodeData,
@@ -426,6 +427,15 @@ export default function PlanGrowthWorkflowPage({
   const { toast } = useToast();
   const { regions } = useRegionStore();
   const updatePlan = usePlanStore((state) => state.updatePlan);
+  const resetWorkflowDraft = usePlanWorkflowDraftStore(
+    (state) => state.resetDraft,
+  );
+  const goToCreateWorkflow = useCallback(() => {
+    // Start a clean canvas — otherwise a workflow opened earlier via
+    // "Mở workflow" would still be sitting in the draft store.
+    resetWorkflowDraft();
+    setLocation(`${basePath}/create/workflow`);
+  }, [basePath, resetWorkflowDraft, setLocation]);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [viewMode, setViewMode] = useState<WorkflowViewMode>("workflow");
@@ -530,7 +540,7 @@ export default function PlanGrowthWorkflowPage({
             setDeleteOpen(true);
           }
         },
-        () => setLocation(`${basePath}/create/workflow`),
+        goToCreateWorkflow,
         getRegionLabels(rootSlot.plan, regions || []),
         { interactive: true, showFooterAction: false },
       ),
@@ -552,7 +562,7 @@ export default function PlanGrowthWorkflowPage({
                 setDeleteOpen(true);
               }
             },
-            () => setLocation(`${basePath}/create/workflow`),
+            goToCreateWorkflow,
             slot.isPrimary
               ? primaryRegionLabels
               : getRegionLabels(slot.plan, regions || []),
@@ -638,13 +648,13 @@ export default function PlanGrowthWorkflowPage({
 
     return { nodes, edges };
   }, [
-    basePath,
     plan,
     primaryRegionLabels,
     regions,
     setLocation,
     viewMode,
     openEditDialog,
+    goToCreateWorkflow,
   ]);
 
   const [nodes, setNodes, onNodesChange] = useNodesState(flowDefinition.nodes);

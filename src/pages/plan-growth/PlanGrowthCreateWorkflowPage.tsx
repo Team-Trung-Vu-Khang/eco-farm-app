@@ -38,9 +38,10 @@ import {
   type Node,
   type NodeChange,
 } from "reactflow";
-import { useLocation } from "wouter";
+import { useLocation, useParams } from "wouter";
 import { useDialogBugWorkaround } from "../../shared/hooks/useDialogBugWorkaround";
 import usePlanStore, { type Plan } from "../../stores/usePlanStore";
+import useWorkflowStore from "../../stores/useWorkflowStore";
 import {
   WorkflowCardNode,
   type WorkflowActionItem,
@@ -482,11 +483,14 @@ function toInfoDisplayNode(
 
 export default function PlanGrowthCreateWorkflowPage() {
   const [, setLocation] = useLocation();
+  const params = useParams<{ workflowId?: string }>();
   const { toast } = useToast();
   const { regions } = useRegionStore();
   const plans = usePlanStore((state) => state.plans);
   const addPlan = usePlanStore((state) => state.addPlan);
+  const updatePlan = usePlanStore((state) => state.updatePlan);
   const deletePlan = usePlanStore((state) => state.deletePlan);
+  const upsertWorkflow = useWorkflowStore((state) => state.upsertWorkflow);
 
   const nodes = usePlanWorkflowDraftStore((state) => state.nodes);
   const edges = usePlanWorkflowDraftStore((state) => state.edges);
@@ -506,6 +510,40 @@ export default function PlanGrowthCreateWorkflowPage() {
   );
   const infoNodes = usePlanWorkflowDraftStore((state) => state.infoNodes);
   const setInfoNodes = usePlanWorkflowDraftStore((state) => state.setInfoNodes);
+  const loadWorkflow = usePlanWorkflowDraftStore((state) => state.loadWorkflow);
+  const resetDraft = usePlanWorkflowDraftStore((state) => state.resetDraft);
+  const activeWorkflowId = usePlanWorkflowDraftStore(
+    (state) => state.activeWorkflowId,
+  );
+
+  useEffect(() => {
+    const workflowId = params.workflowId ?? null;
+    // Bare route ("/create/workflow" with no id) always means "continue the
+    // current draft" — the "Khởi tạo kế hoạch mới" entry points reset the
+    // draft explicitly before navigating here, so this effect must never
+    // infer a reset from the URL alone (that would also fire every time a
+    // plan/stage/detail sub-route routes back to this same bare path).
+    if (!workflowId || workflowId === activeWorkflowId) return;
+
+    const saved = useWorkflowStore.getState().getWorkflowById(workflowId);
+    if (!saved) return;
+
+    loadWorkflow({
+      nodes: saved.nodes,
+      edges: saved.edges,
+      infoNodes: [
+        {
+          id: saved.id,
+          name: saved.name,
+          description: saved.description,
+          selections: saved.selections,
+          isActive: true,
+          position: { x: INFO_NODE_X, y: 0 },
+        },
+      ],
+      activeWorkflowId: workflowId,
+    });
+  }, [params.workflowId, activeWorkflowId, loadWorkflow, resetDraft]);
 
   const [infoFormOpen, setInfoFormOpen] = useState(false);
   const [editingInfoNodeId, setEditingInfoNodeId] = useState<string | null>(
@@ -676,10 +714,39 @@ export default function PlanGrowthCreateWorkflowPage() {
   };
 
   const handleSaveWorkflow = () => {
+    if (!infoNodes.length) return;
+
+    // Multiple info cards can exist in one draft, but only one drives the
+    // plan tree today (see usePlanForm's workflowInfo lookup) — so every
+    // plan in this draft gets linked to that same primary workflow.
+    const primaryWorkflow = infoNodes.find((item) => item.isActive) ?? infoNodes[0];
+
+    infoNodes.forEach((info) => {
+      upsertWorkflow({
+        id: info.id,
+        name: info.name,
+        description: info.description,
+        selections: info.selections,
+        isActive: info.isActive,
+        // Only the primary workflow owns the canvas — secondary info cards
+        // aren't tied to a distinct part of the tree today.
+        nodes: info.id === primaryWorkflow.id ? nodes : [],
+        edges: info.id === primaryWorkflow.id ? edges : [],
+      });
+    });
+
+    nodes.forEach((node) => {
+      if (node.data.setupKind !== "plan") return;
+      updatePlan(node.data.planId, { workflowId: primaryWorkflow.id });
+    });
+
     toast({
       title: "Đã lưu quy trình",
       description: "Sơ đồ quy trình canh tác đã được lưu lại.",
     });
+    // Already persisted to useWorkflowStore above — clear the draft so a
+    // later bare "/create/workflow" visit doesn't reopen this canvas.
+    resetDraft();
     setLocation("/plan-growth");
   };
 

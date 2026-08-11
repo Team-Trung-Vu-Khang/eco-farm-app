@@ -53,6 +53,9 @@ const PlanGrowthCreateWorkflowPage = lazy(
 const PlanGrowthDetailPage = lazy(
   () => import("./pages/plan-growth/PlanGrowthDetailPage"),
 );
+const PlanGrowthWorkflowPlansPage = lazy(
+  () => import("./pages/plan-growth/PlanGrowthWorkflowPlansPage"),
+);
 const PlanGrowthEditPage = lazy(
   () => import("./pages/plan-growth/PlanGrowthEditPage"),
 );
@@ -760,6 +763,7 @@ const AquacultureRegionWorkflowRoute = () => <AquacultureRegionWorkflowPage />;
 const PlanGrowthRoute = () => <PlanGrowthPage />;
 const PlanGrowthCreateRoute = () => <PlanGrowthCreatePage />;
 const PlanGrowthCreateWorkflowRoute = () => <PlanGrowthCreateWorkflowPage />;
+const PlanGrowthWorkflowPlansRoute = () => <PlanGrowthWorkflowPlansPage />;
 const PlanGrowthWorkflowPlanEditRoute = () => {
   const [, setLocation] = useLocation();
   const backToWorkflow = () => setLocation("/plan-growth/create/workflow");
@@ -1548,7 +1552,15 @@ function Router() {
         path="/plan-growth/create/workflow"
         component={PlanGrowthCreateWorkflowRoute}
       />
+      <Route
+        path="/plan-growth/create/workflow/:workflowId"
+        component={PlanGrowthCreateWorkflowRoute}
+      />
       <Route path="/plan-growth/create" component={PlanGrowthCreateRoute} />
+      <Route
+        path="/plan-growth/workflow/:workflowId"
+        component={PlanGrowthWorkflowPlansRoute}
+      />
       <Route
         path="/plan-growth/:id/workflow"
         component={PlanGrowthWorkflowRoute}

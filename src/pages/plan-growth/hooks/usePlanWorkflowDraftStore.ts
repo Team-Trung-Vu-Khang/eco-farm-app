@@ -101,6 +101,11 @@ interface PlanWorkflowDraftState {
   nodes: DraftNode[];
   edges: Edge[];
   infoNodes: DiagramInfoRecord[];
+  // Which saved workflow (if any) this draft currently mirrors. null means
+  // "unsaved fresh draft" — used to tell that apart from "draft still holds
+  // a previously opened saved workflow" so a bare /create/workflow visit
+  // knows when it must reset instead of reusing stale state.
+  activeWorkflowId: string | null;
   onNodesChange: (changes: NodeChange[]) => void;
   onEdgesChange: (changes: EdgeChange[]) => void;
   setEdges: (updater: Edge[] | ((current: Edge[]) => Edge[])) => void;
@@ -109,12 +114,20 @@ interface PlanWorkflowDraftState {
   updateNodePayload: (nodeId: string, payload: StagePayload | DetailPayload) => void;
   removeNodeCascade: (nodeId: string) => void;
   setInfoNodes: (updater: DiagramInfoRecord[] | ((current: DiagramInfoRecord[]) => DiagramInfoRecord[])) => void;
+  loadWorkflow: (data: {
+    nodes: DraftNode[];
+    edges: Edge[];
+    infoNodes: DiagramInfoRecord[];
+    activeWorkflowId: string;
+  }) => void;
+  resetDraft: () => void;
 }
 
 export const usePlanWorkflowDraftStore = create<PlanWorkflowDraftState>()((set, get) => ({
   nodes: [],
   edges: [],
   infoNodes: [],
+  activeWorkflowId: null,
 
   onNodesChange: (changes) => {
     set((state) => {
@@ -193,5 +206,13 @@ export const usePlanWorkflowDraftStore = create<PlanWorkflowDraftState>()((set, 
     set((state) => ({
       infoNodes: typeof updater === "function" ? updater(state.infoNodes) : updater,
     }));
+  },
+
+  loadWorkflow: ({ nodes, edges, infoNodes, activeWorkflowId }) => {
+    set({ nodes, edges, infoNodes, activeWorkflowId });
+  },
+
+  resetDraft: () => {
+    set({ nodes: [], edges: [], infoNodes: [], activeWorkflowId: null });
   },
 }));
