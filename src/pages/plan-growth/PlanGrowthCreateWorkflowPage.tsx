@@ -20,6 +20,7 @@ import {
   Layers,
   PencilLine,
   Plus,
+  Save,
   Trash2,
   Workflow,
 } from "lucide-react";
@@ -674,6 +675,14 @@ export default function PlanGrowthCreateWorkflowPage() {
     });
   };
 
+  const handleSaveWorkflow = () => {
+    toast({
+      title: "Đã lưu quy trình",
+      description: "Sơ đồ quy trình canh tác đã được lưu lại.",
+    });
+    setLocation("/plan-growth");
+  };
+
   const infoNodeHandlers: InfoNodeHandlers = {
     onEdit: handleOpenEditInfoNode,
     onRequestToggleActive: handleRequestToggleInfoNodeActive,
@@ -757,6 +766,14 @@ export default function PlanGrowthCreateWorkflowPage() {
           >
             <ArrowLeft className="mr-2 h-4 w-4" />
             Quay lại
+          </Button>
+          <Button
+            className="h-9 px-3"
+            disabled={infoNodes.length === 0}
+            onClick={handleSaveWorkflow}
+          >
+            <Save className="mr-2 h-4 w-4" />
+            Lưu quy trình
           </Button>
         </div>
       }
