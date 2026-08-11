@@ -57,6 +57,7 @@ import usePersonnelStore from "../../stores/usePersonnelStore";
 import usePlanStore, { type Plan } from "../../stores/usePlanStore";
 import useRegionStore from "../../stores/useRegionStore";
 import useTaskStore from "../../stores/useTaskStore";
+import GeographicalSelector from "../plan/components/GeographicalSelector";
 import { TaskStageAllocation } from "../plan/components/TaskStageAllocation";
 import type {
   GeographicalSelection,
@@ -119,12 +120,16 @@ export default function TaskCreatePage() {
   const amendmentPlans = useAmendmentPlanStore((state) => state.plans);
   const personnel = usePersonnelStore((state) => state.personnel);
 
+  const presetPlanId = useMemo(
+    () => new URLSearchParams(search).get("planId"),
+    [search],
+  );
+
   // Arriving from a plan's "Phân bổ công việc" pre-selects that plan.
   const presetPlan = useMemo(() => {
-    const presetId = new URLSearchParams(search).get("planId");
-    if (!presetId) return undefined;
-    return plans.find((p) => String(p.id) === presetId);
-  }, [plans, search]);
+    if (!presetPlanId) return undefined;
+    return plans.find((p) => String(p.id) === presetPlanId);
+  }, [plans, presetPlanId]);
 
   const [formData, setFormData] = useState<TaskCreateFormData>({
     code: "CV-" + Math.floor(1000 + Math.random() * 9000),
@@ -158,7 +163,7 @@ export default function TaskCreatePage() {
   const [searchInspector, setSearchInspector] = useState("");
   const [planSearchTerm, setPlanSearchTerm] = useState("");
   const [selectedEnterpriseId] = useState<string>("");
-  const [selections] = useState<GeographicalSelection[]>([]);
+  const [selections, setSelections] = useState<GeographicalSelection[]>([]);
 
   const [newMaterial, setNewMaterial] = useState({
     type: "fertilizer" as "fertilizer" | "pesticide" | "tool" | "other",
@@ -200,6 +205,43 @@ export default function TaskCreatePage() {
   );
 
   const { regions, getRegionById } = useRegionStore();
+
+  const planScopedRegions = useMemo(() => {
+    if (!selectedPlan) return [];
+
+    const regionIds = ((selectedPlan as any).selectedRegionIds || []).map(
+      String,
+    );
+    const zoneIds = ((selectedPlan as any).selectedZoneIds || []).map(String);
+    const plotIds = ((selectedPlan as any).selectedPlotIds || []).map(String);
+    if (!regionIds.length && !zoneIds.length && !plotIds.length) return [];
+
+    return regions
+      .map((region: any) => {
+        const regionId = String(region.id);
+        const isWholeRegionSelected = regionIds.includes(regionId);
+
+        if (isWholeRegionSelected) return region;
+
+        const subAreas = (region.subAreas || [])
+          .map((area: any) => {
+            const areaId = String(area.id);
+            const isWholeAreaSelected = zoneIds.includes(areaId);
+
+            if (isWholeAreaSelected) return area;
+
+            const plots = (area.plots || []).filter((plot: any) =>
+              plotIds.includes(String(plot.id)),
+            );
+
+            return plots.length > 0 ? { ...area, plots } : null;
+          })
+          .filter(Boolean);
+
+        return subAreas.length > 0 ? { ...region, subAreas } : null;
+      })
+      .filter(Boolean) as any[];
+  }, [regions, selectedPlan]);
 
   const filteredRegionsForPhatSinh = useMemo(() => {
     if (formData.objectiveType !== "phat-sinh" || selections.length === 0) {
@@ -342,13 +384,11 @@ export default function TaskCreatePage() {
   };
 
   const handleAddTask = (item: Omit<TaskAllocation, "id">) => {
-    // If objectiveType is "phat-sinh", pre-populate with Step 1 selections if no scope provided
+    // Use the Step 1 scope as the default unless the selected task has its own.
     const geoMapping =
-      formData.objectiveType === "phat-sinh"
-        ? item.geographicalSelections && item.geographicalSelections.length > 0
-          ? item.geographicalSelections
-          : selections
-        : item.geographicalSelections;
+      item.geographicalSelections && item.geographicalSelections.length > 0
+        ? item.geographicalSelections
+        : selections;
 
     setFormData((prev) => ({
       ...prev,
@@ -544,7 +584,9 @@ export default function TaskCreatePage() {
                             planId: "",
                             planName: "",
                             mainTaskIds: [],
+                            selectedPlotIds: [],
                           });
+                          setSelections([]);
                           setPlanSearchTerm("");
                         }}
                         className={cn(
@@ -584,6 +626,7 @@ export default function TaskCreatePage() {
                         </Label>
                         <Select
                           value={formData.planId}
+                          disabled={!!presetPlanId}
                           onValueChange={(val) => {
                             const p = plans.find((p) => String(p.id) === val);
                             // Carry the plan's personnel across as a starting
@@ -603,13 +646,15 @@ export default function TaskCreatePage() {
                                   "phat-sinh")
                                 : "phat-sinh",
                               mainTaskIds: [],
+                              selectedPlotIds: [],
                               supervisors: planSupervisors,
                               qualityInspectors: planInspectors,
                             });
+                            setSelections([]);
                             setPlanSearchTerm("");
                           }}
                         >
-                          <SelectTrigger className="h-12">
+                          <SelectTrigger className="h-12 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-500 disabled:opacity-80">
                             <SelectValue placeholder="Chọn kế hoạch áp dụng..." />
                           </SelectTrigger>
                           <SelectContent className="max-h-80 overflow-hidden p-0">
@@ -647,6 +692,85 @@ export default function TaskCreatePage() {
                             </div>
                           </SelectContent>
                         </Select>
+                        {presetPlanId && (
+                          <p className="text-[11px] font-medium text-slate-400">
+                            Kế hoạch đã được cố định từ liên kết phân bổ công
+                            việc.
+                          </p>
+                        )}
+
+                        {formData.planId && selectedPlan && (
+                          <div className="space-y-3 rounded-2xl border border-emerald-100 bg-emerald-50/30 p-4">
+                            <div className="flex items-center justify-between gap-3">
+                              <div>
+                                <Label className="text-sm font-bold text-slate-700">
+                                  Vùng canh tác từ kế hoạch
+                                  <span className="text-red-500"> *</span>
+                                </Label>
+                                <p className="mt-1 text-[11px] font-medium text-slate-400">
+                                  Chỉ chọn được vùng/khu/lô thuộc kế hoạch triển
+                                  khai đã chọn.
+                                </p>
+                              </div>
+                              <GeographicalSelector
+                                regions={planScopedRegions}
+                                enterpriseId={
+                                  selectedEnterpriseId ||
+                                  (selectedPlan as any)?.enterpriseId ||
+                                  ""
+                                }
+                                existingSelections={selections}
+                                onConfirm={(nextSelections) => {
+                                  setSelections(nextSelections);
+                                  setFormData((prev) => ({
+                                    ...prev,
+                                    selectedPlotIds: nextSelections
+                                      .filter((item) => item.type === "plot")
+                                      .map((item) => String(item.plotId)),
+                                  }));
+                                }}
+                                disabled={planScopedRegions.length === 0}
+                              />
+                            </div>
+
+                            {planScopedRegions.length === 0 ? (
+                              <div className="rounded-xl border border-dashed border-slate-200 bg-white/70 px-4 py-3 text-xs italic text-slate-400">
+                                Kế hoạch này chưa có phạm vi canh tác để chọn.
+                              </div>
+                            ) : selections.length === 0 ? (
+                              <div className="rounded-xl border border-dashed border-emerald-200 bg-white/70 px-4 py-3 text-xs italic text-slate-400">
+                                Chưa chọn vùng canh tác cụ thể.
+                              </div>
+                            ) : (
+                              <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                                {getSelectionSummary(selections).map(
+                                  (group) => (
+                                    <div
+                                      key={group.regionId}
+                                      className="rounded-xl border border-emerald-100 bg-white/80 p-3"
+                                    >
+                                      <div className="mb-2 flex items-center gap-2 text-[11px] font-black uppercase tracking-wider text-emerald-700">
+                                        <MapPin className="h-3.5 w-3.5" />
+                                        {group.regionName}
+                                      </div>
+                                      <div className="flex flex-wrap gap-1.5">
+                                        {group.items.map((item) => (
+                                          <Badge
+                                            key={`${item.type}-${item.id}`}
+                                            variant="outline"
+                                            className="h-auto border-emerald-100 bg-emerald-50/60 px-2 py-0.5 text-[10px] font-semibold text-emerald-700"
+                                          >
+                                            {item.name}
+                                          </Badge>
+                                        ))}
+                                      </div>
+                                    </div>
+                                  ),
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        )}
 
                         {formData.planId &&
                           (selectedPlan?.taskAllocations || []).length > 0 && (
@@ -1291,6 +1415,7 @@ export default function TaskCreatePage() {
                     onUpdateTask={handleUpdateTask}
                     regions={regions}
                     personnel={personnel}
+                    masterSelections={selections}
                     enterpriseId={
                       selectedEnterpriseId ||
                       (selectedPlan as any)?.enterpriseId ||
@@ -1322,6 +1447,7 @@ export default function TaskCreatePage() {
                   onUpdateTask={handleUpdateTask}
                   regions={regions}
                   personnel={personnel}
+                  masterSelections={selections}
                   enterpriseId={
                     selectedEnterpriseId ||
                     (selectedPlan as any)?.enterpriseId ||
@@ -1356,6 +1482,7 @@ export default function TaskCreatePage() {
                 onUpdateTask={handleUpdateTask}
                 regions={filteredRegionsForPhatSinh}
                 personnel={personnel}
+                masterSelections={selections}
                 enterpriseId={selectedEnterpriseId}
               />
             ) : null}
