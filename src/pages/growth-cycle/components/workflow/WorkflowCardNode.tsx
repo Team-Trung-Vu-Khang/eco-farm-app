@@ -198,7 +198,9 @@ export function WorkflowCardNode({ data }: NodeProps<WorkflowCardNodeData>) {
   const widthClass = isPosterPlan
     ? data.kind === "plan"
       ? "w-[820px] max-w-[calc(100vw-32px)]"
-      : "w-[440px] max-w-[calc(100vw-32px)]"
+      : data.kind === "cycle"
+        ? "w-[640px] max-w-[calc(100vw-32px)]"
+        : "w-[440px] max-w-[calc(100vw-32px)]"
     : data.kind === "cycle" || data.kind === "stage"
       ? "w-[360px]"
       : data.wide
