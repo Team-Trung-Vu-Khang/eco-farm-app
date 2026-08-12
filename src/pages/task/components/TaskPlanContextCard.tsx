@@ -7,11 +7,10 @@ import {
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import {
   CalendarRange,
+  Clock,
   ClipboardList,
   Layers,
   MapPin,
-  Package,
-  Sprout,
 } from "lucide-react";
 import type { Plan } from "../../../stores/usePlanStore";
 
@@ -151,35 +150,32 @@ export function TaskPlanContextCard({
 
         <Separator />
 
-        <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
-          <InfoItem
-            icon={Sprout}
-            label="Mùa vụ"
-            value={plan.seasonName || "---"}
-          />
-          <InfoItem
-            icon={Package}
-            label="Đối tượng"
-            value={
-              [plan.crop, plan.variety].filter(Boolean).join(" - ") || "---"
-            }
-          />
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           <InfoItem
             icon={CalendarRange}
-            label="Thời gian"
+            label="Thời gian dự kiến"
             value={`${formatDate(plan.startDate)} - ${formatDate(plan.endDate)}`}
           />
           <InfoItem
             icon={MapPin}
-            label="Phạm vi"
+            label="Phạm vi canh tác & sản xuất"
             value={`${plan.selectedPlotIds?.length || 0} lô${
               plan.area ? ` • ${plan.area} ha` : ""
             }`}
           />
           <InfoItem
             icon={Layers}
-            label="Giai đoạn"
-            value={`${plan.selectedStages?.length || 0} giai đoạn`}
+            label="Số giai đoạn/hạng mục"
+            value={`${plan.selectedStages?.length || 0} giai đoạn${
+              plan.materialAllocations.length + plan.taskAllocations.length
+                ? ` • ${plan.materialAllocations.length + plan.taskAllocations.length} hạng mục`
+                : ""
+            }`}
+          />
+          <InfoItem
+            icon={Clock}
+            label="Thời gian khởi tạo"
+            value={formatDate(plan.createdAt)}
           />
         </div>
 
