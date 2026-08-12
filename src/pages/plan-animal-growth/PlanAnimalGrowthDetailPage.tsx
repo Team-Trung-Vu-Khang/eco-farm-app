@@ -195,22 +195,6 @@ export default function PlanAnimalGrowthDetailPage({
             </CardHeader>
             <CardContent className="pt-4 space-y-5">
               <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="text-xs text-muted-foreground font-semibold uppercase tracking-wider">
-                    Lứa nuôi
-                  </label>
-                  <p className="font-medium mt-1 text-slate-800">
-                    {plan.seasonName}
-                  </p>
-                </div>
-                <div>
-                  <label className="text-xs text-muted-foreground font-semibold uppercase tracking-wider">
-                    Vật nuôi
-                  </label>
-                  <p className="font-medium mt-1 text-slate-800">
-                    {plan.crop} - {plan.variety}
-                  </p>
-                </div>
                 {plan.purpose === "cultivation" ? (
                   <div>
                     <label className="text-xs text-muted-foreground font-semibold uppercase tracking-wider">

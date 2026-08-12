@@ -161,6 +161,10 @@ const footerActionButtonClass =
   "h-[42px] w-[42px] rounded-full border border-slate-200 bg-white p-0 text-slate-900 shadow-[0_10px_22px_rgba(15,23,42,0.10)] hover:bg-slate-50";
 const footerActionIconClass = "h-6 w-6";
 
+// Sentinel used by callers (see PlanGrowthCreateWorkflowPage) to signal "no
+// region picked yet" — rendered as plain centered text instead of a chip.
+const EMPTY_REGION_LABEL = "Chưa thiết lập vùng canh tác";
+
 function WorkflowHandle({
   id,
   type,
@@ -229,17 +233,35 @@ export function WorkflowCardNode({ data }: NodeProps<WorkflowCardNodeData>) {
   };
 
   if (isPosterPlan) {
+    // The "cycle" card (the top-level workflow diagram card) gets an emerald
+    // accent in its light theme so it stands out from the plain plan cards
+    // it sits above on the canvas.
+    const isCyclePoster = data.kind === "cycle" && !isDarkPoster;
+
+    // Solid, high-contrast pills so each status reads at a glance instead of
+    // blending into the (often equally pale) card background.
+    const posterStatusColorMap: Record<WorkflowNodeStatus, string> = {
+      not_started: "border-slate-400 bg-slate-500 text-white",
+      in_progress: "border-emerald-500 bg-emerald-500 text-white",
+      ended: "border-amber-500 bg-amber-500 text-white",
+      completed: "border-blue-500 bg-blue-500 text-white",
+      paused: "border-rose-500 bg-rose-500 text-white",
+    };
     const posterStatusClass = isDarkPoster
       ? "border-sky-400/50 bg-sky-500/20 text-sky-100"
-      : status
-        ? "border-blue-200 bg-blue-50 text-blue-700"
+      : data.status
+        ? posterStatusColorMap[data.status]
         : "";
     const posterBadgeClass = isDarkPoster
       ? "border-white/15 bg-white/5 text-slate-100 shadow-none"
-      : "border-slate-200 bg-white/80 text-slate-700 shadow-none";
+      : isCyclePoster
+        ? "border-emerald-200 bg-emerald-50 text-emerald-700 shadow-none"
+        : "border-slate-200 bg-white/80 text-slate-700 shadow-none";
     const posterWrapperClass = isDarkPoster
       ? "border-slate-500/60 bg-[#111111] text-slate-100 shadow-[0_16px_44px_rgba(0,0,0,0.45)]"
-      : "border-slate-200 bg-white shadow-[0_16px_44px_rgba(15,23,42,0.08)]";
+      : isCyclePoster
+        ? "border-transparent bg-white shadow-[0_16px_44px_rgba(16,185,129,0.16)]"
+        : "border-slate-200 bg-white shadow-[0_16px_44px_rgba(15,23,42,0.08)]";
     const posterChipClass = isDarkPoster
       ? "border-white/15 bg-black/25 text-slate-100"
       : "border-slate-200 bg-white/80 text-slate-700";
@@ -247,8 +269,8 @@ export function WorkflowCardNode({ data }: NodeProps<WorkflowCardNodeData>) {
       ? "text-slate-300"
       : "text-slate-700";
     const posterSummaryClass = isDarkPoster
-      ? "border border-white/15 bg-black/20 px-3 py-2.5 text-slate-100 shadow-none"
-      : "rounded-2xl bg-slate-50/80 px-3 py-2.5";
+      ? "border border-white/15 bg-black/20 px-3 py-2.5 text-center text-slate-100 shadow-none"
+      : "rounded-2xl bg-slate-50/80 px-3 py-2.5 text-center";
     const posterSummaryLabelClass = isDarkPoster
       ? "text-[9px] font-medium uppercase tracking-[0.12em] text-slate-400"
       : "text-[9px] font-medium uppercase tracking-[0.12em] text-slate-500";
@@ -257,16 +279,27 @@ export function WorkflowCardNode({ data }: NodeProps<WorkflowCardNodeData>) {
       : "mt-1 text-[13px] font-semibold leading-snug text-slate-900 sm:text-[14px]";
     const posterRegionWrapClass = isDarkPoster
       ? "border-white/20 bg-black/20"
-      : "border-slate-100";
+      : isCyclePoster
+        ? "border-emerald-200/70 bg-emerald-50/40"
+        : "border-slate-100";
     const posterRegionTitleClass = isDarkPoster
       ? "bg-[#111111] text-slate-300"
-      : "bg-white text-slate-700";
+      : isCyclePoster
+        ? "bg-white text-emerald-700"
+        : "bg-white text-slate-700";
     const posterRegionChipClass = isDarkPoster
       ? "border-white/15 bg-white/5 text-slate-100"
-      : "bg-slate-50/80 px-3 py-2 text-[12px] font-medium leading-5 text-slate-800";
+      : isCyclePoster
+        ? "border border-emerald-100 bg-white px-3 py-2 text-[12px] font-medium leading-5 text-slate-800"
+        : "bg-slate-50/80 px-3 py-2 text-[12px] font-medium leading-5 text-slate-800";
     const posterActionClass = isDarkPoster
       ? "border-white/15 bg-white/5 text-slate-100 hover:border-white/30 hover:bg-white/10"
-      : "border border-slate-200 bg-white text-slate-900 hover:border-slate-300 hover:bg-slate-50";
+      : isCyclePoster
+        ? "border border-emerald-200 bg-white text-emerald-800 hover:border-emerald-300 hover:bg-emerald-50"
+        : "border border-slate-200 bg-white text-slate-900 hover:border-slate-300 hover:bg-slate-50";
+    const posterActionDestructiveClass = isDarkPoster
+      ? "border border-rose-400/40 bg-rose-500/10 text-rose-200 hover:border-rose-400/60 hover:bg-rose-500/20"
+      : "border border-red-200 bg-red-50 text-red-700 hover:border-red-300 hover:bg-red-100";
     const posterFooterButtonClass = isDarkPoster
       ? "border-white/20 bg-black/30 text-white shadow-[0_10px_22px_rgba(0,0,0,0.35)] hover:bg-black/45"
       : footerActionButtonClass;
@@ -290,10 +323,14 @@ export function WorkflowCardNode({ data }: NodeProps<WorkflowCardNodeData>) {
 
         <div
           className={[
-            "rounded-[24px] border p-4 backdrop-blur-sm",
+            "overflow-hidden border backdrop-blur-sm",
+            // A tighter radius than the plan cards' rounded-[24px] keeps the
+            // workflow (cycle) card visually distinct on the canvas.
+            isCyclePoster ? "rounded-xl" : "rounded-[24px]",
             posterWrapperClass,
           ].join(" ")}
         >
+          <div className="p-4">
           <div className="flex items-start justify-between gap-3">
             <Badge
               variant="outline"
@@ -397,7 +434,7 @@ export function WorkflowCardNode({ data }: NodeProps<WorkflowCardNodeData>) {
           {data.regionLabels?.length ? (
             <div
               className={[
-                "mt-5 rounded-[18px] border border-dashed px-4 py-3",
+                "mt-5 rounded-[18px] border-2 border-dashed px-4 py-3",
                 posterRegionWrapClass,
               ].join(" ")}
             >
@@ -409,19 +446,31 @@ export function WorkflowCardNode({ data }: NodeProps<WorkflowCardNodeData>) {
               >
                 Vùng canh tác
               </div>
-              <div className="mt-3 grid gap-2 md:grid-cols-2">
-                {data.regionLabels.map((label) => (
-                  <div
-                    key={label}
-                    className={[
-                      "rounded-xl border px-3 py-2 text-[12px] font-medium leading-5",
-                      posterRegionChipClass,
-                    ].join(" ")}
-                  >
-                    {label}
-                  </div>
-                ))}
-              </div>
+              {data.regionLabels.length === 1 &&
+              data.regionLabels[0] === EMPTY_REGION_LABEL ? (
+                <p
+                  className={[
+                    "mt-3 text-center text-[13px] font-normal",
+                    isDarkPoster ? "text-slate-300" : "text-slate-500",
+                  ].join(" ")}
+                >
+                  {EMPTY_REGION_LABEL}
+                </p>
+              ) : (
+                <div className="mt-3 grid gap-2 text-center md:grid-cols-2">
+                  {data.regionLabels.map((label) => (
+                    <div
+                      key={label}
+                      className={[
+                        "rounded-xl border px-3 py-2 text-center text-[12px] font-medium leading-5",
+                        posterRegionChipClass,
+                      ].join(" ")}
+                    >
+                      {label}
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           ) : null}
 
@@ -446,7 +495,9 @@ export function WorkflowCardNode({ data }: NodeProps<WorkflowCardNodeData>) {
                     variant="outline"
                     className={[
                       "nodrag h-10 justify-center gap-2 rounded-xl px-4 text-[12px] font-semibold shadow-none",
-                      posterActionClass,
+                      action.tone === "destructive"
+                        ? posterActionDestructiveClass
+                        : posterActionClass,
                     ].join(" ")}
                     disabled={action.disabled}
                     onClick={(event) => {
@@ -462,6 +513,7 @@ export function WorkflowCardNode({ data }: NodeProps<WorkflowCardNodeData>) {
               })}
             </div>
           ) : null}
+          </div>
         </div>
         {isDarkPoster && data.footerAction ? (
           <div className="flex justify-center">

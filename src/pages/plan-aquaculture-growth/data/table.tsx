@@ -18,7 +18,6 @@ import {
   Layers,
   MoreHorizontal,
   PencilLine,
-  Sprout,
   Trash2,
   Workflow,
 } from "lucide-react";
@@ -52,12 +51,6 @@ function resolveLocationLabel(plan: Plan) {
     plan.plot ||
     (regionCount > 0 ? `${regionCount} ao nuôi` : "") ||
     "Chưa xác định"
-  );
-}
-
-function resolveCropLabel(plan: Plan) {
-  return (
-    [plan.crop, plan.variety].filter(Boolean).join(" - ") || "Chưa xác định"
   );
 }
 
@@ -103,25 +96,6 @@ export function createPlanAquacultureGrowthColumns({
       ),
     },
     {
-      key: "seasonName",
-      label: "Vụ nuôi",
-      render: (value) => (
-        <span className="text-sm font-medium text-slate-700">
-          {(value as string) || "—"}
-        </span>
-      ),
-    },
-    {
-      key: "startDate",
-      label: "Thời gian bắt đầu",
-      render: (value) => (
-        <div className="flex items-center gap-2 text-xs text-slate-600">
-          <Calendar className="h-3.5 w-3.5 text-emerald-500" />
-          <span>{formatDate(value as string | undefined)}</span>
-        </div>
-      ),
-    },
-    {
       key: "endDate",
       label: "Thời gian triển khai dự kiến",
       render: (_, item) => (
@@ -141,18 +115,6 @@ export function createPlanAquacultureGrowthColumns({
           <Layers className="h-3.5 w-3.5 text-emerald-500" />
           <span className="text-sm text-slate-700">
             {resolveLocationLabel(item)}
-          </span>
-        </div>
-      ),
-    },
-    {
-      key: "crop",
-      label: "Đối tượng nuôi",
-      render: (_, item) => (
-        <div className="flex items-center gap-2">
-          <Sprout className="h-3.5 w-3.5 text-green-500" />
-          <span className="text-sm text-slate-700">
-            {resolveCropLabel(item)}
           </span>
         </div>
       ),

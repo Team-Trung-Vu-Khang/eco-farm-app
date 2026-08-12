@@ -65,6 +65,9 @@ const PlanGrowthWorkflowStageEditPage = lazy(
 const PlanGrowthWorkflowDetailEditPage = lazy(
   () => import("./pages/plan-growth/PlanGrowthWorkflowDetailEditPage"),
 );
+const PlanGrowthWorkflowInfoFormPage = lazy(
+  () => import("./pages/plan-growth/PlanGrowthWorkflowInfoFormPage"),
+);
 const PlanGrowthWorkflowPage = lazy(
   () => import("./pages/plan-growth/PlanGrowthWorkflowPage"),
 );
@@ -95,6 +98,9 @@ const PlanAnimalGrowthWorkflowStageEditPage = lazy(
 );
 const PlanAnimalGrowthWorkflowDetailEditPage = lazy(
   () => import("./pages/plan-animal-growth/PlanAnimalGrowthWorkflowDetailEditPage"),
+);
+const PlanAnimalGrowthWorkflowInfoFormPage = lazy(
+  () => import("./pages/plan-animal-growth/PlanAnimalGrowthWorkflowInfoFormPage"),
 );
 const PlanAquacultureGrowthPage = lazy(
   () => import("./pages/plan-aquaculture-growth/PlanAquacultureGrowthPage"),
@@ -136,6 +142,12 @@ const PlanAquacultureGrowthWorkflowDetailEditPage = lazy(
   () =>
     import(
       "./pages/plan-aquaculture-growth/PlanAquacultureGrowthWorkflowDetailEditPage"
+    ),
+);
+const PlanAquacultureGrowthWorkflowInfoFormPage = lazy(
+  () =>
+    import(
+      "./pages/plan-aquaculture-growth/PlanAquacultureGrowthWorkflowInfoFormPage"
     ),
 );
 const PlanTypePage = lazy(() => import("./pages/plan-type/PlanTypePage"));
@@ -787,6 +799,7 @@ const PlanGrowthWorkflowPlanEditRoute = () => {
 };
 const PlanGrowthWorkflowStageEditRoute = () => <PlanGrowthWorkflowStageEditPage />;
 const PlanGrowthWorkflowDetailEditRoute = () => <PlanGrowthWorkflowDetailEditPage />;
+const PlanGrowthWorkflowInfoFormRoute = () => <PlanGrowthWorkflowInfoFormPage />;
 const PlanGrowthWorkflowRoute = () => <PlanGrowthWorkflowPage />;
 const PlanGrowthEditRoute = () => <PlanGrowthEditPage />;
 const PlanGrowthDetailRoute = () => <PlanGrowthDetailPage />;
@@ -811,6 +824,9 @@ const PlanAnimalGrowthWorkflowStageEditRoute = () => (
 );
 const PlanAnimalGrowthWorkflowDetailEditRoute = () => (
   <PlanAnimalGrowthWorkflowDetailEditPage />
+);
+const PlanAnimalGrowthWorkflowInfoFormRoute = () => (
+  <PlanAnimalGrowthWorkflowInfoFormPage />
 );
 const PlanAnimalGrowthWorkflowRoute = () => <PlanAnimalGrowthWorkflowPage />;
 const PlanAnimalGrowthWorkflowPlansRoute = () => (
@@ -855,6 +871,9 @@ const PlanAquacultureGrowthWorkflowStageEditRoute = () => (
 );
 const PlanAquacultureGrowthWorkflowDetailEditRoute = () => (
   <PlanAquacultureGrowthWorkflowDetailEditPage />
+);
+const PlanAquacultureGrowthWorkflowInfoFormRoute = () => (
+  <PlanAquacultureGrowthWorkflowInfoFormPage />
 );
 const PlanAquacultureGrowthWorkflowRoute = () => (
   <PlanAquacultureGrowthWorkflowPage />
@@ -1591,6 +1610,14 @@ function Router() {
         component={PlanGrowthWorkflowDetailEditRoute}
       />
       <Route
+        path="/plan-growth/create/workflow/info/create"
+        component={PlanGrowthWorkflowInfoFormRoute}
+      />
+      <Route
+        path="/plan-growth/create/workflow/info/:nodeId/edit"
+        component={PlanGrowthWorkflowInfoFormRoute}
+      />
+      <Route
         path="/plan-growth/create/workflow"
         component={PlanGrowthCreateWorkflowRoute}
       />
@@ -1621,6 +1648,14 @@ function Router() {
       <Route
         path="/plan-animal-growth/create/workflow/detail/:nodeId/edit"
         component={PlanAnimalGrowthWorkflowDetailEditRoute}
+      />
+      <Route
+        path="/plan-animal-growth/create/workflow/info/create"
+        component={PlanAnimalGrowthWorkflowInfoFormRoute}
+      />
+      <Route
+        path="/plan-animal-growth/create/workflow/info/:nodeId/edit"
+        component={PlanAnimalGrowthWorkflowInfoFormRoute}
       />
       <Route
         path="/plan-animal-growth/create/workflow"
@@ -1665,6 +1700,14 @@ function Router() {
       <Route
         path="/plan-aquaculture-growth/create/workflow/detail/:nodeId/edit"
         component={PlanAquacultureGrowthWorkflowDetailEditRoute}
+      />
+      <Route
+        path="/plan-aquaculture-growth/create/workflow/info/create"
+        component={PlanAquacultureGrowthWorkflowInfoFormRoute}
+      />
+      <Route
+        path="/plan-aquaculture-growth/create/workflow/info/:nodeId/edit"
+        component={PlanAquacultureGrowthWorkflowInfoFormRoute}
       />
       <Route
         path="/plan-aquaculture-growth/create/workflow"

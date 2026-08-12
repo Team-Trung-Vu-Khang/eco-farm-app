@@ -1,6 +1,7 @@
 import { applyEdgeChanges, applyNodeChanges } from "reactflow";
 import type { Edge, EdgeChange, Node, NodeChange } from "reactflow";
 import { create } from "zustand";
+import type { Plan } from "@/stores/useAquacultureGrowthPlanStore";
 import type { GeographicalSelection } from "../types";
 
 export type WorkflowSetupKind = "plan" | "stage" | "detail";
@@ -58,6 +59,65 @@ export function getDetailPayload(node: DraftNode): DetailPayload {
         unit: "",
       };
 }
+
+export const INFO_NODE_X = -560;
+const INFO_NODE_GAP_Y = 300;
+
+export function createInfoNodeId() {
+  return `info-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+}
+
+export function getNextInfoNodePosition(existing: DiagramInfoRecord[]) {
+  return { x: INFO_NODE_X, y: existing.length * INFO_NODE_GAP_Y };
+}
+
+export function createNodeId(kind: "plan" | "stage" | "detail") {
+  return `${kind}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+}
+
+// Placeholder — useAquacultureGrowthWorkflowDraftStore auto-lays out the whole tree after
+// every add/remove, so the exact initial value doesn't matter.
+export const PLACEHOLDER_POSITION = { x: 0, y: 0 };
+
+function buildAutoPlanCode() {
+  const now = new Date();
+  const stamp = [
+    now.getFullYear(),
+    String(now.getMonth() + 1).padStart(2, "0"),
+    String(now.getDate()).padStart(2, "0"),
+    String(now.getHours()).padStart(2, "0"),
+    String(now.getMinutes()).padStart(2, "0"),
+    String(now.getSeconds()).padStart(2, "0"),
+  ].join("");
+
+  return `KH-DRAFT-${stamp}`;
+}
+
+export function createEmptyPlanDraft(name = ""): Omit<Plan, "id" | "createdAt"> {
+  return {
+    code: buildAutoPlanCode(),
+    name,
+    description: "",
+    seasonId: "",
+    seasonName: "",
+    startDate: "",
+    endDate: "",
+    selectedRegionIds: [],
+    selectedZoneIds: [],
+    selectedPlotIds: [],
+    crop: "",
+    variety: "",
+    purpose: "cultivation",
+    growthCycleId: "",
+    regimenId: "",
+    selectedStages: [],
+    materialAllocations: [],
+    taskAllocations: [],
+    status: "draft",
+  };
+}
+
+export const DEFAULT_DRAFT_PLAN_NAME = "Kế hoạch Draft";
 
 export function getParentId(node: DraftNode): string | undefined {
   return node.data.parentId;
