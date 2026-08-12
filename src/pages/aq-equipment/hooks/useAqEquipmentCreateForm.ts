@@ -145,6 +145,91 @@ export function useAqEquipmentCreateForm() {
     });
   };
 
+  const resetForm = () => {
+    if (isEdit && params?.id) {
+      const item = getEquipmentById(Number(params.id));
+      if (item) {
+        setFormData({
+          code: item.code,
+          name: item.name,
+          technologyLevelId: item.technologyLevelId,
+          valueChainId: item.valueChainId,
+          financialManagementId: item.financialManagementId,
+          status: item.status,
+          maintainanceInterval: item.maintainanceInterval,
+          description: item.description,
+          technicalDocType: item.technicalDocType || "file",
+          technicalDocContent: item.technicalDocContent || "",
+          supplierDetails: item.supplierDetails || [],
+          sku: item.sku || item.code || "",
+          machineName: item.machineName || item.name || "",
+          model: item.model || "",
+          productImage: item.productImage || "",
+          manufacturer: item.manufacturer || "",
+          countryOfOrigin: item.countryOfOrigin || "",
+          manufactureYear: item.manufactureYear || "",
+          technologyLevelGroup: item.technologyLevelGroup || item.technologyLevelId || "",
+          assetManagementGroup: item.assetManagementGroup || item.financialManagementId || "",
+          valueChainGroup: item.valueChainGroup || (item.valueChainId ? [item.valueChainId] : []),
+          machineType: item.machineType || [],
+          powerCapacity: item.powerCapacity || "",
+          workingCapacity: item.workingCapacity || "",
+          fuelEnergyType: item.fuelEnergyType || "Dầu diesel",
+          dimensions: item.dimensions || "",
+          weight: item.weight || "",
+          otherSpecifications: item.otherSpecifications || "",
+          fuelConsumptionRate: item.fuelConsumptionRate || "",
+          maintenanceSchedule: item.maintenanceSchedule || item.maintainanceInterval || "",
+          mainAccessories: item.mainAccessories || "",
+          manufacturerOrigin: item.manufacturerOrigin || [],
+          importerRegistrant: item.importerRegistrant || [],
+          distributor: item.distributor || [],
+          referencePrice: item.referencePrice || "",
+          packagingSpecs: item.packagingSpecs || [],
+        });
+      }
+    } else {
+      setFormData({
+        code: "",
+        name: "",
+        technologyLevelId: "",
+        valueChainId: "",
+        financialManagementId: "",
+        status: "active",
+        maintainanceInterval: "",
+        description: "",
+        technicalDocType: "file",
+        technicalDocContent: "",
+        supplierDetails: [],
+        sku: "",
+        machineName: "",
+        model: "",
+        productImage: "",
+        manufacturer: "",
+        countryOfOrigin: "",
+        manufactureYear: "",
+        technologyLevelGroup: "",
+        assetManagementGroup: "",
+        valueChainGroup: [],
+        machineType: [],
+        powerCapacity: "",
+        workingCapacity: "",
+        fuelEnergyType: "Dầu diesel",
+        dimensions: "",
+        weight: "",
+        otherSpecifications: "",
+        fuelConsumptionRate: "",
+        maintenanceSchedule: "",
+        mainAccessories: "",
+        manufacturerOrigin: [],
+        importerRegistrant: [],
+        distributor: [],
+        referencePrice: "",
+        packagingSpecs: [],
+      });
+    }
+  };
+
   const handleConfirmSubmit = () => {
     const payload = {
       // Sync legacy fields
@@ -206,6 +291,7 @@ export function useAqEquipmentCreateForm() {
     isEdit,
     formData,
     updateField,
+    resetForm,
     tempSupplier,
     setTempSupplier,
     addSupplierItem,

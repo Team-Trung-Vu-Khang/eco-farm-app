@@ -9,14 +9,18 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   Button,
+  Label,
   StepperForm,
+  Switch,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { ChevronLeft } from "lucide-react";
+import { useState } from "react";
 import { EquipmentBasicInfoStep } from "../equipment/components/steps/EquipmentBasicInfoStep";
 import { EquipmentTechnicalStep } from "../equipment/components/steps/EquipmentTechnicalStep";
 import { EquipmentOperationStep } from "../equipment/components/steps/EquipmentOperationStep";
 import { EquipmentSuppliersStep } from "../equipment/components/steps/EquipmentSuppliersStep";
 import { EquipmentConfirmationStep } from "../equipment/components/steps/EquipmentConfirmationStep";
+import SimpleEquipmentForm from "../equipment/components/SimpleEquipmentForm";
 import { useAqEquipmentCreateForm } from "./hooks/useAqEquipmentCreateForm";
 
 const AqEquipmentCreatePage = () => {
@@ -24,6 +28,7 @@ const AqEquipmentCreatePage = () => {
     isEdit,
     formData,
     updateField,
+    resetForm,
     tempSupplier,
     setTempSupplier,
     addSupplierItem,
@@ -33,6 +38,8 @@ const AqEquipmentCreatePage = () => {
     handleConfirmSubmit,
     navigateBack,
   } = useAqEquipmentCreateForm();
+
+  const [isDetailMode, setIsDetailMode] = useState(false);
 
   const steps = [
     {
@@ -79,14 +86,17 @@ const AqEquipmentCreatePage = () => {
 
   return (
     <PageWrapper
-      title={isEdit ? "Cập nhật thiết bị thủy sản" : "Thêm mới thiết bị thủy sản"}
+      title={
+        isEdit ? "Cập nhật thiết bị thủy sản" : "Thêm mới thiết bị thủy sản"
+      }
       description={
         isEdit
           ? `Chỉnh sửa thông tin ${formData.machineName || formData.name}`
           : "Quản lý máy móc, công cụ thủy sản và lịch bảo dưỡng"
       }
     >
-      <div className="mb-4">
+      {/* Header bar: back button + toggle */}
+      <div className="mb-4 flex items-center justify-between">
         <Button
           variant="ghost"
           size="sm"
@@ -96,15 +106,45 @@ const AqEquipmentCreatePage = () => {
           <ChevronLeft className="w-4 h-4" />
           Quay lại danh sách
         </Button>
+
+        <div className="flex items-center gap-2.5 bg-white/80 backdrop-blur-sm border border-slate-200 rounded-full px-3 py-1.5 shadow-sm">
+          <Label
+            htmlFor="aq-equipment-detail-mode"
+            className="text-xs font-semibold text-slate-600 cursor-pointer select-none"
+          >
+            Thông tin chuyên sâu
+          </Label>
+          <Switch
+            id="aq-equipment-detail-mode"
+            checked={isDetailMode}
+            onCheckedChange={(checked) => {
+              setIsDetailMode(checked);
+              resetForm();
+            }}
+          />
+        </div>
       </div>
 
       <div className="bg-white/50 backdrop-blur-xs rounded-xl">
-        <StepperForm
-          steps={steps}
-          completeLabel={isEdit ? "Lưu thay đổi" : "Hoàn tất & Lưu"}
-          onComplete={() => setConfirmOpen(true)}
-          onCancel={navigateBack}
-        />
+        {isDetailMode ? (
+          <StepperForm
+            steps={steps}
+            completeLabel={isEdit ? "Lưu thay đổi" : "Hoàn tất & Lưu"}
+            onComplete={() => setConfirmOpen(true)}
+            onCancel={navigateBack}
+          />
+        ) : (
+          <div className="p-4 md:p-6">
+            <SimpleEquipmentForm
+              formData={formData}
+              domain="aquaculture"
+              updateField={updateField}
+              handleComplete={() => setConfirmOpen(true)}
+              goBack={navigateBack}
+              completeLabel={isEdit ? "Lưu thay đổi" : "Hoàn tất & Lưu"}
+            />
+          </div>
+        )}
       </div>
 
       <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
@@ -123,16 +163,22 @@ const AqEquipmentCreatePage = () => {
                 <div className="bg-slate-50 p-4 rounded-lg space-y-2 text-sm mt-3">
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Mã SKU:</span>
-                    <span className="font-medium">{formData.sku || formData.code}</span>
+                    <span className="font-medium">
+                      {formData.sku || formData.code}
+                    </span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Tên máy móc:</span>
-                    <span className="font-medium">{formData.machineName || formData.name}</span>
+                    <span className="font-medium">
+                      {formData.machineName || formData.name}
+                    </span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Bảo dưỡng:</span>
                     <span className="font-medium">
-                      {formData.maintenanceSchedule || formData.maintainanceInterval || "N/A"}
+                      {formData.maintenanceSchedule ||
+                        formData.maintainanceInterval ||
+                        "N/A"}
                     </span>
                   </div>
                 </div>

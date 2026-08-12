@@ -9,14 +9,18 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   Button,
+  Label,
   StepperForm,
+  Switch,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { ChevronLeft } from "lucide-react";
+import { useState } from "react";
 import { EquipmentBasicInfoStep } from "./components/steps/EquipmentBasicInfoStep";
 import { EquipmentTechnicalStep } from "./components/steps/EquipmentTechnicalStep";
 import { EquipmentOperationStep } from "./components/steps/EquipmentOperationStep";
 import { EquipmentSuppliersStep } from "./components/steps/EquipmentSuppliersStep";
 import { EquipmentConfirmationStep } from "./components/steps/EquipmentConfirmationStep";
+import SimpleEquipmentForm from "./components/SimpleEquipmentForm";
 import { useEquipmentCreateForm } from "./hooks/useEquipmentCreateForm";
 
 const EquipmentCreatePage = () => {
@@ -24,6 +28,7 @@ const EquipmentCreatePage = () => {
     isEdit,
     formData,
     updateField,
+    resetForm,
     tempSupplier,
     setTempSupplier,
     addSupplierItem,
@@ -33,6 +38,8 @@ const EquipmentCreatePage = () => {
     handleConfirmSubmit,
     navigateBack,
   } = useEquipmentCreateForm();
+
+  const [isDetailMode, setIsDetailMode] = useState(false);
 
   const steps = [
     {
@@ -86,7 +93,8 @@ const EquipmentCreatePage = () => {
           : "Quản lý máy móc, công cụ và lịch bảo dưỡng"
       }
     >
-      <div className="mb-4">
+      {/* Header bar: back button + toggle */}
+      <div className="mb-4 flex items-center justify-between">
         <Button
           variant="ghost"
           size="sm"
@@ -96,15 +104,45 @@ const EquipmentCreatePage = () => {
           <ChevronLeft className="w-4 h-4" />
           Quay lại danh sách
         </Button>
+
+        <div className="flex items-center gap-2.5 bg-white/80 backdrop-blur-sm border border-slate-200 rounded-full px-3 py-1.5 shadow-sm">
+          <Label
+            htmlFor="equipment-detail-mode"
+            className="text-xs font-semibold text-slate-600 cursor-pointer select-none"
+          >
+            Thông tin chuyên sâu
+          </Label>
+          <Switch
+            id="equipment-detail-mode"
+            checked={isDetailMode}
+            onCheckedChange={(checked) => {
+              setIsDetailMode(checked);
+              resetForm();
+            }}
+          />
+        </div>
       </div>
 
       <div className="bg-white/50 backdrop-blur-xs rounded-xl">
-        <StepperForm
-          steps={steps}
-          completeLabel={isEdit ? "Lưu thay đổi" : "Hoàn tất & Lưu"}
-          onComplete={() => setConfirmOpen(true)}
-          onCancel={navigateBack}
-        />
+        {isDetailMode ? (
+          <StepperForm
+            steps={steps}
+            completeLabel={isEdit ? "Lưu thay đổi" : "Hoàn tất & Lưu"}
+            onComplete={() => setConfirmOpen(true)}
+            onCancel={navigateBack}
+          />
+        ) : (
+          <div className="p-4 md:p-6">
+            <SimpleEquipmentForm
+              formData={formData}
+              domain="cultivation"
+              updateField={updateField}
+              handleComplete={() => setConfirmOpen(true)}
+              goBack={navigateBack}
+              completeLabel={isEdit ? "Lưu thay đổi" : "Hoàn tất & Lưu"}
+            />
+          </div>
+        )}
       </div>
 
       <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
@@ -123,22 +161,16 @@ const EquipmentCreatePage = () => {
                 <div className="bg-slate-50 p-4 rounded-lg space-y-2 text-sm mt-3">
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Mã SKU:</span>
-                    <span className="font-medium">
-                      {formData.sku || formData.code}
-                    </span>
+                    <span className="font-medium">{formData.sku || formData.code}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Tên máy móc:</span>
-                    <span className="font-medium">
-                      {formData.machineName || formData.name}
-                    </span>
+                    <span className="font-medium">{formData.machineName || formData.name}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Bảo dưỡng:</span>
                     <span className="font-medium">
-                      {formData.maintenanceSchedule ||
-                        formData.maintainanceInterval ||
-                        "N/A"}
+                      {formData.maintenanceSchedule || formData.maintainanceInterval || "N/A"}
                     </span>
                   </div>
                 </div>

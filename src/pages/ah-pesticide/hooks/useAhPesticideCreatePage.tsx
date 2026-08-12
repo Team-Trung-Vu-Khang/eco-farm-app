@@ -126,6 +126,14 @@ export function useAhPesticideCreatePage() {
     setLocation("/animal-husbandry-material/pesticide");
   };
 
+  const resetForm = () => {
+    setFormData(
+      initialEditItem
+        ? createPesticideFormDataFromItem(initialEditItem)
+        : createEmptyPesticideFormData()
+    );
+  };
+
   const steps = [
     {
       id: "info",
@@ -182,6 +190,8 @@ export function useAhPesticideCreatePage() {
   return {
     isEdit,
     formData,
+    updateField,
+    resetForm,
     confirmOpen,
     setConfirmOpen,
     steps,

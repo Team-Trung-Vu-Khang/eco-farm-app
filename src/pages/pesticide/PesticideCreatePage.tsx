@@ -1,13 +1,17 @@
 import PageWrapper from "@/components/PageWrapper";
-import { Button, StepperForm } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import { Button, Label, StepperForm, Switch } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { ChevronLeft } from "lucide-react";
+import { useState } from "react";
 import PesticideSubmitConfirmDialog from "./components/PesticideSubmitConfirmDialog";
+import SimplePesticideForm from "./components/SimplePesticideForm";
 import { usePesticideCreatePage } from "./hooks/usePesticideCreatePage";
 
 const PesticideCreatePage = () => {
   const {
     isEdit,
     formData,
+    updateField,
+    resetForm,
     confirmOpen,
     setConfirmOpen,
     steps,
@@ -15,6 +19,8 @@ const PesticideCreatePage = () => {
     handleComplete,
     handleConfirmSubmit,
   } = usePesticideCreatePage();
+
+  const [isDetailMode, setIsDetailMode] = useState(false);
 
   return (
     <PageWrapper
@@ -25,7 +31,8 @@ const PesticideCreatePage = () => {
           : "Khai báo thông tin thuốc trừ sâu, bệnh mới"
       }
     >
-      <div className="mb-4">
+      {/* Header bar: back button + toggle */}
+      <div className="mb-4 flex items-center justify-between">
         <Button
           variant="ghost"
           size="sm"
@@ -35,15 +42,42 @@ const PesticideCreatePage = () => {
           <ChevronLeft className="w-4 h-4" />
           Quay lại danh sách
         </Button>
+
+        <div className="flex items-center gap-2.5 bg-white/80 backdrop-blur-sm border border-slate-200 rounded-full px-3 py-1.5 shadow-sm">
+          <Label htmlFor="pesticide-detail-mode" className="text-xs font-semibold text-slate-600 cursor-pointer select-none">
+            Thông tin chuyên sâu
+          </Label>
+          <Switch
+            id="pesticide-detail-mode"
+            checked={isDetailMode}
+            onCheckedChange={(checked) => {
+              setIsDetailMode(checked);
+              resetForm();
+            }}
+          />
+        </div>
       </div>
 
       <div className="bg-white/50 backdrop-blur-xs rounded-xl">
-        <StepperForm
-          steps={steps}
-          completeLabel={isEdit ? "Lưu thay đổi" : "Hoàn tất & Lưu"}
-          onComplete={handleComplete}
-          onCancel={goBack}
-        />
+        {isDetailMode ? (
+          <StepperForm
+            steps={steps}
+            completeLabel={isEdit ? "Lưu thay đổi" : "Hoàn tất & Lưu"}
+            onComplete={handleComplete}
+            onCancel={goBack}
+          />
+        ) : (
+          <div className="p-4 md:p-6">
+            <SimplePesticideForm
+              formData={formData}
+              domain="cultivation"
+              onFormFieldChange={updateField}
+              handleComplete={() => setConfirmOpen(true)}
+              goBack={goBack}
+              completeLabel={isEdit ? "Lưu thay đổi" : "Hoàn tất & Lưu"}
+            />
+          </div>
+        )}
       </div>
 
       <PesticideSubmitConfirmDialog

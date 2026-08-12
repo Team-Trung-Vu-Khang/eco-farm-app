@@ -124,6 +124,14 @@ export function usePesticideCreatePage() {
     setLocation("/cultivation-material/pesticide");
   };
 
+  const resetForm = () => {
+    setFormData(
+      initialEditItem
+        ? createPesticideFormDataFromItem(initialEditItem)
+        : createEmptyPesticideFormData()
+    );
+  };
+
   const steps = [
     {
       id: "info",
@@ -180,6 +188,8 @@ export function usePesticideCreatePage() {
   return {
     isEdit,
     formData,
+    updateField,
+    resetForm,
     confirmOpen,
     setConfirmOpen,
     steps,
