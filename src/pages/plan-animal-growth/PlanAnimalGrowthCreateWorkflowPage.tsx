@@ -49,16 +49,17 @@ import {
   type WorkflowNodeStatus,
 } from "./../growth-cycle/components/workflow/WorkflowCardNode";
 import {
-  DiagramInfoFormDialog,
-  type DiagramInfoFormData,
-} from "./components/DiagramInfoFormDialog";
-import {
+  createEmptyPlanDraft,
+  createNodeId,
   getDirectChildren,
   getParentId,
+  INFO_NODE_X,
+  PLACEHOLDER_POSITION,
   useAnimalGrowthWorkflowDraftStore,
   type DiagramInfoRecord,
   type DraftNode,
 } from "./hooks/useAnimalGrowthWorkflowDraftStore";
+import type { GeographicalSelection } from "./types";
 import { summarizePlanSelections, summarizeSelections } from "./utils/location";
 
 type PlanDisplayStatus =
@@ -89,10 +90,8 @@ const PLAN_STATUS_META: Record<
   completed: { nodeStatus: "completed", label: "Đã kết thúc" },
 };
 
-const INFO_NODE_X = -560;
-const INFO_NODE_GAP_Y = 300;
 const DEFAULT_DIAGRAM_INFO_EYEBROW = "Quy trình chăn nuôi";
-const DEFAULT_DRAFT_PLAN_NAME = "Kế hoạch Draft";
+const WORKFLOW_BASE_PATH = "/plan-animal-growth/create/workflow";
 
 type FlowViewInstance = {
   fitView: (options?: {
@@ -100,14 +99,6 @@ type FlowViewInstance = {
     includeHiddenNodes?: boolean;
   }) => void;
 };
-
-function createInfoNodeId() {
-  return `info-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-}
-
-function getNextInfoNodePosition(existing: DiagramInfoRecord[]) {
-  return { x: INFO_NODE_X, y: existing.length * INFO_NODE_GAP_Y };
-}
 
 function getDurationLabel(startDate?: string, endDate?: string) {
   if (!startDate || !endDate) return "Chưa xác định";
@@ -155,48 +146,6 @@ function getPlanOutlineCode(nodeId: string, allNodes: DraftNode[]): string {
   return `${getPlanOutlineCode(parentId, allNodes)}.${index}`;
 }
 
-function buildAutoPlanCode() {
-  const now = new Date();
-  const stamp = [
-    now.getFullYear(),
-    String(now.getMonth() + 1).padStart(2, "0"),
-    String(now.getDate()).padStart(2, "0"),
-    String(now.getHours()).padStart(2, "0"),
-    String(now.getMinutes()).padStart(2, "0"),
-    String(now.getSeconds()).padStart(2, "0"),
-  ].join("");
-
-  return `KH-DRAFT-${stamp}`;
-}
-
-function createEmptyPlanDraft(name = ""): Omit<Plan, "id" | "createdAt"> {
-  return {
-    code: buildAutoPlanCode(),
-    name,
-    description: "",
-    seasonId: "",
-    seasonName: "",
-    startDate: "",
-    endDate: "",
-    selectedRegionIds: [],
-    selectedZoneIds: [],
-    selectedPlotIds: [],
-    crop: "",
-    variety: "",
-    purpose: "cultivation",
-    growthCycleId: "",
-    regimenId: "",
-    selectedStages: [],
-    materialAllocations: [],
-    taskAllocations: [],
-    status: "draft",
-  };
-}
-
-function createNodeId(kind: "plan" | "stage" | "detail") {
-  return `${kind}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-}
-
 function buildChildEdge(sourceNodeId: string, targetNodeId: string): Edge {
   return {
     id: `edge-${sourceNodeId}-${targetNodeId}`,
@@ -209,10 +158,6 @@ function buildChildEdge(sourceNodeId: string, targetNodeId: string): Edge {
     style: { strokeWidth: 2, stroke: "#1f2937" },
   };
 }
-
-// Positions are placeholders — useAnimalGrowthWorkflowDraftStore auto-lays out the
-// whole tree after every add/remove, so the exact initial value doesn't matter.
-const PLACEHOLDER_POSITION = { x: 0, y: 0 };
 
 function isPlanInfoComplete(plan: Plan) {
   return Boolean(
@@ -274,7 +219,7 @@ function getRegionLabelsFromPlan(
   regions: ReturnType<typeof useRegionStore.getState>["regions"],
 ) {
   const summary = summarizePlanSelections(plan, regions);
-  if (!summary.length) return ["Chưa chọn vùng"];
+  if (!summary.length) return ["Chưa thiết lập vùng canh tác"];
 
   return summary.map((group) => {
     const itemLabel = group.items.map((item) => item.name).join(", ");
@@ -283,11 +228,11 @@ function getRegionLabelsFromPlan(
 }
 
 function getRegionLabelsFromSelections(
-  selections: DiagramInfoFormData["selections"],
+  selections: GeographicalSelection[],
   regions: ReturnType<typeof useRegionStore.getState>["regions"],
 ) {
   const summary = summarizeSelections(selections, regions || []);
-  if (!summary.length) return ["Chưa chọn vùng"];
+  if (!summary.length) return ["Chưa thiết lập vùng canh tác"];
 
   return summary.map((group) => {
     const itemLabel = group.items.map((item) => item.name).join(", ");
@@ -545,10 +490,6 @@ export default function PlanAnimalGrowthCreateWorkflowPage() {
     });
   }, [params.workflowId, activeWorkflowId, loadWorkflow, resetDraft]);
 
-  const [infoFormOpen, setInfoFormOpen] = useState(false);
-  const [editingInfoNodeId, setEditingInfoNodeId] = useState<string | null>(
-    null,
-  );
   const [confirmAction, setConfirmAction] = useState<ConfirmActionState | null>(
     null,
   );
@@ -556,11 +497,7 @@ export default function PlanAnimalGrowthCreateWorkflowPage() {
     null,
   );
 
-  useDialogBugWorkaround([infoFormOpen, confirmAction !== null]);
-
-  const editingInfoNode = editingInfoNodeId
-    ? (infoNodes.find((item) => item.id === editingInfoNodeId) ?? null)
-    : null;
+  useDialogBugWorkaround([confirmAction !== null]);
 
   const createPlanNode = (sourceNodeId?: string, planName = "") => {
     addPlan(createEmptyPlanDraft(planName));
@@ -631,48 +568,11 @@ export default function PlanAnimalGrowthCreateWorkflowPage() {
   };
 
   const handleOpenCreateInfoNode = () => {
-    setEditingInfoNodeId(null);
-    setInfoFormOpen(true);
+    setLocation(`${WORKFLOW_BASE_PATH}/info/create`);
   };
 
   const handleOpenEditInfoNode = (id: string) => {
-    setEditingInfoNodeId(id);
-    setInfoFormOpen(true);
-  };
-
-  const handleSubmitInfoForm = (values: DiagramInfoFormData) => {
-    const isNewNode = !editingInfoNode;
-    const isFirstInfoNode = infoNodes.length === 0;
-
-    if (isNewNode) {
-      const newRecord: DiagramInfoRecord = {
-        id: createInfoNodeId(),
-        ...values,
-        isActive: true,
-        position: getNextInfoNodePosition(infoNodes),
-      };
-      setInfoNodes((prev) => [...prev, newRecord]);
-    } else if (editingInfoNodeId) {
-      setInfoNodes((prev) =>
-        prev.map((item) =>
-          item.id === editingInfoNodeId ? { ...item, ...values } : item,
-        ),
-      );
-    }
-
-    setInfoFormOpen(false);
-    setEditingInfoNodeId(null);
-
-    if (isNewNode && isFirstInfoNode && nodes.length === 0) {
-      createPlanNode(undefined, DEFAULT_DRAFT_PLAN_NAME);
-    }
-
-    toast({
-      title: "Thành công",
-      description: isNewNode
-        ? "Đã thêm node thông tin quy trình"
-        : "Đã cập nhật node thông tin quy trình",
-    });
+    setLocation(`${WORKFLOW_BASE_PATH}/info/${id}/edit`);
   };
 
   const handleRequestToggleInfoNodeActive = (id: string) => {
@@ -914,19 +814,6 @@ export default function PlanAnimalGrowthCreateWorkflowPage() {
           </div>
         )}
       </div>
-
-      <DiagramInfoFormDialog
-        open={infoFormOpen}
-        onOpenChange={(open) => {
-          setInfoFormOpen(open);
-          if (!open) setEditingInfoNodeId(null);
-        }}
-        isEdit={!!editingInfoNode}
-        initialData={
-          editingInfoNode || { name: "", description: "", selections: [] }
-        }
-        onSubmit={handleSubmitInfoForm}
-      />
 
       <AlertDialog
         open={confirmAction !== null}
