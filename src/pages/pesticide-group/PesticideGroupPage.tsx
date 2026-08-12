@@ -32,7 +32,7 @@ const PesticideGroupPage = () => {
         <TabsList className="grid w-full grid-cols-5 mb-6">
           <TabsTrigger value="target_pest" className="flex items-center gap-2">
             <Droplet className="w-4 h-4" />
-            Đối tượng phòng trừ
+            Công dụng thuốc
           </TabsTrigger>
           <TabsTrigger value="origin" className="flex items-center gap-2">
             <Leaf className="w-4 h-4" />
@@ -50,7 +50,7 @@ const PesticideGroupPage = () => {
             className="flex items-center gap-2"
           >
             <Activity className="w-4 h-4" />
-            Cách xâm nhập
+            Cơ chế tác động
           </TabsTrigger>
           <TabsTrigger value="formulation" className="flex items-center gap-2">
             <Beaker className="w-4 h-4" />
@@ -61,35 +61,35 @@ const PesticideGroupPage = () => {
         <TabsContent value="target_pest">
           <MedicineCategoryTabContent
             catalog="pesticide-groups"
-            title="Phân loại theo Đối tượng phòng trừ"
+            title="Công dụng thuốc"
             description="Ví dụ: Thuốc trừ sâu, Thuốc trừ nấm, Thuốc trừ cỏ..."
           />
         </TabsContent>
         <TabsContent value="origin">
           <MedicineCategoryTabContent
             catalog="pesticide-origins"
-            title="Phân loại theo Nguồn gốc"
+            title="Nguồn gốc"
             description="Ví dụ: Hóa học tổng hợp, Sinh học, Thảo mộc..."
           />
         </TabsContent>
         <TabsContent value="toxicity_level">
           <MedicineCategoryTabContent
             catalog="pesticide-toxicity-classes"
-            title="Phân loại theo Mức độ độc hại"
+            title="Mức độ độc hại"
             description="Theo chuẩn WHO (Ia, Ib, II, III, U)"
           />
         </TabsContent>
         <TabsContent value="mode_of_action">
           <MedicineCategoryTabContent
             catalog="pesticide-modes-of-action"
-            title="Phân loại theo Cơ chế tác động"
+            title="Cơ chế tác động"
             description="Ví dụ: Vị độc, Tiếp xúc, Nội hấp..."
           />
         </TabsContent>
         <TabsContent value="formulation">
           <MedicineCategoryTabContent
             catalog="pesticide-formulations"
-            title="Phân loại theo Dạng bào chế"
+            title="Dạng bào chế"
             description="Ví dụ: Nhũ dầu (EC), Huyền phù (SC), Bột (WP)..."
           />
         </TabsContent>

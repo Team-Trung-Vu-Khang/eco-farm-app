@@ -73,6 +73,25 @@ export const EquipmentConfirmationStep = ({
                 <span className="text-muted-foreground block text-xs">Năm sản xuất:</span>
                 <span className="font-medium text-slate-700">{formData.manufactureYear || "N/A"}</span>
               </div>
+              <div>
+                <span className="text-muted-foreground block text-xs">Hashtags:</span>
+                <div className="flex flex-wrap gap-1 mt-1">
+                  {(formData.hashtags || []).map((tag) => (
+                    <Badge key={tag} variant="outline" className="text-[10px] bg-slate-50">
+                      #{tag}
+                    </Badge>
+                  ))}
+                  {(!formData.hashtags || formData.hashtags.length === 0) && (
+                    <span className="text-slate-400">Không có hashtags</span>
+                  )}
+                </div>
+              </div>
+              <div>
+                <span className="text-muted-foreground block text-xs">Mô tả / Ghi chú:</span>
+                <span className="font-medium text-slate-700 block whitespace-pre-wrap">
+                  {formData.description || "N/A"}
+                </span>
+              </div>
             </div>
           </CardContent>
         </Card>

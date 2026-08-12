@@ -4,6 +4,7 @@ import { useLocation, useRoute } from "wouter";
 import { isContaintHtmlTag, safeConvertLexicalToHtml } from "@/utils/commons";
 import useFertilizerStore from "../../../stores/useFertilizerStore";
 import type { FertilizerFormData } from "../types/types";
+import { parsePackagingSpec } from "../../pesticide/utils/form";
 
 export function useFertilizerCreateForm() {
   const [, setLocation] = useLocation();
@@ -72,6 +73,9 @@ export function useFertilizerCreateForm() {
     hashtags: [],
     supplierDetails: [],
     documents: [],
+    quantity: "",
+    unit: "",
+    packaging: "",
   });
 
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -123,6 +127,7 @@ export function useFertilizerCreateForm() {
         hashtags: initialEditItem.hashtags || ["HieuQuaCao"],
         supplierDetails: initialEditItem.supplierDetails || [],
         documents: initialEditItem.documents || [],
+        ...parsePackagingSpec(initialEditItem.packagingSpecs?.[0]),
       });
     }
   }, [isEdit, initialEditItem]);
@@ -186,6 +191,7 @@ export function useFertilizerCreateForm() {
         hashtags: initialEditItem.hashtags || ["HieuQuaCao"],
         supplierDetails: initialEditItem.supplierDetails || [],
         documents: initialEditItem.documents || [],
+        ...parsePackagingSpec(initialEditItem.packagingSpecs?.[0]),
       });
     } else {
       setFormData({
@@ -226,6 +232,9 @@ export function useFertilizerCreateForm() {
         hashtags: [],
         supplierDetails: [],
         documents: [],
+        quantity: "",
+        unit: "",
+        packaging: "",
       });
     }
   };
@@ -272,7 +281,12 @@ export function useFertilizerCreateForm() {
       importerRegistrant: formData.importerRegistrant,
       distributor: formData.distributor,
       referencePrice: formData.referencePrice,
-      packagingSpecs: formData.packagingSpecs,
+      packagingSpecs:
+        formData.packagingSpecs.length > 0
+          ? formData.packagingSpecs
+          : formData.quantity && formData.unit && formData.packaging
+            ? [`${formData.quantity} ${formData.unit} / ${formData.packaging}`]
+            : undefined,
 
       status: "active" as const,
     };

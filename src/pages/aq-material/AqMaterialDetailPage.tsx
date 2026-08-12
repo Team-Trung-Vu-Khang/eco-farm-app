@@ -100,11 +100,6 @@ const AqMaterialDetailPage = () => {
                     {item.status === "active" ? "Đang hoạt động" : "Ngừng hoạt động"}
                   </Badge>
                 </div>
-                <div className="flex flex-wrap gap-2 mt-4">
-                  <Badge variant="outline" className="bg-white/50 border-teal-200 text-teal-800">
-                    {item.type}
-                  </Badge>
-                </div>
               </div>
             </div>
           </Card>
@@ -120,21 +115,23 @@ const AqMaterialDetailPage = () => {
               <CardContent className="pt-6 space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm">
                   <div>
-                    <span className="text-muted-foreground block text-xs mb-1">Danh mục vật tư:</span>
-                    <span className="font-semibold text-slate-800">{item.type || "N/A"}</span>
+                    <span className="text-muted-foreground block text-xs mb-1">Mức độ công nghệ:</span>
+                    <span className="font-semibold text-slate-850 bg-slate-50 border px-2 py-1 rounded inline-block text-xs mt-1">
+                      {getMaterialGroupLabel(item.technologyLevelId)}
+                    </span>
                   </div>
                   <div>
-                    <span className="text-muted-foreground block text-xs mb-1">Nhóm vật tư (Phân loại):</span>
+                    <span className="text-muted-foreground block text-xs mb-1">Giai đoạn áp dụng:</span>
                     <span className="font-semibold text-slate-850 bg-slate-50 border px-2 py-1 rounded inline-block text-xs mt-1">
-                      {getMaterialGroupLabel(item.materialGroupId)}
+                      {getMaterialGroupLabel(item.valueChainId)}
                     </span>
                   </div>
                 </div>
 
                 <div className="border-t pt-4">
-                  <h4 className="text-sm font-medium text-muted-foreground mb-2">Mô tả chi tiết</h4>
+                  <h4 className="text-sm font-medium text-muted-foreground mb-2">Mô tả</h4>
                   <div className="bg-slate-50 p-4 rounded-lg text-sm leading-relaxed border border-slate-100 min-h-[100px]">
-                    {item.description || "Chưa có mô tả chi tiết cho vật tư này."}
+                    {item.description || "Chưa có mô tả cho vật tư này."}
                   </div>
                 </div>
               </CardContent>

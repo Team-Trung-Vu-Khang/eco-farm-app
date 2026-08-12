@@ -63,9 +63,7 @@ const MaterialValueChainPage = ({ onEdit }: Props) => {
     <div className="space-y-2">
       <div className="flex justify-between items-center">
         <div>
-          <h2 className="text-2xl font-semibold">
-            Phân loại theo Chuỗi Giá trị Sản xuất
-          </h2>
+          <h2 className="text-2xl font-semibold">Chuỗi Giá trị Sản xuất</h2>
           <p className="text-sm text-muted-foreground mt-1">
             Quản lý dụng cụ - máy móc theo chuỗi giá trị
           </p>

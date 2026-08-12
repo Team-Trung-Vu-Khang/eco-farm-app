@@ -39,6 +39,7 @@ export interface Equipment {
   distributor?: string[];
   referencePrice?: string;
   packagingSpecs?: string[];
+  hashtags?: string[];
 }
 
 export interface SupplierDetail {
@@ -88,4 +89,5 @@ export interface EquipmentFormData {
   distributor: string[];
   referencePrice: string;
   packagingSpecs: string[];
+  hashtags: string[];
 }

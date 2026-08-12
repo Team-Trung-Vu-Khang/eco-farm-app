@@ -20,15 +20,13 @@ import {
   Upload,
   X,
 } from "lucide-react";
-import { initialPesticidePurposes } from "../../pesticide-group/data/constants";
-import {
-  commonHashtags,
-  pesticideForms,
-  toxicityLevels,
-} from "../data/constants";
-import type { PesticideFormData } from "../types";
+import { useMasterData } from "@/features/master-data";
+import { MOCK_MEDICINE_DATA } from "../../shared-medicine-group/data/mocks";
+import { commonHashtags } from "../data/constants";
+import type { PesticideDomain, PesticideFormData } from "../types";
 
 interface PesticideBasicInfoStepProps {
+  domain?: PesticideDomain;
   formData: PesticideFormData;
   paramHashtag: string;
   onParamHashtagChange: (value: string) => void;
@@ -49,6 +47,7 @@ const toxicityColorMap: Record<string, string> = {
 };
 
 export default function PesticideBasicInfoStep({
+  domain,
   formData,
   paramHashtag,
   onParamHashtagChange,
@@ -56,6 +55,100 @@ export default function PesticideBasicInfoStep({
   onAddHashtag,
   onRemoveHashtag,
 }: PesticideBasicInfoStepProps) {
+  const isCultivation = domain === "cultivation" || !domain;
+  const isAnimal = domain === "animal";
+  const isAquaculture = domain === "aquaculture";
+
+  // Cultivation Master Data
+  const { items: loadedPesticideGroups } = useMasterData("pesticide-groups", {
+    enabled: isCultivation,
+  });
+  const { items: loadedPesticideOrigins } = useMasterData("pesticide-origins", {
+    enabled: isCultivation,
+  });
+  const { items: loadedPesticideToxicityClasses } = useMasterData(
+    "pesticide-toxicity-classes",
+    { enabled: isCultivation },
+  );
+  const { items: loadedPesticideModesOfAction } = useMasterData(
+    "pesticide-modes-of-action",
+    { enabled: isCultivation },
+  );
+  const { items: loadedPesticideFormulations } = useMasterData(
+    "pesticide-formulations",
+    { enabled: isCultivation },
+  );
+
+  // Animal Master Data
+  const { items: loadedLivestockFunctions } = useMasterData(
+    "livestock-medicine-functions",
+    { enabled: isAnimal },
+  );
+  const { items: loadedLivestockAdministrationRoutes } = useMasterData(
+    "livestock-medicine-administration-routes",
+    { enabled: isAnimal },
+  );
+  const { items: loadedLivestockControlLevels } = useMasterData(
+    "livestock-medicine-control-levels",
+    { enabled: isAnimal },
+  );
+
+  // Aquaculture Master Data
+  const { items: loadedAquacultureFunctions } = useMasterData(
+    "aquaculture-medicine-functions",
+    { enabled: isAquaculture },
+  );
+  const { items: loadedAquacultureControlResidues } = useMasterData(
+    "aquaculture-medicine-control-residues",
+    { enabled: isAquaculture },
+  );
+
+  const getItems = (loaded: any[], catalog: string) => {
+    if (loaded && loaded.length > 0) {
+      return loaded;
+    }
+    return MOCK_MEDICINE_DATA[catalog] || [];
+  };
+
+  const pesticideGroups = getItems(loadedPesticideGroups, "pesticide-groups");
+  const pesticideOrigins = getItems(
+    loadedPesticideOrigins,
+    "pesticide-origins",
+  );
+  const pesticideToxicityClasses = getItems(
+    loadedPesticideToxicityClasses,
+    "pesticide-toxicity-classes",
+  );
+  const pesticideModesOfAction = getItems(
+    loadedPesticideModesOfAction,
+    "pesticide-modes-of-action",
+  );
+  const pesticideFormulations = getItems(
+    loadedPesticideFormulations,
+    "pesticide-formulations",
+  );
+
+  const livestockFunctions = getItems(
+    loadedLivestockFunctions,
+    "livestock-medicine-functions",
+  );
+  const livestockAdministrationRoutes = getItems(
+    loadedLivestockAdministrationRoutes,
+    "livestock-medicine-administration-routes",
+  );
+  const livestockControlLevels = getItems(
+    loadedLivestockControlLevels,
+    "livestock-medicine-control-levels",
+  );
+
+  const aquacultureFunctions = getItems(
+    loadedAquacultureFunctions,
+    "aquaculture-medicine-functions",
+  );
+  const aquacultureControlResidues = getItems(
+    loadedAquacultureControlResidues,
+    "aquaculture-medicine-control-residues",
+  );
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 animate-in fade-in slide-in-from-bottom-2 duration-500">
       <div className="lg:col-span-2 space-y-6">
@@ -120,7 +213,7 @@ export default function PesticideBasicInfoStep({
 
           <div className="space-y-2">
             <Label>
-              Nhóm phân loại chính (Đối tượng phòng trừ){" "}
+              {isCultivation ? "Công dụng thuốc" : "Công dụng"}{" "}
               <span className="text-red-500">*</span>
             </Label>
             <Select
@@ -131,13 +224,18 @@ export default function PesticideBasicInfoStep({
                 <SelectValue placeholder="Chọn loại thuốc từ danh mục..." />
               </SelectTrigger>
               <SelectContent>
-                {initialPesticidePurposes.map((purpose) => (
-                  <SelectItem key={purpose.code} value={purpose.name}>
+                {(isCultivation
+                  ? pesticideGroups
+                  : isAnimal
+                    ? livestockFunctions
+                    : aquacultureFunctions
+                ).map((item) => (
+                  <SelectItem key={item.id || item.code} value={item.name}>
                     <div className="flex flex-col">
-                      <span className="font-medium">{purpose.name}</span>
-                      {purpose.description && (
+                      <span className="font-medium">{item.name}</span>
+                      {item.description && (
                         <span className="text-xs text-muted-foreground truncate max-w-[300px]">
-                          {purpose.description}
+                          {item.description}
                         </span>
                       )}
                     </div>
@@ -145,10 +243,6 @@ export default function PesticideBasicInfoStep({
                 ))}
               </SelectContent>
             </Select>
-            {/* <p className="text-xs text-muted-foreground">
-              Danh mục được quản lý tại{" "}
-              <span className="text-primary font-medium">Danh mục → Thuốc BVTV</span>
-            </p> */}
           </div>
 
           <div className="space-y-2">
@@ -174,91 +268,291 @@ export default function PesticideBasicInfoStep({
             Phân loại kỹ thuật
           </h3>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label>Dạng bào chế</Label>
-              <Select
-                value={formData.form}
-                onValueChange={(v) => onFormFieldChange("form", v)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Chọn dạng bào chế..." />
-                </SelectTrigger>
-                <SelectContent>
-                  {pesticideForms.map((f) => (
-                    <SelectItem key={f} value={f}>
-                      {f}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <p className="text-xs text-muted-foreground">
-                EC, SC, WP, WG, SL, viên nén...
-              </p>
-            </div>
+          {isCultivation && (
+            <>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Dạng bào chế */}
+                <div className="space-y-2">
+                  <Label>Dạng bào chế</Label>
+                  <Select
+                    value={formData.form}
+                    onValueChange={(v) => onFormFieldChange("form", v)}
+                  >
+                    <SelectTrigger className="text-left h-auto py-2">
+                      <SelectValue placeholder="Chọn dạng bào chế..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {pesticideFormulations.map((item) => (
+                        <SelectItem
+                          key={item.id || item.code}
+                          value={item.name}
+                        >
+                          <div className="flex flex-col">
+                            <span className="font-medium">{item.name}</span>
+                            {item.description && (
+                              <span className="text-xs text-muted-foreground truncate max-w-[300px]">
+                                {item.description}
+                              </span>
+                            )}
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
 
-            <div className="space-y-2">
-              <Label>Cách xâm nhập</Label>
-              <Input
-                value={formData.actionType}
-                onChange={(e) =>
-                  onFormFieldChange("actionType", e.target.value)
-                }
-                placeholder="VD: Vị độc, tiếp xúc, xông hơi, nội hấp"
-              />
-            </div>
-          </div>
+                {/* Nguồn gốc */}
+                <div className="space-y-2">
+                  <Label>Nguồn gốc</Label>
+                  <Select
+                    value={formData.origin}
+                    onValueChange={(v) => onFormFieldChange("origin", v)}
+                  >
+                    <SelectTrigger className="text-left h-auto py-2">
+                      <SelectValue placeholder="Chọn nguồn gốc..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {pesticideOrigins.map((item) => (
+                        <SelectItem
+                          key={item.id || item.code}
+                          value={item.name}
+                        >
+                          <div className="flex flex-col">
+                            <span className="font-medium">{item.name}</span>
+                            {item.description && (
+                              <span className="text-xs text-muted-foreground truncate max-w-[300px]">
+                                {item.description}
+                              </span>
+                            )}
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
 
-          {/* Nhóm độc WHO */}
-          <div className="space-y-2">
-            <Label className="flex items-center gap-1.5">
-              <ShieldAlert className="w-4 h-4 text-amber-500" />
-              Nhóm độc / Mức độ độc hại (WHO)
-            </Label>
-            <div className="flex flex-wrap gap-2">
-              {toxicityLevels.map((level) => (
-                <button
-                  key={level.value}
-                  type="button"
-                  onClick={() =>
-                    onFormFieldChange("toxicityLevel", level.value)
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Cơ chế tác động */}
+                <div className="space-y-2">
+                  <Label>Cơ chế tác động (Cách xâm nhập)</Label>
+                  <Select
+                    value={formData.actionType}
+                    onValueChange={(v) => onFormFieldChange("actionType", v)}
+                  >
+                    <SelectTrigger className="text-left h-auto py-2">
+                      <SelectValue placeholder="Chọn cơ chế tác động..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {pesticideModesOfAction.map((item) => (
+                        <SelectItem
+                          key={item.id || item.code}
+                          value={item.name}
+                        >
+                          <div className="flex flex-col">
+                            <span className="font-medium">{item.name}</span>
+                            {item.description && (
+                              <span className="text-xs text-muted-foreground truncate max-w-[300px]">
+                                {item.description}
+                              </span>
+                            )}
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Độc tính WHO */}
+                <div className="space-y-2">
+                  <Label className="flex items-center gap-1.5">
+                    <ShieldAlert className="w-4 h-4 text-amber-500" />
+                    Nhóm độc / Mức độ độc hại (WHO)
+                  </Label>
+                  <Select
+                    value={formData.toxicityLevel}
+                    onValueChange={(v) => onFormFieldChange("toxicityLevel", v)}
+                  >
+                    <SelectTrigger className="text-left h-auto py-2">
+                      <SelectValue placeholder="Chọn nhóm độc WHO..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {pesticideToxicityClasses.map((item) => {
+                        const val = item.name.split(" - ")[0];
+                        return (
+                          <SelectItem key={item.id || item.code} value={val}>
+                            <div className="flex flex-col">
+                              <span className="font-medium">{item.name}</span>
+                              {item.description && (
+                                <span className="text-xs text-muted-foreground truncate max-w-[300px]">
+                                  {item.description}
+                                </span>
+                              )}
+                            </div>
+                          </SelectItem>
+                        );
+                      })}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              {/* Nhóm MoA */}
+              <div className="space-y-2">
+                <Label>Nhóm cơ chế tác động (MoA)</Label>
+                <Input
+                  value={formData.moaGroup}
+                  onChange={(e) =>
+                    onFormFieldChange("moaGroup", e.target.value)
                   }
-                  className={`px-3 py-1.5 rounded-lg border text-sm font-medium transition-all ${
-                    formData.toxicityLevel === level.value
-                      ? toxicityColorMap[level.value] +
-                        " ring-2 ring-offset-1 ring-current"
-                      : "bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100"
-                  }`}
-                >
-                  {level.label}
-                </button>
-              ))}
-              {formData.toxicityLevel && (
-                <button
-                  type="button"
-                  onClick={() => onFormFieldChange("toxicityLevel", "")}
-                  className="px-2 py-1.5 text-xs text-muted-foreground hover:text-slate-900"
-                >
-                  Xóa
-                </button>
-              )}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Áp dụng với thuốc BVTV hoặc hóa chất độc hại
-            </p>
-          </div>
+                  placeholder="VD: IRAC Nhóm 4A, FRAC Nhóm 3, WHO..."
+                />
+                <p className="text-xs text-muted-foreground">
+                  Theo IRAC / FRAC / WHO (nếu có)
+                </p>
+              </div>
+            </>
+          )}
 
-          <div className="space-y-2">
-            <Label>Nhóm cơ chế tác động (MoA)</Label>
-            <Input
-              value={formData.moaGroup}
-              onChange={(e) => onFormFieldChange("moaGroup", e.target.value)}
-              placeholder="VD: IRAC Nhóm 4A, FRAC Nhóm 3, WHO..."
-            />
-            <p className="text-xs text-muted-foreground">
-              Theo IRAC / FRAC / WHO (nếu có)
-            </p>
-          </div>
+          {isAnimal && (
+            <>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Phân loại sử dụng / Đường dùng */}
+                <div className="space-y-2">
+                  <Label>Phân loại sử dụng (Đường dùng)</Label>
+                  <Select
+                    value={formData.actionType}
+                    onValueChange={(v) => onFormFieldChange("actionType", v)}
+                  >
+                    <SelectTrigger className="text-left h-auto py-2">
+                      <SelectValue placeholder="Chọn phân loại sử dụng..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {livestockAdministrationRoutes.map((item) => (
+                        <SelectItem
+                          key={item.id || item.code}
+                          value={item.name}
+                        >
+                          <div className="flex flex-col">
+                            <span className="font-medium">{item.name}</span>
+                            {item.description && (
+                              <span className="text-xs text-muted-foreground truncate max-w-[300px]">
+                                {item.description}
+                              </span>
+                            )}
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Mức độ kiểm soát */}
+                <div className="space-y-2">
+                  <Label className="flex items-center gap-1.5">
+                    <ShieldAlert className="w-4 h-4 text-amber-500" />
+                    Mức độ kiểm soát
+                  </Label>
+                  <Select
+                    value={formData.toxicityLevel}
+                    onValueChange={(v) => onFormFieldChange("toxicityLevel", v)}
+                  >
+                    <SelectTrigger className="text-left h-auto py-2">
+                      <SelectValue placeholder="Chọn mức độ kiểm soát..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {livestockControlLevels.map((item) => (
+                        <SelectItem
+                          key={item.id || item.code}
+                          value={item.name}
+                        >
+                          <div className="flex flex-col">
+                            <span className="font-medium">{item.name}</span>
+                            {item.description && (
+                              <span className="text-xs text-muted-foreground truncate max-w-[300px]">
+                                {item.description}
+                              </span>
+                            )}
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              {/* Dạng bào chế */}
+              <div className="space-y-2">
+                <Label>Dạng bào chế (nếu có)</Label>
+                <Input
+                  value={formData.form}
+                  onChange={(e) => onFormFieldChange("form", e.target.value)}
+                  placeholder="VD: Dung dịch tiêm, Bột hòa tan,..."
+                />
+              </div>
+            </>
+          )}
+
+          {isAquaculture && (
+            <>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Mức độ kiểm soát & dư lượng */}
+                <div className="space-y-2">
+                  <Label className="flex items-center gap-1.5">
+                    <ShieldAlert className="w-4 h-4 text-amber-500" />
+                    Mức độ kiểm soát & dư lượng
+                  </Label>
+                  <Select
+                    value={formData.toxicityLevel}
+                    onValueChange={(v) => onFormFieldChange("toxicityLevel", v)}
+                  >
+                    <SelectTrigger className="text-left h-auto py-2">
+                      <SelectValue placeholder="Chọn mức độ kiểm soát..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {aquacultureControlResidues.map((item) => (
+                        <SelectItem
+                          key={item.id || item.code}
+                          value={item.name}
+                        >
+                          <div className="flex flex-col">
+                            <span className="font-medium">{item.name}</span>
+                            {item.description && (
+                              <span className="text-xs text-muted-foreground truncate max-w-[300px]">
+                                {item.description}
+                              </span>
+                            )}
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Cách dùng / Xâm nhập */}
+                <div className="space-y-2">
+                  <Label>Cách dùng / Xâm nhập</Label>
+                  <Input
+                    value={formData.actionType}
+                    onChange={(e) =>
+                      onFormFieldChange("actionType", e.target.value)
+                    }
+                    placeholder="VD: Trộn thức ăn, Rắc xuống ao,..."
+                  />
+                </div>
+              </div>
+
+              {/* Dạng bào chế */}
+              <div className="space-y-2">
+                <Label>Dạng bào chế (nếu có)</Label>
+                <Input
+                  value={formData.form}
+                  onChange={(e) => onFormFieldChange("form", e.target.value)}
+                  placeholder="VD: Dạng lỏng, Dạng hạt,..."
+                />
+              </div>
+            </>
+          )}
         </div>
 
         {/* Card: Hashtags */}

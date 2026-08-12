@@ -1,5 +1,7 @@
+import { useState } from "react";
 import { useMasterData } from "@/features/master-data";
 import {
+  Badge,
   Button,
   Card,
   CardContent,
@@ -20,12 +22,44 @@ import {
   Info,
   Leaf,
   Package,
+  Plus,
+  Tags,
   Upload,
+  X,
 } from "lucide-react";
 import type { FertilizerFormData } from "../types/types";
-import { originOptions, packagingUnitOptions } from "../data/constants";
+import { originOptions, packagingUnitOptions, commonHashtags } from "../data/constants";
 
-const UNIT_OPTIONS = ["Bao", "Gói", "Thùng", "Chai", "Can", "Tấn", "Kg"];
+const MEASURE_UNIT_OPTIONS = [
+  "kg",
+  "g",
+  "L",
+  "ml",
+  "tấn",
+  "bao",
+  "can",
+  "thùng",
+  "viên",
+  "ống",
+  "vỉ",
+  "cc",
+  "IU",
+];
+
+const PACKAGING_OPTIONS = [
+  "Bao",
+  "Bì",
+  "Can",
+  "Chai",
+  "Hộp",
+  "Lọ",
+  "Gói",
+  "Thùng",
+  "Túi",
+  "Cuộn",
+  "Kiện",
+  "Khay",
+];
 
 interface SimpleFertilizerFormProps {
   formData: FertilizerFormData;
@@ -46,6 +80,22 @@ export default function SimpleFertilizerForm({
   const { items: fertilizerGroups } = useMasterData("fertilizer-groups");
 
   const isValid = Boolean(formData.name);
+  const [paramHashtag, setParamHashtag] = useState("");
+
+  const onAddHashtag = () => {
+    const tag = paramHashtag.trim();
+    if (tag && !formData.hashtags.includes(tag)) {
+      updateField("hashtags", [...formData.hashtags, tag]);
+      setParamHashtag("");
+    }
+  };
+
+  const onRemoveHashtag = (tag: string) => {
+    updateField(
+      "hashtags",
+      formData.hashtags.filter((t) => t !== tag),
+    );
+  };
 
   return (
     <div className="max-w-2xl mx-auto space-y-6 pb-24">
@@ -172,21 +222,24 @@ export default function SimpleFertilizerForm({
             <Input
               type="number"
               min={0}
-              placeholder="Số lượng (VD: 50)"
-              value={formData.nutrientContent}
-              onChange={(e) => updateField("nutrientContent", e.target.value)}
+              placeholder="Giá trị (VD: 50)"
+              value={formData.quantity || formData.nutrientContent}
+              onChange={(e) => {
+                updateField("quantity", e.target.value);
+                updateField("nutrientContent", e.target.value);
+              }}
             />
           </div>
-          <div className="w-36">
+          <div className="w-28">
             <Select
-              value={formData.physicalForm}
-              onValueChange={(v) => updateField("physicalForm", v)}
+              value={formData.unit}
+              onValueChange={(v) => updateField("unit", v)}
             >
-              <SelectTrigger>
+              <SelectTrigger className="text-left h-auto py-2">
                 <SelectValue placeholder="Đơn vị" />
               </SelectTrigger>
               <SelectContent>
-                {UNIT_OPTIONS.map((u) => (
+                {MEASURE_UNIT_OPTIONS.map((u) => (
                   <SelectItem key={u} value={u}>
                     {u}
                   </SelectItem>
@@ -194,9 +247,29 @@ export default function SimpleFertilizerForm({
               </SelectContent>
             </Select>
           </div>
+          <div className="w-32">
+            <Select
+              value={formData.packaging || formData.physicalForm}
+              onValueChange={(v) => {
+                updateField("packaging", v);
+                updateField("physicalForm", v);
+              }}
+            >
+              <SelectTrigger className="text-left h-auto py-2">
+                <SelectValue placeholder="Quy cách" />
+              </SelectTrigger>
+              <SelectContent>
+                {PACKAGING_OPTIONS.map((p) => (
+                  <SelectItem key={p} value={p}>
+                    {p}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
         <p className="text-xs text-muted-foreground">
-          VD: 50 Bao, 25 Kg, 10 Can… Bổ sung thêm quy cách chi tiết ở chế độ chuyên sâu.
+          VD: 50 kg / Bao, 25 kg / Túi, 10 L / Can… Bổ sung thêm quy cách chi tiết ở chế độ chuyên sâu.
         </p>
       </div>
 
@@ -222,6 +295,71 @@ export default function SimpleFertilizerForm({
           placeholder="Ghi chú nội bộ, lưu ý khi sử dụng hoặc bảo quản..."
           rows={3}
         />
+      </div>
+
+      {/* Card: Hashtags */}
+      <div className="bg-white p-6 rounded-xl shadow-sm border space-y-4">
+        <h3 className="font-semibold text-lg flex items-center gap-2">
+          <Tags className="w-5 h-5 text-primary" />
+          Hashtags
+        </h3>
+        <div className="space-y-3">
+          <Label>Thêm Hashtag</Label>
+          <div className="flex gap-2">
+            <Input
+              value={paramHashtag}
+              onChange={(e) => setParamHashtag(e.target.value)}
+              placeholder="Nhập hashtag..."
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  onAddHashtag();
+                }
+              }}
+            />
+            <Button type="button" onClick={onAddHashtag} variant="outline">
+              <Plus className="w-4 h-4" />
+            </Button>
+          </div>
+          <div className="flex flex-wrap gap-2 pt-2">
+            {commonHashtags.map((tag) => (
+              <Badge
+                key={tag}
+                variant="outline"
+                className={`cursor-pointer transition-all ${
+                  formData.hashtags.includes(tag)
+                    ? "bg-primary/10 border-primary text-primary"
+                    : "hover:bg-slate-100"
+                }`}
+                onClick={() =>
+                  formData.hashtags.includes(tag)
+                    ? onRemoveHashtag(tag)
+                    : updateField("hashtags", [
+                        ...formData.hashtags,
+                        tag,
+                      ])
+                }
+              >
+                #{tag}
+              </Badge>
+            ))}
+            {formData.hashtags
+              .filter((tag) => !commonHashtags.includes(tag))
+              .map((tag) => (
+                <Badge
+                  key={tag}
+                  variant="secondary"
+                  className="flex items-center gap-1"
+                >
+                  #{tag}
+                  <X
+                    className="w-3 h-3 cursor-pointer"
+                    onClick={() => onRemoveHashtag(tag)}
+                  />
+                </Badge>
+              ))}
+          </div>
+        </div>
       </div>
 
       {/* ── Info card ── */}

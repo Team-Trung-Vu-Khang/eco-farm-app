@@ -1,5 +1,12 @@
-import { Input, Label } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { ImageIcon, Upload, Wrench } from "lucide-react";
+import { useState } from "react";
+import {
+  Badge,
+  Button,
+  Input,
+  Label,
+  Textarea,
+} from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import { ImageIcon, Upload, Wrench, Tags, Plus, X } from "lucide-react";
 import type { EquipmentFormData } from "../../types";
 
 interface EquipmentBasicInfoStepProps {
@@ -7,10 +14,38 @@ interface EquipmentBasicInfoStepProps {
   updateField: (field: keyof EquipmentFormData, value: any) => void;
 }
 
+const commonHashtags = [
+  "CoGioiHoa",
+  "TietKiemNangLuong",
+  "CongNgheMoi",
+  "BenBi",
+  "HieuSuatCao",
+  "AnToanVanHanh",
+];
+
 export const EquipmentBasicInfoStep = ({
   formData,
   updateField,
 }: EquipmentBasicInfoStepProps) => {
+  const [paramHashtag, setParamHashtag] = useState("");
+
+  const onAddHashtag = () => {
+    const trimmed = paramHashtag.trim().replace(/^#/, "");
+    const current = formData.hashtags || [];
+    if (trimmed && !current.includes(trimmed)) {
+      updateField("hashtags", [...current, trimmed]);
+    }
+    setParamHashtag("");
+  };
+
+  const onRemoveHashtag = (tag: string) => {
+    const current = formData.hashtags || [];
+    updateField(
+      "hashtags",
+      current.filter((t) => t !== tag),
+    );
+  };
+
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 animate-in fade-in slide-in-from-bottom-2 duration-500 max-w-7xl mx-auto">
       <div className="lg:col-span-2 space-y-6">
@@ -35,7 +70,9 @@ export const EquipmentBasicInfoStep = ({
                 }}
                 placeholder="VD: SKU-KUBOTA-L5018"
               />
-              <p className="text-xs text-muted-foreground">Rất quan trọng để truy xuất nguồn gốc</p>
+              <p className="text-xs text-muted-foreground">
+                Rất quan trọng để truy xuất nguồn gốc
+              </p>
             </div>
             <div className="space-y-2">
               <Label className="flex items-center gap-1">
@@ -95,6 +132,83 @@ export const EquipmentBasicInfoStep = ({
               placeholder="VD: 2022, 2023..."
               min={1900}
               max={new Date().getFullYear() + 1}
+            />
+          </div>
+        </div>
+
+        {/* Card: Ghi chú & Hashtags */}
+        <div className="bg-white p-6 rounded-xl shadow-sm border space-y-4">
+          <h3 className="font-semibold text-lg flex items-center gap-2">
+            <Tags className="w-5 h-5 text-primary" />
+            Hashtags & Ghi chú
+          </h3>
+
+          <div className="space-y-3">
+            <Label>Thêm Hashtag</Label>
+            <div className="flex gap-2">
+              <Input
+                value={paramHashtag}
+                onChange={(e) => setParamHashtag(e.target.value)}
+                placeholder="Nhập hashtag..."
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    onAddHashtag();
+                  }
+                }}
+              />
+              <Button type="button" onClick={onAddHashtag} variant="outline">
+                <Plus className="w-4 h-4" />
+              </Button>
+            </div>
+            <div className="flex flex-wrap gap-1.5 pt-2">
+              {commonHashtags.map((tag) => {
+                const current = formData.hashtags || [];
+                const isSelected = current.includes(tag);
+                return (
+                  <Badge
+                    key={tag}
+                    variant="outline"
+                    className={`cursor-pointer transition-all ${
+                      isSelected
+                        ? "bg-primary/10 border-primary text-primary"
+                        : "hover:bg-slate-100"
+                    }`}
+                    onClick={() =>
+                      isSelected
+                        ? onRemoveHashtag(tag)
+                        : updateField("hashtags", [...current, tag])
+                    }
+                  >
+                    #{tag}
+                  </Badge>
+                );
+              })}
+              {(formData.hashtags || [])
+                .filter((tag) => !commonHashtags.includes(tag))
+                .map((tag) => (
+                  <Badge
+                    key={tag}
+                    variant="secondary"
+                    className="flex items-center gap-1"
+                  >
+                    #{tag}
+                    <X
+                      className="w-3 h-3 cursor-pointer"
+                      onClick={() => onRemoveHashtag(tag)}
+                    />
+                  </Badge>
+                ))}
+            </div>
+          </div>
+
+          <div className="space-y-2 pt-2 border-t border-slate-100">
+            <Label>Ghi chú</Label>
+            <Textarea
+              value={formData.description || ""}
+              onChange={(e) => updateField("description", e.target.value)}
+              placeholder="Ghi chú về thiết bị hoặc lưu ý vận hành..."
+              rows={3}
             />
           </div>
         </div>

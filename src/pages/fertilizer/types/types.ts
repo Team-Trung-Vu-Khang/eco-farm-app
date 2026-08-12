@@ -104,4 +104,8 @@ export interface FertilizerFormData {
 
   hashtags: string[];
   documents: { name: string; size: number; file?: File }[];
+
+  quantity?: string;
+  unit?: string;
+  packaging?: string;
 }

@@ -10,10 +10,11 @@ import {
   SelectValue,
   Textarea,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { Building2, DollarSign, Package, Plus, X } from "lucide-react";
+import { Building2, DollarSign, Package, Plus, X, Search } from "lucide-react";
 import { useState } from "react";
 import { packagingUnitOptions } from "../data/constants";
 import type { PesticideFormData } from "../types";
+import { PartnerSelectorDialog } from "@/components/organizations/PartnerSelectorDialog";
 
 interface PesticideSuppliersStepProps {
   formData: PesticideFormData;
@@ -24,21 +25,35 @@ interface PesticideSuppliersStepProps {
 }
 
 // Danh sách đơn vị để chọn
-const packagingUnits = [
+const MEASURE_UNIT_OPTIONS = [
   "ml",
   "L",
   "g",
   "kg",
   "viên",
   "ống",
-  "gói",
-  "hộp",
-  "chai",
-  "lọ",
-  "bọc",
-  "bao",
-  "can",
-  "thùng",
+  "vỉ",
+  "tấn",
+  "m",
+  "mm",
+  "cc",
+  "IU",
+];
+
+const PACKAGING_OPTIONS = [
+  "Chai",
+  "Lọ",
+  "Gói",
+  "Hộp",
+  "Bao",
+  "Bì",
+  "Can",
+  "Thùng",
+  "Túi",
+  "Vỉ",
+  "Ống",
+  "Chậu",
+  "Khay",
 ];
 
 export default function PesticideSuppliersStep({
@@ -47,16 +62,21 @@ export default function PesticideSuppliersStep({
 }: PesticideSuppliersStepProps) {
   const [quantity, setQuantity] = useState("");
   const [unit, setUnit] = useState("");
+  const [packaging, setPackaging] = useState("");
+  const [activeModal, setActiveModal] = useState<
+    "manufacturerOrigin" | "importerRegistrant" | "distributor" | null
+  >(null);
 
   const addPackagingSpec = () => {
-    const trimmed = quantity.trim();
-    if (!trimmed || !unit) return;
-    const spec = `${trimmed} ${unit}`;
+    const trimmedVal = quantity.trim();
+    if (!trimmedVal || !unit || !packaging) return;
+    const spec = `${trimmedVal} ${unit} / ${packaging}`;
     if (!formData.packagingSpecs.includes(spec)) {
       onFormFieldChange("packagingSpecs", [...formData.packagingSpecs, spec]);
     }
     setQuantity("");
     setUnit("");
+    setPackaging("");
   };
 
   const removePackagingSpec = (spec: string) => {
@@ -77,13 +97,33 @@ export default function PesticideSuppliersStep({
 
         <div className="space-y-2">
           <Label>Nhà sản xuất / Xuất xứ</Label>
-          <Input
-            value={formData.manufacturerOrigin}
-            onChange={(e) =>
-              onFormFieldChange("manufacturerOrigin", e.target.value)
-            }
-            placeholder="VD: Syngenta AG – Thụy Sĩ, Bayer AG – Đức"
-          />
+          <div
+            className="flex items-center justify-between border rounded-xl p-3 bg-slate-50 border-dashed border-slate-350 hover:bg-slate-100/50 hover:shadow-xs transition-all cursor-pointer min-h-11"
+            onClick={() => setActiveModal("manufacturerOrigin")}
+          >
+            <div className="flex-1 min-w-0 flex flex-wrap gap-1.5 items-center">
+              {formData.manufacturerOrigin ? (
+                <Badge
+                  variant="secondary"
+                  className="bg-primary/5 text-primary border border-primary/20 text-xs font-semibold py-0.5 px-2.5"
+                >
+                  {formData.manufacturerOrigin}
+                </Badge>
+              ) : (
+                <span className="text-sm text-slate-400">
+                  Bấm để chọn nhà sản xuất...
+                </span>
+              )}
+            </div>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="h-8 w-8 text-slate-400 p-0 rounded-full hover:bg-primary/10"
+            >
+              <Search className="w-4 h-4 text-slate-500" />
+            </Button>
+          </div>
           <p className="text-xs text-muted-foreground">
             Tên công ty + quốc gia (Việt Nam, Ấn Độ, Trung Quốc, Đức, Mỹ,
             Nhật...)
@@ -92,13 +132,39 @@ export default function PesticideSuppliersStep({
 
         <div className="space-y-2">
           <Label>Nhà nhập khẩu / Đăng ký tại Việt Nam</Label>
-          <Input
-            value={formData.importerRegistrant}
-            onChange={(e) =>
-              onFormFieldChange("importerRegistrant", e.target.value)
-            }
-            placeholder="VD: Syngenta Việt Nam, Bayer Việt Nam"
-          />
+          <div
+            className="flex items-center justify-between border rounded-xl p-3 bg-slate-50 border-dashed border-slate-350 hover:bg-slate-100/50 hover:shadow-xs transition-all cursor-pointer min-h-11"
+            onClick={() => setActiveModal("importerRegistrant")}
+          >
+            <div className="flex-1 min-w-0 flex flex-wrap gap-1.5 items-center">
+              {formData.importerRegistrant ? (
+                formData.importerRegistrant
+                  .split(", ")
+                  .filter(Boolean)
+                  .map((name) => (
+                    <Badge
+                      key={name}
+                      variant="secondary"
+                      className="bg-primary/5 text-primary border border-primary/20 text-xs font-semibold py-0.5 px-2.5"
+                    >
+                      {name}
+                    </Badge>
+                  ))
+              ) : (
+                <span className="text-sm text-slate-400">
+                  Bấm để chọn nhà nhập khẩu...
+                </span>
+              )}
+            </div>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="h-8 w-8 text-slate-400 p-0 rounded-full hover:bg-primary/10"
+            >
+              <Search className="w-4 h-4 text-slate-500" />
+            </Button>
+          </div>
           <p className="text-xs text-muted-foreground">
             Công ty đứng tên đăng ký lưu hành tại Việt Nam
           </p>
@@ -106,12 +172,39 @@ export default function PesticideSuppliersStep({
 
         <div className="space-y-2">
           <Label>Nhà phân phối</Label>
-          <Textarea
-            value={formData.distributor}
-            onChange={(e) => onFormFieldChange("distributor", e.target.value)}
-            placeholder="VD: Công ty CP BVTV 1, Đại lý VTNN Hòa Phát..."
-            rows={2}
-          />
+          <div
+            className="flex items-center justify-between border rounded-xl p-3 bg-slate-50 border-dashed border-slate-350 hover:bg-slate-105 hover:shadow-xs transition-all cursor-pointer min-h-11"
+            onClick={() => setActiveModal("distributor")}
+          >
+            <div className="flex-1 min-w-0 flex flex-wrap gap-1.5 items-center">
+              {formData.distributor ? (
+                formData.distributor
+                  .split(", ")
+                  .filter(Boolean)
+                  .map((name) => (
+                    <Badge
+                      key={name}
+                      variant="secondary"
+                      className="bg-primary/5 text-primary border border-primary/20 text-xs font-semibold py-0.5 px-2.5"
+                    >
+                      {name}
+                    </Badge>
+                  ))
+              ) : (
+                <span className="text-sm text-slate-400">
+                  Bấm để chọn nhà phân phối...
+                </span>
+              )}
+            </div>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="h-8 w-8 text-slate-400 p-0 rounded-full hover:bg-primary/10"
+            >
+              <Search className="w-4 h-4 text-slate-500" />
+            </Button>
+          </div>
           <p className="text-xs text-muted-foreground">
             Các công ty lớn phân phối trên thị trường
           </p>
@@ -152,12 +245,12 @@ export default function PesticideSuppliersStep({
           {/* Input row */}
           <div className="flex gap-2 items-end">
             <div className="flex-1 space-y-1">
-              <Label className="text-xs text-muted-foreground">Số lượng</Label>
+              <Label className="text-xs text-muted-foreground">Giá trị</Label>
               <Input
                 type="number"
                 value={quantity}
                 onChange={(e) => setQuantity(e.target.value)}
-                placeholder="VD: 500, 1, 25"
+                placeholder="VD: 500, 25"
                 min={0}
                 onKeyDown={(e) => {
                   if (e.key === "Enter") {
@@ -167,16 +260,33 @@ export default function PesticideSuppliersStep({
                 }}
               />
             </div>
-            <div className="w-36 space-y-1">
+            <div className="w-28 space-y-1">
               <Label className="text-xs text-muted-foreground">Đơn vị</Label>
               <Select value={unit} onValueChange={setUnit}>
-                <SelectTrigger>
+                <SelectTrigger className="text-left h-auto py-2">
                   <SelectValue placeholder="Chọn..." />
                 </SelectTrigger>
                 <SelectContent>
-                  {packagingUnits.map((u) => (
+                  {MEASURE_UNIT_OPTIONS.map((u) => (
                     <SelectItem key={u} value={u}>
                       {u}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="w-32 space-y-1">
+              <Label className="text-xs text-muted-foreground">
+                Quy cách chứa
+              </Label>
+              <Select value={packaging} onValueChange={setPackaging}>
+                <SelectTrigger className="text-left h-auto py-2">
+                  <SelectValue placeholder="Chọn..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {PACKAGING_OPTIONS.map((p) => (
+                    <SelectItem key={p} value={p}>
+                      {p}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -185,7 +295,7 @@ export default function PesticideSuppliersStep({
             <Button
               type="button"
               onClick={addPackagingSpec}
-              disabled={!quantity.trim() || !unit}
+              disabled={!quantity.trim() || !unit || !packaging}
               className="mb-0 shrink-0"
             >
               <Plus className="w-4 h-4 mr-1" />
@@ -251,6 +361,53 @@ export default function PesticideSuppliersStep({
           )}
         </div>
       </div>
+
+      <PartnerSelectorDialog
+        open={activeModal === "manufacturerOrigin"}
+        onOpenChange={(open) =>
+          setActiveModal(open ? "manufacturerOrigin" : null)
+        }
+        title="Chọn nhà sản xuất / Xuất xứ"
+        isMulti={false}
+        selectedNames={
+          formData.manufacturerOrigin ? [formData.manufacturerOrigin] : []
+        }
+        onConfirm={(names) =>
+          onFormFieldChange("manufacturerOrigin", names[0] || "")
+        }
+      />
+
+      <PartnerSelectorDialog
+        open={activeModal === "importerRegistrant"}
+        onOpenChange={(open) =>
+          setActiveModal(open ? "importerRegistrant" : null)
+        }
+        title="Chọn nhà nhập khẩu / Đăng ký"
+        isMulti={true}
+        selectedNames={
+          formData.importerRegistrant
+            ? formData.importerRegistrant.split(", ").filter(Boolean)
+            : []
+        }
+        onConfirm={(names) =>
+          onFormFieldChange("importerRegistrant", names.join(", "))
+        }
+      />
+
+      <PartnerSelectorDialog
+        open={activeModal === "distributor"}
+        onOpenChange={(open) => setActiveModal(open ? "distributor" : null)}
+        title="Chọn nhà phân phối"
+        isMulti={true}
+        selectedNames={
+          formData.distributor
+            ? formData.distributor.split(", ").filter(Boolean)
+            : []
+        }
+        onConfirm={(names) =>
+          onFormFieldChange("distributor", names.join(", "))
+        }
+      />
     </div>
   );
 }

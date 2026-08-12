@@ -53,6 +53,7 @@ export function useEquipmentCreateForm() {
     distributor: [],
     referencePrice: "",
     packagingSpecs: [],
+    hashtags: [],
   });
 
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -106,6 +107,7 @@ export function useEquipmentCreateForm() {
           distributor: item.distributor || [],
           referencePrice: item.referencePrice || "",
           packagingSpecs: item.packagingSpecs || [],
+          hashtags: item.hashtags || [],
         });
       }
     }
@@ -184,6 +186,7 @@ export function useEquipmentCreateForm() {
           distributor: item.distributor || [],
           referencePrice: item.referencePrice || "",
           packagingSpecs: item.packagingSpecs || [],
+          hashtags: item.hashtags || [],
         });
       }
     } else {
@@ -224,6 +227,7 @@ export function useEquipmentCreateForm() {
         distributor: [],
         referencePrice: "",
         packagingSpecs: [],
+        hashtags: [],
       });
     }
   };
@@ -269,6 +273,7 @@ export function useEquipmentCreateForm() {
       distributor: formData.distributor,
       referencePrice: formData.referencePrice,
       packagingSpecs: formData.packagingSpecs,
+      hashtags: formData.hashtags,
     };
 
     if (isEdit && params?.id) {

@@ -109,7 +109,12 @@ export function useAqPesticideCreatePage() {
       importerRegistrant: formData.importerRegistrant || undefined,
       distributor: formData.distributor || undefined,
       referencePrice: formData.referencePrice || undefined,
-      packagingSpecs: formData.packagingSpecs.length > 0 ? formData.packagingSpecs : undefined,
+      packagingSpecs:
+        formData.packagingSpecs.length > 0
+          ? formData.packagingSpecs
+          : formData.quantity && formData.unit && formData.packaging
+            ? [`${formData.quantity} ${formData.unit} / ${formData.packaging}`]
+            : undefined,
       status: "active" as const,
       domain: "aquaculture" as const,
     };
@@ -140,6 +145,7 @@ export function useAqPesticideCreatePage() {
       title: "Định danh & Phân loại",
       content: (
         <PesticideBasicInfoStep
+          domain="aquaculture"
           formData={formData}
           paramHashtag={paramHashtag}
           onParamHashtagChange={setParamHashtag}

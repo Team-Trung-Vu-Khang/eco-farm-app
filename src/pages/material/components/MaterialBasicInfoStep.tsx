@@ -97,29 +97,8 @@ export default function MaterialBasicInfoStep({
             </div>
           </div>
 
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-            <div className="space-y-2">
-              <Label>Phân loại danh mục</Label>
-              <Select
-                value={formData.type}
-                onValueChange={(value) => onFormFieldChange("type", value)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Chọn loại vật tư" />
-                </SelectTrigger>
-                <SelectContent>
-                  {materialTypes.map((type) => (
-                    <SelectItem key={type} value={type}>
-                      {type}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
           <div className="space-y-2">
-            <Label>Mô tả chi tiết</Label>
+            <Label>Mô tả</Label>
             <Textarea
               value={formData.description}
               onChange={(e) => onFormFieldChange("description", e.target.value)}
@@ -133,36 +112,54 @@ export default function MaterialBasicInfoStep({
         <div className="space-y-4 rounded-xl border bg-white p-6 shadow-sm">
           <h3 className="flex items-center gap-2 text-lg font-semibold">
             <Cpu className="h-5 w-5 text-primary" />
-            Định danh nhóm / Phân loại vật tư khác
+            Phân loại kỹ thuật vật tư khác
           </h3>
 
-          <div className="space-y-2">
-            <Label>Nhóm vật tư khác <span className="text-red-500">*</span></Label>
-            <Select
-              value={formData.materialGroupId || ""}
-              onValueChange={(value) => onFormFieldChange("materialGroupId", value)}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Chọn nhóm phân loại vật tư..." />
-              </SelectTrigger>
-              <SelectContent>
-                {materialGroups.map((group) => (
-                  <div key={group.category}>
-                    <div className="px-2 py-1.5 text-xs font-semibold text-slate-500 bg-slate-50 border-y select-none">
-                      {group.category}
-                    </div>
-                    {group.options.map((opt) => (
-                      <SelectItem key={opt.id} value={opt.id}>
-                        {opt.label}
-                      </SelectItem>
-                    ))}
-                  </div>
-                ))}
-              </SelectContent>
-            </Select>
-            <p className="text-xs text-muted-foreground mt-1">
-              Phân loại vật tư khác theo mức độ công nghệ, khâu chuỗi giá trị, hoặc khía cạnh quản lý tài chính.
-            </p>
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <div className="space-y-2">
+              <Label>
+                Mức độ công nghệ <span className="text-red-500">*</span>
+              </Label>
+              <Select
+                value={formData.technologyLevelId || ""}
+                onValueChange={(value) => {
+                  onFormFieldChange("technologyLevelId", value);
+                  onFormFieldChange("materialGroupId", value);
+                }}
+              >
+                <SelectTrigger className="text-left h-auto py-2">
+                  <SelectValue placeholder="Chọn mức độ công nghệ..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {materialGroups[0].options.map((opt) => (
+                    <SelectItem key={opt.id} value={opt.id}>
+                      {opt.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label>
+                Giai đoạn áp dụng <span className="text-red-500">*</span>
+              </Label>
+              <Select
+                value={formData.valueChainId || ""}
+                onValueChange={(value) => onFormFieldChange("valueChainId", value)}
+              >
+                <SelectTrigger className="text-left h-auto py-2">
+                  <SelectValue placeholder="Chọn giai đoạn áp dụng..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {materialGroups[1].options.map((opt) => (
+                    <SelectItem key={opt.id} value={opt.id}>
+                      {opt.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
         </div>
 

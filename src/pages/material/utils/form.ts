@@ -10,6 +10,8 @@ export const createEmptyMaterialFormData = (): MaterialFormData => ({
   description: "",
   hashtags: [],
   materialGroupId: "",
+  technologyLevelId: "",
+  valueChainId: "",
 
   // Origin & Supply fields
   manufacturerOrigin: [],
@@ -27,6 +29,8 @@ export const createMaterialFormDataFromItem = (
   description: item.description,
   hashtags: ["BenBi", "TietKiem"],
   materialGroupId: item.materialGroupId || "",
+  technologyLevelId: item.technologyLevelId || "",
+  valueChainId: item.valueChainId || "",
 
   // Hydrate origin & supply fields
   manufacturerOrigin: item.manufacturerOrigin || [],

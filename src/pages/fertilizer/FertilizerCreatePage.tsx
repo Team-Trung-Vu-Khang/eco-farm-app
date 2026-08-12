@@ -53,10 +53,7 @@ const FertilizerCreatePage = () => {
       id: "usage",
       title: "Thông tin sử dụng",
       content: (
-        <FertilizerUsageStep
-          formData={formData}
-          updateField={updateField}
-        />
+        <FertilizerUsageStep formData={formData} updateField={updateField} />
       ),
     },
     {
@@ -172,12 +169,15 @@ const FertilizerCreatePage = () => {
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Nguồn gốc:</span>
                     <span className="font-medium">
-                      {originOptions.find((o) => o.id === formData.originId)?.label || "N/A"}
+                      {originOptions.find((o) => o.id === formData.originId)
+                        ?.label || "N/A"}
                     </span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Hàm lượng:</span>
-                    <span className="font-medium">{formData.nutrientContent}</span>
+                    <span className="font-medium">
+                      {formData.nutrientContent}
+                    </span>
                   </div>
                 </div>
               </div>

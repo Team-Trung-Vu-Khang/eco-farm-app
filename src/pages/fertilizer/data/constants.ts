@@ -45,17 +45,17 @@ export const standardsOptions = [
 ];
 
 export const packagingUnitOptions = [
-  "Bao 50kg",
-  "Bao 25kg",
-  "Bao 10kg",
-  "Túi 5kg",
-  "Túi 1kg",
-  "Túi 500g",
-  "Chai 1 lít",
-  "Chai 500ml",
-  "Chai 100ml",
-  "Can 5 lít",
-  "Can 10 lít",
+  "50 kg / Bao",
+  "25 kg / Bao",
+  "10 kg / Bao",
+  "5 kg / Túi",
+  "1 kg / Túi",
+  "500 g / Túi",
+  "1 L / Chai",
+  "500 ml / Chai",
+  "100 ml / Chai",
+  "5 L / Can",
+  "10 L / Can",
 ];
 
 export const initialFertilizers: Fertilizer[] = [

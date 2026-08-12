@@ -191,6 +191,7 @@ const PesticideDetailPage = () => {
                 <InfoRow label="Dạng bào chế" value={item.form} />
                 <InfoRow label="Cách xâm nhập" value={item.actionType} />
                 <InfoRow label="Nhóm MoA" value={item.moaGroup} />
+                <InfoRow label="Nguồn gốc" value={item.origin} />
                 {item.toxicityLevel && (
                   <div>
                     <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1 flex items-center gap-1">

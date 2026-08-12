@@ -19,16 +19,23 @@ export const materialColumns = (
     ),
   },
   {
-    key: "type",
-    label: "Phân loại & Nhóm",
-    render: (value, row) => {
-      const groupLabel = getMaterialGroupLabel(row.materialGroupId);
+    key: "technologyLevelId",
+    label: "Phân loại kỹ thuật",
+    render: (_, row) => {
+      const techLabel = getMaterialGroupLabel(row.technologyLevelId);
+      const chainLabel = getMaterialGroupLabel(row.valueChainId);
       return (
         <div className="flex flex-col gap-1 text-xs">
-          <Badge variant="outline" className="w-fit">{value}</Badge>
-          <span className="text-muted-foreground truncate max-w-[200px]" title={groupLabel}>
-            • {groupLabel}
-          </span>
+          {techLabel && (
+            <Badge variant="outline" className="w-fit">
+              {techLabel}
+            </Badge>
+          )}
+          {chainLabel && (
+            <span className="text-muted-foreground truncate max-w-[200px]" title={chainLabel}>
+              • {chainLabel}
+            </span>
+          )}
         </div>
       );
     },

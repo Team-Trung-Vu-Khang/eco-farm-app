@@ -67,14 +67,7 @@ const MaterialGroupPage = () => {
           </TabsTrigger>
           <TabsTrigger value="value_chain" className="flex items-center gap-2">
             <ListTree className="w-4 h-4" />
-            Chuỗi giá trị
-          </TabsTrigger>
-          <TabsTrigger
-            value="financial_aspect"
-            className="flex items-center gap-2"
-          >
-            <DollarSign className="w-4 h-4" />
-            Khía cạnh tài chính
+            Giai đoạn áp dụng
           </TabsTrigger>
         </TabsList>
 
@@ -84,10 +77,6 @@ const MaterialGroupPage = () => {
 
         <TabsContent value="value_chain">
           <MaterialValueChainPage onEdit={handleStaticEdit} />
-        </TabsContent>
-
-        <TabsContent value="financial_aspect">
-          <MaterialFinancialAspectPage onEdit={handleStaticEdit} />
         </TabsContent>
       </Tabs>
 

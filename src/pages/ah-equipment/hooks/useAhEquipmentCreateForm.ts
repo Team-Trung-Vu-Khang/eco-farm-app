@@ -55,6 +55,7 @@ export function useAhEquipmentCreateForm() {
     distributor: [],
     referencePrice: "",
     packagingSpecs: [],
+    hashtags: [],
   });
 
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -90,9 +91,13 @@ export function useAhEquipmentCreateForm() {
           manufacturer: item.manufacturer || "",
           countryOfOrigin: item.countryOfOrigin || "",
           manufactureYear: item.manufactureYear || "",
-          technologyLevelGroup: item.technologyLevelGroup || item.technologyLevelId || "",
-          assetManagementGroup: item.assetManagementGroup || item.financialManagementId || "",
-          valueChainGroup: item.valueChainGroup || (item.valueChainId ? [item.valueChainId] : []),
+          technologyLevelGroup:
+            item.technologyLevelGroup || item.technologyLevelId || "",
+          assetManagementGroup:
+            item.assetManagementGroup || item.financialManagementId || "",
+          valueChainGroup:
+            item.valueChainGroup ||
+            (item.valueChainId ? [item.valueChainId] : []),
           machineType: item.machineType || [],
           powerCapacity: item.powerCapacity || "",
           workingCapacity: item.workingCapacity || "",
@@ -101,13 +106,15 @@ export function useAhEquipmentCreateForm() {
           weight: item.weight || "",
           otherSpecifications: item.otherSpecifications || "",
           fuelConsumptionRate: item.fuelConsumptionRate || "",
-          maintenanceSchedule: item.maintenanceSchedule || item.maintainanceInterval || "",
+          maintenanceSchedule:
+            item.maintenanceSchedule || item.maintainanceInterval || "",
           mainAccessories: item.mainAccessories || "",
           manufacturerOrigin: item.manufacturerOrigin || [],
           importerRegistrant: item.importerRegistrant || [],
           distributor: item.distributor || [],
           referencePrice: item.referencePrice || "",
           packagingSpecs: item.packagingSpecs || [],
+          hashtags: item.hashtags ?? [],
         });
       }
     }
@@ -168,9 +175,13 @@ export function useAhEquipmentCreateForm() {
           manufacturer: item.manufacturer || "",
           countryOfOrigin: item.countryOfOrigin || "",
           manufactureYear: item.manufactureYear || "",
-          technologyLevelGroup: item.technologyLevelGroup || item.technologyLevelId || "",
-          assetManagementGroup: item.assetManagementGroup || item.financialManagementId || "",
-          valueChainGroup: item.valueChainGroup || (item.valueChainId ? [item.valueChainId] : []),
+          technologyLevelGroup:
+            item.technologyLevelGroup || item.technologyLevelId || "",
+          assetManagementGroup:
+            item.assetManagementGroup || item.financialManagementId || "",
+          valueChainGroup:
+            item.valueChainGroup ||
+            (item.valueChainId ? [item.valueChainId] : []),
           machineType: item.machineType || [],
           powerCapacity: item.powerCapacity || "",
           workingCapacity: item.workingCapacity || "",
@@ -179,13 +190,15 @@ export function useAhEquipmentCreateForm() {
           weight: item.weight || "",
           otherSpecifications: item.otherSpecifications || "",
           fuelConsumptionRate: item.fuelConsumptionRate || "",
-          maintenanceSchedule: item.maintenanceSchedule || item.maintainanceInterval || "",
+          maintenanceSchedule:
+            item.maintenanceSchedule || item.maintainanceInterval || "",
           mainAccessories: item.mainAccessories || "",
           manufacturerOrigin: item.manufacturerOrigin || [],
           importerRegistrant: item.importerRegistrant || [],
           distributor: item.distributor || [],
           referencePrice: item.referencePrice || "",
           packagingSpecs: item.packagingSpecs || [],
+          hashtags: item.hashtags ?? [],
         });
       }
     } else {
@@ -226,6 +239,7 @@ export function useAhEquipmentCreateForm() {
         distributor: [],
         referencePrice: "",
         packagingSpecs: [],
+        hashtags: [],
       });
     }
   };
@@ -252,7 +266,10 @@ export function useAhEquipmentCreateForm() {
       productImage: formData.productImage,
       manufacturer: formData.manufacturer,
       countryOfOrigin: formData.countryOfOrigin,
-      manufactureYear: formData.manufactureYear === "" ? undefined : Number(formData.manufactureYear),
+      manufactureYear:
+        formData.manufactureYear === ""
+          ? undefined
+          : Number(formData.manufactureYear),
       technologyLevelGroup: formData.technologyLevelGroup,
       assetManagementGroup: formData.assetManagementGroup,
       valueChainGroup: formData.valueChainGroup,
@@ -271,6 +288,7 @@ export function useAhEquipmentCreateForm() {
       distributor: formData.distributor,
       referencePrice: formData.referencePrice,
       packagingSpecs: formData.packagingSpecs,
+      hashtags: formData.hashtags,
     };
 
     if (isEdit && params?.id) {
@@ -281,7 +299,10 @@ export function useAhEquipmentCreateForm() {
       });
     } else {
       addEquipment(payload);
-      toast({ title: "Thành công", description: "Đã thêm mới thiết bị chăn nuôi" });
+      toast({
+        title: "Thành công",
+        description: "Đã thêm mới thiết bị chăn nuôi",
+      });
     }
     setConfirmOpen(false);
     setLocation("/animal-husbandry-material/equipment");

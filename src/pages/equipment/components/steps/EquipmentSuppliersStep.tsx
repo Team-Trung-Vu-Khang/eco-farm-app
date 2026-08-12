@@ -16,6 +16,7 @@ import {
   X,
   DollarSign,
   ShieldAlert,
+  Search,
 } from "lucide-react";
 import { useState } from "react";
 import {
@@ -24,6 +25,7 @@ import {
   packagingSpecsPresets,
 } from "../../data/constants";
 import type { EquipmentFormData, SupplierDetail } from "../../types";
+import { PartnerSelectorDialog } from "@/components/organizations/PartnerSelectorDialog";
 
 interface EquipmentSuppliersStepProps {
   formData: EquipmentFormData;
@@ -42,40 +44,14 @@ export const EquipmentSuppliersStep = ({
   removeSupplierItem,
   updateField,
 }: EquipmentSuppliersStepProps) => {
-  const [mfgInput, setMfgInput] = useState("");
-  const [impInput, setImpInput] = useState("");
-  const [distInput, setDistInput] = useState("");
   const [pkgInput, setPkgInput] = useState("");
+  const [activeModal, setActiveModal] = useState<"manufacturerOrigin" | "importerRegistrant" | "distributor" | null>(null);
 
   const manufacturerOriginArr = formData.manufacturerOrigin || [];
   const importerRegistrantArr = formData.importerRegistrant || [];
   const distributorArr = formData.distributor || [];
   const packagingSpecsArr = formData.packagingSpecs || [];
   const supplierDetailsArr = formData.supplierDetails || [];
-
-  const addMfg = () => {
-    const val = mfgInput.trim();
-    if (val && !manufacturerOriginArr.includes(val)) {
-      updateField("manufacturerOrigin", [...manufacturerOriginArr, val]);
-      setMfgInput("");
-    }
-  };
-
-  const addImp = () => {
-    const val = impInput.trim();
-    if (val && !importerRegistrantArr.includes(val)) {
-      updateField("importerRegistrant", [...importerRegistrantArr, val]);
-      setImpInput("");
-    }
-  };
-
-  const addDist = () => {
-    const val = distInput.trim();
-    if (val && !distributorArr.includes(val)) {
-      updateField("distributor", [...distributorArr, val]);
-      setDistInput("");
-    }
-  };
 
   const addPkg = () => {
     const val = pkgInput.trim();
@@ -105,106 +81,110 @@ export const EquipmentSuppliersStep = ({
         {/* Manufacturer Origin */}
         <div className="space-y-2">
           <Label>Nhà sản xuất / Xuất xứ</Label>
-          <div className="flex gap-2">
-            <Input
-              value={mfgInput}
-              onChange={(e) => setMfgInput(e.target.value)}
-              placeholder="VD: Kubota Corp - Nhật Bản, DJI - Trung Quốc..."
-              onKeyDown={(e) =>
-                e.key === "Enter" && (e.preventDefault(), addMfg())
-              }
-            />
-            <Button type="button" onClick={addMfg} variant="outline">
-              <Plus className="w-4 h-4" />
+          <div
+            className="flex items-center justify-between border rounded-xl p-3 bg-slate-50 border-dashed border-slate-350 hover:bg-slate-100/50 hover:shadow-xs transition-all cursor-pointer min-h-11"
+            onClick={() => setActiveModal("manufacturerOrigin")}
+          >
+            <div className="flex-1 min-w-0 flex flex-wrap gap-1.5 items-center">
+              {manufacturerOriginArr.length > 0 ? (
+                manufacturerOriginArr.map((tag) => (
+                  <Badge
+                    key={tag}
+                    variant="secondary"
+                    className="bg-primary/5 text-primary border border-primary/20 text-xs font-semibold py-0.5 px-2.5"
+                  >
+                    {tag}
+                  </Badge>
+                ))
+              ) : (
+                <span className="text-sm text-slate-400">Bấm để chọn nhà sản xuất...</span>
+              )}
+            </div>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="h-8 w-8 text-slate-400 p-0 rounded-full hover:bg-primary/10"
+            >
+              <Search className="w-4 h-4 text-slate-500" />
             </Button>
           </div>
-          {manufacturerOriginArr.length > 0 && (
-            <div className="flex flex-wrap gap-2 pt-1">
-              {manufacturerOriginArr.map((tag) => (
-                <Badge
-                  key={tag}
-                  variant="secondary"
-                  className="flex items-center gap-1"
-                >
-                  {tag}
-                  <X
-                    className="w-3.5 h-3.5 cursor-pointer text-slate-400 hover:text-slate-600"
-                    onClick={() => removeTag("manufacturerOrigin", tag)}
-                  />
-                </Badge>
-              ))}
-            </div>
-          )}
+          <p className="text-xs text-muted-foreground">
+            Tên công ty + quốc gia (Việt Nam, Ấn Độ, Trung Quốc, Đức, Mỹ,
+            Nhật...)
+          </p>
         </div>
 
         {/* Importer Registrant */}
         <div className="space-y-2">
           <Label>Nhà nhập khẩu / Đăng ký</Label>
-          <div className="flex gap-2">
-            <Input
-              value={impInput}
-              onChange={(e) => setImpInput(e.target.value)}
-              placeholder="VD: Công ty TNHH Kubota Việt Nam..."
-              onKeyDown={(e) =>
-                e.key === "Enter" && (e.preventDefault(), addImp())
-              }
-            />
-            <Button type="button" onClick={addImp} variant="outline">
-              <Plus className="w-4 h-4" />
+          <div
+            className="flex items-center justify-between border rounded-xl p-3 bg-slate-50 border-dashed border-slate-350 hover:bg-slate-100/50 hover:shadow-xs transition-all cursor-pointer min-h-11"
+            onClick={() => setActiveModal("importerRegistrant")}
+          >
+            <div className="flex-1 min-w-0 flex flex-wrap gap-1.5 items-center">
+              {importerRegistrantArr.length > 0 ? (
+                importerRegistrantArr.map((tag) => (
+                  <Badge
+                    key={tag}
+                    variant="secondary"
+                    className="bg-primary/5 text-primary border border-primary/20 text-xs font-semibold py-0.5 px-2.5"
+                  >
+                    {tag}
+                  </Badge>
+                ))
+              ) : (
+                <span className="text-sm text-slate-400">Bấm để chọn nhà nhập khẩu...</span>
+              )}
+            </div>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="h-8 w-8 text-slate-400 p-0 rounded-full hover:bg-primary/10"
+            >
+              <Search className="w-4 h-4 text-slate-500" />
             </Button>
           </div>
-          {importerRegistrantArr.length > 0 && (
-            <div className="flex flex-wrap gap-2 pt-1">
-              {importerRegistrantArr.map((tag) => (
-                <Badge
-                  key={tag}
-                  variant="secondary"
-                  className="flex items-center gap-1"
-                >
-                  {tag}
-                  <X
-                    className="w-3.5 h-3.5 cursor-pointer text-slate-400 hover:text-slate-600"
-                    onClick={() => removeTag("importerRegistrant", tag)}
-                  />
-                </Badge>
-              ))}
-            </div>
-          )}
+          <p className="text-xs text-muted-foreground">
+            Công ty đứng tên đăng ký lưu hành tại Việt Nam
+          </p>
         </div>
 
         {/* Distributor */}
         <div className="space-y-2">
           <Label>Nhà phân phối chính trên thị trường</Label>
-          <div className="flex gap-2">
-            <Input
-              value={distInput}
-              onChange={(e) => setDistInput(e.target.value)}
-              placeholder="VD: Đại lý Bình Minh, DJI Store Vietnam..."
-              onKeyDown={(e) =>
-                e.key === "Enter" && (e.preventDefault(), addDist())
-              }
-            />
-            <Button type="button" onClick={addDist} variant="outline">
-              <Plus className="w-4 h-4" />
+          <div
+            className="flex items-center justify-between border rounded-xl p-3 bg-slate-50 border-dashed border-slate-350 hover:bg-slate-100/50 hover:shadow-xs transition-all cursor-pointer min-h-11"
+            onClick={() => setActiveModal("distributor")}
+          >
+            <div className="flex-1 min-w-0 flex flex-wrap gap-1.5 items-center">
+              {distributorArr.length > 0 ? (
+                distributorArr.map((tag) => (
+                  <Badge
+                    key={tag}
+                    variant="secondary"
+                    className="bg-primary/5 text-primary border border-primary/20 text-xs font-semibold py-0.5 px-2.5"
+                  >
+                    {tag}
+                  </Badge>
+                ))
+              ) : (
+                <span className="text-sm text-slate-400">Bấm để chọn nhà phân phối...</span>
+              )}
+            </div>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="h-8 w-8 text-slate-400 p-0 rounded-full hover:bg-primary/10"
+            >
+              <Search className="w-4 h-4 text-slate-500" />
             </Button>
           </div>
-          {distributorArr.length > 0 && (
-            <div className="flex flex-wrap gap-2 pt-1">
-              {distributorArr.map((tag) => (
-                <Badge
-                  key={tag}
-                  variant="secondary"
-                  className="flex items-center gap-1"
-                >
-                  {tag}
-                  <X
-                    className="w-3.5 h-3.5 cursor-pointer text-slate-400 hover:text-slate-600"
-                    onClick={() => removeTag("distributor", tag)}
-                  />
-                </Badge>
-              ))}
-            </div>
-          )}
+          <p className="text-xs text-muted-foreground">
+            Các công ty lớn phân phối trên thị trường
+          </p>
         </div>
       </div>
 
@@ -300,6 +280,33 @@ export const EquipmentSuppliersStep = ({
           )}
         </div>
       </div>
+
+      <PartnerSelectorDialog
+        open={activeModal === "manufacturerOrigin"}
+        onOpenChange={(open) => setActiveModal(open ? "manufacturerOrigin" : null)}
+        title="Chọn nhà sản xuất / Xuất xứ"
+        isMulti={false}
+        selectedNames={formData.manufacturerOrigin || []}
+        onConfirm={(names) => updateField("manufacturerOrigin", names.slice(0, 1))}
+      />
+
+      <PartnerSelectorDialog
+        open={activeModal === "importerRegistrant"}
+        onOpenChange={(open) => setActiveModal(open ? "importerRegistrant" : null)}
+        title="Chọn nhà nhập khẩu / Đăng ký"
+        isMulti={true}
+        selectedNames={formData.importerRegistrant || []}
+        onConfirm={(names) => updateField("importerRegistrant", names)}
+      />
+
+      <PartnerSelectorDialog
+        open={activeModal === "distributor"}
+        onOpenChange={(open) => setActiveModal(open ? "distributor" : null)}
+        title="Chọn nhà phân phối"
+        isMulti={true}
+        selectedNames={formData.distributor || []}
+        onConfirm={(names) => updateField("distributor", names)}
+      />
     </div>
   );
 };

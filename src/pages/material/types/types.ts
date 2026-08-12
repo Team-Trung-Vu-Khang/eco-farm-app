@@ -9,6 +9,8 @@ export interface Material {
 
   // Single classification group
   materialGroupId?: string;
+  technologyLevelId?: string;
+  valueChainId?: string;
 
   // Origin & Supply fields
   manufacturerOrigin?: string[];
@@ -26,6 +28,8 @@ export interface MaterialFormData {
   imageUrl?: string;
 
   materialGroupId: string;
+  technologyLevelId: string;
+  valueChainId: string;
 
   // Origin & Supply fields
   manufacturerOrigin: string[];

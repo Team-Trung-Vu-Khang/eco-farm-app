@@ -54,9 +54,7 @@ const MaterialTechnologyLevelPage = ({ onEdit }: Props) => {
     <div className="space-y-2">
       <div className="flex justify-between items-center">
         <div>
-          <h2 className="text-2xl font-semibold">
-            Phân loại theo Mức độ Công nghệ
-          </h2>
+          <h2 className="text-2xl font-semibold">Mức độ Công nghệ</h2>
           <p className="text-sm text-muted-foreground mt-1">
             Quản lý dụng cụ - máy móc theo mức độ công nghệ
           </p>

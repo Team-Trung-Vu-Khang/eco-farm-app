@@ -43,13 +43,15 @@ export default function MaterialConfirmStep({
                 <span className="font-semibold text-slate-900">{formData.name}</span>
               </div>
               <div>
-                <span className="text-muted-foreground">Phân loại danh mục:</span>{" "}
-                <span className="font-medium text-slate-700">{formData.type || "Chưa chọn"}</span>
+                <span className="text-muted-foreground">Mức độ công nghệ:</span>{" "}
+                <span className="font-semibold text-slate-900">
+                  {getMaterialGroupLabel(formData.technologyLevelId) || "Chưa chọn"}
+                </span>
               </div>
               <div>
-                <span className="text-muted-foreground">Nhóm phân loại:</span>{" "}
+                <span className="text-muted-foreground">Giai đoạn áp dụng:</span>{" "}
                 <span className="font-semibold text-slate-900">
-                  {getMaterialGroupLabel(formData.materialGroupId)}
+                  {getMaterialGroupLabel(formData.valueChainId) || "Chưa chọn"}
                 </span>
               </div>
               <div className="col-span-2">

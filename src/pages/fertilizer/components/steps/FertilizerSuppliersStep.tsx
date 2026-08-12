@@ -9,47 +9,68 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { Building2, Package, Plus, X, DollarSign } from "lucide-react";
+import { Building2, Package, Plus, X, DollarSign, Search } from "lucide-react";
 import { useState } from "react";
 import { packagingUnitOptions } from "../../data/constants";
 import type { FertilizerFormData } from "../../types/types";
+import { PartnerSelectorDialog } from "@/components/organizations/PartnerSelectorDialog";
 
 interface FertilizerSuppliersStepProps {
   formData: FertilizerFormData;
   updateField: (field: keyof FertilizerFormData, value: any) => void;
 }
 
-const packagingUnits = [
-  "ml",
-  "L",
-  "g",
+const MEASURE_UNIT_OPTIONS = [
   "kg",
-  "viên",
-  "gói",
-  "hộp",
+  "g",
+  "L",
+  "ml",
+  "tấn",
   "bao",
   "can",
   "thùng",
+  "viên",
+  "ống",
+  "vỉ",
+  "cc",
+  "IU",
+];
+
+const PACKAGING_OPTIONS = [
+  "Bao",
+  "Bì",
+  "Can",
+  "Chai",
+  "Hộp",
+  "Lọ",
+  "Gói",
+  "Thùng",
+  "Túi",
+  "Cuộn",
+  "Kiện",
+  "Khay",
 ];
 
 export const FertilizerSuppliersStep = ({
   formData,
   updateField,
 }: FertilizerSuppliersStepProps) => {
-  // local state for packaging input
   const [quantity, setQuantity] = useState("");
   const [unit, setUnit] = useState("");
+  const [packaging, setPackaging] = useState("");
+  const [activeModal, setActiveModal] = useState<"manufacturerOrigin" | "importerRegistrant" | "distributor" | null>(null);
 
   const addPackagingSpec = () => {
     const trimmed = quantity.trim();
-    if (!trimmed || !unit) return;
-    const spec = `${trimmed} ${unit}`;
+    if (!trimmed || !unit || !packaging) return;
+    const spec = `${trimmed} ${unit} / ${packaging}`;
     const currentSpecs = formData.packagingSpecs || [];
     if (!currentSpecs.includes(spec)) {
       updateField("packagingSpecs", [...currentSpecs, spec]);
     }
     setQuantity("");
     setUnit("");
+    setPackaging("");
   };
 
   const removePackagingSpec = (spec: string) => {
@@ -71,29 +92,95 @@ export const FertilizerSuppliersStep = ({
 
         <div className="space-y-2">
           <Label>Nhà sản xuất / Xuất xứ</Label>
-          <Input
-            value={formData.manufacturerOrigin}
-            onChange={(e) => updateField("manufacturerOrigin", e.target.value)}
-            placeholder="VD: Yara International ASA - Na Uy, Công ty Bình Điền - Việt Nam"
-          />
+          <div
+            className="flex items-center justify-between border rounded-xl p-3 bg-slate-50 border-dashed border-slate-350 hover:bg-slate-100/50 hover:shadow-xs transition-all cursor-pointer min-h-11"
+            onClick={() => setActiveModal("manufacturerOrigin")}
+          >
+            <div className="flex-1 min-w-0 flex flex-wrap gap-1.5 items-center">
+              {formData.manufacturerOrigin ? (
+                <Badge
+                  variant="secondary"
+                  className="bg-primary/5 text-primary border border-primary/20 text-xs font-semibold py-0.5 px-2.5"
+                >
+                  {formData.manufacturerOrigin}
+                </Badge>
+              ) : (
+                <span className="text-sm text-slate-400">Bấm để chọn nhà sản xuất...</span>
+              )}
+            </div>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="h-8 w-8 text-slate-400 p-0 rounded-full hover:bg-primary/10"
+            >
+              <Search className="w-4 h-4 text-slate-500" />
+            </Button>
+          </div>
         </div>
 
         <div className="space-y-2">
           <Label>Nhà nhập khẩu / Đăng ký</Label>
-          <Input
-            value={formData.importerRegistrant}
-            onChange={(e) => updateField("importerRegistrant", e.target.value)}
-            placeholder="VD: Công ty TNHH Yara Việt Nam..."
-          />
+          <div
+            className="flex items-center justify-between border rounded-xl p-3 bg-slate-50 border-dashed border-slate-350 hover:bg-slate-100/50 hover:shadow-xs transition-all cursor-pointer min-h-11"
+            onClick={() => setActiveModal("importerRegistrant")}
+          >
+            <div className="flex-1 min-w-0 flex flex-wrap gap-1.5 items-center">
+              {formData.importerRegistrant ? (
+                formData.importerRegistrant.split(", ").filter(Boolean).map((name) => (
+                  <Badge
+                    key={name}
+                    variant="secondary"
+                    className="bg-primary/5 text-primary border border-primary/20 text-xs font-semibold py-0.5 px-2.5"
+                  >
+                    {name}
+                  </Badge>
+                ))
+              ) : (
+                <span className="text-sm text-slate-400">Bấm để chọn nhà nhập khẩu...</span>
+              )}
+            </div>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="h-8 w-8 text-slate-400 p-0 rounded-full hover:bg-primary/10"
+            >
+              <Search className="w-4 h-4 text-slate-500" />
+            </Button>
+          </div>
         </div>
 
         <div className="space-y-2">
           <Label>Nhà phân phối chính trên thị trường</Label>
-          <Input
-            value={formData.distributor}
-            onChange={(e) => updateField("distributor", e.target.value)}
-            placeholder="VD: Công ty CP Vật tư Nông nghiệp Hà Lan, các đại lý cấp 1..."
-          />
+          <div
+            className="flex items-center justify-between border rounded-xl p-3 bg-slate-50 border-dashed border-slate-350 hover:bg-slate-100/50 hover:shadow-xs transition-all cursor-pointer min-h-11"
+            onClick={() => setActiveModal("distributor")}
+          >
+            <div className="flex-1 min-w-0 flex flex-wrap gap-1.5 items-center">
+              {formData.distributor ? (
+                formData.distributor.split(", ").filter(Boolean).map((name) => (
+                  <Badge
+                    key={name}
+                    variant="secondary"
+                    className="bg-primary/5 text-primary border border-primary/20 text-xs font-semibold py-0.5 px-2.5"
+                  >
+                    {name}
+                  </Badge>
+                ))
+              ) : (
+                <span className="text-sm text-slate-400">Bấm để chọn nhà phân phối...</span>
+              )}
+            </div>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="h-8 w-8 text-slate-400 p-0 rounded-full hover:bg-primary/10"
+            >
+              <Search className="w-4 h-4 text-slate-500" />
+            </Button>
+          </div>
         </div>
       </div>
 
@@ -125,12 +212,12 @@ export const FertilizerSuppliersStep = ({
 
           <div className="flex gap-2 items-end">
             <div className="flex-1 space-y-1">
-              <Label className="text-xs text-muted-foreground">Số lượng</Label>
+              <Label className="text-xs text-muted-foreground">Giá trị</Label>
               <Input
                 type="number"
                 value={quantity}
                 onChange={(e) => setQuantity(e.target.value)}
-                placeholder="VD: 50, 1, 500"
+                placeholder="VD: 50, 25"
                 min={0}
                 onKeyDown={(e) => {
                   if (e.key === "Enter") {
@@ -140,16 +227,31 @@ export const FertilizerSuppliersStep = ({
                 }}
               />
             </div>
-            <div className="w-36 space-y-1">
+            <div className="w-28 space-y-1">
               <Label className="text-xs text-muted-foreground">Đơn vị</Label>
               <Select value={unit} onValueChange={setUnit}>
-                <SelectTrigger>
+                <SelectTrigger className="text-left h-auto py-2">
                   <SelectValue placeholder="Chọn..." />
                 </SelectTrigger>
                 <SelectContent>
-                  {packagingUnits.map((u) => (
+                  {MEASURE_UNIT_OPTIONS.map((u) => (
                     <SelectItem key={u} value={u}>
                       {u}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="w-32 space-y-1">
+              <Label className="text-xs text-muted-foreground">Quy cách chứa</Label>
+              <Select value={packaging} onValueChange={setPackaging}>
+                <SelectTrigger className="text-left h-auto py-2">
+                  <SelectValue placeholder="Chọn..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {PACKAGING_OPTIONS.map((p) => (
+                    <SelectItem key={p} value={p}>
+                      {p}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -158,7 +260,7 @@ export const FertilizerSuppliersStep = ({
             <Button
               type="button"
               onClick={addPackagingSpec}
-              disabled={!quantity.trim() || !unit}
+              disabled={!quantity.trim() || !unit || !packaging}
               className="mb-0 shrink-0"
             >
               <Plus className="w-4 h-4 mr-1" />
@@ -228,6 +330,33 @@ export const FertilizerSuppliersStep = ({
           )}
         </div>
       </div>
+
+      <PartnerSelectorDialog
+        open={activeModal === "manufacturerOrigin"}
+        onOpenChange={(open) => setActiveModal(open ? "manufacturerOrigin" : null)}
+        title="Chọn nhà sản xuất / Xuất xứ"
+        isMulti={false}
+        selectedNames={formData.manufacturerOrigin ? [formData.manufacturerOrigin] : []}
+        onConfirm={(names) => updateField("manufacturerOrigin", names[0] || "")}
+      />
+
+      <PartnerSelectorDialog
+        open={activeModal === "importerRegistrant"}
+        onOpenChange={(open) => setActiveModal(open ? "importerRegistrant" : null)}
+        title="Chọn nhà nhập khẩu / Đăng ký"
+        isMulti={true}
+        selectedNames={formData.importerRegistrant ? formData.importerRegistrant.split(", ").filter(Boolean) : []}
+        onConfirm={(names) => updateField("importerRegistrant", names.join(", "))}
+      />
+
+      <PartnerSelectorDialog
+        open={activeModal === "distributor"}
+        onOpenChange={(open) => setActiveModal(open ? "distributor" : null)}
+        title="Chọn nhà phân phối"
+        isMulti={true}
+        selectedNames={formData.distributor ? formData.distributor.split(", ").filter(Boolean) : []}
+        onConfirm={(names) => updateField("distributor", names.join(", "))}
+      />
     </div>
   );
 };

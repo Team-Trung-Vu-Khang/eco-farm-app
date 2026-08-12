@@ -1,4 +1,6 @@
+import { useState } from "react";
 import {
+  Badge,
   Button,
   Card,
   CardContent,
@@ -15,10 +17,13 @@ import {
   ArrowLeft,
   Image as ImageIcon,
   Info,
+  Plus,
   Settings,
   Tag,
+  Tags,
   Upload,
   Wrench,
+  X,
 } from "lucide-react";
 import type { EquipmentFormData } from "../types";
 import {
@@ -41,27 +46,48 @@ const DOMAIN_MACHINE_TYPES: Record<
     { value: "Máy bơm", description: "Bơm nước tưới tiêu" },
     { value: "Máy phun thuốc", description: "Phun thuốc BVTV, phân bón lá" },
     { value: "Drone", description: "Drone phun thuốc, gieo hạt UAV" },
-    { value: "Hệ thống tưới", description: "Tưới nhỏ giọt, phun sương tự động" },
+    {
+      value: "Hệ thống tưới",
+      description: "Tưới nhỏ giọt, phun sương tự động",
+    },
     { value: "Máy xay xát", description: "Xay, xát, chế biến nông sản" },
     { value: "Máy sấy", description: "Sấy thóc, ngô, nông sản" },
     { value: "Thiết bị khác", description: "Các máy móc canh tác khác" },
   ],
   animal: [
-    { value: "Hệ thống cho ăn tự động", description: "Phân phối thức ăn tự động theo lịch" },
+    {
+      value: "Hệ thống cho ăn tự động",
+      description: "Phân phối thức ăn tự động theo lịch",
+    },
     { value: "Máy bơm", description: "Bơm nước uống, vệ sinh chuồng trại" },
     { value: "Quạt thông gió", description: "Điều hòa nhiệt độ chuồng nuôi" },
-    { value: "Hệ thống chiếu sáng", description: "Điều chỉnh ánh sáng kích thích sinh trưởng" },
+    {
+      value: "Hệ thống chiếu sáng",
+      description: "Điều chỉnh ánh sáng kích thích sinh trưởng",
+    },
     { value: "Máy phun sát khuẩn", description: "Khử khuẩn, vệ sinh định kỳ" },
-    { value: "Thiết bị giám sát", description: "Camera, cảm biến theo dõi đàn" },
+    {
+      value: "Thiết bị giám sát",
+      description: "Camera, cảm biến theo dõi đàn",
+    },
     { value: "Thiết bị khác", description: "Máy móc chăn nuôi khác" },
   ],
   aquaculture: [
     { value: "Quạt tạo oxy", description: "Tăng oxy hòa tan trong ao nuôi" },
     { value: "Máy sục khí", description: "Sục khí đáy ao, xử lý khí độc" },
-    { value: "Hệ thống lọc nước", description: "Lọc tuần hoàn, xử lý nước RAS" },
-    { value: "Hệ thống cho ăn tự động", description: "Phân phối thức ăn thủy sản tự động" },
+    {
+      value: "Hệ thống lọc nước",
+      description: "Lọc tuần hoàn, xử lý nước RAS",
+    },
+    {
+      value: "Hệ thống cho ăn tự động",
+      description: "Phân phối thức ăn thủy sản tự động",
+    },
     { value: "Máy bơm", description: "Bơm nước, thay nước ao nuôi" },
-    { value: "Thiết bị giám sát", description: "Đo pH, oxy, nhiệt độ, độ muối" },
+    {
+      value: "Thiết bị giám sát",
+      description: "Đo pH, oxy, nhiệt độ, độ muối",
+    },
     { value: "Thiết bị khác", description: "Máy móc nuôi trồng thủy sản khác" },
   ],
 };
@@ -81,6 +107,15 @@ interface SimpleEquipmentFormProps {
   completeLabel?: string;
 }
 
+const commonHashtags = [
+  "CoGioiHoa",
+  "TietKiemNangLuong",
+  "CongNgheMoi",
+  "BenBi",
+  "HieuSuatCao",
+  "AnToanVanHanh",
+];
+
 export default function SimpleEquipmentForm({
   formData,
   domain,
@@ -92,6 +127,24 @@ export default function SimpleEquipmentForm({
   const machineTypes = DOMAIN_MACHINE_TYPES[domain];
   const domainLabel = DOMAIN_LABELS[domain];
   const isValid = Boolean(formData.machineName || formData.name);
+  const [paramHashtag, setParamHashtag] = useState("");
+
+  const onAddHashtag = () => {
+    const tag = paramHashtag.trim();
+    const current = formData.hashtags || [];
+    if (tag && !current.includes(tag)) {
+      updateField("hashtags", [...current, tag]);
+      setParamHashtag("");
+    }
+  };
+
+  const onRemoveHashtag = (tag: string) => {
+    const current = formData.hashtags || [];
+    updateField(
+      "hashtags",
+      current.filter((t) => t !== tag),
+    );
+  };
 
   return (
     <div className="max-w-2xl mx-auto space-y-6 pb-24">
@@ -104,8 +157,8 @@ export default function SimpleEquipmentForm({
           <h3 className="font-semibold">Thông tin cơ bản</h3>
           <p className="text-sm text-slate-600 mt-0.5">
             Nhập nhanh những thông tin cần thiết nhất. Bật{" "}
-            <span className="font-bold">Thông tin chuyên sâu</span> để khai báo đầy đủ thông
-            số kỹ thuật, xuất xứ và cung ứng.
+            <span className="font-bold">Thông tin chuyên sâu</span> để khai báo
+            đầy đủ thông số kỹ thuật, xuất xứ và cung ứng.
           </p>
         </div>
       </div>
@@ -137,7 +190,9 @@ export default function SimpleEquipmentForm({
               <Upload className="w-7 h-7" />
             </div>
             <div>
-              <p className="font-medium text-slate-700 text-sm">Tải lên ảnh thiết bị</p>
+              <p className="font-medium text-slate-700 text-sm">
+                Tải lên ảnh thiết bị
+              </p>
               <p className="text-xs text-muted-foreground mt-0.5">
                 Kéo thả hoặc click để chọn — PNG, JPG tối đa 5MB
               </p>
@@ -164,11 +219,17 @@ export default function SimpleEquipmentForm({
           Loại {domainLabel.toLowerCase()}
         </Label>
         <Select
-          value={Array.isArray(formData.machineType) ? formData.machineType[0] ?? "" : (formData.machineType ?? "")}
+          value={
+            Array.isArray(formData.machineType)
+              ? (formData.machineType[0] ?? "")
+              : (formData.machineType ?? "")
+          }
           onValueChange={(v) => updateField("machineType", [v])}
         >
           <SelectTrigger className="text-left h-auto py-2">
-            <SelectValue placeholder={`Chọn loại ${domainLabel.toLowerCase()}...`} />
+            <SelectValue
+              placeholder={`Chọn loại ${domainLabel.toLowerCase()}...`}
+            />
           </SelectTrigger>
           <SelectContent>
             {machineTypes.map((t) => (
@@ -222,7 +283,11 @@ export default function SimpleEquipmentForm({
         </Label>
         <div className="space-y-3">
           <Select
-            value={formData.maintenanceSchedule || formData.maintainanceInterval || ""}
+            value={
+              formData.maintenanceSchedule ||
+              formData.maintainanceInterval ||
+              ""
+            }
             onValueChange={(v) => {
               updateField("maintenanceSchedule", v);
               updateField("maintainanceInterval", v);
@@ -248,14 +313,81 @@ export default function SimpleEquipmentForm({
         </div>
       </div>
 
+      {/* Card: Hashtags */}
+      <div className="bg-white p-6 rounded-xl shadow-sm border space-y-4">
+        <h3 className="font-semibold text-lg flex items-center gap-2">
+          <Tags className="w-5 h-5 text-primary" />
+          Hashtags
+        </h3>
+        <div className="space-y-3">
+          <Label>Thêm Hashtag</Label>
+          <div className="flex gap-2">
+            <Input
+              value={paramHashtag}
+              onChange={(e) => setParamHashtag(e.target.value)}
+              placeholder="Nhập hashtag..."
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  onAddHashtag();
+                }
+              }}
+            />
+            <Button type="button" onClick={onAddHashtag} variant="outline">
+              <Plus className="w-4 h-4" />
+            </Button>
+          </div>
+          <div className="flex flex-wrap gap-2 pt-2">
+            {commonHashtags.map((tag) => {
+              const current = formData.hashtags || [];
+              const isSelected = current.includes(tag);
+              return (
+                <Badge
+                  key={tag}
+                  variant="outline"
+                  className={`cursor-pointer transition-all ${
+                    isSelected
+                      ? "bg-primary/10 border-primary text-primary"
+                      : "hover:bg-slate-100"
+                  }`}
+                  onClick={() =>
+                    isSelected
+                      ? onRemoveHashtag(tag)
+                      : updateField("hashtags", [...current, tag])
+                  }
+                >
+                  #{tag}
+                </Badge>
+              );
+            })}
+            {(formData.hashtags || [])
+              .filter((tag) => !commonHashtags.includes(tag))
+              .map((tag) => (
+                <Badge
+                  key={tag}
+                  variant="secondary"
+                  className="flex items-center gap-1"
+                >
+                  #{tag}
+                  <X
+                    className="w-3 h-3 cursor-pointer"
+                    onClick={() => onRemoveHashtag(tag)}
+                  />
+                </Badge>
+              ))}
+          </div>
+        </div>
+      </div>
+
       {/* ── Info card ── */}
       <Card className="bg-amber-50/50 border-amber-100">
         <CardContent className="p-4 flex items-start gap-2">
           <Info className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
           <p className="text-xs text-amber-800">
-            Chế độ cơ bản giúp tạo nhanh {domainLabel.toLowerCase()} với thông tin tối thiểu. Bật{" "}
-            <span className="font-bold">Thông tin chuyên sâu</span> để khai báo đầy đủ thông số kỹ
-            thuật, xuất xứ và nhà cung cấp.
+            Chế độ cơ bản giúp tạo nhanh {domainLabel.toLowerCase()} với thông
+            tin tối thiểu. Bật{" "}
+            <span className="font-bold">Thông tin chuyên sâu</span> để khai báo
+            đầy đủ thông số kỹ thuật, xuất xứ và nhà cung cấp.
           </p>
         </CardContent>
       </Card>

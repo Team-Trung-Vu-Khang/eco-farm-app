@@ -6,9 +6,7 @@ import type { EquipmentFormData, SupplierDetail } from "../../equipment/types";
 
 export function useAqEquipmentCreateForm() {
   const [, setLocation] = useLocation();
-  const [match, params] = useRoute(
-    "/aquaculture-material/equipment/:id/edit",
-  );
+  const [match, params] = useRoute("/aquaculture-material/equipment/:id/edit");
   const isEdit = match && !!params?.id;
   const { toast } = useToast();
 
@@ -17,6 +15,7 @@ export function useAqEquipmentCreateForm() {
   const updateEquipment = useEquipmentStore((state) => state.updateEquipment);
 
   const [formData, setFormData] = useState<EquipmentFormData>({
+    hashtags: [],
     code: "",
     name: "",
     technologyLevelId: "",
@@ -70,6 +69,7 @@ export function useAqEquipmentCreateForm() {
       const item = getEquipmentById(Number(params.id));
       if (item) {
         setFormData({
+          hashtags: item.hashtags ?? [],
           code: item.code,
           name: item.name,
           technologyLevelId: item.technologyLevelId,
@@ -90,9 +90,13 @@ export function useAqEquipmentCreateForm() {
           manufacturer: item.manufacturer || "",
           countryOfOrigin: item.countryOfOrigin || "",
           manufactureYear: item.manufactureYear || "",
-          technologyLevelGroup: item.technologyLevelGroup || item.technologyLevelId || "",
-          assetManagementGroup: item.assetManagementGroup || item.financialManagementId || "",
-          valueChainGroup: item.valueChainGroup || (item.valueChainId ? [item.valueChainId] : []),
+          technologyLevelGroup:
+            item.technologyLevelGroup || item.technologyLevelId || "",
+          assetManagementGroup:
+            item.assetManagementGroup || item.financialManagementId || "",
+          valueChainGroup:
+            item.valueChainGroup ||
+            (item.valueChainId ? [item.valueChainId] : []),
           machineType: item.machineType || [],
           powerCapacity: item.powerCapacity || "",
           workingCapacity: item.workingCapacity || "",
@@ -101,7 +105,8 @@ export function useAqEquipmentCreateForm() {
           weight: item.weight || "",
           otherSpecifications: item.otherSpecifications || "",
           fuelConsumptionRate: item.fuelConsumptionRate || "",
-          maintenanceSchedule: item.maintenanceSchedule || item.maintainanceInterval || "",
+          maintenanceSchedule:
+            item.maintenanceSchedule || item.maintainanceInterval || "",
           mainAccessories: item.mainAccessories || "",
           manufacturerOrigin: item.manufacturerOrigin || [],
           importerRegistrant: item.importerRegistrant || [],
@@ -168,9 +173,13 @@ export function useAqEquipmentCreateForm() {
           manufacturer: item.manufacturer || "",
           countryOfOrigin: item.countryOfOrigin || "",
           manufactureYear: item.manufactureYear || "",
-          technologyLevelGroup: item.technologyLevelGroup || item.technologyLevelId || "",
-          assetManagementGroup: item.assetManagementGroup || item.financialManagementId || "",
-          valueChainGroup: item.valueChainGroup || (item.valueChainId ? [item.valueChainId] : []),
+          technologyLevelGroup:
+            item.technologyLevelGroup || item.technologyLevelId || "",
+          assetManagementGroup:
+            item.assetManagementGroup || item.financialManagementId || "",
+          valueChainGroup:
+            item.valueChainGroup ||
+            (item.valueChainId ? [item.valueChainId] : []),
           machineType: item.machineType || [],
           powerCapacity: item.powerCapacity || "",
           workingCapacity: item.workingCapacity || "",
@@ -179,17 +188,20 @@ export function useAqEquipmentCreateForm() {
           weight: item.weight || "",
           otherSpecifications: item.otherSpecifications || "",
           fuelConsumptionRate: item.fuelConsumptionRate || "",
-          maintenanceSchedule: item.maintenanceSchedule || item.maintainanceInterval || "",
+          maintenanceSchedule:
+            item.maintenanceSchedule || item.maintainanceInterval || "",
           mainAccessories: item.mainAccessories || "",
           manufacturerOrigin: item.manufacturerOrigin || [],
           importerRegistrant: item.importerRegistrant || [],
           distributor: item.distributor || [],
           referencePrice: item.referencePrice || "",
           packagingSpecs: item.packagingSpecs || [],
+          hashtags: item.hashtags ?? [],
         });
       }
     } else {
       setFormData({
+        hashtags: [],
         code: "",
         name: "",
         technologyLevelId: "",
@@ -252,7 +264,10 @@ export function useAqEquipmentCreateForm() {
       productImage: formData.productImage,
       manufacturer: formData.manufacturer,
       countryOfOrigin: formData.countryOfOrigin,
-      manufactureYear: formData.manufactureYear === "" ? undefined : Number(formData.manufactureYear),
+      manufactureYear:
+        formData.manufactureYear === ""
+          ? undefined
+          : Number(formData.manufactureYear),
       technologyLevelGroup: formData.technologyLevelGroup,
       assetManagementGroup: formData.assetManagementGroup,
       valueChainGroup: formData.valueChainGroup,
@@ -271,6 +286,7 @@ export function useAqEquipmentCreateForm() {
       distributor: formData.distributor,
       referencePrice: formData.referencePrice,
       packagingSpecs: formData.packagingSpecs,
+      hashtags: formData.hashtags,
     };
 
     if (isEdit && params?.id) {
@@ -281,7 +297,10 @@ export function useAqEquipmentCreateForm() {
       });
     } else {
       addEquipment(payload);
-      toast({ title: "Thành công", description: "Đã thêm mới thiết bị thủy sản" });
+      toast({
+        title: "Thành công",
+        description: "Đã thêm mới thiết bị thủy sản",
+      });
     }
     setConfirmOpen(false);
     setLocation("/aquaculture-material/equipment");

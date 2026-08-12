@@ -10,9 +10,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { Building2, Package, Plus, X } from "lucide-react";
+import { Building2, Package, Plus, X, Search } from "lucide-react";
 import { packagingSpecsPresets } from "../data/constants";
 import type { MaterialFormData } from "../types/types";
+import { PartnerSelectorDialog } from "@/components/organizations/PartnerSelectorDialog";
 
 interface MaterialSuppliersStepProps {
   formData: MaterialFormData;
@@ -22,72 +23,83 @@ interface MaterialSuppliersStepProps {
   ) => void;
 }
 
-const packagingUnits = [
-  "cái", "cuộn", "mét", "kg", "g",
-  "bộ", "thùng", "bao", "hộp", "lọ",
-  "kiện", "gói", "can", "lít", "ml"
+const MEASURE_UNIT_OPTIONS = [
+  "cái",
+  "cuộn",
+  "mét",
+  "kg",
+  "g",
+  "bộ",
+  "thùng",
+  "bao",
+  "hộp",
+  "lọ",
+  "kiện",
+  "gói",
+  "can",
+  "lít",
+  "ml",
+  "tấn",
+  "mm",
+];
+
+const PACKAGING_OPTIONS = [
+  "Bao",
+  "Bì",
+  "Hộp",
+  "Thùng",
+  "Túi",
+  "Chai",
+  "Lọ",
+  "Gói",
+  "Can",
+  "Cuộn",
+  "Kiện",
+  "Khay",
 ];
 
 export default function MaterialSuppliersStep({
   formData,
   onFormFieldChange,
 }: MaterialSuppliersStepProps) {
-  const [mfgInput, setMfgInput] = useState("");
-  const [impInput, setImpInput] = useState("");
-  const [distInput, setDistInput] = useState("");
+  const [activeModal, setActiveModal] = useState<
+    "manufacturerOrigin" | "importerRegistrant" | "distributor" | null
+  >(null);
 
   // Quantity and unit state for packaging specs
   const [quantity, setQuantity] = useState("");
   const [unit, setUnit] = useState("");
+  const [packaging, setPackaging] = useState("");
 
   const manufacturerOriginArr = formData.manufacturerOrigin || [];
   const importerRegistrantArr = formData.importerRegistrant || [];
   const distributorArr = formData.distributor || [];
   const packagingSpecsArr = formData.packagingSpecs || [];
 
-  const addMfg = () => {
-    const val = mfgInput.trim();
-    if (val && !manufacturerOriginArr.includes(val)) {
-      onFormFieldChange("manufacturerOrigin", [...manufacturerOriginArr, val]);
-      setMfgInput("");
-    }
-  };
-
-  const addImp = () => {
-    const val = impInput.trim();
-    if (val && !importerRegistrantArr.includes(val)) {
-      onFormFieldChange("importerRegistrant", [...importerRegistrantArr, val]);
-      setImpInput("");
-    }
-  };
-
-  const addDist = () => {
-    const val = distInput.trim();
-    if (val && !distributorArr.includes(val)) {
-      onFormFieldChange("distributor", [...distributorArr, val]);
-      setDistInput("");
-    }
-  };
-
   const addPackagingSpec = () => {
     const trimmedQty = quantity.trim();
-    if (!trimmedQty || !unit) return;
-    const spec = `${trimmedQty} ${unit}`;
+    if (!trimmedQty || !unit || !packaging) return;
+    const spec = `${trimmedQty} ${unit} / ${packaging}`;
     if (!packagingSpecsArr.includes(spec)) {
       onFormFieldChange("packagingSpecs", [...packagingSpecsArr, spec]);
     }
     setQuantity("");
     setUnit("");
+    setPackaging("");
   };
 
   const removeTag = (
-    field: "manufacturerOrigin" | "importerRegistrant" | "distributor" | "packagingSpecs",
-    value: string
+    field:
+      | "manufacturerOrigin"
+      | "importerRegistrant"
+      | "distributor"
+      | "packagingSpecs",
+    value: string,
   ) => {
     const current = formData[field] || [];
     onFormFieldChange(
       field,
-      current.filter((v) => v !== value)
+      current.filter((v) => v !== value),
     );
   };
 
@@ -103,106 +115,116 @@ export default function MaterialSuppliersStep({
         {/* Manufacturer Origin */}
         <div className="space-y-2">
           <Label>Nhà sản xuất / Xuất xứ</Label>
-          <div className="flex gap-2">
-            <Input
-              value={mfgInput}
-              onChange={(e) => setMfgInput(e.target.value)}
-              placeholder="VD: Công ty Nhựa Rạng Đông, Netafim - Israel..."
-              onKeyDown={(e) =>
-                e.key === "Enter" && (e.preventDefault(), addMfg())
-              }
-            />
-            <Button type="button" onClick={addMfg} variant="outline">
-              <Plus className="w-4 h-4" />
+          <div
+            className="flex items-center justify-between border rounded-xl p-3 bg-slate-50 border-dashed border-slate-350 hover:bg-slate-100/50 hover:shadow-xs transition-all cursor-pointer min-h-11"
+            onClick={() => setActiveModal("manufacturerOrigin")}
+          >
+            <div className="flex-1 min-w-0 flex flex-wrap gap-1.5 items-center">
+              {manufacturerOriginArr.length > 0 ? (
+                manufacturerOriginArr.map((tag) => (
+                  <Badge
+                    key={tag}
+                    variant="secondary"
+                    className="bg-primary/5 text-primary border border-primary/20 text-xs font-semibold py-0.5 px-2.5"
+                  >
+                    {tag}
+                  </Badge>
+                ))
+              ) : (
+                <span className="text-sm text-slate-400">
+                  Bấm để chọn nhà sản xuất...
+                </span>
+              )}
+            </div>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="h-8 w-8 text-slate-400 p-0 rounded-full hover:bg-primary/10"
+            >
+              <Search className="w-4 h-4 text-slate-500" />
             </Button>
           </div>
-          {manufacturerOriginArr.length > 0 && (
-            <div className="flex flex-wrap gap-2 pt-1">
-              {manufacturerOriginArr.map((tag) => (
-                <Badge
-                  key={tag}
-                  variant="secondary"
-                  className="flex items-center gap-1"
-                >
-                  {tag}
-                  <X
-                    className="w-3.5 h-3.5 cursor-pointer text-slate-400 hover:text-slate-600"
-                    onClick={() => removeTag("manufacturerOrigin", tag)}
-                  />
-                </Badge>
-              ))}
-            </div>
-          )}
+          <p className="text-xs text-muted-foreground">
+            Tên công ty + quốc gia (Việt Nam, Ấn Độ, Trung Quốc, Đức, Mỹ,
+            Nhật...)
+          </p>
         </div>
 
         {/* Importer Registrant */}
         <div className="space-y-2">
           <Label>Nhà nhập khẩu / Đăng ký</Label>
-          <div className="flex gap-2">
-            <Input
-              value={impInput}
-              onChange={(e) => setImpInput(e.target.value)}
-              placeholder="VD: Công ty TNHH Nhựa Hòa Phát..."
-              onKeyDown={(e) =>
-                e.key === "Enter" && (e.preventDefault(), addImp())
-              }
-            />
-            <Button type="button" onClick={addImp} variant="outline">
-              <Plus className="w-4 h-4" />
+          <div
+            className="flex items-center justify-between border rounded-xl p-3 bg-slate-50 border-dashed border-slate-350 hover:bg-slate-100/50 hover:shadow-xs transition-all cursor-pointer min-h-11"
+            onClick={() => setActiveModal("importerRegistrant")}
+          >
+            <div className="flex-1 min-w-0 flex flex-wrap gap-1.5 items-center">
+              {importerRegistrantArr.length > 0 ? (
+                importerRegistrantArr.map((tag) => (
+                  <Badge
+                    key={tag}
+                    variant="secondary"
+                    className="bg-primary/5 text-primary border border-primary/20 text-xs font-semibold py-0.5 px-2.5"
+                  >
+                    {tag}
+                  </Badge>
+                ))
+              ) : (
+                <span className="text-sm text-slate-400">
+                  Bấm để chọn nhà nhập khẩu...
+                </span>
+              )}
+            </div>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="h-8 w-8 text-slate-400 p-0 rounded-full hover:bg-primary/10"
+            >
+              <Search className="w-4 h-4 text-slate-500" />
             </Button>
           </div>
-          {importerRegistrantArr.length > 0 && (
-            <div className="flex flex-wrap gap-2 pt-1">
-              {importerRegistrantArr.map((tag) => (
-                <Badge
-                  key={tag}
-                  variant="secondary"
-                  className="flex items-center gap-1"
-                >
-                  {tag}
-                  <X
-                    className="w-3.5 h-3.5 cursor-pointer text-slate-400 hover:text-slate-600"
-                    onClick={() => removeTag("importerRegistrant", tag)}
-                  />
-                </Badge>
-              ))}
-            </div>
-          )}
+          <p className="text-xs text-muted-foreground">
+            Công ty đứng tên đăng ký lưu hành tại Việt Nam
+          </p>
         </div>
 
         {/* Distributor */}
         <div className="space-y-2">
           <Label>Nhà phân phối chính trên thị trường</Label>
-          <div className="flex gap-2">
-            <Input
-              value={distInput}
-              onChange={(e) => setDistInput(e.target.value)}
-              placeholder="VD: Đại lý Bình Minh, DJI Store Vietnam..."
-              onKeyDown={(e) =>
-                e.key === "Enter" && (e.preventDefault(), addDist())
-              }
-            />
-            <Button type="button" onClick={addDist} variant="outline">
-              <Plus className="w-4 h-4" />
+          <div
+            className="flex items-center justify-between border rounded-xl p-3 bg-slate-50 border-dashed border-slate-350 hover:bg-slate-100/50 hover:shadow-xs transition-all cursor-pointer min-h-11"
+            onClick={() => setActiveModal("distributor")}
+          >
+            <div className="flex-1 min-w-0 flex flex-wrap gap-1.5 items-center">
+              {distributorArr.length > 0 ? (
+                distributorArr.map((tag) => (
+                  <Badge
+                    key={tag}
+                    variant="secondary"
+                    className="bg-primary/5 text-primary border border-primary/20 text-xs font-semibold py-0.5 px-2.5"
+                  >
+                    {tag}
+                  </Badge>
+                ))
+              ) : (
+                <span className="text-sm text-slate-400">
+                  Bấm để chọn nhà phân phối...
+                </span>
+              )}
+            </div>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="h-8 w-8 text-slate-400 p-0 rounded-full hover:bg-primary/10"
+            >
+              <Search className="w-4 h-4 text-slate-500" />
             </Button>
           </div>
-          {distributorArr.length > 0 && (
-            <div className="flex flex-wrap gap-2 pt-1">
-              {distributorArr.map((tag) => (
-                <Badge
-                  key={tag}
-                  variant="secondary"
-                  className="flex items-center gap-1"
-                >
-                  {tag}
-                  <X
-                    className="w-3.5 h-3.5 cursor-pointer text-slate-400 hover:text-slate-600"
-                    onClick={() => removeTag("distributor", tag)}
-                  />
-                </Badge>
-              ))}
-            </div>
-          )}
+          <p className="text-xs text-muted-foreground">
+            Các công ty lớn phân phối trên thị trường
+          </p>
         </div>
       </div>
 
@@ -222,12 +244,12 @@ export default function MaterialSuppliersStep({
           {/* Input row */}
           <div className="flex gap-2 items-end">
             <div className="flex-1 space-y-1">
-              <Label className="text-xs text-muted-foreground">Số lượng</Label>
+              <Label className="text-xs text-muted-foreground">Giá trị</Label>
               <Input
                 type="number"
                 value={quantity}
                 onChange={(e) => setQuantity(e.target.value)}
-                placeholder="VD: 500, 1, 25"
+                placeholder="VD: 500, 25"
                 min={0}
                 onKeyDown={(e) => {
                   if (e.key === "Enter") {
@@ -237,16 +259,33 @@ export default function MaterialSuppliersStep({
                 }}
               />
             </div>
-            <div className="w-36 space-y-1">
+            <div className="w-28 space-y-1">
               <Label className="text-xs text-muted-foreground">Đơn vị</Label>
               <Select value={unit} onValueChange={setUnit}>
-                <SelectTrigger>
+                <SelectTrigger className="text-left h-auto py-2">
                   <SelectValue placeholder="Chọn..." />
                 </SelectTrigger>
                 <SelectContent>
-                  {packagingUnits.map((u) => (
+                  {MEASURE_UNIT_OPTIONS.map((u) => (
                     <SelectItem key={u} value={u}>
                       {u}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="w-32 space-y-1">
+              <Label className="text-xs text-muted-foreground">
+                Quy cách chứa
+              </Label>
+              <Select value={packaging} onValueChange={setPackaging}>
+                <SelectTrigger className="text-left h-auto py-2">
+                  <SelectValue placeholder="Chọn..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {PACKAGING_OPTIONS.map((p) => (
+                    <SelectItem key={p} value={p}>
+                      {p}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -255,7 +294,7 @@ export default function MaterialSuppliersStep({
             <Button
               type="button"
               onClick={addPackagingSpec}
-              disabled={!quantity.trim() || !unit}
+              disabled={!quantity.trim() || !unit || !packaging}
               className="mb-0 shrink-0"
             >
               <Plus className="w-4 h-4 mr-1" />
@@ -325,6 +364,39 @@ export default function MaterialSuppliersStep({
           )}
         </div>
       </div>
+
+      <PartnerSelectorDialog
+        open={activeModal === "manufacturerOrigin"}
+        onOpenChange={(open) =>
+          setActiveModal(open ? "manufacturerOrigin" : null)
+        }
+        title="Chọn nhà sản xuất / Xuất xứ"
+        isMulti={false}
+        selectedNames={formData.manufacturerOrigin || []}
+        onConfirm={(names) =>
+          onFormFieldChange("manufacturerOrigin", names.slice(0, 1))
+        }
+      />
+
+      <PartnerSelectorDialog
+        open={activeModal === "importerRegistrant"}
+        onOpenChange={(open) =>
+          setActiveModal(open ? "importerRegistrant" : null)
+        }
+        title="Chọn nhà nhập khẩu / Đăng ký"
+        isMulti={true}
+        selectedNames={formData.importerRegistrant || []}
+        onConfirm={(names) => onFormFieldChange("importerRegistrant", names)}
+      />
+
+      <PartnerSelectorDialog
+        open={activeModal === "distributor"}
+        onOpenChange={(open) => setActiveModal(open ? "distributor" : null)}
+        title="Chọn nhà phân phối"
+        isMulti={true}
+        selectedNames={formData.distributor || []}
+        onConfirm={(names) => onFormFieldChange("distributor", names)}
+      />
     </div>
   );
 }

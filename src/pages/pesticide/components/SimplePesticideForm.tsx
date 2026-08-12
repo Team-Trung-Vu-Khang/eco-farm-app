@@ -1,4 +1,6 @@
+import { useState } from "react";
 import {
+  Badge,
   Button,
   Card,
   CardContent,
@@ -18,11 +20,15 @@ import {
   Image as ImageIcon,
   Info,
   Package,
+  Plus,
   Shield,
+  Tags,
   Upload,
+  X,
 } from "lucide-react";
 import type { PesticideDomain, PesticideFormData } from "../types";
 import { initialPesticidePurposes } from "../../pesticide-group/data/constants";
+import { commonHashtags } from "../data/constants";
 
 interface GroupOption {
   code: string;
@@ -38,34 +44,127 @@ const DOMAIN_GROUP_OPTIONS: Record<PesticideDomain, GroupOption[]> = {
     description: p.description,
   })),
   animal: [
-    { code: "ANTIBIOTIC", name: "Kháng sinh", description: "Điều trị nhiễm khuẩn, hô hấp, tiêu hóa" },
-    { code: "VACCINE", name: "Vaccine", description: "Phòng bệnh truyền nhiễm, tăng miễn dịch đàn" },
-    { code: "ANTIPARASITIC", name: "Thuốc kháng ký sinh trùng", description: "Trị giun sán, ve, bọ chét, ký sinh nội ngoại" },
-    { code: "PROBIOTIC_VET", name: "Chế phẩm sinh học thú y", description: "Vi sinh vật có lợi, enzyme, probiotic" },
-    { code: "ANTIFUNGAL_VET", name: "Thuốc kháng nấm", description: "Điều trị nấm da, nấm nội tạng" },
-    { code: "VITAMIN_MINERAL", name: "Vitamin & khoáng chất", description: "Bổ sung dinh dưỡng, tăng sức đề kháng" },
-    { code: "ANALGESIC_VET", name: "Thuốc giảm đau / hạ sốt", description: "Kiểm soát đau, hạ thân nhiệt" },
-    { code: "OTHER_VET", name: "Các nhóm khác", description: "Thuốc trợ tim, hormone, dịch truyền, v.v." },
+    {
+      code: "ANTIBIOTIC",
+      name: "Kháng sinh",
+      description: "Điều trị nhiễm khuẩn, hô hấp, tiêu hóa",
+    },
+    {
+      code: "VACCINE",
+      name: "Vaccine",
+      description: "Phòng bệnh truyền nhiễm, tăng miễn dịch đàn",
+    },
+    {
+      code: "ANTIPARASITIC",
+      name: "Thuốc kháng ký sinh trùng",
+      description: "Trị giun sán, ve, bọ chét, ký sinh nội ngoại",
+    },
+    {
+      code: "PROBIOTIC_VET",
+      name: "Chế phẩm sinh học thú y",
+      description: "Vi sinh vật có lợi, enzyme, probiotic",
+    },
+    {
+      code: "ANTIFUNGAL_VET",
+      name: "Thuốc kháng nấm",
+      description: "Điều trị nấm da, nấm nội tạng",
+    },
+    {
+      code: "VITAMIN_MINERAL",
+      name: "Vitamin & khoáng chất",
+      description: "Bổ sung dinh dưỡng, tăng sức đề kháng",
+    },
+    {
+      code: "ANALGESIC_VET",
+      name: "Thuốc giảm đau / hạ sốt",
+      description: "Kiểm soát đau, hạ thân nhiệt",
+    },
+    {
+      code: "OTHER_VET",
+      name: "Các nhóm khác",
+      description: "Thuốc trợ tim, hormone, dịch truyền, v.v.",
+    },
   ],
   aquaculture: [
-    { code: "WATER_TREATMENT", name: "Thuốc xử lý nước", description: "Cân bằng pH, độ kiềm, oxy hòa tan" },
-    { code: "ANTIFUNGAL_AQ", name: "Thuốc kháng nấm thủy sản", description: "Trị nấm trên tôm cá, ký sinh ngoại" },
-    { code: "DISINFECTANT_AQ", name: "Hóa chất khử trùng ao", description: "Sát khuẩn ao nuôi, diệt mầm bệnh" },
-    { code: "ENV_IMPROVER", name: "Chất cải thiện môi trường", description: "Xử lý bùn đáy, khí độc NH3, H2S" },
-    { code: "ANTIBACTERIAL_AQ", name: "Thuốc kháng khuẩn thủy sản", description: "Điều trị nhiễm khuẩn đường ruột, gan tụy" },
-    { code: "PROBIOTIC_AQ", name: "Chế phẩm sinh học thủy sản", description: "Probiotic, enzyme, vi sinh phân hủy hữu cơ" },
-    { code: "OTHER_AQ", name: "Các nhóm khác", description: "Khoáng, vitamin, chất tăng đề kháng thủy sản" },
+    {
+      code: "WATER_TREATMENT",
+      name: "Thuốc xử lý nước",
+      description: "Cân bằng pH, độ kiềm, oxy hòa tan",
+    },
+    {
+      code: "ANTIFUNGAL_AQ",
+      name: "Thuốc kháng nấm thủy sản",
+      description: "Trị nấm trên tôm cá, ký sinh ngoại",
+    },
+    {
+      code: "DISINFECTANT_AQ",
+      name: "Hóa chất khử trùng ao",
+      description: "Sát khuẩn ao nuôi, diệt mầm bệnh",
+    },
+    {
+      code: "ENV_IMPROVER",
+      name: "Chất cải thiện môi trường",
+      description: "Xử lý bùn đáy, khí độc NH3, H2S",
+    },
+    {
+      code: "ANTIBACTERIAL_AQ",
+      name: "Thuốc kháng khuẩn thủy sản",
+      description: "Điều trị nhiễm khuẩn đường ruột, gan tụy",
+    },
+    {
+      code: "PROBIOTIC_AQ",
+      name: "Chế phẩm sinh học thủy sản",
+      description: "Probiotic, enzyme, vi sinh phân hủy hữu cơ",
+    },
+    {
+      code: "OTHER_AQ",
+      name: "Các nhóm khác",
+      description: "Khoáng, vitamin, chất tăng đề kháng thủy sản",
+    },
   ],
 };
 
-const DOMAIN_LABELS: Record<PesticideDomain, { item: string; groupLabel: string }> = {
+const DOMAIN_LABELS: Record<
+  PesticideDomain,
+  { item: string; groupLabel: string }
+> = {
   cultivation: { item: "Thuốc BVTV", groupLabel: "Nhóm thuốc BVTV" },
   animal: { item: "Thuốc / Vaccine", groupLabel: "Nhóm thuốc chăn nuôi" },
   aquaculture: { item: "Thuốc / Hóa chất", groupLabel: "Nhóm thuốc thủy sản" },
 };
 
-// Simple packaging units (count + unit)
-const UNIT_OPTIONS = ["Chai", "Lọ", "Gói", "Bọc", "Can", "Bao", "Thùng", "Hộp", "Ống", "Viên"];
+// Predefined measurement units
+const MEASURE_UNIT_OPTIONS = [
+  "ml",
+  "L",
+  "g",
+  "kg",
+  "viên",
+  "ống",
+  "vỉ",
+  "tấn",
+  "m",
+  "mm",
+  "cc",
+  "IU",
+];
+
+// Predefined packaging formats
+const PACKAGING_OPTIONS = [
+  "Chai",
+  "Lọ",
+  "Gói",
+  "Hộp",
+  "Bao",
+  "Bì",
+  "Can",
+  "Thùng",
+  "Túi",
+  "Vỉ",
+  "Ống",
+  "Chậu",
+  "Khay",
+];
 
 interface SimplePesticideFormProps {
   formData: PesticideFormData;
@@ -90,6 +189,22 @@ export default function SimplePesticideForm({
   const labels = DOMAIN_LABELS[domain];
   const groupOptions = DOMAIN_GROUP_OPTIONS[domain];
   const isValid = Boolean(formData.name);
+  const [paramHashtag, setParamHashtag] = useState("");
+
+  const onAddHashtag = () => {
+    const tag = paramHashtag.trim();
+    if (tag && !formData.hashtags.includes(tag)) {
+      onFormFieldChange("hashtags", [...formData.hashtags, tag]);
+      setParamHashtag("");
+    }
+  };
+
+  const onRemoveHashtag = (tag: string) => {
+    onFormFieldChange(
+      "hashtags",
+      formData.hashtags.filter((t) => t !== tag),
+    );
+  };
 
   return (
     <div className="max-w-2xl mx-auto space-y-6 pb-24">
@@ -101,8 +216,9 @@ export default function SimplePesticideForm({
         <div>
           <h3 className="font-semibold">Thông tin cơ bản</h3>
           <p className="text-sm text-blue-700 mt-0.5">
-            Nhập nhanh những thông tin cần thiết nhất. Bật <span className="font-bold">Thông tin chuyên sâu</span> để
-            khai báo đầy đủ hoạt chất, liều lượng, pháp lý và nhà cung cấp.
+            Nhập nhanh những thông tin cần thiết nhất. Bật{" "}
+            <span className="font-bold">Thông tin chuyên sâu</span> để khai báo
+            đầy đủ hoạt chất, liều lượng, pháp lý và nhà cung cấp.
           </p>
         </div>
       </div>
@@ -134,8 +250,12 @@ export default function SimplePesticideForm({
               <Upload className="w-7 h-7" />
             </div>
             <div>
-              <p className="font-medium text-slate-700 text-sm">Tải lên ảnh sản phẩm</p>
-              <p className="text-xs text-muted-foreground mt-0.5">Kéo thả hoặc click để chọn — PNG, JPG tối đa 5MB</p>
+              <p className="font-medium text-slate-700 text-sm">
+                Tải lên ảnh sản phẩm
+              </p>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Kéo thả hoặc click để chọn — PNG, JPG tối đa 5MB
+              </p>
             </div>
             <input
               type="file"
@@ -159,9 +279,14 @@ export default function SimplePesticideForm({
             <Package className="w-4 h-4 text-slate-400" />
             {labels.groupLabel}
           </Label>
-          <Select value={formData.group} onValueChange={(v) => onFormFieldChange("group", v)}>
+          <Select
+            value={formData.group}
+            onValueChange={(v) => onFormFieldChange("group", v)}
+          >
             <SelectTrigger className="text-left h-auto py-2">
-              <SelectValue placeholder={`Chọn nhóm ${labels.item.toLowerCase()}...`} />
+              <SelectValue
+                placeholder={`Chọn nhóm ${labels.item.toLowerCase()}...`}
+              />
             </SelectTrigger>
             <SelectContent>
               {groupOptions.map((g) => (
@@ -204,18 +329,21 @@ export default function SimplePesticideForm({
             <Input
               type="number"
               min={0}
-              placeholder="Số lượng (VD: 100)"
+              placeholder="Giá trị (VD: 500)"
               value={formData.quantity}
               onChange={(e) => onFormFieldChange("quantity", e.target.value)}
             />
           </div>
-          <div className="w-36">
-            <Select value={formData.unit} onValueChange={(v) => onFormFieldChange("unit", v)}>
-              <SelectTrigger>
+          <div className="w-28">
+            <Select
+              value={formData.unit}
+              onValueChange={(v) => onFormFieldChange("unit", v)}
+            >
+              <SelectTrigger className="text-left h-auto py-2">
                 <SelectValue placeholder="Đơn vị" />
               </SelectTrigger>
               <SelectContent>
-                {UNIT_OPTIONS.map((u) => (
+                {MEASURE_UNIT_OPTIONS.map((u) => (
                   <SelectItem key={u} value={u}>
                     {u}
                   </SelectItem>
@@ -223,9 +351,27 @@ export default function SimplePesticideForm({
               </SelectContent>
             </Select>
           </div>
+          <div className="w-32">
+            <Select
+              value={formData.packaging}
+              onValueChange={(v) => onFormFieldChange("packaging", v)}
+            >
+              <SelectTrigger className="text-left h-auto py-2">
+                <SelectValue placeholder="Quy cách" />
+              </SelectTrigger>
+              <SelectContent>
+                {PACKAGING_OPTIONS.map((p) => (
+                  <SelectItem key={p} value={p}>
+                    {p}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
         <p className="text-xs text-muted-foreground">
-          VD: 50 Chai, 100 Lọ, 1 Bao… Bổ sung thêm quy cách chi tiết ở chế độ chuyên sâu.
+          VD: 500 ml / Chai, 25 kg / Bao, 10 viên / Vỉ… Bổ sung thêm quy cách chi tiết ở chế độ
+          chuyên sâu.
         </p>
       </div>
 
@@ -253,14 +399,80 @@ export default function SimplePesticideForm({
         />
       </div>
 
+      {/* Card: Hashtags */}
+      <div className="bg-white p-6 rounded-xl shadow-sm border space-y-4">
+        <h3 className="font-semibold text-lg flex items-center gap-2">
+          <Tags className="w-5 h-5 text-primary" />
+          Hashtags
+        </h3>
+        <div className="space-y-3">
+          <Label>Thêm Hashtag</Label>
+          <div className="flex gap-2">
+            <Input
+              value={paramHashtag}
+              onChange={(e) => setParamHashtag(e.target.value)}
+              placeholder="Nhập hashtag..."
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  onAddHashtag();
+                }
+              }}
+            />
+            <Button type="button" onClick={onAddHashtag} variant="outline">
+              <Plus className="w-4 h-4" />
+            </Button>
+          </div>
+          <div className="flex flex-wrap gap-2 pt-2">
+            {commonHashtags.map((tag) => (
+              <Badge
+                key={tag}
+                variant="outline"
+                className={`cursor-pointer transition-all ${
+                  formData.hashtags.includes(tag)
+                    ? "bg-primary/10 border-primary text-primary"
+                    : "hover:bg-slate-100"
+                }`}
+                onClick={() =>
+                  formData.hashtags.includes(tag)
+                    ? onRemoveHashtag(tag)
+                    : onFormFieldChange("hashtags", [
+                        ...formData.hashtags,
+                        tag,
+                      ])
+                }
+              >
+                #{tag}
+              </Badge>
+            ))}
+            {formData.hashtags
+              .filter((tag) => !commonHashtags.includes(tag))
+              .map((tag) => (
+                <Badge
+                  key={tag}
+                  variant="secondary"
+                  className="flex items-center gap-1"
+                >
+                  #{tag}
+                  <X
+                    className="w-3 h-3 cursor-pointer"
+                    onClick={() => onRemoveHashtag(tag)}
+                  />
+                </Badge>
+              ))}
+          </div>
+        </div>
+      </div>
+
       {/* ── Info card ── */}
       <Card className="bg-amber-50/50 border-amber-100">
         <CardContent className="p-4 flex items-start gap-2">
           <Info className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
           <p className="text-xs text-amber-800">
-            Chế độ cơ bản giúp tạo nhanh {labels.item.toLowerCase()} với thông tin tối thiểu. Bật{" "}
-            <span className="font-bold">Thông tin chuyên sâu</span> để khai báo đầy đủ hoạt chất,
-            liều lượng, an toàn pháp lý và nhà cung cấp.
+            Chế độ cơ bản giúp tạo nhanh {labels.item.toLowerCase()} với thông
+            tin tối thiểu. Bật{" "}
+            <span className="font-bold">Thông tin chuyên sâu</span> để khai báo
+            đầy đủ hoạt chất, liều lượng, an toàn pháp lý và nhà cung cấp.
           </p>
         </CardContent>
       </Card>

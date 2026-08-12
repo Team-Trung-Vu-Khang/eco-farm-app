@@ -12,7 +12,8 @@ import { MedicineCategoryTabContent } from "../shared-medicine-group/components/
 type AquacultureMedicineTab = "function" | "target_species" | "control_residue";
 
 const AquacultureMedicineGroupPage = () => {
-  const [activeTab, setActiveTab] = useState<AquacultureMedicineTab>("function");
+  const [activeTab, setActiveTab] =
+    useState<AquacultureMedicineTab>("function");
 
   return (
     <PageWrapper
@@ -29,11 +30,10 @@ const AquacultureMedicineGroupPage = () => {
             <Activity className="w-4 h-4" />
             Công dụng
           </TabsTrigger>
-          <TabsTrigger value="target_species" className="flex items-center gap-2">
-            <Fish className="w-4 h-4" />
-            Đối tượng sử dụng
-          </TabsTrigger>
-          <TabsTrigger value="control_residue" className="flex items-center gap-2">
+          <TabsTrigger
+            value="control_residue"
+            className="flex items-center gap-2"
+          >
             <TestTube className="w-4 h-4" />
             Mức độ kiểm soát & dư lượng
           </TabsTrigger>
@@ -42,21 +42,21 @@ const AquacultureMedicineGroupPage = () => {
         <TabsContent value="function">
           <MedicineCategoryTabContent
             catalog="aquaculture-medicine-functions"
-            title="Phân loại theo Công dụng"
+            title="Công dụng"
             description="Ví dụ: Thuốc kháng sinh, Kháng nấm, Xử lý môi trường,..."
           />
         </TabsContent>
         <TabsContent value="target_species">
           <MedicineCategoryTabContent
             catalog="aquaculture-medicine-target-species"
-            title="Phân loại theo Đối tượng sử dụng"
+            title="Đối tượng áp dụng"
             description="Ví dụ: Tôm, Cá, Nhuyễn thể,..."
           />
         </TabsContent>
         <TabsContent value="control_residue">
           <MedicineCategoryTabContent
             catalog="aquaculture-medicine-control-residues"
-            title="Phân loại theo Mức độ kiểm soát & dư lượng"
+            title="Mức độ kiểm soát & dư lượng"
             description="Ví dụ: Kháng sinh, Hóa chất xử lý nước, Vaccine,..."
           />
         </TabsContent>

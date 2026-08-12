@@ -93,7 +93,30 @@ export const createPesticideFormDataFromItem = (
   technicalDocContent: "",
   technicalDocFile: null,
   selectedSupplierId: "sup1",
-  quantity: "",
-  unit: "",
-  packaging: item.packagingSpecs?.[0] ?? "",
+  ...parsePackagingSpec(item.packagingSpecs?.[0]),
 });
+
+export const parsePackagingSpec = (spec?: string) => {
+  if (!spec) return { quantity: "", unit: "", packaging: "" };
+  if (spec.includes(" / ")) {
+    const parts = spec.split(" / ");
+    const left = parts[0].trim();
+    const packaging = parts[1].trim();
+    const spaceIdx = left.indexOf(" ");
+    if (spaceIdx !== -1) {
+      const quantity = left.substring(0, spaceIdx).trim();
+      const unit = left.substring(spaceIdx + 1).trim();
+      return { quantity, unit, packaging };
+    }
+    return { quantity: left, unit: "", packaging };
+  }
+  const numMatch = spec.match(/\d+/);
+  if (numMatch) {
+    const quantity = numMatch[0];
+    const idx = spec.indexOf(quantity);
+    const packaging = spec.substring(0, idx).trim();
+    const unit = spec.substring(idx + quantity.length).trim();
+    return { quantity, unit, packaging };
+  }
+  return { quantity: "", unit: "", packaging: spec };
+};

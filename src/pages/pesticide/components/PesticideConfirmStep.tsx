@@ -35,13 +35,47 @@ export default function PesticideConfirmStep({ formData, domain }: PesticideConf
     void convert();
   }, [formData.firstAid]);
 
+  const isCultivation = domain === "cultivation" || !domain;
+  const isAnimal = domain === "animal";
+  const isAquaculture = domain === "aquaculture";
+
   const toxLabel = toxicityLevels.find((t) => t.value === formData.toxicityLevel);
   const toxColorMap: Record<string, string> = {
-    Ia: "bg-red-100 text-red-700",
-    Ib: "bg-orange-100 text-orange-700",
-    II: "bg-yellow-100 text-yellow-700",
-    III: "bg-blue-100 text-blue-700",
-    U: "bg-green-100 text-green-700",
+    Ia: "bg-red-100 text-red-700 border-red-200",
+    Ib: "bg-orange-100 text-orange-700 border-orange-200",
+    II: "bg-yellow-100 text-yellow-700 border-yellow-200",
+    III: "bg-blue-100 text-blue-700 border-blue-200",
+    U: "bg-green-100 text-green-700 border-green-200",
+  };
+
+  const getToxicityLabel = () => {
+    if (isCultivation) return "Nhóm độc";
+    if (isAnimal) return "Mức độ kiểm soát";
+    return "Mức độ kiểm soát & dư lượng";
+  };
+
+  const getToxicityValue = () => {
+    if (isCultivation) {
+      return toxLabel?.label ?? formData.toxicityLevel;
+    }
+    return formData.toxicityLevel;
+  };
+
+  const getToxicityBadgeClass = () => {
+    if (isCultivation) {
+      return toxColorMap[formData.toxicityLevel] ?? "bg-slate-100 text-slate-700 border-slate-200";
+    }
+    const val = formData.toxicityLevel;
+    if (val.includes("OTC") || val.includes("An toàn")) {
+      return "bg-green-100 text-green-700 border-green-200";
+    }
+    if (val.includes("kê đơn") || val.includes("cách ly") || val.includes("WITHDRAWAL")) {
+      return "bg-yellow-100 text-yellow-700 border-yellow-200";
+    }
+    if (val.includes("cấm") || val.includes("hạn chế") || val.includes("RESTRICTED") || val.includes("BANNED")) {
+      return "bg-red-100 text-red-700 border-red-200";
+    }
+    return "bg-slate-100 text-slate-700 border-slate-200";
   };
 
   return (
@@ -68,18 +102,28 @@ export default function PesticideConfirmStep({ formData, domain }: PesticideConf
               <Row label="Hàm lượng" value={formData.concentration} />
               <Row label="Nhóm phân loại" value={formData.group} />
               <Row label="Dạng bào chế" value={formData.form} />
+              {isCultivation && <Row label="Nguồn gốc" value={formData.origin} />}
               <div className="col-span-2">
                 <span className="text-muted-foreground text-sm">Hoạt chất:</span>{" "}
                 <span className="font-medium text-sm">{formData.activeIngredient}</span>
               </div>
-              <Row label="Cách xâm nhập" value={formData.actionType} />
-              <Row label="Nhóm MoA" value={formData.moaGroup} />
+              <Row
+                label={
+                  isCultivation
+                    ? "Cách xâm nhập"
+                    : isAnimal
+                      ? "Phân loại sử dụng (Đường dùng)"
+                      : "Cách dùng / Xâm nhập"
+                }
+                value={formData.actionType}
+              />
+              {isCultivation && <Row label="Nhóm MoA" value={formData.moaGroup} />}
               {formData.toxicityLevel && (
                 <div className="col-span-2 flex items-center gap-2">
                   <ShieldAlert className="w-4 h-4 text-amber-500" />
-                  <span className="text-muted-foreground text-sm">Nhóm độc:</span>
-                  <span className={`px-2 py-0.5 rounded text-xs font-semibold ${toxColorMap[formData.toxicityLevel] ?? ""}`}>
-                    {toxLabel?.label ?? formData.toxicityLevel}
+                  <span className="text-muted-foreground text-sm">{getToxicityLabel()}:</span>
+                  <span className={`px-2 py-0.5 rounded text-xs font-semibold border ${getToxicityBadgeClass()}`}>
+                    {getToxicityValue()}
                   </span>
                 </div>
               )}

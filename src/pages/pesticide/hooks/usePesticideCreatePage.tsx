@@ -107,7 +107,12 @@ export function usePesticideCreatePage() {
       importerRegistrant: formData.importerRegistrant || undefined,
       distributor: formData.distributor || undefined,
       referencePrice: formData.referencePrice || undefined,
-      packagingSpecs: formData.packagingSpecs.length > 0 ? formData.packagingSpecs : undefined,
+      packagingSpecs:
+        formData.packagingSpecs.length > 0
+          ? formData.packagingSpecs
+          : formData.quantity && formData.unit && formData.packaging
+            ? [`${formData.quantity} ${formData.unit} / ${formData.packaging}`]
+            : undefined,
       status: "active" as const,
       domain: "cultivation" as const,
     };
@@ -138,6 +143,7 @@ export function usePesticideCreatePage() {
       title: "Định danh & Phân loại",
       content: (
         <PesticideBasicInfoStep
+          domain="cultivation"
           formData={formData}
           paramHashtag={paramHashtag}
           onParamHashtagChange={setParamHashtag}

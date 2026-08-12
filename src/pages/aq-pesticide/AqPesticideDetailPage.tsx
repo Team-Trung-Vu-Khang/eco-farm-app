@@ -84,6 +84,19 @@ const AqPesticideDetailPage = () => {
 
   const toxLabel = toxicityLevels.find((t) => t.value === item.toxicityLevel);
 
+  const getControlLevelColor = (val: string) => {
+    if (val.includes("OTC") || val.includes("An toàn")) {
+      return "bg-green-100 text-green-700 border-green-300";
+    }
+    if (val.includes("kê đơn") || val.includes("cách ly") || val.includes("WITHDRAWAL")) {
+      return "bg-yellow-100 text-yellow-700 border-yellow-300";
+    }
+    if (val.includes("cấm") || val.includes("hạn chế") || val.includes("RESTRICTED") || val.includes("BANNED")) {
+      return "bg-red-100 text-red-700 border-red-300";
+    }
+    return "bg-slate-50 border-slate-200 text-slate-600";
+  };
+
   return (
     <PageWrapper
       title="Chi tiết thuốc thủy sản"
@@ -160,9 +173,9 @@ const AqPesticideDetailPage = () => {
                   )}
                   {item.toxicityLevel && (
                     <span
-                      className={`px-2 py-0.5 rounded text-xs font-semibold border ${toxicityColorMap[item.toxicityLevel] ?? ""}`}
+                      className={`px-2 py-0.5 rounded text-xs font-semibold border ${getControlLevelColor(item.toxicityLevel)}`}
                     >
-                      WHO {toxLabel?.label ?? item.toxicityLevel}
+                      {item.toxicityLevel}
                     </span>
                   )}
                 </div>
@@ -187,17 +200,16 @@ const AqPesticideDetailPage = () => {
                 />
                 <InfoRow label="Dạng bào chế" value={item.form} />
                 <InfoRow label="Cách dùng / Xâm nhập" value={item.actionType} />
-                <InfoRow label="Nhóm MoA" value={item.moaGroup} />
                 {item.toxicityLevel && (
                   <div>
                     <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1 flex items-center gap-1">
                       <ShieldAlert className="w-3.5 h-3.5 text-amber-500" />{" "}
-                      Nhóm độc WHO
+                      Mức độ kiểm soát & dư lượng
                     </h4>
                     <span
-                      className={`px-2 py-1 rounded text-sm font-semibold border ${toxicityColorMap[item.toxicityLevel] ?? ""}`}
+                      className={`px-2 py-1 rounded text-sm font-semibold border ${getControlLevelColor(item.toxicityLevel)}`}
                     >
-                      {toxLabel?.label ?? item.toxicityLevel}
+                      {item.toxicityLevel}
                     </span>
                   </div>
                 )}

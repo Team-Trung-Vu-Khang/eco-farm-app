@@ -60,10 +60,11 @@ export function useAhMaterialCreatePage() {
     const payload = {
       code: formData.code,
       name: formData.name,
-      type: formData.type,
       description: formData.description,
       status: "active" as const,
       materialGroupId: formData.materialGroupId,
+      technologyLevelId: formData.technologyLevelId,
+      valueChainId: formData.valueChainId,
       manufacturerOrigin: formData.manufacturerOrigin,
       importerRegistrant: formData.importerRegistrant,
       distributor: formData.distributor,
@@ -123,6 +124,7 @@ export function useAhMaterialCreatePage() {
   return {
     isEdit,
     formData,
+    updateField,
     confirmOpen,
     setConfirmOpen,
     steps,
