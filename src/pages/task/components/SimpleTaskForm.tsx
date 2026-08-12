@@ -1,6 +1,7 @@
 import {
   Badge,
   Button,
+  Calendar,
   Card,
   CardContent,
   Checkbox,
@@ -9,18 +10,21 @@ import {
   Textarea,
   cn,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import { vi } from "date-fns/locale";
 import {
   ArrowLeft,
-  Calendar,
+  Calendar as CalendarIcon,
   ClipboardList,
   Info,
   RefreshCw,
-  Search,
-  User,
+  X,
 } from "lucide-react";
-import { useMemo, useState, type Dispatch, type SetStateAction } from "react";
-import type { Personnel } from "../../../stores/usePersonnelStore";
-import { DAYS_OF_WEEK, getFrequencyText } from "../../plan/utils/task";
+import type { CSSProperties, Dispatch, SetStateAction } from "react";
+import {
+  formatLocalISODate,
+  getRepeatDatesText,
+  parseLocalISODate,
+} from "../../plan/utils/task";
 import type { TaskCreateFormData } from "../TaskCreatePage";
 
 const PRIORITY_OPTIONS = [
@@ -53,7 +57,6 @@ const PRIORITY_OPTIONS = [
 interface SimpleTaskFormProps {
   formData: TaskCreateFormData;
   setFormData: Dispatch<SetStateAction<TaskCreateFormData>>;
-  personnel: Personnel[];
   handleComplete: () => void;
   goBack: () => void;
   completeLabel?: string;
@@ -62,23 +65,18 @@ interface SimpleTaskFormProps {
 export default function SimpleTaskForm({
   formData,
   setFormData,
-  personnel,
   handleComplete,
   goBack,
   completeLabel = "Hoàn tất & Khởi tạo",
 }: SimpleTaskFormProps) {
-  const [personnelSearch, setPersonnelSearch] = useState("");
-
   const mainSubtask = formData.tasks[0];
   const isRepeating = Boolean(mainSubtask?.isRepeating);
-  const repeatDays = mainSubtask?.repeatDays || [];
-  const repeatWeeks = mainSubtask?.repeatWeeks || 1;
+  const repeatDates = mainSubtask?.repeatDates || [];
 
   const updateSubtask = (
     patch: Partial<{
       isRepeating: boolean;
-      repeatDays: number[];
-      repeatWeeks: number;
+      repeatDates: string[];
     }>,
   ) => {
     setFormData((prev) => {
@@ -101,28 +99,14 @@ export default function SimpleTaskForm({
       setFormData((prev) => ({ ...prev, tasks: [] }));
       return;
     }
-    updateSubtask({ isRepeating: true, repeatDays, repeatWeeks });
+    updateSubtask({ isRepeating: true, repeatDates });
   };
-
-  const toggleAssignee = (name: string) => {
-    setFormData((prev) => ({
-      ...prev,
-      assignedTo: prev.assignedTo.includes(name)
-        ? prev.assignedTo.filter((n) => n !== name)
-        : [...prev.assignedTo, name],
-    }));
-  };
-
-  const filteredPersonnel = useMemo(() => {
-    const query = personnelSearch.trim().toLowerCase();
-    if (!query) return personnel;
-    return personnel.filter((p) => p.fullName.toLowerCase().includes(query));
-  }, [personnel, personnelSearch]);
 
   const isValid =
     Boolean(formData.name) &&
     Boolean(formData.startDate) &&
-    (isRepeating ? repeatDays.length > 0 : Boolean(formData.endDate));
+    Boolean(formData.endDate) &&
+    (!isRepeating || repeatDates.length > 0);
 
   return (
     <div className="max-w-2xl mx-auto space-y-6 pb-24">
@@ -194,7 +178,7 @@ export default function SimpleTaskForm({
               Ngày bắt đầu
             </span>
             <div className="relative">
-              <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 z-10" />
+              <CalendarIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 z-10" />
               <Input
                 type="date"
                 className="pl-10 h-10 text-sm bg-slate-50 border-slate-200"
@@ -209,45 +193,25 @@ export default function SimpleTaskForm({
             </div>
           </div>
 
-          {!isRepeating ? (
-            <div className="space-y-1.5">
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                Ngày kết thúc
-              </span>
-              <div className="relative">
-                <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 z-10" />
-                <Input
-                  type="date"
-                  className="pl-10 h-10 text-sm bg-slate-50 border-slate-200"
-                  value={formData.endDate}
-                  onChange={(e) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      endDate: e.target.value,
-                    }))
-                  }
-                />
-              </div>
-            </div>
-          ) : (
-            <div className="space-y-1.5">
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                Số tuần lặp lại
-              </span>
+          <div className="space-y-1.5">
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+              Ngày kết thúc
+            </span>
+            <div className="relative">
+              <CalendarIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 z-10" />
               <Input
-                type="number"
-                min={1}
-                className="h-10 text-sm bg-slate-50 border-slate-200 font-bold"
-                value={repeatWeeks || ""}
-                placeholder="Số tuần..."
+                type="date"
+                className="pl-10 h-10 text-sm bg-slate-50 border-slate-200"
+                value={formData.endDate}
                 onChange={(e) =>
-                  updateSubtask({
-                    repeatWeeks: parseInt(e.target.value, 10) || 1,
-                  })
+                  setFormData((prev) => ({
+                    ...prev,
+                    endDate: e.target.value,
+                  }))
                 }
               />
             </div>
-          )}
+          </div>
         </div>
 
         <div className="flex items-center gap-2 p-3 rounded-xl border border-slate-100 bg-slate-50/50">
@@ -268,99 +232,55 @@ export default function SimpleTaskForm({
         </div>
 
         {isRepeating && (
-          <div className="space-y-3 p-3 bg-blue-50/50 rounded-xl border border-blue-100">
-            <div className="flex flex-wrap gap-2 justify-between">
-              {DAYS_OF_WEEK.map((day) => {
-                const isSelected = repeatDays.includes(day.value);
-                return (
-                  <button
-                    key={day.value}
-                    type="button"
-                    onClick={() => {
-                      const newDays = isSelected
-                        ? repeatDays.filter((d) => d !== day.value)
-                        : [...repeatDays, day.value];
-                      updateSubtask({ repeatDays: newDays });
-                    }}
-                    className={cn(
-                      "w-8 h-8 rounded-full text-[10px] font-bold transition-all border",
-                      isSelected
-                        ? "bg-blue-600 border-blue-600 text-white shadow-sm"
-                        : "bg-white border-slate-200 text-slate-400 hover:border-blue-300 hover:text-blue-500",
-                    )}
-                  >
-                    {day.label}
-                  </button>
-                );
-              })}
-            </div>
-            <div className="pt-2 border-t border-blue-100/50">
-              <p className="text-[11px] font-medium text-blue-700 italic">
-                {getFrequencyText(repeatDays, repeatWeeks)}
+          <div className="space-y-3 p-3 bg-white rounded-xl border border-blue-100">
+            <div className="flex w-full items-center justify-between">
+              <p className="text-xs font-bold text-slate-700">
+                Chọn các ngày lặp lại
               </p>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="h-7 px-2 text-[11px] text-slate-500 hover:text-rose-600 hover:bg-rose-50"
+                disabled={repeatDates.length === 0}
+                onClick={() => updateSubtask({ repeatDates: [] })}
+              >
+                <X className="w-3 h-3 mr-1" />
+                Xóa
+              </Button>
+            </div>
+            <Calendar
+              mode="multiple"
+              locale={vi}
+              selected={repeatDates.map(parseLocalISODate)}
+              onSelect={(dates) =>
+                updateSubtask({
+                  repeatDates: (dates || []).map(formatLocalISODate),
+                })
+              }
+              disabled={{
+                before: new Date(new Date().setHours(0, 0, 0, 0)),
+              }}
+              className="mx-auto w-1/2 bg-white"
+              style={{ "--cell-size": "3.25rem" } as CSSProperties}
+            />
+            <div className="pt-2 border-t border-blue-100/50">
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-[11px] font-medium text-blue-700 italic">
+                  {getRepeatDatesText(repeatDates)}
+                </p>
+                {repeatDates.length > 0 && (
+                  <Badge
+                    variant="outline"
+                    className="shrink-0 bg-white text-[10px] font-bold text-blue-700 border-blue-200"
+                  >
+                    {repeatDates.length} ngày
+                  </Badge>
+                )}
+              </div>
             </div>
           </div>
         )}
-      </div>
-
-      <div className="space-y-2">
-        <div className="flex items-center justify-between">
-          <Label>Người phụ trách</Label>
-          <Badge
-            variant="outline"
-            className="text-[10px] bg-slate-50 font-bold"
-          >
-            {formData.assignedTo.length} người
-          </Badge>
-        </div>
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
-          <Input
-            placeholder="Tìm theo tên..."
-            className="pl-10 h-9 text-sm"
-            value={personnelSearch}
-            onChange={(e) => setPersonnelSearch(e.target.value)}
-          />
-        </div>
-        <div className="max-h-48 overflow-y-auto space-y-1.5 rounded-xl border border-slate-100 bg-slate-50/40 p-2">
-          {filteredPersonnel.length === 0 && (
-            <p className="text-xs text-slate-400 italic text-center py-4">
-              Không tìm thấy nhân sự
-            </p>
-          )}
-          {filteredPersonnel.map((p) => {
-            const isSelected = formData.assignedTo.includes(p.fullName);
-            return (
-              <button
-                key={p.id}
-                type="button"
-                onClick={() => toggleAssignee(p.fullName)}
-                className={cn(
-                  "w-full flex items-center gap-2.5 rounded-lg border p-2 text-left transition-all",
-                  isSelected
-                    ? "border-blue-200 bg-blue-50"
-                    : "border-transparent bg-white hover:border-slate-200",
-                )}
-              >
-                <div className="h-7 w-7 rounded-full bg-slate-100 border overflow-hidden flex items-center justify-center shrink-0">
-                  {p.avatar ? (
-                    <img
-                      src={p.avatar}
-                      alt={p.fullName}
-                      className="h-full w-full object-cover"
-                    />
-                  ) : (
-                    <User className="w-3.5 h-3.5 text-slate-400" />
-                  )}
-                </div>
-                <span className="text-xs font-semibold text-slate-700 truncate flex-1">
-                  {p.fullName}
-                </span>
-                <Checkbox checked={isSelected} />
-              </button>
-            );
-          })}
-        </div>
       </div>
 
       <div className="space-y-2">

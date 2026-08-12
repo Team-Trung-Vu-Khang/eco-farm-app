@@ -2,6 +2,7 @@ import PageWrapper from "@/components/PageWrapper";
 import {
   Badge,
   Button,
+  Calendar,
   Card,
   CardContent,
   CardHeader,
@@ -50,8 +51,9 @@ import {
   Users,
   X,
 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type CSSProperties } from "react";
 import { useLocation, useParams } from "wouter";
+import { vi } from "date-fns/locale";
 
 import useAmendmentPlanStore from "../../stores/useAmendmentPlanStore";
 import usePersonnelStore from "../../stores/usePersonnelStore";
@@ -66,7 +68,12 @@ import type {
   MaterialAllocation,
   TaskAllocation,
 } from "../plan/types";
-import { DAYS_OF_WEEK, getFrequencyText } from "../plan/utils/task";
+import {
+  formatLocalISODate,
+  getFrequencyText,
+  getRepeatDatesText,
+  parseLocalISODate,
+} from "../plan/utils/task";
 
 type TaskObjectiveType =
   | "phat-sinh"
@@ -108,8 +115,7 @@ type TaskCreateFormData = {
   startDate: string;
   endDate: string;
   isRepeating: boolean;
-  repeatDays: number[];
-  repeatWeeks: number;
+  repeatDates: string[];
   priority: "low" | "medium" | "high";
   description: string;
   materials: MaterialAllocation[];
@@ -150,8 +156,7 @@ export default function TaskEditPage() {
     startDate: new Date().toISOString().split("T")[0],
     endDate: new Date().toISOString().split("T")[0],
     isRepeating: false,
-    repeatDays: [] as number[],
-    repeatWeeks: 1,
+    repeatDates: [] as string[],
     priority: "medium" as "low" | "medium" | "high",
     description: "",
     materials: [] as MaterialAllocation[],
@@ -421,8 +426,7 @@ export default function TaskEditPage() {
       startDate: task.startDate,
       endDate: task.endDate,
       isRepeating: Boolean(repeatingSubtask),
-      repeatDays: repeatingSubtask?.repeatDays || [],
-      repeatWeeks: repeatingSubtask?.repeatWeeks || 1,
+      repeatDates: repeatingSubtask?.repeatDates || [],
       priority: task.priority,
       description: task.description,
       materials: ((task.materials || []) as MaterialAllocation[]).map(
@@ -557,8 +561,7 @@ export default function TaskEditPage() {
       name: taskName,
       description: formData.description,
       isRepeating: true,
-      repeatDays: formData.repeatDays,
-      repeatWeeks: formData.repeatWeeks,
+      repeatDates: formData.repeatDates,
       startDate: formData.startDate,
       endDate: formData.endDate,
       geographicalSelections: selections,
@@ -630,8 +633,8 @@ export default function TaskEditPage() {
       title: "Công việc triển khai",
       description: "Thông tin mô tả công việc",
       content: (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2 space-y-6">
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+          <div className="lg:col-span-3 space-y-6">
             <Card>
               <CardHeader>
                 <CardTitle className="text-lg flex items-center gap-2">
@@ -642,7 +645,7 @@ export default function TaskEditPage() {
               <CardContent className="space-y-4">
                 <div className="space-y-2">
                   <Label className="text-sm font-bold text-slate-700">
-                    Đầu việc triển khai *
+                    Hạng mục công việc triển khai *
                   </Label>
                   <Input
                     value={formData.name}
@@ -657,77 +660,88 @@ export default function TaskEditPage() {
                   <Label className="text-sm font-bold text-slate-700">
                     Loại công việc *
                   </Label>
-                  <div className="grid grid-cols-2 gap-4">
-                    {(
-                      [
-                        {
-                          id: "plan",
-                          label: "Hạng mục dự kiến",
-                          description: "Từ một kế hoạch có sẵn",
-                          icon: Layers,
-                          borderColor: "border-blue-500",
-                          bgColor: "bg-blue-50/50",
-                          activeColor: "bg-blue-500",
-                          textColor: "text-blue-700",
-                        },
-                        {
-                          id: "phat-sinh",
-                          label: "Phát sinh",
-                          description: "Ngoài kế hoạch",
-                          icon: Info,
-                          borderColor: "border-amber-500",
-                          bgColor: "bg-amber-50/50",
-                          activeColor: "bg-amber-500",
-                          textColor: "text-amber-700",
-                        },
-                      ] as const
-                    ).map((type) => (
+                  <div
+                    className={cn(
+                      "flex items-center justify-between gap-4 rounded-2xl border-2 border-slate-100 bg-white p-4",
+                      formData.planId && "cursor-not-allowed opacity-70",
+                    )}
+                  >
+                    <div className="flex items-center gap-3">
                       <div
-                        key={type.id}
-                        onClick={() => {
-                          if (formData.planId) return;
-                          setFormData({
-                            ...formData,
-                            mode: type.id,
-                            // Reset to a neutral placeholder — picking a plan
-                            // below immediately derives the real value from
-                            // its purpose.
-                            objectiveType: "phat-sinh",
-                            planId: "",
-                            planName: "",
-                            mainTaskIds: [],
-                            selectedPlotIds: [],
-                          });
-                          setSelections([]);
-                          setPlanSearchTerm("");
-                        }}
                         className={cn(
-                          "cursor-pointer p-4 rounded-2xl border-2 transition-all flex flex-col items-center text-center gap-1 group relative overflow-hidden",
-                          formData.planId &&
-                            "cursor-not-allowed opacity-70 hover:shadow-none",
-                          formData.mode === type.id
-                            ? `${type.borderColor} ${type.bgColor} ${type.textColor} shadow-md`
-                            : "border-slate-100 bg-white hover:border-slate-200 hover:shadow-sm",
+                          "w-10 h-10 shrink-0 rounded-xl flex items-center justify-center transition-colors",
+                          formData.mode === "plan"
+                            ? "bg-blue-500 text-white"
+                            : "bg-slate-50 text-slate-400",
                         )}
                       >
-                        <div
+                        <Layers className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <p
                           className={cn(
-                            "w-10 h-10 rounded-xl flex items-center justify-center mb-1 group-hover:scale-110 transition-transform",
-                            formData.mode === type.id
-                              ? `${type.activeColor} text-white`
-                              : "bg-slate-50 text-slate-400",
+                            "text-xs font-black uppercase tracking-tight",
+                            formData.mode === "plan"
+                              ? "text-blue-700"
+                              : "text-slate-400",
                           )}
                         >
-                          <type.icon className="w-5 h-5" />
-                        </div>
-                        <span className="text-xs font-black uppercase tracking-tight">
-                          {type.label}
-                        </span>
-                        <span className="text-[10px] opacity-60 font-medium">
-                          {type.description}
-                        </span>
+                          Hạng mục dự kiến
+                        </p>
+                        <p className="text-[10px] text-slate-400 font-medium">
+                          Từ một kế hoạch có sẵn
+                        </p>
                       </div>
-                    ))}
+                    </div>
+
+                    <Switch
+                      checked={formData.mode === "phat-sinh"}
+                      disabled={!!formData.planId}
+                      onCheckedChange={(checked) => {
+                        setFormData({
+                          ...formData,
+                          mode: checked ? "phat-sinh" : "plan",
+                          // Reset to a neutral placeholder — picking a plan
+                          // below immediately derives the real value from
+                          // its purpose.
+                          objectiveType: "phat-sinh",
+                          planId: "",
+                          planName: "",
+                          mainTaskIds: [],
+                          selectedPlotIds: [],
+                        });
+                        setSelections([]);
+                        setPlanSearchTerm("");
+                      }}
+                    />
+
+                    <div className="flex items-center gap-3">
+                      <div>
+                        <p
+                          className={cn(
+                            "text-xs font-black uppercase tracking-tight text-right",
+                            formData.mode === "phat-sinh"
+                              ? "text-amber-700"
+                              : "text-slate-400",
+                          )}
+                        >
+                          Phát sinh
+                        </p>
+                        <p className="text-[10px] text-slate-400 font-medium text-right">
+                          Ngoài kế hoạch
+                        </p>
+                      </div>
+                      <div
+                        className={cn(
+                          "w-10 h-10 shrink-0 rounded-xl flex items-center justify-center transition-colors",
+                          formData.mode === "phat-sinh"
+                            ? "bg-amber-500 text-white"
+                            : "bg-slate-50 text-slate-400",
+                        )}
+                      >
+                        <Info className="w-5 h-5" />
+                      </div>
+                    </div>
                   </div>
                 </div>
 
@@ -736,7 +750,7 @@ export default function TaskEditPage() {
                     <div className="space-y-4">
                       <div className="space-y-2">
                         <Label className="text-sm font-bold text-slate-700">
-                          Chọn kế hoạch triển khai *
+                          Thông tin kế hoạch triển khai *
                         </Label>
                         <Select
                           value={formData.planId}
@@ -1352,7 +1366,7 @@ export default function TaskEditPage() {
             </Card>
           </div>
 
-          <div className="space-y-6">
+          <div className="lg:col-span-2 space-y-6">
             <Card>
               <CardHeader>
                 <CardTitle className="text-lg flex items-center gap-2">
@@ -1374,45 +1388,29 @@ export default function TaskEditPage() {
                   />
                 </div>
 
-                {!formData.isRepeating ? (
-                  <div className="space-y-2">
-                    <Label className="text-sm font-bold text-slate-700">
-                      Ngày kết thúc *
-                    </Label>
-                    <Input
-                      type="date"
-                      value={formData.endDate}
-                      onChange={(e) =>
-                        setFormData({ ...formData, endDate: e.target.value })
-                      }
-                    />
-                  </div>
-                ) : (
-                  <div className="space-y-2">
-                    <Label className="text-sm font-bold text-slate-700">
-                      Số tuần lặp lại
-                    </Label>
-                    <Input
-                      type="number"
-                      min={1}
-                      value={formData.repeatWeeks || ""}
-                      placeholder="Số tuần..."
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          repeatWeeks: parseInt(e.target.value, 10) || 1,
-                        })
-                      }
-                    />
-                  </div>
-                )}
+                <div className="space-y-2">
+                  <Label className="text-sm font-bold text-slate-700">
+                    Ngày kết thúc *
+                  </Label>
+                  <Input
+                    type="date"
+                    value={formData.endDate}
+                    onChange={(e) =>
+                      setFormData({ ...formData, endDate: e.target.value })
+                    }
+                  />
+                </div>
 
                 <div className="flex items-center gap-2 p-3 rounded-xl border border-slate-100 bg-slate-50/50">
                   <Checkbox
                     id="task-full-repeat"
                     checked={formData.isRepeating}
                     onCheckedChange={(checked) =>
-                      setFormData({ ...formData, isRepeating: !!checked })
+                      setFormData({
+                        ...formData,
+                        isRepeating: !!checked,
+                        repeatDates: checked ? formData.repeatDates : [],
+                      })
                     }
                   />
                   <Label
@@ -1430,46 +1428,55 @@ export default function TaskEditPage() {
                 </div>
 
                 {formData.isRepeating && (
-                  <div className="space-y-3 p-3 bg-blue-50/50 rounded-xl border border-blue-100">
-                    <div className="flex flex-wrap gap-2 justify-between">
-                      {DAYS_OF_WEEK.map((day) => {
-                        const isSelected = formData.repeatDays.includes(
-                          day.value,
-                        );
-                        return (
-                          <button
-                            key={day.value}
-                            type="button"
-                            onClick={() => {
-                              const newDays = isSelected
-                                ? formData.repeatDays.filter(
-                                    (d) => d !== day.value,
-                                  )
-                                : [...formData.repeatDays, day.value];
-                              setFormData({
-                                ...formData,
-                                repeatDays: newDays,
-                              });
-                            }}
-                            className={cn(
-                              "w-8 h-8 rounded-full text-[10px] font-bold transition-all border",
-                              isSelected
-                                ? "bg-blue-600 border-blue-600 text-white shadow-sm"
-                                : "bg-white border-slate-200 text-slate-400 hover:border-blue-300 hover:text-blue-500",
-                            )}
-                          >
-                            {day.label}
-                          </button>
-                        );
-                      })}
-                    </div>
-                    <div className="pt-2 border-t border-blue-100/50">
-                      <p className="text-[11px] font-medium text-blue-700 italic">
-                        {getFrequencyText(
-                          formData.repeatDays,
-                          formData.repeatWeeks,
-                        )}
+                  <div className="space-y-3 p-3 bg-white rounded-xl border border-blue-100">
+                    <div className="flex items-center justify-between">
+                      <p className="text-xs font-bold text-slate-700">
+                        Chọn các ngày lặp lại
                       </p>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 px-2 text-[11px] text-slate-500 hover:text-rose-600 hover:bg-rose-50"
+                        disabled={formData.repeatDates.length === 0}
+                        onClick={() =>
+                          setFormData({ ...formData, repeatDates: [] })
+                        }
+                      >
+                        <X className="w-3 h-3 mr-1" />
+                        Xóa
+                      </Button>
+                    </div>
+                    <Calendar
+                      mode="multiple"
+                      locale={vi}
+                      selected={formData.repeatDates.map(parseLocalISODate)}
+                      onSelect={(dates) =>
+                        setFormData({
+                          ...formData,
+                          repeatDates: (dates || []).map(formatLocalISODate),
+                        })
+                      }
+                      disabled={{
+                        before: new Date(new Date().setHours(0, 0, 0, 0)),
+                      }}
+                      className="mx-auto w-full bg-white"
+                      style={{ "--cell-size": "3.25rem" } as CSSProperties}
+                    />
+                    <div className="pt-2 border-t border-blue-100/50">
+                      <div className="flex items-center justify-between gap-2">
+                        <p className="text-[11px] font-medium text-blue-700 italic">
+                          {getRepeatDatesText(formData.repeatDates)}
+                        </p>
+                        {formData.repeatDates.length > 0 && (
+                          <Badge
+                            variant="outline"
+                            className="shrink-0 bg-white text-[10px] font-bold text-blue-700 border-blue-200"
+                          >
+                            {formData.repeatDates.length} ngày
+                          </Badge>
+                        )}
+                      </div>
                     </div>
                   </div>
                 )}
@@ -1741,10 +1748,7 @@ export default function TaskEditPage() {
                       >
                         <CalendarIcon className="w-3 h-3 mr-1 opacity-50" />
                         {formData.isRepeating
-                          ? getFrequencyText(
-                              formData.repeatDays,
-                              formData.repeatWeeks,
-                            )
+                          ? getRepeatDatesText(formData.repeatDates)
                           : `${formData.startDate} → ${formData.endDate}`}
                       </Badge>
                       <Badge
@@ -2120,10 +2124,7 @@ export default function TaskEditPage() {
                           Tần suất
                         </span>
                         <span className="font-semibold text-slate-200 text-xs text-right">
-                          {getFrequencyText(
-                            formData.repeatDays,
-                            formData.repeatWeeks,
-                          )}
+                          {getRepeatDatesText(formData.repeatDates)}
                         </span>
                       </div>
                     ) : (
@@ -2203,12 +2204,12 @@ export default function TaskEditPage() {
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2">
             <Label htmlFor="simple-task-mode-toggle" className="text-xs font-bold text-slate-600 whitespace-nowrap">
-              Chế độ đơn giản
+              Thông tin chuyên sâu
             </Label>
             <Switch
               id="simple-task-mode-toggle"
-              checked={isSimpleMode}
-              onCheckedChange={setIsSimpleMode}
+              checked={!isSimpleMode}
+              onCheckedChange={(checked) => setIsSimpleMode(!checked)}
             />
           </div>
           <Button variant="ghost" onClick={() => setLocation("/task")}>
@@ -2223,7 +2224,6 @@ export default function TaskEditPage() {
           <SimpleTaskForm
             formData={formData}
             setFormData={setFormData}
-            personnel={personnel}
             handleComplete={handleComplete}
             goBack={() => setLocation("/task")}
             completeLabel="Hoàn tất & Cập nhật"

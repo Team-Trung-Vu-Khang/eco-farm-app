@@ -26,6 +26,9 @@ export interface TaskAllocation {
   isRepeating?: boolean;
   repeatDays?: number[];
   repeatWeeks?: number;
+  // ISO date strings (YYYY-MM-DD) explicitly picked on the repeat calendar —
+  // supersedes repeatDays/repeatWeeks for tasks created after that UI change.
+  repeatDates?: string[];
 }
 
 export interface Plan {
