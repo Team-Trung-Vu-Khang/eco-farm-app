@@ -38,9 +38,7 @@ const AhMaterialDetailPage = () => {
             Không tìm thấy thông tin vật tư.
           </p>
           <Button
-            onClick={() =>
-              setLocation("/animal-husbandry-material/material")
-            }
+            onClick={() => setLocation("/animal-husbandry-material/material")}
           >
             Quay lại danh sách
           </Button>
@@ -110,8 +108,6 @@ const AhMaterialDetailPage = () => {
                       : "Ngừng hoạt động"}
                   </Badge>
                 </div>
-
-                </div>
               </div>
             </div>
           </Card>
@@ -128,13 +124,17 @@ const AhMaterialDetailPage = () => {
               <CardContent className="pt-6 space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm">
                   <div>
-                    <span className="text-muted-foreground block text-xs mb-1">Mức độ công nghệ:</span>
+                    <span className="text-muted-foreground block text-xs mb-1">
+                      Mức độ công nghệ:
+                    </span>
                     <span className="font-semibold text-slate-850 bg-slate-50 border px-2 py-1 rounded inline-block text-xs mt-1">
                       {getMaterialGroupLabel(item.technologyLevelId)}
                     </span>
                   </div>
                   <div>
-                    <span className="text-muted-foreground block text-xs mb-1">Giai đoạn áp dụng:</span>
+                    <span className="text-muted-foreground block text-xs mb-1">
+                      Giai đoạn áp dụng:
+                    </span>
                     <span className="font-semibold text-slate-850 bg-slate-50 border px-2 py-1 rounded inline-block text-xs mt-1">
                       {getMaterialGroupLabel(item.valueChainId)}
                     </span>
@@ -146,8 +146,7 @@ const AhMaterialDetailPage = () => {
                     Mô tả
                   </h4>
                   <div className="bg-slate-50 p-4 rounded-lg text-sm leading-relaxed border border-slate-100 min-h-[100px]">
-                    {item.description ||
-                      "Chưa có mô tả cho vật tư này."}
+                    {item.description || "Chưa có mô tả cho vật tư này."}
                   </div>
                 </div>
               </CardContent>
@@ -161,34 +160,60 @@ const AhMaterialDetailPage = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent className="pt-6 space-y-4 text-sm">
-                {item.manufacturerOrigin && item.manufacturerOrigin.length > 0 && (
-                  <div>
-                    <span className="text-muted-foreground block text-xs mb-1.5">Nhà sản xuất / Xuất xứ:</span>
-                    <div className="flex flex-wrap gap-1.5">
-                      {item.manufacturerOrigin.map((tag) => (
-                        <Badge key={tag} variant="outline" className="bg-slate-50">{tag}</Badge>
-                      ))}
+                {item.manufacturerOrigin &&
+                  item.manufacturerOrigin.length > 0 && (
+                    <div>
+                      <span className="text-muted-foreground block text-xs mb-1.5">
+                        Nhà sản xuất / Xuất xứ:
+                      </span>
+                      <div className="flex flex-wrap gap-1.5">
+                        {item.manufacturerOrigin.map((tag) => (
+                          <Badge
+                            key={tag}
+                            variant="outline"
+                            className="bg-slate-50"
+                          >
+                            {tag}
+                          </Badge>
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                )}
+                  )}
 
-                {item.importerRegistrant && item.importerRegistrant.length > 0 && (
-                  <div className="border-t pt-4">
-                    <span className="text-muted-foreground block text-xs mb-1.5">Nhà nhập khẩu / Đăng ký:</span>
-                    <div className="flex flex-wrap gap-1.5">
-                      {item.importerRegistrant.map((tag) => (
-                        <Badge key={tag} variant="outline" className="bg-slate-50">{tag}</Badge>
-                      ))}
+                {item.importerRegistrant &&
+                  item.importerRegistrant.length > 0 && (
+                    <div className="border-t pt-4">
+                      <span className="text-muted-foreground block text-xs mb-1.5">
+                        Nhà nhập khẩu / Đăng ký:
+                      </span>
+                      <div className="flex flex-wrap gap-1.5">
+                        {item.importerRegistrant.map((tag) => (
+                          <Badge
+                            key={tag}
+                            variant="outline"
+                            className="bg-slate-50"
+                          >
+                            {tag}
+                          </Badge>
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                )}
+                  )}
 
                 {item.distributor && item.distributor.length > 0 && (
                   <div className="border-t pt-4">
-                    <span className="text-muted-foreground block text-xs mb-1.5">Nhà phân phối chính:</span>
+                    <span className="text-muted-foreground block text-xs mb-1.5">
+                      Nhà phân phối chính:
+                    </span>
                     <div className="flex flex-wrap gap-1.5">
                       {item.distributor.map((tag) => (
-                        <Badge key={tag} variant="outline" className="bg-slate-50">{tag}</Badge>
+                        <Badge
+                          key={tag}
+                          variant="outline"
+                          className="bg-slate-50"
+                        >
+                          {tag}
+                        </Badge>
                       ))}
                     </div>
                   </div>
@@ -196,23 +221,31 @@ const AhMaterialDetailPage = () => {
 
                 {item.packagingSpecs && item.packagingSpecs.length > 0 && (
                   <div className="border-t pt-4">
-                    <span className="text-muted-foreground block text-xs mb-1.5">Quy cách đóng gói vật tư:</span>
+                    <span className="text-muted-foreground block text-xs mb-1.5">
+                      Quy cách đóng gói vật tư:
+                    </span>
                     <div className="flex flex-wrap gap-1.5">
                       {item.packagingSpecs.map((tag) => (
-                        <Badge key={tag} variant="secondary" className="text-xs">{tag}</Badge>
+                        <Badge
+                          key={tag}
+                          variant="secondary"
+                          className="text-xs"
+                        >
+                          {tag}
+                        </Badge>
                       ))}
                     </div>
                   </div>
                 )}
 
-                {(!item.manufacturerOrigin?.length &&
+                {!item.manufacturerOrigin?.length &&
                   !item.importerRegistrant?.length &&
                   !item.distributor?.length &&
-                  !item.packagingSpecs?.length) && (
-                  <div className="text-center py-6 text-xs text-muted-foreground border border-dashed rounded-lg bg-slate-50">
-                    Không cấu hình thông tin xuất xứ & phân phối
-                  </div>
-                )}
+                  !item.packagingSpecs?.length && (
+                    <div className="text-center py-6 text-xs text-muted-foreground border border-dashed rounded-lg bg-slate-50">
+                      Không cấu hình thông tin xuất xứ & phân phối
+                    </div>
+                  )}
               </CardContent>
             </Card>
           </div>
