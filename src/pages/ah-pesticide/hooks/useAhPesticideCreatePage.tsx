@@ -113,7 +113,7 @@ export function useAhPesticideCreatePage() {
         formData.packagingSpecs.length > 0
           ? formData.packagingSpecs
           : formData.quantity && formData.unit && formData.packaging
-            ? [`${formData.quantity} ${formData.unit} / ${formData.packaging}`]
+            ? [`${formData.packaging} ${formData.quantity} ${formData.unit}`]
             : undefined,
       status: "active" as const,
       domain: "animal" as const,

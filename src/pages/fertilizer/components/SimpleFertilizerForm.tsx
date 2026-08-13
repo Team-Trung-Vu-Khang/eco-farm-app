@@ -218,6 +218,26 @@ export default function SimpleFertilizerForm({
           Quy cách đóng gói
         </Label>
         <div className="flex gap-3">
+          <div className="w-32">
+            <Select
+              value={formData.packaging || formData.physicalForm}
+              onValueChange={(v) => {
+                updateField("packaging", v);
+                updateField("physicalForm", v);
+              }}
+            >
+              <SelectTrigger className="text-left h-auto py-2">
+                <SelectValue placeholder="Quy cách" />
+              </SelectTrigger>
+              <SelectContent>
+                {PACKAGING_OPTIONS.map((p) => (
+                  <SelectItem key={p} value={p}>
+                    {p}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
           <div className="flex-1">
             <Input
               type="number"
@@ -247,29 +267,9 @@ export default function SimpleFertilizerForm({
               </SelectContent>
             </Select>
           </div>
-          <div className="w-32">
-            <Select
-              value={formData.packaging || formData.physicalForm}
-              onValueChange={(v) => {
-                updateField("packaging", v);
-                updateField("physicalForm", v);
-              }}
-            >
-              <SelectTrigger className="text-left h-auto py-2">
-                <SelectValue placeholder="Quy cách" />
-              </SelectTrigger>
-              <SelectContent>
-                {PACKAGING_OPTIONS.map((p) => (
-                  <SelectItem key={p} value={p}>
-                    {p}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
         </div>
         <p className="text-xs text-muted-foreground">
-          VD: 50 kg / Bao, 25 kg / Túi, 10 L / Can… Bổ sung thêm quy cách chi tiết ở chế độ chuyên sâu.
+          VD: Bao 50 kg, Túi 25 kg, Can 10 L… Bổ sung thêm quy cách chi tiết ở chế độ chuyên sâu.
         </p>
       </div>
 

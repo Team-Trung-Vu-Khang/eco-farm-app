@@ -70,7 +70,7 @@ export default function PesticideSuppliersStep({
   const addPackagingSpec = () => {
     const trimmedVal = quantity.trim();
     if (!trimmedVal || !unit || !packaging) return;
-    const spec = `${trimmedVal} ${unit} / ${packaging}`;
+    const spec = `${packaging} ${trimmedVal} ${unit}`;
     if (!formData.packagingSpecs.includes(spec)) {
       onFormFieldChange("packagingSpecs", [...formData.packagingSpecs, spec]);
     }
@@ -244,6 +244,23 @@ export default function PesticideSuppliersStep({
 
           {/* Input row */}
           <div className="flex gap-2 items-end">
+            <div className="w-32 space-y-1">
+              <Label className="text-xs text-muted-foreground">
+                Quy cách chứa
+              </Label>
+              <Select value={packaging} onValueChange={setPackaging}>
+                <SelectTrigger className="text-left h-auto py-2">
+                  <SelectValue placeholder="Chọn..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {PACKAGING_OPTIONS.map((p) => (
+                    <SelectItem key={p} value={p}>
+                      {p}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
             <div className="flex-1 space-y-1">
               <Label className="text-xs text-muted-foreground">Giá trị</Label>
               <Input
@@ -270,23 +287,6 @@ export default function PesticideSuppliersStep({
                   {MEASURE_UNIT_OPTIONS.map((u) => (
                     <SelectItem key={u} value={u}>
                       {u}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="w-32 space-y-1">
-              <Label className="text-xs text-muted-foreground">
-                Quy cách chứa
-              </Label>
-              <Select value={packaging} onValueChange={setPackaging}>
-                <SelectTrigger className="text-left h-auto py-2">
-                  <SelectValue placeholder="Chọn..." />
-                </SelectTrigger>
-                <SelectContent>
-                  {PACKAGING_OPTIONS.map((p) => (
-                    <SelectItem key={p} value={p}>
-                      {p}
                     </SelectItem>
                   ))}
                 </SelectContent>

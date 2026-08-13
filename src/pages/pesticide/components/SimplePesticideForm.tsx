@@ -325,6 +325,23 @@ export default function SimplePesticideForm({
           Quy cách đóng gói
         </Label>
         <div className="flex gap-3">
+          <div className="w-32">
+            <Select
+              value={formData.packaging}
+              onValueChange={(v) => onFormFieldChange("packaging", v)}
+            >
+              <SelectTrigger className="text-left h-auto py-2">
+                <SelectValue placeholder="Quy cách" />
+              </SelectTrigger>
+              <SelectContent>
+                {PACKAGING_OPTIONS.map((p) => (
+                  <SelectItem key={p} value={p}>
+                    {p}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
           <div className="flex-1">
             <Input
               type="number"
@@ -351,26 +368,9 @@ export default function SimplePesticideForm({
               </SelectContent>
             </Select>
           </div>
-          <div className="w-32">
-            <Select
-              value={formData.packaging}
-              onValueChange={(v) => onFormFieldChange("packaging", v)}
-            >
-              <SelectTrigger className="text-left h-auto py-2">
-                <SelectValue placeholder="Quy cách" />
-              </SelectTrigger>
-              <SelectContent>
-                {PACKAGING_OPTIONS.map((p) => (
-                  <SelectItem key={p} value={p}>
-                    {p}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
         </div>
         <p className="text-xs text-muted-foreground">
-          VD: 500 ml / Chai, 25 kg / Bao, 10 viên / Vỉ… Bổ sung thêm quy cách chi tiết ở chế độ
+          VD: Chai 500 ml, Bao 25 kg, Vỉ 10 viên… Bổ sung thêm quy cách chi tiết ở chế độ
           chuyên sâu.
         </p>
       </div>

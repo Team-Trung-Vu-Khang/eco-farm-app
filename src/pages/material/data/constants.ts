@@ -129,11 +129,11 @@ export const getMaterialGroupLabel = (id?: string) => {
 
 // Packaging Presets for Materials
 export const packagingSpecsPresets = [
-  "1 Thùng / Thùng",
-  "1 Bao / Bao",
-  "1 Cuộn / Cuộn",
-  "1 Hộp / Hộp",
-  "1 Chai / Chai",
-  "50 cái / Kiện",
-  "500 m / Cuộn",
+  "Thùng 1 Thùng",
+  "Bao 1 Bao",
+  "Cuộn 1 Cuộn",
+  "Hộp 1 Hộp",
+  "Chai 1 Chai",
+  "Kiện 50 cái",
+  "Cuộn 500 m",
 ];
