@@ -21,6 +21,7 @@ interface MaterialGroupFormDialogProps {
   onOpenChange: (open: boolean) => void;
   editItem: MaterialGroupRecord | null;
   onSubmit: (data: MaterialGroupFormValues) => Promise<void> | void;
+  loading?: boolean;
 }
 
 function normalizeStatus(
@@ -38,6 +39,7 @@ export function MaterialGroupFormDialog({
   onOpenChange,
   editItem,
   onSubmit,
+  loading,
 }: MaterialGroupFormDialogProps) {
   const defaultValues = useMemo<MaterialGroupFormInput>(
     () =>
@@ -86,6 +88,7 @@ export function MaterialGroupFormDialog({
       onOpenChange={onOpenChange}
       title={editItem ? "Chỉnh sửa nhóm vật tư" : "Thêm nhóm vật tư mới"}
       onSubmit={handleRHFSubmit(submitForm)}
+      loading={loading}
     >
       <div className="space-y-4">
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">

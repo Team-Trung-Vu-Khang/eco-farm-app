@@ -1,13 +1,8 @@
 import { useMemo, useState } from "react";
 import { useToast } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { useMasterData, useMasterDataMutations } from "@/features/master-data";
-import type {
-  MasterDataCatalog,
-  MasterDataStatus,
-} from "@/features/master-data/types/master-data.type";
+import type { MasterDataStatus } from "@/features/master-data/types/master-data.type";
 import type { MedicineCategoryFormValues } from "../data/schema";
-import { emptyMedicineCategoryFormData } from "../data/schema";
-import { MOCK_MEDICINE_DATA } from "../data/mocks";
 
 export type MedicineCategoryItem = {
   id: number;
@@ -17,7 +12,10 @@ export type MedicineCategoryItem = {
   status: MasterDataStatus;
 };
 
-export function useMedicineCategoryPage(catalog: MasterDataCatalog) {
+export function useMedicineCategoryPage(
+  domainCode: "CROP" | "LIVESTOCK" | "AQUACULTURE",
+  classification: string,
+) {
   const { toast } = useToast();
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState<MasterDataStatus | "all">("all");
@@ -26,15 +24,14 @@ export function useMedicineCategoryPage(catalog: MasterDataCatalog) {
   const [formOpen, setFormOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [editItem, setEditItem] = useState<MedicineCategoryItem | null>(null);
-  const [deleteItem, setDeleteItem] = useState<MedicineCategoryItem | null>(null);
-
-  // MOCK DATA STATE
-  const [mockItems, setMockItems] = useState<MedicineCategoryItem[]>(
-    MOCK_MEDICINE_DATA[catalog] || [],
+  const [deleteItem, setDeleteItem] = useState<MedicineCategoryItem | null>(
+    null,
   );
 
-  const { items, loading, error, response } = useMasterData(catalog, {
+  const { items, loading, error, response } = useMasterData("medicine-groups", {
     params: {
+      domainCode,
+      classification,
       keyword: search.trim() || undefined,
       status: status === "all" ? undefined : status,
       page: Math.max(currentIndex - 1, 0),
@@ -43,51 +40,9 @@ export function useMedicineCategoryPage(catalog: MasterDataCatalog) {
   });
 
   const { createMasterData, updateMasterData, deleteMasterData } =
-    useMasterDataMutations(catalog);
+    useMasterDataMutations("medicine-groups");
 
-  // Use mock data if API fails or is empty and we have mocks available
-  const isMocked = MOCK_MEDICINE_DATA[catalog] !== undefined;
-
-  const data = useMemo(() => {
-    if (isMocked) {
-      let filtered = [...mockItems];
-      if (search.trim()) {
-        const lowerSearch = search.toLowerCase();
-        filtered = filtered.filter(
-          (item) =>
-            item.code.toLowerCase().includes(lowerSearch) ||
-            item.name.toLowerCase().includes(lowerSearch),
-        );
-      }
-      if (status !== "all") {
-        filtered = filtered.filter((item) => item.status === status);
-      }
-      return filtered.slice((currentIndex - 1) * pageSize, currentIndex * pageSize);
-    }
-    return items as MedicineCategoryItem[];
-  }, [items, isMocked, mockItems, search, status, currentIndex, pageSize]);
-
-  const mockResponse = useMemo(() => {
-    if (isMocked) {
-      let filtered = [...mockItems];
-      if (search.trim()) {
-        const lowerSearch = search.toLowerCase();
-        filtered = filtered.filter(
-          (item) =>
-            item.code.toLowerCase().includes(lowerSearch) ||
-            item.name.toLowerCase().includes(lowerSearch),
-        );
-      }
-      if (status !== "all") {
-        filtered = filtered.filter((item) => item.status === status);
-      }
-      return {
-        totalElements: filtered.length,
-        totalPages: Math.ceil(filtered.length / pageSize),
-      };
-    }
-    return response;
-  }, [isMocked, mockItems, search, status, response, pageSize]);
+  const data = useMemo(() => items as MedicineCategoryItem[], [items]);
 
   const handleAdd = () => {
     setEditItem(null);
@@ -105,7 +60,9 @@ export function useMedicineCategoryPage(catalog: MasterDataCatalog) {
   };
 
   const buildPayload = (values: MedicineCategoryFormValues) => ({
-    code: values.code?.trim().toUpperCase(),
+    domainCode,
+    classification,
+    code: values.code.trim().toUpperCase(),
     name: values.name.trim(),
     description: values.description.trim(),
     displayOrder: 1,
@@ -139,33 +96,6 @@ export function useMedicineCategoryPage(catalog: MasterDataCatalog) {
       return;
     }
 
-    if (isMocked) {
-      if (editItem) {
-        setMockItems((prev) =>
-          prev.map((item) =>
-            item.id === editItem.id ? { ...item, ...payload } : item,
-          ),
-        );
-      } else {
-        setMockItems((prev) => [
-          ...prev,
-          {
-            id: Date.now(),
-            code: payload.code || `CODE_${Date.now()}`,
-            name: payload.name,
-            description: payload.description,
-            status: payload.status as MasterDataStatus,
-          },
-        ]);
-      }
-      toast({
-        title: "Thành công (MOCK)",
-        description: editItem ? "Đã cập nhật phân loại." : "Đã thêm phân loại mới.",
-      });
-      setFormOpen(false);
-      return;
-    }
-
     try {
       if (editItem) {
         await updateMasterData.mutateAsync({
@@ -178,7 +108,9 @@ export function useMedicineCategoryPage(catalog: MasterDataCatalog) {
 
       toast({
         title: "Thành công",
-        description: editItem ? "Đã cập nhật phân loại." : "Đã thêm phân loại mới.",
+        description: editItem
+          ? "Đã cập nhật phân loại."
+          : "Đã thêm phân loại mới.",
       });
       setFormOpen(false);
     } catch (error) {
@@ -195,29 +127,23 @@ export function useMedicineCategoryPage(catalog: MasterDataCatalog) {
 
   const handleConfirmDelete = async () => {
     if (deleteItem) {
-      if (isMocked) {
-        setMockItems((prev) => prev.filter((item) => item.id !== deleteItem.id));
+      try {
+        await deleteMasterData.mutateAsync(deleteItem.id);
         toast({
-          title: "Thành công (MOCK)",
+          title: "Thành công",
           description: "Đã xóa phân loại.",
         });
-      } else {
-        try {
-          await deleteMasterData.mutateAsync(deleteItem.id);
-          toast({
-            title: "Thành công",
-            description: "Đã xóa phân loại.",
-          });
-        } catch (error) {
-          const message =
-            error instanceof Error ? error.message : "Đã xảy ra lỗi không xác định";
+      } catch (error) {
+        const message =
+          error instanceof Error
+            ? error.message
+            : "Đã xảy ra lỗi không xác định";
 
-          toast({
-            title: "Không thể xóa",
-            description: message,
-            variant: "destructive",
-          });
-        }
+        toast({
+          title: "Không thể xóa",
+          description: message,
+          variant: "destructive",
+        });
       }
     }
 
@@ -227,12 +153,10 @@ export function useMedicineCategoryPage(catalog: MasterDataCatalog) {
 
   return {
     data,
-    loading: isMocked ? false : loading,
-    submitting: isMocked
-      ? false
-      : createMasterData.isPending || updateMasterData.isPending,
-    error: isMocked ? null : error,
-    response: mockResponse,
+    loading,
+    submitting: createMasterData.isPending || updateMasterData.isPending,
+    error,
+    response,
     search,
     setSearch,
     status,

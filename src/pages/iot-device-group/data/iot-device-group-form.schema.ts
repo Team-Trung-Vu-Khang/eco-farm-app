@@ -7,7 +7,7 @@ export const IOT_DEVICE_GROUP_FORM_STATUSES = [
 ] as const;
 
 export const iotDeviceGroupFormSchema = z.object({
-  code: z.string().trim().min(1, "Vui lòng nhập mã nhóm."),
+  code: z.string().trim().optional(),
   name: z.string().trim().min(1, "Vui lòng nhập tên nhóm."),
   description: z.string().trim().default(""),
   status: z.enum(IOT_DEVICE_GROUP_FORM_STATUSES, {

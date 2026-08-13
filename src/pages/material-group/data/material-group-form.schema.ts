@@ -7,7 +7,7 @@ export const MATERIAL_GROUP_FORM_STATUSES = [
 ] as const;
 
 export const materialGroupFormSchema = z.object({
-  code: z.string().trim().min(1, "Vui lòng nhập mã nhóm."),
+  code: z.string().trim().optional(),
   name: z.string().trim().min(1, "Vui lòng nhập tên nhóm."),
   description: z.string().trim().default(""),
   status: z.enum(MATERIAL_GROUP_FORM_STATUSES, {

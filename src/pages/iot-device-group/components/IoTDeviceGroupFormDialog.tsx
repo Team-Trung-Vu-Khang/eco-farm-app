@@ -21,6 +21,7 @@ interface IoTDeviceGroupFormDialogProps {
   onOpenChange: (open: boolean) => void;
   editItem: IoTDeviceGroupRecord | null;
   onSubmit: (data: IoTDeviceGroupFormValues) => Promise<void> | void;
+  loading?: boolean;
 }
 
 function normalizeStatus(
@@ -38,6 +39,7 @@ export function IoTDeviceGroupFormDialog({
   onOpenChange,
   editItem,
   onSubmit,
+  loading,
 }: IoTDeviceGroupFormDialogProps) {
   const defaultValues = useMemo<IoTDeviceGroupFormInput>(
     () =>
@@ -86,6 +88,7 @@ export function IoTDeviceGroupFormDialog({
       onOpenChange={onOpenChange}
       title={editItem ? "Chỉnh sửa nhóm IoT" : "Thêm nhóm IoT mới"}
       onSubmit={handleRHFSubmit(submitForm)}
+      loading={loading}
     >
       <div className="space-y-4">
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">

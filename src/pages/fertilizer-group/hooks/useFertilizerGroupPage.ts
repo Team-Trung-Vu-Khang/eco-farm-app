@@ -15,20 +15,7 @@ const DEFAULT_PAGE_SIZE = 10;
 
 type FertilizerGroupStatusFilter = MasterDataStatus | typeof ALL_STATUS;
 
-function buildPayload(values: FertilizerGroupFormValues) {
-  return {
-    code: values.code.trim().toUpperCase(),
-    name: values.name.trim(),
-    description: values.description.trim(),
-    displayOrder: 1,
-    status: values.status,
-    metadataJson: {
-      source: "manual",
-    },
-  };
-}
-
-export function useFertilizerGroupPage() {
+export function useFertilizerGroupPage(classification?: string) {
   const { toast } = useToast();
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState<FertilizerGroupStatusFilter>(ALL_STATUS);
@@ -43,6 +30,7 @@ export function useFertilizerGroupPage() {
 
   const query = useMasterData("fertilizer-groups", {
     params: {
+      classification,
       keyword: search.trim() || undefined,
       status: status === ALL_STATUS ? undefined : status,
       page: Math.max(currentIndex - 1, 0),
@@ -52,6 +40,20 @@ export function useFertilizerGroupPage() {
 
   const { createMasterData, updateMasterData, deleteMasterData } =
     useMasterDataMutations("fertilizer-groups");
+
+  const buildPayload = (values: FertilizerGroupFormValues) => {
+    return {
+      code: values.code?.trim().toUpperCase() || "",
+      name: values.name.trim(),
+      classification: (values as any).classification || classification || "",
+      description: values.description.trim(),
+      displayOrder: 1,
+      status: values.status,
+      metadataJson: {
+        source: "manual",
+      },
+    };
+  };
 
   const data = useMemo(() => query.items, [query.items]);
 
@@ -85,10 +87,10 @@ export function useFertilizerGroupPage() {
   const handleSubmit = async (values: FertilizerGroupFormValues) => {
     const payload = buildPayload(values);
 
-    if (!payload.code || !payload.name) {
+    if (!payload.name) {
       toast({
         title: "Thiếu thông tin",
-        description: "Vui lòng nhập mã và tên nhóm phân bón.",
+        description: "Vui lòng nhập tên nhóm phân bón.",
         variant: "destructive",
       });
       return;
@@ -153,6 +155,7 @@ export function useFertilizerGroupPage() {
   return {
     data,
     loading: query.loading,
+    submitting: createMasterData.isPending || updateMasterData.isPending,
     error: query.error,
     response: query.response,
     search,

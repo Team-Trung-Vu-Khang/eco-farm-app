@@ -12,20 +12,7 @@ const DEFAULT_PAGE_SIZE = 10;
 
 type IoTDeviceGroupStatusFilter = MasterDataStatus | typeof ALL_STATUS;
 
-function buildPayload(values: IoTDeviceGroupFormValues) {
-  return {
-    code: values.code.trim().toUpperCase(),
-    name: values.name.trim(),
-    description: values.description.trim(),
-    displayOrder: 1,
-    status: values.status,
-    metadataJson: {
-      source: "manual",
-    },
-  };
-}
-
-export function useIoTDeviceGroupPage() {
+export function useIoTDeviceGroupPage(classification?: string) {
   const { toast } = useToast();
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState<IoTDeviceGroupStatusFilter>(ALL_STATUS);
@@ -40,6 +27,7 @@ export function useIoTDeviceGroupPage() {
 
   const query = useMasterData("iot-device-groups", {
     params: {
+      classification,
       keyword: search.trim() || undefined,
       status: status === ALL_STATUS ? undefined : status,
       page: Math.max(currentIndex - 1, 0),
@@ -50,6 +38,20 @@ export function useIoTDeviceGroupPage() {
   const { createMasterData, updateMasterData, deleteMasterData } =
     useMasterDataMutations("iot-device-groups");
 
+  const buildPayload = (values: IoTDeviceGroupFormValues) => {
+    return {
+      code: values.code?.trim().toUpperCase() || "",
+      name: values.name.trim(),
+      classification: classification || "",
+      description: values.description.trim(),
+      displayOrder: 1,
+      status: values.status,
+      metadataJson: {
+        source: "manual",
+      },
+    };
+  };
+
   const data = useMemo(() => query.items, [query.items]);
 
   const handleSearch = (value: string) => {
@@ -59,7 +61,9 @@ export function useIoTDeviceGroupPage() {
 
   const handleFilterChange = (key: string, value: string) => {
     if (key === "status") {
-      setStatus(value === ALL_STATUS ? ALL_STATUS : (value as MasterDataStatus));
+      setStatus(
+        value === ALL_STATUS ? ALL_STATUS : (value as MasterDataStatus),
+      );
       setCurrentIndex(1);
     }
   };
@@ -82,10 +86,10 @@ export function useIoTDeviceGroupPage() {
   const handleSubmit = async (values: IoTDeviceGroupFormValues) => {
     const payload = buildPayload(values);
 
-    if (!payload.code || !payload.name) {
+    if (!payload.name) {
       toast({
         title: "Thiếu thông tin",
-        description: "Vui lòng nhập mã và tên nhóm IoT.",
+        description: "Vui lòng nhập tên nhóm IoT.",
         variant: "destructive",
       });
       return;
@@ -150,6 +154,7 @@ export function useIoTDeviceGroupPage() {
   return {
     data,
     loading: query.loading,
+    submitting: createMasterData.isPending || updateMasterData.isPending,
     error: query.error,
     response: query.response,
     pageSize,
@@ -161,6 +166,7 @@ export function useIoTDeviceGroupPage() {
     deleteOpen,
     setDeleteOpen,
     editItem,
+    deleteItem,
     handleAdd,
     handleEdit,
     handleDelete,

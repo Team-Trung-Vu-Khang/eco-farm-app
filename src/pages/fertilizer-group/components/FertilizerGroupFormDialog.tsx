@@ -21,6 +21,7 @@ interface FertilizerGroupFormDialogProps {
   onOpenChange: (open: boolean) => void;
   editItem: FertilizerGroupRecord | null;
   onSubmit: (data: FertilizerGroupFormValues) => Promise<void> | void;
+  loading?: boolean;
 }
 
 function normalizeStatus(
@@ -38,6 +39,7 @@ export function FertilizerGroupFormDialog({
   onOpenChange,
   editItem,
   onSubmit,
+  loading,
 }: FertilizerGroupFormDialogProps) {
   const defaultValues = useMemo<FertilizerGroupFormInput>(
     () =>
@@ -86,6 +88,7 @@ export function FertilizerGroupFormDialog({
       onOpenChange={onOpenChange}
       title={editItem ? "Chỉnh sửa nhóm phân bón" : "Thêm nhóm phân bón mới"}
       onSubmit={handleRHFSubmit(submitForm)}
+      loading={loading}
     >
       <div className="space-y-4">
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">

@@ -27,6 +27,7 @@ export interface MasterDataQueryParams {
   parentId?: number;
   parentCode?: string;
   domainCode?: string;
+  classification?: string;
 }
 
 export interface ProvinceWardQueryParams extends MasterDataQueryParams {
@@ -65,13 +66,7 @@ export interface MasterDataAttributesMap {
   "rearing-methods": Record<string, unknown>;
   "iot-device-groups": Record<string, unknown>;
   "material-groups": Record<string, unknown>;
-  "pesticide-groups": Record<string, unknown>;
-  "pesticide-origins": Record<string, unknown>;
-  "pesticide-toxicity-classes": {
-    whoGroup?: string;
-    bandColor?: string;
-    ld50Threshold?: string;
-  };
+  "medicine-groups": Record<string, unknown>;
   "plan-groups": Record<string, unknown>;
   "plan-types": Record<string, unknown>;
   "position-groups": Record<string, unknown>;
@@ -106,24 +101,20 @@ export interface MasterDataRequestExtraFieldsMap {
     domainCode?: "CROP" | "LIVESTOCK" | "AQUACULTURE" | null;
   };
   "equipment-tool-groups": Record<string, never>;
-  "fertilizer-groups": Record<string, never>;
-  "irrigation-systems": Record<string, never>;
-  "material-groups": Record<string, never>;
-  "pesticide-groups": Record<string, never>;
-  "pesticide-origins": Record<string, never>;
-  "pesticide-modes-of-action": Record<string, never>;
-  "pesticide-formulations": Record<string, never>;
-  "pesticide-toxicity-classes": {
-    whoGroup: string;
-    bandColor: string;
-    ld50Threshold: string;
+  "fertilizer-groups": {
+    classification: string;
   };
-  "livestock-medicine-functions": Record<string, never>;
-  "livestock-medicine-administration-routes": Record<string, never>;
-  "livestock-medicine-control-levels": Record<string, never>;
-  "aquaculture-medicine-functions": Record<string, never>;
-  "aquaculture-medicine-target-species": Record<string, never>;
-  "aquaculture-medicine-control-residues": Record<string, never>;
+  "irrigation-systems": Record<string, never>;
+  "iot-device-groups": {
+    classification: string;
+  };
+  "material-groups": {
+    classification: string;
+  };
+  "medicine-groups": {
+    domainCode?: "CROP" | "LIVESTOCK" | "AQUACULTURE" | null;
+    classification: string;
+  };
   "plan-types": {
     color: string;
     planGroupId?: number | null;
@@ -158,27 +149,23 @@ export interface MasterDataRecordExtraFieldsMap {
     documents: CertificateStandardDocument[];
   };
   "equipment-tool-groups": Record<string, never>;
-  "fertilizer-groups": Record<string, never>;
+  "fertilizer-groups": {
+    classification: string;
+  };
   "irrigation-systems": Record<string, never>;
   "rearing-methods": {
     domainCode?: "CROP" | "LIVESTOCK" | "AQUACULTURE";
   };
-  "material-groups": Record<string, never>;
-  "pesticide-groups": Record<string, never>;
-  "pesticide-origins": Record<string, never>;
-  "pesticide-modes-of-action": Record<string, never>;
-  "pesticide-formulations": Record<string, never>;
-  "pesticide-toxicity-classes": {
-    whoGroup?: string | null;
-    bandColor?: string | null;
-    ld50Threshold?: string | null;
+  "iot-device-groups": {
+    classification: string;
   };
-  "livestock-medicine-functions": Record<string, never>;
-  "livestock-medicine-administration-routes": Record<string, never>;
-  "livestock-medicine-control-levels": Record<string, never>;
-  "aquaculture-medicine-functions": Record<string, never>;
-  "aquaculture-medicine-target-species": Record<string, never>;
-  "aquaculture-medicine-control-residues": Record<string, never>;
+  "material-groups": {
+    classification: string;
+  };
+  "medicine-groups": {
+    domainCode?: "CROP" | "LIVESTOCK" | "AQUACULTURE";
+    classification: string;
+  };
   "plan-types": {
     color: string;
     planGroup?: PlanGroupRecord | null;
@@ -363,15 +350,12 @@ export type RearingMethodRecord = MasterDataRecord<"rearing-methods">;
 export type MaterialGroupRecord = MasterDataRecord<"material-groups">;
 export type MaterialGroupPageResponse =
   MasterDataPageResponse<MaterialGroupRecord>;
-export type PesticideGroupRecord = MasterDataRecord<"pesticide-groups">;
-export type PesticideOriginRecord = MasterDataRecord<"pesticide-origins">;
-export type PesticideToxicityClassRecord =
-  MasterDataRecord<"pesticide-toxicity-classes">;
+export type MedicineGroupRecord = MasterDataRecord<"medicine-groups">;
 export type PlanGroupRecord = MasterDataRecord<"plan-groups">;
-export type PesticideGroupCreateRequest =
-  MasterDataCreateRequest<"pesticide-groups">;
-export type PesticideGroupUpdateRequest =
-  MasterDataUpdateRequest<"pesticide-groups">;
+export type MedicineGroupCreateRequest =
+  MasterDataCreateRequest<"medicine-groups">;
+export type MedicineGroupUpdateRequest =
+  MasterDataUpdateRequest<"medicine-groups">;
 export type FertilizerGroupCreateRequest =
   MasterDataCreateRequest<"fertilizer-groups">;
 export type FertilizerGroupUpdateRequest =
@@ -398,14 +382,6 @@ export type IoTDeviceGroupUpdateRequest =
   MasterDataUpdateRequest<"iot-device-groups">;
 export type MaterialGroupMutationRequest = MaterialGroupCreateRequest;
 export type MaterialGroupDeleteResponse = void;
-export type PesticideOriginCreateRequest =
-  MasterDataCreateRequest<"pesticide-origins">;
-export type PesticideOriginUpdateRequest =
-  MasterDataUpdateRequest<"pesticide-origins">;
-export type PesticideToxicityClassCreateRequest =
-  MasterDataCreateRequest<"pesticide-toxicity-classes">;
-export type PesticideToxicityClassUpdateRequest =
-  MasterDataUpdateRequest<"pesticide-toxicity-classes">;
 export type PlanGroupCreateRequest = MasterDataCreateRequest<"plan-groups">;
 export type PlanGroupUpdateRequest = MasterDataUpdateRequest<"plan-groups">;
 

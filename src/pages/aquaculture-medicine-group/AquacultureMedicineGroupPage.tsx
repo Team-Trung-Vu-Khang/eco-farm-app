@@ -30,6 +30,10 @@ const AquacultureMedicineGroupPage = () => {
             <Activity className="w-4 h-4" />
             Công dụng
           </TabsTrigger>
+          <TabsTrigger value="target_species" className="flex items-center gap-2">
+            <Fish className="w-4 h-4" />
+            Đối tượng áp dụng
+          </TabsTrigger>
           <TabsTrigger
             value="control_residue"
             className="flex items-center gap-2"
@@ -41,21 +45,24 @@ const AquacultureMedicineGroupPage = () => {
 
         <TabsContent value="function">
           <MedicineCategoryTabContent
-            catalog="aquaculture-medicine-functions"
+            domainCode="AQUACULTURE"
+            classification="usage"
             title="Công dụng"
             description="Ví dụ: Thuốc kháng sinh, Kháng nấm, Xử lý môi trường,..."
           />
         </TabsContent>
         <TabsContent value="target_species">
           <MedicineCategoryTabContent
-            catalog="aquaculture-medicine-target-species"
+            domainCode="AQUACULTURE"
+            classification="target_subject"
             title="Đối tượng áp dụng"
             description="Ví dụ: Tôm, Cá, Nhuyễn thể,..."
           />
         </TabsContent>
         <TabsContent value="control_residue">
           <MedicineCategoryTabContent
-            catalog="aquaculture-medicine-control-residues"
+            domainCode="AQUACULTURE"
+            classification="control_residue_level"
             title="Mức độ kiểm soát & dư lượng"
             description="Ví dụ: Kháng sinh, Hóa chất xử lý nước, Vaccine,..."
           />

@@ -1,7 +1,7 @@
 import type { MedicineCategoryItem } from "../hooks/useMedicineCategoryPage";
 
 export const MOCK_MEDICINE_DATA: Record<string, MedicineCategoryItem[]> = {
-  "livestock-medicine-functions": [
+  "LIVESTOCK_usage": [
     {
       id: 1,
       code: "VACCINE",
@@ -59,7 +59,7 @@ export const MOCK_MEDICINE_DATA: Record<string, MedicineCategoryItem[]> = {
       status: "active",
     },
   ],
-  "livestock-medicine-administration-routes": [
+  "LIVESTOCK_usage_method": [
     {
       id: 9,
       code: "INJECTION",
@@ -96,7 +96,7 @@ export const MOCK_MEDICINE_DATA: Record<string, MedicineCategoryItem[]> = {
       status: "active",
     },
   ],
-  "livestock-medicine-control-levels": [
+  "LIVESTOCK_control_level": [
     {
       id: 14,
       code: "OTC",
@@ -119,7 +119,7 @@ export const MOCK_MEDICINE_DATA: Record<string, MedicineCategoryItem[]> = {
       status: "active",
     },
   ],
-  "aquaculture-medicine-functions": [
+  "AQUACULTURE_usage": [
     {
       id: 17,
       code: "ANTIBIOTICS",
@@ -163,7 +163,7 @@ export const MOCK_MEDICINE_DATA: Record<string, MedicineCategoryItem[]> = {
       status: "active",
     },
   ],
-  "aquaculture-medicine-target-species": [
+  "AQUACULTURE_target_subject": [
     {
       id: 23,
       code: "FISH",
@@ -186,7 +186,7 @@ export const MOCK_MEDICINE_DATA: Record<string, MedicineCategoryItem[]> = {
       status: "active",
     },
   ],
-  "aquaculture-medicine-control-residues": [
+  "AQUACULTURE_control_residue_level": [
     {
       id: 26,
       code: "SAFE_NO_WITHDRAWAL",
@@ -209,7 +209,7 @@ export const MOCK_MEDICINE_DATA: Record<string, MedicineCategoryItem[]> = {
       status: "active",
     },
   ],
-  "pesticide-groups": [
+  "CROP_target_group": [
     {
       id: 101,
       code: "INSECTICIDES",
@@ -274,7 +274,7 @@ export const MOCK_MEDICINE_DATA: Record<string, MedicineCategoryItem[]> = {
       status: "active",
     }
   ],
-  "pesticide-origins": [
+  "CROP_origin": [
     {
       id: 110,
       code: "SYNTHETIC_CHEMICAL",
@@ -304,7 +304,7 @@ export const MOCK_MEDICINE_DATA: Record<string, MedicineCategoryItem[]> = {
       status: "active",
     }
   ],
-  "pesticide-toxicity-classes": [
+  "CROP_toxicity": [
     {
       id: 114,
       code: "TOXICITY_IA",
@@ -341,7 +341,7 @@ export const MOCK_MEDICINE_DATA: Record<string, MedicineCategoryItem[]> = {
       status: "active",
     }
   ],
-  "pesticide-modes-of-action": [
+  "CROP_mode_of_action": [
     {
       id: 119,
       code: "STOMACH_POISON",
@@ -378,7 +378,7 @@ export const MOCK_MEDICINE_DATA: Record<string, MedicineCategoryItem[]> = {
       status: "active",
     }
   ],
-  "pesticide-formulations": [
+  "CROP_dosage_form": [
     {
       id: 124,
       code: "EC",

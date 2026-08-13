@@ -50,21 +50,24 @@ const LivestockMedicineGroupPage = () => {
 
         <TabsContent value="function">
           <MedicineCategoryTabContent
-            catalog="livestock-medicine-functions"
+            domainCode="LIVESTOCK"
+            classification="usage"
             title="Công dụng"
             description="Ví dụ: Vaccine, Thuốc kháng sinh, Thuốc kháng viêm,..."
           />
         </TabsContent>
         <TabsContent value="administration_route">
           <MedicineCategoryTabContent
-            catalog="livestock-medicine-administration-routes"
+            domainCode="LIVESTOCK"
+            classification="usage_method"
             title="Cách sử dụng"
             description="Ví dụ: Tiêm, Uống, Bôi ngoài da,..."
           />
         </TabsContent>
         <TabsContent value="control_level">
           <MedicineCategoryTabContent
-            catalog="livestock-medicine-control-levels"
+            domainCode="LIVESTOCK"
+            classification="control_level"
             title="Mức độ kiểm soát"
             description="Ví dụ: Thuốc OTC, Thuốc kê đơn, Thuốc cấm/hạn chế,..."
           />

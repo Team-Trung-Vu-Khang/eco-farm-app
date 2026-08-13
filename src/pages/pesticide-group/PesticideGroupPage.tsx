@@ -60,35 +60,40 @@ const PesticideGroupPage = () => {
 
         <TabsContent value="target_pest">
           <MedicineCategoryTabContent
-            catalog="pesticide-groups"
+            domainCode="CROP"
+            classification="target_group"
             title="Công dụng thuốc"
             description="Ví dụ: Thuốc trừ sâu, Thuốc trừ nấm, Thuốc trừ cỏ..."
           />
         </TabsContent>
         <TabsContent value="origin">
           <MedicineCategoryTabContent
-            catalog="pesticide-origins"
+            domainCode="CROP"
+            classification="origin"
             title="Nguồn gốc"
             description="Ví dụ: Hóa học tổng hợp, Sinh học, Thảo mộc..."
           />
         </TabsContent>
         <TabsContent value="toxicity_level">
           <MedicineCategoryTabContent
-            catalog="pesticide-toxicity-classes"
+            domainCode="CROP"
+            classification="toxicity"
             title="Mức độ độc hại"
             description="Theo chuẩn WHO (Ia, Ib, II, III, U)"
           />
         </TabsContent>
         <TabsContent value="mode_of_action">
           <MedicineCategoryTabContent
-            catalog="pesticide-modes-of-action"
+            domainCode="CROP"
+            classification="mode_of_action"
             title="Cơ chế tác động"
             description="Ví dụ: Vị độc, Tiếp xúc, Nội hấp..."
           />
         </TabsContent>
         <TabsContent value="formulation">
           <MedicineCategoryTabContent
-            catalog="pesticide-formulations"
+            domainCode="CROP"
+            classification="dosage_form"
             title="Dạng bào chế"
             description="Ví dụ: Nhũ dầu (EC), Huyền phù (SC), Bột (WP)..."
           />

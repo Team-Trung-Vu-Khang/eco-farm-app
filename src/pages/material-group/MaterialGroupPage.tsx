@@ -1,18 +1,13 @@
 import PageWrapper from "@/components/PageWrapper";
 import {
-  Button,
   Tabs,
   TabsContent,
   TabsList,
   TabsTrigger,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { Cpu, DollarSign, ListTree, Plus } from "lucide-react";
+import { Award, Compass, DollarSign } from "lucide-react";
 import { useState } from "react";
-import MaterialTechnologyLevelPage from "./MaterialTechnologyLevelPage";
-import MaterialValueChainPage from "./MaterialValueChainPage";
-import MaterialFinancialAspectPage from "./MaterialFinancialAspectPage";
-import { MaterialGroupFormDialog } from "./components/MaterialGroupFormDialog";
-import { useMaterialGroupPage } from "./hooks/useMaterialGroupPage";
+import { MaterialGroupTabContent } from "./components/MaterialGroupTabContent";
 
 type MaterialGroupTab = "technology_level" | "value_chain" | "financial_aspect";
 
@@ -20,37 +15,10 @@ const MaterialGroupPage = () => {
   const [activeTab, setActiveTab] =
     useState<MaterialGroupTab>("technology_level");
 
-  const {
-    formOpen,
-    setFormOpen,
-    editItem,
-    handleAdd,
-    handleEdit,
-    handleSubmit,
-  } = useMaterialGroupPage();
-
-  const handleStaticEdit = (item: any) => {
-    handleEdit({
-      id: Math.floor(Math.random() * 1000000), // Fake ID for static item
-      code: item.id || item.code || "",
-      name: item.label || item.name || "",
-      description: item.description || "",
-      status: "active",
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    } as any);
-  };
-
   return (
     <PageWrapper
-      title="Nhóm vật tư khác"
-      description="Quản lý danh mục dụng cụ, máy móc, vật tư theo công nghệ, chuỗi giá trị và tài chính"
-      actions={
-        <Button onClick={handleAdd} data-testid="add-material-group">
-          <Plus className="w-4 h-4 mr-2" />
-          Thêm nhóm
-        </Button>
-      }
+      title="Danh mục nhóm vật tư"
+      description="Quản lý phân loại nhóm vật tư và thiết bị trong chuỗi giá trị nông nghiệp"
     >
       <Tabs
         value={activeTab}
@@ -62,30 +30,46 @@ const MaterialGroupPage = () => {
             value="technology_level"
             className="flex items-center gap-2"
           >
-            <Cpu className="w-4 h-4" />
-            Mức độ công nghệ
+            <Compass className="w-4 h-4" />
+            Mức độ Công nghệ
           </TabsTrigger>
           <TabsTrigger value="value_chain" className="flex items-center gap-2">
-            <ListTree className="w-4 h-4" />
-            Giai đoạn áp dụng
+            <Award className="w-4 h-4" />
+            Chuỗi giá trị
+          </TabsTrigger>
+          <TabsTrigger
+            value="financial_aspect"
+            className="flex items-center gap-2"
+          >
+            <DollarSign className="w-4 h-4" />
+            Khía cạnh Tài chính
           </TabsTrigger>
         </TabsList>
 
         <TabsContent value="technology_level">
-          <MaterialTechnologyLevelPage onEdit={handleStaticEdit} />
+          <MaterialGroupTabContent
+            classification="technology_level"
+            title="Mức độ Công nghệ"
+            description="Ví dụ: Dụng cụ thủ công (Cuốc, xẻng), Máy móc cơ giới (Máy cày, máy bơm), Thiết bị thông minh (Drone, cảm biến IoT)..."
+          />
         </TabsContent>
 
         <TabsContent value="value_chain">
-          <MaterialValueChainPage onEdit={handleStaticEdit} />
+          <MaterialGroupTabContent
+            classification="value_chain"
+            title="Chuỗi giá trị"
+            description="Ví dụ: Chuẩn bị đất (máy cày), Gieo cấy (máy sạ), Chăm sóc (máy phun thuốc), Thu hoạch (máy gặt), Bảo quản sau thu hoạch..."
+          />
+        </TabsContent>
+
+        <TabsContent value="financial_aspect">
+          <MaterialGroupTabContent
+            classification="financial_aspect"
+            title="Khía cạnh Tài chính"
+            description="Ví dụ: CAPEX (Chi phí đầu tư thiết bị cố định), OPEX (Chi phí vận hành, bảo dưỡng thường xuyên)..."
+          />
         </TabsContent>
       </Tabs>
-
-      <MaterialGroupFormDialog
-        open={formOpen}
-        onOpenChange={setFormOpen}
-        editItem={editItem}
-        onSubmit={handleSubmit}
-      />
     </PageWrapper>
   );
 };

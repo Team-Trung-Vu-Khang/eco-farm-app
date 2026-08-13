@@ -1,19 +1,13 @@
 import PageWrapper from "@/components/PageWrapper";
 import {
-  Button,
   Tabs,
   TabsContent,
   TabsList,
   TabsTrigger,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { Beaker, Box, Calendar, Leaf, Plus } from "lucide-react";
+import { Beaker, Box, Calendar, Leaf } from "lucide-react";
 import { useState } from "react";
-import FertilizerNutritionalContentPage from "./FertilizerNutritionalContentPage";
-import FertilizerOriginPage from "./FertilizerOriginPage";
-import FertilizerApplicationStagePage from "./FertilizerApplicationStagePage";
-import FertilizerPhysicalFormPage from "./FertilizerPhysicalFormPage";
-import { FertilizerGroupFormDialog } from "./components/FertilizerGroupFormDialog";
-import { useFertilizerGroupPage } from "./hooks/useFertilizerGroupPage";
+import { FertilizerGroupTabContent } from "./components/FertilizerGroupTabContent";
 
 type FertilizerGroupTab =
   | "nutritional_content"
@@ -26,37 +20,10 @@ const FertilizerGroupPage = () => {
     "nutritional_content",
   );
 
-  const {
-    formOpen,
-    setFormOpen,
-    editItem,
-    handleAdd,
-    handleEdit,
-    handleSubmit,
-  } = useFertilizerGroupPage();
-
-  const handleStaticEdit = (item: any) => {
-    handleEdit({
-      id: Math.floor(Math.random() * 1000000), // Fake ID for static item
-      code: item.id || item.code || "",
-      name: item.label || item.name || "",
-      description: item.description || "",
-      status: "active",
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    } as any);
-  };
-
   return (
     <PageWrapper
       title="Danh mục phân bón"
       description="Quản lý phân loại phân bón theo thành phần, nguồn gốc, giai đoạn và hình thái"
-      actions={
-        <Button onClick={handleAdd} data-testid="add-fertilizer-group">
-          <Plus className="w-4 h-4 mr-2" />
-          Thêm nhóm
-        </Button>
-      }
     >
       <Tabs
         value={activeTab}
@@ -92,28 +59,37 @@ const FertilizerGroupPage = () => {
         </TabsList>
 
         <TabsContent value="nutritional_content">
-          <FertilizerNutritionalContentPage onEdit={handleStaticEdit} />
+          <FertilizerGroupTabContent
+            classification="nutrient_composition"
+            title="Thành phần dinh dưỡng"
+            description="Ví dụ: Đa lượng (NPK), Trung lượng (Canxi, Magie), Vi lượng (Đồng, Kẽm)..."
+          />
         </TabsContent>
 
         <TabsContent value="origin">
-          <FertilizerOriginPage onEdit={handleStaticEdit} />
+          <FertilizerGroupTabContent
+            classification="origin"
+            title="Nguồn gốc"
+            description="Ví dụ: Hóa học (Vô cơ), Hữu cơ (Phân chuồng, Phân xanh), Sinh học (Vi sinh)..."
+          />
         </TabsContent>
 
         <TabsContent value="application_stage">
-          <FertilizerApplicationStagePage onEdit={handleStaticEdit} />
+          <FertilizerGroupTabContent
+            classification="effect_stage"
+            title="Giai đoạn tác động"
+            description="Ví dụ: Bón lót (cải tạo đất trước gieo), Bón thúc đẻ nhánh, Bón nuôi quả..."
+          />
         </TabsContent>
 
         <TabsContent value="physical_form">
-          <FertilizerPhysicalFormPage onEdit={handleStaticEdit} />
+          <FertilizerGroupTabContent
+            classification="physical_form"
+            title="Hình thái vật lý"
+            description="Ví dụ: Dạng hạt, Dạng bột, Dạng lỏng (phun lá, tưới gốc)..."
+          />
         </TabsContent>
       </Tabs>
-
-      <FertilizerGroupFormDialog
-        open={formOpen}
-        onOpenChange={setFormOpen}
-        editItem={editItem}
-        onSubmit={handleSubmit}
-      />
     </PageWrapper>
   );
 };

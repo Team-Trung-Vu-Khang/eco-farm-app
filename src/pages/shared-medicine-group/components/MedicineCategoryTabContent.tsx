@@ -11,13 +11,15 @@ import { MEDICINE_CATEGORY_STATUS_OPTIONS } from "../data/constants";
 import type { MasterDataCatalog } from "@/features/master-data/types/master-data.type";
 
 interface MedicineCategoryTabContentProps {
-  catalog: MasterDataCatalog;
+  domainCode: "CROP" | "LIVESTOCK" | "AQUACULTURE";
+  classification: string;
   title: string;
   description: string;
 }
 
 export function MedicineCategoryTabContent({
-  catalog,
+  domainCode,
+  classification,
   title,
   description,
 }: MedicineCategoryTabContentProps) {
@@ -44,7 +46,7 @@ export function MedicineCategoryTabContent({
     handleConfirmDelete,
     handleSearch,
     handleFilterChange,
-  } = useMedicineCategoryPage(catalog);
+  } = useMedicineCategoryPage(domainCode, classification);
 
   return (
     <div className="space-y-6">
@@ -53,7 +55,7 @@ export function MedicineCategoryTabContent({
           <h2 className="text-2xl font-semibold">{title}</h2>
           <p className="text-sm text-muted-foreground mt-1">{description}</p>
         </div>
-        <Button onClick={handleAdd} data-testid={`add-${catalog}`}>
+        <Button onClick={handleAdd} data-testid={`add-${domainCode}-${classification}`}>
           <Plus className="w-4 h-4 mr-2" />
           Thêm phân loại
         </Button>
