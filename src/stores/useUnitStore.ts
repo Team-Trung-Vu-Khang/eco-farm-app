@@ -12,6 +12,7 @@ interface UnitState {
   // Actions
   setUnits: (units: Unit[]) => void;
   addUnit: (unit: Omit<Unit, "id" | "createdAt">) => void;
+  addUnits: (units: Omit<Unit, "id" | "createdAt">[]) => void;
   updateUnit: (id: number, unit: Partial<Unit>) => void;
   deleteUnit: (id: number) => void;
   getUnitById: (id: number) => Unit | undefined;
@@ -47,6 +48,23 @@ const useUnitStore = create<UnitState>()(
             },
             false,
             "addUnit",
+          ),
+
+        addUnits: (unitsData) =>
+          set(
+            (state) => {
+              let currentMaxId = Math.max(0, ...state.units.map((u) => u.id));
+              const newUnits: Unit[] = unitsData.map((unitData, index) => ({
+                ...unitData,
+                id: currentMaxId + 1 + index,
+                createdAt: new Date().toISOString().split("T")[0],
+              }));
+              return {
+                units: [...newUnits, ...state.units],
+              };
+            },
+            false,
+            "addUnits",
           ),
 
         updateUnit: (id, unitData) =>

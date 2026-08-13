@@ -1,31 +1,13 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLocation, useRoute } from "wouter";
 import { useToast } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import useUnitStore from "../../../stores/useUnitStore";
-import {
-  UNIT_STANDARDS,
-  UNIT_TYPE_OPTIONS,
-  emptyUnitFormData,
-} from "../data/constants";
-import type { Unit, UnitFormData, UnitType } from "../types/types";
+import useMaterialStore from "../../../stores/useMaterialStore";
 
-function getDefaultStandard(type: UnitType) {
-  return UNIT_STANDARDS[type].find((standard) => standard.factor === 1)?.value ?? "";
-}
-
-function getInitialFormData(item?: Unit): UnitFormData {
-  if (!item) {
-    return emptyUnitFormData;
-  }
-
-  return {
-    code: item.code,
-    name: item.name,
-    description: item.description,
-    status: item.status,
-    type: item.type,
-    conversionFactor: item.conversionFactor,
-  };
+export interface PreviewItem {
+  sourceMaterialId: number;
+  targetMaterialId: number;
+  conversionFactor: number;
 }
 
 export function useUnitFormPage() {
@@ -34,120 +16,182 @@ export function useUnitFormPage() {
   const { toast } = useToast();
 
   const getUnitById = useUnitStore((state) => state.getUnitById);
-  const addUnit = useUnitStore((state) => state.addUnit);
+  const addUnits = useUnitStore((state) => state.addUnits);
   const updateUnit = useUnitStore((state) => state.updateUnit);
-  const getBaseUnitByType = useUnitStore((state) => state.getBaseUnitByType);
+  const materials = useMaterialStore((state) => state.materials);
 
   const isEdit = match && Boolean(params?.id);
-  const editItem = isEdit && params?.id ? getUnitById(Number(params.id)) : undefined;
+  const editItemId = isEdit && params?.id ? Number(params.id) : null;
+  const editItem = editItemId ? getUnitById(editItemId) : undefined;
 
-  const [formData, setFormData] = useState<UnitFormData>(() =>
-    getInitialFormData(editItem),
-  );
-  const [selectedStandard, setSelectedStandard] = useState(() =>
-    getDefaultStandard(editItem?.type ?? emptyUnitFormData.type),
-  );
-  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [sourceMaterialId, setSourceMaterialId] = useState<string>("");
+  const [targetMaterialId, setTargetMaterialId] = useState<string>("");
+  const [conversionFactor, setConversionFactor] = useState<string>("1");
+  const [previewList, setPreviewList] = useState<PreviewItem[]>([]);
 
-  const standardOptions = UNIT_STANDARDS[formData.type];
-  const selectedStandardLabel =
-    standardOptions.find((standard) => standard.value === selectedStandard)?.label ?? "...";
-  const unitTypeLabel =
-    UNIT_TYPE_OPTIONS.find((option) => option.value === formData.type)?.label ?? formData.type;
+  // Pre-fill form if in Edit Mode
+  useEffect(() => {
+    if (isEdit && editItem) {
+      setSourceMaterialId(String(editItem.sourceMaterialId ?? ""));
+      setTargetMaterialId(String(editItem.targetMaterialId ?? ""));
+      setConversionFactor(String(editItem.conversionFactor ?? "1"));
+    }
+  }, [isEdit, editItem]);
 
-  const updateField = <K extends keyof UnitFormData>(
-    field: K,
-    value: UnitFormData[K],
-  ) => {
-    setFormData((prev) => {
-      const next = { ...prev, [field]: value };
-      if (field === "type") {
-        const nextType = value as UnitType;
-        setSelectedStandard(getDefaultStandard(nextType));
-        return {
-          ...next,
-          conversionFactor: 1,
-        };
-      }
-      return next;
-    });
+  const handleAddPreview = () => {
+    if (!sourceMaterialId || !targetMaterialId || !conversionFactor) {
+      toast({
+        title: "Thiếu thông tin",
+        description: "Vui lòng chọn vật tư và số lượng",
+        variant: "destructive",
+      });
+      return;
+    }
+    const fromId = Number(sourceMaterialId);
+    const toId = Number(targetMaterialId);
+    const qty = Number(conversionFactor);
+
+    if (fromId === toId) {
+      toast({
+        title: "Lỗi quy đổi",
+        description: "Không thể quy đổi cùng một loại vật tư",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (isNaN(qty) || qty <= 0) {
+      toast({
+        title: "Lỗi nhập liệu",
+        description: "Số lượng quy đổi phải lớn hơn 0",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Check duplicate in preview
+    const isDuplicate = previewList.some(
+      (item) => item.sourceMaterialId === fromId && item.targetMaterialId === toId,
+    );
+    if (isDuplicate) {
+      toast({
+        title: "Trùng lặp",
+        description: "Quy tắc quy đổi này đã có trong danh sách preview",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setPreviewList((prev) => [
+      ...prev,
+      { sourceMaterialId: fromId, targetMaterialId: toId, conversionFactor: qty },
+    ]);
+
+    // Reset all form inputs for convenient subsequent additions
+    setSourceMaterialId("");
+    setTargetMaterialId("");
+    setConversionFactor("1");
+  };
+
+  const handleRemovePreview = (index: number) => {
+    setPreviewList((prev) => prev.filter((_, idx) => idx !== index));
   };
 
   const handleSubmit = (event: React.FormEvent) => {
     event.preventDefault();
-    setConfirmOpen(true);
-  };
 
-  const handleConfirmSubmit = () => {
-    const systemBaseUnit = getBaseUnitByType(formData.type);
+    if (isEdit) {
+      if (!sourceMaterialId || !targetMaterialId || !conversionFactor) {
+        toast({
+          title: "Thiếu thông tin",
+          description: "Vui lòng chọn vật tư và số lượng",
+          variant: "destructive",
+        });
+        return;
+      }
+      const fromId = Number(sourceMaterialId);
+      const toId = Number(targetMaterialId);
+      const qty = Number(conversionFactor);
 
-    if (!systemBaseUnit) {
-      toast({
-        title: "Lỗi cấu hình",
-        description: `Không tìm thấy đơn vị chuẩn hệ thống cho loại ${formData.type}`,
-        variant: "destructive",
-      });
-      setConfirmOpen(false);
-      return;
-    }
+      if (fromId === toId) {
+        toast({
+          title: "Lỗi quy đổi",
+          description: "Không thể quy đổi cùng một loại vật tư",
+          variant: "destructive",
+        });
+        return;
+      }
 
-    const selectedStandardItem = standardOptions.find(
-      (standard) => standard.value === selectedStandard,
-    );
+      if (isNaN(qty) || qty <= 0) {
+        toast({
+          title: "Lỗi nhập liệu",
+          description: "Số lượng quy đổi phải lớn hơn 0",
+          variant: "destructive",
+        });
+        return;
+      }
 
-    if (!selectedStandardItem) {
-      toast({
-        title: "Thiếu thông tin",
-        description: "Vui lòng chọn đơn vị quy đổi",
-        variant: "destructive",
-      });
-      setConfirmOpen(false);
-      return;
-    }
-
-    const finalData = {
-      code: formData.code,
-      name: formData.name,
-      description: formData.description,
-      status: formData.status,
-      type: formData.type,
-      isBaseUnit: false,
-      baseUnitId: systemBaseUnit.id,
-      conversionFactor:
-        Number(formData.conversionFactor) * selectedStandardItem.factor,
-    };
-
-    if (isEdit && params?.id) {
-      updateUnit(Number(params.id), finalData);
-      toast({
-        title: "Thành công",
-        description: "Đã cập nhật đơn vị tính",
-      });
+      if (editItemId) {
+        updateUnit(editItemId, {
+          sourceMaterialId: fromId,
+          targetMaterialId: toId,
+          conversionFactor: qty,
+        });
+        toast({
+          title: "Thành công",
+          description: "Đã cập nhật quy tắc quy đổi",
+        });
+        setLocation("/unit");
+      }
     } else {
-      addUnit(finalData);
+      // Create mode
+      if (previewList.length === 0) {
+        // If they have inputs filled but didn't click add
+        if (sourceMaterialId && targetMaterialId && conversionFactor) {
+          toast({
+            title: "Nhắc nhở",
+            description: "Vui lòng bấm nút 'Thêm' để đưa quy tắc quy đổi vào danh sách bên dưới trước khi Lưu.",
+            variant: "destructive",
+          });
+        } else {
+          toast({
+            title: "Trống",
+            description: "Chưa có quy tắc quy đổi nào được thêm vào danh sách.",
+            variant: "destructive",
+          });
+        }
+        return;
+      }
+
+      // Prepare list of units to save
+      const unitsToSave = previewList.map((item) => ({
+        sourceMaterialId: item.sourceMaterialId,
+        targetMaterialId: item.targetMaterialId,
+        conversionFactor: item.conversionFactor,
+      }));
+
+      addUnits(unitsToSave);
       toast({
         title: "Thành công",
-        description: "Đã thêm mới đơn vị tính",
+        description: `Đã lưu thành công ${unitsToSave.length} quy tắc quy đổi`,
       });
+      setLocation("/unit");
     }
-
-    setConfirmOpen(false);
-    setLocation("/unit");
   };
 
   return {
     isEdit,
-    formData,
-    selectedStandard,
-    selectedStandardLabel,
-    unitTypeLabel,
-    standardOptions,
-    confirmOpen,
-    setConfirmOpen,
-    updateField,
-    setSelectedStandard,
+    materials,
+    sourceMaterialId,
+    setSourceMaterialId,
+    targetMaterialId,
+    setTargetMaterialId,
+    conversionFactor,
+    setConversionFactor,
+    previewList,
+    handleAddPreview,
+    handleRemovePreview,
     handleSubmit,
-    handleConfirmSubmit,
     goBack: () => setLocation("/unit"),
   };
 }

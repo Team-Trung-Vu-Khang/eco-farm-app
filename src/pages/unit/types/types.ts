@@ -11,15 +11,17 @@ export type UnitStatus = "active" | "inactive";
 
 export interface Unit {
   id: number;
-  code: string;
-  name: string;
-  description: string;
-  status: UnitStatus;
+  code?: string;
+  name?: string;
+  description?: string;
+  status?: UnitStatus;
   createdAt: string;
-  type: UnitType;
-  isBaseUnit: boolean;
+  type?: UnitType;
+  isBaseUnit?: boolean;
   baseUnitId?: number;
   conversionFactor: number;
+  sourceMaterialId?: number;
+  targetMaterialId?: number;
 }
 
 export interface UnitStandard {

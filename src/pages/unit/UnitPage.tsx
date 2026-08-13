@@ -22,7 +22,7 @@ export default function UnitPage() {
 
   return (
     <PageWrapper
-      title="Quản lý đơn vị"
+      title="Quản lý đơn vị quy đổi"
       description="Quản lý danh sách đơn vị tính và quy tắc quy đổi về đơn vị chuẩn (kg, lít...)"
       actions={
         <Button onClick={handleAdd}>

@@ -2,8 +2,10 @@ import { useMemo, useState } from "react";
 import { useLocation } from "wouter";
 import { useToast } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import useUnitStore from "../../../stores/useUnitStore";
+import useMaterialStore from "../../../stores/useMaterialStore";
 import { getUnitColumns } from "../data/columns";
 import type { Unit } from "../types/types";
+import type { Material } from "../../material/types/types";
 
 export function useUnitPage() {
   const { toast } = useToast();
@@ -11,29 +13,31 @@ export function useUnitPage() {
 
   const units = useUnitStore((state) => state.units);
   const deleteUnit = useUnitStore((state) => state.deleteUnit);
+  const materials = useMaterialStore((state) => state.materials);
 
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleteItem, setDeleteItem] = useState<Unit | null>(null);
 
-  const unitMap = useMemo(
+  const materialMap = useMemo(
     () =>
-      units.reduce(
-        (acc, unit) => {
-          acc[unit.id] = unit;
+      materials.reduce(
+        (acc, m) => {
+          acc[m.id] = m;
           return acc;
         },
-        {} as Record<number, Unit>,
+        {} as Record<number, Material>,
       ),
-    [units],
+    [materials],
   );
 
   const columns = useMemo(
     () =>
       getUnitColumns({
-        unitMap,
+        units,
+        materialMap,
         onEditNavigate: (id) => setLocation(`/unit/${id}/edit`),
       }),
-    [setLocation, unitMap],
+    [setLocation, units, materialMap],
   );
 
   const handleAdd = () => setLocation("/unit/create");
@@ -51,19 +55,6 @@ export function useUnitPage() {
       return;
     }
 
-    if (deleteItem.isBaseUnit) {
-      const hasDependents = units.some((unit) => unit.baseUnitId === deleteItem.id);
-      if (hasDependents) {
-        toast({
-          title: "Không thể xóa",
-          description: "Đơn vị này đang là chuẩn quy đổi cho các đơn vị khác.",
-          variant: "destructive",
-        });
-        setDeleteOpen(false);
-        return;
-      }
-    }
-
     deleteUnit(deleteItem.id);
     toast({ title: "Thành công", description: "Đã xóa đơn vị tính" });
     setDeleteOpen(false);
@@ -79,7 +70,13 @@ export function useUnitPage() {
     handleEdit,
     handleDelete,
     handleConfirmDelete,
-    handleView: (item: Unit) =>
-      toast({ title: "Xem chi tiết", description: item.name }),
+    handleView: (item: Unit) => {
+      const fromMat = materialMap[item.sourceMaterialId || 0]?.name || "Vật tư";
+      const toMat = materialMap[item.targetMaterialId || 0]?.name || "Vật tư";
+      toast({
+        title: "Xem chi tiết",
+        description: `Quy đổi: 1 ${fromMat} = ${item.conversionFactor} ${toMat}`,
+      });
+    },
   };
 }
