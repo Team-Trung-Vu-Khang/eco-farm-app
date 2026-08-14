@@ -730,7 +730,7 @@ export default function PlanGrowthEditPage({
                             <Label className="text-[10px] uppercase font-black text-slate-400">
                               Hạng mục công việc của phác đồ
                             </Label>
-                            <div className="flex flex-wrap gap-2 p-4 bg-white rounded-2xl border border-slate-100 shadow-sm">
+                            <div className="flex flex-col gap-2 p-4 bg-white rounded-2xl border border-slate-100 shadow-sm">
                               {stageTitles.map((title) => {
                                 const stageKey = `${formData.regimenId}:${title}`;
                                 const checked =
@@ -740,7 +740,7 @@ export default function PlanGrowthEditPage({
                                   <label
                                     key={stageKey}
                                     className={cn(
-                                      "flex cursor-pointer items-center gap-2 rounded-xl border py-1 px-2.5 h-auto text-[10px] font-bold transition-colors",
+                                      "flex w-full cursor-pointer items-center gap-2.5 rounded-xl border px-3 py-2.5 text-xs font-bold transition-colors",
                                       checked
                                         ? "border-slate-200 bg-slate-50 text-slate-700"
                                         : "border-slate-100 bg-white text-slate-400",
@@ -752,10 +752,7 @@ export default function PlanGrowthEditPage({
                                         setFormData((prev) => ({
                                           ...prev,
                                           selectedStages: value
-                                            ? [
-                                                ...prev.selectedStages,
-                                                stageKey,
-                                              ]
+                                            ? [...prev.selectedStages, stageKey]
                                             : prev.selectedStages.filter(
                                                 (s) => s !== stageKey,
                                               ),
@@ -827,14 +824,16 @@ export default function PlanGrowthEditPage({
                     </div>
 
                     {formData.selectedStages.length > 0 && (
-                      <div className="flex flex-wrap gap-2 p-4 bg-white rounded-2xl border border-slate-100 shadow-sm">
-                        {formData.selectedStages.map((stage) => (
-                          <Badge
+                      <div className="flex flex-col gap-2 p-4 bg-white rounded-2xl border border-slate-100 shadow-sm">
+                        {formData.selectedStages.map((stage, idx) => (
+                          <div
                             key={stage}
-                            variant="secondary"
-                            className="bg-slate-100 text-slate-700 pr-1 py-1 pl-3 h-8 rounded-lg flex items-center gap-2 border-transparent group hover:bg-red-50 hover:text-red-700 transition-colors cursor-default"
+                            className="flex w-full items-center gap-2.5 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-xs font-bold text-slate-700 transition-colors"
                           >
-                            <span className="font-bold text-xs">{stage}</span>
+                            <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-white text-[11px] font-bold text-slate-700 shadow-sm">
+                              {idx + 1}
+                            </span>
+                            <span className="flex-1">{stage}</span>
                             <Button
                               variant="ghost"
                               size="icon"
@@ -850,7 +849,7 @@ export default function PlanGrowthEditPage({
                             >
                               <X className="w-3 h-3" />
                             </Button>
-                          </Badge>
+                          </div>
                         ))}
                       </div>
                     )}
@@ -858,9 +857,8 @@ export default function PlanGrowthEditPage({
                     <div className="flex items-center gap-2 p-3 bg-amber-50/50 rounded-xl border border-amber-100/50">
                       <Info className="w-3.5 h-3.5 text-amber-500 shrink-0" />
                       <p className="text-[10px] text-amber-700 font-medium">
-                        Nhập tên các hạng mục công việc bạn muốn triển khai.
-                        Bạn sẽ phân bổ vật tư cho từng hạng mục ở bước tiếp
-                        theo.
+                        Nhập tên các hạng mục công việc bạn muốn triển khai. Bạn
+                        sẽ phân bổ vật tư cho từng hạng mục ở bước tiếp theo.
                       </p>
                     </div>
                   </div>
@@ -921,14 +919,16 @@ export default function PlanGrowthEditPage({
                 </div>
 
                 {formData.selectedStages.length > 0 && (
-                  <div className="flex flex-wrap gap-2 p-4 bg-white rounded-2xl border border-slate-100 shadow-sm">
-                    {formData.selectedStages.map((stage) => (
-                      <Badge
+                  <div className="flex flex-col gap-2 p-4 bg-white rounded-2xl border border-slate-100 shadow-sm">
+                    {formData.selectedStages.map((stage, idx) => (
+                      <div
                         key={stage}
-                        variant="secondary"
-                        className="bg-slate-100 text-slate-700 pr-1 py-1 pl-3 h-8 rounded-lg flex items-center gap-2 border-transparent group hover:bg-red-50 hover:text-red-700 transition-colors cursor-default"
+                        className="flex w-full items-center gap-2.5 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-xs font-bold text-slate-700 transition-colors"
                       >
-                        <span className="font-bold text-xs">{stage}</span>
+                        <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-white text-[11px] font-bold text-slate-700 shadow-sm">
+                          {idx + 1}
+                        </span>
+                        <span className="flex-1">{stage}</span>
                         <Button
                           variant="ghost"
                           size="icon"
@@ -944,7 +944,7 @@ export default function PlanGrowthEditPage({
                         >
                           <X className="w-3 h-3" />
                         </Button>
-                      </Badge>
+                      </div>
                     ))}
                   </div>
                 )}
@@ -1013,14 +1013,16 @@ export default function PlanGrowthEditPage({
                 </div>
 
                 {formData.selectedStages.length > 0 && (
-                  <div className="flex flex-wrap gap-2 p-4 bg-white rounded-2xl border border-slate-100 shadow-sm">
-                    {formData.selectedStages.map((stage) => (
-                      <Badge
+                  <div className="flex flex-col gap-2 p-4 bg-white rounded-2xl border border-slate-100 shadow-sm">
+                    {formData.selectedStages.map((stage, idx) => (
+                      <div
                         key={stage}
-                        variant="secondary"
-                        className="bg-slate-100 text-slate-700 pr-1 py-1 pl-3 h-8 rounded-lg flex items-center gap-2 border-transparent group hover:bg-red-50 hover:text-red-700 transition-colors cursor-default"
+                        className="flex w-full items-center gap-2.5 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-xs font-bold text-slate-700 transition-colors"
                       >
-                        <span className="font-bold text-xs">{stage}</span>
+                        <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-white text-[11px] font-bold text-slate-700 shadow-sm">
+                          {idx + 1}
+                        </span>
+                        <span className="flex-1">{stage}</span>
                         <Button
                           variant="ghost"
                           size="icon"
@@ -1036,7 +1038,7 @@ export default function PlanGrowthEditPage({
                         >
                           <X className="w-3 h-3" />
                         </Button>
-                      </Badge>
+                      </div>
                     ))}
                   </div>
                 )}
@@ -1774,7 +1776,10 @@ export default function PlanGrowthEditPage({
       actions={
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2">
-            <Label htmlFor="simple-mode-toggle" className="text-xs font-bold text-slate-600 whitespace-nowrap">
+            <Label
+              htmlFor="simple-mode-toggle"
+              className="text-xs font-bold text-slate-600 whitespace-nowrap"
+            >
               Chế độ đơn giản
             </Label>
             <Switch
