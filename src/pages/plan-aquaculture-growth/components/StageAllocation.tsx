@@ -1,6 +1,7 @@
 import {
   Badge,
   Button,
+  Combobox,
   Dialog,
   DialogContent,
   DialogFooter,
@@ -321,9 +322,17 @@ export const StageAllocation = memo(
                       </div>
 
                       <div className="col-span-8">
-                        <Select
+                        <Combobox
+                          options={(
+                            MATERIAL_OPTIONS[
+                              newItem.type as keyof typeof MATERIAL_OPTIONS
+                            ] || []
+                          ).map((opt) => ({
+                            value: opt.value,
+                            label: opt.label,
+                          }))}
                           value={newItem.name}
-                          onValueChange={(v) => {
+                          onChange={(v) => {
                             const category =
                               MATERIAL_OPTIONS[
                                 newItem.type as keyof typeof MATERIAL_OPTIONS
@@ -335,22 +344,11 @@ export const StageAllocation = memo(
                               unit: item?.unit || newItem.unit,
                             });
                           }}
-                        >
-                          <SelectTrigger className="h-9 text-xs w-full bg-slate-50/50">
-                            <SelectValue placeholder="Chọn vật tư cụ thể..." />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {(
-                              MATERIAL_OPTIONS[
-                                newItem.type as keyof typeof MATERIAL_OPTIONS
-                              ] || []
-                            ).map((opt) => (
-                              <SelectItem key={opt.value} value={opt.value}>
-                                {opt.label}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                          placeholder="Chọn vật tư cụ thể..."
+                          searchPlaceholder="Tìm vật tư..."
+                          emptyText="Không tìm thấy vật tư."
+                          className="h-9 text-xs w-full bg-slate-50/50"
+                        />
                       </div>
                     </div>
 
@@ -476,21 +474,18 @@ export const StageAllocation = memo(
                 {/* Add Task Form */}
                 <div className="space-y-2 pt-3 border-t mt-auto text-sm shrink-0">
                   <div className="flex gap-2">
-                    <Select
+                    <Combobox
+                      options={TASK_OPTIONS.map((opt) => ({
+                        value: opt.value,
+                        label: opt.label,
+                      }))}
                       value={newTask.name}
-                      onValueChange={(v) => setNewTask({ ...newTask, name: v })}
-                    >
-                      <SelectTrigger className="h-9 flex-1 font-medium bg-slate-50/50">
-                        <SelectValue placeholder="Chọn công việc..." />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {TASK_OPTIONS.map((opt) => (
-                          <SelectItem key={opt.value} value={opt.value}>
-                            {opt.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                      onChange={(v) => setNewTask({ ...newTask, name: v })}
+                      placeholder="Chọn công việc..."
+                      searchPlaceholder="Tìm công việc..."
+                      emptyText="Không tìm thấy công việc."
+                      className="h-9 flex-1 font-medium bg-slate-50/50"
+                    />
                     <Button
                       size="sm"
                       className="h-9 px-3 bg-slate-900 hover:bg-slate-800"
