@@ -3,6 +3,8 @@ import {
   Button,
   Card,
   CardContent,
+  Checkbox,
+  Combobox,
   Input,
   Label,
   Select,
@@ -20,9 +22,10 @@ import {
   Calendar,
   Info,
   Layers,
-  Package,
+  Link2,
   Plus,
   Sprout,
+  Trash2,
   Wrench,
   X,
 } from "lucide-react";
@@ -61,13 +64,11 @@ interface SimplePlanFormProps {
 
 function StageMaterialPicker({
   stageKey,
-  stageName,
   allocations,
   onAddMaterial,
   onRemoveMaterial,
 }: {
   stageKey: string;
-  stageName: string;
   allocations: MaterialAllocation[];
   onAddMaterial: (item: Omit<MaterialAllocation, "id">) => void;
   onRemoveMaterial: (id: number) => void;
@@ -93,17 +94,7 @@ function StageMaterialPicker({
   };
 
   return (
-    <div className="rounded-2xl border border-slate-100 bg-slate-50/40 p-4 space-y-3">
-      <div className="flex items-center gap-2">
-        <div className="w-7 h-7 rounded-lg bg-white border shadow-xs flex items-center justify-center">
-          <Package className="w-3.5 h-3.5 text-slate-500" />
-        </div>
-        <h4 className="font-bold text-sm text-slate-800">{stageName}</h4>
-        <Badge variant="outline" className="ml-auto text-[10px] bg-white">
-          {allocations.length} vật tư
-        </Badge>
-      </div>
-
+    <div className="space-y-3">
       {allocations.length > 0 && (
         <div className="space-y-1.5">
           {allocations.map((a) => (
@@ -151,25 +142,22 @@ function StageMaterialPicker({
           </Select>
         </div>
         <div className="col-span-8">
-          <Select
+          <Combobox
+            options={(MATERIAL_OPTIONS[newItem.type as keyof typeof MATERIAL_OPTIONS] || []).map((opt) => ({
+              value: opt.value,
+              label: opt.label,
+            }))}
             value={newItem.name}
-            onValueChange={(v) => {
+            onChange={(v) => {
               const category = MATERIAL_OPTIONS[newItem.type as keyof typeof MATERIAL_OPTIONS] || [];
               const item = category.find((i) => i.value === v);
               setNewItem({ ...newItem, name: v, unit: item?.unit || newItem.unit });
             }}
-          >
-            <SelectTrigger className="h-9 text-xs w-full bg-white">
-              <SelectValue placeholder="Chọn vật tư..." />
-            </SelectTrigger>
-            <SelectContent>
-              {(MATERIAL_OPTIONS[newItem.type as keyof typeof MATERIAL_OPTIONS] || []).map((opt) => (
-                <SelectItem key={opt.value} value={opt.value}>
-                  {opt.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+            placeholder="Chọn vật tư..."
+            searchPlaceholder="Tìm vật tư..."
+            emptyText="Không tìm thấy vật tư."
+            className="h-9 text-xs w-full bg-white"
+          />
         </div>
         <div className="col-span-5">
           <Input
@@ -403,11 +391,24 @@ export default function SimplePlanForm({
             }}
           />
           {formData.regimenId && regimenStages.length > 0 && (
-            <div className="flex flex-wrap gap-2 p-3 bg-white rounded-xl border border-slate-100">
+            <div className="flex flex-col gap-2 p-4 bg-white rounded-2xl border border-slate-100 shadow-sm">
               {regimenStages.map((stage) => (
-                <Badge key={stage} variant="outline" className="text-[10px] font-bold py-1 px-2.5 h-auto">
+                <label
+                  key={stage}
+                  className="flex w-full cursor-pointer items-center gap-2.5 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-xs font-bold text-slate-700 transition-colors"
+                >
+                  <Checkbox
+                    checked
+                    onCheckedChange={(value) => {
+                      if (value) return;
+                      setFormData((prev) => ({
+                        ...prev,
+                        selectedStages: prev.selectedStages.filter((s) => s !== stage),
+                      }));
+                    }}
+                  />
                   {stage.split(":").slice(1).join(":")}
-                </Badge>
+                </label>
               ))}
             </div>
           )}
@@ -439,39 +440,52 @@ export default function SimplePlanForm({
             Thêm
           </Button>
         </div>
-        {manualStages.length > 0 && (
-          <div className="flex flex-wrap gap-2 p-4 bg-white rounded-2xl border border-slate-100 shadow-sm">
-            {manualStages.map((stage) => (
-              <Badge
-                key={stage}
-                variant="secondary"
-                className="bg-slate-100 text-slate-700 pr-1 py-1 pl-3 h-8 rounded-lg flex items-center gap-2 border-transparent"
-              >
-                <span className="font-bold text-xs">{stage}</span>
-                <button type="button" onClick={() => removeStage(stage)} className="h-6 w-6 rounded-md hover:bg-red-100 hover:text-red-600 flex items-center justify-center">
-                  <X className="w-3 h-3" />
-                </button>
-              </Badge>
-            ))}
-          </div>
-        )}
       </div>
 
       {formData.selectedStages.length > 0 && (
         <div className="space-y-3">
           <Label>Chọn vật tư / ước lượng theo hạng mục</Label>
-          <div className="space-y-3">
-            {formData.selectedStages.map((stageKey) => {
+          <div className="space-y-2">
+            {formData.selectedStages.map((stageKey, idx) => {
               const stageName = stageKey.includes(":") ? stageKey.split(":").slice(1).join(":") : stageKey;
+              const materialCount = formData.materialAllocations.filter(
+                (m) => m.stageId === stageKey,
+              ).length;
+
               return (
-                <StageMaterialPicker
+                <div
                   key={stageKey}
-                  stageKey={stageKey}
-                  stageName={stageName}
-                  allocations={formData.materialAllocations.filter((m) => m.stageId === stageKey)}
-                  onAddMaterial={handleAddMaterial}
-                  onRemoveMaterial={handleRemoveMaterial}
-                />
+                  className="rounded-2xl border border-slate-100 bg-white shadow-sm overflow-hidden"
+                >
+                  <div className="flex items-center gap-3 px-4 py-3">
+                    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-slate-50 text-xs font-bold text-slate-700">
+                      {idx + 1}
+                    </span>
+                    <span className="flex-1 truncate font-bold text-sm text-slate-800">
+                      {stageName}
+                    </span>
+                    <span className="flex items-center gap-1 text-[11px] font-medium text-slate-400 whitespace-nowrap">
+                      <Link2 className="h-3.5 w-3.5" /> {materialCount} vật tư
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => removeStage(stageKey)}
+                      className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-slate-300 transition-colors hover:bg-red-50 hover:text-red-500"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
+                  <div className="border-t border-slate-100 p-4">
+                    <StageMaterialPicker
+                      stageKey={stageKey}
+                      allocations={formData.materialAllocations.filter(
+                        (m) => m.stageId === stageKey,
+                      )}
+                      onAddMaterial={handleAddMaterial}
+                      onRemoveMaterial={handleRemoveMaterial}
+                    />
+                  </div>
+                </div>
               );
             })}
           </div>

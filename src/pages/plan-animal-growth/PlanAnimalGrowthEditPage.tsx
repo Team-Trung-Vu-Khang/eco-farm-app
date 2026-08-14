@@ -94,7 +94,7 @@ export default function PlanAnimalGrowthEditPage({
   } = useAnimalGrowthForm("edit", basePath, { onSaved, onCancel });
 
   const [newManualStage, setNewManualStage] = useState("");
-  const [isSimpleMode, setIsSimpleMode] = useState(false);
+  const [isSimpleMode, setIsSimpleMode] = useState(true);
   const [applyRegimen, setApplyRegimen] = useState(() => !!formData.regimenId);
   const purpose = formData.purpose as string;
   const isCultivationLike =
@@ -1775,17 +1775,17 @@ export default function PlanAnimalGrowthEditPage({
       description={pageDescription}
       actions={
         <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2.5 rounded-full border border-slate-200 bg-white px-4 py-2 shadow-sm">
             <Label
               htmlFor="simple-mode-toggle"
-              className="text-xs font-bold text-slate-600 whitespace-nowrap"
+              className="text-xs font-bold text-slate-700 whitespace-nowrap cursor-pointer"
             >
-              Chế độ đơn giản
+              Thông tin chuyên sâu
             </Label>
             <Switch
               id="simple-mode-toggle"
-              checked={isSimpleMode}
-              onCheckedChange={setIsSimpleMode}
+              checked={!isSimpleMode}
+              onCheckedChange={(checked) => setIsSimpleMode(!checked)}
             />
           </div>
           <Button variant="outline" onClick={goBack}>
