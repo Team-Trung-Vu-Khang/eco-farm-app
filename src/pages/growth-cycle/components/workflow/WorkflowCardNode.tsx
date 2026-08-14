@@ -384,6 +384,7 @@ export function WorkflowCardNode({ data }: NodeProps<WorkflowCardNodeData>) {
             className={[
               "mt-4 text-[20px] font-extrabold leading-[1.12] tracking-[-0.03em] sm:text-[22px]",
               isDarkPoster ? "text-white" : "text-slate-900",
+              data.kind === "plan" ? "text-center" : "",
             ].join(" ")}
           >
             {data.title}
@@ -425,6 +426,7 @@ export function WorkflowCardNode({ data }: NodeProps<WorkflowCardNodeData>) {
               className={[
                 "mt-3 max-w-[720px] text-[13px] leading-6",
                 posterDescriptionClass,
+                data.kind === "plan" ? "pl-2" : "",
               ].join(" ")}
             >
               {data.description}
