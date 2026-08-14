@@ -34,6 +34,7 @@ interface AquacultureGrowthWorkflowStore {
   upsertWorkflow: (workflow: UpsertWorkflowInput) => void;
   getWorkflowById: (id: string) => Workflow | undefined;
   deleteWorkflow: (id: string) => void;
+  cloneWorkflow: (id: string) => Workflow | undefined;
 }
 
 const useAquacultureGrowthWorkflowStore = create<AquacultureGrowthWorkflowStore>()(
@@ -75,6 +76,20 @@ const useAquacultureGrowthWorkflowStore = create<AquacultureGrowthWorkflowStore>
           set((state) => ({
             workflows: state.workflows.filter((item) => item.id !== id),
           }));
+        },
+
+        cloneWorkflow: (id) => {
+          const source = get().workflows.find((item) => item.id === id);
+          if (!source) return undefined;
+
+          const clone: Workflow = {
+            ...source,
+            id: `workflow-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+            name: `${source.name} (Bản sao)`,
+            createdAt: new Date().toISOString(),
+          };
+          set((state) => ({ workflows: [...state.workflows, clone] }));
+          return clone;
         },
       }),
       {

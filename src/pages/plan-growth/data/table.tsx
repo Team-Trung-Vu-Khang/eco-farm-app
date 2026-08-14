@@ -14,6 +14,7 @@ import {
   Calendar,
   CheckCircle2,
   Clock,
+  Copy,
   Eye,
   Layers,
   MoreHorizontal,
@@ -180,9 +181,11 @@ export interface WorkflowRow {
 export function createWorkflowColumns({
   onView,
   onOpenWorkflow,
+  onClone,
 }: {
   onView: (row: WorkflowRow) => void;
   onOpenWorkflow: (row: WorkflowRow) => void;
+  onClone: (row: WorkflowRow) => void;
 }): Column<WorkflowRow>[] {
   return [
     {
@@ -288,6 +291,13 @@ export function createWorkflowColumns({
             >
               <Workflow className="mr-2 h-4 w-4" />
               Workflow
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              disabled={item.id === UNASSIGNED_WORKFLOW_ID}
+              onClick={() => onClone(item)}
+            >
+              <Copy className="mr-2 h-4 w-4" />
+              Nhân bản
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

@@ -1,6 +1,18 @@
 import PageWrapper from "@/components/PageWrapper";
 import useAnimalGrowthWorkflowStore from "@/stores/useAnimalGrowthWorkflowStore";
-import { Button, DataTable } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  Button,
+  DataTable,
+  useToast,
+} from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { Plus } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useLocation } from "wouter";
@@ -22,10 +34,17 @@ export default function PlanAnimalGrowthPage({
 }: PlanAnimalGrowthPageProps) {
   const [search, setSearch] = useState("");
   const [, setLocation] = useLocation();
+  const { toast } = useToast();
   const { plans, statistics } = useAnimalGrowthPage(basePath);
   const workflows = useAnimalGrowthWorkflowStore((state) => state.workflows);
+  const cloneWorkflow = useAnimalGrowthWorkflowStore(
+    (state) => state.cloneWorkflow,
+  );
   const resetWorkflowDraft = useAnimalGrowthWorkflowDraftStore(
     (state) => state.resetDraft,
+  );
+  const [workflowToClone, setWorkflowToClone] = useState<WorkflowRow | null>(
+    null,
   );
 
   const handleCreatePlan = () => {
@@ -75,12 +94,23 @@ export default function PlanAnimalGrowthPage({
     return rows;
   }, [workflows, plans]);
 
+  const handleConfirmClone = () => {
+    if (!workflowToClone) return;
+    cloneWorkflow(workflowToClone.id);
+    toast({
+      title: "Đã nhân bản sơ đồ",
+      description: `Đã tạo bản sao của "${workflowToClone.name}".`,
+    });
+    setWorkflowToClone(null);
+  };
+
   const columns = useMemo(
     () =>
       createWorkflowColumns({
         onView: (row) => setLocation(`${basePath}/workflow/${row.id}`),
         onOpenWorkflow: (row) =>
           setLocation(`${basePath}/create/workflow/${row.id}`),
+        onClone: (row) => setWorkflowToClone(row),
       }),
     [basePath, setLocation],
   );
@@ -126,6 +156,30 @@ export default function PlanAnimalGrowthPage({
           searchPlaceholder="Tìm kiếm sơ đồ quy trình chăn nuôi..."
         />
       </div>
+
+      <AlertDialog
+        open={workflowToClone !== null}
+        onOpenChange={(open) => {
+          if (!open) setWorkflowToClone(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Nhân bản sơ đồ quy trình?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Hành động này sẽ tạo một bản sao của sơ đồ
+              {workflowToClone?.name ? ` "${workflowToClone.name}"` : ""} với
+              toàn bộ nội dung hiện có.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Hủy</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmClone}>
+              Nhân bản
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </PageWrapper>
   );
 }
