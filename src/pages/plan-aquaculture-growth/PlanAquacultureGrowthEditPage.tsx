@@ -6,6 +6,7 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
+  Checkbox,
   Input,
   Label,
   ScrollArea,
@@ -677,10 +678,18 @@ export default function PlanAquacultureGrowthEditPage({
 
                 {formData.regimenId &&
                   (() => {
-                    const regimenStages = formData.selectedStages.filter(
-                      (stage) => stage.startsWith(`${formData.regimenId}:`),
+                    const selectedRegimen = regimens.find(
+                      (item) => item.id === formData.regimenId,
                     );
-                    if (!regimenStages.length) return null;
+                    const stageTitles: string[] =
+                      selectedRegimen?.steps && selectedRegimen.steps.length > 0
+                        ? selectedRegimen.steps.map(
+                            (step: { title: string }) => step.title,
+                          )
+                        : selectedRegimen
+                          ? [selectedRegimen.name]
+                          : [];
+                    if (!stageTitles.length) return null;
 
                     return (
                       <div className="space-y-2 pt-4 border-t border-dashed border-slate-200">
@@ -688,121 +697,42 @@ export default function PlanAquacultureGrowthEditPage({
                           Hạng mục công việc của phác đồ
                         </Label>
                         <div className="flex flex-wrap gap-2 p-4 bg-white rounded-2xl border border-slate-100 shadow-sm">
-                          {regimenStages.map((stage) => (
-                            <Badge
-                              key={stage}
-                              variant="outline"
-                              className="bg-slate-50 text-slate-700 border-slate-200 text-[10px] font-bold py-1 px-2.5 h-auto"
-                            >
-                              {stage.split(":").slice(1).join(":")}
-                            </Badge>
-                          ))}
+                          {stageTitles.map((title) => {
+                            const stageKey = `${formData.regimenId}:${title}`;
+                            const checked =
+                              formData.selectedStages.includes(stageKey);
+
+                            return (
+                              <label
+                                key={stageKey}
+                                className={cn(
+                                  "flex cursor-pointer items-center gap-2 rounded-xl border py-1 px-2.5 h-auto text-[10px] font-bold transition-colors",
+                                  checked
+                                    ? "border-slate-200 bg-slate-50 text-slate-700"
+                                    : "border-slate-100 bg-white text-slate-400",
+                                )}
+                              >
+                                <Checkbox
+                                  checked={checked}
+                                  onCheckedChange={(value) =>
+                                    setFormData((prev) => ({
+                                      ...prev,
+                                      selectedStages: value
+                                        ? [...prev.selectedStages, stageKey]
+                                        : prev.selectedStages.filter(
+                                            (s) => s !== stageKey,
+                                          ),
+                                    }))
+                                  }
+                                />
+                                {title}
+                              </label>
+                            );
+                          })}
                         </div>
                       </div>
                     );
                   })()}
-
-                <div className="space-y-4 pt-4 border-t border-dashed border-slate-200">
-                  <div className="flex items-center justify-between">
-                    <Label className="text-[10px] uppercase font-black text-slate-400">
-                      Hạng mục công việc dự kiến
-                    </Label>
-                    <Badge
-                      variant="outline"
-                      className="bg-amber-50 text-amber-700 border-amber-200 text-[10px] font-bold"
-                    >
-                      {
-                        formData.selectedStages.filter(
-                          (stage) => !stage.includes(":"),
-                        ).length
-                      }{" "}
-                      mục
-                    </Badge>
-                  </div>
-
-                  <div className="flex gap-2">
-                    <Input
-                      placeholder="Nhập tên hạng mục (VD: Bón vôi, Làm ao trại...)"
-                      value={newManualStage}
-                      onChange={(e) => setNewManualStage(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter") {
-                          e.preventDefault();
-                          const name = newManualStage.trim();
-                          if (
-                            name &&
-                            !formData.selectedStages.includes(name)
-                          ) {
-                            setFormData((prev) => ({
-                              ...prev,
-                              selectedStages: [...prev.selectedStages, name],
-                            }));
-                            setNewManualStage("");
-                          }
-                        }
-                      }}
-                      className="bg-white border-slate-200 h-11 text-sm rounded-xl"
-                    />
-                    <Button
-                      type="button"
-                      onClick={() => {
-                        const name = newManualStage.trim();
-                        if (name && !formData.selectedStages.includes(name)) {
-                          setFormData((prev) => ({
-                            ...prev,
-                            selectedStages: [...prev.selectedStages, name],
-                          }));
-                          setNewManualStage("");
-                        }
-                      }}
-                      className="px-6 h-11 rounded-xl font-bold uppercase text-xs"
-                    >
-                      THÊM
-                    </Button>
-                  </div>
-
-                  {formData.selectedStages.filter(
-                    (stage) => !stage.includes(":"),
-                  ).length > 0 && (
-                    <div className="flex flex-wrap gap-2 p-4 bg-white rounded-2xl border border-slate-100 shadow-sm">
-                      {formData.selectedStages
-                        .filter((stage) => !stage.includes(":"))
-                        .map((stage) => (
-                          <Badge
-                            key={stage}
-                            variant="secondary"
-                            className="bg-slate-100 text-slate-700 pr-1 py-1 pl-3 h-8 rounded-lg flex items-center gap-2 border-transparent group hover:bg-red-50 hover:text-red-700 transition-colors cursor-default"
-                          >
-                            <span className="font-bold text-xs">{stage}</span>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() =>
-                                setFormData((prev) => ({
-                                  ...prev,
-                                  selectedStages: prev.selectedStages.filter(
-                                    (s) => s !== stage,
-                                  ),
-                                }))
-                              }
-                              className="h-6 w-6 rounded-md hover:bg-red-100 hover:text-red-600 shrink-0"
-                            >
-                              <X className="w-3 h-3" />
-                            </Button>
-                          </Badge>
-                        ))}
-                    </div>
-                  )}
-
-                  <div className="flex items-center gap-2 p-3 bg-amber-50/50 rounded-xl border border-amber-100/50">
-                    <Info className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-                    <p className="text-[10px] text-amber-700 font-medium">
-                      Nhập tên các hạng mục công việc bạn muốn triển khai thêm
-                      ngoài phác đồ. Bạn sẽ phân bổ vật tư cho từng hạng mục ở
-                      bước tiếp theo.
-                    </p>
-                  </div>
-                </div>
               </div>
             )}
 
