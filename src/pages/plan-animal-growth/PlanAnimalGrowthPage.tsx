@@ -1,10 +1,9 @@
 import PageWrapper from "@/components/PageWrapper";
+import useAnimalGrowthWorkflowStore from "@/stores/useAnimalGrowthWorkflowStore";
 import { Button, DataTable } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { Plus } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useLocation } from "wouter";
-import useAnimalGrowthWorkflowStore from "@/stores/useAnimalGrowthWorkflowStore";
-import { useAnimalGrowthWorkflowDraftStore } from "./hooks/useAnimalGrowthWorkflowDraftStore";
 import {
   createWorkflowColumns,
   PlanAnimalGrowthStatisticsCards,
@@ -12,6 +11,7 @@ import {
   type WorkflowRow,
 } from "./data/table";
 import { useAnimalGrowthPage } from "./hooks/useAnimalGrowthPage";
+import { useAnimalGrowthWorkflowDraftStore } from "./hooks/useAnimalGrowthWorkflowDraftStore";
 
 interface PlanAnimalGrowthPageProps {
   basePath?: string;
@@ -105,7 +105,7 @@ export default function PlanAnimalGrowthPage({
       actions={
         <Button data-testid="add-plan" onClick={handleCreatePlan}>
           <Plus className="w-4 h-4 mr-2" />
-          Khởi tạo kế hoạch chăn nuôi mới
+          Khởi tạo quy trình
         </Button>
       }
     >

@@ -1,10 +1,9 @@
 import PageWrapper from "@/components/PageWrapper";
+import useWorkflowStore from "@/stores/useWorkflowStore";
 import { Button, DataTable } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { Plus } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useLocation } from "wouter";
-import useWorkflowStore from "@/stores/useWorkflowStore";
-import { usePlanWorkflowDraftStore } from "./hooks/usePlanWorkflowDraftStore";
 import {
   createWorkflowColumns,
   PlanGrowthStatisticsCards,
@@ -12,6 +11,7 @@ import {
   type WorkflowRow,
 } from "./data/table";
 import { usePlanPage } from "./hooks/usePlanPage";
+import { usePlanWorkflowDraftStore } from "./hooks/usePlanWorkflowDraftStore";
 
 interface PlanGrowthPageProps {
   basePath?: string;
@@ -45,8 +45,7 @@ export default function PlanGrowthPage({
         name: workflow.name,
         description: workflow.description,
         totalCount: workflowPlans.length,
-        activeCount: workflowPlans.filter((p) => p.status === "active")
-          .length,
+        activeCount: workflowPlans.filter((p) => p.status === "active").length,
         draftCount: workflowPlans.filter((p) => p.status === "draft").length,
         completedCount: workflowPlans.filter((p) => p.status === "completed")
           .length,
@@ -65,14 +64,11 @@ export default function PlanGrowthPage({
         totalCount: unassignedPlans.length,
         activeCount: unassignedPlans.filter((p) => p.status === "active")
           .length,
-        draftCount: unassignedPlans.filter((p) => p.status === "draft")
+        draftCount: unassignedPlans.filter((p) => p.status === "draft").length,
+        completedCount: unassignedPlans.filter((p) => p.status === "completed")
           .length,
-        completedCount: unassignedPlans.filter(
-          (p) => p.status === "completed",
-        ).length,
-        cancelledCount: unassignedPlans.filter(
-          (p) => p.status === "cancelled",
-        ).length,
+        cancelledCount: unassignedPlans.filter((p) => p.status === "cancelled")
+          .length,
       });
     }
 
@@ -94,7 +90,11 @@ export default function PlanGrowthPage({
     if (!query) return workflowRows;
 
     return workflowRows.filter((row) =>
-      [row.name, row.description].filter(Boolean).join(" ").toLowerCase().includes(query),
+      [row.name, row.description]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase()
+        .includes(query),
     );
   }, [workflowRows, search]);
 
@@ -105,7 +105,7 @@ export default function PlanGrowthPage({
       actions={
         <Button data-testid="add-plan" onClick={handleCreatePlan}>
           <Plus className="w-4 h-4 mr-2" />
-          Khởi tạo kế hoạch mới
+          Khởi tạo quy trình
         </Button>
       }
     >

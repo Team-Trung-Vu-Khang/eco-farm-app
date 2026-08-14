@@ -1,10 +1,9 @@
 import PageWrapper from "@/components/PageWrapper";
+import useAquacultureGrowthWorkflowStore from "@/stores/useAquacultureGrowthWorkflowStore";
 import { Button, DataTable } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { Plus } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useLocation } from "wouter";
-import useAquacultureGrowthWorkflowStore from "@/stores/useAquacultureGrowthWorkflowStore";
-import { useAquacultureGrowthWorkflowDraftStore } from "./hooks/useAquacultureGrowthWorkflowDraftStore";
 import {
   createWorkflowColumns,
   PlanAquacultureGrowthStatisticsCards,
@@ -12,6 +11,7 @@ import {
   type WorkflowRow,
 } from "./data/table";
 import { useAquacultureGrowthPage } from "./hooks/useAquacultureGrowthPage";
+import { useAquacultureGrowthWorkflowDraftStore } from "./hooks/useAquacultureGrowthWorkflowDraftStore";
 
 interface PlanAquacultureGrowthPageProps {
   basePath?: string;
@@ -23,7 +23,9 @@ export default function PlanAquacultureGrowthPage({
   const [search, setSearch] = useState("");
   const [, setLocation] = useLocation();
   const { plans, statistics } = useAquacultureGrowthPage(basePath);
-  const workflows = useAquacultureGrowthWorkflowStore((state) => state.workflows);
+  const workflows = useAquacultureGrowthWorkflowStore(
+    (state) => state.workflows,
+  );
   const resetWorkflowDraft = useAquacultureGrowthWorkflowDraftStore(
     (state) => state.resetDraft,
   );
@@ -105,7 +107,7 @@ export default function PlanAquacultureGrowthPage({
       actions={
         <Button data-testid="add-plan" onClick={handleCreatePlan}>
           <Plus className="w-4 h-4 mr-2" />
-          Khởi tạo kế hoạch nuôi trồng thủy sản mới
+          Khởi tạo quy trình
         </Button>
       }
     >
