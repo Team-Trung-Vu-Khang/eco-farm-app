@@ -14,8 +14,6 @@ import {
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import {
   ArrowLeft,
-  Ban,
-  CheckCircle2,
   ClipboardList,
   Layers,
   PencilLine,
@@ -376,8 +374,6 @@ function toDisplayNode(
 
 type InfoNodeHandlers = {
   onEdit: (id: string) => void;
-  onRequestToggleActive: (id: string) => void;
-  onRequestDelete: (id: string) => void;
 };
 
 function toInfoDisplayNode(
@@ -398,8 +394,6 @@ function toInfoDisplayNode(
       icon: Workflow,
       eyebrow: DEFAULT_DIAGRAM_INFO_EYEBROW,
       title: record.name,
-      status: record.isActive ? "in_progress" : "ended",
-      statusLabel: record.isActive ? "Đang áp dụng" : "Ngừng hoạt động",
       wide: true,
       description: record.description || "Chưa có mô tả cho node này.",
       regionLabels: getRegionLabelsFromSelections(record.selections, regions),
@@ -408,18 +402,6 @@ function toInfoDisplayNode(
           label: "Chỉnh sửa",
           icon: PencilLine,
           onClick: () => handlers.onEdit(record.id),
-        },
-        {
-          label: record.isActive ? "Ngừng hoạt động" : "Kích hoạt",
-          icon: record.isActive ? Ban : CheckCircle2,
-          tone: record.isActive ? "destructive" : "default",
-          onClick: () => handlers.onRequestToggleActive(record.id),
-        },
-        {
-          label: "Xóa node",
-          icon: Trash2,
-          tone: "destructive",
-          onClick: () => handlers.onRequestDelete(record.id),
         },
       ],
     },
@@ -575,44 +557,6 @@ export default function PlanAquacultureGrowthCreateWorkflowPage() {
     setLocation(`${WORKFLOW_BASE_PATH}/info/${id}/edit`);
   };
 
-  const handleRequestToggleInfoNodeActive = (id: string) => {
-    const record = infoNodes.find((item) => item.id === id);
-    if (!record) return;
-    const willActivate = !record.isActive;
-
-    setConfirmAction({
-      title: willActivate ? "Kích hoạt node?" : "Ngừng hoạt động node?",
-      description: willActivate
-        ? "Node thông tin quy trình sẽ được kích hoạt trở lại."
-        : "Node thông tin quy trình sẽ tạm ngừng hoạt động. Bạn có thể kích hoạt lại bất cứ lúc nào.",
-      confirmLabel: willActivate ? "Kích hoạt" : "Ngừng hoạt động",
-      tone: willActivate ? "default" : "destructive",
-      onConfirm: () => {
-        setInfoNodes((prev) =>
-          prev.map((item) =>
-            item.id === id ? { ...item, isActive: willActivate } : item,
-          ),
-        );
-      },
-    });
-  };
-
-  const handleRequestDeleteInfoNode = (id: string) => {
-    const record = infoNodes.find((item) => item.id === id);
-
-    setConfirmAction({
-      title: "Xóa node thông tin quy trình?",
-      description: `Hành động này sẽ xóa node${
-        record?.name ? ` "${record.name}"` : " này"
-      }. Không thể hoàn tác.`,
-      confirmLabel: "Xóa node",
-      tone: "destructive",
-      onConfirm: () => {
-        setInfoNodes((prev) => prev.filter((item) => item.id !== id));
-      },
-    });
-  };
-
   const handleSaveWorkflow = () => {
     if (!infoNodes.length) return;
 
@@ -652,8 +596,6 @@ export default function PlanAquacultureGrowthCreateWorkflowPage() {
 
   const infoNodeHandlers: InfoNodeHandlers = {
     onEdit: handleOpenEditInfoNode,
-    onRequestToggleActive: handleRequestToggleInfoNodeActive,
-    onRequestDelete: handleRequestDeleteInfoNode,
   };
 
   const displayNodes = nodes.map((node) =>

@@ -260,7 +260,7 @@ export function WorkflowCardNode({ data }: NodeProps<WorkflowCardNodeData>) {
     const posterWrapperClass = isDarkPoster
       ? "border-slate-500/60 bg-[#111111] text-slate-100 shadow-[0_16px_44px_rgba(0,0,0,0.45)]"
       : isCyclePoster
-        ? "border-transparent bg-white shadow-[0_16px_44px_rgba(16,185,129,0.16)]"
+        ? "border-emerald-200 bg-white shadow-[0_16px_44px_rgba(16,185,129,0.16)]"
         : "border-slate-200 bg-white shadow-[0_16px_44px_rgba(15,23,42,0.08)]";
     const posterChipClass = isDarkPoster
       ? "border-white/15 bg-black/25 text-slate-100"
@@ -280,7 +280,7 @@ export function WorkflowCardNode({ data }: NodeProps<WorkflowCardNodeData>) {
     const posterRegionWrapClass = isDarkPoster
       ? "border-white/20 bg-black/20"
       : isCyclePoster
-        ? "border-emerald-200/70 bg-emerald-50/40"
+        ? "border-emerald-200/70 bg-emerald-50/60"
         : "border-slate-100";
     const posterRegionTitleClass = isDarkPoster
       ? "bg-[#111111] text-slate-300"
@@ -303,6 +303,12 @@ export function WorkflowCardNode({ data }: NodeProps<WorkflowCardNodeData>) {
     const posterFooterButtonClass = isDarkPoster
       ? "border-white/20 bg-black/30 text-white shadow-[0_10px_22px_rgba(0,0,0,0.35)] hover:bg-black/45"
       : footerActionButtonClass;
+
+    // A lone action on the cycle/info card (e.g. "Chỉnh sửa") reads as a
+    // corner icon button next to the eyebrow badge instead of a bottom bar —
+    // there's nothing else competing for that space once status is gone.
+    const cornerAction =
+      isCyclePoster && data.actions?.length === 1 ? data.actions[0] : null;
 
     return (
       <div className={widthClass}>
@@ -342,17 +348,36 @@ export function WorkflowCardNode({ data }: NodeProps<WorkflowCardNodeData>) {
               {data.eyebrow ?? config.badge}
             </Badge>
 
-            {status && (
-              <Badge
-                variant="outline"
-                className={[
-                  "h-8 rounded-xl px-3.5 text-[11px] font-semibold tracking-[0.14em]",
-                  posterStatusClass,
-                ].join(" ")}
-              >
-                {data.statusLabel ?? status.label}
-              </Badge>
-            )}
+            <div className="flex items-center gap-2">
+              {status && (
+                <Badge
+                  variant="outline"
+                  className={[
+                    "h-8 rounded-xl px-3.5 text-[11px] font-semibold tracking-[0.14em]",
+                    posterStatusClass,
+                  ].join(" ")}
+                >
+                  {data.statusLabel ?? status.label}
+                </Badge>
+              )}
+              {cornerAction && (
+                <Button
+                  type="button"
+                  size="sm"
+                  aria-label={cornerAction.label}
+                  className="nodrag h-8 gap-1.5 rounded-xl border border-emerald-200 bg-emerald-50 px-3 text-[11px] font-semibold text-emerald-700 shadow-none hover:bg-emerald-100"
+                  disabled={cornerAction.disabled}
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    cornerAction.onClick();
+                  }}
+                  onMouseDown={(event) => event.stopPropagation()}
+                >
+                  <cornerAction.icon className="h-4 w-4" />
+                  {cornerAction.label}
+                </Button>
+              )}
+            </div>
           </div>
 
           <h3
@@ -474,7 +499,7 @@ export function WorkflowCardNode({ data }: NodeProps<WorkflowCardNodeData>) {
             </div>
           ) : null}
 
-          {data.actions?.length ? (
+          {data.actions?.length && !cornerAction ? (
             <div
               className={[
                 "mt-5 grid gap-2.5",
