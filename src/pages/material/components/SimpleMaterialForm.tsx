@@ -23,6 +23,7 @@ import {
   X,
   Cpu,
   Hammer,
+  Loader2,
 } from "lucide-react";
 import type { MaterialFormData } from "../types/types";
 import { commonHashtags, materialGroups } from "../data/constants";
@@ -33,6 +34,7 @@ interface SimpleMaterialFormProps {
   handleComplete: () => void;
   goBack: () => void;
   completeLabel?: string;
+  loading?: boolean;
 }
 
 export default function SimpleMaterialForm({
@@ -41,8 +43,10 @@ export default function SimpleMaterialForm({
   handleComplete,
   goBack,
   completeLabel = "Hoàn tất & Lưu",
+  loading,
 }: SimpleMaterialFormProps) {
-  const isValid = Boolean(formData.name && formData.code);
+  const isEdit = window.location.pathname.includes("/edit");
+  const isValid = Boolean(formData.name);
   const [paramHashtag, setParamHashtag] = useState("");
 
   const onAddHashtag = () => {
@@ -137,9 +141,11 @@ export default function SimpleMaterialForm({
 
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <div className="space-y-2">
-            <Label required>Mã vật tư</Label>
+            <Label>Mã vật tư</Label>
             <Input
               value={formData.code}
+              disabled={isEdit}
+              clearable={!isEdit}
               onChange={(e) => updateField("code", e.target.value)}
               placeholder="VD: VL001"
             />
@@ -303,10 +309,11 @@ export default function SimpleMaterialForm({
         </Button>
         <Button
           type="button"
-          disabled={!isValid}
+          disabled={!isValid || loading}
           onClick={handleComplete}
           className="font-bold"
         >
+          {loading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
           {completeLabel}
         </Button>
       </div>

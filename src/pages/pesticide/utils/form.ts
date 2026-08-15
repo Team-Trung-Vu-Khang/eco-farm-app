@@ -26,7 +26,8 @@ export const createEmptyPesticideFormData = (): PesticideFormData => ({
   toxicityInfo: "",
   protectiveMeasures: "",
   firstAid: "",
-  legalStatus: "",
+  legalStatus: "allowed",
+  legalDescription: "",
   standardsCompliance: [],
   // Bước 4
   manufacturerOrigin: "",
@@ -46,6 +47,7 @@ export const createEmptyPesticideFormData = (): PesticideFormData => ({
   quantity: "",
   unit: "",
   packaging: "",
+  formType: "basic",
 });
 
 export const createPesticideFormDataFromItem = (
@@ -76,7 +78,8 @@ export const createPesticideFormDataFromItem = (
   toxicityInfo: item.toxicityInfo ?? "",
   protectiveMeasures: item.protectiveMeasures ?? "",
   firstAid: item.firstAid ?? "",
-  legalStatus: item.legalStatus ?? "",
+  legalStatus: item.legalStatus ?? "allowed",
+  legalDescription: item.legalDescription ?? "",
   standardsCompliance: item.standardsCompliance ?? [],
   // Bước 4
   manufacturerOrigin: item.manufacturerOrigin ?? item.origin ?? "",
@@ -86,13 +89,18 @@ export const createPesticideFormDataFromItem = (
   packagingSpecs: item.packagingSpecs ?? [],
   // Legacy / misc
   origin: item.origin,
-  usage: "",
-  note: "",
-  hashtags: ["HieuQuaCao", "AnToan"],
+  hashtags: item.hashtags ?? [],
+  note: item.note ?? "",
   technicalDocType: "file",
   technicalDocContent: "",
   technicalDocFile: null,
   selectedSupplierId: "sup1",
+  imageFile: null,
+  formType: item.formType || "basic",
+  usage: null,
+  packaging: "",
+  quantity: "",
+  unit: "",
   ...parsePackagingSpec(item.packagingSpecs?.[0]),
 });
 

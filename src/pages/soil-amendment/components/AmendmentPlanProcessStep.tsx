@@ -150,7 +150,10 @@ export function AmendmentPlanProcessStep({
           <Label className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
             Quy trình áp dụng
           </Label>
-          <Select onValueChange={handleProcessChange} value={formData.processId}>
+          <Select
+            onValueChange={handleProcessChange}
+            value={formData.processId}
+          >
             <SelectTrigger className="h-14 border-emerald-100 bg-emerald-50/20 focus:ring-emerald-500">
               <div className="flex items-center gap-3">
                 <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-emerald-500 text-white">
@@ -161,7 +164,11 @@ export function AmendmentPlanProcessStep({
             </SelectTrigger>
             <SelectContent>
               {AMENDMENT_PROCESSES.map((process) => (
-                <SelectItem className="py-3" key={process.id} value={process.id}>
+                <SelectItem
+                  className="py-3"
+                  key={process.id}
+                  value={process.id}
+                >
                   <div className="flex flex-col gap-0.5">
                     <span className="font-bold text-slate-900">
                       {process.name}
@@ -240,7 +247,9 @@ export function AmendmentPlanProcessStep({
           </Label>
           <Select
             onValueChange={(value) => {
-              const regimen = treatmentRegimens.find((item) => item.id === value);
+              const regimen = treatmentRegimens.find(
+                (item) => item.id === value,
+              );
               setFormData((current) => ({
                 ...current,
                 regimenId: value,

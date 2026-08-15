@@ -1,5 +1,12 @@
 import { Badge, Card, CardContent } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { CheckCircle2, Wrench, Cpu, FileText, Building2, Package } from "lucide-react";
+import {
+  CheckCircle2,
+  Wrench,
+  Cpu,
+  FileText,
+  Building2,
+  Package,
+} from "lucide-react";
 import {
   suppliers as presetSuppliers,
   technologyLevelOptions,
@@ -34,7 +41,8 @@ export const EquipmentConfirmationStep = ({
           Xác nhận thông tin thiết bị
         </h3>
         <p className="text-green-700 mt-2">
-          Vui lòng kiểm tra kỹ tất cả các khía cạnh thông số kỹ thuật trước khi lưu dữ liệu.
+          Vui lòng kiểm tra kỹ tất cả các khía cạnh thông số kỹ thuật trước khi
+          lưu dữ liệu.
         </p>
       </div>
 
@@ -48,36 +56,66 @@ export const EquipmentConfirmationStep = ({
             </h4>
             <div className="space-y-2.5 text-sm">
               <div>
-                <span className="text-muted-foreground block text-xs">Mã sản phẩm / SKU:</span>
-                <span className="font-semibold text-slate-900">{formData.sku || "N/A"}</span>
+                <span className="text-muted-foreground block text-xs">
+                  Mã sản phẩm / SKU:
+                </span>
+                <span className="font-semibold text-slate-900">
+                  {formData.sku || "N/A"}
+                </span>
               </div>
               <div>
-                <span className="text-muted-foreground block text-xs">Tên máy móc / thiết bị:</span>
-                <span className="font-semibold text-slate-900">{formData.machineName || "N/A"}</span>
+                <span className="text-muted-foreground block text-xs">
+                  Tên máy móc / thiết bị:
+                </span>
+                <span className="font-semibold text-slate-900">
+                  {formData.machineName || "N/A"}
+                </span>
               </div>
               <div>
-                <span className="text-muted-foreground block text-xs">Model / Kiểu máy:</span>
-                <span className="font-medium text-slate-700">{formData.model || "N/A"}</span>
+                <span className="text-muted-foreground block text-xs">
+                  Model / Kiểu máy:
+                </span>
+                <span className="font-medium text-slate-700">
+                  {formData.model || "N/A"}
+                </span>
               </div>
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <span className="text-muted-foreground block text-xs">Hãng sản xuất:</span>
-                  <span className="font-medium text-slate-700">{formData.manufacturer || "N/A"}</span>
+                  <span className="text-muted-foreground block text-xs">
+                    Hãng sản xuất:
+                  </span>
+                  <span className="font-medium text-slate-700">
+                    {formData.manufacturer || "N/A"}
+                  </span>
                 </div>
                 <div>
-                  <span className="text-muted-foreground block text-xs">Nước sản xuất:</span>
-                  <span className="font-medium text-slate-700">{formData.countryOfOrigin || "N/A"}</span>
+                  <span className="text-muted-foreground block text-xs">
+                    Nước sản xuất:
+                  </span>
+                  <span className="font-medium text-slate-700">
+                    {formData.countryOfOrigin || "N/A"}
+                  </span>
                 </div>
               </div>
               <div>
-                <span className="text-muted-foreground block text-xs">Năm sản xuất:</span>
-                <span className="font-medium text-slate-700">{formData.manufactureYear || "N/A"}</span>
+                <span className="text-muted-foreground block text-xs">
+                  Năm sản xuất:
+                </span>
+                <span className="font-medium text-slate-700">
+                  {formData.manufactureYear || "N/A"}
+                </span>
               </div>
               <div>
-                <span className="text-muted-foreground block text-xs">Hashtags:</span>
+                <span className="text-muted-foreground block text-xs">
+                  Hashtags:
+                </span>
                 <div className="flex flex-wrap gap-1 mt-1">
                   {(formData.hashtags || []).map((tag) => (
-                    <Badge key={tag} variant="outline" className="text-[10px] bg-slate-50">
+                    <Badge
+                      key={tag}
+                      variant="outline"
+                      className="text-[10px] bg-slate-50"
+                    >
                       #{tag}
                     </Badge>
                   ))}
@@ -87,7 +125,9 @@ export const EquipmentConfirmationStep = ({
                 </div>
               </div>
               <div>
-                <span className="text-muted-foreground block text-xs">Mô tả / Ghi chú:</span>
+                <span className="text-muted-foreground block text-xs">
+                  Mô tả / Ghi chú:
+                </span>
                 <span className="font-medium text-slate-700 block whitespace-pre-wrap">
                   {formData.description || "N/A"}
                 </span>
@@ -106,65 +146,107 @@ export const EquipmentConfirmationStep = ({
             <div className="space-y-2.5 text-sm">
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <span className="text-muted-foreground block text-xs">Nhóm công nghệ:</span>
+                  <span className="text-muted-foreground block text-xs">
+                    Nhóm công nghệ:
+                  </span>
                   <span className="font-semibold text-slate-900">
-                    {technologyLevelOptions.find((o) => o.id === formData.technologyLevelGroup)?.label || "N/A"}
+                    {technologyLevelOptions.find(
+                      (o) => o.id === formData.technologyLevelGroup,
+                    )?.label || "N/A"}
                   </span>
                 </div>
                 <div>
-                  <span className="text-muted-foreground block text-xs">Nhóm tài sản:</span>
+                  <span className="text-muted-foreground block text-xs">
+                    Nhóm tài sản:
+                  </span>
                   <span className="font-semibold text-slate-900">
-                    {financialManagementOptions.find((o) => o.id === formData.assetManagementGroup)?.label || "N/A"}
+                    {financialManagementOptions.find(
+                      (o) => o.id === formData.assetManagementGroup,
+                    )?.label || "N/A"}
                   </span>
                 </div>
               </div>
               <div>
-                <span className="text-muted-foreground block text-xs mb-1">Nhóm chuỗi quy trình:</span>
+                <span className="text-muted-foreground block text-xs mb-1">
+                  Nhóm chuỗi quy trình:
+                </span>
                 <div className="flex flex-wrap gap-1">
                   {valueChainGroupArr.map((id) => {
-                    const label = valueChainOptions.find((o) => o.id === id)?.label;
+                    const label = valueChainOptions.find(
+                      (o) => o.id === id,
+                    )?.label;
                     return (
                       <Badge key={id} variant="outline" className="text-[11px]">
                         {label || id}
                       </Badge>
                     );
                   })}
-                  {valueChainGroupArr.length === 0 && <span className="text-slate-400">Chưa chọn khâu</span>}
+                  {valueChainGroupArr.length === 0 && (
+                    <span className="text-slate-400">Chưa chọn khâu</span>
+                  )}
                 </div>
               </div>
               <div>
-                <span className="text-muted-foreground block text-xs mb-1">Loại máy / Công dụng:</span>
+                <span className="text-muted-foreground block text-xs mb-1">
+                  Loại máy / Công dụng:
+                </span>
                 <div className="flex flex-wrap gap-1">
                   {machineTypeArr.map((tag) => (
-                    <Badge key={tag} variant="secondary" className="text-[11px] bg-slate-100">
+                    <Badge
+                      key={tag}
+                      variant="secondary"
+                      className="text-[11px] bg-slate-100"
+                    >
                       {tag}
                     </Badge>
                   ))}
-                  {machineTypeArr.length === 0 && <span className="text-slate-400">Chưa nhập loại</span>}
+                  {machineTypeArr.length === 0 && (
+                    <span className="text-slate-400">Chưa nhập loại</span>
+                  )}
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <span className="text-muted-foreground block text-xs">Công suất:</span>
-                  <span className="font-medium text-slate-700">{formData.powerCapacity || "N/A"}</span>
+                  <span className="text-muted-foreground block text-xs">
+                    Công suất:
+                  </span>
+                  <span className="font-medium text-slate-700">
+                    {formData.powerCapacity || "N/A"}
+                  </span>
                 </div>
                 <div>
-                  <span className="text-muted-foreground block text-xs">Dung tích / Khả năng:</span>
-                  <span className="font-medium text-slate-700">{formData.workingCapacity || "N/A"}</span>
+                  <span className="text-muted-foreground block text-xs">
+                    Dung tích / Khả năng:
+                  </span>
+                  <span className="font-medium text-slate-700">
+                    {formData.workingCapacity || "N/A"}
+                  </span>
                 </div>
               </div>
               <div className="grid grid-cols-3 gap-2">
                 <div>
-                  <span className="text-muted-foreground block text-xs">Nhiên liệu:</span>
-                  <span className="font-medium text-slate-700">{formData.fuelEnergyType || "N/A"}</span>
+                  <span className="text-muted-foreground block text-xs">
+                    Nhiên liệu:
+                  </span>
+                  <span className="font-medium text-slate-700">
+                    {formData.fuelEnergyType || "N/A"}
+                  </span>
                 </div>
                 <div>
-                  <span className="text-muted-foreground block text-xs">Trọng lượng:</span>
-                  <span className="font-medium text-slate-700">{formData.weight || "N/A"}</span>
+                  <span className="text-muted-foreground block text-xs">
+                    Trọng lượng:
+                  </span>
+                  <span className="font-medium text-slate-700">
+                    {formData.weight || "N/A"}
+                  </span>
                 </div>
                 <div>
-                  <span className="text-muted-foreground block text-xs">Kích thước:</span>
-                  <span className="font-medium text-slate-700 truncate block">{formData.dimensions || "N/A"}</span>
+                  <span className="text-muted-foreground block text-xs">
+                    Kích thước:
+                  </span>
+                  <span className="font-medium text-slate-700 truncate block">
+                    {formData.dimensions || "N/A"}
+                  </span>
                 </div>
               </div>
             </div>
@@ -181,33 +263,50 @@ export const EquipmentConfirmationStep = ({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
               <div className="space-y-2">
                 <div>
-                  <span className="text-muted-foreground block text-xs">Định mức tiêu hao nhiên liệu:</span>
-                  <span className="font-semibold text-slate-900">{formData.fuelConsumptionRate || "N/A"}</span>
+                  <span className="text-muted-foreground block text-xs">
+                    Định mức tiêu hao nhiên liệu:
+                  </span>
+                  <span className="font-semibold text-slate-900">
+                    {formData.fuelConsumptionRate || "N/A"}
+                  </span>
                 </div>
                 <div>
-                  <span className="text-muted-foreground block text-xs">Lịch bảo dưỡng định kỳ:</span>
-                  <span className="font-semibold text-slate-900">{formData.maintenanceSchedule || "N/A"}</span>
+                  <span className="text-muted-foreground block text-xs">
+                    Lịch bảo dưỡng định kỳ:
+                  </span>
+                  <span className="font-semibold text-slate-900">
+                    {formData.maintenanceSchedule || "N/A"}
+                  </span>
                 </div>
                 <div>
-                  <span className="text-muted-foreground block text-xs">Phụ tùng chính kèm theo:</span>
+                  <span className="text-muted-foreground block text-xs">
+                    Phụ tùng chính kèm theo:
+                  </span>
                   <span className="font-medium text-slate-700 whitespace-pre-line bg-slate-50 p-2 border block rounded text-xs">
                     {formData.mainAccessories || "Không gán phụ tùng"}
                   </span>
                 </div>
               </div>
               <div>
-                <span className="text-muted-foreground block text-xs mb-1">Tài liệu kỹ thuật kèm theo:</span>
+                <span className="text-muted-foreground block text-xs mb-1">
+                  Tài liệu kỹ thuật kèm theo:
+                </span>
                 {formData.technicalDocType === "file" ? (
                   <div className="p-4 bg-slate-50 border rounded-lg flex items-center gap-2 text-xs">
                     <FileText className="w-8 h-8 text-blue-500" />
                     <div>
-                      <div className="font-semibold text-slate-800">Tệp tài liệu kỹ thuật / Hướng dẫn sử dụng</div>
-                      <div className="text-muted-foreground">Đã đính kèm tệp cấu hình thiết bị</div>
+                      <div className="font-semibold text-slate-800">
+                        Tệp tài liệu kỹ thuật / Hướng dẫn sử dụng
+                      </div>
+                      <div className="text-muted-foreground">
+                        Đã đính kèm tệp cấu hình thiết bị
+                      </div>
                     </div>
                   </div>
                 ) : (
                   <div className="bg-slate-50 p-3 rounded-lg border text-xs max-h-36 overflow-y-auto font-mono whitespace-pre-wrap text-slate-700 leading-relaxed">
-                    {formData.technicalDocContent || "Chưa nhập nội dung hướng dẫn sử dụng"}
+                    {formData.technicalDocContent ||
+                      "Chưa nhập nội dung hướng dẫn sử dụng"}
                   </div>
                 )}
               </div>
@@ -225,51 +324,95 @@ export const EquipmentConfirmationStep = ({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm">
               <div className="space-y-3">
                 <div>
-                  <span className="text-muted-foreground block text-xs mb-1">Nhà sản xuất / Quốc gia:</span>
+                  <span className="text-muted-foreground block text-xs mb-1">
+                    Nhà sản xuất / Quốc gia:
+                  </span>
                   <div className="flex flex-wrap gap-1">
                     {manufacturerOriginArr.map((tag) => (
-                      <Badge key={tag} variant="outline" className="text-xs bg-slate-50">{tag}</Badge>
+                      <Badge
+                        key={tag}
+                        variant="outline"
+                        className="text-xs bg-slate-50"
+                      >
+                        {tag}
+                      </Badge>
                     ))}
-                    {manufacturerOriginArr.length === 0 && <span className="text-slate-400">N/A</span>}
+                    {manufacturerOriginArr.length === 0 && (
+                      <span className="text-slate-400">N/A</span>
+                    )}
                   </div>
                 </div>
                 <div>
-                  <span className="text-muted-foreground block text-xs mb-1">Đơn vị nhập khẩu / Đăng ký:</span>
+                  <span className="text-muted-foreground block text-xs mb-1">
+                    Đơn vị nhập khẩu / Đăng ký:
+                  </span>
                   <div className="flex flex-wrap gap-1">
                     {importerRegistrantArr.map((tag) => (
-                      <Badge key={tag} variant="outline" className="text-xs bg-slate-50">{tag}</Badge>
+                      <Badge
+                        key={tag}
+                        variant="outline"
+                        className="text-xs bg-slate-50"
+                      >
+                        {tag}
+                      </Badge>
                     ))}
-                    {importerRegistrantArr.length === 0 && <span className="text-slate-400">N/A</span>}
+                    {importerRegistrantArr.length === 0 && (
+                      <span className="text-slate-400">N/A</span>
+                    )}
                   </div>
                 </div>
                 <div>
-                  <span className="text-muted-foreground block text-xs mb-1">Nhà phân phối chính thức:</span>
+                  <span className="text-muted-foreground block text-xs mb-1">
+                    Nhà phân phối chính thức:
+                  </span>
                   <div className="flex flex-wrap gap-1">
                     {distributorArr.map((tag) => (
-                      <Badge key={tag} variant="outline" className="text-xs bg-slate-50">{tag}</Badge>
+                      <Badge
+                        key={tag}
+                        variant="outline"
+                        className="text-xs bg-slate-50"
+                      >
+                        {tag}
+                      </Badge>
                     ))}
-                    {distributorArr.length === 0 && <span className="text-slate-400">N/A</span>}
+                    {distributorArr.length === 0 && (
+                      <span className="text-slate-400">N/A</span>
+                    )}
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                   <div>
-                    <span className="text-muted-foreground block text-xs">Giá tham khảo:</span>
-                    <span className="font-semibold text-slate-900">{formData.referencePrice || "N/A"}</span>
+                    <span className="text-muted-foreground block text-xs">
+                      Giá tham khảo:
+                    </span>
+                    <span className="font-semibold text-slate-900">
+                      {formData.referencePrice || "N/A"}
+                    </span>
                   </div>
                   <div>
-                    <span className="text-muted-foreground block text-xs mb-1">Quy cách bao bì:</span>
+                    <span className="text-muted-foreground block text-xs mb-1">
+                      Quy cách bao bì:
+                    </span>
                     <div className="flex flex-wrap gap-1">
                       {packagingSpecsArr.map((s) => (
-                        <Badge key={s} variant="secondary" className="text-[10px]">{s}</Badge>
+                        <Badge
+                          key={s}
+                          variant="secondary"
+                          className="text-[10px]"
+                        >
+                          {s}
+                        </Badge>
                       ))}
-                      {packagingSpecsArr.length === 0 && <span className="text-slate-400">N/A</span>}
+                      {packagingSpecsArr.length === 0 && (
+                        <span className="text-slate-400">N/A</span>
+                      )}
                     </div>
                   </div>
                 </div>
               </div>
 
               {/* Warehousing details */}
-              <div className="space-y-2">
+              {/* <div className="space-y-2">
                 <span className="text-muted-foreground block text-xs font-semibold">Tồn kho lô nhập ban đầu:</span>
                 <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1">
                   {supplierDetailsArr.map((item, idx) => {
@@ -292,7 +435,7 @@ export const EquipmentConfirmationStep = ({
                     </div>
                   )}
                 </div>
-              </div>
+              </div> */}
             </div>
           </CardContent>
         </Card>

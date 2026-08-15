@@ -1,30 +1,30 @@
 import PageWrapper from "@/components/PageWrapper";
-import {
-  Button,
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import { Button } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { ChevronLeft, Edit } from "lucide-react";
 import { useLocation, useRoute } from "wouter";
 import useEquipmentStore from "../../stores/useEquipmentStore";
+import { useFarmSupplyDetailHook } from "@/features/farm-supply/hooks/useFarmSupplyDetailHook";
 import { EquipmentDetailHeader } from "../equipment/components/detail/EquipmentDetailHeader";
 import { EquipmentDetailSidebar } from "../equipment/components/detail/EquipmentDetailSidebar";
-import {
-  DocsTab,
-  InfoTab,
-  MaintenanceTab,
-  UsageTab,
-} from "../equipment/components/detail/EquipmentDetailTabs";
+import { InfoTab } from "../equipment/components/detail/EquipmentDetailTabs";
 
 const AqEquipmentDetailPage = () => {
   const [, params] = useRoute("/aquaculture-material/equipment/:id");
   const [, setLocation] = useLocation();
   const id = params?.id ? Number(params.id) : 0;
+  const { item, loading } = useFarmSupplyDetailHook("equipment", id);
 
-  const getEquipmentById = useEquipmentStore((state) => state.getEquipmentById);
-  const item = getEquipmentById(id);
+  if (loading) {
+    return (
+      <PageWrapper title="Chi tiết thiết bị thủy sản">
+        <div className="flex flex-col items-center justify-center py-20">
+          <p className="text-muted-foreground animate-pulse">
+            Đang tải dữ liệu...
+          </p>
+        </div>
+      </PageWrapper>
+    );
+  }
 
   if (!item) {
     return (
@@ -46,14 +46,16 @@ const AqEquipmentDetailPage = () => {
       title="Chi tiết thiết bị thủy sản"
       description={`Thông tin và lịch sử bảo dưỡng của ${item.name}`}
       actions={
-        <Button
-          onClick={() =>
-            setLocation(`/aquaculture-material/equipment/${id}/edit`)
-          }
-        >
-          <Edit className="w-4 h-4 mr-2" />
-          Chỉnh sửa
-        </Button>
+        item.source === "OWNER" && (
+          <Button
+            onClick={() =>
+              setLocation(`/aquaculture-material/equipment/${id}/edit`)
+            }
+          >
+            <Edit className="w-4 h-4 mr-2" />
+            Chỉnh sửa
+          </Button>
+        )
       }
     >
       <div className="mb-6">
@@ -71,28 +73,7 @@ const AqEquipmentDetailPage = () => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 space-y-8">
           <EquipmentDetailHeader item={item} />
-
-          <Tabs defaultValue="info" className="w-full">
-            <TabsList className="grid w-full grid-cols-4 bg-slate-100 p-1 rounded-xl">
-              <TabsTrigger value="info">Thông tin</TabsTrigger>
-              <TabsTrigger value="history">Lịch sử dùng</TabsTrigger>
-              <TabsTrigger value="maintenance">Bảo trì</TabsTrigger>
-              <TabsTrigger value="docs">Tài liệu</TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="info" className="mt-6 space-y-6">
-              <InfoTab item={item} />
-            </TabsContent>
-            <TabsContent value="history" className="mt-6">
-              <UsageTab />
-            </TabsContent>
-            <TabsContent value="maintenance" className="mt-6">
-              <MaintenanceTab />
-            </TabsContent>
-            <TabsContent value="docs" className="mt-6">
-              <DocsTab equipmentCode={item.code} />
-            </TabsContent>
-          </Tabs>
+          <InfoTab item={item} />
         </div>
 
         <div className="space-y-6">

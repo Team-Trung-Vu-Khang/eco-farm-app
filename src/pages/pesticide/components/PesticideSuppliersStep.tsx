@@ -15,6 +15,8 @@ import { useState } from "react";
 import { packagingUnitOptions } from "../data/constants";
 import type { PesticideFormData } from "../types";
 import { PartnerSelectorDialog } from "@/components/organizations/PartnerSelectorDialog";
+import { useQuery } from "@tanstack/react-query";
+import { farmSupplyApi } from "@/features/farm-supply";
 
 interface PesticideSuppliersStepProps {
   formData: PesticideFormData;
@@ -60,6 +62,27 @@ export default function PesticideSuppliersStep({
   formData,
   onFormFieldChange,
 }: PesticideSuppliersStepProps) {
+  // Fetch packaging types and units
+  const { data: packagingTypes } = useQuery({
+    queryKey: ["packaging-types"],
+    queryFn: () => farmSupplyApi.listPackagingTypes(),
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const { data: baseUnits } = useQuery({
+    queryKey: ["base-units"],
+    queryFn: () => farmSupplyApi.listBaseUnits(),
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const packagingList =
+    packagingTypes && packagingTypes.length > 0
+      ? packagingTypes.map((p) => p.name)
+      : PACKAGING_OPTIONS;
+
+  const unitList =
+    baseUnits && baseUnits.length > 0 ? baseUnits.map((u) => u.name) : MEASURE_UNIT_OPTIONS;
+
   const [quantity, setQuantity] = useState("");
   const [unit, setUnit] = useState("");
   const [packaging, setPackaging] = useState("");
@@ -253,7 +276,7 @@ export default function PesticideSuppliersStep({
                   <SelectValue placeholder="Chọn..." />
                 </SelectTrigger>
                 <SelectContent>
-                  {PACKAGING_OPTIONS.map((p) => (
+                  {packagingList.map((p) => (
                     <SelectItem key={p} value={p}>
                       {p}
                     </SelectItem>
@@ -284,7 +307,7 @@ export default function PesticideSuppliersStep({
                   <SelectValue placeholder="Chọn..." />
                 </SelectTrigger>
                 <SelectContent>
-                  {MEASURE_UNIT_OPTIONS.map((u) => (
+                  {unitList.map((u) => (
                     <SelectItem key={u} value={u}>
                       {u}
                     </SelectItem>

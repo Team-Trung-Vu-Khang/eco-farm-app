@@ -5,6 +5,11 @@ import {
   Label,
   MultiSelect,
   Textarea,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
   type SerializedEditorState,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import {
@@ -14,9 +19,11 @@ import {
   HeartPulse,
   Shield,
 } from "lucide-react";
-import { initialEditorValue } from "../../../docs/mocks";
+
 import { standardsOptions } from "../../data/constants";
 import type { FertilizerFormData } from "../../types/types";
+import { useQuery } from "@tanstack/react-query";
+import { farmSupplyApi } from "@/features/farm-supply";
 
 interface FertilizerSafetyLegalStepProps {
   formData: FertilizerFormData;
@@ -64,15 +71,23 @@ const STANDARDS_META: Record<
   },
 };
 
-const standardsMultiOptions = standardsOptions.map((std) => ({
-  label: std,
-  value: std,
-}));
-
 export default function FertilizerSafetyLegalStep({
   formData,
   updateField,
 }: FertilizerSafetyLegalStepProps) {
+  const { data: apiStandards } = useQuery({
+    queryKey: ["certificate-standards"],
+    queryFn: () => farmSupplyApi.listCertificateStandards(),
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const standardsMultiOptions =
+    apiStandards && apiStandards.length > 0
+      ? apiStandards.map((c: any) => ({ label: c.name, value: c.name }))
+      : standardsOptions.map((std) => ({
+          label: std,
+          value: std,
+        }));
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500 max-w-4xl mx-auto">
       {/* Card: Toxicity & Protection */}
@@ -117,10 +132,15 @@ export default function FertilizerSafetyLegalStep({
             <Editor
               maxLength={200000}
               contentEditableClassname="h-[250px] p-6 focus:outline-none bg-white text-base leading-loose text-slate-700"
+              initialHtml={
+                typeof formData.firstAid === "string" && formData.firstAid
+                  ? formData.firstAid
+                  : undefined
+              }
               editorSerializedState={
-                typeof formData.firstAid === "string" || !formData.firstAid
-                  ? (initialEditorValue as unknown as SerializedEditorState)
-                  : (formData.firstAid as unknown as SerializedEditorState)
+                typeof formData.firstAid !== "string" && formData.firstAid
+                  ? (formData.firstAid as unknown as SerializedEditorState)
+                  : undefined
               }
               onSerializedChange={(content) =>
                 updateField("firstAid", content as unknown as string)
@@ -140,34 +160,22 @@ export default function FertilizerSafetyLegalStep({
         {/* Legal Status */}
         <div className="space-y-2">
           <Label>Tình trạng pháp lý tại Việt Nam</Label>
-          <div className="flex gap-2 flex-wrap mb-2">
-            {["Được phép lưu hành", "Hạn chế sử dụng", "Cấm sử dụng"].map(
-              (status) => (
-                <button
-                  key={status}
-                  type="button"
-                  onClick={() => updateField("legalStatus", status)}
-                  className={`px-4 py-2 rounded-lg border text-sm font-medium transition-all ${
-                    formData.legalStatus === status
-                      ? status === "Cấm sử dụng"
-                        ? "bg-red-100 border-red-400 text-red-700"
-                        : status === "Hạn chế sử dụng"
-                          ? "bg-orange-100 border-orange-400 text-orange-700"
-                          : "bg-green-100 border-green-400 text-green-700"
-                      : "bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100"
-                  }`}
-                >
-                  {status === "Được phép lưu hành" && (
-                    <CheckCircle2 className="w-3.5 h-3.5 inline mr-1" />
-                  )}
-                  {status}
-                </button>
-              ),
-            )}
-          </div>
-          <Textarea
+          <Select
             value={formData.legalStatus}
-            onChange={(e) => updateField("legalStatus", e.target.value)}
+            onValueChange={(value) => updateField("legalStatus", value as any)}
+          >
+            <SelectTrigger className="w-full text-left">
+              <SelectValue placeholder="Chọn tình trạng pháp lý..." />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="allowed">Được phép lưu hành</SelectItem>
+              <SelectItem value="restricted">Hạn chế sử dụng</SelectItem>
+              <SelectItem value="banned">Cấm sử dụng</SelectItem>
+            </SelectContent>
+          </Select>
+          <Textarea
+            value={formData.legalDescription || ""}
+            onChange={(e) => updateField("legalDescription", e.target.value)}
             placeholder="Mô tả tình trạng pháp lý hoặc số quyết định lưu hành..."
             rows={2}
           />

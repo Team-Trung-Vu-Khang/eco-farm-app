@@ -9,6 +9,8 @@ import {
 import { Upload, X, FileText, Droplets, Leaf } from "lucide-react";
 import { targetCropsOptions } from "../../data/constants";
 import type { FertilizerFormData } from "../../types/types";
+import { useQuery } from "@tanstack/react-query";
+import { farmSupplyApi } from "@/features/farm-supply";
 
 interface FertilizerUsageStepProps {
   formData: FertilizerFormData;
@@ -61,10 +63,19 @@ export const FertilizerUsageStep = ({
     updateField("documents", [...formData.documents, ...newDocs]);
   };
 
-  const cropMultiOptions = targetCropsOptions.map((c) => ({
-    label: c,
-    value: c,
-  }));
+  const { data: apiSubjects } = useQuery({
+    queryKey: ["target-subjects", "CROP"],
+    queryFn: () => farmSupplyApi.getTargetSubjects("CROP"),
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const cropMultiOptions =
+    apiSubjects && apiSubjects.length > 0
+      ? apiSubjects.map((s: any) => ({ label: s.name, value: s.name }))
+      : targetCropsOptions.map((c) => ({
+          label: c,
+          value: c,
+        }));
 
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500 max-w-4xl mx-auto">
@@ -95,14 +106,23 @@ export const FertilizerUsageStep = ({
             />
           </div>
           <div className="space-y-2">
-            <Label>Đối tượng sử dụng (cây trồng áp dụng)</Label>
-            <MultiSelect
-              options={cropMultiOptions}
-              value={formData.targetCrops || []}
-              onChange={(value) => updateField("targetCrops", value)}
-              placeholder="Chọn các loại cây trồng..."
+            <Label>Hạn sử dụng</Label>
+            <Input
+              value={formData.shelfLife}
+              onChange={(e) => updateField("shelfLife", e.target.value)}
+              placeholder="VD: 2 năm, 24 tháng..."
             />
           </div>
+        </div>
+
+        <div className="space-y-2">
+          <Label>Đối tượng sử dụng (cây trồng áp dụng)</Label>
+          <MultiSelect
+            options={cropMultiOptions}
+            value={formData.targetCrops || []}
+            onChange={(value) => updateField("targetCrops", value)}
+            placeholder="Chọn các loại cây trồng..."
+          />
         </div>
 
         <div className="space-y-2">

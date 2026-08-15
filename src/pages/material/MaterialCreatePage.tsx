@@ -17,9 +17,23 @@ const MaterialCreatePage = () => {
     goBack,
     handleComplete,
     handleConfirmSubmit,
+    loading,
+    submitting,
+    isDetailMode,
+    setIsDetailMode,
   } = useMaterialCreatePage();
 
-  const [isDetailMode, setIsDetailMode] = useState(false);
+  if (loading) {
+    return (
+      <PageWrapper title={isEdit ? "Cập nhật vật tư" : "Thêm mới vật tư"}>
+        <div className="flex flex-col items-center justify-center py-20">
+          <p className="text-muted-foreground animate-pulse">
+            Đang tải dữ liệu...
+          </p>
+        </div>
+      </PageWrapper>
+    );
+  }
 
   return (
     <PageWrapper
@@ -63,6 +77,7 @@ const MaterialCreatePage = () => {
             completeLabel={isEdit ? "Lưu thay đổi" : "Hoàn tất & Lưu"}
             onComplete={handleComplete}
             onCancel={goBack}
+            loading={submitting}
           />
         ) : (
           <div className="p-4 md:p-6">
@@ -72,6 +87,7 @@ const MaterialCreatePage = () => {
               handleComplete={() => setConfirmOpen(true)}
               goBack={goBack}
               completeLabel={isEdit ? "Lưu thay đổi" : "Hoàn tất & Lưu"}
+              loading={submitting}
             />
           </div>
         )}
@@ -83,6 +99,7 @@ const MaterialCreatePage = () => {
         isEdit={isEdit}
         formData={formData}
         onConfirm={handleConfirmSubmit}
+        loading={submitting}
       />
     </PageWrapper>
   );

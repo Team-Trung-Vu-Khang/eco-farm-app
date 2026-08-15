@@ -14,6 +14,8 @@ import { Building2, Package, Plus, X, Search } from "lucide-react";
 import { packagingSpecsPresets } from "../data/constants";
 import type { MaterialFormData } from "../types/types";
 import { PartnerSelectorDialog } from "@/components/organizations/PartnerSelectorDialog";
+import { useQuery } from "@tanstack/react-query";
+import { farmSupplyApi } from "@/features/farm-supply";
 
 interface MaterialSuppliersStepProps {
   formData: MaterialFormData;
@@ -62,6 +64,29 @@ export default function MaterialSuppliersStep({
   formData,
   onFormFieldChange,
 }: MaterialSuppliersStepProps) {
+  // Fetch packaging types and units from API
+  const { data: packagingTypes } = useQuery({
+    queryKey: ["packaging-types"],
+    queryFn: () => farmSupplyApi.listPackagingTypes(),
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const { data: baseUnits } = useQuery({
+    queryKey: ["base-units"],
+    queryFn: () => farmSupplyApi.listBaseUnits(),
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const packagingList =
+    packagingTypes && packagingTypes.length > 0
+      ? packagingTypes.map((p) => p.name)
+      : PACKAGING_OPTIONS;
+
+  const unitList =
+    baseUnits && baseUnits.length > 0
+      ? baseUnits.map((u) => u.name)
+      : MEASURE_UNIT_OPTIONS;
+
   const [activeModal, setActiveModal] = useState<
     "manufacturerOrigin" | "importerRegistrant" | "distributor" | null
   >(null);
@@ -71,9 +96,6 @@ export default function MaterialSuppliersStep({
   const [unit, setUnit] = useState("");
   const [packaging, setPackaging] = useState("");
 
-  const manufacturerOriginArr = formData.manufacturerOrigin || [];
-  const importerRegistrantArr = formData.importerRegistrant || [];
-  const distributorArr = formData.distributor || [];
   const packagingSpecsArr = formData.packagingSpecs || [];
 
   const addPackagingSpec = () => {
@@ -89,11 +111,7 @@ export default function MaterialSuppliersStep({
   };
 
   const removeTag = (
-    field:
-      | "manufacturerOrigin"
-      | "importerRegistrant"
-      | "distributor"
-      | "packagingSpecs",
+    field: "packagingSpecs",
     value: string,
   ) => {
     const current = formData[field] || [];
@@ -120,16 +138,13 @@ export default function MaterialSuppliersStep({
             onClick={() => setActiveModal("manufacturerOrigin")}
           >
             <div className="flex-1 min-w-0 flex flex-wrap gap-1.5 items-center">
-              {manufacturerOriginArr.length > 0 ? (
-                manufacturerOriginArr.map((tag) => (
-                  <Badge
-                    key={tag}
-                    variant="secondary"
-                    className="bg-primary/5 text-primary border border-primary/20 text-xs font-semibold py-0.5 px-2.5"
-                  >
-                    {tag}
-                  </Badge>
-                ))
+              {formData.manufacturerOrigin ? (
+                <Badge
+                  variant="secondary"
+                  className="bg-primary/5 text-primary border border-primary/20 text-xs font-semibold py-0.5 px-2.5"
+                >
+                  {formData.manufacturerOrigin}
+                </Badge>
               ) : (
                 <span className="text-sm text-slate-400">
                   Bấm để chọn nhà sản xuất...
@@ -159,8 +174,8 @@ export default function MaterialSuppliersStep({
             onClick={() => setActiveModal("importerRegistrant")}
           >
             <div className="flex-1 min-w-0 flex flex-wrap gap-1.5 items-center">
-              {importerRegistrantArr.length > 0 ? (
-                importerRegistrantArr.map((tag) => (
+              {formData.importerRegistrant ? (
+                formData.importerRegistrant.split(", ").filter(Boolean).map((tag) => (
                   <Badge
                     key={tag}
                     variant="secondary"
@@ -197,8 +212,8 @@ export default function MaterialSuppliersStep({
             onClick={() => setActiveModal("distributor")}
           >
             <div className="flex-1 min-w-0 flex flex-wrap gap-1.5 items-center">
-              {distributorArr.length > 0 ? (
-                distributorArr.map((tag) => (
+              {formData.distributor ? (
+                formData.distributor.split(", ").filter(Boolean).map((tag) => (
                   <Badge
                     key={tag}
                     variant="secondary"
@@ -252,7 +267,7 @@ export default function MaterialSuppliersStep({
                   <SelectValue placeholder="Chọn..." />
                 </SelectTrigger>
                 <SelectContent>
-                  {PACKAGING_OPTIONS.map((p) => (
+                  {packagingList.map((p) => (
                     <SelectItem key={p} value={p}>
                       {p}
                     </SelectItem>
@@ -283,7 +298,7 @@ export default function MaterialSuppliersStep({
                   <SelectValue placeholder="Chọn..." />
                 </SelectTrigger>
                 <SelectContent>
-                  {MEASURE_UNIT_OPTIONS.map((u) => (
+                  {unitList.map((u) => (
                     <SelectItem key={u} value={u}>
                       {u}
                     </SelectItem>
@@ -372,9 +387,9 @@ export default function MaterialSuppliersStep({
         }
         title="Chọn nhà sản xuất / Xuất xứ"
         isMulti={false}
-        selectedNames={formData.manufacturerOrigin || []}
+        selectedNames={formData.manufacturerOrigin ? [formData.manufacturerOrigin] : []}
         onConfirm={(names) =>
-          onFormFieldChange("manufacturerOrigin", names.slice(0, 1))
+          onFormFieldChange("manufacturerOrigin", names[0] || "")
         }
       />
 
@@ -385,8 +400,8 @@ export default function MaterialSuppliersStep({
         }
         title="Chọn nhà nhập khẩu / Đăng ký"
         isMulti={true}
-        selectedNames={formData.importerRegistrant || []}
-        onConfirm={(names) => onFormFieldChange("importerRegistrant", names)}
+        selectedNames={formData.importerRegistrant ? formData.importerRegistrant.split(", ").filter(Boolean) : []}
+        onConfirm={(names) => onFormFieldChange("importerRegistrant", names.join(", "))}
       />
 
       <PartnerSelectorDialog
@@ -394,8 +409,8 @@ export default function MaterialSuppliersStep({
         onOpenChange={(open) => setActiveModal(open ? "distributor" : null)}
         title="Chọn nhà phân phối"
         isMulti={true}
-        selectedNames={formData.distributor || []}
-        onConfirm={(names) => onFormFieldChange("distributor", names)}
+        selectedNames={formData.distributor ? formData.distributor.split(", ").filter(Boolean) : []}
+        onConfirm={(names) => onFormFieldChange("distributor", names.join(", "))}
       />
     </div>
   );

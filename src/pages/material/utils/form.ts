@@ -14,9 +14,9 @@ export const createEmptyMaterialFormData = (): MaterialFormData => ({
   valueChainId: "",
 
   // Origin & Supply fields
-  manufacturerOrigin: [],
-  importerRegistrant: [],
-  distributor: [],
+  manufacturerOrigin: "",
+  importerRegistrant: "",
+  distributor: "",
   packagingSpecs: [],
 });
 
@@ -25,16 +25,18 @@ export const createMaterialFormDataFromItem = (
 ): MaterialFormData => ({
   code: item.code,
   name: item.name,
-  type: item.type,
+  type: item.type || "",
   description: item.description,
-  hashtags: ["BenBi", "TietKiem"],
+  hashtags: item.hashtags || [],
+  imageUrl: item.imageUrl || "",
+  imageFile: null,
   materialGroupId: item.materialGroupId || "",
   technologyLevelId: item.technologyLevelId || "",
   valueChainId: item.valueChainId || "",
 
   // Hydrate origin & supply fields
-  manufacturerOrigin: item.manufacturerOrigin || [],
-  importerRegistrant: item.importerRegistrant || [],
-  distributor: item.distributor || [],
+  manufacturerOrigin: item.manufacturerOrigin || "",
+  importerRegistrant: item.importerRegistrant || "",
+  distributor: item.distributor || "",
   packagingSpecs: item.packagingSpecs || [],
 });

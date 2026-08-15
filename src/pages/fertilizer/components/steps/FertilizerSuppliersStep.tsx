@@ -14,6 +14,8 @@ import { useState } from "react";
 import { packagingUnitOptions } from "../../data/constants";
 import type { FertilizerFormData } from "../../types/types";
 import { PartnerSelectorDialog } from "@/components/organizations/PartnerSelectorDialog";
+import { useQuery } from "@tanstack/react-query";
+import { farmSupplyApi } from "@/features/farm-supply";
 
 interface FertilizerSuppliersStepProps {
   formData: FertilizerFormData;
@@ -55,10 +57,35 @@ export const FertilizerSuppliersStep = ({
   formData,
   updateField,
 }: FertilizerSuppliersStepProps) => {
+  // Fetch packaging types and units
+  const { data: packagingTypes } = useQuery({
+    queryKey: ["packaging-types"],
+    queryFn: () => farmSupplyApi.listPackagingTypes(),
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const { data: baseUnits } = useQuery({
+    queryKey: ["base-units"],
+    queryFn: () => farmSupplyApi.listBaseUnits(),
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const packagingList =
+    packagingTypes && packagingTypes.length > 0
+      ? packagingTypes.map((p) => p.name)
+      : PACKAGING_OPTIONS;
+
+  const unitList =
+    baseUnits && baseUnits.length > 0
+      ? baseUnits.map((u) => u.name)
+      : MEASURE_UNIT_OPTIONS;
+
   const [quantity, setQuantity] = useState("");
   const [unit, setUnit] = useState("");
   const [packaging, setPackaging] = useState("");
-  const [activeModal, setActiveModal] = useState<"manufacturerOrigin" | "importerRegistrant" | "distributor" | null>(null);
+  const [activeModal, setActiveModal] = useState<
+    "manufacturerOrigin" | "importerRegistrant" | "distributor" | null
+  >(null);
 
   const addPackagingSpec = () => {
     const trimmed = quantity.trim();
@@ -105,7 +132,9 @@ export const FertilizerSuppliersStep = ({
                   {formData.manufacturerOrigin}
                 </Badge>
               ) : (
-                <span className="text-sm text-slate-400">Bấm để chọn nhà sản xuất...</span>
+                <span className="text-sm text-slate-400">
+                  Bấm để chọn nhà sản xuất...
+                </span>
               )}
             </div>
             <Button
@@ -127,17 +156,22 @@ export const FertilizerSuppliersStep = ({
           >
             <div className="flex-1 min-w-0 flex flex-wrap gap-1.5 items-center">
               {formData.importerRegistrant ? (
-                formData.importerRegistrant.split(", ").filter(Boolean).map((name) => (
-                  <Badge
-                    key={name}
-                    variant="secondary"
-                    className="bg-primary/5 text-primary border border-primary/20 text-xs font-semibold py-0.5 px-2.5"
-                  >
-                    {name}
-                  </Badge>
-                ))
+                formData.importerRegistrant
+                  .split(", ")
+                  .filter(Boolean)
+                  .map((name) => (
+                    <Badge
+                      key={name}
+                      variant="secondary"
+                      className="bg-primary/5 text-primary border border-primary/20 text-xs font-semibold py-0.5 px-2.5"
+                    >
+                      {name}
+                    </Badge>
+                  ))
               ) : (
-                <span className="text-sm text-slate-400">Bấm để chọn nhà nhập khẩu...</span>
+                <span className="text-sm text-slate-400">
+                  Bấm để chọn nhà nhập khẩu...
+                </span>
               )}
             </div>
             <Button
@@ -159,17 +193,22 @@ export const FertilizerSuppliersStep = ({
           >
             <div className="flex-1 min-w-0 flex flex-wrap gap-1.5 items-center">
               {formData.distributor ? (
-                formData.distributor.split(", ").filter(Boolean).map((name) => (
-                  <Badge
-                    key={name}
-                    variant="secondary"
-                    className="bg-primary/5 text-primary border border-primary/20 text-xs font-semibold py-0.5 px-2.5"
-                  >
-                    {name}
-                  </Badge>
-                ))
+                formData.distributor
+                  .split(", ")
+                  .filter(Boolean)
+                  .map((name) => (
+                    <Badge
+                      key={name}
+                      variant="secondary"
+                      className="bg-primary/5 text-primary border border-primary/20 text-xs font-semibold py-0.5 px-2.5"
+                    >
+                      {name}
+                    </Badge>
+                  ))
               ) : (
-                <span className="text-sm text-slate-400">Bấm để chọn nhà phân phối...</span>
+                <span className="text-sm text-slate-400">
+                  Bấm để chọn nhà phân phối...
+                </span>
               )}
             </div>
             <Button
@@ -212,13 +251,15 @@ export const FertilizerSuppliersStep = ({
 
           <div className="flex gap-2 items-end">
             <div className="w-32 space-y-1">
-              <Label className="text-xs text-muted-foreground">Quy cách chứa</Label>
+              <Label className="text-xs text-muted-foreground">
+                Quy cách chứa
+              </Label>
               <Select value={packaging} onValueChange={setPackaging}>
                 <SelectTrigger className="text-left h-auto py-2">
                   <SelectValue placeholder="Chọn..." />
                 </SelectTrigger>
                 <SelectContent>
-                  {PACKAGING_OPTIONS.map((p) => (
+                  {packagingList.map((p) => (
                     <SelectItem key={p} value={p}>
                       {p}
                     </SelectItem>
@@ -249,7 +290,7 @@ export const FertilizerSuppliersStep = ({
                   <SelectValue placeholder="Chọn..." />
                 </SelectTrigger>
                 <SelectContent>
-                  {MEASURE_UNIT_OPTIONS.map((u) => (
+                  {unitList.map((u) => (
                     <SelectItem key={u} value={u}>
                       {u}
                     </SelectItem>
@@ -333,20 +374,32 @@ export const FertilizerSuppliersStep = ({
 
       <PartnerSelectorDialog
         open={activeModal === "manufacturerOrigin"}
-        onOpenChange={(open) => setActiveModal(open ? "manufacturerOrigin" : null)}
+        onOpenChange={(open) =>
+          setActiveModal(open ? "manufacturerOrigin" : null)
+        }
         title="Chọn nhà sản xuất / Xuất xứ"
         isMulti={false}
-        selectedNames={formData.manufacturerOrigin ? [formData.manufacturerOrigin] : []}
+        selectedNames={
+          formData.manufacturerOrigin ? [formData.manufacturerOrigin] : []
+        }
         onConfirm={(names) => updateField("manufacturerOrigin", names[0] || "")}
       />
 
       <PartnerSelectorDialog
         open={activeModal === "importerRegistrant"}
-        onOpenChange={(open) => setActiveModal(open ? "importerRegistrant" : null)}
+        onOpenChange={(open) =>
+          setActiveModal(open ? "importerRegistrant" : null)
+        }
         title="Chọn nhà nhập khẩu / Đăng ký"
         isMulti={true}
-        selectedNames={formData.importerRegistrant ? formData.importerRegistrant.split(", ").filter(Boolean) : []}
-        onConfirm={(names) => updateField("importerRegistrant", names.join(", "))}
+        selectedNames={
+          formData.importerRegistrant
+            ? formData.importerRegistrant.split(", ").filter(Boolean)
+            : []
+        }
+        onConfirm={(names) =>
+          updateField("importerRegistrant", names.join(", "))
+        }
       />
 
       <PartnerSelectorDialog
@@ -354,7 +407,11 @@ export const FertilizerSuppliersStep = ({
         onOpenChange={(open) => setActiveModal(open ? "distributor" : null)}
         title="Chọn nhà phân phối"
         isMulti={true}
-        selectedNames={formData.distributor ? formData.distributor.split(", ").filter(Boolean) : []}
+        selectedNames={
+          formData.distributor
+            ? formData.distributor.split(", ").filter(Boolean)
+            : []
+        }
         onConfirm={(names) => updateField("distributor", names.join(", "))}
       />
     </div>

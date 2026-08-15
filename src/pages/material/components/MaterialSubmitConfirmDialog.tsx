@@ -8,6 +8,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import { Loader2 } from "lucide-react";
 import type { MaterialFormData } from "../types/types";
 
 interface MaterialSubmitConfirmDialogProps {
@@ -16,6 +17,7 @@ interface MaterialSubmitConfirmDialogProps {
   isEdit: boolean;
   formData: MaterialFormData;
   onConfirm: () => void;
+  loading?: boolean;
 }
 
 export default function MaterialSubmitConfirmDialog({
@@ -24,6 +26,7 @@ export default function MaterialSubmitConfirmDialog({
   isEdit,
   formData,
   onConfirm,
+  loading,
 }: MaterialSubmitConfirmDialogProps) {
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
@@ -55,8 +58,9 @@ export default function MaterialSubmitConfirmDialog({
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel>Hủy bỏ</AlertDialogCancel>
-          <AlertDialogAction onClick={onConfirm}>
+          <AlertDialogCancel disabled={loading}>Hủy bỏ</AlertDialogCancel>
+          <AlertDialogAction onClick={onConfirm} disabled={loading}>
+            {loading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
             {isEdit ? "Xác nhận cập nhật" : "Xác nhận thêm mới"}
           </AlertDialogAction>
         </AlertDialogFooter>

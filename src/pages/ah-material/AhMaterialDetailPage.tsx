@@ -21,14 +21,25 @@ import {
 import { useLocation, useRoute } from "wouter";
 import useMaterialStore from "../../stores/useMaterialStore";
 import { getMaterialGroupLabel } from "../material/data/constants";
+import { useFarmSupplyDetailHook } from "@/features/farm-supply/hooks/useFarmSupplyDetailHook";
 
 const AhMaterialDetailPage = () => {
   const [, params] = useRoute("/animal-husbandry-material/material/:id");
   const [, setLocation] = useLocation();
   const id = params?.id ? Number(params.id) : 0;
+  const { item, loading } = useFarmSupplyDetailHook("material", id);
 
-  const getMaterialById = useMaterialStore((state) => state.getMaterialById);
-  const item = getMaterialById(id);
+  if (loading) {
+    return (
+      <PageWrapper title="Chi tiết vật tư chăn nuôi">
+        <div className="flex flex-col items-center justify-center py-20">
+          <p className="text-muted-foreground animate-pulse">
+            Đang tải dữ liệu...
+          </p>
+        </div>
+      </PageWrapper>
+    );
+  }
 
   if (!item) {
     return (
@@ -52,14 +63,16 @@ const AhMaterialDetailPage = () => {
       title="Chi tiết vật tư chăn nuôi"
       description={`Thông tin chi tiết cho ${item.name}`}
       actions={
-        <Button
-          onClick={() =>
-            setLocation(`/animal-husbandry-material/material/${id}/edit`)
-          }
-        >
-          <Edit className="w-4 h-4 mr-2" />
-          Chỉnh sửa
-        </Button>
+        item.source === "OWNER" && (
+          <Button
+            onClick={() =>
+              setLocation(`/animal-husbandry-material/material/${id}/edit`)
+            }
+          >
+            <Edit className="w-4 h-4 mr-2" />
+            Chỉnh sửa
+          </Button>
+        )
       }
     >
       <div className="mb-6">
@@ -80,8 +93,16 @@ const AhMaterialDetailPage = () => {
           {/* Header Card */}
           <Card className="overflow-hidden border-none shadow-md bg-white">
             <div className="bg-linear-to-r from-blue-50 to-cyan-50 p-6 flex flex-col md:flex-row gap-6 items-start">
-              <div className="w-24 h-24 bg-white rounded-xl shadow-sm border p-2 flex items-center justify-center shrink-0">
-                <ImageIcon className="w-12 h-12 text-slate-300" />
+              <div className="w-24 h-24 bg-white rounded-xl shadow-sm border p-2 flex items-center justify-center shrink-0 overflow-hidden">
+                {item.metadataJson.imageUrl ? (
+                  <img
+                    alt={item.name}
+                    src={item.metadataJson.imageUrl}
+                    className="w-full h-full object-cover rounded-lg"
+                  />
+                ) : (
+                  <ImageIcon className="w-12 h-12 text-slate-300" />
+                )}
               </div>
               <div className="flex-1">
                 <div className="flex items-start justify-between">
@@ -277,7 +298,7 @@ const AhMaterialDetailPage = () => {
           </Card>
 
           {/* Quick Actions */}
-          <div className="grid grid-cols-1 gap-2">
+          {/* <div className="grid grid-cols-1 gap-2">
             <Button variant="outline" className="w-full justify-start">
               <CheckCircle2 className="w-4 h-4 mr-2" />
               Kiểm kho nhanh
@@ -286,7 +307,7 @@ const AhMaterialDetailPage = () => {
               <Package className="w-4 h-4 mr-2" />
               Lịch sử nhập xuất
             </Button>
-          </div>
+          </div> */}
         </div>
       </div>
     </PageWrapper>

@@ -30,6 +30,7 @@ import {
 } from "lucide-react";
 import { useLocation, useRoute } from "wouter";
 import useFertilizerStore from "../../stores/useFertilizerStore";
+import { useFarmSupplyDetailHook } from "@/features/farm-supply/hooks/useFarmSupplyDetailHook";
 import {
   originOptions,
   applicationStageOptions,
@@ -42,7 +43,7 @@ const STANDARDS_META: Record<
   string,
   { emoji: string; color: string; desc: string }
 > = {
-  "VietGAP": {
+  VietGAP: {
     emoji: "🇻🇳",
     color: "bg-red-50 border-red-200 text-red-800",
     desc: "Thực hành nông nghiệp tốt Việt Nam",
@@ -67,7 +68,7 @@ const STANDARDS_META: Record<
     color: "bg-indigo-50 border-indigo-200 text-indigo-800",
     desc: "Tiêu chuẩn an toàn thực phẩm Hoa Kỳ",
   },
-  "HACCP": {
+  HACCP: {
     emoji: "🔬",
     color: "bg-purple-50 border-purple-200 text-purple-800",
     desc: "Phân tích mối nguy & kiểm soát điểm tới hạn",
@@ -79,7 +80,29 @@ const STANDARDS_META: Record<
   },
 };
 
-function InfoRow({ label, value }: { label: string; value?: string | number | null }) {
+const formatPrice = (price?: string | number | null) => {
+  if (!price) return "";
+  const str = price.toString().trim();
+  if (str.toLowerCase().includes("đ") || str.toLowerCase().includes("vnd"))
+    return str;
+  let s = str.replace(/\s+/g, "").replace(/\./g, "").replace(/,/g, ".");
+  const matched = s.match(/[-+]?[0-9]*\.?[0-9]+/);
+  if (!matched) return str;
+  const num = parseFloat(matched[0]);
+  if (isNaN(num)) return str;
+  return new Intl.NumberFormat("vi-VN", {
+    style: "currency",
+    currency: "VND",
+  }).format(num);
+};
+
+function InfoRow({
+  label,
+  value,
+}: {
+  label: string;
+  value?: string | number | null;
+}) {
   if (!value) return null;
   return (
     <div>
@@ -95,20 +118,33 @@ const FertilizerDetailPage = () => {
   const [, params] = useRoute("/cultivation-material/fertilizer/:id");
   const [, setLocation] = useLocation();
   const id = params?.id ? Number(params.id) : 0;
+  const { item, loading } = useFarmSupplyDetailHook("fertilizer", id);
 
-  const getFertilizerById = useFertilizerStore(
-    (state) => state.getFertilizerById,
-  );
-  const item = getFertilizerById(id);
+  if (loading) {
+    return (
+      <PageWrapper title="Chi tiết phân bón">
+        <div className="flex flex-col items-center justify-center py-20">
+          <p className="text-muted-foreground animate-pulse">
+            Đang tải dữ liệu...
+          </p>
+        </div>
+      </PageWrapper>
+    );
+  }
 
   if (!item) {
     return (
-      <PageWrapper title="Chi tiết phân bón" description="Đang tải thông tin...">
+      <PageWrapper
+        title="Chi tiết phân bón"
+        description="Đang tải thông tin..."
+      >
         <div className="flex flex-col items-center justify-center py-20">
           <p className="text-muted-foreground mb-4">
             Không tìm thấy thông tin phân bón.
           </p>
-          <Button onClick={() => setLocation("/cultivation-material/fertilizer")}>
+          <Button
+            onClick={() => setLocation("/cultivation-material/fertilizer")}
+          >
             <ChevronLeft className="w-4 h-4 mr-2" />
             Quay lại danh sách
           </Button>
@@ -123,14 +159,23 @@ const FertilizerDetailPage = () => {
       description={`Thông tin chi tiết sản phẩm ${item.name}`}
       actions={
         <div className="flex gap-2">
-          <Button variant="outline" onClick={() => setLocation("/cultivation-material/fertilizer")}>
+          <Button
+            variant="outline"
+            onClick={() => setLocation("/cultivation-material/fertilizer")}
+          >
             <ChevronLeft className="w-4 h-4 mr-2" />
             Quay lại
           </Button>
-          <Button onClick={() => setLocation(`/cultivation-material/fertilizer/${id}/edit`)}>
-            <Edit className="w-4 h-4 mr-2" />
-            Chỉnh sửa
-          </Button>
+          {item.source === "OWNER" && (
+            <Button
+              onClick={() =>
+                setLocation(`/cultivation-material/fertilizer/${id}/edit`)
+              }
+            >
+              <Edit className="w-4 h-4 mr-2" />
+              Chỉnh sửa
+            </Button>
+          )}
         </div>
       }
     >
@@ -141,7 +186,9 @@ const FertilizerDetailPage = () => {
           <Card className="overflow-hidden border-none shadow-md bg-white">
             <div className="bg-linear-to-r from-green-50/50 to-emerald-50/50 p-6 flex flex-col md:flex-row gap-6 items-start">
               <div className="w-24 h-24 bg-white rounded-xl shadow-sm border p-2 flex items-center justify-center shrink-0">
-                {item.originId === "organic" ? (
+                {item?.metadataJson?.imageUrl ? (
+                  <img src={item.metadataJson.imageUrl} />
+                ) : item.originId === "organic" ? (
                   <Leaf className="w-12 h-12 text-green-500" />
                 ) : item.originId === "biological" ? (
                   <FlaskConical className="w-12 h-12 text-purple-500" />
@@ -152,7 +199,9 @@ const FertilizerDetailPage = () => {
               <div className="flex-1 space-y-2">
                 <div className="flex items-start justify-between flex-wrap gap-2">
                   <div>
-                    <h2 className="text-2xl font-bold text-slate-900">{item.name}</h2>
+                    <h2 className="text-2xl font-bold text-slate-900">
+                      {item.name}
+                    </h2>
                     <div className="flex items-center gap-3 mt-1.5 text-sm text-slate-600">
                       <span className="bg-white px-2 py-0.5 rounded border font-mono text-xs font-semibold">
                         {item.code}
@@ -163,8 +212,12 @@ const FertilizerDetailPage = () => {
                       </span>
                     </div>
                   </div>
-                  <Badge variant={item.status === "active" ? "default" : "secondary"}>
-                    {item.status === "active" ? "Đang hoạt động" : "Ngừng hoạt động"}
+                  <Badge
+                    variant={item.status === "active" ? "default" : "secondary"}
+                  >
+                    {item.status === "active"
+                      ? "Đang hoạt động"
+                      : "Ngừng hoạt động"}
                   </Badge>
                 </div>
 
@@ -177,7 +230,11 @@ const FertilizerDetailPage = () => {
                 {item.hashtags && item.hashtags.length > 0 && (
                   <div className="flex flex-wrap gap-1.5 pt-2">
                     {item.hashtags.map((tag) => (
-                      <Badge key={tag} variant="secondary" className="text-xs bg-slate-100 hover:bg-slate-200">
+                      <Badge
+                        key={tag}
+                        variant="secondary"
+                        className="text-xs bg-slate-100 hover:bg-slate-200"
+                      >
                         #{tag}
                       </Badge>
                     ))}
@@ -197,10 +254,22 @@ const FertilizerDetailPage = () => {
             </CardHeader>
             <CardContent className="pt-5 space-y-5">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                <InfoRow label="Số đăng ký quyết định lưu hành" value={item.registrationNumber} />
-                <InfoRow label="Tên khoa học / Tên kỹ thuật" value={item.scientificTechnicalName} />
-                <InfoRow label="Nhóm phân bón (nguồn gốc)" value={item.fertilizerOriginGroup} />
-                <InfoRow label="Thành phần dinh dưỡng chính" value={item.nutritionalComponents} />
+                <InfoRow
+                  label="Số đăng ký quyết định lưu hành"
+                  value={item.registrationNumber}
+                />
+                <InfoRow
+                  label="Tên khoa học / Tên kỹ thuật"
+                  value={item.scientificTechnicalName}
+                />
+                <InfoRow
+                  label="Nhóm phân bón (nguồn gốc)"
+                  value={item.fertilizerOriginGroup}
+                />
+                <InfoRow
+                  label="Thành phần dinh dưỡng chính"
+                  value={item.nutritionalComponents}
+                />
                 <InfoRow label="Dạng phân bón" value={item.fertilizerType} />
                 <InfoRow label="Hình thái vật lý" value={item.physicalForm} />
                 <InfoRow label="Cơ chế tác động (MoA)" value={item.moaGroup} />
@@ -247,7 +316,11 @@ const FertilizerDetailPage = () => {
                   </h4>
                   <div className="flex flex-wrap gap-1.5">
                     {item.targetCrops.map((crop) => (
-                      <Badge key={crop} variant="outline" className="text-xs border-green-200 bg-green-50/30 text-green-800">
+                      <Badge
+                        key={crop}
+                        variant="outline"
+                        className="text-xs border-green-200 bg-green-50/30 text-green-800"
+                      >
                         {crop}
                       </Badge>
                     ))}
@@ -256,7 +329,14 @@ const FertilizerDetailPage = () => {
               )}
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 border-t pt-4">
-                <InfoRow label="Giai đoạn tác động" value={item.applicationStage} />
+                <InfoRow
+                  label="Giai đoạn tác động"
+                  value={item.applicationStage}
+                />
+                <InfoRow
+                  label="Hạn sử dụng"
+                  value={item.shelfLife}
+                />
               </div>
 
               {item.recommendedDosage && (
@@ -300,11 +380,18 @@ const FertilizerDetailPage = () => {
                   </h4>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     {item.documents.map((doc, idx) => (
-                      <div key={idx} className="flex items-center gap-3 p-3 rounded-lg border bg-slate-50/50 hover:bg-slate-50 transition-colors">
+                      <div
+                        key={idx}
+                        className="flex items-center gap-3 p-3 rounded-lg border bg-slate-50/50 hover:bg-slate-50 transition-colors"
+                      >
                         <FileText className="w-8 h-8 text-red-500 shrink-0" />
                         <div className="min-w-0">
-                          <p className="text-sm font-medium text-slate-700 truncate">{doc.name}</p>
-                          <p className="text-xs text-muted-foreground">{(doc.size / (1024 * 1024)).toFixed(2)} MB</p>
+                          <p className="text-sm font-medium text-slate-700 truncate">
+                            {doc.name}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {(doc.size / (1024 * 1024)).toFixed(2)} MB
+                          </p>
                         </div>
                       </div>
                     ))}
@@ -370,34 +457,39 @@ const FertilizerDetailPage = () => {
                   <BookOpen className="w-3.5 h-3.5 text-primary" />
                   Tình trạng pháp lý
                 </h4>
-                <Badge variant="outline" className="bg-slate-50 border-slate-200">
+                <Badge
+                  variant="outline"
+                  className="bg-slate-50 border-slate-200"
+                >
                   {item.legalStatus || "Được phép lưu hành"}
                 </Badge>
               </div>
 
-              {item.standardsCompliance && item.standardsCompliance.length > 0 && (
-                <div>
-                  <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
-                    Tiêu chuẩn nông nghiệp đạt được
-                  </h4>
-                  <div className="flex flex-wrap gap-1.5">
-                    {item.standardsCompliance.map((std) => {
-                      const meta = STANDARDS_META[std];
-                      return (
-                        <div
-                          key={std}
-                          className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-xs font-medium ${
-                            meta?.color ?? "bg-slate-50 border-slate-200 text-slate-700"
-                          }`}
-                        >
-                          <span>{meta?.emoji ?? "📄"}</span>
-                          <span>{std}</span>
-                        </div>
-                      );
-                    })}
+              {item.standardsCompliance &&
+                item.standardsCompliance.length > 0 && (
+                  <div>
+                    <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
+                      Tiêu chuẩn nông nghiệp đạt được
+                    </h4>
+                    <div className="flex flex-wrap gap-1.5">
+                      {item.standardsCompliance.map((std) => {
+                        const meta = STANDARDS_META[std];
+                        return (
+                          <div
+                            key={std}
+                            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-xs font-medium ${
+                              meta?.color ??
+                              "bg-slate-50 border-slate-200 text-slate-700"
+                            }`}
+                          >
+                            <span>{meta?.emoji ?? "📄"}</span>
+                            <span>{std}</span>
+                          </div>
+                        );
+                      })}
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
             </CardContent>
           </Card>
 
@@ -410,10 +502,19 @@ const FertilizerDetailPage = () => {
               </CardTitle>
             </CardHeader>
             <CardContent className="pt-5 space-y-5 text-sm">
-              <InfoRow label="Nhà sản xuất / Xuất xứ" value={item.manufacturerOrigin} />
-              <InfoRow label="Nhà nhập khẩu / Đăng ký" value={item.importerRegistrant} />
+              <InfoRow
+                label="Nhà sản xuất / Xuất xứ"
+                value={item.manufacturerOrigin}
+              />
+              <InfoRow
+                label="Nhà nhập khẩu / Đăng ký"
+                value={item.importerRegistrant}
+              />
               <InfoRow label="Nhà phân phối" value={item.distributor} />
-              <InfoRow label="Giá bán tham khảo" value={item.referencePrice} />
+              <InfoRow
+                label="Giá bán tham khảo"
+                value={formatPrice(item.referencePrice)}
+              />
 
               {item.packagingSpecs && item.packagingSpecs.length > 0 && (
                 <div>
@@ -422,7 +523,11 @@ const FertilizerDetailPage = () => {
                   </h4>
                   <div className="flex flex-wrap gap-1.5">
                     {item.packagingSpecs.map((spec) => (
-                      <Badge key={spec} variant="secondary" className="text-xs bg-slate-50">
+                      <Badge
+                        key={spec}
+                        variant="secondary"
+                        className="text-xs bg-slate-50"
+                      >
                         <Package className="w-3 h-3 mr-1" />
                         {spec}
                       </Badge>
@@ -439,11 +544,21 @@ const FertilizerDetailPage = () => {
                   </h4>
                   <div className="space-y-1.5">
                     {item.supplierDetails.map((supDetail, idx) => {
-                      const sup = suppliers.find((s) => s.id === supDetail.supplierId);
+                      const sup = suppliers.find(
+                        (s) => s.id === supDetail.supplierId,
+                      );
                       return (
-                        <div key={idx} className="flex justify-between p-2 rounded-lg bg-slate-50 text-xs border">
-                          <span className="font-semibold text-slate-700 truncate mr-2">{sup?.name || supDetail.supplierId}</span>
-                          <span className="text-muted-foreground shrink-0">{supDetail.quantity} {supDetail.unit} ({supDetail.packaging})</span>
+                        <div
+                          key={idx}
+                          className="flex justify-between p-2 rounded-lg bg-slate-50 text-xs border"
+                        >
+                          <span className="font-semibold text-slate-700 truncate mr-2">
+                            {sup?.name || supDetail.supplierId}
+                          </span>
+                          <span className="text-muted-foreground shrink-0">
+                            {supDetail.quantity} {supDetail.unit} (
+                            {supDetail.packaging})
+                          </span>
                         </div>
                       );
                     })}

@@ -16,6 +16,8 @@ import {
   targetEntitiesCultivation,
 } from "../data/constants";
 import type { PesticideDomain, PesticideFormData } from "../types";
+import { useQuery } from "@tanstack/react-query";
+import { farmSupplyApi } from "@/features/farm-supply";
 
 interface PesticideUsageInfoStepProps {
   formData: PesticideFormData;
@@ -46,7 +48,25 @@ export default function PesticideUsageInfoStep({
   domain,
   onFormFieldChange,
 }: PesticideUsageInfoStepProps) {
-  const targetOptions = getTargetOptionsByDomain(domain);
+  const domainCode =
+    domain === "animal"
+      ? "LIVESTOCK"
+      : domain === "aquaculture"
+        ? "AQUACULTURE"
+        : "CROP";
+
+  const isAquaculture = domainCode === "AQUACULTURE";
+
+  const { data: apiSubjects } = useQuery({
+    queryKey: ["target-subjects", domainCode],
+    queryFn: () => farmSupplyApi.getTargetSubjects(domainCode),
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const targetOptions =
+    apiSubjects && apiSubjects.length > 0
+      ? apiSubjects.map((s: any) => ({ label: s.name, value: s.name }))
+      : getTargetOptionsByDomain(domain);
 
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500 max-w-4xl mx-auto">
@@ -68,18 +88,23 @@ export default function PesticideUsageInfoStep({
           />
         </div>
 
-        <div className="space-y-2">
-          <Label>Đối tượng sử dụng (áp dụng)</Label>
-          <p className="text-xs text-muted-foreground -mt-1">
-            Chọn cây trồng / vật nuôi / loài thủy sản cụ thể. Có thể chọn nhiều.
-          </p>
-          <MultiSelect
-            options={targetOptions}
-            value={formData.targetEntities}
-            onChange={(value) => onFormFieldChange("targetEntities", value)}
-            placeholder="Chọn đối tượng áp dụng..."
-          />
-        </div>
+        {isAquaculture ? (
+          <> </>
+        ) : (
+          <div className="space-y-2">
+            <Label>Đối tượng sử dụng (áp dụng)</Label>
+            <p className="text-xs text-muted-foreground -mt-1">
+              Chọn cây trồng / vật nuôi / loài thủy sản cụ thể. Có thể chọn
+              nhiều.
+            </p>
+            <MultiSelect
+              options={targetOptions}
+              value={formData.targetEntities}
+              onChange={(value) => onFormFieldChange("targetEntities", value)}
+              placeholder="Chọn đối tượng áp dụng..."
+            />
+          </div>
+        )}
       </div>
 
       {/* Card: Hướng dẫn sử dụng */}

@@ -1,5 +1,10 @@
 import PageWrapper from "@/components/PageWrapper";
-import { Button, Label, StepperForm, Switch } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import {
+  Button,
+  Label,
+  StepperForm,
+  Switch,
+} from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { ChevronLeft } from "lucide-react";
 import { useState } from "react";
 import MaterialSubmitConfirmDialog from "../material/components/MaterialSubmitConfirmDialog";
@@ -17,9 +22,25 @@ const AhMaterialCreatePage = () => {
     goBack,
     handleComplete,
     handleConfirmSubmit,
+    loading,
+    submitting,
+    isDetailMode,
+    setIsDetailMode,
   } = useAhMaterialCreatePage();
 
-  const [isDetailMode, setIsDetailMode] = useState(false);
+  if (loading) {
+    return (
+      <PageWrapper
+        title={isEdit ? "Cập nhật vật tư" : "Thêm mới vật tư chăn nuôi"}
+      >
+        <div className="flex flex-col items-center justify-center py-20">
+          <p className="text-muted-foreground animate-pulse">
+            Đang tải dữ liệu...
+          </p>
+        </div>
+      </PageWrapper>
+    );
+  }
 
   return (
     <PageWrapper
@@ -43,7 +64,10 @@ const AhMaterialCreatePage = () => {
         </Button>
 
         <div className="flex items-center gap-2.5 bg-white/80 backdrop-blur-sm border border-slate-200 rounded-full px-3 py-1.5 shadow-sm">
-          <Label htmlFor="ah-material-detail-mode" className="text-xs font-semibold text-slate-600 cursor-pointer select-none">
+          <Label
+            htmlFor="ah-material-detail-mode"
+            className="text-xs font-semibold text-slate-600 cursor-pointer select-none"
+          >
             Thông tin chuyên sâu
           </Label>
           <Switch
@@ -63,6 +87,7 @@ const AhMaterialCreatePage = () => {
             completeLabel={isEdit ? "Lưu thay đổi" : "Hoàn tất & Lưu"}
             onComplete={handleComplete}
             onCancel={goBack}
+            loading={submitting}
           />
         ) : (
           <div className="p-4 md:p-6">
@@ -72,6 +97,7 @@ const AhMaterialCreatePage = () => {
               handleComplete={() => setConfirmOpen(true)}
               goBack={goBack}
               completeLabel={isEdit ? "Lưu thay đổi" : "Hoàn tất & Lưu"}
+              loading={submitting}
             />
           </div>
         )}
@@ -83,6 +109,7 @@ const AhMaterialCreatePage = () => {
         isEdit={isEdit}
         formData={formData}
         onConfirm={handleConfirmSubmit}
+        loading={submitting}
       />
     </PageWrapper>
   );

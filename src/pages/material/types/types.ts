@@ -13,9 +13,9 @@ export interface Material {
   valueChainId?: string;
 
   // Origin & Supply fields
-  manufacturerOrigin?: string[];
-  importerRegistrant?: string[];
-  distributor?: string[];
+  manufacturerOrigin?: string;
+  importerRegistrant?: string;
+  distributor?: string;
   packagingSpecs?: string[];
 }
 
@@ -26,14 +26,15 @@ export interface MaterialFormData {
   description: string;
   hashtags: string[];
   imageUrl?: string;
+  imageFile?: File | null;
 
   materialGroupId: string;
   technologyLevelId: string;
   valueChainId: string;
 
   // Origin & Supply fields
-  manufacturerOrigin: string[];
-  importerRegistrant: string[];
-  distributor: string[];
+  manufacturerOrigin: string;
+  importerRegistrant: string;
+  distributor: string;
   packagingSpecs: string[];
 }

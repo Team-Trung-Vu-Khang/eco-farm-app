@@ -13,7 +13,7 @@ import {
   StepperForm,
   Switch,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { ChevronLeft } from "lucide-react";
+import { ChevronLeft, Loader2 } from "lucide-react";
 import { useState } from "react";
 import { EquipmentBasicInfoStep } from "./components/steps/EquipmentBasicInfoStep";
 import { EquipmentTechnicalStep } from "./components/steps/EquipmentTechnicalStep";
@@ -37,9 +37,24 @@ const EquipmentCreatePage = () => {
     setConfirmOpen,
     handleConfirmSubmit,
     navigateBack,
+    loading,
+    submitting,
+    isDetailMode,
+    setIsDetailMode,
+    isValidStep1,
   } = useEquipmentCreateForm();
 
-  const [isDetailMode, setIsDetailMode] = useState(false);
+  if (loading) {
+    return (
+      <PageWrapper title={isEdit ? "Cập nhật thiết bị" : "Thêm mới thiết bị"}>
+        <div className="flex flex-col items-center justify-center py-20">
+          <p className="text-muted-foreground animate-pulse">
+            Đang tải dữ liệu...
+          </p>
+        </div>
+      </PageWrapper>
+    );
+  }
 
   const steps = [
     {
@@ -48,12 +63,17 @@ const EquipmentCreatePage = () => {
       content: (
         <EquipmentBasicInfoStep formData={formData} updateField={updateField} />
       ),
+      isValid: isValidStep1,
     },
     {
       id: "technical",
       title: "Thông số kỹ thuật",
       content: (
-        <EquipmentTechnicalStep formData={formData} updateField={updateField} />
+        <EquipmentTechnicalStep
+          domainCode="CROP"
+          formData={formData}
+          updateField={updateField}
+        />
       ),
     },
     {
@@ -130,16 +150,19 @@ const EquipmentCreatePage = () => {
             completeLabel={isEdit ? "Lưu thay đổi" : "Hoàn tất & Lưu"}
             onComplete={() => setConfirmOpen(true)}
             onCancel={navigateBack}
+            loading={submitting}
           />
         ) : (
           <div className="p-4 md:p-6">
             <SimpleEquipmentForm
+              isEdit={isEdit}
               formData={formData}
               domain="cultivation"
               updateField={updateField}
               handleComplete={() => setConfirmOpen(true)}
               goBack={navigateBack}
               completeLabel={isEdit ? "Lưu thay đổi" : "Hoàn tất & Lưu"}
+              loading={submitting}
             />
           </div>
         )}
@@ -161,16 +184,22 @@ const EquipmentCreatePage = () => {
                 <div className="bg-slate-50 p-4 rounded-lg space-y-2 text-sm mt-3">
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Mã SKU:</span>
-                    <span className="font-medium">{formData.sku || formData.code}</span>
+                    <span className="font-medium">
+                      {formData.sku || formData.code}
+                    </span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Tên máy móc:</span>
-                    <span className="font-medium">{formData.machineName || formData.name}</span>
+                    <span className="font-medium">
+                      {formData.machineName || formData.name}
+                    </span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Bảo dưỡng:</span>
                     <span className="font-medium">
-                      {formData.maintenanceSchedule || formData.maintainanceInterval || "N/A"}
+                      {formData.maintenanceSchedule ||
+                        formData.maintainanceInterval ||
+                        "N/A"}
                     </span>
                   </div>
                 </div>
@@ -178,8 +207,12 @@ const EquipmentCreatePage = () => {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Hủy bỏ</AlertDialogCancel>
-            <AlertDialogAction onClick={handleConfirmSubmit}>
+            <AlertDialogCancel disabled={submitting}>Hủy bỏ</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmSubmit}
+              disabled={submitting}
+            >
+              {submitting && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
               {isEdit ? "Xác nhận cập nhật" : "Xác nhận thêm mới"}
             </AlertDialogAction>
           </AlertDialogFooter>

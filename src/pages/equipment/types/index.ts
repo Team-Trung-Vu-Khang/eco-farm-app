@@ -59,6 +59,7 @@ export interface EquipmentFormData {
   maintainanceInterval: string;
   description: string;
   imageUrl?: string;
+  imageFile?: File | null;
   technicalDocType: "file" | "editor";
   technicalDocContent: string;
   supplierDetails: SupplierDetail[];

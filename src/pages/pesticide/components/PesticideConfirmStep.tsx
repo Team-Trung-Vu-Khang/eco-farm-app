@@ -1,10 +1,12 @@
 import { useEffect, useState } from "react";
+import { Badge, Card, CardContent } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import {
-  Badge,
-  Card,
-  CardContent,
-} from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { AlarmClock, Building2, CheckCircle2, Package, ShieldAlert } from "lucide-react";
+  AlarmClock,
+  Building2,
+  CheckCircle2,
+  Package,
+  ShieldAlert,
+} from "lucide-react";
 import { safeConvertLexicalToHtml } from "@/utils/commons";
 import { toxicityLevels } from "../data/constants";
 import type { PesticideDomain, PesticideFormData } from "../types";
@@ -14,7 +16,22 @@ interface PesticideConfirmStepProps {
   domain?: PesticideDomain;
 }
 
-function Row({ label, value }: { label: string; value?: string | number | null }) {
+function formatLegalStatus(status: string | null | undefined): string {
+  if (!status) return "Được phép sử dụng";
+  const normalized = status.toLowerCase().trim();
+  if (normalized === "allowed") return "Được phép sử dụng";
+  if (normalized === "restricted") return "Hạn chế sử dụng";
+  if (normalized === "banned") return "Cấm sử dụng";
+  return status;
+}
+
+function Row({
+  label,
+  value,
+}: {
+  label: string;
+  value?: string | number | null;
+}) {
   if (!value) return null;
   return (
     <div className="col-span-1">
@@ -24,7 +41,10 @@ function Row({ label, value }: { label: string; value?: string | number | null }
   );
 }
 
-export default function PesticideConfirmStep({ formData, domain }: PesticideConfirmStepProps) {
+export default function PesticideConfirmStep({
+  formData,
+  domain,
+}: PesticideConfirmStepProps) {
   const [firstAidHtml, setFirstAidHtml] = useState("");
 
   useEffect(() => {
@@ -39,7 +59,9 @@ export default function PesticideConfirmStep({ formData, domain }: PesticideConf
   const isAnimal = domain === "animal";
   const isAquaculture = domain === "aquaculture";
 
-  const toxLabel = toxicityLevels.find((t) => t.value === formData.toxicityLevel);
+  const toxLabel = toxicityLevels.find(
+    (t) => t.value === formData.toxicityLevel,
+  );
   const toxColorMap: Record<string, string> = {
     Ia: "bg-red-100 text-red-700 border-red-200",
     Ib: "bg-orange-100 text-orange-700 border-orange-200",
@@ -63,16 +85,28 @@ export default function PesticideConfirmStep({ formData, domain }: PesticideConf
 
   const getToxicityBadgeClass = () => {
     if (isCultivation) {
-      return toxColorMap[formData.toxicityLevel] ?? "bg-slate-100 text-slate-700 border-slate-200";
+      return (
+        toxColorMap[formData.toxicityLevel] ??
+        "bg-slate-100 text-slate-700 border-slate-200"
+      );
     }
     const val = formData.toxicityLevel;
     if (val.includes("OTC") || val.includes("An toàn")) {
       return "bg-green-100 text-green-700 border-green-200";
     }
-    if (val.includes("kê đơn") || val.includes("cách ly") || val.includes("WITHDRAWAL")) {
+    if (
+      val.includes("kê đơn") ||
+      val.includes("cách ly") ||
+      val.includes("WITHDRAWAL")
+    ) {
       return "bg-yellow-100 text-yellow-700 border-yellow-200";
     }
-    if (val.includes("cấm") || val.includes("hạn chế") || val.includes("RESTRICTED") || val.includes("BANNED")) {
+    if (
+      val.includes("cấm") ||
+      val.includes("hạn chế") ||
+      val.includes("RESTRICTED") ||
+      val.includes("BANNED")
+    ) {
       return "bg-red-100 text-red-700 border-red-200";
     }
     return "bg-slate-100 text-slate-700 border-slate-200";
@@ -84,8 +118,12 @@ export default function PesticideConfirmStep({ formData, domain }: PesticideConf
         <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4 text-green-600">
           <CheckCircle2 className="w-8 h-8" />
         </div>
-        <h3 className="text-2xl font-bold text-green-900">Xác nhận thông tin</h3>
-        <p className="text-green-700 mt-2">Vui lòng kiểm tra kỹ thông tin trước khi hoàn tất</p>
+        <h3 className="text-2xl font-bold text-green-900">
+          Xác nhận thông tin
+        </h3>
+        <p className="text-green-700 mt-2">
+          Vui lòng kiểm tra kỹ thông tin trước khi hoàn tất
+        </p>
       </div>
 
       <div className="space-y-4">
@@ -102,10 +140,16 @@ export default function PesticideConfirmStep({ formData, domain }: PesticideConf
               <Row label="Hàm lượng" value={formData.concentration} />
               <Row label="Nhóm phân loại" value={formData.group} />
               <Row label="Dạng bào chế" value={formData.form} />
-              {isCultivation && <Row label="Nguồn gốc" value={formData.origin} />}
+              {isCultivation && (
+                <Row label="Nguồn gốc" value={formData.origin} />
+              )}
               <div className="col-span-2">
-                <span className="text-muted-foreground text-sm">Hoạt chất:</span>{" "}
-                <span className="font-medium text-sm">{formData.activeIngredient}</span>
+                <span className="text-muted-foreground text-sm">
+                  Hoạt chất:
+                </span>{" "}
+                <span className="font-medium text-sm">
+                  {formData.activeIngredient}
+                </span>
               </div>
               <Row
                 label={
@@ -117,12 +161,18 @@ export default function PesticideConfirmStep({ formData, domain }: PesticideConf
                 }
                 value={formData.actionType}
               />
-              {isCultivation && <Row label="Nhóm MoA" value={formData.moaGroup} />}
+              {isCultivation && (
+                <Row label="Nhóm MoA" value={formData.moaGroup} />
+              )}
               {formData.toxicityLevel && (
                 <div className="col-span-2 flex items-center gap-2">
                   <ShieldAlert className="w-4 h-4 text-amber-500" />
-                  <span className="text-muted-foreground text-sm">{getToxicityLabel()}:</span>
-                  <span className={`px-2 py-0.5 rounded text-xs font-semibold border ${getToxicityBadgeClass()}`}>
+                  <span className="text-muted-foreground text-sm">
+                    {getToxicityLabel()}:
+                  </span>
+                  <span
+                    className={`px-2 py-0.5 rounded text-xs font-semibold border ${getToxicityBadgeClass()}`}
+                  >
                     {getToxicityValue()}
                   </span>
                 </div>
@@ -132,7 +182,9 @@ export default function PesticideConfirmStep({ formData, domain }: PesticideConf
                   <span className="text-muted-foreground text-sm">Tags:</span>{" "}
                   <div className="inline-flex gap-1 flex-wrap mt-1">
                     {formData.hashtags.map((tag) => (
-                      <Badge key={tag} variant="secondary" className="text-xs">#{tag}</Badge>
+                      <Badge key={tag} variant="secondary" className="text-xs">
+                        #{tag}
+                      </Badge>
                     ))}
                   </div>
                 </div>
@@ -151,23 +203,36 @@ export default function PesticideConfirmStep({ formData, domain }: PesticideConf
             <div className="grid grid-cols-2 gap-x-8 gap-y-3">
               {formData.indications && (
                 <div className="col-span-2">
-                  <span className="text-muted-foreground text-sm">Công dụng:</span>{" "}
-                  <span className="font-medium text-sm">{formData.indications}</span>
+                  <span className="text-muted-foreground text-sm">
+                    Công dụng:
+                  </span>{" "}
+                  <span className="font-medium text-sm">
+                    {formData.indications}
+                  </span>
                 </div>
               )}
               {formData.targetEntities.length > 0 && (
                 <div className="col-span-2">
-                  <span className="text-muted-foreground text-sm">Đối tượng:</span>{" "}
+                  <span className="text-muted-foreground text-sm">
+                    Đối tượng:
+                  </span>{" "}
                   <div className="inline-flex gap-1 flex-wrap mt-1">
                     {formData.targetEntities.map((e) => (
-                      <Badge key={e} variant="outline" className="text-xs">{e}</Badge>
+                      <Badge key={e} variant="outline" className="text-xs">
+                        {e}
+                      </Badge>
                     ))}
                   </div>
                 </div>
               )}
               <Row label="Liều lượng" value={formData.recommendedDosage} />
               <Row label="Cách dùng" value={formData.applicationMethod} />
-              {formData.phi && <Row label="Thời gian cách ly (PHI)" value={`${formData.phi} ngày`} />}
+              {formData.phi && (
+                <Row
+                  label="Thời gian cách ly (PHI)"
+                  value={`${formData.phi} ngày`}
+                />
+              )}
               {formData.maxUsage && (
                 <Row
                   label="Số lần tối đa"
@@ -192,35 +257,54 @@ export default function PesticideConfirmStep({ formData, domain }: PesticideConf
             <div className="grid grid-cols-1 gap-y-3">
               {formData.toxicityInfo && (
                 <div>
-                  <span className="text-muted-foreground text-sm">Độc tính:</span>{" "}
-                  <span className="font-medium text-sm">{formData.toxicityInfo}</span>
+                  <span className="text-muted-foreground text-sm">
+                    Độc tính:
+                  </span>{" "}
+                  <span className="font-medium text-sm">
+                    {formData.toxicityInfo}
+                  </span>
                 </div>
               )}
               {formData.legalStatus && (
                 <div>
-                  <span className="text-muted-foreground text-sm">Pháp lý:</span>{" "}
-                  <span className="font-medium text-sm">{formData.legalStatus}</span>
+                  <span className="text-muted-foreground text-sm">
+                    Pháp lý:
+                  </span>{" "}
+                  <span className="font-medium text-sm">
+                    {formatLegalStatus(formData.legalStatus)}
+                  </span>
                 </div>
               )}
               {firstAidHtml && (
                 <div>
-                  <span className="text-muted-foreground text-sm">Sơ cứu khi ngộ độc:</span>
+                  <span className="text-muted-foreground text-sm">
+                    Sơ cứu khi ngộ độc:
+                  </span>
                   <div
                     className="mt-1 text-sm bg-slate-50 border p-3 rounded-lg leading-relaxed text-slate-700"
                     dangerouslySetInnerHTML={{ __html: firstAidHtml }}
                   />
                 </div>
               )}
-              {formData.standardsCompliance && formData.standardsCompliance.length > 0 && (
-                <div>
-                  <span className="text-muted-foreground text-sm">Tiêu chuẩn:</span>{" "}
-                  <div className="inline-flex gap-1 flex-wrap mt-1">
-                    {formData.standardsCompliance.map((std) => (
-                      <Badge key={std} variant="secondary" className="text-xs">{std}</Badge>
-                    ))}
+              {formData.standardsCompliance &&
+                formData.standardsCompliance.length > 0 && (
+                  <div>
+                    <span className="text-muted-foreground text-sm">
+                      Tiêu chuẩn:
+                    </span>{" "}
+                    <div className="inline-flex gap-1 flex-wrap mt-1">
+                      {formData.standardsCompliance.map((std) => (
+                        <Badge
+                          key={std}
+                          variant="secondary"
+                          className="text-xs"
+                        >
+                          {std}
+                        </Badge>
+                      ))}
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
             </div>
           </CardContent>
         </Card>
@@ -244,7 +328,9 @@ export default function PesticideConfirmStep({ formData, domain }: PesticideConf
                   </span>{" "}
                   <div className="inline-flex gap-1 flex-wrap mt-1">
                     {formData.packagingSpecs.map((spec) => (
-                      <Badge key={spec} variant="outline" className="text-xs">{spec}</Badge>
+                      <Badge key={spec} variant="outline" className="text-xs">
+                        {spec}
+                      </Badge>
                     ))}
                   </div>
                 </div>

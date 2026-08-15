@@ -25,6 +25,7 @@ export const FertilizerBasicInfoStep = ({
   formData,
   updateField,
 }: FertilizerBasicInfoStepProps) => {
+  const isEdit = window.location.pathname.includes("/edit");
   const [paramHashtag, setParamHashtag] = useState("");
 
   // Fetch groups dynamically from master data (managed in FertilizerGroupPage.tsx)
@@ -65,6 +66,8 @@ export const FertilizerBasicInfoStep = ({
                 value={formData.code}
                 onChange={(e) => updateField("code", e.target.value)}
                 placeholder="VD: PB-NPK-202015"
+                disabled={isEdit}
+                clearable={!isEdit}
               />
               <p className="text-xs text-muted-foreground">
                 Rất quan trọng để truy xuất nguồn gốc
@@ -271,15 +274,50 @@ export const FertilizerBasicInfoStep = ({
             <ImageIcon className="w-5 h-5 text-primary" />
             Hình ảnh sản phẩm
           </h3>
-          <div className="border-2 border-dashed border-slate-200 rounded-xl p-8 flex flex-col items-center justify-center text-center hover:bg-slate-50 transition-colors cursor-pointer min-h-[200px]">
-            <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-4 text-primary">
-              <Upload className="w-8 h-8" />
+          {formData.imageUrl ? (
+            <div className="relative group w-full max-w-[240px] mx-auto">
+              <img
+                src={formData.imageUrl}
+                alt="product"
+                className="w-full rounded-xl border object-cover aspect-square"
+              />
+              <button
+                type="button"
+                onClick={() => {
+                  updateField("imageUrl", "");
+                  updateField("imageFile", null);
+                }}
+                className="absolute top-2 right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity"
+              >
+                ✕
+              </button>
             </div>
-            <p className="font-medium text-slate-900">Tải lên ảnh sản phẩm</p>
-            <p className="text-sm text-muted-foreground mt-1">
-              Kéo thả hoặc click để chọn file
-            </p>
-          </div>
+          ) : (
+            <label className="border-2 border-dashed border-slate-200 rounded-xl p-8 flex flex-col items-center justify-center text-center hover:bg-slate-50 transition-colors cursor-pointer min-h-[200px]">
+              <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-4 text-primary">
+                <Upload className="w-8 h-8" />
+              </div>
+              <p className="font-medium text-slate-900">Tải lên ảnh sản phẩm</p>
+              <p className="text-sm text-muted-foreground mt-1">
+                Kéo thả hoặc click để chọn file
+              </p>
+              <p className="text-xs text-muted-foreground mt-1">
+                PNG, JPG tối đa 5MB
+              </p>
+              <input
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (!file) return;
+                  const url = URL.createObjectURL(file);
+                  updateField("imageUrl", url);
+                  updateField("imageFile", file);
+                }}
+              />
+            </label>
+          )}
         </div>
       </div>
     </div>

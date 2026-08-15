@@ -37,6 +37,7 @@ export interface Fertilizer {
   recommendedDosage?: string;
   applicationMethod?: string;
   usageNotes?: string;
+  shelfLife?: string;
 
   // Step 3 - Safety & Legal
   toxicityInfo?: string;
@@ -60,6 +61,7 @@ export interface FertilizerFormData {
   code: string;
   name: string;
   imageUrl?: string;
+  imageFile?: File | null;
 
   // Existing properties
   nutritionalContentId: string;
@@ -87,12 +89,14 @@ export interface FertilizerFormData {
   recommendedDosage: string;
   applicationMethod: string;
   usageNotes: string;
+  shelfLife: string;
 
   // Step 3
   toxicityInfo: string;
   protectiveMeasures: string;
   firstAid: any; // SerializedEditorState or HTML string
-  legalStatus: string;
+  legalStatus: "allowed" | "restricted" | "banned";
+  legalDescription: string;
   standardsCompliance: string[];
 
   // Step 4
@@ -108,4 +112,5 @@ export interface FertilizerFormData {
   quantity?: string;
   unit?: string;
   packaging?: string;
+  formType?: "basic" | "advanced";
 }

@@ -13,8 +13,8 @@ import {
   StepperForm,
   Switch,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { ChevronLeft } from "lucide-react";
-import { useState } from "react";
+import { ChevronLeft, Loader2 } from "lucide-react";
+import { useEffect, useState } from "react";
 import { FertilizerBasicInfoStep } from "./components/steps/FertilizerBasicInfoStep";
 import { FertilizerUsageStep } from "./components/steps/FertilizerUsageStep";
 import FertilizerSafetyLegalStep from "./components/steps/FertilizerSafetyLegalStep";
@@ -34,9 +34,29 @@ const FertilizerCreatePage = () => {
     setConfirmOpen,
     handleConfirmSubmit,
     setLocation,
+    loading,
+    submitting,
   } = useFertilizerCreateForm();
 
   const [isDetailMode, setIsDetailMode] = useState(false);
+
+  useEffect(() => {
+    if (isEdit && formData.formType) {
+      setIsDetailMode(formData.formType === "advanced");
+    }
+  }, [isEdit, formData.formType]);
+
+  if (loading) {
+    return (
+      <PageWrapper title={isEdit ? "Cập nhật phân bón" : "Thêm phân bón"}>
+        <div className="flex flex-col items-center justify-center py-20">
+          <p className="text-muted-foreground animate-pulse">
+            Đang tải dữ liệu...
+          </p>
+        </div>
+      </PageWrapper>
+    );
+  }
 
   const steps = [
     {
@@ -47,6 +67,9 @@ const FertilizerCreatePage = () => {
           formData={formData}
           updateField={updateField}
         />
+      ),
+      isValid: Boolean(
+        formData.name && formData.fertilizerOriginGroup,
       ),
     },
     {
@@ -116,7 +139,9 @@ const FertilizerCreatePage = () => {
             checked={isDetailMode}
             onCheckedChange={(checked) => {
               setIsDetailMode(checked);
-              resetForm();
+              if (!isEdit) {
+                resetForm();
+              }
             }}
           />
         </div>
@@ -129,6 +154,7 @@ const FertilizerCreatePage = () => {
             completeLabel={isEdit ? "Lưu thay đổi" : "Hoàn tất & Lưu"}
             onComplete={() => setConfirmOpen(true)}
             onCancel={() => setLocation("/cultivation-material/fertilizer")}
+            loading={submitting}
           />
         ) : (
           <div className="p-4 md:p-6">
@@ -138,6 +164,7 @@ const FertilizerCreatePage = () => {
               handleComplete={() => setConfirmOpen(true)}
               goBack={() => setLocation("/cultivation-material/fertilizer")}
               completeLabel={isEdit ? "Lưu thay đổi" : "Hoàn tất & Lưu"}
+              loading={submitting}
             />
           </div>
         )}
@@ -184,8 +211,12 @@ const FertilizerCreatePage = () => {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Hủy bỏ</AlertDialogCancel>
-            <AlertDialogAction onClick={handleConfirmSubmit}>
+            <AlertDialogCancel disabled={submitting}>Hủy bỏ</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => handleConfirmSubmit(isDetailMode)}
+              disabled={submitting}
+            >
+              {submitting && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
               {isEdit ? "Xác nhận cập nhật" : "Xác nhận thêm mới"}
             </AlertDialogAction>
           </AlertDialogFooter>

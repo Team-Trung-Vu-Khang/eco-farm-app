@@ -14,7 +14,6 @@ import {
   Switch,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { ChevronLeft } from "lucide-react";
-import { useState } from "react";
 import { EquipmentBasicInfoStep } from "../equipment/components/steps/EquipmentBasicInfoStep";
 import { EquipmentTechnicalStep } from "../equipment/components/steps/EquipmentTechnicalStep";
 import { EquipmentOperationStep } from "../equipment/components/steps/EquipmentOperationStep";
@@ -37,9 +36,26 @@ const AhEquipmentCreatePage = () => {
     setConfirmOpen,
     handleConfirmSubmit,
     navigateBack,
+    loading,
+    submitting,
+    isDetailMode,
+    setIsDetailMode,
+    isValidStep1,
   } = useAhEquipmentCreateForm();
 
-  const [isDetailMode, setIsDetailMode] = useState(false);
+  if (loading) {
+    return (
+      <PageWrapper
+        title={isEdit ? "Cập nhật thiết bị" : "Thêm mới thiết bị chăn nuôi"}
+      >
+        <div className="flex flex-col items-center justify-center py-20">
+          <p className="text-muted-foreground animate-pulse">
+            Đang tải dữ liệu...
+          </p>
+        </div>
+      </PageWrapper>
+    );
+  }
 
   const steps = [
     {
@@ -48,12 +64,17 @@ const AhEquipmentCreatePage = () => {
       content: (
         <EquipmentBasicInfoStep formData={formData} updateField={updateField} />
       ),
+      isValid: isValidStep1,
     },
     {
       id: "technical",
       title: "Thông số kỹ thuật",
       content: (
-        <EquipmentTechnicalStep formData={formData} updateField={updateField} />
+        <EquipmentTechnicalStep
+          domainCode="LIVESTOCK"
+          formData={formData}
+          updateField={updateField}
+        />
       ),
     },
     {
@@ -129,6 +150,7 @@ const AhEquipmentCreatePage = () => {
         {isDetailMode ? (
           <StepperForm
             steps={steps}
+            loading={submitting}
             completeLabel={isEdit ? "Lưu thay đổi" : "Hoàn tất & Lưu"}
             onComplete={() => setConfirmOpen(true)}
             onCancel={navigateBack}
@@ -136,6 +158,8 @@ const AhEquipmentCreatePage = () => {
         ) : (
           <div className="p-4 md:p-6">
             <SimpleEquipmentForm
+              loading={submitting}
+              isEdit={isEdit}
               formData={formData}
               domain="animal"
               updateField={updateField}

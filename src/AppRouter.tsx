@@ -87,20 +87,22 @@ const PlanAnimalGrowthWorkflowPage = lazy(
   () => import("./pages/plan-animal-growth/PlanAnimalGrowthWorkflowPage"),
 );
 const PlanAnimalGrowthWorkflowPlansPage = lazy(
-  () =>
-    import("./pages/plan-animal-growth/PlanAnimalGrowthWorkflowPlansPage"),
+  () => import("./pages/plan-animal-growth/PlanAnimalGrowthWorkflowPlansPage"),
 );
 const PlanAnimalGrowthCreateWorkflowPage = lazy(
   () => import("./pages/plan-animal-growth/PlanAnimalGrowthCreateWorkflowPage"),
 );
 const PlanAnimalGrowthWorkflowStageEditPage = lazy(
-  () => import("./pages/plan-animal-growth/PlanAnimalGrowthWorkflowStageEditPage"),
+  () =>
+    import("./pages/plan-animal-growth/PlanAnimalGrowthWorkflowStageEditPage"),
 );
 const PlanAnimalGrowthWorkflowDetailEditPage = lazy(
-  () => import("./pages/plan-animal-growth/PlanAnimalGrowthWorkflowDetailEditPage"),
+  () =>
+    import("./pages/plan-animal-growth/PlanAnimalGrowthWorkflowDetailEditPage"),
 );
 const PlanAnimalGrowthWorkflowInfoFormPage = lazy(
-  () => import("./pages/plan-animal-growth/PlanAnimalGrowthWorkflowInfoFormPage"),
+  () =>
+    import("./pages/plan-animal-growth/PlanAnimalGrowthWorkflowInfoFormPage"),
 );
 const PlanAquacultureGrowthPage = lazy(
   () => import("./pages/plan-aquaculture-growth/PlanAquacultureGrowthPage"),
@@ -122,33 +124,23 @@ const PlanAquacultureGrowthWorkflowPage = lazy(
 );
 const PlanAquacultureGrowthWorkflowPlansPage = lazy(
   () =>
-    import(
-      "./pages/plan-aquaculture-growth/PlanAquacultureGrowthWorkflowPlansPage"
-    ),
+    import("./pages/plan-aquaculture-growth/PlanAquacultureGrowthWorkflowPlansPage"),
 );
 const PlanAquacultureGrowthCreateWorkflowPage = lazy(
   () =>
-    import(
-      "./pages/plan-aquaculture-growth/PlanAquacultureGrowthCreateWorkflowPage"
-    ),
+    import("./pages/plan-aquaculture-growth/PlanAquacultureGrowthCreateWorkflowPage"),
 );
 const PlanAquacultureGrowthWorkflowStageEditPage = lazy(
   () =>
-    import(
-      "./pages/plan-aquaculture-growth/PlanAquacultureGrowthWorkflowStageEditPage"
-    ),
+    import("./pages/plan-aquaculture-growth/PlanAquacultureGrowthWorkflowStageEditPage"),
 );
 const PlanAquacultureGrowthWorkflowDetailEditPage = lazy(
   () =>
-    import(
-      "./pages/plan-aquaculture-growth/PlanAquacultureGrowthWorkflowDetailEditPage"
-    ),
+    import("./pages/plan-aquaculture-growth/PlanAquacultureGrowthWorkflowDetailEditPage"),
 );
 const PlanAquacultureGrowthWorkflowInfoFormPage = lazy(
   () =>
-    import(
-      "./pages/plan-aquaculture-growth/PlanAquacultureGrowthWorkflowInfoFormPage"
-    ),
+    import("./pages/plan-aquaculture-growth/PlanAquacultureGrowthWorkflowInfoFormPage"),
 );
 const PlanTypePage = lazy(() => import("./pages/plan-type/PlanTypePage"));
 const FertilizerCreatePage = lazy(
@@ -797,9 +789,15 @@ const PlanGrowthWorkflowPlanEditRoute = () => {
     />
   );
 };
-const PlanGrowthWorkflowStageEditRoute = () => <PlanGrowthWorkflowStageEditPage />;
-const PlanGrowthWorkflowDetailEditRoute = () => <PlanGrowthWorkflowDetailEditPage />;
-const PlanGrowthWorkflowInfoFormRoute = () => <PlanGrowthWorkflowInfoFormPage />;
+const PlanGrowthWorkflowStageEditRoute = () => (
+  <PlanGrowthWorkflowStageEditPage />
+);
+const PlanGrowthWorkflowDetailEditRoute = () => (
+  <PlanGrowthWorkflowDetailEditPage />
+);
+const PlanGrowthWorkflowInfoFormRoute = () => (
+  <PlanGrowthWorkflowInfoFormPage />
+);
 const PlanGrowthWorkflowRoute = () => <PlanGrowthWorkflowPage />;
 const PlanGrowthEditRoute = () => <PlanGrowthEditPage />;
 const PlanGrowthDetailRoute = () => <PlanGrowthDetailPage />;
@@ -810,7 +808,8 @@ const PlanAnimalGrowthCreateWorkflowRoute = () => (
 );
 const PlanAnimalGrowthWorkflowPlanEditRoute = () => {
   const [, setLocation] = useLocation();
-  const backToWorkflow = () => setLocation("/plan-animal-growth/create/workflow");
+  const backToWorkflow = () =>
+    setLocation("/plan-animal-growth/create/workflow");
   return (
     <PlanAnimalGrowthEditPage
       basePath="/plan-animal-growth/create/workflow"
@@ -838,9 +837,7 @@ const PlanAnimalGrowthEditRoute = () => {
 
   useEffect(() => {
     if (params.id) {
-      setLocation(
-        `/plan-animal-growth/create/workflow/plan/${params.id}/edit`,
-      );
+      setLocation(`/plan-animal-growth/create/workflow/plan/${params.id}/edit`);
     }
   }, [params.id, setLocation]);
 
@@ -1424,6 +1421,10 @@ function Router() {
       <Route path="/material-group" component={MaterialGroupPage} />
       <Route
         path="/cultivation-material/material/create"
+        component={MaterialCreatePage}
+      />
+      <Route
+        path="/cultivation-material/material/:id/edit"
         component={MaterialCreatePage}
       />
       <Route

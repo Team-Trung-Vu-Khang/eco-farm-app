@@ -31,7 +31,8 @@ export interface Pesticide {
   toxicityInfo?: string;       // Độc tính với người, ĐV, môi trường
   protectiveMeasures?: string; // Biện pháp phòng hộ
   firstAid?: string;           // Sơ cứu khi ngộ độc
-  legalStatus?: string;        // Tình trạng pháp lý
+  legalStatus?: "allowed" | "restricted" | "banned"; // Tình trạng pháp lý
+  legalDescription?: string;   // Chi tiết tình trạng pháp lý
   standardsCompliance?: string[]; // Tiêu chuẩn đáp ứng (VietGAP, GlobalGAP...)
 
   // Bước 4 – Xuất xứ & Cung ứng
@@ -44,6 +45,7 @@ export interface Pesticide {
   status: "active" | "inactive";
   createdAt: string;
   domain?: PesticideDomain;    // Phân biệt domain (trồng trọt / chăn nuôi / thủy sản)
+  formType?: "basic" | "advanced";
 }
 
 export interface PesticideFormData {
@@ -59,6 +61,7 @@ export interface PesticideFormData {
   moaGroup: string;
   actionType: string;
   imageUrl?: string;
+  imageFile?: File | null;
 
   // Bước 2 – Thông tin sử dụng
   indications: string;
@@ -74,7 +77,8 @@ export interface PesticideFormData {
   toxicityInfo: string;
   protectiveMeasures: string;
   firstAid: string;
-  legalStatus: string;
+  legalStatus: "allowed" | "restricted" | "banned";
+  legalDescription: string;
   standardsCompliance: string[];
 
   // Bước 4 – Xuất xứ & Cung ứng
@@ -96,4 +100,5 @@ export interface PesticideFormData {
   quantity: string;
   unit: string;
   packaging: string;
+  formType?: "basic" | "advanced";
 }

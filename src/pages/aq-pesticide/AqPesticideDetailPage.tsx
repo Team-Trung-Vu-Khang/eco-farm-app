@@ -30,6 +30,7 @@ import {
 import { useLocation, useRoute } from "wouter";
 import usePesticideStore from "../../stores/usePesticideStore";
 import { toxicityLevels } from "../pesticide/data/constants";
+import { useFarmSupplyDetailHook } from "@/features/farm-supply/hooks/useFarmSupplyDetailHook";
 
 const toxicityColorMap: Record<string, string> = {
   Ia: "bg-red-100 text-red-700 border-red-300",
@@ -37,6 +38,22 @@ const toxicityColorMap: Record<string, string> = {
   II: "bg-yellow-100 text-yellow-700 border-yellow-300",
   III: "bg-blue-100 text-blue-700 border-blue-300",
   U: "bg-green-100 text-green-700 border-green-300",
+};
+
+const formatPrice = (price?: string | number | null) => {
+  if (!price) return "";
+  const str = price.toString().trim();
+  if (str.toLowerCase().includes("đ") || str.toLowerCase().includes("vnd"))
+    return str;
+  let s = str.replace(/\s+/g, "").replace(/\./g, "").replace(/,/g, ".");
+  const matched = s.match(/[-+]?[0-9]*\.?[0-9]+/);
+  if (!matched) return str;
+  const num = parseFloat(matched[0]);
+  if (isNaN(num)) return str;
+  return new Intl.NumberFormat("vi-VN", {
+    style: "currency",
+    currency: "VND",
+  }).format(num);
 };
 
 function InfoRow({
@@ -61,9 +78,19 @@ const AqPesticideDetailPage = () => {
   const [, params] = useRoute("/aquaculture-material/pesticide/:id");
   const [, setLocation] = useLocation();
   const id = params?.id ? Number(params.id) : 0;
+  const { item, loading } = useFarmSupplyDetailHook("medicine", id);
 
-  const getPesticideById = usePesticideStore((state) => state.getPesticideById);
-  const item = getPesticideById(id);
+  if (loading) {
+    return (
+      <PageWrapper title="Chi tiết thuốc thủy sản">
+        <div className="flex flex-col items-center justify-center py-20">
+          <p className="text-muted-foreground animate-pulse">
+            Đang tải dữ liệu...
+          </p>
+        </div>
+      </PageWrapper>
+    );
+  }
 
   if (!item) {
     return (
@@ -88,10 +115,19 @@ const AqPesticideDetailPage = () => {
     if (val.includes("OTC") || val.includes("An toàn")) {
       return "bg-green-100 text-green-700 border-green-300";
     }
-    if (val.includes("kê đơn") || val.includes("cách ly") || val.includes("WITHDRAWAL")) {
+    if (
+      val.includes("kê đơn") ||
+      val.includes("cách ly") ||
+      val.includes("WITHDRAWAL")
+    ) {
       return "bg-yellow-100 text-yellow-700 border-yellow-300";
     }
-    if (val.includes("cấm") || val.includes("hạn chế") || val.includes("RESTRICTED") || val.includes("BANNED")) {
+    if (
+      val.includes("cấm") ||
+      val.includes("hạn chế") ||
+      val.includes("RESTRICTED") ||
+      val.includes("BANNED")
+    ) {
       return "bg-red-100 text-red-700 border-red-300";
     }
     return "bg-slate-50 border-slate-200 text-slate-600";
@@ -102,14 +138,16 @@ const AqPesticideDetailPage = () => {
       title="Chi tiết thuốc thủy sản"
       description={`Thông tin chi tiết cho sản phẩm ${item.name}`}
       actions={
-        <Button
-          onClick={() =>
-            setLocation(`/aquaculture-material/pesticide/${id}/edit`)
-          }
-        >
-          <Edit className="w-4 h-4 mr-2" />
-          Chỉnh sửa
-        </Button>
+        item.source === "OWNER" && (
+          <Button
+            onClick={() =>
+              setLocation(`/aquaculture-material/pesticide/${id}/edit`)
+            }
+          >
+            <Edit className="w-4 h-4 mr-2" />
+            Chỉnh sửa
+          </Button>
+        )
       }
     >
       <div className="mb-6">
@@ -130,7 +168,14 @@ const AqPesticideDetailPage = () => {
           <Card className="overflow-hidden border-none shadow-md bg-white">
             <div className="bg-linear-to-r from-cyan-50 to-teal-50 p-6 flex flex-col md:flex-row gap-6 items-start">
               <div className="w-24 h-24 bg-white rounded-xl shadow-sm border p-2 flex items-center justify-center shrink-0">
-                <ImageIcon className="w-12 h-12 text-slate-300" />
+                {item?.metadataJson?.imageUrl ? (
+                  <img
+                    className="w-full h-full"
+                    src={item.metadataJson.imageUrl}
+                  />
+                ) : (
+                  <ImageIcon className="w-12 h-12 text-slate-300" />
+                )}
               </div>
               <div className="flex-1">
                 <div className="flex items-start justify-between">
@@ -203,8 +248,8 @@ const AqPesticideDetailPage = () => {
                 {item.toxicityLevel && (
                   <div>
                     <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1 flex items-center gap-1">
-                      <ShieldAlert className="w-3.5 h-3.5 text-amber-500" />{" "}
-                      Mức độ kiểm soát & dư lượng
+                      <ShieldAlert className="w-3.5 h-3.5 text-amber-500" /> Mức
+                      độ kiểm soát & dư lượng
                     </h4>
                     <span
                       className={`px-2 py-1 rounded text-sm font-semibold border ${getControlLevelColor(item.toxicityLevel)}`}
@@ -387,7 +432,7 @@ const AqPesticideDetailPage = () => {
                     tham khảo
                   </h4>
                   <p className="text-sm font-semibold text-emerald-700">
-                    {item.referencePrice}
+                    {formatPrice(item.referencePrice)}
                   </p>
                 </div>
               )}
@@ -424,20 +469,26 @@ const AqPesticideDetailPage = () => {
             </CardHeader>
             <CardContent className="pt-4">
               <div className="flex flex-wrap gap-2">
-                <Badge variant="secondary" className="font-normal">
-                  #ThuySan
-                </Badge>
-                <Badge variant="secondary" className="font-normal">
-                  #AnToan
-                </Badge>
-                <Badge variant="secondary" className="font-normal">
-                  #HieuQua
-                </Badge>
+                {item.hashtags && item.hashtags.length > 0 ? (
+                  item.hashtags.map((tag) => (
+                    <Badge
+                      key={tag}
+                      variant="secondary"
+                      className="font-normal"
+                    >
+                      #{tag}
+                    </Badge>
+                  ))
+                ) : (
+                  <span className="text-sm text-muted-foreground">
+                    Chưa có nhãn phân loại
+                  </span>
+                )}
               </div>
             </CardContent>
           </Card>
 
-          <div className="grid grid-cols-1 gap-2">
+          {/* <div className="grid grid-cols-1 gap-2">
             <Button variant="outline" className="w-full justify-start">
               <CheckCircle2 className="w-4 h-4 mr-2" />
               Đánh dấu ưu tiên
@@ -448,7 +499,7 @@ const AqPesticideDetailPage = () => {
             >
               Ngừng kinh doanh
             </Button>
-          </div>
+          </div> */}
         </div>
       </div>
     </PageWrapper>

@@ -24,6 +24,7 @@ import {
   Upload,
   Wrench,
   X,
+  Loader2,
 } from "lucide-react";
 import type { EquipmentFormData } from "../types";
 import {
@@ -43,50 +44,109 @@ const DOMAIN_MACHINE_TYPES: Record<
     { value: "Máy cày", description: "Làm đất, xới đất trồng trọt" },
     { value: "Máy kéo", description: "Kéo xe, phụ kiện nông nghiệp" },
     { value: "Máy gặt đập liên hợp", description: "Thu hoạch lúa, ngô..." },
-    { value: "Máy bơm", description: "Bơm nước tưới tiêu" },
-    { value: "Máy phun thuốc", description: "Phun thuốc BVTV, phân bón lá" },
-    { value: "Drone", description: "Drone phun thuốc, gieo hạt UAV" },
+    { value: "Máy cấy", description: "Cấy lúa tự động, bán tự động" },
+    { value: "Máy gieo sạ", description: "Gieo hạt, sạ lúa thẳng hàng" },
     {
-      value: "Hệ thống tưới",
-      description: "Tưới nhỏ giọt, phun sương tự động",
+      value: "Máy phun thuốc",
+      description: "Phun thuốc bảo vệ thực vật, phân bón",
     },
-    { value: "Máy xay xát", description: "Xay, xát, chế biến nông sản" },
-    { value: "Máy sấy", description: "Sấy thóc, ngô, nông sản" },
-    { value: "Thiết bị khác", description: "Các máy móc canh tác khác" },
+    {
+      value: "Thiết bị bay không người lái (Drone)",
+      description: "Drone phun thuốc, bón phân, giám sát",
+    },
+    {
+      value: "Hệ thống tưới tự động",
+      description: "Tưới nhỏ giọt, tưới phun mưa tự động",
+    },
+    { value: "Máy bơm nước", description: "Cấp thoát nước đồng ruộng" },
+    { value: "Máy xới cỏ", description: "Diệt cỏ, xới đất gốc cây" },
+    {
+      value: "Máy sấy nông sản",
+      description: "Sấy lúa, cà phê, hạt nông nghiệp",
+    },
+    {
+      value: "Hệ thống nhà màng/nhà kính",
+      description: "Khung vòm, màng phủ, điều khiển nhiệt độ",
+    },
+    { value: "Thiết bị khác", description: "Máy móc phục vụ trồng trọt khác" },
   ],
   animal: [
     {
+      value: "Máy nghiền trộn thức ăn",
+      description: "Nghiền, trộn cám, nguyên liệu chăn nuôi",
+    },
+    {
+      value: "Máy ép cám viên",
+      description: "Tự sản xuất cám viên tại trang trại",
+    },
+    {
       value: "Hệ thống cho ăn tự động",
-      description: "Phân phối thức ăn tự động theo lịch",
+      description: "Máng ăn tự động, điều khiển lượng thức ăn",
     },
-    { value: "Máy bơm", description: "Bơm nước uống, vệ sinh chuồng trại" },
-    { value: "Quạt thông gió", description: "Điều hòa nhiệt độ chuồng nuôi" },
     {
-      value: "Hệ thống chiếu sáng",
-      description: "Điều chỉnh ánh sáng kích thích sinh trưởng",
+      value: "Hệ thống cấp nước tự động",
+      description: "Núm uống, máng uống tự động cho vật nuôi",
     },
-    { value: "Máy phun sát khuẩn", description: "Khử khuẩn, vệ sinh định kỳ" },
     {
-      value: "Thiết bị giám sát",
-      description: "Camera, cảm biến theo dõi đàn",
+      value: "Hệ thống làm mát chuồng trại",
+      description: "Quạt thông gió, giàn lạnh Cooling Pad",
     },
-    { value: "Thiết bị khác", description: "Máy móc chăn nuôi khác" },
+    {
+      value: "Hệ thống sưởi ấm",
+      description: "Đèn hồng ngoại, lò sưởi úm gia súc/gia cầm",
+    },
+    { value: "Máy vắt sữa", description: "Vắt sữa bò, dê tự động" },
+    {
+      value: "Thiết bị dọn phân tự động",
+      description: "Cào phân tự động, hệ thống biogas",
+    },
+    {
+      value: "Máy sát trùng/Khử trùng chuồng trại",
+      description: "Phun sương khử trùng, sát khuẩn chuồng",
+    },
+    {
+      value: "Thiết bị thú y trang trại",
+      description: "Kìm bấm tai, xi lanh tự động, máy siêu âm heo",
+    },
+    { value: "Thiết bị khác", description: "Thiết bị phục vụ chăn nuôi khác" },
   ],
   aquaculture: [
-    { value: "Quạt tạo oxy", description: "Tăng oxy hòa tan trong ao nuôi" },
-    { value: "Máy sục khí", description: "Sục khí đáy ao, xử lý khí độc" },
     {
-      value: "Hệ thống lọc nước",
-      description: "Lọc tuần hoàn, xử lý nước RAS",
+      value: "Máy quạt nước tạo oxy",
+      description: "Quạt guồng, quạt lông nhím cung cấp oxy ao nuôi",
     },
     {
-      value: "Hệ thống cho ăn tự động",
-      description: "Phân phối thức ăn thủy sản tự động",
+      value: "Máy sục khí nano/sục khí đáy",
+      description: "Tăng oxy hòa tan tầng đáy ao nuôi",
     },
-    { value: "Máy bơm", description: "Bơm nước, thay nước ao nuôi" },
     {
-      value: "Thiết bị giám sát",
-      description: "Đo pH, oxy, nhiệt độ, độ muối",
+      value: "Máy cho tôm/cá ăn tự động",
+      description: "Phun thức ăn tự động, điều chỉnh bán kính phun",
+    },
+    {
+      value: "Hệ thống đo chất lượng nước tự động",
+      description: "Đo pH, Oxy hòa tan DO, độ mặn, nhiệt độ liên tục",
+    },
+    {
+      value: "Máy bơm nước công suất lớn",
+      description: "Cấp nước ao lắng, tiêu thoát ao nuôi",
+    },
+    { value: "Máy hút bùn ao nuôi", description: "Vệ sinh đáy ao sau vụ nuôi" },
+    {
+      value: "Hệ thống lọc nước tuần hoàn (RAS)",
+      description: "Lọc cơ học, lọc sinh học tuần hoàn nguồn nước",
+    },
+    {
+      value: "Máy khử trùng nước bằng UV/Ozone",
+      description: "Diệt khuẩn nguồn nước cấp ao nuôi",
+    },
+    {
+      value: "Thiết bị phân loại cá/tôm",
+      description: "Phân size, kích cỡ tôm cá thu hoạch",
+    },
+    {
+      value: "Máy bóc vỏ tôm/chế biến thô",
+      description: "Chế biến sơ bộ thủy sản sau thu hoạch",
     },
     { value: "Thiết bị khác", description: "Máy móc nuôi trồng thủy sản khác" },
   ],
@@ -100,11 +160,13 @@ const DOMAIN_LABELS: Record<EquipmentDomain, string> = {
 
 interface SimpleEquipmentFormProps {
   formData: EquipmentFormData;
+  isEdit: boolean;
   domain: EquipmentDomain;
   updateField: (field: keyof EquipmentFormData, value: any) => void;
   handleComplete: () => void;
   goBack: () => void;
   completeLabel?: string;
+  loading?: boolean;
 }
 
 const commonHashtags = [
@@ -119,10 +181,12 @@ const commonHashtags = [
 export default function SimpleEquipmentForm({
   formData,
   domain,
+  isEdit,
   updateField,
   handleComplete,
   goBack,
   completeLabel = "Hoàn tất & Lưu",
+  loading,
 }: SimpleEquipmentFormProps) {
   const machineTypes = DOMAIN_MACHINE_TYPES[domain];
   const domainLabel = DOMAIN_LABELS[domain];
@@ -178,7 +242,10 @@ export default function SimpleEquipmentForm({
             />
             <button
               type="button"
-              onClick={() => updateField("productImage", "")}
+              onClick={() => {
+                updateField("productImage", "");
+                updateField("imageFile", null);
+              }}
               className="absolute top-2 right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity"
             >
               ✕
@@ -206,6 +273,7 @@ export default function SimpleEquipmentForm({
                 if (!file) return;
                 const url = URL.createObjectURL(file);
                 updateField("productImage", url);
+                updateField("imageFile", file);
               }}
             />
           </label>
@@ -246,6 +314,27 @@ export default function SimpleEquipmentForm({
             ))}
           </SelectContent>
         </Select>
+      </div>
+
+      {/* ── Mã SKU ── */}
+      <div className="space-y-2">
+        <Label className="flex items-center gap-1.5">
+          <Wrench className="w-4 h-4 text-slate-400" />
+          Mã sản phẩm / Mã SKU {isEdit ? "" : " (Không bắt buộc)"}
+        </Label>
+        <Input
+          disabled={isEdit}
+          clearable={!isEdit}
+          value={formData.sku || ""}
+          onChange={(e) => {
+            updateField("sku", e.target.value);
+            updateField("code", e.target.value);
+          }}
+          placeholder="VD: SKU-KUBOTA-L5018"
+        />
+        <p className="text-xs text-muted-foreground">
+          Nếu để trống, hệ thống sẽ tự động tạo mã SKU ngẫu nhiên khi lưu.
+        </p>
       </div>
 
       {/* ── Tên máy móc ── */}
@@ -400,10 +489,11 @@ export default function SimpleEquipmentForm({
         </Button>
         <Button
           type="button"
-          disabled={!isValid}
+          disabled={!isValid || loading}
           onClick={handleComplete}
           className="font-bold"
         >
+          {loading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
           {completeLabel}
         </Button>
       </div>

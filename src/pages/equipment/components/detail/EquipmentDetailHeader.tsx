@@ -15,14 +15,31 @@ export const EquipmentDetailHeader = ({ item }: EquipmentDetailHeaderProps) => {
   // Gracefully handle values
   const techLevel = item.technologyLevelGroup || item.technologyLevelId;
   const financialMgmt = item.assetManagementGroup || item.financialManagementId;
-  const valChainGroup = item.valueChainGroup || (item.valueChainId ? [item.valueChainId] : []);
+  const valChainGroup = Array.isArray(item.valueChainGroup)
+    ? item.valueChainGroup
+    : item.valueChainGroup && typeof item.valueChainGroup === "string"
+      ? [item.valueChainGroup]
+      : item.valueChainId
+        ? [item.valueChainId]
+        : [];
   const maintSched = item.maintenanceSchedule || item.maintainanceInterval;
+
+  const techLabel = technologyLevelOptions.find((o) => o.id === techLevel || o.label === techLevel)?.label || techLevel || "N/A";
+  const finLabel = financialManagementOptions.find((o) => o.id === financialMgmt || o.label === financialMgmt)?.label || financialMgmt || "N/A";
 
   return (
     <Card className="overflow-hidden border-none shadow-md bg-white">
       <div className="bg-linear-to-r from-blue-50 to-indigo-50 p-6 flex flex-col md:flex-row gap-6 items-start">
-        <div className="w-24 h-24 bg-white rounded-xl shadow-sm border p-2 flex items-center justify-center shrink-0">
-          <Wrench className="w-12 h-12 text-slate-300" />
+        <div className="w-24 h-24 bg-white rounded-xl shadow-sm border p-2 flex items-center justify-center shrink-0 overflow-hidden">
+          {item.productImage || item.imageUrl ? (
+            <img
+              src={item.productImage || item.imageUrl}
+              alt={item.machineName || item.name}
+              className="w-full h-full object-cover rounded-lg"
+            />
+          ) : (
+            <Wrench className="w-12 h-12 text-slate-300" />
+          )}
         </div>
         <div className="flex-1">
           <div className="flex items-start justify-between">
@@ -61,24 +78,24 @@ export const EquipmentDetailHeader = ({ item }: EquipmentDetailHeaderProps) => {
               variant="outline"
               className="bg-white/50 border-blue-200 text-blue-800"
             >
-              {technologyLevelOptions.find((o) => o.id === techLevel)?.label || "N/A"}
+              {techLabel}
             </Badge>
             <Badge
               variant="outline"
               className="bg-white/50 border-amber-200 text-amber-800"
             >
-              {financialManagementOptions.find((o) => o.id === financialMgmt)?.label || "N/A"}
+              {finLabel}
             </Badge>
             
             {valChainGroup.map((id) => {
-              const label = valueChainOptions.find((o) => o.id === id)?.label;
+              const label = valueChainOptions.find((o) => o.id === id || o.label === id)?.label || id;
               return (
                 <Badge
                   key={id}
                   variant="outline"
                   className="bg-white/50 border-emerald-200 text-emerald-800"
                 >
-                  {label || id}
+                  {label}
                 </Badge>
               );
             })}

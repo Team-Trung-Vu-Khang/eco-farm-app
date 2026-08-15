@@ -5,7 +5,7 @@ import {
   DeleteDialog,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { Plus } from "lucide-react";
-import { getFertilizerColumns } from "./data/columns";
+import { fertilizerColumns } from "./data/columns";
 import { useFertilizerPage } from "./hooks/useFertilizerPage";
 
 export default function FertilizerPage() {
@@ -14,35 +14,92 @@ export default function FertilizerPage() {
     deleteOpen,
     setDeleteOpen,
     handleAdd,
-    handleView,
     handleEdit,
+    handleView,
     handleDelete,
     handleConfirmDelete,
-    setLocation,
-  } = useFertilizerPage();
+    navigateToDetail,
 
-  const columns = getFertilizerColumns((id) =>
-    setLocation(`/cultivation-material/fertilizer/${id}`),
-  );
+    // Pagination/Filter states
+    pageSize,
+    setPageSize,
+    currentIndex,
+    setCurrentIndex,
+    totalElements,
+    totalPages,
+    search,
+    setSearch,
+    status,
+    setStatus,
+    onlyOwner,
+    setOnlyOwner,
+    loading,
+  } = useFertilizerPage();
 
   return (
     <PageWrapper
-      title="Quản lý chất bón"
-      description="Quản lý danh mục phân bón, chất cải tạo đất"
+      title="Quản lý phân bón"
+      description="Quản lý danh mục phân bón sử dụng trong trồng trọt"
       actions={
-        <Button onClick={handleAdd}>
-          <Plus className="w-4 h-4 mr-2" />
-          Thêm phân bón
-        </Button>
+        <div className="flex items-center gap-3">
+          <label className="flex items-center gap-2 text-sm text-muted-foreground cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={onlyOwner}
+              onChange={(e) => {
+                setOnlyOwner(e.target.checked);
+                setCurrentIndex(1);
+              }}
+              className="rounded border-slate-300 text-primary focus:ring-primary h-4 w-4"
+            />
+            Chỉ xem vật tư nội bộ
+          </label>
+          <Button onClick={handleAdd}>
+            <Plus className="w-4 h-4 mr-2" />
+            Thêm phân bón
+          </Button>
+        </div>
       }
     >
       <DataTable
-        columns={columns}
+        columns={fertilizerColumns(navigateToDetail)}
         data={fertilizers}
+        searchable
+        searchPlaceholder="Tìm kiếm phân bón..."
+        pageSize={pageSize}
+        currentIndex={currentIndex}
+        totalElements={totalElements}
+        totalPages={totalPages}
+        onSearch={(val) => {
+          setSearch(val);
+          setCurrentIndex(1);
+        }}
+        onPageSize={(size) => {
+          setPageSize(size);
+          setCurrentIndex(1);
+        }}
+        onIndexChange={setCurrentIndex}
+        onFilterChange={(key, val) => {
+          if (key === "status") {
+            setStatus(val as any);
+            setCurrentIndex(1);
+          }
+        }}
+        filters={[
+          {
+            key: "status",
+            label: "Trạng thái",
+            options: [
+              { label: "Hoạt động", value: "active" },
+              { label: "Không hoạt động", value: "inactive" },
+              { label: "Đã lưu trữ", value: "archived" },
+            ],
+          },
+        ]}
         onView={handleView}
         onEdit={handleEdit}
         onDelete={handleDelete}
-        searchPlaceholder="Tìm kiếm phân bón..."
+        loading={loading}
       />
 
       <DeleteDialog

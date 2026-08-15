@@ -1,6 +1,11 @@
-import { Card, CardContent, CardHeader, CardTitle, Button } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { Building2, AlertTriangle, History, CheckCircle2 } from "lucide-react";
-import { itemSuppliers, type MockSupplier } from "../../data/mocks";
+import {
+  Button,
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import { AlertTriangle, Building2, CheckCircle2, History } from "lucide-react";
 import { suppliers as presetSuppliers } from "../../data/constants";
 import type { Equipment } from "../../types";
 
@@ -8,19 +13,24 @@ interface EquipmentDetailSidebarProps {
   item?: Equipment;
 }
 
-export const EquipmentDetailSidebar = ({ item }: EquipmentDetailSidebarProps) => {
+export const EquipmentDetailSidebar = ({
+  item,
+}: EquipmentDetailSidebarProps) => {
   // Convert item's supplierDetails if available
-  const activeSuppliers: MockSupplier[] = item?.supplierDetails && item.supplierDetails.length > 0
-    ? item.supplierDetails.map(detail => {
-        const found = presetSuppliers.find(s => s.id === detail.supplierId);
-        return {
-          name: found?.name || detail.supplierId,
-          quantity: detail.quantity,
-          unit: detail.unit,
-          warranty: detail.warranty
-        };
-      })
-    : itemSuppliers;
+  const activeSuppliers: Record<string, string>[] =
+    item?.supplierDetails &&
+    Array.isArray(item.supplierDetails) &&
+    item.supplierDetails.length > 0
+      ? item.supplierDetails.map((detail) => {
+          const found = presetSuppliers.find((s) => s.id === detail.supplierId);
+          return {
+            name: found?.name || detail.supplierId,
+            quantity: detail.quantity,
+            unit: detail.unit,
+            warranty: detail.warranty,
+          };
+        })
+      : [];
 
   return (
     <div className="space-y-6">
@@ -33,11 +43,18 @@ export const EquipmentDetailSidebar = ({ item }: EquipmentDetailSidebarProps) =>
         </CardHeader>
         <CardContent className="pt-6 grid gap-4">
           {activeSuppliers.map((sup, idx) => (
-            <div key={idx} className="space-y-2 border-b pb-3 last:border-b-0 last:pb-0">
+            <div
+              key={idx}
+              className="space-y-2 border-b pb-3 last:border-b-0 last:pb-0"
+            >
               <div className="font-semibold text-sm">{sup.name}</div>
               <div className="text-xs text-muted-foreground grid grid-cols-2 gap-2">
-                <span>Số lượng: {sup.quantity} {sup.unit}</span>
-                <span className="font-medium text-emerald-600">BH: {sup.warranty}</span>
+                <span>
+                  Số lượng: {sup.quantity} {sup.unit}
+                </span>
+                <span className="font-medium text-emerald-600">
+                  BH: {sup.warranty}
+                </span>
               </div>
             </div>
           ))}

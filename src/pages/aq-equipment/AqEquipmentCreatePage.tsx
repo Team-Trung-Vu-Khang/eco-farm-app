@@ -37,9 +37,26 @@ const AqEquipmentCreatePage = () => {
     setConfirmOpen,
     handleConfirmSubmit,
     navigateBack,
+    loading,
+    submitting,
+    isDetailMode,
+    setIsDetailMode,
+    isValidStep1,
   } = useAqEquipmentCreateForm();
 
-  const [isDetailMode, setIsDetailMode] = useState(false);
+  if (loading) {
+    return (
+      <PageWrapper
+        title={isEdit ? "Cập nhật thiết bị" : "Thêm mới thiết bị thủy sản"}
+      >
+        <div className="flex flex-col items-center justify-center py-20">
+          <p className="text-muted-foreground animate-pulse">
+            Đang tải dữ liệu...
+          </p>
+        </div>
+      </PageWrapper>
+    );
+  }
 
   const steps = [
     {
@@ -48,12 +65,17 @@ const AqEquipmentCreatePage = () => {
       content: (
         <EquipmentBasicInfoStep formData={formData} updateField={updateField} />
       ),
+      isValid: isValidStep1,
     },
     {
       id: "technical",
       title: "Thông số kỹ thuật",
       content: (
-        <EquipmentTechnicalStep formData={formData} updateField={updateField} />
+        <EquipmentTechnicalStep
+          domainCode="AQUACULTURE"
+          formData={formData}
+          updateField={updateField}
+        />
       ),
     },
     {
@@ -129,6 +151,7 @@ const AqEquipmentCreatePage = () => {
         {isDetailMode ? (
           <StepperForm
             steps={steps}
+            loading={submitting}
             completeLabel={isEdit ? "Lưu thay đổi" : "Hoàn tất & Lưu"}
             onComplete={() => setConfirmOpen(true)}
             onCancel={navigateBack}
@@ -136,6 +159,8 @@ const AqEquipmentCreatePage = () => {
         ) : (
           <div className="p-4 md:p-6">
             <SimpleEquipmentForm
+              loading={submitting}
+              isEdit={isEdit}
               formData={formData}
               domain="aquaculture"
               updateField={updateField}

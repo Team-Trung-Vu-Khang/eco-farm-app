@@ -1,11 +1,11 @@
 import { Badge, type Column } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import type { Material } from "../types/types";
 import { getMaterialGroupLabel } from "./constants";
 
 export const materialColumns = (
   onNavigateDetail: (id: number) => void,
-): Column<Material>[] => [
+): Column<any>[] => [
   { key: "code", label: "Mã" },
+  { key: "sku", label: "Mã SKU" },
   {
     key: "name",
     label: "Tên vật tư",
@@ -19,11 +19,29 @@ export const materialColumns = (
     ),
   },
   {
+    key: "source",
+    label: "Nguồn",
+    render: (value) => (
+      <Badge variant={value === "MASTER" ? "secondary" : "default"}>
+        {value === "MASTER" ? "Hệ thống" : "Nội bộ"}
+      </Badge>
+    ),
+  },
+  {
     key: "technologyLevelId",
     label: "Phân loại kỹ thuật",
     render: (_, row) => {
-      const techLabel = getMaterialGroupLabel(row.technologyLevelId);
-      const chainLabel = getMaterialGroupLabel(row.valueChainId);
+      const techLevel =
+        row.classifications?.find(
+          (c: any) => c.classification === "technology_level",
+        )?.group?.code || row.technologyLevelId;
+      const valueChain =
+        row.classifications?.find(
+          (c: any) => c.classification === "value_chain",
+        )?.group?.code || row.valueChainId;
+
+      const techLabel = getMaterialGroupLabel(techLevel);
+      const chainLabel = getMaterialGroupLabel(valueChain);
       return (
         <div className="flex flex-col gap-1 text-xs">
           {techLabel && (
@@ -32,7 +50,10 @@ export const materialColumns = (
             </Badge>
           )}
           {chainLabel && (
-            <span className="text-muted-foreground truncate max-w-[200px]" title={chainLabel}>
+            <span
+              className="text-muted-foreground truncate max-w-[200px]"
+              title={chainLabel}
+            >
               • {chainLabel}
             </span>
           )}
@@ -44,9 +65,7 @@ export const materialColumns = (
     key: "description",
     label: "Mô tả",
     render: (value) => (
-      <span className="inline-block max-w-[200px] truncate" title={value}>
-        {value}
-      </span>
+      <span className="inline-block max-w-[200px] truncate">{value}</span>
     ),
   },
   {

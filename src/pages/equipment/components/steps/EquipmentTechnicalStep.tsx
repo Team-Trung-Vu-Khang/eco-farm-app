@@ -12,26 +12,55 @@ import {
   Textarea,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { Cpu, Plus, X } from "lucide-react";
-import { useState } from "react";
+import React, { useState } from "react";
 import {
-  technologyLevelOptions,
-  financialManagementOptions,
-  valueChainOptions,
   fuelEnergyTypeOptions,
   machineTypeOptions,
 } from "../../data/constants";
 import type { EquipmentFormData } from "../../types";
+import { useQuery } from "@tanstack/react-query";
+import { farmSupplyApi, type DomainCode } from "@/features/farm-supply";
 
 interface EquipmentTechnicalStepProps {
+  domainCode: DomainCode;
   formData: EquipmentFormData;
   updateField: (field: keyof EquipmentFormData, value: any) => void;
 }
 
 export const EquipmentTechnicalStep = ({
   formData,
+  domainCode,
   updateField,
 }: EquipmentTechnicalStepProps) => {
   const [customMachineType, setCustomMachineType] = useState("");
+
+  const { data: apiGroups } = useQuery({
+    queryKey: ["equipment-groups", domainCode],
+    queryFn: () => farmSupplyApi.getClassificationGroups("material"),
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const technologyLevelOptions = React.useMemo(() => {
+    return (
+      apiGroups?.filter((item) => item.classification === "technology_level") ??
+      []
+    );
+  }, [apiGroups]);
+
+  const financialManagementOptions = React.useMemo(
+    () =>
+      apiGroups?.filter((item) => item.classification === "financial_aspect") ??
+      [],
+    [apiGroups],
+  );
+
+  const valueChainOptions = React.useMemo(
+    () =>
+      (
+        apiGroups?.filter((item) => item.classification === "value_chain") ?? []
+      ).map((item) => ({ label: item.name, value: item.code })),
+    [apiGroups],
+  );
 
   const machineTypeArr = formData.machineType || [];
   const valueChainGroupArr = formData?.valueChainGroup || [];
@@ -76,8 +105,8 @@ export const EquipmentTechnicalStep = ({
               </SelectTrigger>
               <SelectContent>
                 {technologyLevelOptions.map((t) => (
-                  <SelectItem key={t.id} value={t.id}>
-                    {t.label}
+                  <SelectItem key={t.code} value={t.code}>
+                    {t.name}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -98,8 +127,8 @@ export const EquipmentTechnicalStep = ({
               </SelectTrigger>
               <SelectContent>
                 {financialManagementOptions.map((t) => (
-                  <SelectItem key={t.id} value={t.id}>
-                    {t.label}
+                  <SelectItem key={t.code} value={t.code}>
+                    {t.name}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -111,10 +140,7 @@ export const EquipmentTechnicalStep = ({
         <div className="space-y-2">
           <Label>Nhóm công cụ theo quy trình (Chuỗi giá trị)</Label>
           <MultiSelect
-            options={valueChainOptions.map((o) => ({
-              value: o.id,
-              label: o.label,
-            }))}
+            options={valueChainOptions}
             value={valueChainGroupArr}
             onChange={(vals) => {
               updateField("valueChainGroup", vals);

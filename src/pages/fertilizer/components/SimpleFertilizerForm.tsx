@@ -26,9 +26,16 @@ import {
   Tags,
   Upload,
   X,
+  Loader2,
 } from "lucide-react";
 import type { FertilizerFormData } from "../types/types";
-import { originOptions, packagingUnitOptions, commonHashtags } from "../data/constants";
+import {
+  originOptions,
+  packagingUnitOptions,
+  commonHashtags,
+} from "../data/constants";
+import { useQuery } from "@tanstack/react-query";
+import { farmSupplyApi } from "@/features/farm-supply";
 
 const MEASURE_UNIT_OPTIONS = [
   "kg",
@@ -67,6 +74,7 @@ interface SimpleFertilizerFormProps {
   handleComplete: () => void;
   goBack: () => void;
   completeLabel?: string;
+  loading?: boolean;
 }
 
 export default function SimpleFertilizerForm({
@@ -75,9 +83,36 @@ export default function SimpleFertilizerForm({
   handleComplete,
   goBack,
   completeLabel = "Hoàn tất & Lưu",
+  loading,
 }: SimpleFertilizerFormProps) {
+  const isEdit = window.location.pathname.includes("/edit");
   // Fetch fertilizer groups from master data (same as advanced form)
-  const { items: fertilizerGroups } = useMasterData("fertilizer-groups");
+  const { items: fertilizerGroups } = useMasterData("fertilizer-groups", {
+    params: { size: 100 },
+  });
+
+  // Dynamic API Fetching
+  const { data: packagingTypes } = useQuery({
+    queryKey: ["packaging-types"],
+    queryFn: () => farmSupplyApi.listPackagingTypes(),
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const { data: baseUnits } = useQuery({
+    queryKey: ["base-units"],
+    queryFn: () => farmSupplyApi.listBaseUnits(),
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const packagingList =
+    packagingTypes && packagingTypes.length > 0
+      ? packagingTypes.map((p) => p.name)
+      : PACKAGING_OPTIONS;
+
+  const unitList =
+    baseUnits && baseUnits.length > 0
+      ? baseUnits.map((u) => u.name)
+      : MEASURE_UNIT_OPTIONS;
 
   const isValid = Boolean(formData.name);
   const [paramHashtag, setParamHashtag] = useState("");
@@ -108,8 +143,9 @@ export default function SimpleFertilizerForm({
           <h3 className="font-semibold">Thông tin cơ bản</h3>
           <p className="text-sm text-green-700 mt-0.5">
             Nhập nhanh những thông tin cần thiết nhất. Bật{" "}
-            <span className="font-bold">Thông tin chuyên sâu</span> để khai báo đầy đủ thành phần,
-            hướng dẫn sử dụng, an toàn pháp lý và nhà cung cấp.
+            <span className="font-bold">Thông tin chuyên sâu</span> để khai báo
+            đầy đủ thành phần, hướng dẫn sử dụng, an toàn pháp lý và nhà cung
+            cấp.
           </p>
         </div>
       </div>
@@ -129,7 +165,10 @@ export default function SimpleFertilizerForm({
             />
             <button
               type="button"
-              onClick={() => updateField("imageUrl", "")}
+              onClick={() => {
+                updateField("imageUrl", "");
+                updateField("imageFile", null);
+              }}
               className="absolute top-2 right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity"
             >
               ✕
@@ -141,7 +180,9 @@ export default function SimpleFertilizerForm({
               <Upload className="w-7 h-7" />
             </div>
             <div>
-              <p className="font-medium text-slate-700 text-sm">Tải lên ảnh sản phẩm</p>
+              <p className="font-medium text-slate-700 text-sm">
+                Tải lên ảnh sản phẩm
+              </p>
               <p className="text-xs text-muted-foreground mt-0.5">
                 Kéo thả hoặc click để chọn — PNG, JPG tối đa 5MB
               </p>
@@ -155,6 +196,7 @@ export default function SimpleFertilizerForm({
                 if (!file) return;
                 const url = URL.createObjectURL(file);
                 updateField("imageUrl", url);
+                updateField("imageFile", file);
               }}
             />
           </label>
@@ -198,6 +240,21 @@ export default function SimpleFertilizerForm({
         </Select>
       </div>
 
+      {/* ── Mã SKU ── */}
+      <div className="space-y-2">
+        <Label className="flex items-center gap-1.5">
+          <FileText className="w-4 h-4 text-slate-400" />
+          Mã sản phẩm / SKU
+        </Label>
+        <Input
+          value={formData.code}
+          disabled={isEdit}
+          clearable={!isEdit}
+          onChange={(e) => updateField("code", e.target.value)}
+          placeholder="Để trống để tự động tạo"
+        />
+      </div>
+
       {/* ── Tên phân bón ── */}
       <div className="space-y-2">
         <Label required className="flex items-center gap-1.5">
@@ -230,7 +287,7 @@ export default function SimpleFertilizerForm({
                 <SelectValue placeholder="Quy cách" />
               </SelectTrigger>
               <SelectContent>
-                {PACKAGING_OPTIONS.map((p) => (
+                {packagingList.map((p) => (
                   <SelectItem key={p} value={p}>
                     {p}
                   </SelectItem>
@@ -259,7 +316,7 @@ export default function SimpleFertilizerForm({
                 <SelectValue placeholder="Đơn vị" />
               </SelectTrigger>
               <SelectContent>
-                {MEASURE_UNIT_OPTIONS.map((u) => (
+                {unitList.map((u) => (
                   <SelectItem key={u} value={u}>
                     {u}
                   </SelectItem>
@@ -269,7 +326,8 @@ export default function SimpleFertilizerForm({
           </div>
         </div>
         <p className="text-xs text-muted-foreground">
-          VD: Bao 50 kg, Túi 25 kg, Can 10 L… Bổ sung thêm quy cách chi tiết ở chế độ chuyên sâu.
+          VD: Bao 50 kg, Túi 25 kg, Can 10 L… Bổ sung thêm quy cách chi tiết ở
+          chế độ chuyên sâu.
         </p>
       </div>
 
@@ -280,8 +338,8 @@ export default function SimpleFertilizerForm({
           Hạn sử dụng
         </Label>
         <Input
-          value={formData.applicationStage}
-          onChange={(e) => updateField("applicationStage", e.target.value)}
+          value={formData.shelfLife}
+          onChange={(e) => updateField("shelfLife", e.target.value)}
           placeholder="VD: 2 năm, 18 tháng, 12/2026..."
         />
       </div>
@@ -334,10 +392,7 @@ export default function SimpleFertilizerForm({
                 onClick={() =>
                   formData.hashtags.includes(tag)
                     ? onRemoveHashtag(tag)
-                    : updateField("hashtags", [
-                        ...formData.hashtags,
-                        tag,
-                      ])
+                    : updateField("hashtags", [...formData.hashtags, tag])
                 }
               >
                 #{tag}
@@ -368,8 +423,9 @@ export default function SimpleFertilizerForm({
           <Info className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
           <p className="text-xs text-amber-800">
             Chế độ cơ bản giúp tạo nhanh phân bón với thông tin tối thiểu. Bật{" "}
-            <span className="font-bold">Thông tin chuyên sâu</span> để khai báo đầy đủ thành phần
-            dinh dưỡng, hướng dẫn sử dụng, an toàn pháp lý và nhà cung cấp.
+            <span className="font-bold">Thông tin chuyên sâu</span> để khai báo
+            đầy đủ thành phần dinh dưỡng, hướng dẫn sử dụng, an toàn pháp lý và
+            nhà cung cấp.
           </p>
         </CardContent>
       </Card>
@@ -382,10 +438,11 @@ export default function SimpleFertilizerForm({
         </Button>
         <Button
           type="button"
-          disabled={!isValid}
+          disabled={!isValid || loading}
           onClick={handleComplete}
           className="font-bold"
         >
+          {loading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
           {completeLabel}
         </Button>
       </div>

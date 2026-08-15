@@ -9,6 +9,7 @@ import {
   AlertDialogTitle,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import type { PesticideFormData } from "../types";
+import { Loader2 } from "lucide-react";
 
 interface PesticideSubmitConfirmDialogProps {
   open: boolean;
@@ -16,6 +17,7 @@ interface PesticideSubmitConfirmDialogProps {
   isEdit: boolean;
   formData: PesticideFormData;
   onConfirm: () => void;
+  loading?: boolean;
 }
 
 export default function PesticideSubmitConfirmDialog({
@@ -24,6 +26,7 @@ export default function PesticideSubmitConfirmDialog({
   isEdit,
   formData,
   onConfirm,
+  loading = false,
 }: PesticideSubmitConfirmDialogProps) {
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
@@ -59,8 +62,9 @@ export default function PesticideSubmitConfirmDialog({
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel>Hủy bỏ</AlertDialogCancel>
-          <AlertDialogAction onClick={onConfirm}>
+          <AlertDialogCancel disabled={loading}>Hủy bỏ</AlertDialogCancel>
+          <AlertDialogAction onClick={onConfirm} disabled={loading}>
+            {loading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
             {isEdit ? "Xác nhận cập nhật" : "Xác nhận thêm mới"}
           </AlertDialogAction>
         </AlertDialogFooter>

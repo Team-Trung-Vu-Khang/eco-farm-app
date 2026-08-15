@@ -1,8 +1,5 @@
-import {
-  Badge,
-  type Column,
-} from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import type { Pesticide } from "../types";
+import { Badge, type Column } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import { toxicityLevels } from "./constants";
 
 const toxicityBadgeColor: Record<string, string> = {
   Ia: "bg-red-100 text-red-700 border-red-300",
@@ -14,8 +11,9 @@ const toxicityBadgeColor: Record<string, string> = {
 
 export const pesticideColumns = (
   onNavigateDetail: (id: number) => void,
-): Column<Pesticide>[] => [
-  { key: "code", label: "Mã SKU" },
+): Column<any>[] => [
+  { key: "code", label: "Mã" },
+  { key: "sku", label: "Mã SKU" },
   {
     key: "name",
     label: "Tên thương mại",
@@ -26,6 +24,15 @@ export const pesticideColumns = (
       >
         {value}
       </span>
+    ),
+  },
+  {
+    key: "source",
+    label: "Nguồn",
+    render: (value) => (
+      <Badge variant={value === "MASTER" ? "secondary" : "default"}>
+        {value === "MASTER" ? "Hệ thống" : "Nội bộ"}
+      </Badge>
     ),
   },
   {
@@ -41,22 +48,66 @@ export const pesticideColumns = (
   {
     key: "group",
     label: "Nhóm phân loại",
-    render: (value) => <Badge variant="outline">{value}</Badge>,
+    render: (_, row) => {
+      const type =
+        row.domainCode === "LIVESTOCK"
+          ? "control_level"
+          : row.domainCode === "AQUACULTURE"
+            ? "control_residue_level"
+            : "target_group";
+      const val = row.classifications?.find(
+        (c: any) => c.classification === type,
+      )?.group?.name;
+      return val ? (
+        <Badge variant="outline">{val}</Badge>
+      ) : (
+        <span className="text-muted-foreground text-xs">—</span>
+      );
+    },
   },
-  { key: "form", label: "Dạng bào chế" },
+  {
+    key: "form",
+    label: "Dạng bào chế",
+    render: (_, row) => {
+      const val = row.classifications?.find(
+        (c: any) => c.classification === "dosage_form",
+      )?.group?.name;
+      return val || <span className="text-muted-foreground text-xs">—</span>;
+    },
+  },
   {
     key: "toxicityLevel",
     label: "Nhóm độc (WHO)",
-    render: (value) =>
-      value ? (
+    render: (_, row) => {
+      let val = row.classifications?.find(
+        (c: any) => c.classification === "toxicity",
+      )?.group?.name;
+      if (!val && row.metadataJson) {
+        try {
+          const meta =
+            typeof row.metadataJson === "string"
+              ? JSON.parse(row.metadataJson)
+              : row.metadataJson;
+          val = meta?.toxicityLevel;
+        } catch (e) {
+          // ignore
+        }
+      }
+      if (!val) {
+        val = row.toxicityLevel;
+      }
+      const displayLabel =
+        toxicityLevels.find((t) => t.value === val)?.label || val;
+      return val ? (
         <span
-          className={`px-2 py-0.5 rounded text-xs font-semibold border ${toxicityBadgeColor[value as string] ?? "bg-slate-100 text-slate-600"}`}
+          className={`px-2 py-0.5 rounded text-xs font-semibold border ${toxicityBadgeColor[val] ?? "bg-slate-100 text-slate-600"}`}
         >
-          {value}
+          {displayLabel}
         </span>
       ) : (
         <span className="text-muted-foreground text-xs">—</span>
-      ),
+      );
+    },
   },
   {
     key: "status",

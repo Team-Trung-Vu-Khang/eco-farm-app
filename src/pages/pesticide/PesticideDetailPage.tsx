@@ -9,7 +9,6 @@ import {
   Separator,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import {
-  AlarmClock,
   AlertTriangle,
   BookOpen,
   Building2,
@@ -18,7 +17,6 @@ import {
   ChevronLeft,
   DollarSign,
   Edit,
-  FlaskConical,
   HeartPulse,
   Image as ImageIcon,
   Info,
@@ -29,8 +27,8 @@ import {
   Tags,
 } from "lucide-react";
 import { useLocation, useRoute } from "wouter";
-import usePesticideStore from "../../stores/usePesticideStore";
 import { toxicityLevels } from "./data/constants";
+import { useFarmSupplyDetailHook } from "@/features/farm-supply/hooks/useFarmSupplyDetailHook";
 
 const toxicityColorMap: Record<string, string> = {
   Ia: "bg-red-100 text-red-700 border-red-300",
@@ -38,6 +36,22 @@ const toxicityColorMap: Record<string, string> = {
   II: "bg-yellow-100 text-yellow-700 border-yellow-300",
   III: "bg-blue-100 text-blue-700 border-blue-300",
   U: "bg-green-100 text-green-700 border-green-300",
+};
+
+const formatPrice = (price?: string | number | null) => {
+  if (!price) return "";
+  const str = price.toString().trim();
+  if (str.toLowerCase().includes("đ") || str.toLowerCase().includes("vnd"))
+    return str;
+  let s = str.replace(/\s+/g, "").replace(/\./g, "").replace(/,/g, ".");
+  const matched = s.match(/[-+]?[0-9]*\.?[0-9]+/);
+  if (!matched) return str;
+  const num = parseFloat(matched[0]);
+  if (isNaN(num)) return str;
+  return new Intl.NumberFormat("vi-VN", {
+    style: "currency",
+    currency: "VND",
+  }).format(num);
 };
 
 function InfoRow({
@@ -62,9 +76,19 @@ const PesticideDetailPage = () => {
   const [, params] = useRoute("/cultivation-material/pesticide/:id");
   const [, setLocation] = useLocation();
   const id = params?.id ? Number(params.id) : 0;
+  const { item, loading } = useFarmSupplyDetailHook("medicine", id);
 
-  const getPesticideById = usePesticideStore((state) => state.getPesticideById);
-  const item = getPesticideById(id);
+  if (loading) {
+    return (
+      <PageWrapper title="Chi tiết thuốc BVTV">
+        <div className="flex flex-col items-center justify-center py-20">
+          <p className="text-muted-foreground animate-pulse">
+            Đang tải dữ liệu...
+          </p>
+        </div>
+      </PageWrapper>
+    );
+  }
 
   if (!item) {
     return (
@@ -90,14 +114,16 @@ const PesticideDetailPage = () => {
       title="Chi tiết thuốc BVTV"
       description={`Thông tin chi tiết cho sản phẩm ${item.name}`}
       actions={
-        <Button
-          onClick={() =>
-            setLocation(`/cultivation-material/pesticide/${id}/edit`)
-          }
-        >
-          <Edit className="w-4 h-4 mr-2" />
-          Chỉnh sửa
-        </Button>
+        item.source === "OWNER" && (
+          <Button
+            onClick={() =>
+              setLocation(`/cultivation-material/pesticide/${id}/edit`)
+            }
+          >
+            <Edit className="w-4 h-4 mr-2" />
+            Chỉnh sửa
+          </Button>
+        )
       }
     >
       <div className="mb-6">
@@ -119,7 +145,14 @@ const PesticideDetailPage = () => {
           <Card className="overflow-hidden border-none shadow-md bg-white">
             <div className="bg-linear-to-r from-green-50 to-emerald-50 p-6 flex flex-col md:flex-row gap-6 items-start">
               <div className="w-24 h-24 bg-white rounded-xl shadow-sm border p-2 flex items-center justify-center shrink-0">
-                <ImageIcon className="w-12 h-12 text-slate-300" />
+                {item?.metadataJson?.imageUrl ? (
+                  <img
+                    className="w-full h-full"
+                    src={item.metadataJson.imageUrl}
+                  />
+                ) : (
+                  <ImageIcon className="w-12 h-12 text-slate-300" />
+                )}
               </div>
               <div className="flex-1">
                 <div className="flex items-start justify-between">
@@ -380,7 +413,7 @@ const PesticideDetailPage = () => {
                     Giá tham khảo
                   </h4>
                   <p className="text-sm font-semibold text-emerald-700">
-                    {item.referencePrice}
+                    {formatPrice(item.referencePrice)}
                   </p>
                 </div>
               )}
@@ -419,21 +452,27 @@ const PesticideDetailPage = () => {
             </CardHeader>
             <CardContent className="pt-4">
               <div className="flex flex-wrap gap-2">
-                <Badge variant="secondary" className="font-normal">
-                  #HieuQuaCao
-                </Badge>
-                <Badge variant="secondary" className="font-normal">
-                  #AnToan
-                </Badge>
-                <Badge variant="secondary" className="font-normal">
-                  #BVTV
-                </Badge>
+                {item.hashtags && item.hashtags.length > 0 ? (
+                  item.hashtags.map((tag) => (
+                    <Badge
+                      key={tag}
+                      variant="secondary"
+                      className="font-normal"
+                    >
+                      #{tag}
+                    </Badge>
+                  ))
+                ) : (
+                  <span className="text-sm text-muted-foreground">
+                    Chưa có nhãn phân loại
+                  </span>
+                )}
               </div>
             </CardContent>
           </Card>
 
           {/* Quick Actions */}
-          <div className="grid grid-cols-1 gap-2">
+          {/* <div className="grid grid-cols-1 gap-2">
             <Button variant="outline" className="w-full justify-start">
               <CheckCircle2 className="w-4 h-4 mr-2" />
               Đánh dấu ưu tiên
@@ -444,7 +483,7 @@ const PesticideDetailPage = () => {
             >
               Ngừng kinh doanh
             </Button>
-          </div>
+          </div> */}
         </div>
       </div>
     </PageWrapper>

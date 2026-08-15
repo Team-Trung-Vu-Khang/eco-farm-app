@@ -32,6 +32,24 @@ function DetailRow({ label, value }: { label: string; value?: string | number | 
 }
 
 export const InfoTab = ({ item }: { item: Equipment }) => {
+  const machineTypeArr = Array.isArray(item.machineType) ? item.machineType : [];
+  const manufacturerOriginArr = Array.isArray(item.manufacturerOrigin)
+    ? item.manufacturerOrigin
+    : typeof item.manufacturerOrigin === "string" && item.manufacturerOrigin
+      ? [item.manufacturerOrigin]
+      : [];
+  const importerRegistrantArr = Array.isArray(item.importerRegistrant)
+    ? item.importerRegistrant
+    : typeof item.importerRegistrant === "string" && item.importerRegistrant
+      ? [item.importerRegistrant]
+      : [];
+  const distributorArr = Array.isArray(item.distributor)
+    ? item.distributor
+    : typeof item.distributor === "string" && item.distributor
+      ? [item.distributor]
+      : [];
+  const packagingSpecsArr = Array.isArray(item.packagingSpecs) ? item.packagingSpecs : [];
+
   return (
     <div className="space-y-6">
       {/* 1. Technical Specs Card */}
@@ -55,11 +73,11 @@ export const InfoTab = ({ item }: { item: Equipment }) => {
             <DetailRow label="Kích thước" value={item.dimensions} />
           </div>
 
-          {item.machineType && item.machineType.length > 0 && (
+          {machineTypeArr.length > 0 && (
             <div className="mt-6 border-t pt-4">
               <span className="text-muted-foreground block text-xs mb-2">Loại máy / Công dụng:</span>
               <div className="flex flex-wrap gap-1.5">
-                {item.machineType.map((tag) => (
+                {machineTypeArr.map((tag) => (
                   <Badge key={tag} variant="secondary" className="text-xs bg-slate-100">
                     {tag}
                   </Badge>
@@ -120,33 +138,33 @@ export const InfoTab = ({ item }: { item: Equipment }) => {
           </CardTitle>
         </CardHeader>
         <CardContent className="pt-6 space-y-4 text-sm">
-          {item.manufacturerOrigin && item.manufacturerOrigin.length > 0 && (
+          {manufacturerOriginArr.length > 0 && (
             <div>
               <span className="text-muted-foreground block text-xs mb-1.5">Nhà sản xuất / Xuất xứ:</span>
               <div className="flex flex-wrap gap-1.5">
-                {item.manufacturerOrigin.map((tag) => (
+                {manufacturerOriginArr.map((tag) => (
                   <Badge key={tag} variant="outline" className="bg-slate-50">{tag}</Badge>
                 ))}
               </div>
             </div>
           )}
 
-          {item.importerRegistrant && item.importerRegistrant.length > 0 && (
+          {importerRegistrantArr.length > 0 && (
             <div className="border-t pt-4">
               <span className="text-muted-foreground block text-xs mb-1.5">Nhà nhập khẩu / Đăng ký:</span>
               <div className="flex flex-wrap gap-1.5">
-                {item.importerRegistrant.map((tag) => (
+                {importerRegistrantArr.map((tag) => (
                   <Badge key={tag} variant="outline" className="bg-slate-50">{tag}</Badge>
                 ))}
               </div>
             </div>
           )}
 
-          {item.distributor && item.distributor.length > 0 && (
+          {distributorArr.length > 0 && (
             <div className="border-t pt-4">
               <span className="text-muted-foreground block text-xs mb-1.5">Nhà phân phối chính:</span>
               <div className="flex flex-wrap gap-1.5">
-                {item.distributor.map((tag) => (
+                {distributorArr.map((tag) => (
                   <Badge key={tag} variant="outline" className="bg-slate-50">{tag}</Badge>
                 ))}
               </div>
@@ -155,11 +173,11 @@ export const InfoTab = ({ item }: { item: Equipment }) => {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 border-t pt-4">
             <DetailRow label="Giá tham khảo trên thị trường" value={item.referencePrice} />
-            {item.packagingSpecs && item.packagingSpecs.length > 0 && (
+            {packagingSpecsArr.length > 0 && (
               <div>
                 <span className="text-muted-foreground block text-xs mb-1.5">Quy cách bao bì máy:</span>
                 <div className="flex flex-wrap gap-1.5">
-                  {item.packagingSpecs.map((tag) => (
+                  {packagingSpecsArr.map((tag) => (
                     <Badge key={tag} variant="secondary" className="text-xs">{tag}</Badge>
                   ))}
                 </div>

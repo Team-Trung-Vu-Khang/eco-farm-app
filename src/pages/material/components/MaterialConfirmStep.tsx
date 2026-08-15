@@ -82,33 +82,31 @@ export default function MaterialConfirmStep({
               Xuất xứ & Đơn vị phân phối
             </h4>
             <div className="space-y-4 text-sm">
-              {formData.manufacturerOrigin && formData.manufacturerOrigin.length > 0 && (
+              {formData.manufacturerOrigin && (
                 <div>
                   <span className="text-muted-foreground block text-xs mb-1">Nhà sản xuất / Xuất xứ:</span>
                   <div className="flex flex-wrap gap-1">
-                    {formData.manufacturerOrigin.map((tag) => (
-                      <Badge key={tag} variant="outline" className="bg-slate-50">{tag}</Badge>
-                    ))}
+                    <Badge variant="outline" className="bg-slate-50">{formData.manufacturerOrigin}</Badge>
                   </div>
                 </div>
               )}
 
-              {formData.importerRegistrant && formData.importerRegistrant.length > 0 && (
+              {formData.importerRegistrant && (
                 <div>
                   <span className="text-muted-foreground block text-xs mb-1">Nhà nhập khẩu / Đăng ký:</span>
                   <div className="flex flex-wrap gap-1">
-                    {formData.importerRegistrant.map((tag) => (
+                    {formData.importerRegistrant.split(", ").filter(Boolean).map((tag) => (
                       <Badge key={tag} variant="outline" className="bg-slate-50">{tag}</Badge>
                     ))}
                   </div>
                 </div>
               )}
 
-              {formData.distributor && formData.distributor.length > 0 && (
+              {formData.distributor && (
                 <div>
                   <span className="text-muted-foreground block text-xs mb-1">Nhà phân phối:</span>
                   <div className="flex flex-wrap gap-1">
-                    {formData.distributor.map((tag) => (
+                    {formData.distributor.split(", ").filter(Boolean).map((tag) => (
                       <Badge key={tag} variant="outline" className="bg-slate-50">{tag}</Badge>
                     ))}
                   </div>
@@ -126,9 +124,9 @@ export default function MaterialConfirmStep({
                 </div>
               )}
 
-              {(!formData.manufacturerOrigin?.length &&
-                !formData.importerRegistrant?.length &&
-                !formData.distributor?.length &&
+              {(!formData.manufacturerOrigin &&
+                !formData.importerRegistrant &&
+                !formData.distributor &&
                 !formData.packagingSpecs?.length) && (
                 <div className="text-center py-6 text-xs text-muted-foreground border border-dashed rounded-lg bg-slate-50">
                   Không cấu hình thông tin xuất xứ & phân phối

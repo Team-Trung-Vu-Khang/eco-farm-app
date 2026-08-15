@@ -25,10 +25,13 @@ import {
   Tags,
   Upload,
   X,
+  Loader2,
 } from "lucide-react";
 import type { PesticideDomain, PesticideFormData } from "../types";
 import { initialPesticidePurposes } from "../../pesticide-group/data/constants";
 import { commonHashtags } from "../data/constants";
+import { useQuery } from "@tanstack/react-query";
+import { farmSupplyApi } from "@/features/farm-supply";
 
 interface GroupOption {
   code: string;
@@ -176,6 +179,7 @@ interface SimplePesticideFormProps {
   handleComplete: () => void;
   goBack: () => void;
   completeLabel?: string;
+  loading?: boolean;
 }
 
 export default function SimplePesticideForm({
@@ -185,11 +189,59 @@ export default function SimplePesticideForm({
   handleComplete,
   goBack,
   completeLabel = "Hoàn tất & Lưu",
+  loading,
 }: SimplePesticideFormProps) {
+  const isEdit = window.location.pathname.includes("/edit");
   const labels = DOMAIN_LABELS[domain];
   const groupOptions = DOMAIN_GROUP_OPTIONS[domain];
   const isValid = Boolean(formData.name);
   const [paramHashtag, setParamHashtag] = useState("");
+
+  const domainCode =
+    domain === "cultivation"
+      ? "CROP"
+      : domain === "animal"
+        ? "LIVESTOCK"
+        : "AQUACULTURE";
+  const classification = domain === "cultivation" ? "target_group" : "usage";
+
+  // Dynamic API Fetching
+  const { data: packagingTypes } = useQuery({
+    queryKey: ["packaging-types"],
+    queryFn: () => farmSupplyApi.listPackagingTypes(),
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const { data: baseUnits } = useQuery({
+    queryKey: ["base-units"],
+    queryFn: () => farmSupplyApi.listBaseUnits(),
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const { data: apiGroups } = useQuery({
+    queryKey: ["medicine-groups", domainCode, classification],
+    queryFn: () =>
+      farmSupplyApi.getClassificationGroups("medicine").then((content) => {
+        return content.filter(
+          (g: any) =>
+            g.domainCode === domainCode && g.classification === classification,
+        );
+      }),
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const packagingList =
+    packagingTypes && packagingTypes.length > 0
+      ? packagingTypes.map((p) => p.name)
+      : PACKAGING_OPTIONS;
+
+  const unitList =
+    baseUnits && baseUnits.length > 0
+      ? baseUnits.map((u) => u.name)
+      : MEASURE_UNIT_OPTIONS;
+
+  const groupList =
+    apiGroups && apiGroups.length > 0 ? apiGroups : groupOptions;
 
   const onAddHashtag = () => {
     const tag = paramHashtag.trim();
@@ -238,7 +290,10 @@ export default function SimplePesticideForm({
             />
             <button
               type="button"
-              onClick={() => onFormFieldChange("imageUrl", "")}
+              onClick={() => {
+                onFormFieldChange("imageUrl", "");
+                onFormFieldChange("imageFile", null);
+              }}
               className="absolute top-2 right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity"
             >
               ✕
@@ -266,6 +321,7 @@ export default function SimplePesticideForm({
                 if (!file) return;
                 const url = URL.createObjectURL(file);
                 onFormFieldChange("imageUrl", url);
+                onFormFieldChange("imageFile", file);
               }}
             />
           </label>
@@ -289,8 +345,8 @@ export default function SimplePesticideForm({
               />
             </SelectTrigger>
             <SelectContent>
-              {groupOptions.map((g) => (
-                <SelectItem key={g.code} value={g.name}>
+              {groupList.map((g: any) => (
+                <SelectItem key={g.id || g.code} value={g.name}>
                   <div className="flex flex-col">
                     <span className="font-medium">{g.name}</span>
                     {g.description && (
@@ -303,6 +359,20 @@ export default function SimplePesticideForm({
               ))}
             </SelectContent>
           </Select>
+        </div>
+
+        <div className="space-y-2">
+          <Label className="flex items-center gap-1.5">
+            <FileText className="w-4 h-4 text-slate-400" />
+            Mã sản phẩm / Mã SKU
+          </Label>
+          <Input
+            value={formData.code}
+            disabled={isEdit}
+            clearable={!isEdit}
+            onChange={(e) => onFormFieldChange("code", e.target.value)}
+            placeholder="Để trống để tự động tạo"
+          />
         </div>
 
         <div className="space-y-2">
@@ -334,7 +404,7 @@ export default function SimplePesticideForm({
                 <SelectValue placeholder="Quy cách" />
               </SelectTrigger>
               <SelectContent>
-                {PACKAGING_OPTIONS.map((p) => (
+                {packagingList.map((p) => (
                   <SelectItem key={p} value={p}>
                     {p}
                   </SelectItem>
@@ -360,7 +430,7 @@ export default function SimplePesticideForm({
                 <SelectValue placeholder="Đơn vị" />
               </SelectTrigger>
               <SelectContent>
-                {MEASURE_UNIT_OPTIONS.map((u) => (
+                {unitList.map((u) => (
                   <SelectItem key={u} value={u}>
                     {u}
                   </SelectItem>
@@ -370,8 +440,8 @@ export default function SimplePesticideForm({
           </div>
         </div>
         <p className="text-xs text-muted-foreground">
-          VD: Chai 500 ml, Bao 25 kg, Vỉ 10 viên… Bổ sung thêm quy cách chi tiết ở chế độ
-          chuyên sâu.
+          VD: Chai 500 ml, Bao 25 kg, Vỉ 10 viên… Bổ sung thêm quy cách chi tiết
+          ở chế độ chuyên sâu.
         </p>
       </div>
 
@@ -436,10 +506,7 @@ export default function SimplePesticideForm({
                 onClick={() =>
                   formData.hashtags.includes(tag)
                     ? onRemoveHashtag(tag)
-                    : onFormFieldChange("hashtags", [
-                        ...formData.hashtags,
-                        tag,
-                      ])
+                    : onFormFieldChange("hashtags", [...formData.hashtags, tag])
                 }
               >
                 #{tag}
@@ -485,10 +552,11 @@ export default function SimplePesticideForm({
         </Button>
         <Button
           type="button"
-          disabled={!isValid}
-          onClick={handleComplete}
           className="font-bold"
+          onClick={handleComplete}
+          disabled={!isValid || loading}
         >
+          {loading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
           {completeLabel}
         </Button>
       </div>

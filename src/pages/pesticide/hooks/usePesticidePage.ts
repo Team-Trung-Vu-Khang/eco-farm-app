@@ -1,55 +1,31 @@
-import { useState } from "react";
-import { useLocation } from "wouter";
-import { useToast } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import usePesticideStore from "../../../stores/usePesticideStore";
-import type { Pesticide } from "../types";
+import { useFarmSupplyListHook } from "@/features/farm-supply/hooks/useFarmSupplyListHook";
 
 export function usePesticidePage() {
-  const { toast } = useToast();
-  const [, setLocation] = useLocation();
-
-  const pesticides = usePesticideStore((state) => state.pesticides);
-  const deletePesticide = usePesticideStore((state) => state.deletePesticide);
-
-  const [deleteOpen, setDeleteOpen] = useState(false);
-  const [deleteItem, setDeleteItem] = useState<Pesticide | null>(null);
-
-  const handleAdd = () => {
-    setLocation("/cultivation-material/pesticide/create");
-  };
-
-  const handleEdit = (item: Pesticide) => {
-    setLocation(`/cultivation-material/pesticide/${item.id}/edit`);
-  };
-
-  const handleDelete = (item: Pesticide) => {
-    setDeleteItem(item);
-    setDeleteOpen(true);
-  };
-
-  const handleViewDetail = (item: Pesticide) => {
-    setLocation(`/cultivation-material/pesticide/${item.id}`);
-  };
-
-  const handleConfirmDelete = () => {
-    if (deleteItem) {
-      deletePesticide(deleteItem.id);
-      toast({ title: "Thành công", description: "Đã xóa thuốc BVTV" });
-    }
-
-    setDeleteOpen(false);
-    setDeleteItem(null);
-  };
-
+  const listHook = useFarmSupplyListHook("medicine", "CROP");
   return {
-    pesticides,
-    deleteOpen,
-    setDeleteOpen,
-    handleAdd,
-    handleEdit,
-    handleDelete,
-    handleViewDetail,
-    handleConfirmDelete,
-    navigateToDetail: (id: number) => setLocation(`/cultivation-material/pesticide/${id}`),
+    pesticides: listHook.items,
+    deleteOpen: listHook.deleteOpen,
+    setDeleteOpen: listHook.setDeleteOpen,
+    handleAdd: listHook.handleAdd,
+    handleEdit: listHook.handleEdit,
+    handleDelete: listHook.handleDelete,
+    handleViewDetail: listHook.handleViewDetail,
+    handleConfirmDelete: listHook.handleConfirmDelete,
+    navigateToDetail: listHook.navigateToDetail,
+
+    // Pagination/Filter states for DataTable
+    pageSize: listHook.pageSize,
+    setPageSize: listHook.setPageSize,
+    currentIndex: listHook.currentIndex,
+    setCurrentIndex: listHook.setCurrentIndex,
+    totalElements: listHook.totalElements,
+    totalPages: listHook.totalPages,
+    search: listHook.search,
+    setSearch: listHook.setSearch,
+    status: listHook.status,
+    setStatus: listHook.setStatus,
+    onlyOwner: listHook.onlyOwner,
+    setOnlyOwner: listHook.setOnlyOwner,
+    loading: listHook.loading,
   };
 }

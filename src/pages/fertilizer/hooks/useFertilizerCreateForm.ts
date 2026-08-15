@@ -1,35 +1,34 @@
-import { useToast, convertHtmlToLexical } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import {
+  useToast,
+  convertHtmlToLexical,
+} from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { useEffect, useState } from "react";
 import { useLocation, useRoute } from "wouter";
+import { useQueryClient } from "@tanstack/react-query";
 import { isContaintHtmlTag, safeConvertLexicalToHtml } from "@/utils/commons";
-import useFertilizerStore from "../../../stores/useFertilizerStore";
 import type { FertilizerFormData } from "../types/types";
 import { parsePackagingSpec } from "../../pesticide/utils/form";
+import {
+  farmSupplyApi,
+  parsePackagingSpecs,
+  formatPackagingSpecs,
+} from "@/features/farm-supply";
+import { useImageUploadWithCache } from "@/features/storage/hooks/useImageUploadWithCache";
 
 export function useFertilizerCreateForm() {
+  const queryClient = useQueryClient();
   const [, setLocation] = useLocation();
   const [match, params] = useRoute("/cultivation-material/fertilizer/:id/edit");
   const isEdit = match && !!params?.id;
   const { toast } = useToast();
-
-  // Zustand store
-  const getFertilizerById = useFertilizerStore(
-    (state) => state.getFertilizerById,
-  );
-  const addFertilizer = useFertilizerStore((state) => state.addFertilizer);
-  const updateFertilizer = useFertilizerStore(
-    (state) => state.updateFertilizer,
-  );
-
-  const initialEditItem =
-    isEdit && params?.id ? getFertilizerById(Number(params.id)) : undefined;
+  const { uploadImage } = useImageUploadWithCache();
 
   const [formData, setFormData] = useState<FertilizerFormData>({
     code: "",
     name: "",
     imageUrl: "",
+    imageFile: null,
 
-    // Existing fields
     nutritionalContentId: "macronutrients",
     originId: "inorganic",
     applicationStageId: "top_dressing",
@@ -37,7 +36,6 @@ export function useFertilizerCreateForm() {
     nutrientContent: "",
     description: "",
 
-    // New fields
     registrationNumber: "",
     scientificTechnicalName: "",
     fertilizerOriginGroup: "",
@@ -48,22 +46,21 @@ export function useFertilizerCreateForm() {
     moaGroup: "",
     npkRatio: "",
 
-    // Step 2
     indications: "",
     applicationStage: "",
     targetCrops: [],
     recommendedDosage: "",
     applicationMethod: "",
     usageNotes: "",
+    shelfLife: "",
 
-    // Step 3
     toxicityInfo: "",
     protectiveMeasures: "",
     firstAid: "",
-    legalStatus: "Được phép lưu hành",
+    legalStatus: "allowed",
+    legalDescription: "",
     standardsCompliance: [],
 
-    // Step 4
     manufacturerOrigin: "",
     importerRegistrant: "",
     distributor: "",
@@ -71,66 +68,61 @@ export function useFertilizerCreateForm() {
     packagingSpecs: [],
 
     hashtags: [],
-    supplierDetails: [],
     documents: [],
     quantity: "",
     unit: "",
     packaging: "",
+    formType: "basic",
   });
 
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [loading, setLoading] = useState(isEdit);
+  const [submitting, setSubmitting] = useState(false);
 
-  // Load initial data for Edit
+  // Metadata states
+  const [packagingTypes, setPackagingTypes] = useState<any[]>([]);
+  const [baseUnits, setBaseUnits] = useState<any[]>([]);
+  const [allGroups, setAllGroups] = useState<any[]>([]);
+  const [allSubjects, setAllSubjects] = useState<any[]>([]);
+  const [allCertificates, setAllCertificates] = useState<any[]>([]);
+
+  // Load metadata and initial data for Edit
   useEffect(() => {
-    if (isEdit && initialEditItem) {
-      setFormData({
-        code: initialEditItem.code || "",
-        name: initialEditItem.name || "",
-        imageUrl: initialEditItem.imageUrl || "",
+    setLoading(true);
+    Promise.all([
+      farmSupplyApi.listPackagingTypes(),
+      farmSupplyApi.listBaseUnits(),
+      farmSupplyApi.getClassificationGroups("fertilizer"),
+      farmSupplyApi.getTargetSubjects("CROP"),
+      farmSupplyApi.listCertificateStandards(),
+    ])
+      .then(([pkgs, units, groups, subjects, certs]) => {
+        setPackagingTypes(pkgs);
+        setBaseUnits(units);
+        setAllGroups(groups);
+        setAllSubjects(subjects);
+        setAllCertificates(certs);
 
-        nutritionalContentId: initialEditItem.nutritionalContentId || "macronutrients",
-        originId: initialEditItem.originId || "inorganic",
-        applicationStageId: initialEditItem.applicationStageId || "top_dressing",
-        physicalFormId: initialEditItem.physicalFormId || "soil_application",
-        nutrientContent: initialEditItem.nutrientContent || "",
-        description: initialEditItem.description || "",
-
-        registrationNumber: initialEditItem.registrationNumber || "",
-        scientificTechnicalName: initialEditItem.scientificTechnicalName || "",
-        fertilizerOriginGroup: initialEditItem.fertilizerOriginGroup || "",
-        nutritionalComponents: initialEditItem.nutritionalComponents || "",
-        fertilizerType: initialEditItem.fertilizerType || "",
-        physicalForm: initialEditItem.physicalForm || "",
-        mainIngredients: initialEditItem.mainIngredients || "",
-        moaGroup: initialEditItem.moaGroup || "",
-        npkRatio: initialEditItem.npkRatio || "",
-
-        indications: initialEditItem.indications || "",
-        applicationStage: initialEditItem.applicationStage || "",
-        targetCrops: initialEditItem.targetCrops || [],
-        recommendedDosage: initialEditItem.recommendedDosage || "",
-        applicationMethod: initialEditItem.applicationMethod || "",
-        usageNotes: initialEditItem.usageNotes || "",
-
-        toxicityInfo: initialEditItem.toxicityInfo || "",
-        protectiveMeasures: initialEditItem.protectiveMeasures || "",
-        firstAid: initialEditItem.firstAid || "",
-        legalStatus: initialEditItem.legalStatus || "Được phép lưu hành",
-        standardsCompliance: initialEditItem.standardsCompliance || [],
-
-        manufacturerOrigin: initialEditItem.manufacturerOrigin || "",
-        importerRegistrant: initialEditItem.importerRegistrant || "",
-        distributor: initialEditItem.distributor || "",
-        referencePrice: initialEditItem.referencePrice || "",
-        packagingSpecs: initialEditItem.packagingSpecs || [],
-
-        hashtags: initialEditItem.hashtags || ["HieuQuaCao"],
-        supplierDetails: initialEditItem.supplierDetails || [],
-        documents: initialEditItem.documents || [],
-        ...parsePackagingSpec(initialEditItem.packagingSpecs?.[0]),
+        if (isEdit && params?.id) {
+          return farmSupplyApi
+            .getById("fertilizer", Number(params.id), "OWNER")
+            .then((item) => {
+              const mapped = mapResponseToFertilizer(item, certs);
+              setFormData(mapped);
+            });
+        }
+      })
+      .catch((err) => {
+        toast({
+          title: "Lỗi",
+          description: "Không tải được thông tin metadata hoặc vật tư",
+          variant: "destructive",
+        });
+      })
+      .finally(() => {
+        setLoading(false);
       });
-    }
-  }, [isEdit, initialEditItem]);
+  }, [isEdit, params?.id]);
 
   // Convert HTML back to Lexical for Rich Editor
   useEffect(() => {
@@ -145,167 +137,181 @@ export function useFertilizerCreateForm() {
       }));
     };
     void hydrateFirstAid();
-  }, [initialEditItem]);
+  }, [formData.code]);
 
   const updateField = (field: keyof FertilizerFormData, value: any) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
   const resetForm = () => {
-    if (isEdit && initialEditItem) {
-      setFormData({
-        code: initialEditItem.code || "",
-        name: initialEditItem.name || "",
-        imageUrl: initialEditItem.imageUrl || "",
-        nutritionalContentId: initialEditItem.nutritionalContentId || "macronutrients",
-        originId: initialEditItem.originId || "inorganic",
-        applicationStageId: initialEditItem.applicationStageId || "top_dressing",
-        physicalFormId: initialEditItem.physicalFormId || "soil_application",
-        nutrientContent: initialEditItem.nutrientContent || "",
-        description: initialEditItem.description || "",
-        registrationNumber: initialEditItem.registrationNumber || "",
-        scientificTechnicalName: initialEditItem.scientificTechnicalName || "",
-        fertilizerOriginGroup: initialEditItem.fertilizerOriginGroup || "",
-        nutritionalComponents: initialEditItem.nutritionalComponents || "",
-        fertilizerType: initialEditItem.fertilizerType || "",
-        physicalForm: initialEditItem.physicalForm || "",
-        mainIngredients: initialEditItem.mainIngredients || "",
-        moaGroup: initialEditItem.moaGroup || "",
-        npkRatio: initialEditItem.npkRatio || "",
-        indications: initialEditItem.indications || "",
-        applicationStage: initialEditItem.applicationStage || "",
-        targetCrops: initialEditItem.targetCrops || [],
-        recommendedDosage: initialEditItem.recommendedDosage || "",
-        applicationMethod: initialEditItem.applicationMethod || "",
-        usageNotes: initialEditItem.usageNotes || "",
-        toxicityInfo: initialEditItem.toxicityInfo || "",
-        protectiveMeasures: initialEditItem.protectiveMeasures || "",
-        firstAid: initialEditItem.firstAid || "",
-        legalStatus: initialEditItem.legalStatus || "Được phép lưu hành",
-        standardsCompliance: initialEditItem.standardsCompliance || [],
-        manufacturerOrigin: initialEditItem.manufacturerOrigin || "",
-        importerRegistrant: initialEditItem.importerRegistrant || "",
-        distributor: initialEditItem.distributor || "",
-        referencePrice: initialEditItem.referencePrice || "",
-        packagingSpecs: initialEditItem.packagingSpecs || [],
-        hashtags: initialEditItem.hashtags || ["HieuQuaCao"],
-        supplierDetails: initialEditItem.supplierDetails || [],
-        documents: initialEditItem.documents || [],
-        ...parsePackagingSpec(initialEditItem.packagingSpecs?.[0]),
-      });
-    } else {
-      setFormData({
-        code: "",
-        name: "",
-        imageUrl: "",
-        nutritionalContentId: "macronutrients",
-        originId: "inorganic",
-        applicationStageId: "top_dressing",
-        physicalFormId: "soil_application",
-        nutrientContent: "",
-        description: "",
-        registrationNumber: "",
-        scientificTechnicalName: "",
-        fertilizerOriginGroup: "",
-        nutritionalComponents: "",
-        fertilizerType: "",
-        physicalForm: "",
-        mainIngredients: "",
-        moaGroup: "",
-        npkRatio: "",
-        indications: "",
-        applicationStage: "",
-        targetCrops: [],
-        recommendedDosage: "",
-        applicationMethod: "",
-        usageNotes: "",
-        toxicityInfo: "",
-        protectiveMeasures: "",
-        firstAid: "",
-        legalStatus: "Được phép lưu hành",
-        standardsCompliance: [],
-        manufacturerOrigin: "",
-        importerRegistrant: "",
-        distributor: "",
-        referencePrice: "",
-        packagingSpecs: [],
-        hashtags: [],
-        supplierDetails: [],
-        documents: [],
-        quantity: "",
-        unit: "",
-        packaging: "",
-      });
-    }
+    setFormData((prev) => ({ ...prev, code: "" }));
   };
 
-  const handleConfirmSubmit = async () => {
-    const firstAidHtml = await safeConvertLexicalToHtml(formData.firstAid);
+  const handleConfirmSubmit = async (isDetailMode?: boolean) => {
+    setSubmitting(true);
+    try {
+      const firstAidHtml = await safeConvertLexicalToHtml(formData.firstAid);
+      const uploadedImageUrl = await uploadImage(
+        formData.imageUrl,
+        formData.imageFile,
+        "fertilizer",
+      );
 
-    const payload = {
-      code: formData.code,
-      name: formData.name,
-      imageUrl: formData.imageUrl,
+      // Dynamic Classifications matching
+      const classifications: any[] = [];
+      const addClass = (classKey: string, name: string) => {
+        if (!name) return;
+        const matched = allGroups.find(
+          (g) =>
+            g.classification === classKey &&
+            g.name.toLowerCase() === name.toLowerCase(),
+        );
+        if (matched) {
+          classifications.push({
+            classification: classKey,
+            groupId: matched.id,
+            displayOrder: 0,
+          });
+        }
+      };
 
-      nutritionalContentId: formData.nutritionalContentId,
-      originId: formData.originId,
-      applicationStageId: formData.applicationStageId,
-      physicalFormId: formData.physicalFormId,
-      nutrientContent: formData.nutrientContent || formData.npkRatio || "",
-      description: formData.description,
+      addClass(
+        "nutrient_composition",
+        formData.fertilizerType || formData.nutritionalContentId,
+      );
+      addClass("origin", formData.fertilizerOriginGroup || formData.originId);
+      addClass(
+        "effect_stage",
+        formData.applicationStage || formData.applicationStageId,
+      );
+      addClass(
+        "physical_form",
+        formData.physicalForm || formData.physicalFormId,
+      );
 
-      registrationNumber: formData.registrationNumber,
-      scientificTechnicalName: formData.scientificTechnicalName,
-      fertilizerOriginGroup: formData.fertilizerOriginGroup,
-      nutritionalComponents: formData.nutritionalComponents,
-      fertilizerType: formData.fertilizerType,
-      physicalForm: formData.physicalForm,
-      mainIngredients: formData.mainIngredients,
-      moaGroup: formData.moaGroup,
-      npkRatio: formData.npkRatio,
+      // Dynamic Subjects mapping
+      const targetSubjectIds = formData.targetCrops
+        .map(
+          (name) =>
+            allSubjects.find((s) => s.name.toLowerCase() === name.toLowerCase())
+              ?.id,
+        )
+        .filter((id): id is number => id !== undefined);
 
-      indications: formData.indications,
-      applicationStage: formData.applicationStage,
-      targetCrops: formData.targetCrops,
-      recommendedDosage: formData.recommendedDosage,
-      applicationMethod: formData.applicationMethod,
-      usageNotes: formData.usageNotes,
+      // Dynamic Certificates mapping
+      const certificateIds = formData.standardsCompliance
+        .map(
+          (name) =>
+            allCertificates.find(
+              (c) => c.name.toLowerCase() === name.toLowerCase(),
+            )?.id,
+        )
+        .filter((id): id is number => id !== undefined);
 
-      toxicityInfo: formData.toxicityInfo,
-      protectiveMeasures: formData.protectiveMeasures,
-      firstAid: firstAidHtml,
-      legalStatus: formData.legalStatus,
-      standardsCompliance: formData.standardsCompliance,
+      const generatedSku =
+        formData.code?.trim() ||
+        `PB-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
+      const payload: any = {
+        name: formData.name,
+        sku: generatedSku,
+        displayOrder: 10,
+        status: "active",
+        domainCode: "CROP",
+        manufacturer: formData.manufacturerOrigin || undefined,
+        importer: formData.importerRegistrant || undefined,
+        distributor: formData.distributor || undefined,
+        referencePrice: formData.referencePrice || undefined,
+        registrationNumber: formData.registrationNumber || undefined,
+        legalStatus: formData.legalStatus || "allowed",
+        legalDescription: formData.legalDescription || undefined,
+        description: formData.description || undefined,
+        hashtags: formData.hashtags,
+        packagingVariants: parsePackagingSpecs(
+          isDetailMode
+            ? formData.packagingSpecs
+            : formData.packaging || formData.quantity || formData.unit
+              ? [
+                  `${formData.packaging || "Bao"} ${formData.quantity || "1"} ${formData.unit || "kg"}`,
+                ]
+              : [],
+          packagingTypes,
+          baseUnits,
+        ),
+        certificates: certificateIds.map((cid, i) => ({
+          certificateId: cid,
+          displayOrder: i,
+        })),
+        classifications,
+        targetSubjectIds,
 
-      manufacturerOrigin: formData.manufacturerOrigin,
-      importerRegistrant: formData.importerRegistrant,
-      distributor: formData.distributor,
-      referencePrice: formData.referencePrice,
-      packagingSpecs:
-        formData.packagingSpecs.length > 0
-          ? formData.packagingSpecs
-          : formData.quantity && formData.unit && formData.packaging
-            ? [`${formData.packaging} ${formData.quantity} ${formData.unit}`]
-            : undefined,
+        // Metadata for unsupported fields
+        metadataJson: {
+          imageUrl: uploadedImageUrl || undefined,
+          origin:
+            formData.fertilizerOriginGroup ||
+            formData.manufacturerOrigin ||
+            undefined,
+          formType: isDetailMode ? "advanced" : "basic",
+          shelfLife: formData.shelfLife || undefined,
+          applicationStage: formData.applicationStage || undefined,
+          mainIngredients: formData.mainIngredients || undefined,
+        },
 
-      status: "active" as const,
-    };
+        // Profile details
+        scientificName: formData.scientificTechnicalName || undefined,
+        npkRatio: formData.npkRatio || undefined,
+        detailedComposition:
+          formData.nutrientContent ||
+          formData.nutritionalComponents ||
+          formData.mainIngredients ||
+          undefined,
+        moaOrNutrientNote: formData.moaGroup || undefined,
+        mainUsage: formData.indications || undefined,
+        recommendedDosage: formData.recommendedDosage || undefined,
+        usageMethod: formData.applicationMethod || undefined,
+        usageNotes: formData.usageNotes || undefined,
+        shelfLife: formData.shelfLife || undefined,
+        toxicityDescription: formData.toxicityInfo || undefined,
+        protectiveMeasures: formData.protectiveMeasures || undefined,
+        poisoningTreatment: firstAidHtml || undefined,
 
-    if (isEdit && params?.id) {
-      updateFertilizer(Number(params.id), payload);
-      toast({
-        title: "Thành công",
-        description: "Đã cập nhật thông tin phân bón",
-      });
-    } else {
-      addFertilizer(payload);
-      toast({
-        title: "Thành công",
-        description: "Đã thêm mới phân bón",
-      });
+        documents: formData.documents || [],
+      };
+
+      if (isEdit && params?.id) {
+        await farmSupplyApi.update("fertilizer", Number(params.id), payload);
+        toast({
+          title: "Thành công",
+          description: "Đã cập nhật thông tin phân bón thành công",
+        });
+      } else {
+        await farmSupplyApi.create("fertilizer", payload);
+        toast({
+          title: "Thành công",
+          description: "Đã thêm mới phân bón thành công",
+        });
+      }
+      queryClient.invalidateQueries({ queryKey: ["farm-supplies"] });
+      setLocation("/cultivation-material/fertilizer");
+    } catch (err: any) {
+      if (err.response?.status === 409) {
+        toast({
+          title: "Trùng lặp SKU",
+          description:
+            "Mã SKU này đã tồn tại trong hệ thống. Vui lòng nhập mã SKU khác.",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Lỗi",
+          description: err.message || "Lưu thất bại",
+          variant: "destructive",
+        });
+      }
+    } finally {
+      setSubmitting(false);
+      setConfirmOpen(false);
     }
-    setConfirmOpen(false);
-    setLocation("/cultivation-material/fertilizer");
   };
 
   return {
@@ -318,5 +324,97 @@ export function useFertilizerCreateForm() {
     setConfirmOpen,
     handleConfirmSubmit,
     setLocation,
+    loading,
+    submitting,
+  };
+}
+
+function mapResponseToFertilizer(item: any, certs: any[]): any {
+  const profile = item.profile || {};
+  return {
+    code: item.sku || item.code,
+    name: item.name,
+    imageUrl:
+      (item.metadataJson && item.metadataJson?.imageUrl) || item.imageUrl || "",
+    imageFile: null,
+    formType: item.metadataJson?.formType || "basic",
+
+    nutritionalContentId:
+      item.classifications?.find(
+        (c: any) => c.classification === "nutrient_composition",
+      )?.group?.name || "macronutrients",
+    originId:
+      item.classifications?.find((c: any) => c.classification === "origin")
+        ?.group?.name ||
+      item.metadataJson?.origin ||
+      "inorganic",
+    applicationStageId:
+      item.classifications?.find(
+        (c: any) => c.classification === "effect_stage",
+      )?.group?.name || "top_dressing",
+    physicalFormId:
+      item.classifications?.find(
+        (c: any) => c.classification === "physical_form",
+      )?.group?.name || "soil_application",
+    nutrientContent: profile.detailedComposition || "",
+    description: item.description || "",
+
+    registrationNumber: item.registrationNumber || "",
+    scientificTechnicalName: profile.scientificName || "",
+    fertilizerOriginGroup:
+      item.classifications?.find((c: any) => c.classification === "origin")
+        ?.group?.name ||
+      item.metadataJson?.origin ||
+      "",
+    nutritionalComponents: profile.detailedComposition || "",
+    fertilizerType:
+      item.classifications?.find(
+        (c: any) => c.classification === "nutrient_composition",
+      )?.group?.name || "",
+    physicalForm:
+      item.classifications?.find(
+        (c: any) => c.classification === "physical_form",
+      )?.group?.name || "",
+    mainIngredients: item.metadataJson?.mainIngredients || "",
+    moaGroup: profile.moaOrNutrientNote || "",
+    npkRatio: profile.npkRatio || "",
+
+    indications: profile.mainUsage || "",
+    applicationStage:
+      item.classifications?.find(
+        (c: any) => c.classification === "effect_stage",
+      )?.group?.name ||
+      item.metadataJson?.applicationStage ||
+      "",
+    targetCrops: item.targetSubjects?.map((t: any) => t.name) || [],
+    recommendedDosage: profile.recommendedDosage || "",
+    applicationMethod: profile.usageMethod || "",
+    usageNotes: profile.usageNotes || "",
+    shelfLife: profile.shelfLife || item.metadataJson?.shelfLife || "",
+
+    toxicityInfo: profile.toxicityDescription || "",
+    protectiveMeasures: profile.protectiveMeasures || "",
+    firstAid: profile.poisoningTreatment || "",
+    legalStatus: item.legalStatus || "allowed",
+    legalDescription: item.legalDescription || "",
+    standardsCompliance:
+      item.certificates
+        ?.map(
+          (c: any) =>
+            c.certificate?.name ||
+            certs.find((x: any) => x.id === c.certificateId)?.name,
+        )
+        .filter(Boolean) || [],
+
+    manufacturerOrigin: item.manufacturer || "",
+    importerRegistrant: item.importer || "",
+    distributor: item.distributor || "",
+    referencePrice: item.referencePrice || "",
+    packagingSpecs: formatPackagingSpecs(item.packagingVariants) || [],
+    hashtags: (item.hashtags || []).map((t: string) =>
+      t.startsWith("#") ? t.slice(1) : t,
+    ),
+    documents: profile.documents || [],
+    ...parsePackagingSpec(formatPackagingSpecs(item.packagingVariants)?.[0]),
   };
 }

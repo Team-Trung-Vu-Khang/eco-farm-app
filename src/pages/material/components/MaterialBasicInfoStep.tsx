@@ -20,11 +20,7 @@ import {
   X,
   Cpu,
 } from "lucide-react";
-import {
-  commonHashtags,
-  materialTypes,
-  materialGroups,
-} from "../data/constants";
+import { commonHashtags, materialGroups } from "../data/constants";
 import type { MaterialFormData } from "../types/types";
 
 interface MaterialBasicInfoStepProps {
@@ -47,6 +43,7 @@ export default function MaterialBasicInfoStep({
   onAddHashtag,
   onRemoveHashtag,
 }: MaterialBasicInfoStepProps) {
+  const isEdit = window.location.pathname.includes("/edit");
   const handleHashtagKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
     if (event.key === "Enter") {
       event.preventDefault();
@@ -75,11 +72,11 @@ export default function MaterialBasicInfoStep({
 
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <div className="space-y-2">
-              <Label>
-                Mã vật tư <span className="text-red-500">*</span>
-              </Label>
+              <Label>Mã vật tư</Label>
               <Input
                 value={formData.code}
+                disabled={isEdit}
+                clearable={!isEdit}
                 onChange={(e) => onFormFieldChange("code", e.target.value)}
                 placeholder="VD: VL001"
               />
@@ -146,7 +143,9 @@ export default function MaterialBasicInfoStep({
               </Label>
               <Select
                 value={formData.valueChainId || ""}
-                onValueChange={(value) => onFormFieldChange("valueChainId", value)}
+                onValueChange={(value) =>
+                  onFormFieldChange("valueChainId", value)
+                }
               >
                 <SelectTrigger className="text-left h-auto py-2">
                   <SelectValue placeholder="Chọn giai đoạn áp dụng..." />
@@ -226,15 +225,50 @@ export default function MaterialBasicInfoStep({
             <ImageIcon className="h-5 w-5 text-primary" />
             Hình ảnh
           </h3>
-          <div className="flex min-h-[200px] cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-slate-200 p-8 text-center transition-colors hover:bg-slate-50">
-            <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 text-primary">
-              <Upload className="h-8 w-8" />
+          {formData.imageUrl ? (
+            <div className="relative group w-full max-w-[240px] mx-auto">
+              <img
+                src={formData.imageUrl}
+                alt="material"
+                className="w-full rounded-xl border object-cover aspect-square"
+              />
+              <button
+                type="button"
+                onClick={() => {
+                  onFormFieldChange("imageUrl", "");
+                  onFormFieldChange("imageFile", null);
+                }}
+                className="absolute top-2 right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity"
+              >
+                ✕
+              </button>
             </div>
-            <p className="font-medium text-slate-900">Tải lên ảnh vật tư</p>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Kéo thả hoặc click để chọn file
-            </p>
-          </div>
+          ) : (
+            <label className="flex min-h-[200px] cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-slate-200 p-8 text-center transition-colors hover:bg-slate-50">
+              <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 text-primary">
+                <Upload className="h-8 w-8" />
+              </div>
+              <p className="font-medium text-slate-900">Tải lên ảnh vật tư</p>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Kéo thả hoặc click để chọn file
+              </p>
+              <p className="text-xs text-muted-foreground mt-1">
+                PNG, JPG tối đa 5MB
+              </p>
+              <input
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (!file) return;
+                  const url = URL.createObjectURL(file);
+                  onFormFieldChange("imageUrl", url);
+                  onFormFieldChange("imageFile", file);
+                }}
+              />
+            </label>
+          )}
         </div>
       </div>
     </div>

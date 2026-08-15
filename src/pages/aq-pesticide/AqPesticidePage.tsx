@@ -19,26 +19,87 @@ export default function AqPesticidePage() {
     handleViewDetail,
     handleConfirmDelete,
     navigateToDetail,
+
+    // Pagination/Filter states
+    pageSize,
+    setPageSize,
+    currentIndex,
+    setCurrentIndex,
+    totalElements,
+    totalPages,
+    search,
+    setSearch,
+    status,
+    setStatus,
+    onlyOwner,
+    setOnlyOwner,
+    loading,
   } = useAqPesticidePage();
 
   return (
     <PageWrapper
       title="Quản lý thuốc thủy sản"
-      description="Quản lý danh mục thuốc, hóa chất và chế phẩm sinh học nuôi trồng thủy sản"
+      description="Quản lý danh mục thuốc thủy sản hệ thống và nội bộ"
       actions={
-        <Button onClick={handleAdd} data-testid="add-aq-pesticide">
-          <Plus className="w-4 h-4 mr-2" />
-          Thêm thuốc
-        </Button>
+        <div className="flex items-center gap-3">
+          <label className="flex items-center gap-2 text-sm text-muted-foreground cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={onlyOwner}
+              onChange={(e) => {
+                setOnlyOwner(e.target.checked);
+                setCurrentIndex(1);
+              }}
+              className="rounded border-slate-300 text-primary focus:ring-primary h-4 w-4"
+            />
+            Chỉ xem vật tư nội bộ
+          </label>
+          <Button onClick={handleAdd}>
+            <Plus className="w-4 h-4 mr-2" />
+            Thêm thuốc thủy sản
+          </Button>
+        </div>
       }
     >
       <DataTable
         columns={pesticideColumns(navigateToDetail)}
         data={pesticides}
+        searchable
+        searchPlaceholder="Tìm kiếm thuốc thủy sản..."
+        pageSize={pageSize}
+        currentIndex={currentIndex}
+        totalElements={totalElements}
+        totalPages={totalPages}
+        onSearch={(val) => {
+          setSearch(val);
+          setCurrentIndex(1);
+        }}
+        onPageSize={(size) => {
+          setPageSize(size);
+          setCurrentIndex(1);
+        }}
+        onIndexChange={setCurrentIndex}
+        onFilterChange={(key, val) => {
+          if (key === "status") {
+            setStatus(val as any);
+            setCurrentIndex(1);
+          }
+        }}
+        filters={[
+          {
+            key: "status",
+            label: "Trạng thái",
+            options: [
+              { label: "Hoạt động", value: "active" },
+              { label: "Không hoạt động", value: "inactive" },
+              { label: "Đã lưu trữ", value: "archived" },
+            ],
+          },
+        ]}
         onView={handleViewDetail}
         onEdit={handleEdit}
         onDelete={handleDelete}
-        searchPlaceholder="Tìm kiếm thuốc..."
+        loading={loading}
       />
 
       <DeleteDialog

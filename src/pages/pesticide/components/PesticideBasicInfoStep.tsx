@@ -38,14 +38,6 @@ interface PesticideBasicInfoStepProps {
   onRemoveHashtag: (tag: string) => void;
 }
 
-const toxicityColorMap: Record<string, string> = {
-  Ia: "bg-red-100 text-red-700 border-red-300",
-  Ib: "bg-orange-100 text-orange-700 border-orange-300",
-  II: "bg-yellow-100 text-yellow-700 border-yellow-300",
-  III: "bg-blue-100 text-blue-700 border-blue-300",
-  U: "bg-green-100 text-green-700 border-green-300",
-};
-
 export default function PesticideBasicInfoStep({
   domain,
   formData,
@@ -55,52 +47,93 @@ export default function PesticideBasicInfoStep({
   onAddHashtag,
   onRemoveHashtag,
 }: PesticideBasicInfoStepProps) {
+  const isEdit = window.location.pathname.includes("/edit");
+
   const isCultivation = domain === "cultivation" || !domain;
   const isAnimal = domain === "animal";
   const isAquaculture = domain === "aquaculture";
 
   // Cultivation Master Data
-  const { items: loadedPesticideGroups } = useMasterData("pesticide-groups", {
+  const { items: loadedPesticideGroups } = useMasterData("medicine-groups", {
+    params: { domainCode: "CROP", classification: "target_group", size: 100 },
     enabled: isCultivation,
   });
-  const { items: loadedPesticideOrigins } = useMasterData("pesticide-origins", {
+  const { items: loadedPesticideOrigins } = useMasterData("medicine-groups", {
+    params: { domainCode: "CROP", classification: "origin", size: 100 },
     enabled: isCultivation,
   });
   const { items: loadedPesticideToxicityClasses } = useMasterData(
-    "pesticide-toxicity-classes",
-    { enabled: isCultivation },
+    "medicine-groups",
+    {
+      params: { domainCode: "CROP", classification: "toxicity", size: 100 },
+      enabled: isCultivation,
+    },
   );
   const { items: loadedPesticideModesOfAction } = useMasterData(
-    "pesticide-modes-of-action",
-    { enabled: isCultivation },
+    "medicine-groups",
+    {
+      params: {
+        domainCode: "CROP",
+        classification: "mode_of_action",
+        size: 100,
+      },
+      enabled: isCultivation,
+    },
   );
   const { items: loadedPesticideFormulations } = useMasterData(
-    "pesticide-formulations",
-    { enabled: isCultivation },
+    "medicine-groups",
+    {
+      params: { domainCode: "CROP", classification: "dosage_form", size: 100 },
+      enabled: isCultivation,
+    },
   );
 
   // Animal Master Data
-  const { items: loadedLivestockFunctions } = useMasterData(
-    "livestock-medicine-functions",
-    { enabled: isAnimal },
-  );
+  const { items: loadedLivestockFunctions } = useMasterData("medicine-groups", {
+    params: { domainCode: "LIVESTOCK", classification: "usage", size: 100 },
+    enabled: isAnimal,
+  });
   const { items: loadedLivestockAdministrationRoutes } = useMasterData(
-    "livestock-medicine-administration-routes",
-    { enabled: isAnimal },
+    "medicine-groups",
+    {
+      params: {
+        domainCode: "LIVESTOCK",
+        classification: "usage_method",
+        size: 100,
+      },
+      enabled: isAnimal,
+    },
   );
   const { items: loadedLivestockControlLevels } = useMasterData(
-    "livestock-medicine-control-levels",
-    { enabled: isAnimal },
+    "medicine-groups",
+    {
+      params: {
+        domainCode: "LIVESTOCK",
+        classification: "control_level",
+        size: 100,
+      },
+      enabled: isAnimal,
+    },
   );
 
   // Aquaculture Master Data
   const { items: loadedAquacultureFunctions } = useMasterData(
-    "aquaculture-medicine-functions",
-    { enabled: isAquaculture },
+    "medicine-groups",
+    {
+      params: { domainCode: "AQUACULTURE", classification: "usage", size: 100 },
+      enabled: isAquaculture,
+    },
   );
   const { items: loadedAquacultureControlResidues } = useMasterData(
-    "aquaculture-medicine-control-residues",
-    { enabled: isAquaculture },
+    "medicine-groups",
+    {
+      params: {
+        domainCode: "AQUACULTURE",
+        classification: "control_residue_level",
+        size: 100,
+      },
+      enabled: isAquaculture,
+    },
   );
 
   const getItems = (loaded: any[], catalog: string) => {
@@ -165,9 +198,11 @@ export default function PesticideBasicInfoStep({
                 Mã sản phẩm / Mã SKU <span className="text-red-500">*</span>
               </Label>
               <Input
+                disabled={isEdit}
+                clearable={!isEdit}
                 value={formData.code}
-                onChange={(e) => onFormFieldChange("code", e.target.value)}
                 placeholder="VD: BVTV001"
+                onChange={(e) => onFormFieldChange("code", e.target.value)}
               />
               <p className="text-xs text-muted-foreground">
                 Rất quan trọng để truy xuất nguồn gốc
@@ -636,18 +671,50 @@ export default function PesticideBasicInfoStep({
             <ImageIcon className="w-5 h-5 text-primary" />
             Hình ảnh bao bì
           </h3>
-          <div className="border-2 border-dashed border-slate-200 rounded-xl p-8 flex flex-col items-center justify-center text-center hover:bg-slate-50 transition-colors cursor-pointer min-h-[200px]">
-            <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-4 text-primary">
-              <Upload className="w-8 h-8" />
+          {formData.imageUrl ? (
+            <div className="relative group w-full max-w-[240px] mx-auto">
+              <img
+                src={formData.imageUrl}
+                alt="product"
+                className="w-full rounded-xl border object-cover aspect-square"
+              />
+              <button
+                type="button"
+                onClick={() => {
+                  onFormFieldChange("imageUrl", "");
+                  onFormFieldChange("imageFile", null);
+                }}
+                className="absolute top-2 right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity"
+              >
+                ✕
+              </button>
             </div>
-            <p className="font-medium text-slate-900">Tải lên ảnh sản phẩm</p>
-            <p className="text-sm text-muted-foreground mt-1">
-              Kéo thả hoặc click để chọn file
-            </p>
-            <p className="text-xs text-muted-foreground mt-1">
-              PNG, JPG tối đa 5MB
-            </p>
-          </div>
+          ) : (
+            <label className="border-2 border-dashed border-slate-200 rounded-xl p-8 flex flex-col items-center justify-center text-center hover:bg-slate-50 transition-colors cursor-pointer min-h-[200px]">
+              <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-4 text-primary">
+                <Upload className="w-8 h-8" />
+              </div>
+              <p className="font-medium text-slate-900">Tải lên ảnh sản phẩm</p>
+              <p className="text-sm text-muted-foreground mt-1">
+                Kéo thả hoặc click để chọn file
+              </p>
+              <p className="text-xs text-muted-foreground mt-1">
+                PNG, JPG tối đa 5MB
+              </p>
+              <input
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (!file) return;
+                  const url = URL.createObjectURL(file);
+                  onFormFieldChange("imageUrl", url);
+                  onFormFieldChange("imageFile", file);
+                }}
+              />
+            </label>
+          )}
         </div>
       </div>
     </div>

@@ -23,6 +23,15 @@ interface FertilizerConfirmationStepProps {
   formData: FertilizerFormData;
 }
 
+function formatLegalStatus(status: string | null | undefined): string {
+  if (!status) return "Được phép sử dụng";
+  const normalized = status.toLowerCase().trim();
+  if (normalized === "allowed") return "Được phép sử dụng";
+  if (normalized === "restricted") return "Hạn chế sử dụng";
+  if (normalized === "banned") return "Cấm sử dụng";
+  return status;
+}
+
 function Row({
   label,
   value,
@@ -151,6 +160,10 @@ export const FertilizerConfirmationStep = ({
                 label="Giai đoạn tác động"
                 value={formData.applicationStage}
               />
+              <Row
+                label="Hạn sử dụng"
+                value={formData.shelfLife}
+              />
               {formData.targetCrops && formData.targetCrops.length > 0 && (
                 <div className="col-span-2">
                   <span className="text-muted-foreground text-sm">
@@ -263,7 +276,7 @@ export const FertilizerConfirmationStep = ({
                     Tình trạng pháp lý:
                   </span>{" "}
                   <Badge variant="outline" className="ml-1 bg-white">
-                    {formData.legalStatus}
+                    {formatLegalStatus(formData.legalStatus)}
                   </Badge>
                 </div>
               )}
@@ -330,13 +343,13 @@ export const FertilizerConfirmationStep = ({
                 )}
 
               {/* Lô kho */}
-              {formData.supplierDetails.length > 0 && (
+              {(formData.supplierDetails?.length ?? 0) > 0 && (
                 <div className="col-span-2 mt-2">
                   <span className="text-muted-foreground block mb-2">
                     Đăng ký tồn kho ban đầu:
                   </span>
                   <div className="space-y-1">
-                    {formData.supplierDetails.map((item, idx) => {
+                    {formData.supplierDetails?.map((item, idx) => {
                       const sup = suppliers.find(
                         (s) => s.id === item.supplierId,
                       );
