@@ -90,8 +90,9 @@ export default function PlanAnimalGrowthCreatePage({
   } = useAnimalGrowthForm("create", basePath);
 
   const [newManualStage, setNewManualStage] = useState("");
-  const [isSimpleMode, setIsSimpleMode] = useState(false);
+  const [isSimpleMode, setIsSimpleMode] = useState(true);
   const [stageSearch, setStageSearch] = useState("");
+  const [applyRegimen, setApplyRegimen] = useState(true);
   const purpose = formData.purpose as string;
   const isCultivationLike =
     purpose === "cultivation" || purpose === "facility-upgrade";
@@ -680,53 +681,84 @@ export default function PlanAnimalGrowthCreatePage({
           <div className="space-y-6">
             {isTreatmentOrAmendment && (
               <div className="space-y-4 animation-slide-up bg-slate-50/30 p-6 rounded-3xl border border-slate-100 shadow-sm">
-                <div className="flex items-center justify-between">
-                  <Label className="text-base uppercase tracking-wider text-slate-500 font-bold text-[10px]">
-                    {purpose === "treatment"
-                      ? "Phác đồ điều trị"
-                      : "Phác đồ cải tạo chuồng trại"}
-                  </Label>
-                  {formData.regimenId && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() =>
+                <div className="flex items-center justify-between rounded-xl border border-slate-100 bg-white p-3">
+                  <div>
+                    <p className="text-xs font-bold text-slate-700">
+                      Áp dụng phác đồ có sẵn
+                    </p>
+                    <p className="text-[10px] text-slate-400">
+                      Tắt để tự nhập các hạng mục công việc thay vì dùng phác
+                      đồ.
+                    </p>
+                  </div>
+                  <Switch
+                    checked={applyRegimen}
+                    onCheckedChange={(checked) => {
+                      setApplyRegimen(checked);
+                      setFormData((prev) => ({
+                        ...prev,
+                        regimenId: checked ? prev.regimenId : "",
+                        selectedStages: checked
+                          ? prev.selectedStages.filter((stage) =>
+                              stage.includes(":"),
+                            )
+                          : prev.selectedStages.filter(
+                              (stage) => !stage.includes(":"),
+                            ),
+                      }));
+                    }}
+                  />
+                </div>
+
+                {applyRegimen ? (
+                  <>
+                    <div className="flex items-center justify-between">
+                      <Label className="text-base uppercase tracking-wider text-slate-500 font-bold text-[10px]">
+                        {purpose === "treatment"
+                          ? "Phác đồ điều trị"
+                          : "Phác đồ cải tạo chuồng trại"}
+                      </Label>
+                      {formData.regimenId && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() =>
+                            setFormData((prev) => ({
+                              ...prev,
+                              regimenId: "",
+                              selectedStages: [],
+                            }))
+                          }
+                          className="h-7 text-[10px] font-bold text-red-500 hover:text-red-600 hover:bg-red-50 rounded-lg px-2"
+                        >
+                          XÓA PHÁC ĐỒ
+                        </Button>
+                      )}
+                    </div>
+                    <RegimenSelector
+                      regimens={regimens}
+                      selectedRegimenId={formData.regimenId}
+                      type={formData.purpose as "treatment" | "amendment"}
+                      onSelect={(regimen) => {
+                        const stages =
+                          regimen.steps && regimen.steps.length > 0
+                            ? regimen.steps.map(
+                                (step) => `${regimen.id}:${step.title}`,
+                              )
+                            : [`${regimen.id}:${regimen.name}`];
                         setFormData((prev) => ({
                           ...prev,
-                          regimenId: "",
-                          selectedStages: [],
-                        }))
-                      }
-                      className="h-7 text-[10px] font-bold text-red-500 hover:text-red-600 hover:bg-red-50 rounded-lg px-2"
-                    >
-                      XÓA PHÁC ĐỒ
-                    </Button>
-                  )}
-                </div>
-                <RegimenSelector
-                  regimens={regimens}
-                  selectedRegimenId={formData.regimenId}
-                  type={formData.purpose as "treatment" | "amendment"}
-                  onSelect={(regimen) => {
-                    const stages =
-                      regimen.steps && regimen.steps.length > 0
-                        ? regimen.steps.map(
-                            (step) => `${regimen.id}:${step.title}`,
-                          )
-                        : [`${regimen.id}:${regimen.name}`];
-                    setFormData((prev) => ({
-                      ...prev,
-                      regimenId: regimen.id,
-                      selectedStages: stages,
-                    }));
-                  }}
-                />
-
-                {!formData.regimenId && (
+                          regimenId: regimen.id,
+                          selectedStages: stages,
+                        }));
+                      }}
+                    />
+                  </>
+                ) : (
                   <div className="space-y-4 pt-4 border-t border-dashed border-slate-200">
                     <div className="flex items-center justify-between">
                       <Label className="text-[10px] uppercase font-black text-slate-400">
-                        Hoặc Tự nhập các giai đoạn xử lý
+                        Hạng mục công việc dự kiến
                       </Label>
                       <Badge
                         variant="outline"
@@ -1944,14 +1976,14 @@ export default function PlanAnimalGrowthCreatePage({
       description={pageDescription}
       actions={
         <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2">
-            <Label htmlFor="simple-mode-toggle" className="text-xs font-bold text-slate-600 whitespace-nowrap">
-              Chế độ đơn giản
+          <div className="flex items-center gap-2.5 rounded-full border border-slate-200 bg-white px-4 py-2 shadow-sm">
+            <Label htmlFor="simple-mode-toggle" className="text-xs font-bold text-slate-700 whitespace-nowrap cursor-pointer">
+              Thông tin chuyên sâu
             </Label>
             <Switch
               id="simple-mode-toggle"
-              checked={isSimpleMode}
-              onCheckedChange={setIsSimpleMode}
+              checked={!isSimpleMode}
+              onCheckedChange={(checked) => setIsSimpleMode(!checked)}
             />
           </div>
           <Button variant="outline" onClick={goBack}>

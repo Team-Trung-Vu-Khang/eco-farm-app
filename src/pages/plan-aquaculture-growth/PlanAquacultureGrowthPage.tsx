@@ -1,10 +1,21 @@
 import PageWrapper from "@/components/PageWrapper";
-import { Button, DataTable } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import useAquacultureGrowthWorkflowStore from "@/stores/useAquacultureGrowthWorkflowStore";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  Button,
+  DataTable,
+  useToast,
+} from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { Plus } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useLocation } from "wouter";
-import useAquacultureGrowthWorkflowStore from "@/stores/useAquacultureGrowthWorkflowStore";
-import { useAquacultureGrowthWorkflowDraftStore } from "./hooks/useAquacultureGrowthWorkflowDraftStore";
 import {
   createWorkflowColumns,
   PlanAquacultureGrowthStatisticsCards,
@@ -12,6 +23,7 @@ import {
   type WorkflowRow,
 } from "./data/table";
 import { useAquacultureGrowthPage } from "./hooks/useAquacultureGrowthPage";
+import { useAquacultureGrowthWorkflowDraftStore } from "./hooks/useAquacultureGrowthWorkflowDraftStore";
 
 interface PlanAquacultureGrowthPageProps {
   basePath?: string;
@@ -22,10 +34,19 @@ export default function PlanAquacultureGrowthPage({
 }: PlanAquacultureGrowthPageProps) {
   const [search, setSearch] = useState("");
   const [, setLocation] = useLocation();
+  const { toast } = useToast();
   const { plans, statistics } = useAquacultureGrowthPage(basePath);
-  const workflows = useAquacultureGrowthWorkflowStore((state) => state.workflows);
+  const workflows = useAquacultureGrowthWorkflowStore(
+    (state) => state.workflows,
+  );
+  const cloneWorkflow = useAquacultureGrowthWorkflowStore(
+    (state) => state.cloneWorkflow,
+  );
   const resetWorkflowDraft = useAquacultureGrowthWorkflowDraftStore(
     (state) => state.resetDraft,
+  );
+  const [workflowToClone, setWorkflowToClone] = useState<WorkflowRow | null>(
+    null,
   );
 
   const handleCreatePlan = () => {
@@ -75,12 +96,23 @@ export default function PlanAquacultureGrowthPage({
     return rows;
   }, [workflows, plans]);
 
+  const handleConfirmClone = () => {
+    if (!workflowToClone) return;
+    cloneWorkflow(workflowToClone.id);
+    toast({
+      title: "Đã nhân bản sơ đồ",
+      description: `Đã tạo bản sao của "${workflowToClone.name}".`,
+    });
+    setWorkflowToClone(null);
+  };
+
   const columns = useMemo(
     () =>
       createWorkflowColumns({
         onView: (row) => setLocation(`${basePath}/workflow/${row.id}`),
         onOpenWorkflow: (row) =>
           setLocation(`${basePath}/create/workflow/${row.id}`),
+        onClone: (row) => setWorkflowToClone(row),
       }),
     [basePath, setLocation],
   );
@@ -105,7 +137,7 @@ export default function PlanAquacultureGrowthPage({
       actions={
         <Button data-testid="add-plan" onClick={handleCreatePlan}>
           <Plus className="w-4 h-4 mr-2" />
-          Khởi tạo kế hoạch nuôi trồng thủy sản mới
+          Khởi tạo quy trình
         </Button>
       }
     >
@@ -126,6 +158,30 @@ export default function PlanAquacultureGrowthPage({
           searchPlaceholder="Tìm kiếm sơ đồ quy trình nuôi trồng thủy sản..."
         />
       </div>
+
+      <AlertDialog
+        open={workflowToClone !== null}
+        onOpenChange={(open) => {
+          if (!open) setWorkflowToClone(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Nhân bản sơ đồ quy trình?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Hành động này sẽ tạo một bản sao của sơ đồ
+              {workflowToClone?.name ? ` "${workflowToClone.name}"` : ""} với
+              toàn bộ nội dung hiện có.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Hủy</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmClone}>
+              Nhân bản
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </PageWrapper>
   );
 }

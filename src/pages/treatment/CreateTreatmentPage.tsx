@@ -1709,7 +1709,7 @@ export default function CreateTreatmentPage() {
             steps={steps}
             onComplete={handleComplete}
             onCancel={goBack}
-            completeLabel="Xác nhận & Lưu phác đồ"
+            completeLabel="Xác nhận & Lưu sơ đồ"
           />
 
           <input

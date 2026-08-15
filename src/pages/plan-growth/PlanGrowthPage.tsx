@@ -1,10 +1,21 @@
 import PageWrapper from "@/components/PageWrapper";
-import { Button, DataTable } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import useWorkflowStore from "@/stores/useWorkflowStore";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  Button,
+  DataTable,
+  useToast,
+} from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { Plus } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useLocation } from "wouter";
-import useWorkflowStore from "@/stores/useWorkflowStore";
-import { usePlanWorkflowDraftStore } from "./hooks/usePlanWorkflowDraftStore";
 import {
   createWorkflowColumns,
   PlanGrowthStatisticsCards,
@@ -12,6 +23,7 @@ import {
   type WorkflowRow,
 } from "./data/table";
 import { usePlanPage } from "./hooks/usePlanPage";
+import { usePlanWorkflowDraftStore } from "./hooks/usePlanWorkflowDraftStore";
 
 interface PlanGrowthPageProps {
   basePath?: string;
@@ -22,10 +34,15 @@ export default function PlanGrowthPage({
 }: PlanGrowthPageProps) {
   const [search, setSearch] = useState("");
   const [, setLocation] = useLocation();
+  const { toast } = useToast();
   const { plans, statistics } = usePlanPage(basePath);
   const workflows = useWorkflowStore((state) => state.workflows);
+  const cloneWorkflow = useWorkflowStore((state) => state.cloneWorkflow);
   const resetWorkflowDraft = usePlanWorkflowDraftStore(
     (state) => state.resetDraft,
+  );
+  const [workflowToClone, setWorkflowToClone] = useState<WorkflowRow | null>(
+    null,
   );
 
   const handleCreatePlan = () => {
@@ -45,8 +62,7 @@ export default function PlanGrowthPage({
         name: workflow.name,
         description: workflow.description,
         totalCount: workflowPlans.length,
-        activeCount: workflowPlans.filter((p) => p.status === "active")
-          .length,
+        activeCount: workflowPlans.filter((p) => p.status === "active").length,
         draftCount: workflowPlans.filter((p) => p.status === "draft").length,
         completedCount: workflowPlans.filter((p) => p.status === "completed")
           .length,
@@ -65,19 +81,26 @@ export default function PlanGrowthPage({
         totalCount: unassignedPlans.length,
         activeCount: unassignedPlans.filter((p) => p.status === "active")
           .length,
-        draftCount: unassignedPlans.filter((p) => p.status === "draft")
+        draftCount: unassignedPlans.filter((p) => p.status === "draft").length,
+        completedCount: unassignedPlans.filter((p) => p.status === "completed")
           .length,
-        completedCount: unassignedPlans.filter(
-          (p) => p.status === "completed",
-        ).length,
-        cancelledCount: unassignedPlans.filter(
-          (p) => p.status === "cancelled",
-        ).length,
+        cancelledCount: unassignedPlans.filter((p) => p.status === "cancelled")
+          .length,
       });
     }
 
     return rows;
   }, [workflows, plans]);
+
+  const handleConfirmClone = () => {
+    if (!workflowToClone) return;
+    cloneWorkflow(workflowToClone.id);
+    toast({
+      title: "Đã nhân bản sơ đồ",
+      description: `Đã tạo bản sao của "${workflowToClone.name}".`,
+    });
+    setWorkflowToClone(null);
+  };
 
   const columns = useMemo(
     () =>
@@ -85,6 +108,7 @@ export default function PlanGrowthPage({
         onView: (row) => setLocation(`${basePath}/workflow/${row.id}`),
         onOpenWorkflow: (row) =>
           setLocation(`${basePath}/create/workflow/${row.id}`),
+        onClone: (row) => setWorkflowToClone(row),
       }),
     [basePath, setLocation],
   );
@@ -94,7 +118,11 @@ export default function PlanGrowthPage({
     if (!query) return workflowRows;
 
     return workflowRows.filter((row) =>
-      [row.name, row.description].filter(Boolean).join(" ").toLowerCase().includes(query),
+      [row.name, row.description]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase()
+        .includes(query),
     );
   }, [workflowRows, search]);
 
@@ -105,7 +133,7 @@ export default function PlanGrowthPage({
       actions={
         <Button data-testid="add-plan" onClick={handleCreatePlan}>
           <Plus className="w-4 h-4 mr-2" />
-          Khởi tạo kế hoạch mới
+          Khởi tạo quy trình
         </Button>
       }
     >
@@ -126,6 +154,30 @@ export default function PlanGrowthPage({
           searchPlaceholder="Tìm kiếm sơ đồ quy trình..."
         />
       </div>
+
+      <AlertDialog
+        open={workflowToClone !== null}
+        onOpenChange={(open) => {
+          if (!open) setWorkflowToClone(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Nhân bản sơ đồ quy trình?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Hành động này sẽ tạo một bản sao của sơ đồ
+              {workflowToClone?.name ? ` "${workflowToClone.name}"` : ""} với
+              toàn bộ nội dung hiện có.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Hủy</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmClone}>
+              Nhân bản
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </PageWrapper>
   );
 }

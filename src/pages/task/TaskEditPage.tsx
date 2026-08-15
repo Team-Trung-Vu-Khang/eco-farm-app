@@ -163,7 +163,7 @@ export default function TaskEditPage() {
     tasks: [] as TaskAllocation[],
   });
 
-  const [isSimpleMode, setIsSimpleMode] = useState(false);
+  const [isSimpleMode, setIsSimpleMode] = useState(true);
   const [isSupervisorDialogOpen, setIsSupervisorDialogOpen] = useState(false);
   const [searchSupervisor, setSearchSupervisor] = useState("");
   const [isInspectorDialogOpen, setIsInspectorDialogOpen] = useState(false);
@@ -2202,8 +2202,8 @@ export default function TaskEditPage() {
       description="Quy trình 3 bước cập nhật lịch và quản lý nguồn lực"
       actions={
         <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2">
-            <Label htmlFor="simple-task-mode-toggle" className="text-xs font-bold text-slate-600 whitespace-nowrap">
+          <div className="flex items-center gap-2.5 rounded-full border border-slate-200 bg-white px-4 py-2 shadow-sm">
+            <Label htmlFor="simple-task-mode-toggle" className="text-xs font-bold text-slate-700 whitespace-nowrap cursor-pointer">
               Thông tin chuyên sâu
             </Label>
             <Switch

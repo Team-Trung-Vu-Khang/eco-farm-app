@@ -1,10 +1,13 @@
 import PageWrapper from "@/components/PageWrapper";
+import useAquacultureGrowthPlanStore from "@/stores/useAquacultureGrowthPlanStore";
+import useRegionStore from "@/stores/useRegionStore";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   Badge,
   Button,
   Card,
   CardContent,
+  cn,
   Form,
   FormControl,
   FormField,
@@ -13,7 +16,6 @@ import {
   FormMessage,
   Input,
   Textarea,
-  cn,
   useToast,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { ArrowLeft, Layers, Save } from "lucide-react";
@@ -21,8 +23,6 @@ import { useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useLocation, useParams } from "wouter";
 import * as z from "zod";
-import useRegionStore from "@/stores/useRegionStore";
-import useAquacultureGrowthPlanStore from "@/stores/useAquacultureGrowthPlanStore";
 import GeographicalSelector from "./components/GeographicalSelector";
 import {
   createEmptyPlanDraft,
@@ -52,10 +52,16 @@ export default function PlanAquacultureGrowthWorkflowInfoFormPage() {
   const isEdit = Boolean(nodeId);
 
   const { regions } = useRegionStore();
-  const infoNodes = useAquacultureGrowthWorkflowDraftStore((state) => state.infoNodes);
-  const setInfoNodes = useAquacultureGrowthWorkflowDraftStore((state) => state.setInfoNodes);
+  const infoNodes = useAquacultureGrowthWorkflowDraftStore(
+    (state) => state.infoNodes,
+  );
+  const setInfoNodes = useAquacultureGrowthWorkflowDraftStore(
+    (state) => state.setInfoNodes,
+  );
   const nodes = useAquacultureGrowthWorkflowDraftStore((state) => state.nodes);
-  const addNode = useAquacultureGrowthWorkflowDraftStore((state) => state.addNode);
+  const addNode = useAquacultureGrowthWorkflowDraftStore(
+    (state) => state.addNode,
+  );
   const addPlan = useAquacultureGrowthPlanStore((state) => state.addPlan);
 
   const editingRecord = nodeId
@@ -87,7 +93,10 @@ export default function PlanAquacultureGrowthWorkflowInfoFormPage() {
           <CardContent className="p-6 text-sm text-slate-600">
             Node thông tin quy trình này không còn tồn tại.
             <div className="mt-4">
-              <Button variant="outline" onClick={() => setLocation(WORKFLOW_PATH)}>
+              <Button
+                variant="outline"
+                onClick={() => setLocation(WORKFLOW_PATH)}
+              >
                 <ArrowLeft className="mr-2 h-4 w-4" />
                 Quay lại workflow
               </Button>
@@ -171,7 +180,7 @@ export default function PlanAquacultureGrowthWorkflowInfoFormPage() {
           </Button>
           <Button className="h-9 px-3" onClick={form.handleSubmit(handleSave)}>
             <Save className="mr-2 h-4 w-4" />
-            Lưu phác đồ
+            Lưu sơ đồ
           </Button>
         </div>
       }
