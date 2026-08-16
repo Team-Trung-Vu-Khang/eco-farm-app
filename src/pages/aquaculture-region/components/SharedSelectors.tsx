@@ -1,3 +1,8 @@
+import { useAreaPlots } from "@/features/farm/hooks/useAreas";
+import { useRegionAreas } from "@/features/farm/hooks/useRegions";
+import { useFarmPersonnel, useMasterData } from "@/features/master-data";
+import { useSelectedWorkspaceId } from "@/features/workspace";
+import useSeedStore from "@/stores/useSeedStore";
 import {
   Badge,
   Button,
@@ -33,11 +38,6 @@ import {
   X,
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
-import useSeedStore from "@/stores/useSeedStore";
-import { useMasterData, useFarmPersonnel } from "@/features/master-data";
-import { useSelectedWorkspaceId } from "@/features/workspace";
-import { useRegionAreas } from "@/features/farm/hooks/useRegions";
-import { useAreaPlots } from "@/features/farm/hooks/useAreas";
 import type { GeographicalSelection } from "./types";
 
 type RegionOption = {
@@ -552,7 +552,8 @@ export const GeographicalSelector = ({
   const filteredRegions = useMemo(() => {
     return regions.filter(
       (region) =>
-        ((!showEnterprise || !enterpriseId) ||
+        (!showEnterprise ||
+          !enterpriseId ||
           region.enterpriseId === `ent-${enterpriseId}` ||
           region.enterpriseId === enterpriseId) &&
         region.name.toLowerCase().includes(searchTerm.toLowerCase()),
@@ -723,7 +724,7 @@ export const GeographicalSelector = ({
           variant="outline"
         >
           <Plus className="w-5 h-5" />
-          Thêm phạm vi địa lý
+          Chọn vùng canh tác
         </Button>
       )}
 
@@ -828,18 +829,19 @@ export const GeographicalSelector = ({
                     </div>
                   </div>
 
-                  {!regionOnly && expandedRegions.includes(region.id.toString()) && (
-                    <div className="ml-6 pl-4 border-l-2 border-slate-100 space-y-2 py-1">
-                      <RegionAreasList
-                        regionId={region.id.toString()}
-                        regionName={region.name}
-                        expandedAreas={expandedAreas}
-                        toggleArea={toggleArea}
-                        isSelected={isSelected}
-                        onSelect={handleSelect}
-                      />
-                    </div>
-                  )}
+                  {!regionOnly &&
+                    expandedRegions.includes(region.id.toString()) && (
+                      <div className="ml-6 pl-4 border-l-2 border-slate-100 space-y-2 py-1">
+                        <RegionAreasList
+                          regionId={region.id.toString()}
+                          regionName={region.name}
+                          expandedAreas={expandedAreas}
+                          toggleArea={toggleArea}
+                          isSelected={isSelected}
+                          onSelect={handleSelect}
+                        />
+                      </div>
+                    )}
                 </div>
               ))}
 

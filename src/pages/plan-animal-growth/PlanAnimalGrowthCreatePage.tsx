@@ -224,8 +224,8 @@ export default function PlanAnimalGrowthCreatePage({
             <div>
               <h3 className="font-semibold">Thiết lập kế hoạch</h3>
               <p className="text-sm text-blue-700">
-                Chọn lứa nuôi, nhập thời gian dự kiến và đặt tên cho kế hoạch của
-                bạn.
+                Chọn lứa nuôi, nhập thời gian dự kiến và đặt tên cho kế hoạch
+                của bạn.
               </p>
             </div>
           </div>
@@ -357,7 +357,7 @@ export default function PlanAnimalGrowthCreatePage({
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
                       <label className="text-xs text-muted-foreground font-black uppercase tracking-widest">
-                        Vùng sản xuất <span className="text-red-500">*</span>
+                        Vùng canh tác <span className="text-red-500">*</span>
                       </label>
                       <span className="text-[10px] text-emerald-700 bg-emerald-100 px-2 py-1 rounded-full font-semibold">
                         Chọn 1-n khu vực/lô từ sơ đồ ban đầu
@@ -888,7 +888,8 @@ export default function PlanAnimalGrowthCreatePage({
                     return (
                       <div className="p-10 text-center border-2 border-dashed border-slate-200 rounded-3xl bg-slate-50">
                         <p className="text-slate-400 font-medium italic">
-                          Khu chăn nuôi/Lứa nuôi này chưa được gán quy trình mẫu.
+                          Khu chăn nuôi/Lứa nuôi này chưa được gán quy trình
+                          mẫu.
                         </p>
                         <p className="text-[10px] text-slate-400 mt-2">
                           Vui lòng kiểm tra lại cấu hình lứa nuôi.
@@ -1977,7 +1978,10 @@ export default function PlanAnimalGrowthCreatePage({
       actions={
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2.5 rounded-full border border-slate-200 bg-white px-4 py-2 shadow-sm">
-            <Label htmlFor="simple-mode-toggle" className="text-xs font-bold text-slate-700 whitespace-nowrap cursor-pointer">
+            <Label
+              htmlFor="simple-mode-toggle"
+              className="text-xs font-bold text-slate-700 whitespace-nowrap cursor-pointer"
+            >
               Thông tin chuyên sâu
             </Label>
             <Switch

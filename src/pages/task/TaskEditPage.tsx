@@ -697,6 +697,7 @@ export default function TaskEditPage() {
                     <Switch
                       checked={formData.mode === "phat-sinh"}
                       disabled={!!formData.planId}
+                      className="data-[state=checked]:bg-amber-500 data-[state=unchecked]:bg-blue-500"
                       onCheckedChange={(checked) => {
                         setFormData({
                           ...formData,

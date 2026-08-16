@@ -1,4 +1,3 @@
-import { useState, useMemo, useEffect } from "react";
 import {
   Badge,
   Button,
@@ -19,6 +18,7 @@ import {
   Plus,
   Search,
 } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 import type { GeographicalSelection } from "../types";
 
 const GeographicalSelector = ({
@@ -190,7 +190,7 @@ const GeographicalSelector = ({
         variant="outline"
       >
         <Plus className="w-5 h-5" />
-        Thêm phạm vi địa lý
+        Chọn vùng canh tác
       </Button>
       <Dialog
         open={isOpen}

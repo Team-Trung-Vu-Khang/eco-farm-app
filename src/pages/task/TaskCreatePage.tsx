@@ -631,6 +631,7 @@ export default function TaskCreatePage() {
 
                     <Switch
                       checked={formData.mode === "phat-sinh"}
+                      className="data-[state=checked]:bg-amber-500 data-[state=unchecked]:bg-blue-500"
                       onCheckedChange={(checked) => {
                         setFormData({
                           ...formData,

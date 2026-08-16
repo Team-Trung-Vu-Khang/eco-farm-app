@@ -1,11 +1,4 @@
 import {
-  useRef,
-  useState,
-  type ChangeEvent,
-  type KeyboardEvent,
-  type ReactNode,
-} from "react";
-import {
   AutoCompleteSelect,
   Badge,
   Button,
@@ -26,7 +19,21 @@ import {
   Textarea,
   type Step,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { FileText, Image as ImageIcon, Plus, Trash2, Video, X } from "lucide-react";
+import {
+  FileText,
+  Image as ImageIcon,
+  Plus,
+  Trash2,
+  Video,
+  X,
+} from "lucide-react";
+import {
+  useRef,
+  useState,
+  type ChangeEvent,
+  type KeyboardEvent,
+  type ReactNode,
+} from "react";
 import useCropStore from "../../../stores/useCropStore";
 import useGroupCropStore from "../../../stores/useGroupCropStore";
 import {
@@ -156,13 +163,7 @@ function StageMetric({
   );
 }
 
-function SummaryField({
-  label,
-  value,
-}: {
-  label: string;
-  value: ReactNode;
-}) {
+function SummaryField({ label, value }: { label: string; value: ReactNode }) {
   return (
     <div className="space-y-1 rounded-2xl border border-slate-200 bg-white p-4">
       <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
@@ -214,11 +215,17 @@ function TagInput({
         <div className="mb-3 flex flex-wrap gap-2">
           {values.length > 0 ? (
             values.map((item) => (
-              <Badge key={item} variant="secondary" className="rounded-full gap-2">
+              <Badge
+                key={item}
+                variant="secondary"
+                className="rounded-full gap-2"
+              >
                 {item}
                 <button
                   type="button"
-                  onClick={() => onChange(values.filter((value) => value !== item))}
+                  onClick={() =>
+                    onChange(values.filter((value) => value !== item))
+                  }
                 >
                   <X className="h-3 w-3" />
                 </button>
@@ -292,12 +299,18 @@ export function SoilTreatmentPlanFormDialog({
     responsibleUnitOptions,
     formData.responsibleUnit,
   );
-  const priorityLabel = getOptionLabel(treatmentPlanPriorityOptions, formData.priority);
+  const priorityLabel = getOptionLabel(
+    treatmentPlanPriorityOptions,
+    formData.priority,
+  );
   const targetSeverityLabel = getOptionLabel(
     targetSeverityOptions,
     formData.targetSeverity,
   );
-  const budgetRangeLabel = getOptionLabel(budgetRangeOptions, formData.budgetRange);
+  const budgetRangeLabel = getOptionLabel(
+    budgetRangeOptions,
+    formData.budgetRange,
+  );
   const terrainLabels = terrainOptions
     .filter((item) => (formData.terrainTypes || []).includes(item.value))
     .map((item) => item.label);
@@ -305,8 +318,13 @@ export function SoilTreatmentPlanFormDialog({
     .filter((item) => (formData.applicableObjects || []).includes(item.value))
     .map((item) => item.label);
 
-  const joinOrFallback = (values: Array<string | undefined>, fallback = "Chưa cập nhật") => {
-    const normalized = values.map((item) => item?.trim()).filter(Boolean) as string[];
+  const joinOrFallback = (
+    values: Array<string | undefined>,
+    fallback = "Chưa cập nhật",
+  ) => {
+    const normalized = values
+      .map((item) => item?.trim())
+      .filter(Boolean) as string[];
     return normalized.length > 0 ? normalized.join(", ") : fallback;
   };
   const timeWindowSummary =
@@ -351,7 +369,10 @@ export function SoilTreatmentPlanFormDialog({
     key: K,
     value: TreatmentProcedure[K],
   ) => {
-    updateProcedure(procedureId, (procedure) => ({ ...procedure, [key]: value }));
+    updateProcedure(procedureId, (procedure) => ({
+      ...procedure,
+      [key]: value,
+    }));
   };
 
   const updateStageMaterial = (
@@ -369,7 +390,10 @@ export function SoilTreatmentPlanFormDialog({
   };
 
   const addProcedure = () => {
-    updateForm("procedures", [...procedures, createProcedureRow(procedures.length + 1)]);
+    updateForm("procedures", [
+      ...procedures,
+      createProcedureRow(procedures.length + 1),
+    ]);
   };
 
   const handleUploadFiles =
@@ -431,7 +455,7 @@ export function SoilTreatmentPlanFormDialog({
               <Input
                 value={formData.zone || ""}
                 onChange={(event) => updateForm("zone", event.target.value)}
-                placeholder="VD: Đồng Nai - vùng sản xuất 3"
+                placeholder="VD: Đồng Nai - vùng canh tác 3"
               />
             </div>
             <div className="space-y-2">
@@ -498,7 +522,9 @@ export function SoilTreatmentPlanFormDialog({
               <Input
                 type="date"
                 value={formData.startDate || ""}
-                onChange={(event) => updateForm("startDate", event.target.value)}
+                onChange={(event) =>
+                  updateForm("startDate", event.target.value)
+                }
               />
             </div>
             <div className="space-y-2">
@@ -629,7 +655,9 @@ export function SoilTreatmentPlanFormDialog({
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => updateForm("authors", [...authors, createAuthorRow()])}
+                onClick={() =>
+                  updateForm("authors", [...authors, createAuthorRow()])
+                }
               >
                 <Plus className="mr-2 h-4 w-4" />
                 Thêm tác giả
@@ -653,14 +681,22 @@ export function SoilTreatmentPlanFormDialog({
                     value={author.qualification}
                     placeholder="Trình độ"
                     onChange={(event) =>
-                      updateAuthor(author.id, "qualification", event.target.value)
+                      updateAuthor(
+                        author.id,
+                        "qualification",
+                        event.target.value,
+                      )
                     }
                   />
                   <Input
                     value={author.organization}
                     placeholder="Đơn vị cộng tác"
                     onChange={(event) =>
-                      updateAuthor(author.id, "organization", event.target.value)
+                      updateAuthor(
+                        author.id,
+                        "organization",
+                        event.target.value,
+                      )
                     }
                   />
                   <Button
@@ -702,9 +738,16 @@ export function SoilTreatmentPlanFormDialog({
                   value: String(method.id),
                   keywords: [method.description, method.type],
                 }))}
-                value={formData.primaryMethodId ? String(formData.primaryMethodId) : ""}
+                value={
+                  formData.primaryMethodId
+                    ? String(formData.primaryMethodId)
+                    : ""
+                }
                 onChange={(value) =>
-                  updateForm("primaryMethodId", value ? Number(value) : undefined)
+                  updateForm(
+                    "primaryMethodId",
+                    value ? Number(value) : undefined,
+                  )
                 }
                 placeholder="Chọn 1 biện pháp"
               />
@@ -744,7 +787,9 @@ export function SoilTreatmentPlanFormDialog({
               <Textarea
                 rows={4}
                 value={formData.currentSurvey || ""}
-                onChange={(event) => updateForm("currentSurvey", event.target.value)}
+                onChange={(event) =>
+                  updateForm("currentSurvey", event.target.value)
+                }
                 placeholder="Tổng hợp khảo sát đầu kỳ..."
               />
             </div>
@@ -753,7 +798,9 @@ export function SoilTreatmentPlanFormDialog({
               <Textarea
                 rows={4}
                 value={formData.importantNotes || ""}
-                onChange={(event) => updateForm("importantNotes", event.target.value)}
+                onChange={(event) =>
+                  updateForm("importantNotes", event.target.value)
+                }
                 placeholder="Các lưu ý để đội triển khai tránh sai lệch..."
               />
             </div>
@@ -790,11 +837,7 @@ export function SoilTreatmentPlanFormDialog({
                   Mỗi giai đoạn là một phần riêng của phác đồ.
                 </p>
               </div>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={addProcedure}
-              >
+              <Button type="button" variant="outline" onClick={addProcedure}>
                 <Plus className="mr-2 h-4 w-4" />
                 Thêm giai đoạn
               </Button>
@@ -805,7 +848,8 @@ export function SoilTreatmentPlanFormDialog({
                 {procedures.map((procedure, index) => {
                   const stageMaterials = procedure.stageMaterials || [];
                   const hasTiming =
-                    procedure.startDay !== undefined && procedure.endDay !== undefined;
+                    procedure.startDay !== undefined &&
+                    procedure.endDay !== undefined;
                   const stageLabel = procedure.name || `Giai đoạn ${index + 1}`;
                   const scheduleLabel = hasTiming
                     ? `Ngày ${procedure.startDay} -> ${procedure.endDay}`
@@ -824,7 +868,9 @@ export function SoilTreatmentPlanFormDialog({
                           <p className="mt-1 text-base font-semibold text-slate-900">
                             {stageLabel}
                           </p>
-                          <p className="mt-1 text-sm text-slate-500">{scheduleLabel}</p>
+                          <p className="mt-1 text-sm text-slate-500">
+                            {scheduleLabel}
+                          </p>
                         </div>
                         <Button
                           type="button"
@@ -875,7 +921,8 @@ export function SoilTreatmentPlanFormDialog({
                               Thông tin chính
                             </p>
                             <p className="text-sm text-slate-500">
-                              Chỉ giữ lại các trường cốt lõi để khai báo nhanh cho từng giai đoạn.
+                              Chỉ giữ lại các trường cốt lõi để khai báo nhanh
+                              cho từng giai đoạn.
                             </p>
                           </div>
 
@@ -1017,7 +1064,9 @@ export function SoilTreatmentPlanFormDialog({
                             </div>
                             <Textarea
                               rows={4}
-                              value={(procedure.qualityCheckpoints || []).join("\n")}
+                              value={(procedure.qualityCheckpoints || []).join(
+                                "\n",
+                              )}
                               placeholder="Ví dụ: Độ ẩm ổn định, đất tơi đều, không còn mùi chua"
                               onChange={(event) =>
                                 updateProcedureField(
@@ -1074,19 +1123,26 @@ export function SoilTreatmentPlanFormDialog({
                                         Vật tư {materialIndex + 1}
                                       </p>
                                       <p className="text-sm text-slate-500">
-                                        Khai báo loại vật tư và định lượng cho riêng giai đoạn này.
+                                        Khai báo loại vật tư và định lượng cho
+                                        riêng giai đoạn này.
                                       </p>
                                     </div>
                                     <Button
                                       type="button"
                                       variant="ghost"
                                       onClick={() =>
-                                        updateProcedure(procedure.id, (current) => ({
-                                          ...current,
-                                          stageMaterials: (current.stageMaterials || []).filter(
-                                            (material) => material.id !== item.id,
-                                          ),
-                                        }))
+                                        updateProcedure(
+                                          procedure.id,
+                                          (current) => ({
+                                            ...current,
+                                            stageMaterials: (
+                                              current.stageMaterials || []
+                                            ).filter(
+                                              (material) =>
+                                                material.id !== item.id,
+                                            ),
+                                          }),
+                                        )
                                       }
                                     >
                                       <Trash2 className="h-4 w-4" />
@@ -1111,11 +1167,16 @@ export function SoilTreatmentPlanFormDialog({
                                           <SelectValue />
                                         </SelectTrigger>
                                         <SelectContent>
-                                          {treatmentMaterialCategoryOptions.map((option) => (
-                                            <SelectItem key={option.value} value={option.value}>
-                                              {option.label}
-                                            </SelectItem>
-                                          ))}
+                                          {treatmentMaterialCategoryOptions.map(
+                                            (option) => (
+                                              <SelectItem
+                                                key={option.value}
+                                                value={option.value}
+                                              >
+                                                {option.label}
+                                              </SelectItem>
+                                            ),
+                                          )}
                                         </SelectContent>
                                       </Select>
                                     </div>
@@ -1208,7 +1269,9 @@ export function SoilTreatmentPlanFormDialog({
             <div className="space-y-2">
               <Label>Thông số kiểm tra</Label>
               <MultiSelect
-                options={inspectionParameterOptions.map((item) => ({ ...item }))}
+                options={inspectionParameterOptions.map((item) => ({
+                  ...item,
+                }))}
                 value={formData.inspectionParameters || []}
                 onChange={(value) => updateForm("inspectionParameters", value)}
                 placeholder="Chọn thông số"
@@ -1222,7 +1285,9 @@ export function SoilTreatmentPlanFormDialog({
               onChange={(value) =>
                 updateForm(
                   "qualityChecklist",
-                  value.map((item) => item.replace(/^#/, "").replace(/-/g, " ")),
+                  value.map((item) =>
+                    item.replace(/^#/, "").replace(/-/g, " "),
+                  ),
                 )
               }
               placeholder="Nhập hạng mục rồi nhấn Enter"
@@ -1299,7 +1364,9 @@ export function SoilTreatmentPlanFormDialog({
                         <Video className="h-4 w-4 text-violet-500" />
                       )}
                       <div>
-                        <p className="text-sm font-medium text-slate-900">{item.name}</p>
+                        <p className="text-sm font-medium text-slate-900">
+                          {item.name}
+                        </p>
                         <p className="text-xs text-slate-500">{item.size}</p>
                       </div>
                     </div>
@@ -1309,7 +1376,9 @@ export function SoilTreatmentPlanFormDialog({
                       onClick={() =>
                         updateForm(
                           "attachments",
-                          attachments.filter((attachment) => attachment.id !== item.id),
+                          attachments.filter(
+                            (attachment) => attachment.id !== item.id,
+                          ),
                         )
                       }
                     >
@@ -1362,19 +1431,30 @@ export function SoilTreatmentPlanFormDialog({
           <div className="grid gap-4 xl:grid-cols-2">
             <div className="rounded-3xl border border-slate-200 bg-slate-50 p-4">
               <div className="mb-4">
-                <p className="text-sm font-semibold text-slate-900">Step 1. Thông tin nền</p>
+                <p className="text-sm font-semibold text-slate-900">
+                  Step 1. Thông tin nền
+                </p>
                 <p className="text-sm text-slate-500">
                   Tóm tắt bài toán đất, mốc thời gian và phạm vi áp dụng.
                 </p>
               </div>
               <div className="grid gap-3 md:grid-cols-2">
-                <SummaryField label="Tên phác đồ" value={formData.name || "Chưa cập nhật"} />
-                <SummaryField label="Khu vực áp dụng" value={formData.zone || "Chưa cập nhật"} />
+                <SummaryField
+                  label="Tên phác đồ"
+                  value={formData.name || "Chưa cập nhật"}
+                />
+                <SummaryField
+                  label="Khu vực áp dụng"
+                  value={formData.zone || "Chưa cập nhật"}
+                />
                 <SummaryField
                   label="Mức độ mục tiêu"
                   value={targetSeverityLabel || "Chưa cập nhật"}
                 />
-                <SummaryField label="Thời gian áp dụng" value={timeWindowSummary} />
+                <SummaryField
+                  label="Thời gian áp dụng"
+                  value={timeWindowSummary}
+                />
                 <SummaryField
                   label="Ngân sách"
                   value={budgetRangeLabel || "Chưa cập nhật"}
@@ -1390,9 +1470,12 @@ export function SoilTreatmentPlanFormDialog({
 
             <div className="rounded-3xl border border-slate-200 bg-slate-50 p-4">
               <div className="mb-4">
-                <p className="text-sm font-semibold text-slate-900">Step 2. Phạm vi</p>
+                <p className="text-sm font-semibold text-slate-900">
+                  Step 2. Phạm vi
+                </p>
                 <p className="text-sm text-slate-500">
-                  Kiểm tra đơn vị phụ trách, nhóm cây trồng và tác giả liên quan.
+                  Kiểm tra đơn vị phụ trách, nhóm cây trồng và tác giả liên
+                  quan.
                 </p>
               </div>
               <div className="grid gap-3 md:grid-cols-2">
@@ -1433,7 +1516,9 @@ export function SoilTreatmentPlanFormDialog({
 
             <div className="rounded-3xl border border-slate-200 bg-slate-50 p-4">
               <div className="mb-4">
-                <p className="text-sm font-semibold text-slate-900">Step 3. Biện pháp</p>
+                <p className="text-sm font-semibold text-slate-900">
+                  Step 3. Biện pháp
+                </p>
                 <p className="text-sm text-slate-500">
                   Đối chiếu biện pháp chính, hỗ trợ và mục tiêu đầu ra.
                 </p>
@@ -1445,7 +1530,9 @@ export function SoilTreatmentPlanFormDialog({
                 />
                 <SummaryField
                   label="Biện pháp hỗ trợ"
-                  value={joinOrFallback(supportingMethods.map((method) => method.name))}
+                  value={joinOrFallback(
+                    supportingMethods.map((method) => method.name),
+                  )}
                 />
                 <SummaryField
                   label="Mục tiêu phác đồ"
@@ -1462,7 +1549,9 @@ export function SoilTreatmentPlanFormDialog({
 
             <div className="rounded-3xl border border-slate-200 bg-slate-50 p-4">
               <div className="mb-4">
-                <p className="text-sm font-semibold text-slate-900">Step 4. Theo ngày</p>
+                <p className="text-sm font-semibold text-slate-900">
+                  Step 4. Theo ngày
+                </p>
                 <p className="text-sm text-slate-500">
                   Tóm tắt số giai đoạn, vật tư và tài liệu đính kèm.
                 </p>
@@ -1537,10 +1626,11 @@ export function SoilTreatmentPlanFormDialog({
           <DialogTitle>
             {selectedItem ? "Chỉnh sửa phác đồ" : "Tạo phác đồ mới"}
           </DialogTitle>
-        <DialogDescription>
-          Luồng nhập liệu theo từng bước để hoàn thiện master data cải tạo đất.
-        </DialogDescription>
-      </DialogHeader>
+          <DialogDescription>
+            Luồng nhập liệu theo từng bước để hoàn thiện master data cải tạo
+            đất.
+          </DialogDescription>
+        </DialogHeader>
         {content}
       </DialogContent>
     </Dialog>

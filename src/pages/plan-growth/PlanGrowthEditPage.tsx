@@ -355,7 +355,7 @@ export default function PlanGrowthEditPage({
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
                       <label className="text-xs text-muted-foreground font-black uppercase tracking-widest">
-                        Vùng sản xuất{" "}
+                        Vùng canh tác{" "}
                         {!isWorkflowContext && (
                           <span className="text-red-500">*</span>
                         )}

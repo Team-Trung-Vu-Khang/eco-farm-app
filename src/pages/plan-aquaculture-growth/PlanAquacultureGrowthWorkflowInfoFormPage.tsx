@@ -232,7 +232,7 @@ export default function PlanAquacultureGrowthWorkflowInfoFormPage() {
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <label className="text-xs text-muted-foreground font-black uppercase tracking-widest">
-                    Vùng sản xuất <span className="text-red-500">*</span>
+                    Vùng canh tác <span className="text-red-500">*</span>
                   </label>
                   <span className="text-[10px] text-emerald-700 bg-emerald-100 px-2 py-1 rounded-full font-semibold">
                     Chọn 1-n khu vực/lô từ sơ đồ ban đầu
@@ -249,7 +249,7 @@ export default function PlanAquacultureGrowthWorkflowInfoFormPage() {
                 />
                 {regionsTouched && selections.length === 0 && (
                   <p className="text-xs text-destructive">
-                    Vui lòng chọn ít nhất một vùng sản xuất
+                    Vui lòng chọn ít nhất một vùng canh tác
                   </p>
                 )}
 

@@ -357,7 +357,7 @@ export default function PlanAquacultureGrowthCreatePage({
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
                       <label className="text-xs text-muted-foreground font-black uppercase tracking-widest">
-                        Vùng sản xuất <span className="text-red-500">*</span>
+                        Vùng canh tác <span className="text-red-500">*</span>
                       </label>
                       <span className="text-[10px] text-emerald-700 bg-emerald-100 px-2 py-1 rounded-full font-semibold">
                         Chọn 1-n khu vực/lô từ sơ đồ ban đầu
@@ -660,8 +660,8 @@ export default function PlanAquacultureGrowthCreatePage({
                       </span>
                     </div>
                     <p className="text-xs text-emerald-50/80 leading-relaxed italic text-justify">
-                      Quy trình nuôi trồng thủy sản sẽ được áp dụng đồng bộ cho tất cả các
-                      ô ao đã chọn trong danh sách trên.
+                      Quy trình nuôi trồng thủy sản sẽ được áp dụng đồng bộ cho
+                      tất cả các ô ao đã chọn trong danh sách trên.
                     </p>
                   </div>
                 </div>
@@ -1977,7 +1977,10 @@ export default function PlanAquacultureGrowthCreatePage({
       actions={
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2.5 rounded-full border border-slate-200 bg-white px-4 py-2 shadow-sm">
-            <Label htmlFor="simple-mode-toggle" className="text-xs font-bold text-slate-700 whitespace-nowrap cursor-pointer">
+            <Label
+              htmlFor="simple-mode-toggle"
+              className="text-xs font-bold text-slate-700 whitespace-nowrap cursor-pointer"
+            >
               Thông tin chuyên sâu
             </Label>
             <Switch
