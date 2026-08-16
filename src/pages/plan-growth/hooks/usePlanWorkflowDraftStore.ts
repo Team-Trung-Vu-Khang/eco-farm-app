@@ -35,6 +35,9 @@ export type DiagramInfoRecord = {
   name: string;
   description: string;
   selections: GeographicalSelection[];
+  plannedDurationYears: string;
+  plannedDurationMonths: string;
+  plannedDurationDays: string;
   isActive: boolean;
   position: { x: number; y: number };
 };

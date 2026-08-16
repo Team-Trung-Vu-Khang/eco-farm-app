@@ -18,7 +18,7 @@ import {
   Textarea,
   useToast,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { ArrowLeft, Layers, Save } from "lucide-react";
+import { ArrowLeft, Calendar, Layers, Save } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useLocation, useParams } from "wouter";
@@ -78,6 +78,15 @@ export default function PlanAnimalGrowthWorkflowInfoFormPage() {
     editingRecord?.selections ?? [],
   );
   const [regionsTouched, setRegionsTouched] = useState(false);
+  const [plannedDurationYears, setPlannedDurationYears] = useState(
+    editingRecord?.plannedDurationYears ?? "",
+  );
+  const [plannedDurationMonths, setPlannedDurationMonths] = useState(
+    editingRecord?.plannedDurationMonths ?? "",
+  );
+  const [plannedDurationDays, setPlannedDurationDays] = useState(
+    editingRecord?.plannedDurationDays ?? "",
+  );
 
   const selectionSummary = useMemo(
     () => summarizeSelections(selections, regions || []),
@@ -122,6 +131,9 @@ export default function PlanAnimalGrowthWorkflowInfoFormPage() {
                 name: values.name,
                 description: values.description || "",
                 selections,
+                plannedDurationYears,
+                plannedDurationMonths,
+                plannedDurationDays,
               }
             : item,
         ),
@@ -132,6 +144,9 @@ export default function PlanAnimalGrowthWorkflowInfoFormPage() {
         name: values.name,
         description: values.description || "",
         selections,
+        plannedDurationYears,
+        plannedDurationMonths,
+        plannedDurationDays,
         isActive: true,
         position: getNextInfoNodePosition(infoNodes),
       };
@@ -207,6 +222,48 @@ export default function PlanAnimalGrowthWorkflowInfoFormPage() {
                   </FormItem>
                 )}
               />
+
+              <div className="space-y-2">
+                <label className="text-xs text-muted-foreground font-black uppercase tracking-widest">
+                  Thời gian dự kiến
+                </label>
+                <div className="flex items-center gap-4 rounded-lg border px-4 shadow-sm">
+                  <Calendar className="w-4 h-4 text-slate-400 shrink-0" />
+                  <div className="flex items-center gap-2">
+                    <Input
+                      type="number"
+                      min="0"
+                      value={plannedDurationYears}
+                      onChange={(e) => setPlannedDurationYears(e.target.value)}
+                      placeholder="0"
+                      className="w-16 h-9 border-0 bg-transparent px-0 text-center text-base shadow-none focus-visible:ring-0"
+                    />
+                    <span className="text-sm text-slate-500 whitespace-nowrap">năm</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Input
+                      type="number"
+                      min="0"
+                      value={plannedDurationMonths}
+                      onChange={(e) => setPlannedDurationMonths(e.target.value)}
+                      placeholder="0"
+                      className="w-16 h-9 border-0 bg-transparent px-0 text-center text-base shadow-none focus-visible:ring-0"
+                    />
+                    <span className="text-sm text-slate-500 whitespace-nowrap">tháng</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Input
+                      type="number"
+                      min="0"
+                      value={plannedDurationDays}
+                      onChange={(e) => setPlannedDurationDays(e.target.value)}
+                      placeholder="0"
+                      className="w-16 h-9 border-0 bg-transparent px-0 text-center text-base shadow-none focus-visible:ring-0"
+                    />
+                    <span className="text-sm text-slate-500 whitespace-nowrap">ngày</span>
+                  </div>
+                </div>
+              </div>
 
               <FormField
                 control={form.control}
