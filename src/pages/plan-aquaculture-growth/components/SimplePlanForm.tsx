@@ -30,9 +30,10 @@ import {
   X,
 } from "lucide-react";
 import { useState, type Dispatch, type SetStateAction } from "react";
+import GeographicalSelector from "./GeographicalSelector";
 import { RegimenSelector } from "./RegimenSelector";
 import { MATERIAL_OPTIONS, MATERIAL_TYPES, MATERIAL_UNITS } from "../data/mocks";
-import type { MaterialAllocation, PlanFormData } from "../types";
+import type { GeographicalSelection, MaterialAllocation, PlanFormData } from "../types";
 
 const PURPOSE_OPTIONS = [
   { id: "cultivation", label: "Nuôi trồng thủy sản", icon: Layers, color: "blue" },
@@ -50,6 +51,12 @@ const PURPOSE_COLOR_CLASSES: Record<string, { active: string; text: string; bord
   orange: { active: "bg-orange-500", text: "text-orange-700", border: "border-orange-500", bg: "bg-orange-50/50" },
 };
 
+interface ScopeSelectionSummaryGroup {
+  regionId: string;
+  regionName: string;
+  items: { type: string; name: string; parentName?: string }[];
+}
+
 interface SimplePlanFormProps {
   formData: PlanFormData;
   setFormData: Dispatch<SetStateAction<PlanFormData>>;
@@ -60,6 +67,13 @@ interface SimplePlanFormProps {
   handleComplete: () => void;
   goBack: () => void;
   completeLabel: string;
+  regions: any[];
+  selectedEnterpriseId: string;
+  selections: GeographicalSelection[];
+  selectionSummary: ScopeSelectionSummaryGroup[];
+  handleGeographicalConfirm: (selections: GeographicalSelection[]) => void;
+  isWorkflowContext?: boolean;
+  workflowInfo?: { name?: string } | null;
 }
 
 function StageMaterialPicker({
@@ -208,6 +222,13 @@ export default function SimplePlanForm({
   handleComplete,
   goBack,
   completeLabel,
+  regions,
+  selectedEnterpriseId,
+  selections,
+  selectionSummary,
+  handleGeographicalConfirm,
+  isWorkflowContext,
+  workflowInfo,
 }: SimplePlanFormProps) {
   const [newStage, setNewStage] = useState("");
   const isTreatmentOrAmendment = formData.purpose === "treatment" || formData.purpose === "amendment";
@@ -249,9 +270,73 @@ export default function SimplePlanForm({
         <div>
           <h3 className="font-semibold">Chế độ đơn giản</h3>
           <p className="text-sm text-blue-700">
-            Nhập nhanh những thông tin cần thiết nhất. Bạn có thể chuyển sang chế độ chi tiết để bổ sung phạm vi,
-            nhân sự và công việc sau.
+            Nhập nhanh những thông tin cần thiết nhất. Bạn có thể chuyển sang chế độ chi tiết để bổ sung nhân sự và
+            công việc sau.
           </p>
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        <div className="flex items-center justify-between">
+          <Label required={!isWorkflowContext}>Vùng canh tác</Label>
+          <span className="text-[10px] text-emerald-700 bg-emerald-100 px-2 py-1 rounded-full font-semibold">
+            {isWorkflowContext
+              ? `Kế thừa từ quy trình${workflowInfo?.name ? ` "${workflowInfo.name}"` : ""}`
+              : "Chọn 1 khu vực/lô từ sơ đồ ban đầu"}
+          </span>
+        </div>
+        <div className="p-4 rounded-2xl border border-emerald-100 bg-emerald-50/20 shadow-sm space-y-3">
+          {!isWorkflowContext && (
+            <GeographicalSelector
+              regions={regions || []}
+              enterpriseId={selectedEnterpriseId}
+              existingSelections={selections}
+              onConfirm={handleGeographicalConfirm}
+            />
+          )}
+
+          {selectionSummary.length > 0 && (
+            <div className="p-4 rounded-xl bg-white/50 border border-emerald-100/50 space-y-3">
+              <div className="text-[10px] font-bold text-emerald-800/60 uppercase tracking-widest flex items-center gap-2">
+                <Layers className="w-3 h-3" />
+                Phạm vi đã chọn
+              </div>
+              <div className="space-y-3">
+                {selectionSummary.map((group) => (
+                  <div key={group.regionId} className="space-y-2">
+                    <div className="flex items-center gap-1.5 text-[11px] font-bold text-slate-700">
+                      <div className="w-1 h-1 rounded-full bg-emerald-500" />
+                      {group.regionName}
+                    </div>
+                    <div className="flex flex-wrap gap-1.5 pl-2.5">
+                      {group.items.map((item, idx) => (
+                        <Badge
+                          key={idx}
+                          variant="outline"
+                          className={cn(
+                            "text-[10px] py-0 px-2 h-5 font-medium border-emerald-100 shadow-sm",
+                            item.type === "region"
+                              ? "bg-emerald-100 text-emerald-800"
+                              : item.type === "area"
+                                ? "bg-blue-50 text-blue-700 border-blue-100"
+                                : "bg-white text-slate-600 border-slate-200",
+                          )}
+                        >
+                          <span className="opacity-70 mr-1 uppercase text-[8px] font-black">
+                            {item.type === "region" ? "Vùng" : item.type === "area" ? "Khu" : "Lô"}
+                          </span>
+                          {item.name}
+                          {item.parentName && (
+                            <span className="ml-1 opacity-50 font-normal italic">({item.parentName})</span>
+                          )}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
@@ -497,7 +582,7 @@ export default function SimplePlanForm({
           <Info className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
           <p className="text-xs text-amber-800">
             Chế độ đơn giản không phân bổ nhân công/công việc chi tiết. Chuyển sang chế độ chi tiết bất cứ lúc nào để
-            bổ sung phạm vi nuôi trồng, nhân sự phụ trách và công việc cụ thể.
+            bổ sung nhân sự phụ trách và công việc cụ thể.
           </p>
         </CardContent>
       </Card>

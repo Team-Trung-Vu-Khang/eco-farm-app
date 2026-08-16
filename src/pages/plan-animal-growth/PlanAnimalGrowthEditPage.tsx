@@ -363,7 +363,7 @@ export default function PlanAnimalGrowthEditPage({
                       <span className="text-[10px] text-emerald-700 bg-emerald-100 px-2 py-1 rounded-full font-semibold">
                         {isWorkflowContext
                           ? `Kế thừa từ quy trình${workflowInfo?.name ? ` "${workflowInfo.name}"` : ""}`
-                          : "Chọn 1-n khu vực/lô từ sơ đồ ban đầu"}
+                          : "Chọn 1 khu vực/lô từ sơ đồ ban đầu"}
                       </span>
                     </div>
                     {!isWorkflowContext && (
@@ -379,7 +379,7 @@ export default function PlanAnimalGrowthEditPage({
                       <div className="mt-4 p-4 rounded-xl bg-white/50 border border-emerald-100/50 space-y-3">
                         <div className="text-[10px] font-bold text-emerald-800/60 uppercase tracking-widest flex items-center gap-2">
                           <Layers className="w-3 h-3" />
-                          Phạm vi đã chọn ({selections.length} mục)
+                          Phạm vi đã chọn
                         </div>
                         <div className="space-y-3">
                           {selectionSummary.map((group) => (
@@ -1807,6 +1807,13 @@ export default function PlanAnimalGrowthEditPage({
             handleComplete={handleComplete}
             goBack={goBack}
             completeLabel={completeLabel}
+            regions={regions || []}
+            selectedEnterpriseId={selectedEnterpriseId}
+            selections={selections}
+            selectionSummary={selectionSummary}
+            handleGeographicalConfirm={handleGeographicalConfirm}
+            isWorkflowContext={isWorkflowContext}
+            workflowInfo={workflowInfo}
           />
         ) : (
           <StepperForm

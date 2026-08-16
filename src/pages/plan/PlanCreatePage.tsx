@@ -242,7 +242,7 @@ export default function PlanCreatePage() {
                       <div className="mt-4 p-4 rounded-xl bg-white/50 border border-emerald-100/50 space-y-3">
                         <div className="text-[10px] font-bold text-emerald-800/60 uppercase tracking-widest flex items-center gap-2">
                           <Layers className="w-3 h-3" />
-                          Phạm vi đã chọn ({selections.length} mục)
+                          Phạm vi đã chọn
                         </div>
                         <div className="space-y-3">
                           {selectionSummary.map((group) => (

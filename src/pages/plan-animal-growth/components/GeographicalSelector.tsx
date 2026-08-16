@@ -106,30 +106,14 @@ const GeographicalSelector = ({
     return false;
   };
 
+  // Only one region/area/plot may be selected at a time — picking a new
+  // item always replaces the prior selection instead of accumulating.
   const handleSelect = (
     type: "region" | "area" | "plot",
     regionId: string,
     areaId?: string,
     plotId?: string,
   ) => {
-    // If a parent is already selected, don't allow selecting children
-    if (type === "area") {
-      const regionSelected = tempSelections.some(
-        (s) => s.type === "region" && s.regionId === regionId,
-      );
-      if (regionSelected) return;
-    }
-    if (type === "plot") {
-      const regionSelected = tempSelections.some(
-        (s) => s.type === "region" && s.regionId === regionId,
-      );
-      const areaSelected = tempSelections.some(
-        (s) =>
-          s.type === "area" && s.regionId === regionId && s.areaId === areaId,
-      );
-      if (regionSelected || areaSelected) return;
-    }
-
     const isCurrentlySelected = tempSelections.some(
       (s) =>
         s.type === type &&
@@ -138,42 +122,19 @@ const GeographicalSelector = ({
         s.plotId === plotId,
     );
 
-    if (isCurrentlySelected) {
-      setTempSelections((prev) =>
-        prev.filter(
-          (s) =>
-            !(
-              s.type === type &&
-              s.regionId === regionId &&
-              s.areaId === areaId &&
-              s.plotId === plotId
-            ),
-        ),
-      );
-    } else {
-      setTempSelections((prev) => {
-        // Clear children if parent is selected
-        let next = [...prev];
-        if (type === "region") {
-          next = next.filter((s) => s.regionId !== regionId);
-        } else if (type === "area") {
-          next = next.filter(
-            (s) => !(s.regionId === regionId && s.areaId === areaId),
-          );
-        }
-
-        return [
-          ...next,
-          {
-            id: Math.random().toString(36).substr(2, 9),
-            type,
-            regionId,
-            areaId,
-            plotId,
-          },
-        ];
-      });
-    }
+    setTempSelections(
+      isCurrentlySelected
+        ? []
+        : [
+            {
+              id: Math.random().toString(36).substr(2, 9),
+              type,
+              regionId,
+              areaId,
+              plotId,
+            },
+          ],
+    );
   };
 
   const handleConfirm = () => {
@@ -206,7 +167,7 @@ const GeographicalSelector = ({
               Chọn phạm vi chăn nuôi
             </DialogTitle>
             <p className="text-xs text-muted-foreground mt-1">
-              Bạn có thể chọn Khu chăn nuôi, Khu vực hoặc từng Ô chuồng cụ thể
+              Chọn 1 Khu chăn nuôi, Khu vực hoặc Ô chuồng cụ thể
             </p>
           </DialogHeader>
 

@@ -360,7 +360,7 @@ export default function PlanGrowthCreatePage({
                         Vùng canh tác <span className="text-red-500">*</span>
                       </label>
                       <span className="text-[10px] text-emerald-700 bg-emerald-100 px-2 py-1 rounded-full font-semibold">
-                        Chọn 1-n khu vực/lô từ sơ đồ ban đầu
+                        Chọn 1 khu vực/lô từ sơ đồ ban đầu
                       </span>
                     </div>
                     <GeographicalSelector
@@ -374,7 +374,7 @@ export default function PlanGrowthCreatePage({
                       <div className="mt-4 p-4 rounded-xl bg-white/50 border border-emerald-100/50 space-y-3">
                         <div className="text-[10px] font-bold text-emerald-800/60 uppercase tracking-widest flex items-center gap-2">
                           <Layers className="w-3 h-3" />
-                          Phạm vi đã chọn ({selections.length} mục)
+                          Phạm vi đã chọn
                         </div>
                         <div className="space-y-3">
                           {selectionSummary.map((group) => (
@@ -2008,6 +2008,11 @@ export default function PlanGrowthCreatePage({
             handleComplete={handleComplete}
             goBack={goBack}
             completeLabel={completeLabel}
+            regions={regions || []}
+            selectedEnterpriseId={selectedEnterpriseId}
+            selections={selections}
+            selectionSummary={selectionSummary}
+            handleGeographicalConfirm={handleGeographicalConfirm}
           />
         ) : (
           <StepperForm
