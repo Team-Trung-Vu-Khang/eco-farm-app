@@ -2013,6 +2013,7 @@ export default function PlanAquacultureGrowthCreatePage({
             selections={selections}
             selectionSummary={selectionSummary}
             handleGeographicalConfirm={handleGeographicalConfirm}
+            personnel={personnel}
           />
         ) : (
           <StepperForm

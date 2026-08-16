@@ -2014,6 +2014,7 @@ export default function PlanAnimalGrowthCreatePage({
             selections={selections}
             selectionSummary={selectionSummary}
             handleGeographicalConfirm={handleGeographicalConfirm}
+            personnel={personnel}
           />
         ) : (
           <StepperForm

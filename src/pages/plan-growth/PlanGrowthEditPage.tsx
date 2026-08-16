@@ -423,6 +423,12 @@ export default function PlanGrowthEditPage({
                         </div>
                       </div>
                     )}
+
+                    {isWorkflowContext && selectionSummary.length === 0 && (
+                      <p className="text-xs text-emerald-800/60 italic text-center py-2">
+                        Quy trình chưa có vùng canh tác được thiết lập
+                      </p>
+                    )}
                   </div>
                 </div>
               </div>
@@ -1814,6 +1820,7 @@ export default function PlanGrowthEditPage({
             handleGeographicalConfirm={handleGeographicalConfirm}
             isWorkflowContext={isWorkflowContext}
             workflowInfo={workflowInfo}
+            personnel={personnel}
           />
         ) : (
           <StepperForm

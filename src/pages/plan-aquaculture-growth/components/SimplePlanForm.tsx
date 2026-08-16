@@ -30,7 +30,9 @@ import {
   X,
 } from "lucide-react";
 import { useState, type Dispatch, type SetStateAction } from "react";
+import type { Personnel } from "@/stores/usePersonnelStore";
 import GeographicalSelector from "./GeographicalSelector";
+import { PersonnelMultiSelectCard } from "./PersonnelMultiSelectCard";
 import { RegimenSelector } from "./RegimenSelector";
 import { MATERIAL_OPTIONS, MATERIAL_TYPES, MATERIAL_UNITS } from "../data/mocks";
 import type { GeographicalSelection, MaterialAllocation, PlanFormData } from "../types";
@@ -74,6 +76,7 @@ interface SimplePlanFormProps {
   handleGeographicalConfirm: (selections: GeographicalSelection[]) => void;
   isWorkflowContext?: boolean;
   workflowInfo?: { name?: string } | null;
+  personnel: Personnel[];
 }
 
 function StageMaterialPicker({
@@ -229,6 +232,7 @@ export default function SimplePlanForm({
   handleGeographicalConfirm,
   isWorkflowContext,
   workflowInfo,
+  personnel,
 }: SimplePlanFormProps) {
   const [newStage, setNewStage] = useState("");
   const isTreatmentOrAmendment = formData.purpose === "treatment" || formData.purpose === "amendment";
@@ -270,73 +274,9 @@ export default function SimplePlanForm({
         <div>
           <h3 className="font-semibold">Chế độ đơn giản</h3>
           <p className="text-sm text-blue-700">
-            Nhập nhanh những thông tin cần thiết nhất. Bạn có thể chuyển sang chế độ chi tiết để bổ sung nhân sự và
-            công việc sau.
+            Nhập nhanh những thông tin cần thiết nhất. Bạn có thể chuyển sang chế độ chi tiết để bổ sung công việc cụ
+            thể sau.
           </p>
-        </div>
-      </div>
-
-      <div className="space-y-2">
-        <div className="flex items-center justify-between">
-          <Label required={!isWorkflowContext}>Vùng canh tác</Label>
-          <span className="text-[10px] text-emerald-700 bg-emerald-100 px-2 py-1 rounded-full font-semibold">
-            {isWorkflowContext
-              ? `Kế thừa từ quy trình${workflowInfo?.name ? ` "${workflowInfo.name}"` : ""}`
-              : "Chọn 1 khu vực/lô từ sơ đồ ban đầu"}
-          </span>
-        </div>
-        <div className="p-4 rounded-2xl border border-emerald-100 bg-emerald-50/20 shadow-sm space-y-3">
-          {!isWorkflowContext && (
-            <GeographicalSelector
-              regions={regions || []}
-              enterpriseId={selectedEnterpriseId}
-              existingSelections={selections}
-              onConfirm={handleGeographicalConfirm}
-            />
-          )}
-
-          {selectionSummary.length > 0 && (
-            <div className="p-4 rounded-xl bg-white/50 border border-emerald-100/50 space-y-3">
-              <div className="text-[10px] font-bold text-emerald-800/60 uppercase tracking-widest flex items-center gap-2">
-                <Layers className="w-3 h-3" />
-                Phạm vi đã chọn
-              </div>
-              <div className="space-y-3">
-                {selectionSummary.map((group) => (
-                  <div key={group.regionId} className="space-y-2">
-                    <div className="flex items-center gap-1.5 text-[11px] font-bold text-slate-700">
-                      <div className="w-1 h-1 rounded-full bg-emerald-500" />
-                      {group.regionName}
-                    </div>
-                    <div className="flex flex-wrap gap-1.5 pl-2.5">
-                      {group.items.map((item, idx) => (
-                        <Badge
-                          key={idx}
-                          variant="outline"
-                          className={cn(
-                            "text-[10px] py-0 px-2 h-5 font-medium border-emerald-100 shadow-sm",
-                            item.type === "region"
-                              ? "bg-emerald-100 text-emerald-800"
-                              : item.type === "area"
-                                ? "bg-blue-50 text-blue-700 border-blue-100"
-                                : "bg-white text-slate-600 border-slate-200",
-                          )}
-                        >
-                          <span className="opacity-70 mr-1 uppercase text-[8px] font-black">
-                            {item.type === "region" ? "Vùng" : item.type === "area" ? "Khu" : "Lô"}
-                          </span>
-                          {item.name}
-                          {item.parentName && (
-                            <span className="ml-1 opacity-50 font-normal italic">({item.parentName})</span>
-                          )}
-                        </Badge>
-                      ))}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
         </div>
       </div>
 
@@ -428,6 +368,104 @@ export default function SimplePlanForm({
               </button>
             );
           })}
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        <div className="flex items-center justify-between">
+          <Label required={!isWorkflowContext}>Vùng canh tác</Label>
+          <span className="text-[10px] text-emerald-700 bg-emerald-100 px-2 py-1 rounded-full font-semibold">
+            {isWorkflowContext
+              ? `Kế thừa từ quy trình${workflowInfo?.name ? ` "${workflowInfo.name}"` : ""}`
+              : "Chọn 1 khu vực/lô từ sơ đồ ban đầu"}
+          </span>
+        </div>
+        <div className="p-4 rounded-2xl border border-emerald-100 bg-emerald-50/20 shadow-sm space-y-3">
+          {!isWorkflowContext && (
+            <GeographicalSelector
+              regions={regions || []}
+              enterpriseId={selectedEnterpriseId}
+              existingSelections={selections}
+              onConfirm={handleGeographicalConfirm}
+            />
+          )}
+
+          {selectionSummary.length > 0 && (
+            <div className="p-4 rounded-xl bg-white/50 border border-emerald-100/50 space-y-3">
+              <div className="text-[10px] font-bold text-emerald-800/60 uppercase tracking-widest flex items-center gap-2">
+                <Layers className="w-3 h-3" />
+                Phạm vi đã chọn
+              </div>
+              <div className="space-y-3">
+                {selectionSummary.map((group) => (
+                  <div key={group.regionId} className="space-y-2">
+                    <div className="flex items-center gap-1.5 text-[11px] font-bold text-slate-700">
+                      <div className="w-1 h-1 rounded-full bg-emerald-500" />
+                      {group.regionName}
+                    </div>
+                    <div className="flex flex-wrap gap-1.5 pl-2.5">
+                      {group.items.map((item, idx) => (
+                        <Badge
+                          key={idx}
+                          variant="outline"
+                          className={cn(
+                            "text-[10px] py-0 px-2 h-5 font-medium border-emerald-100 shadow-sm",
+                            item.type === "region"
+                              ? "bg-emerald-100 text-emerald-800"
+                              : item.type === "area"
+                                ? "bg-blue-50 text-blue-700 border-blue-100"
+                                : "bg-white text-slate-600 border-slate-200",
+                          )}
+                        >
+                          <span className="opacity-70 mr-1 uppercase text-[8px] font-black">
+                            {item.type === "region" ? "Vùng" : item.type === "area" ? "Khu" : "Lô"}
+                          </span>
+                          {item.name}
+                          {item.parentName && (
+                            <span className="ml-1 opacity-50 font-normal italic">({item.parentName})</span>
+                          )}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      <div className="space-y-3">
+        <Label>Nhân sự phụ trách</Label>
+        <div className="grid gap-4">
+          <PersonnelMultiSelectCard
+            title="Nhân sự quản lý"
+            description="Người phụ trách theo dõi và điều phối kế hoạch"
+            selectedIds={formData.managementPersonnelIds}
+            personnel={personnel}
+            onChange={(ids) =>
+              setFormData((prev) => ({
+                ...prev,
+                managementPersonnelIds: ids,
+              }))
+            }
+            tone="blue"
+            emptyText="Chưa chọn nhân sự quản lý"
+          />
+          <PersonnelMultiSelectCard
+            title="Nhân sự kiểm định chất lượng"
+            description="Người chịu trách nhiệm kiểm tra và xác nhận chất lượng"
+            selectedIds={formData.qualityInspectorPersonnelIds}
+            personnel={personnel}
+            onChange={(ids) =>
+              setFormData((prev) => ({
+                ...prev,
+                qualityInspectorPersonnelIds: ids,
+              }))
+            }
+            tone="violet"
+            emptyText="Chưa chọn nhân sự kiểm định"
+          />
         </div>
       </div>
 
@@ -581,8 +619,8 @@ export default function SimplePlanForm({
         <CardContent className="p-4 flex items-start gap-2">
           <Info className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
           <p className="text-xs text-amber-800">
-            Chế độ đơn giản không phân bổ nhân công/công việc chi tiết. Chuyển sang chế độ chi tiết bất cứ lúc nào để
-            bổ sung nhân sự phụ trách và công việc cụ thể.
+            Chế độ đơn giản không phân bổ công việc chi tiết theo từng giai đoạn. Chuyển sang chế độ chi tiết bất cứ
+            lúc nào để bổ sung công việc cụ thể.
           </p>
         </CardContent>
       </Card>
