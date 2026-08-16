@@ -1,18 +1,13 @@
 import PageWrapper from "@/components/PageWrapper";
-import {
-  Button,
-  DataTable,
-  DeleteDialog,
-} from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import { Button, DataTable } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { Plus } from "lucide-react";
 import { pesticideColumns } from "../pesticide/data/columns";
 import { useAqPesticidePage } from "./hooks/useAqPesticidePage";
+import { DeletionImpactDialog } from "@/components/DeletionImpactDialog";
 
 export default function AqPesticidePage() {
   const {
     pesticides,
-    deleteOpen,
-    setDeleteOpen,
     handleAdd,
     handleEdit,
     handleDelete,
@@ -27,13 +22,16 @@ export default function AqPesticidePage() {
     setCurrentIndex,
     totalElements,
     totalPages,
-    search,
     setSearch,
-    status,
     setStatus,
     onlyOwner,
     setOnlyOwner,
     loading,
+
+    supplyType,
+    deleteImpactItem,
+    deleteImpactOpen,
+    setDeleteImpactOpen,
   } = useAqPesticidePage();
 
   return (
@@ -102,10 +100,14 @@ export default function AqPesticidePage() {
         loading={loading}
       />
 
-      <DeleteDialog
-        open={deleteOpen}
-        onOpenChange={setDeleteOpen}
-        onConfirm={handleConfirmDelete}
+      <DeletionImpactDialog
+        scope="farm"
+        supplyType={supplyType}
+        open={deleteImpactOpen}
+        itemName={deleteImpactItem?.name}
+        onOpenChange={setDeleteImpactOpen}
+        itemId={deleteImpactItem?.id ?? null}
+        onConfirmDelete={handleConfirmDelete}
       />
     </PageWrapper>
   );

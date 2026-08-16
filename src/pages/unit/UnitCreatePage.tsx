@@ -12,54 +12,70 @@ import {
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { ChevronLeft, Save, Plus, Trash2 } from "lucide-react";
 import { useUnitFormPage } from "./hooks/useUnitFormPage";
+import type { ConversionRuleSupplyType } from "./types/types";
+import type { DomainCode } from "@/features/farm-supply";
+
+const SUPPLY_TYPE_OPTIONS = [
+  { value: "medicine", label: "Thuốc BVTV" },
+  { value: "fertilizer", label: "Phân bón" },
+  { value: "material", label: "Vật tư" },
+];
+
+const DOMAIN_CODE_OPTIONS = [
+  { value: "CROP", label: "Trồng trọt" },
+  { value: "LIVESTOCK", label: "Chăn nuôi" },
+  { value: "AQUACULTURE", label: "Thủy sản" },
+];
 
 const UnitCreatePage = () => {
   const {
     isEdit,
-    materials,
-    sourceMaterialId,
-    setSourceMaterialId,
-    targetMaterialId,
-    setTargetMaterialId,
-    conversionFactor,
-    setConversionFactor,
+    loading,
+    submitting,
+
+    supplyType,
+    setSupplyType,
+    domainCode,
+    setDomainCode,
+
+    fromOptions,
+    toOptions,
+
+    fromSupplyItemId,
+    setFromSupplyItemId,
+    toSupplyItemId,
+    setToSupplyItemId,
+    quantity,
+    setQuantity,
+
     previewList,
     handleAddPreview,
     handleRemovePreview,
+
     handleSubmit,
     goBack,
   } = useUnitFormPage();
 
-  // Map materials to options for Combobox
-  const materialOptions = React.useMemo(() => {
-    return materials.map((m) => ({
-      value: String(m.id),
-      label: `${m.name} (${m.code})`,
-    }));
-  }, [materials]);
-
-  // Filter options to prevent selecting the same material in both fields
-  const sourceMaterialOptions = React.useMemo(() => {
-    return materialOptions.filter((opt) => opt.value !== targetMaterialId);
-  }, [materialOptions, targetMaterialId]);
-
-  const targetMaterialOptions = React.useMemo(() => {
-    return materialOptions.filter((opt) => opt.value !== sourceMaterialId);
-  }, [materialOptions, sourceMaterialId]);
-
-  // Map material ID to name for preview table
-  const getMaterialName = (id: number) => {
-    const mat = materials.find((m) => m.id === id);
-    return mat ? mat.name : `Vật tư #${id}`;
-  };
+  if (loading) {
+    return (
+      <PageWrapper
+        title={isEdit ? "Cập nhật quy tắc quy đổi" : "Thêm mới quy tắc quy đổi"}
+        description="Đang tải..."
+      >
+        <div className="flex items-center justify-center py-20 text-slate-400">
+          Đang tải dữ liệu...
+        </div>
+      </PageWrapper>
+    );
+  }
 
   return (
     <PageWrapper
-      title={isEdit ? "Cập nhật đơn vị quy đổi" : "Thêm mới đơn vị quy đổi"}
+      title={isEdit ? "Cập nhật quy tắc quy đổi" : "Thêm mới quy tắc quy đổi"}
       description={
         isEdit
           ? "Chỉnh sửa quy tắc quy đổi giữa hai vật tư"
-          : "Định nghĩa quy tắc quy đổi giữa hai vật tư (Vật tư quy đổi = Số lượng * Vật tư)"
+          : "Định nghĩa quy tắc quy đổi giữa hai vật tư (1 Vật tư A = Số lượng × Vật tư B)"
       }
     >
       <div className="mb-4">
@@ -76,7 +92,53 @@ const UnitCreatePage = () => {
 
       <div className="max-w-4xl mx-auto space-y-6">
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Inputs Section */}
+          {/* Supply Type & Domain Code Selection */}
+          <Card className="border border-slate-100 shadow-sm bg-white overflow-hidden">
+            <CardHeader className="bg-slate-50/50 border-b border-slate-100 py-4">
+              <CardTitle className="text-base font-semibold text-slate-800">
+                Phân loại
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label className="text-xs font-semibold text-slate-500">
+                    Loại vật tư <span className="text-red-500">*</span>
+                  </Label>
+                  <Combobox
+                    options={SUPPLY_TYPE_OPTIONS}
+                    value={supplyType}
+                    onChange={(val) =>
+                      setSupplyType(val as ConversionRuleSupplyType)
+                    }
+                    placeholder="Chọn loại vật tư..."
+                    disabled={isEdit}
+                  />
+                  <p className="text-xs text-slate-400">
+                    Hai vật tư trong 1 quy tắc phải cùng loại. Thiết bị
+                    (equipment) không hỗ trợ quy đổi.
+                  </p>
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-xs font-semibold text-slate-500">
+                    Lĩnh vực <span className="text-red-500">*</span>
+                  </Label>
+                  <Combobox
+                    options={DOMAIN_CODE_OPTIONS}
+                    value={domainCode}
+                    onChange={(val) => setDomainCode(val as DomainCode)}
+                    placeholder="Chọn lĩnh vực..."
+                    disabled={isEdit}
+                  />
+                  <p className="text-xs text-slate-400">
+                    Hai vật tư trong 1 quy tắc phải cùng lĩnh vực.
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Conversion Rule Inputs */}
           <Card className="border border-slate-100 shadow-sm bg-white overflow-hidden">
             <CardHeader className="bg-slate-50/50 border-b border-slate-100 py-4">
               <CardTitle className="text-base font-semibold text-slate-800">
@@ -85,15 +147,15 @@ const UnitCreatePage = () => {
             </CardHeader>
             <CardContent className="p-6">
               <div className="flex flex-col md:flex-row md:items-end gap-4">
-                {/* Source Material */}
+                {/* From Supply Item */}
                 <div className="flex-1 min-w-0 space-y-2">
                   <Label className="text-xs font-semibold text-slate-500">
                     Vật tư quy đổi <span className="text-red-500">*</span>
                   </Label>
                   <Combobox
-                    options={sourceMaterialOptions}
-                    value={sourceMaterialId}
-                    onChange={setSourceMaterialId}
+                    options={fromOptions}
+                    value={fromSupplyItemId}
+                    onChange={setFromSupplyItemId}
                     placeholder="Chọn vật tư nguồn..."
                   />
                 </div>
@@ -105,32 +167,32 @@ const UnitCreatePage = () => {
                   </span>
                 </div>
 
-                {/* Conversion Factor */}
-                <div className="w-full md:max-w-[120px] md:w-[120px] shrink-0 space-y-2">
+                {/* Quantity */}
+                <div className="w-full md:max-w-[140px] md:w-[140px] shrink-0 space-y-2">
                   <Label className="text-xs font-semibold text-slate-500">
                     Số lượng <span className="text-red-500">*</span>
                   </Label>
                   <Input
                     type="number"
                     min="0"
-                    step="0.000001"
-                    value={conversionFactor}
-                    onChange={(e) => setConversionFactor(e.target.value)}
+                    step="0.00000001"
+                    value={quantity}
+                    onChange={(e) => setQuantity(e.target.value)}
                     required
-                    placeholder="Hệ số..."
+                    placeholder="Số lượng..."
                     className="w-full"
                   />
                 </div>
 
-                {/* Target Material */}
+                {/* To Supply Item */}
                 <div className="flex-1 min-w-0 space-y-2">
                   <Label className="text-xs font-semibold text-slate-500">
                     Vật tư <span className="text-red-500">*</span>
                   </Label>
                   <Combobox
-                    options={targetMaterialOptions}
-                    value={targetMaterialId}
-                    onChange={setTargetMaterialId}
+                    options={toOptions}
+                    value={toSupplyItemId}
+                    onChange={setToSupplyItemId}
                     placeholder="Chọn vật tư đích..."
                   />
                 </div>
@@ -189,16 +251,22 @@ const UnitCreatePage = () => {
                               {index + 1}
                             </td>
                             <td className="py-3.5 px-6 font-medium text-slate-800">
-                              {getMaterialName(item.sourceMaterialId)}
+                              {item.fromSupplyItemName}
+                              <span className="text-xs text-slate-400 ml-1">
+                                ({item.fromSupplyItemCode})
+                              </span>
                             </td>
                             <td className="py-3.5 px-6 text-center font-bold text-slate-400">
                               =
                             </td>
                             <td className="py-3.5 px-6 font-semibold text-slate-800">
-                              {item.conversionFactor.toLocaleString("vi-VN")}
+                              {item.quantity.toLocaleString("vi-VN")}
                             </td>
                             <td className="py-3.5 px-6 text-slate-600">
-                              {getMaterialName(item.targetMaterialId)}
+                              {item.toSupplyItemName}
+                              <span className="text-xs text-slate-400 ml-1">
+                                ({item.toSupplyItemCode})
+                              </span>
                             </td>
                             <td className="py-3.5 px-6 text-center">
                               <Button
@@ -226,9 +294,9 @@ const UnitCreatePage = () => {
             <Button type="button" variant="outline" onClick={goBack}>
               Hủy bỏ
             </Button>
-            <Button type="submit" className="gap-2">
+            <Button type="submit" className="gap-2" disabled={submitting}>
               <Save className="w-4 h-4" />
-              {isEdit ? "Lưu thay đổi" : "Lưu lại"}
+              {submitting ? "Đang lưu..." : isEdit ? "Lưu thay đổi" : "Lưu lại"}
             </Button>
           </div>
         </form>

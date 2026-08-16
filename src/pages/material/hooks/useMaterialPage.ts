@@ -2,6 +2,7 @@ import { useFarmSupplyListHook } from "@/features/farm-supply/hooks/useFarmSuppl
 
 export function useMaterialPage() {
   const listHook = useFarmSupplyListHook("material", "CROP");
+
   return {
     materials: listHook.items,
     deleteOpen: listHook.deleteOpen,
@@ -27,5 +28,11 @@ export function useMaterialPage() {
     onlyOwner: listHook.onlyOwner,
     setOnlyOwner: listHook.setOnlyOwner,
     loading: listHook.loading,
+
+    // Deletion Impact
+    deleteImpactOpen: listHook.deleteImpactOpen,
+    setDeleteImpactOpen: listHook.setDeleteImpactOpen,
+    deleteImpactItem: listHook.deleteImpactItem,
+    supplyType: listHook.supplyType,
   };
 }

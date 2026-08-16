@@ -1588,9 +1588,9 @@ function Router() {
       <Route path="/contract/create" component={ContractCreatePage} />
       <Route path="/contract/:id/edit" component={ContractEditPage} />
       <Route path="/contract/:id" component={ContractDetailPage} />
-      <Route path="/unit" component={UnitPage} />
-      <Route path="/unit/create" component={UnitCreatePage} />
-      <Route path="/unit/:id/edit" component={UnitCreatePage} />
+      <Route path="/supply-conversion-rules" component={UnitPage} />
+      <Route path="/supply-conversion-rules/create" component={UnitCreatePage} />
+      <Route path="/supply-conversion-rules/:id/edit" component={UnitCreatePage} />
       <Route path="/plan-type" component={PlanTypePage} />
       <Route path="/plan" component={PlanPage} />
       <Route path="/plan/create" component={PlanCreatePage} />

@@ -1,53 +1,42 @@
 import type { Column } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import type { Unit } from "../types/types";
-import type { Material } from "../../material/types/types";
+import type { SupplyConversionRuleResponse } from "../types/types";
+import { Badge } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 
-interface GetUnitColumnsOptions {
-  units: Unit[];
-  materialMap: Record<number, Material>;
-  onEditNavigate: (id: number) => void;
-}
+const SUPPLY_TYPE_LABELS: Record<string, string> = {
+  medicine: "Thuốc BVTV",
+  fertilizer: "Phân bón",
+  material: "Vật tư",
+  MEDICINE: "Thuốc BVTV",
+  FERTILIZER: "Phân bón",
+  MATERIAL: "Vật tư",
+};
 
-export function getUnitColumns({
-  units,
-  materialMap,
-  onEditNavigate,
-}: GetUnitColumnsOptions): Column<Unit>[] {
+export function getConversionRuleColumns(
+  onEditNavigate: (id: number) => void,
+): Column<SupplyConversionRuleResponse>[] {
   return [
     {
-      key: "stt",
-      label: "STT",
-      render: (_, row) => {
-        const index = units.findIndex((u) => u.id === row.id);
-        return (
-          <span className="text-slate-500 font-medium">
-            {index !== -1 ? index + 1 : "-"}
-          </span>
-        );
-      },
-    },
-    {
-      key: "sourceMaterialId",
+      key: "fromSupplyItem" as any,
       label: "Vật tư quy đổi",
-      render: (value, row) => {
-        const material = materialMap[Number(value) || 0];
-        return (
-          <span
-            className="font-medium text-primary cursor-pointer hover:underline"
-            onClick={() => onEditNavigate(row.id)}
-          >
-            {material?.name || `Vật tư #${value}`}
+      render: (_value, row) => (
+        <span
+          className="font-medium text-primary cursor-pointer hover:underline"
+          onClick={() => onEditNavigate(row.id)}
+        >
+          {row.fromSupplyItem.name}
+          <span className="text-xs text-slate-400 ml-1">
+            ({row.fromSupplyItem.code})
           </span>
-        );
-      },
+        </span>
+      ),
     },
     {
-      key: "equals",
+      key: "equals" as any,
       label: "=",
       render: () => <span className="text-slate-400 font-bold">=</span>,
     },
     {
-      key: "conversionFactor",
+      key: "quantity",
       label: "Số lượng",
       render: (value) => (
         <span className="font-semibold text-slate-800">
@@ -56,16 +45,37 @@ export function getUnitColumns({
       ),
     },
     {
-      key: "targetMaterialId",
+      key: "toSupplyItem" as any,
       label: "Vật tư",
-      render: (value) => {
-        const material = materialMap[Number(value) || 0];
-        return (
-          <span className="text-slate-700">
-            {material?.name || `Vật tư #${value}`}
+      render: (_value, row) => (
+        <span className="text-slate-700">
+          {row.toSupplyItem.name}
+          <span className="text-xs text-slate-400 ml-1">
+            ({row.toSupplyItem.code})
           </span>
-        );
-      },
+        </span>
+      ),
+    },
+    {
+      key: "supplyType",
+      label: "Loại",
+      render: (value) => (
+        <span className="text-xs text-slate-500">
+          {SUPPLY_TYPE_LABELS[String(value)] ?? String(value)}
+        </span>
+      ),
+    },
+    {
+      key: "source",
+      label: "Nguồn",
+      render: (value) => (
+        <Badge
+          variant={value === "MASTER" ? "secondary" : "default"}
+          className="text-xs"
+        >
+          {value === "MASTER" ? "Hệ thống" : "Nội bộ"}
+        </Badge>
+      ),
     },
   ];
 }

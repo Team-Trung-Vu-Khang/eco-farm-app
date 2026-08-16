@@ -9,6 +9,7 @@ import type {
   MasterDataStatus,
   SupplyItemResponse,
 } from "../types";
+import axios from "axios";
 
 export function getSupplyBasePath(
   type: SupplyType,
@@ -49,6 +50,11 @@ export function useFarmSupplyListHook(
 
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleteItem, setDeleteItem] = useState<SupplyItemResponse | null>(null);
+
+  // ─── Deletion Impact state ──────────────────────────────────────────────
+  const [deleteImpactOpen, setDeleteImpactOpen] = useState(false);
+  const [deleteImpactItem, setDeleteImpactItem] =
+    useState<SupplyItemResponse | null>(null);
 
   const basePath = getSupplyBasePath(type, domainCode);
 
@@ -104,6 +110,10 @@ export function useFarmSupplyListHook(
     setLocation(`${basePath}/${item.id}/edit`);
   };
 
+  /**
+   * Opens the DeletionImpactDialog instead of the plain DeleteDialog.
+   * The dialog will check for blockers before allowing deletion.
+   */
   const handleDelete = (item: SupplyItemResponse) => {
     if (item.source !== "OWNER") {
       toast({
@@ -113,32 +123,47 @@ export function useFarmSupplyListHook(
       });
       return;
     }
-    setDeleteItem(item);
-    setDeleteOpen(true);
+    setDeleteImpactItem(item);
+    setDeleteImpactOpen(true);
   };
 
   const handleViewDetail = (item: SupplyItemResponse) => {
     setLocation(`${basePath}/${item.id}?source=${item.source}`);
   };
 
+  /**
+   * Called from DeletionImpactDialog when there are no blockers and user confirms.
+   */
   const handleConfirmDelete = async () => {
-    if (deleteItem) {
+    const itemToDelete = deleteImpactItem ?? deleteItem;
+    if (itemToDelete) {
       try {
-        await deleteMutation.mutateAsync(deleteItem.id);
+        await deleteMutation.mutateAsync(itemToDelete.id);
         toast({
           title: "Thành công",
           description: "Đã xóa thành công vật tư.",
         });
       } catch (e: any) {
-        toast({
-          title: "Lỗi",
-          description: e.message || "Xóa không thành công",
-          variant: "destructive",
-        });
+        if (axios.isAxiosError(e) && e.response?.status === 409) {
+          toast({
+            title: "Không thể xóa",
+            description:
+              "Vật tư đang được sử dụng trong quy tắc quy đổi. Vui lòng xóa các quy tắc quy đổi liên quan trước.",
+            variant: "destructive",
+          });
+        } else {
+          toast({
+            title: "Lỗi",
+            description: e.message || "Xóa không thành công",
+            variant: "destructive",
+          });
+        }
       }
     }
     setDeleteOpen(false);
     setDeleteItem(null);
+    setDeleteImpactOpen(false);
+    setDeleteImpactItem(null);
   };
 
   return {
@@ -166,6 +191,13 @@ export function useFarmSupplyListHook(
     handleDelete,
     handleViewDetail,
     handleConfirmDelete,
+
+    // Deletion Impact dialog state — consuming page must render DeletionImpactDialog
+    deleteImpactOpen,
+    setDeleteImpactOpen,
+    deleteImpactItem,
+    supplyType: type,
+
     navigateToDetail: (id: number) => {
       // Find row in cache to determine source
       const row = query.data?.content?.find((x) => x.id === id);

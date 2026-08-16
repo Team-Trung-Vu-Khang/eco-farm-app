@@ -2,6 +2,7 @@ import { useFarmSupplyListHook } from "@/features/farm-supply/hooks/useFarmSuppl
 
 export function useAhPesticidePage() {
   const listHook = useFarmSupplyListHook("medicine", "LIVESTOCK");
+
   return {
     pesticides: listHook.items,
     deleteOpen: listHook.deleteOpen,
@@ -27,5 +28,11 @@ export function useAhPesticidePage() {
     onlyOwner: listHook.onlyOwner,
     setOnlyOwner: listHook.setOnlyOwner,
     loading: listHook.loading,
+
+    // Deletion Impact
+    deleteImpactOpen: listHook.deleteImpactOpen,
+    setDeleteImpactOpen: listHook.setDeleteImpactOpen,
+    deleteImpactItem: listHook.deleteImpactItem,
+    supplyType: listHook.supplyType,
   };
 }

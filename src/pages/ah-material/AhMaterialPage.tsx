@@ -1,18 +1,13 @@
 import PageWrapper from "@/components/PageWrapper";
-import {
-  Button,
-  DataTable,
-  DeleteDialog,
-} from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import { Button, DataTable } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { Plus } from "lucide-react";
 import { materialColumns } from "../material/data/columns";
 import { useAhMaterialPage } from "./hooks/useAhMaterialPage";
+import { DeletionImpactDialog } from "@/components/DeletionImpactDialog";
 
 export default function AhMaterialPage() {
   const {
     materials,
-    deleteOpen,
-    setDeleteOpen,
     handleAdd,
     handleEdit,
     handleView,
@@ -27,13 +22,16 @@ export default function AhMaterialPage() {
     setCurrentIndex,
     totalElements,
     totalPages,
-    search,
     setSearch,
-    status,
     setStatus,
     onlyOwner,
     setOnlyOwner,
     loading,
+
+    deleteImpactItem,
+    deleteImpactOpen,
+    setDeleteImpactOpen,
+    supplyType,
   } = useAhMaterialPage();
 
   return (
@@ -102,10 +100,14 @@ export default function AhMaterialPage() {
         loading={loading}
       />
 
-      <DeleteDialog
-        open={deleteOpen}
-        onOpenChange={setDeleteOpen}
-        onConfirm={handleConfirmDelete}
+      <DeletionImpactDialog
+        scope="farm"
+        supplyType={supplyType}
+        open={deleteImpactOpen}
+        itemName={deleteImpactItem?.name}
+        onOpenChange={setDeleteImpactOpen}
+        itemId={deleteImpactItem?.id ?? null}
+        onConfirmDelete={handleConfirmDelete}
       />
     </PageWrapper>
   );

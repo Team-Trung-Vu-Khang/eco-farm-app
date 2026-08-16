@@ -1,18 +1,13 @@
 import PageWrapper from "@/components/PageWrapper";
-import {
-  Button,
-  DataTable,
-  DeleteDialog,
-} from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import { Button, DataTable } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { Plus } from "lucide-react";
 import { fertilizerColumns } from "./data/columns";
 import { useFertilizerPage } from "./hooks/useFertilizerPage";
+import { DeletionImpactDialog } from "@/components/DeletionImpactDialog";
 
 export default function FertilizerPage() {
   const {
     fertilizers,
-    deleteOpen,
-    setDeleteOpen,
     handleAdd,
     handleEdit,
     handleView,
@@ -27,13 +22,17 @@ export default function FertilizerPage() {
     setCurrentIndex,
     totalElements,
     totalPages,
-    search,
     setSearch,
-    status,
     setStatus,
     onlyOwner,
     setOnlyOwner,
     loading,
+
+    // Deletion Impact
+    deleteImpactOpen,
+    setDeleteImpactOpen,
+    deleteImpactItem,
+    supplyType,
   } = useFertilizerPage();
 
   return (
@@ -102,10 +101,14 @@ export default function FertilizerPage() {
         loading={loading}
       />
 
-      <DeleteDialog
-        open={deleteOpen}
-        onOpenChange={setDeleteOpen}
-        onConfirm={handleConfirmDelete}
+      <DeletionImpactDialog
+        scope="farm"
+        supplyType={supplyType}
+        open={deleteImpactOpen}
+        itemName={deleteImpactItem?.name}
+        onOpenChange={setDeleteImpactOpen}
+        itemId={deleteImpactItem?.id ?? null}
+        onConfirmDelete={handleConfirmDelete}
       />
     </PageWrapper>
   );

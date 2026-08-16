@@ -1,40 +1,11 @@
-export type UnitType =
-  | "mass"
-  | "volume"
-  | "length"
-  | "quantity"
-  | "time"
-  | "area"
-  | "other";
-
-export type UnitStatus = "active" | "inactive";
-
-export interface Unit {
-  id: number;
-  code?: string;
-  name?: string;
-  description?: string;
-  status?: UnitStatus;
-  createdAt: string;
-  type?: UnitType;
-  isBaseUnit?: boolean;
-  baseUnitId?: number;
-  conversionFactor: number;
-  sourceMaterialId?: number;
-  targetMaterialId?: number;
-}
-
-export interface UnitStandard {
-  value: string;
-  label: string;
-  factor: number;
-}
-
-export interface UnitFormData {
-  code: string;
-  name: string;
-  description: string;
-  status: UnitStatus;
-  type: UnitType;
-  conversionFactor: string | number;
-}
+/**
+ * Re-export the canonical type from the feature layer.
+ * Pages should import from here for convenience.
+ */
+export type {
+  SupplyConversionRuleResponse,
+  SupplyConversionRuleRequest,
+  SupplyConversionRuleQueryParams,
+  SupplyItemRef,
+  ConversionRuleSupplyType,
+} from "@/features/farm-supply/types/supply-conversion-rule.type";
