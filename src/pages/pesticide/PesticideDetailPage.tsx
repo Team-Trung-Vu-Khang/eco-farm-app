@@ -145,10 +145,10 @@ const PesticideDetailPage = () => {
           <Card className="overflow-hidden border-none shadow-md bg-white">
             <div className="bg-linear-to-r from-green-50 to-emerald-50 p-6 flex flex-col md:flex-row gap-6 items-start">
               <div className="w-24 h-24 bg-white rounded-xl shadow-sm border p-2 flex items-center justify-center shrink-0">
-                {item?.metadataJson?.imageUrl ? (
+                {item?.metadataJson?.imageUrl || item?.imageUrl ? (
                   <img
                     className="w-full h-full"
-                    src={item.metadataJson.imageUrl}
+                    src={item.metadataJson.imageUrl || item.imageUrl}
                   />
                 ) : (
                   <ImageIcon className="w-12 h-12 text-slate-300" />
@@ -399,13 +399,16 @@ const PesticideDetailPage = () => {
             <CardContent className="pt-4 space-y-4">
               <InfoRow
                 label="Nhà sản xuất / Xuất xứ"
-                value={item.manufacturerOrigin ?? item.origin}
+                value={item.manufacturerOrganization?.name ?? item.origin}
               />
               <InfoRow
                 label="Nhà nhập khẩu / Đăng ký"
-                value={item.importerRegistrant}
+                value={item.importerOrganization?.name}
               />
-              <InfoRow label="Nhà phân phối" value={item.distributor} />
+              <InfoRow
+                label="Nhà phân phối"
+                value={item.distributorOrganization?.name}
+              />
               {item.referencePrice && (
                 <div>
                   <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1 flex items-center gap-1">

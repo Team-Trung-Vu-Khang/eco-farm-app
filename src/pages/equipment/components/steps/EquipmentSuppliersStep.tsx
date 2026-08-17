@@ -47,9 +47,6 @@ export const EquipmentSuppliersStep = ({
   const [pkgInput, setPkgInput] = useState("");
   const [activeModal, setActiveModal] = useState<"manufacturerOrigin" | "importerRegistrant" | "distributor" | null>(null);
 
-  const manufacturerOriginArr = formData.manufacturerOrigin || [];
-  const importerRegistrantArr = formData.importerRegistrant || [];
-  const distributorArr = formData.distributor || [];
   const packagingSpecsArr = formData.packagingSpecs || [];
   const supplierDetailsArr = formData.supplierDetails || [];
 
@@ -86,16 +83,13 @@ export const EquipmentSuppliersStep = ({
             onClick={() => setActiveModal("manufacturerOrigin")}
           >
             <div className="flex-1 min-w-0 flex flex-wrap gap-1.5 items-center">
-              {manufacturerOriginArr.length > 0 ? (
-                manufacturerOriginArr.map((tag) => (
-                  <Badge
-                    key={tag}
-                    variant="secondary"
-                    className="bg-primary/5 text-primary border border-primary/20 text-xs font-semibold py-0.5 px-2.5"
-                  >
-                    {tag}
-                  </Badge>
-                ))
+              {formData.manufacturerOrigin ? (
+                <Badge
+                  variant="secondary"
+                  className="bg-primary/5 text-primary border border-primary/20 text-xs font-semibold py-0.5 px-2.5"
+                >
+                  {formData.manufacturerOrigin.name}
+                </Badge>
               ) : (
                 <span className="text-sm text-slate-400">Bấm để chọn nhà sản xuất...</span>
               )}
@@ -123,16 +117,13 @@ export const EquipmentSuppliersStep = ({
             onClick={() => setActiveModal("importerRegistrant")}
           >
             <div className="flex-1 min-w-0 flex flex-wrap gap-1.5 items-center">
-              {importerRegistrantArr.length > 0 ? (
-                importerRegistrantArr.map((tag) => (
-                  <Badge
-                    key={tag}
-                    variant="secondary"
-                    className="bg-primary/5 text-primary border border-primary/20 text-xs font-semibold py-0.5 px-2.5"
-                  >
-                    {tag}
-                  </Badge>
-                ))
+              {formData.importerRegistrant ? (
+                <Badge
+                  variant="secondary"
+                  className="bg-primary/5 text-primary border border-primary/20 text-xs font-semibold py-0.5 px-2.5"
+                >
+                  {formData.importerRegistrant.name}
+                </Badge>
               ) : (
                 <span className="text-sm text-slate-400">Bấm để chọn nhà nhập khẩu...</span>
               )}
@@ -159,16 +150,13 @@ export const EquipmentSuppliersStep = ({
             onClick={() => setActiveModal("distributor")}
           >
             <div className="flex-1 min-w-0 flex flex-wrap gap-1.5 items-center">
-              {distributorArr.length > 0 ? (
-                distributorArr.map((tag) => (
-                  <Badge
-                    key={tag}
-                    variant="secondary"
-                    className="bg-primary/5 text-primary border border-primary/20 text-xs font-semibold py-0.5 px-2.5"
-                  >
-                    {tag}
-                  </Badge>
-                ))
+              {formData.distributor ? (
+                <Badge
+                  variant="secondary"
+                  className="bg-primary/5 text-primary border border-primary/20 text-xs font-semibold py-0.5 px-2.5"
+                >
+                  {formData.distributor.name}
+                </Badge>
               ) : (
                 <span className="text-sm text-slate-400">Bấm để chọn nhà phân phối...</span>
               )}
@@ -286,26 +274,29 @@ export const EquipmentSuppliersStep = ({
         onOpenChange={(open) => setActiveModal(open ? "manufacturerOrigin" : null)}
         title="Chọn nhà sản xuất / Xuất xứ"
         isMulti={false}
-        selectedNames={formData.manufacturerOrigin || []}
-        onConfirm={(names) => updateField("manufacturerOrigin", names.slice(0, 1))}
+        returnById
+        selectedItems={formData.manufacturerOrigin ? [formData.manufacturerOrigin] : []}
+        onConfirmItems={(items) => updateField("manufacturerOrigin", items[0] || null)}
       />
 
       <PartnerSelectorDialog
         open={activeModal === "importerRegistrant"}
         onOpenChange={(open) => setActiveModal(open ? "importerRegistrant" : null)}
         title="Chọn nhà nhập khẩu / Đăng ký"
-        isMulti={true}
-        selectedNames={formData.importerRegistrant || []}
-        onConfirm={(names) => updateField("importerRegistrant", names)}
+        isMulti={false}
+        returnById
+        selectedItems={formData.importerRegistrant ? [formData.importerRegistrant] : []}
+        onConfirmItems={(items) => updateField("importerRegistrant", items[0] || null)}
       />
 
       <PartnerSelectorDialog
         open={activeModal === "distributor"}
         onOpenChange={(open) => setActiveModal(open ? "distributor" : null)}
         title="Chọn nhà phân phối"
-        isMulti={true}
-        selectedNames={formData.distributor || []}
-        onConfirm={(names) => updateField("distributor", names)}
+        isMulti={false}
+        returnById
+        selectedItems={formData.distributor ? [formData.distributor] : []}
+        onConfirmItems={(items) => updateField("distributor", items[0] || null)}
       />
     </div>
   );

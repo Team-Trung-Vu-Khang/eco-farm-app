@@ -181,16 +181,16 @@ export function useAqPesticideCreatePage() {
         displayOrder: 10,
         status: "active",
         domainCode: "AQUACULTURE",
-        manufacturer:
-          formData.manufacturerOrigin || formData.origin || undefined,
-        importer: formData.importerRegistrant || undefined,
-        distributor: formData.distributor || undefined,
+        manufacturerOrganizationId: formData.manufacturerOrigin?.id || null,
+        importerOrganizationId: formData.importerRegistrant?.id || null,
+        distributorOrganizationId: formData.distributor?.id || null,
         referencePrice: formData.referencePrice || undefined,
         registrationNumber: formData.registrationNumber || undefined,
         legalStatus: formData.legalStatus || "allowed",
         legalDescription: formData.legalDescription || undefined,
         description: formData.note || undefined,
         hashtags: formData.hashtags,
+        imageUrl: uploadedImageUrl || undefined,
         packagingVariants: parsePackagingSpecs(
           isDetailMode
             ? formData.packagingSpecs
@@ -212,8 +212,6 @@ export function useAqPesticideCreatePage() {
         // Metadata for unsupported fields
         metadataJson: {
           toxicityLevel: formData.toxicityLevel || undefined,
-          origin: formData.origin || formData.manufacturerOrigin || undefined,
-          imageUrl: uploadedImageUrl || undefined,
           formType: isDetailMode ? "advanced" : "basic",
           dosageForm: formData.form || undefined,
           usageMethod: formData.actionType || undefined,
@@ -258,6 +256,14 @@ export function useAqPesticideCreatePage() {
           title: "Trùng lặp SKU",
           description:
             "Mã SKU này đã tồn tại trong hệ thống. Vui lòng nhập mã SKU khác.",
+          variant: "destructive",
+        });
+      } else if (err.response?.status === 400) {
+        toast({
+          title: "Dữ liệu không hợp lệ",
+          description:
+            err.response?.data?.message ||
+            "Thông tin tổ chức không hợp lệ. Vui lòng kiểm tra lại.",
           variant: "destructive",
         });
       } else {
@@ -415,9 +421,9 @@ function mapResponseToPesticide(item: any, certs: any[]): any {
         )
         .filter(Boolean) || [],
 
-    manufacturerOrigin: item.manufacturer || "",
-    importerRegistrant: item.importer || "",
-    distributor: item.distributor || "",
+    manufacturerOrigin: item.manufacturerOrganization || null,
+    importerRegistrant: item.importerOrganization || null,
+    distributor: item.distributorOrganization || null,
     referencePrice: item.referencePrice || "",
     packagingSpecs: formatPackagingSpecs(item.packagingVariants) || [],
     hashtags: (item.hashtags || []).map((t: any) =>

@@ -61,9 +61,9 @@ export function useFertilizerCreateForm() {
     legalDescription: "",
     standardsCompliance: [],
 
-    manufacturerOrigin: "",
-    importerRegistrant: "",
-    distributor: "",
+    manufacturerOrigin: null,
+    importerRegistrant: null,
+    distributor: null,
     referencePrice: "",
     packagingSpecs: [],
 
@@ -217,15 +217,16 @@ export function useFertilizerCreateForm() {
         displayOrder: 10,
         status: "active",
         domainCode: "CROP",
-        manufacturer: formData.manufacturerOrigin || undefined,
-        importer: formData.importerRegistrant || undefined,
-        distributor: formData.distributor || undefined,
+        manufacturerOrganizationId: formData.manufacturerOrigin?.id || null,
+        importerOrganizationId: formData.importerRegistrant?.id || null,
+        distributorOrganizationId: formData.distributor?.id || null,
         referencePrice: formData.referencePrice || undefined,
         registrationNumber: formData.registrationNumber || undefined,
         legalStatus: formData.legalStatus || "allowed",
         legalDescription: formData.legalDescription || undefined,
         description: formData.description || undefined,
         hashtags: formData.hashtags,
+        imageUrl: uploadedImageUrl || undefined,
         packagingVariants: parsePackagingSpecs(
           isDetailMode
             ? formData.packagingSpecs
@@ -246,11 +247,7 @@ export function useFertilizerCreateForm() {
 
         // Metadata for unsupported fields
         metadataJson: {
-          imageUrl: uploadedImageUrl || undefined,
-          origin:
-            formData.fertilizerOriginGroup ||
-            formData.manufacturerOrigin ||
-            undefined,
+          origin: formData.fertilizerOriginGroup || undefined,
           formType: isDetailMode ? "advanced" : "basic",
           shelfLife: formData.shelfLife || undefined,
           applicationStage: formData.applicationStage || undefined,
@@ -299,6 +296,14 @@ export function useFertilizerCreateForm() {
           title: "Trùng lặp SKU",
           description:
             "Mã SKU này đã tồn tại trong hệ thống. Vui lòng nhập mã SKU khác.",
+          variant: "destructive",
+        });
+      } else if (err.response?.status === 400) {
+        toast({
+          title: "Dữ liệu không hợp lệ",
+          description:
+            err.response?.data?.message ||
+            "Thông tin tổ chức không hợp lệ. Vui lòng kiểm tra lại.",
           variant: "destructive",
         });
       } else {
@@ -406,9 +411,9 @@ function mapResponseToFertilizer(item: any, certs: any[]): any {
         )
         .filter(Boolean) || [],
 
-    manufacturerOrigin: item.manufacturer || "",
-    importerRegistrant: item.importer || "",
-    distributor: item.distributor || "",
+    manufacturerOrigin: item.manufacturerOrganization || null,
+    importerRegistrant: item.importerOrganization || null,
+    distributor: item.distributorOrganization || null,
     referencePrice: item.referencePrice || "",
     packagingSpecs: formatPackagingSpecs(item.packagingVariants) || [],
     hashtags: (item.hashtags || []).map((t: string) =>

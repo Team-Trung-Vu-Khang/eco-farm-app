@@ -33,21 +33,6 @@ function DetailRow({ label, value }: { label: string; value?: string | number | 
 
 export const InfoTab = ({ item }: { item: Equipment }) => {
   const machineTypeArr = Array.isArray(item.machineType) ? item.machineType : [];
-  const manufacturerOriginArr = Array.isArray(item.manufacturerOrigin)
-    ? item.manufacturerOrigin
-    : typeof item.manufacturerOrigin === "string" && item.manufacturerOrigin
-      ? [item.manufacturerOrigin]
-      : [];
-  const importerRegistrantArr = Array.isArray(item.importerRegistrant)
-    ? item.importerRegistrant
-    : typeof item.importerRegistrant === "string" && item.importerRegistrant
-      ? [item.importerRegistrant]
-      : [];
-  const distributorArr = Array.isArray(item.distributor)
-    ? item.distributor
-    : typeof item.distributor === "string" && item.distributor
-      ? [item.distributor]
-      : [];
   const packagingSpecsArr = Array.isArray(item.packagingSpecs) ? item.packagingSpecs : [];
 
   return (
@@ -138,35 +123,29 @@ export const InfoTab = ({ item }: { item: Equipment }) => {
           </CardTitle>
         </CardHeader>
         <CardContent className="pt-6 space-y-4 text-sm">
-          {manufacturerOriginArr.length > 0 && (
+          {item.manufacturerOrganization && (
             <div>
               <span className="text-muted-foreground block text-xs mb-1.5">Nhà sản xuất / Xuất xứ:</span>
               <div className="flex flex-wrap gap-1.5">
-                {manufacturerOriginArr.map((tag) => (
-                  <Badge key={tag} variant="outline" className="bg-slate-50">{tag}</Badge>
-                ))}
+                <Badge variant="outline" className="bg-slate-50">{item.manufacturerOrganization.name}</Badge>
               </div>
             </div>
           )}
 
-          {importerRegistrantArr.length > 0 && (
+          {item.importerOrganization && (
             <div className="border-t pt-4">
               <span className="text-muted-foreground block text-xs mb-1.5">Nhà nhập khẩu / Đăng ký:</span>
               <div className="flex flex-wrap gap-1.5">
-                {importerRegistrantArr.map((tag) => (
-                  <Badge key={tag} variant="outline" className="bg-slate-50">{tag}</Badge>
-                ))}
+                <Badge variant="outline" className="bg-slate-50">{item.importerOrganization.name}</Badge>
               </div>
             </div>
           )}
 
-          {distributorArr.length > 0 && (
+          {item.distributorOrganization && (
             <div className="border-t pt-4">
               <span className="text-muted-foreground block text-xs mb-1.5">Nhà phân phối chính:</span>
               <div className="flex flex-wrap gap-1.5">
-                {distributorArr.map((tag) => (
-                  <Badge key={tag} variant="outline" className="bg-slate-50">{tag}</Badge>
-                ))}
+                <Badge variant="outline" className="bg-slate-50">{item.distributorOrganization.name}</Badge>
               </div>
             </div>
           )}

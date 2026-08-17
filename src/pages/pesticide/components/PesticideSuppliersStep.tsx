@@ -130,7 +130,7 @@ export default function PesticideSuppliersStep({
                   variant="secondary"
                   className="bg-primary/5 text-primary border border-primary/20 text-xs font-semibold py-0.5 px-2.5"
                 >
-                  {formData.manufacturerOrigin}
+                  {formData.manufacturerOrigin.name}
                 </Badge>
               ) : (
                 <span className="text-sm text-slate-400">
@@ -161,18 +161,12 @@ export default function PesticideSuppliersStep({
           >
             <div className="flex-1 min-w-0 flex flex-wrap gap-1.5 items-center">
               {formData.importerRegistrant ? (
-                formData.importerRegistrant
-                  .split(", ")
-                  .filter(Boolean)
-                  .map((name) => (
-                    <Badge
-                      key={name}
-                      variant="secondary"
-                      className="bg-primary/5 text-primary border border-primary/20 text-xs font-semibold py-0.5 px-2.5"
-                    >
-                      {name}
-                    </Badge>
-                  ))
+                <Badge
+                  variant="secondary"
+                  className="bg-primary/5 text-primary border border-primary/20 text-xs font-semibold py-0.5 px-2.5"
+                >
+                  {formData.importerRegistrant.name}
+                </Badge>
               ) : (
                 <span className="text-sm text-slate-400">
                   Bấm để chọn nhà nhập khẩu...
@@ -201,18 +195,12 @@ export default function PesticideSuppliersStep({
           >
             <div className="flex-1 min-w-0 flex flex-wrap gap-1.5 items-center">
               {formData.distributor ? (
-                formData.distributor
-                  .split(", ")
-                  .filter(Boolean)
-                  .map((name) => (
-                    <Badge
-                      key={name}
-                      variant="secondary"
-                      className="bg-primary/5 text-primary border border-primary/20 text-xs font-semibold py-0.5 px-2.5"
-                    >
-                      {name}
-                    </Badge>
-                  ))
+                <Badge
+                  variant="secondary"
+                  className="bg-primary/5 text-primary border border-primary/20 text-xs font-semibold py-0.5 px-2.5"
+                >
+                  {formData.distributor.name}
+                </Badge>
               ) : (
                 <span className="text-sm text-slate-400">
                   Bấm để chọn nhà phân phối...
@@ -392,11 +380,12 @@ export default function PesticideSuppliersStep({
         }
         title="Chọn nhà sản xuất / Xuất xứ"
         isMulti={false}
-        selectedNames={
+        returnById
+        selectedItems={
           formData.manufacturerOrigin ? [formData.manufacturerOrigin] : []
         }
-        onConfirm={(names) =>
-          onFormFieldChange("manufacturerOrigin", names[0] || "")
+        onConfirmItems={(items) =>
+          onFormFieldChange("manufacturerOrigin", items[0] || null)
         }
       />
 
@@ -406,14 +395,13 @@ export default function PesticideSuppliersStep({
           setActiveModal(open ? "importerRegistrant" : null)
         }
         title="Chọn nhà nhập khẩu / Đăng ký"
-        isMulti={true}
-        selectedNames={
-          formData.importerRegistrant
-            ? formData.importerRegistrant.split(", ").filter(Boolean)
-            : []
+        isMulti={false}
+        returnById
+        selectedItems={
+          formData.importerRegistrant ? [formData.importerRegistrant] : []
         }
-        onConfirm={(names) =>
-          onFormFieldChange("importerRegistrant", names.join(", "))
+        onConfirmItems={(items) =>
+          onFormFieldChange("importerRegistrant", items[0] || null)
         }
       />
 
@@ -421,14 +409,13 @@ export default function PesticideSuppliersStep({
         open={activeModal === "distributor"}
         onOpenChange={(open) => setActiveModal(open ? "distributor" : null)}
         title="Chọn nhà phân phối"
-        isMulti={true}
-        selectedNames={
-          formData.distributor
-            ? formData.distributor.split(", ").filter(Boolean)
-            : []
+        isMulti={false}
+        returnById
+        selectedItems={
+          formData.distributor ? [formData.distributor] : []
         }
-        onConfirm={(names) =>
-          onFormFieldChange("distributor", names.join(", "))
+        onConfirmItems={(items) =>
+          onFormFieldChange("distributor", items[0] || null)
         }
       />
     </div>

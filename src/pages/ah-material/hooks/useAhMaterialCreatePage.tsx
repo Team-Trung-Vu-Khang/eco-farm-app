@@ -167,19 +167,12 @@ export function useAhMaterialCreatePage() {
         displayOrder: 10,
         status: "active",
         domainCode: "LIVESTOCK",
-        manufacturer: Array.isArray(formData.manufacturerOrigin)
-          ? formData.manufacturerOrigin.join(", ") || undefined
-          : formData.manufacturerOrigin || undefined,
-        importer: Array.isArray(formData.importerRegistrant)
-          ? formData.importerRegistrant.join(", ") || undefined
-          : formData.importerRegistrant || undefined,
-        distributor: Array.isArray(formData.distributor)
-          ? formData.distributor.join(", ") || undefined
-          : formData.distributor || undefined,
+        manufacturerOrganizationId: formData.manufacturerOrigin?.id || null,
+        importerOrganizationId: formData.importerRegistrant?.id || null,
+        distributorOrganizationId: formData.distributor?.id || null,
         hashtags: formData.hashtags || [],
         imageUrl: uploadedImageUrl || undefined,
         metadataJson: {
-          imageUrl: uploadedImageUrl || undefined,
           formType: isDetailMode ? "advanced" : "basic",
         },
         packagingVariants: parsePackagingSpecs(
@@ -211,6 +204,14 @@ export function useAhMaterialCreatePage() {
           title: "Trùng lặp SKU",
           description:
             "Mã SKU này đã tồn tại trong hệ thống. Vui lòng nhập mã SKU khác.",
+          variant: "destructive",
+        });
+      } else if (err.response?.status === 400) {
+        toast({
+          title: "Dữ liệu không hợp lệ",
+          description:
+            err.response?.data?.message ||
+            "Thông tin tổ chức không hợp lệ. Vui lòng kiểm tra lại.",
           variant: "destructive",
         });
       } else {
@@ -286,29 +287,31 @@ function mapResponseToMaterial(item: any): any {
     description: item.description || "",
     status: item.status || "active",
     technologyLevelId:
-      item.classifications?.find(
-        (c: any) => c.classification === "technology_level",
-      )?.group?.code?.toLowerCase() ||
-      item.classifications?.find(
-        (c: any) => c.classification === "technology_level",
-      )?.group?.name?.toLowerCase() ||
+      item.classifications
+        ?.find((c: any) => c.classification === "technology_level")
+        ?.group?.code?.toLowerCase() ||
+      item.classifications
+        ?.find((c: any) => c.classification === "technology_level")
+        ?.group?.name?.toLowerCase() ||
       "",
     valueChainId:
-      item.classifications?.find((c: any) => c.classification === "value_chain")
+      item.classifications
+        ?.find((c: any) => c.classification === "value_chain")
         ?.group?.code?.toLowerCase() ||
-      item.classifications?.find((c: any) => c.classification === "value_chain")
+      item.classifications
+        ?.find((c: any) => c.classification === "value_chain")
         ?.group?.name?.toLowerCase() ||
       "",
     materialGroupId:
       item.classifications?.[0]?.group?.code?.toLowerCase() ||
       item.classifications?.[0]?.group?.name?.toLowerCase() ||
       "",
-    manufacturerOrigin: item.manufacturer || "",
-    importerRegistrant: item.importer || "",
-    distributor: item.distributor || "",
+    manufacturerOrigin: item.manufacturerOrganization || null,
+    importerRegistrant: item.importerOrganization || null,
+    distributor: item.distributorOrganization || null,
     packagingSpecs: formatPackagingSpecs(item.packagingVariants) || [],
     hashtags: item.hashtags || [],
-    imageUrl: item.metadataJson?.imageUrl || item.imageUrl || "",
+    imageUrl: item.imageUrl || item.metadataJson?.imageUrl || "",
     formType: item.metadataJson?.formType || "basic",
   };
 }

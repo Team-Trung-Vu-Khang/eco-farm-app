@@ -504,13 +504,13 @@ const FertilizerDetailPage = () => {
             <CardContent className="pt-5 space-y-5 text-sm">
               <InfoRow
                 label="Nhà sản xuất / Xuất xứ"
-                value={item.manufacturerOrigin}
+                value={item.manufacturerOrganization?.name}
               />
               <InfoRow
                 label="Nhà nhập khẩu / Đăng ký"
-                value={item.importerRegistrant}
+                value={item.importerOrganization?.name}
               />
-              <InfoRow label="Nhà phân phối" value={item.distributor} />
+              <InfoRow label="Nhà phân phối" value={item.distributorOrganization?.name} />
               <InfoRow
                 label="Giá bán tham khảo"
                 value={formatPrice(item.referencePrice)}

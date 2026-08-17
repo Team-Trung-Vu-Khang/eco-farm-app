@@ -30,13 +30,21 @@ import { useSelectedWorkspaceId } from "@/features/workspace";
 
 type OrganizationTypeFilter = "all" | "enterprise" | "farm" | "cooperative";
 
+export interface OrganizationOption {
+  id: number;
+  name: string;
+}
+
 interface PartnerSelectorDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   title: string;
   isMulti?: boolean;
-  selectedNames: string[];
-  onConfirm: (selectedNames: string[]) => void;
+  selectedNames?: string[];
+  onConfirm?: (selectedNames: string[]) => void;
+  returnById?: boolean;
+  selectedItems?: OrganizationOption[];
+  onConfirmItems?: (items: OrganizationOption[]) => void;
 }
 
 const ORGANIZATION_TYPE_LABELS: Record<
@@ -55,6 +63,9 @@ export function PartnerSelectorDialog({
   isMulti = false,
   selectedNames,
   onConfirm,
+  returnById = false,
+  selectedItems,
+  onConfirmItems,
 }: PartnerSelectorDialogProps) {
   const workspaceId = useSelectedWorkspaceId();
   const parsedWorkspaceId =
@@ -63,15 +74,25 @@ export function PartnerSelectorDialog({
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedType, setSelectedType] =
     useState<OrganizationTypeFilter>("all");
-  const [tempSelectedNames, setTempSelectedNames] = useState<string[]>([]);
+  const [tempSelectedItems, setTempSelectedItems] = useState<
+    OrganizationOption[]
+  >([]);
 
   useEffect(() => {
     if (open) {
       setSearchTerm("");
       setSelectedType("all");
-      setTempSelectedNames([...selectedNames]);
+      if (returnById && selectedItems) {
+        setTempSelectedItems([...selectedItems]);
+      } else if (selectedNames) {
+        setTempSelectedItems(
+          selectedNames.map((name) => ({ id: 0, name })),
+        );
+      } else {
+        setTempSelectedItems([]);
+      }
     }
-  }, [open, selectedNames]);
+  }, [open, selectedNames, selectedItems, returnById]);
 
   const { items: organizations, loading } = useOrganizations(
     {
@@ -95,20 +116,30 @@ export function PartnerSelectorDialog({
     });
   }, [organizations, searchTerm]);
 
-  const handleSelectToggle = (name: string) => {
+  const handleSelectToggle = (org: { id: number; name: string; code?: string }) => {
     if (isMulti) {
-      if (tempSelectedNames.includes(name)) {
-        setTempSelectedNames(tempSelectedNames.filter((n) => n !== name));
+      const exists = tempSelectedItems.some((item) => item.id === org.id);
+      if (exists) {
+        setTempSelectedItems(tempSelectedItems.filter((item) => item.id !== org.id));
       } else {
-        setTempSelectedNames([...tempSelectedNames, name]);
+        setTempSelectedItems([...tempSelectedItems, { id: org.id, name: org.name }]);
       }
     } else {
-      setTempSelectedNames([name]);
+      const exists = tempSelectedItems.some((item) => item.id === org.id);
+      setTempSelectedItems(exists ? [] : [{ id: org.id, name: org.name }]);
     }
   };
 
+  const handleRemoveItem = (id: number) => {
+    setTempSelectedItems(tempSelectedItems.filter((item) => item.id !== id));
+  };
+
   const handleConfirm = () => {
-    onConfirm(tempSelectedNames);
+    if (returnById && onConfirmItems) {
+      onConfirmItems(tempSelectedItems);
+    } else if (onConfirm) {
+      onConfirm(tempSelectedItems.map((item) => item.name));
+    }
     onOpenChange(false);
   };
 
@@ -160,21 +191,21 @@ export function PartnerSelectorDialog({
             </div>
           </div>
 
-          {tempSelectedNames.length > 0 && (
+          {tempSelectedItems.length > 0 && (
             <div className="mt-3 flex flex-wrap gap-1.5 items-center">
               <span className="text-xs text-muted-foreground mr-1">
                 Đang chọn:
               </span>
-              {tempSelectedNames.map((name) => (
+              {tempSelectedItems.map((item) => (
                 <Badge
-                  key={name}
+                  key={item.id}
                   variant="secondary"
                   className="flex items-center gap-1 text-[11px] py-0.5 px-2 bg-primary/5 text-primary border border-primary/20"
                 >
-                  {name}
+                  {item.name}
                   <X
                     className="h-3 w-3 cursor-pointer text-primary hover:text-red-500"
-                    onClick={() => handleSelectToggle(name)}
+                    onClick={() => handleRemoveItem(item.id)}
                   />
                 </Badge>
               ))}
@@ -190,13 +221,21 @@ export function PartnerSelectorDialog({
           ) : filteredOrganizations.length > 0 ? (
             <div className="grid gap-3 md:grid-cols-2">
               {filteredOrganizations.map((org) => {
-                const isSelected = tempSelectedNames.includes(org.name);
+                const isSelected = tempSelectedItems.some(
+                  (item) => item.id === org.id,
+                );
 
                 return (
                   <button
                     key={org.id}
                     type="button"
-                    onClick={() => handleSelectToggle(org.name)}
+                    onClick={() =>
+                      handleSelectToggle({
+                        id: Number(org.id),
+                        name: org.name,
+                        code: org.code,
+                      })
+                    }
                     className={cn(
                       "flex items-start gap-3.5 rounded-xl border p-4 text-left transition-all hover:shadow-xs",
                       isSelected

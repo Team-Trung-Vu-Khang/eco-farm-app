@@ -1,7 +1,4 @@
-import type {
-  MaterialFormData,
-  Material,
-} from "../types/types";
+import type { MaterialFormData, Material } from "../types/types";
 
 export const createEmptyMaterialFormData = (): MaterialFormData => ({
   code: "",
@@ -14,9 +11,9 @@ export const createEmptyMaterialFormData = (): MaterialFormData => ({
   valueChainId: "",
 
   // Origin & Supply fields
-  manufacturerOrigin: "",
-  importerRegistrant: "",
-  distributor: "",
+  manufacturerOrigin: null,
+  importerRegistrant: null,
+  distributor: null,
   packagingSpecs: [],
 });
 
@@ -35,8 +32,8 @@ export const createMaterialFormDataFromItem = (
   valueChainId: item.valueChainId || "",
 
   // Hydrate origin & supply fields
-  manufacturerOrigin: item.manufacturerOrigin || "",
-  importerRegistrant: item.importerRegistrant || "",
-  distributor: item.distributor || "",
+  manufacturerOrigin: item.manufacturerOrigin || null,
+  importerRegistrant: item.importerRegistrant || null,
+  distributor: item.distributor || null,
   packagingSpecs: item.packagingSpecs || [],
 });

@@ -1,3 +1,5 @@
+import type { OrganizationOption } from "@/components/organizations/PartnerSelectorDialog";
+
 export interface SupplierDetail {
   supplierId: string;
   quantity: string;
@@ -100,9 +102,9 @@ export interface FertilizerFormData {
   standardsCompliance: string[];
 
   // Step 4
-  manufacturerOrigin: string;
-  importerRegistrant: string;
-  distributor: string;
+  manufacturerOrigin: OrganizationOption | null;
+  importerRegistrant: OrganizationOption | null;
+  distributor: OrganizationOption | null;
   referencePrice: string;
   packagingSpecs: string[];
 

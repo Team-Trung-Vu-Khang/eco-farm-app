@@ -38,7 +38,10 @@ export function useFarmSupplyDetailHook(type: SupplyType, id: number) {
 function formatVND(value: string | number | null | undefined): string {
   if (!value) return "Chưa cập nhật";
   const strVal = value.toString().trim();
-  if (strVal.toLowerCase().includes("đ") || strVal.toLowerCase().includes("vnd")) {
+  if (
+    strVal.toLowerCase().includes("đ") ||
+    strVal.toLowerCase().includes("vnd")
+  ) {
     return strVal;
   }
   let s = strVal.replace(/\s+/g, "").replace(/\./g, "").replace(/,/g, ".");
@@ -102,7 +105,7 @@ function mapMedicineDetail(item: any) {
       (item.metadataJson && item.metadataJson?.origin) ||
       "",
     imageUrl:
-      (item.metadataJson && item.metadataJson?.imageUrl) || item.imageUrl || "",
+      item.imageUrl || (item.metadataJson && item.metadataJson?.imageUrl) || "",
 
     indications: profile.mainUsage || "",
     targetEntities: item.targetSubjects?.map((t: any) => t.name) || [],
@@ -121,13 +124,13 @@ function mapMedicineDetail(item: any) {
     legalStatus: formatLegalStatus(item.legalStatus),
     legalDescription: item.legalDescription || "",
     standardsCompliance:
-      item.certificates
-        ?.map((c: any) => c.certificate?.name)
-        .filter(Boolean) || [],
+      item.certificates?.map((c: any) => c.certificate?.name).filter(Boolean) ||
+      [],
 
-    manufacturerOrigin: item.manufacturer || "",
-    importerRegistrant: item.importer || "",
-    distributor: item.distributor || "",
+    manufacturerOrigin:
+      item.manufacturerOrganization?.name || item.manufacturer || "",
+    importerRegistrant: item.importerOrganization?.name || item.importer || "",
+    distributor: item.distributorOrganization?.name || item.distributor || "",
     referencePrice: formatVND(item.referencePrice),
     packagingSpecs: formatPackagingSpecs(item.packagingVariants) || [],
     hashtags: (item.hashtags || []).map((t: any) =>
@@ -148,7 +151,7 @@ function mapFertilizerDetail(item: any) {
     ...item,
     code: item.sku || item.code,
     imageUrl:
-      (item.metadataJson && item.metadataJson?.imageUrl) || item.imageUrl || "",
+      item.imageUrl || (item.metadataJson && item.metadataJson?.imageUrl) || "",
     imageFile: null,
 
     nutritionalContentId:
@@ -203,13 +206,13 @@ function mapFertilizerDetail(item: any) {
     legalStatus: formatLegalStatus(item.legalStatus),
     legalDescription: item.legalDescription || "",
     standardsCompliance:
-      item.certificates
-        ?.map((c: any) => c.certificate?.name)
-        .filter(Boolean) || [],
+      item.certificates?.map((c: any) => c.certificate?.name).filter(Boolean) ||
+      [],
 
-    manufacturerOrigin: item.manufacturer || "",
-    importerRegistrant: item.importer || "",
-    distributor: item.distributor || "",
+    manufacturerOrigin:
+      item.manufacturerOrganization?.name || item.manufacturer || "",
+    importerRegistrant: item.importerOrganization?.name || item.importer || "",
+    distributor: item.distributorOrganization?.name || item.distributor || "",
     referencePrice: formatVND(item.referencePrice),
     packagingSpecs: formatPackagingSpecs(item.packagingVariants) || [],
     hashtags: (item.hashtags || []).map((t: string) =>
@@ -239,8 +242,12 @@ function mapEquipmentDetail(item: any) {
     sku: item.sku || item.code || "",
     machineName: item.name || "",
     model: profile.model || "",
-    productImage: metadata.imageUrl || item.imageUrl || "",
-    manufacturer: profile.brand || item.manufacturer || "",
+    productImage: item.imageUrl || metadata.imageUrl || "",
+    manufacturer:
+      profile.brand ||
+      item.manufacturerOrganization?.name ||
+      item.manufacturer ||
+      "",
     countryOfOrigin: profile.countryOfOrigin || "",
     manufactureYear: profile.manufactureYear
       ? String(profile.manufactureYear)
@@ -267,9 +274,30 @@ function mapEquipmentDetail(item: any) {
     fuelConsumptionRate: profile.fuelConsumptionRate || "",
     maintenanceSchedule: profile.maintenanceSchedule || "",
     mainAccessories: profile.includedParts || "",
-    manufacturerOrigin: item.manufacturer ? [item.manufacturer] : [],
-    importerRegistrant: item.importer ? [item.importer] : [],
-    distributor: item.distributor ? [item.distributor] : [],
+    manufacturerOrigin: item.manufacturerOrganization
+      ? {
+          id: Number(item.manufacturerOrganization.id),
+          name: item.manufacturerOrganization.name,
+        }
+      : item.manufacturer
+        ? { id: 0, name: item.manufacturer }
+        : null,
+    importerRegistrant: item.importerOrganization
+      ? {
+          id: Number(item.importerOrganization.id),
+          name: item.importerOrganization.name,
+        }
+      : item.importer
+        ? { id: 0, name: item.importer }
+        : null,
+    distributor: item.distributorOrganization
+      ? {
+          id: Number(item.distributorOrganization.id),
+          name: item.distributorOrganization.name,
+        }
+      : item.distributor
+        ? { id: 0, name: item.distributor }
+        : null,
     referencePrice: formatVND(item.referencePrice),
     packagingSpecs: formatPackagingSpecs(item.packagingVariants) || [],
     hashtags: item.hashtags || [],
@@ -291,19 +319,33 @@ function mapMaterialDetail(item: any) {
         (c: any) => c.classification === "technology_level",
       )?.group?.name || "",
     valueChainId:
-      item.classifications?.find(
-        (c: any) => c.classification === "value_chain",
-      )?.group?.name || "",
+      item.classifications?.find((c: any) => c.classification === "value_chain")
+        ?.group?.name || "",
     materialGroupId: item.classifications?.[0]?.group?.name || "",
-    manufacturerOrigin: item.manufacturer
-      ? item.manufacturer.split(",").map((s: any) => s.trim()).filter(Boolean)
-      : [],
-    importerRegistrant: item.importer
-      ? item.importer.split(",").map((s: any) => s.trim()).filter(Boolean)
-      : [],
-    distributor: item.distributor
-      ? item.distributor.split(",").map((s: any) => s.trim()).filter(Boolean)
-      : [],
+    manufacturerOrigin: item.manufacturerOrganization
+      ? {
+          id: Number(item.manufacturerOrganization.id),
+          name: item.manufacturerOrganization.name,
+        }
+      : item.manufacturer
+        ? { id: 0, name: item.manufacturer }
+        : null,
+    importerRegistrant: item.importerOrganization
+      ? {
+          id: Number(item.importerOrganization.id),
+          name: item.importerOrganization.name,
+        }
+      : item.importer
+        ? { id: 0, name: item.importer }
+        : null,
+    distributor: item.distributorOrganization
+      ? {
+          id: Number(item.distributorOrganization.id),
+          name: item.distributorOrganization.name,
+        }
+      : item.distributor
+        ? { id: 0, name: item.distributor }
+        : null,
     packagingSpecs: formatPackagingSpecs(item.packagingVariants) || [],
     hashtags: item.hashtags || [],
     referencePrice: formatVND(item.referencePrice),

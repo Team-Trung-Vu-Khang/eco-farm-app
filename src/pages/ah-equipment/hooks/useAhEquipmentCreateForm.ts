@@ -65,9 +65,9 @@ export function useAhEquipmentCreateForm() {
     fuelConsumptionRate: "",
     maintenanceSchedule: "",
     mainAccessories: "",
-    manufacturerOrigin: [],
-    importerRegistrant: [],
-    distributor: [],
+    manufacturerOrigin: null,
+    importerRegistrant: null,
+    distributor: null,
     referencePrice: "",
     packagingSpecs: [],
     hashtags: [],
@@ -192,17 +192,13 @@ export function useAhEquipmentCreateForm() {
         displayOrder: 10,
         status: formData.status === "maintenance" ? "inactive" : "active",
         domainCode: "LIVESTOCK",
-        manufacturer:
-          formData.manufacturer ||
-          formData.manufacturerOrigin?.[0] ||
-          undefined,
-        importer: formData.importerRegistrant?.[0] || undefined,
-        distributor: formData.distributor?.[0] || undefined,
+        manufacturerOrganizationId: formData.manufacturerOrigin?.id || null,
+        importerOrganizationId: formData.importerRegistrant?.id || null,
+        distributorOrganizationId: formData.distributor?.id || null,
         referencePrice: formData.referencePrice || undefined,
         hashtags: formData.hashtags || [],
         imageUrl: uploadedImageUrl || undefined,
         metadataJson: {
-          imageUrl: uploadedImageUrl || undefined,
           formType: isDetailMode ? "advanced" : "basic",
         },
         packagingVariants: parsePackagingSpecs(
@@ -252,6 +248,14 @@ export function useAhEquipmentCreateForm() {
           title: "Trùng lặp SKU",
           description:
             "Mã SKU này đã tồn tại trong hệ thống. Vui lòng nhập mã SKU khác.",
+          variant: "destructive",
+        });
+      } else if (err.response?.status === 400) {
+        toast({
+          title: "Dữ liệu không hợp lệ",
+          description:
+            err.response?.data?.message ||
+            "Thông tin tổ chức không hợp lệ. Vui lòng kiểm tra lại.",
           variant: "destructive",
         });
       } else {
@@ -325,9 +329,9 @@ function mapResponseToEquipment(item: any): any {
     fuelConsumptionRate: profile.fuelConsumptionRate || "",
     maintenanceSchedule: profile.maintenanceSchedule || "",
     mainAccessories: profile.includedParts || "",
-    manufacturerOrigin: item.manufacturer ? [item.manufacturer] : [],
-    importerRegistrant: item.importer ? [item.importer] : [],
-    distributor: item.distributor ? [item.distributor] : [],
+    manufacturerOrigin: item.manufacturerOrganization || null,
+    importerRegistrant: item.importerOrganization || null,
+    distributor: item.distributorOrganization || null,
     referencePrice: item.referencePrice || "",
     packagingSpecs: formatPackagingSpecs(item.packagingVariants) || [],
     hashtags: item.hashtags || [],

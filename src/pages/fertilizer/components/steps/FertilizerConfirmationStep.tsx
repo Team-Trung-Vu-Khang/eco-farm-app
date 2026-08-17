@@ -313,13 +313,13 @@ export const FertilizerConfirmationStep = ({
             <div className="grid grid-cols-2 gap-x-8 gap-y-3 text-sm">
               <Row
                 label="Nhà sản xuất / Xuất xứ"
-                value={formData.manufacturerOrigin}
+                value={formData.manufacturerOrigin?.name}
               />
               <Row
                 label="Nhà nhập khẩu / Đăng ký"
-                value={formData.importerRegistrant}
+                value={formData.importerRegistrant?.name}
               />
-              <Row label="Nhà phân phối chính" value={formData.distributor} />
+              <Row label="Nhà phân phối chính" value={formData.distributor?.name} />
               <Row label="Giá tham khảo" value={formData.referencePrice} />
 
               {formData.packagingSpecs &&

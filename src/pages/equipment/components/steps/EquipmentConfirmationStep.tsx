@@ -24,9 +24,6 @@ export const EquipmentConfirmationStep = ({
 }: EquipmentConfirmationStepProps) => {
   const valueChainGroupArr = formData.valueChainGroup || [];
   const machineTypeArr = formData.machineType || [];
-  const manufacturerOriginArr = formData.manufacturerOrigin || [];
-  const importerRegistrantArr = formData.importerRegistrant || [];
-  const distributorArr = formData.distributor || [];
   const packagingSpecsArr = formData.packagingSpecs || [];
   const supplierDetailsArr = formData.supplierDetails || [];
 
@@ -328,16 +325,14 @@ export const EquipmentConfirmationStep = ({
                     Nhà sản xuất / Quốc gia:
                   </span>
                   <div className="flex flex-wrap gap-1">
-                    {manufacturerOriginArr.map((tag) => (
+                    {formData.manufacturerOrigin ? (
                       <Badge
-                        key={tag}
                         variant="outline"
                         className="text-xs bg-slate-50"
                       >
-                        {tag}
+                        {formData.manufacturerOrigin.name}
                       </Badge>
-                    ))}
-                    {manufacturerOriginArr.length === 0 && (
+                    ) : (
                       <span className="text-slate-400">N/A</span>
                     )}
                   </div>
@@ -347,16 +342,14 @@ export const EquipmentConfirmationStep = ({
                     Đơn vị nhập khẩu / Đăng ký:
                   </span>
                   <div className="flex flex-wrap gap-1">
-                    {importerRegistrantArr.map((tag) => (
+                    {formData.importerRegistrant ? (
                       <Badge
-                        key={tag}
                         variant="outline"
                         className="text-xs bg-slate-50"
                       >
-                        {tag}
+                        {formData.importerRegistrant.name}
                       </Badge>
-                    ))}
-                    {importerRegistrantArr.length === 0 && (
+                    ) : (
                       <span className="text-slate-400">N/A</span>
                     )}
                   </div>
@@ -366,16 +359,14 @@ export const EquipmentConfirmationStep = ({
                     Nhà phân phối chính thức:
                   </span>
                   <div className="flex flex-wrap gap-1">
-                    {distributorArr.map((tag) => (
+                    {formData.distributor ? (
                       <Badge
-                        key={tag}
                         variant="outline"
                         className="text-xs bg-slate-50"
                       >
-                        {tag}
+                        {formData.distributor.name}
                       </Badge>
-                    ))}
-                    {distributorArr.length === 0 && (
+                    ) : (
                       <span className="text-slate-400">N/A</span>
                     )}
                   </div>

@@ -317,9 +317,9 @@ export default function PesticideConfirmStep({
               Bước 4 – Xuất xứ & Cung ứng
             </h4>
             <div className="grid grid-cols-2 gap-x-8 gap-y-3">
-              <Row label="Nhà sản xuất" value={formData.manufacturerOrigin} />
-              <Row label="Nhà nhập khẩu" value={formData.importerRegistrant} />
-              <Row label="Nhà phân phối" value={formData.distributor} />
+              <Row label="Nhà sản xuất" value={formData.manufacturerOrigin?.name} />
+              <Row label="Nhà nhập khẩu" value={formData.importerRegistrant?.name} />
+              <Row label="Nhà phân phối" value={formData.distributor?.name} />
               <Row label="Giá tham khảo" value={formData.referencePrice} />
               {formData.packagingSpecs.length > 0 && (
                 <div className="col-span-2">

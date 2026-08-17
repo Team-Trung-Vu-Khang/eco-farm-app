@@ -1,3 +1,5 @@
+import type { OrganizationOption } from "@/components/organizations/PartnerSelectorDialog";
+
 export interface Material {
   id: number;
   code: string;
@@ -33,8 +35,8 @@ export interface MaterialFormData {
   valueChainId: string;
 
   // Origin & Supply fields
-  manufacturerOrigin: string;
-  importerRegistrant: string;
-  distributor: string;
+  manufacturerOrigin: OrganizationOption | null;
+  importerRegistrant: OrganizationOption | null;
+  distributor: OrganizationOption | null;
   packagingSpecs: string[];
 }

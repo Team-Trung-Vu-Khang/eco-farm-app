@@ -30,9 +30,9 @@ export const createEmptyPesticideFormData = (): PesticideFormData => ({
   legalDescription: "",
   standardsCompliance: [],
   // Bước 4
-  manufacturerOrigin: "",
-  importerRegistrant: "",
-  distributor: "",
+  manufacturerOrigin: null,
+  importerRegistrant: null,
+  distributor: null,
   referencePrice: "",
   packagingSpecs: [],
   // Legacy / misc
@@ -82,9 +82,9 @@ export const createPesticideFormDataFromItem = (
   legalDescription: item.legalDescription ?? "",
   standardsCompliance: item.standardsCompliance ?? [],
   // Bước 4
-  manufacturerOrigin: item.manufacturerOrigin ?? item.origin ?? "",
-  importerRegistrant: item.importerRegistrant ?? "",
-  distributor: item.distributor ?? "",
+  manufacturerOrigin: item.manufacturerOrigin || null,
+  importerRegistrant: item.importerRegistrant || null,
+  distributor: item.distributor || null,
   referencePrice: item.referencePrice ?? "",
   packagingSpecs: item.packagingSpecs ?? [],
   // Legacy / misc

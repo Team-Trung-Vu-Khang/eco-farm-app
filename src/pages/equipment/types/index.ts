@@ -1,3 +1,5 @@
+import type { OrganizationOption } from "@/components/organizations/PartnerSelectorDialog";
+
 export interface Equipment {
   id: number;
   code: string;
@@ -34,9 +36,9 @@ export interface Equipment {
   fuelConsumptionRate?: string;
   maintenanceSchedule?: string;
   mainAccessories?: string;
-  manufacturerOrigin?: string[];
-  importerRegistrant?: string[];
-  distributor?: string[];
+  manufacturerOrigin?: OrganizationOption | null;
+  importerRegistrant?: OrganizationOption | null;
+  distributor?: OrganizationOption | null;
   referencePrice?: string;
   packagingSpecs?: string[];
   hashtags?: string[];
@@ -85,9 +87,9 @@ export interface EquipmentFormData {
   fuelConsumptionRate: string;
   maintenanceSchedule: string;
   mainAccessories: string;
-  manufacturerOrigin: string[];
-  importerRegistrant: string[];
-  distributor: string[];
+  manufacturerOrigin: OrganizationOption | null;
+  importerRegistrant: OrganizationOption | null;
+  distributor: OrganizationOption | null;
   referencePrice: string;
   packagingSpecs: string[];
   hashtags: string[];

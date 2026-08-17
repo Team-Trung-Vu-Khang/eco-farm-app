@@ -86,7 +86,7 @@ export default function MaterialConfirmStep({
                 <div>
                   <span className="text-muted-foreground block text-xs mb-1">Nhà sản xuất / Xuất xứ:</span>
                   <div className="flex flex-wrap gap-1">
-                    <Badge variant="outline" className="bg-slate-50">{formData.manufacturerOrigin}</Badge>
+                    <Badge variant="outline" className="bg-slate-50">{formData.manufacturerOrigin.name}</Badge>
                   </div>
                 </div>
               )}
@@ -95,9 +95,7 @@ export default function MaterialConfirmStep({
                 <div>
                   <span className="text-muted-foreground block text-xs mb-1">Nhà nhập khẩu / Đăng ký:</span>
                   <div className="flex flex-wrap gap-1">
-                    {formData.importerRegistrant.split(", ").filter(Boolean).map((tag) => (
-                      <Badge key={tag} variant="outline" className="bg-slate-50">{tag}</Badge>
-                    ))}
+                    <Badge variant="outline" className="bg-slate-50">{formData.importerRegistrant.name}</Badge>
                   </div>
                 </div>
               )}
@@ -106,9 +104,7 @@ export default function MaterialConfirmStep({
                 <div>
                   <span className="text-muted-foreground block text-xs mb-1">Nhà phân phối:</span>
                   <div className="flex flex-wrap gap-1">
-                    {formData.distributor.split(", ").filter(Boolean).map((tag) => (
-                      <Badge key={tag} variant="outline" className="bg-slate-50">{tag}</Badge>
-                    ))}
+                    <Badge variant="outline" className="bg-slate-50">{formData.distributor.name}</Badge>
                   </div>
                 </div>
               )}

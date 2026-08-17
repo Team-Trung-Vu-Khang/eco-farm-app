@@ -143,7 +143,7 @@ export default function MaterialSuppliersStep({
                   variant="secondary"
                   className="bg-primary/5 text-primary border border-primary/20 text-xs font-semibold py-0.5 px-2.5"
                 >
-                  {formData.manufacturerOrigin}
+                  {formData.manufacturerOrigin.name}
                 </Badge>
               ) : (
                 <span className="text-sm text-slate-400">
@@ -175,15 +175,13 @@ export default function MaterialSuppliersStep({
           >
             <div className="flex-1 min-w-0 flex flex-wrap gap-1.5 items-center">
               {formData.importerRegistrant ? (
-                formData.importerRegistrant.split(", ").filter(Boolean).map((tag) => (
-                  <Badge
-                    key={tag}
-                    variant="secondary"
-                    className="bg-primary/5 text-primary border border-primary/20 text-xs font-semibold py-0.5 px-2.5"
-                  >
-                    {tag}
-                  </Badge>
-                ))
+                <Badge
+                  key={formData.importerRegistrant.id}
+                  variant="secondary"
+                  className="bg-primary/5 text-primary border border-primary/20 text-xs font-semibold py-0.5 px-2.5"
+                >
+                  {formData.importerRegistrant.name}
+                </Badge>
               ) : (
                 <span className="text-sm text-slate-400">
                   Bấm để chọn nhà nhập khẩu...
@@ -213,15 +211,13 @@ export default function MaterialSuppliersStep({
           >
             <div className="flex-1 min-w-0 flex flex-wrap gap-1.5 items-center">
               {formData.distributor ? (
-                formData.distributor.split(", ").filter(Boolean).map((tag) => (
-                  <Badge
-                    key={tag}
-                    variant="secondary"
-                    className="bg-primary/5 text-primary border border-primary/20 text-xs font-semibold py-0.5 px-2.5"
-                  >
-                    {tag}
-                  </Badge>
-                ))
+                <Badge
+                  key={formData.distributor.id}
+                  variant="secondary"
+                  className="bg-primary/5 text-primary border border-primary/20 text-xs font-semibold py-0.5 px-2.5"
+                >
+                  {formData.distributor.name}
+                </Badge>
               ) : (
                 <span className="text-sm text-slate-400">
                   Bấm để chọn nhà phân phối...
@@ -387,9 +383,10 @@ export default function MaterialSuppliersStep({
         }
         title="Chọn nhà sản xuất / Xuất xứ"
         isMulti={false}
-        selectedNames={formData.manufacturerOrigin ? [formData.manufacturerOrigin] : []}
-        onConfirm={(names) =>
-          onFormFieldChange("manufacturerOrigin", names[0] || "")
+        returnById
+        selectedItems={formData.manufacturerOrigin ? [formData.manufacturerOrigin] : []}
+        onConfirmItems={(items) =>
+          onFormFieldChange("manufacturerOrigin", items[0] || null)
         }
       />
 
@@ -399,18 +396,24 @@ export default function MaterialSuppliersStep({
           setActiveModal(open ? "importerRegistrant" : null)
         }
         title="Chọn nhà nhập khẩu / Đăng ký"
-        isMulti={true}
-        selectedNames={formData.importerRegistrant ? formData.importerRegistrant.split(", ").filter(Boolean) : []}
-        onConfirm={(names) => onFormFieldChange("importerRegistrant", names.join(", "))}
+        isMulti={false}
+        returnById
+        selectedItems={formData.importerRegistrant ? [formData.importerRegistrant] : []}
+        onConfirmItems={(items) =>
+          onFormFieldChange("importerRegistrant", items[0] || null)
+        }
       />
 
       <PartnerSelectorDialog
         open={activeModal === "distributor"}
         onOpenChange={(open) => setActiveModal(open ? "distributor" : null)}
         title="Chọn nhà phân phối"
-        isMulti={true}
-        selectedNames={formData.distributor ? formData.distributor.split(", ").filter(Boolean) : []}
-        onConfirm={(names) => onFormFieldChange("distributor", names.join(", "))}
+        isMulti={false}
+        returnById
+        selectedItems={formData.distributor ? [formData.distributor] : []}
+        onConfirmItems={(items) =>
+          onFormFieldChange("distributor", items[0] || null)
+        }
       />
     </div>
   );

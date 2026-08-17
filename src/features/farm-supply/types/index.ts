@@ -127,10 +127,14 @@ export interface SupplyItemRequest {
   manufacturer?: string;
   importer?: string;
   distributor?: string;
+  manufacturerOrganizationId?: number | null;
+  importerOrganizationId?: number | null;
+  distributorOrganizationId?: number | null;
   referencePrice?: string;
   registrationNumber?: string;
   legalStatus?: LegalStatus;
   legalDescription?: string;
+  imageUrl?: string;
   hashtags?: string[];
   packagingVariants?: PackagingVariantRequest[];
   certificates?: CertificateRequest[];
@@ -186,6 +190,9 @@ export interface SupplyItemResponse {
   manufacturer: string;
   importer: string;
   distributor: string;
+  manufacturerOrganization: CatalogRef | null;
+  importerOrganization: CatalogRef | null;
+  distributorOrganization: CatalogRef | null;
   referencePrice: string;
   registrationNumber: string;
   legalStatus: LegalStatus;
@@ -198,6 +205,7 @@ export interface SupplyItemResponse {
   certificates: CertificateResponse[];
   classifications: ClassificationLinkResponse[];
   targetSubjects: CatalogRef[];
+  imageUrl: string | null;
   createdAt: string;
   updatedAt: string;
 

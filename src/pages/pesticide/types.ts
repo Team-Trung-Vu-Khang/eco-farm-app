@@ -1,3 +1,5 @@
+import type { OrganizationOption } from "@/components/organizations/PartnerSelectorDialog";
+
 // Domain phân biệt ngữ cảnh của thuốc
 export type PesticideDomain = "cultivation" | "animal" | "aquaculture";
 
@@ -39,6 +41,9 @@ export interface Pesticide {
   manufacturerOrigin?: string; // Nhà sản xuất / Xuất xứ chi tiết
   importerRegistrant?: string; // Nhà nhập khẩu / Đăng ký
   distributor?: string;        // Nhà phân phối
+  manufacturerOrganization?: { id: number; code: string; name: string };
+  importerOrganization?: { id: number; code: string; name: string };
+  distributorOrganization?: { id: number; code: string; name: string };
   referencePrice?: string;     // Giá tham khảo
   packagingSpecs?: string[];   // Bao bì quy cách (chai 100ml, gói 50g...)
 
@@ -82,9 +87,9 @@ export interface PesticideFormData {
   standardsCompliance: string[];
 
   // Bước 4 – Xuất xứ & Cung ứng
-  manufacturerOrigin: string;
-  importerRegistrant: string;
-  distributor: string;
+  manufacturerOrigin: OrganizationOption | null;
+  importerRegistrant: OrganizationOption | null;
+  distributor: OrganizationOption | null;
   referencePrice: string;
   packagingSpecs: string[];
 

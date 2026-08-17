@@ -181,61 +181,41 @@ const AhMaterialDetailPage = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent className="pt-6 space-y-4 text-sm">
-                {item.manufacturerOrigin &&
-                  item.manufacturerOrigin.length > 0 && (
+                {item.manufacturerOrganization && (
                     <div>
                       <span className="text-muted-foreground block text-xs mb-1.5">
                         Nhà sản xuất / Xuất xứ:
                       </span>
                       <div className="flex flex-wrap gap-1.5">
-                        {item.manufacturerOrigin.map((tag) => (
-                          <Badge
-                            key={tag}
-                            variant="outline"
-                            className="bg-slate-50"
-                          >
-                            {tag}
-                          </Badge>
-                        ))}
+                        <Badge variant="outline" className="bg-slate-50">
+                          {item.manufacturerOrganization.name}
+                        </Badge>
                       </div>
                     </div>
                   )}
 
-                {item.importerRegistrant &&
-                  item.importerRegistrant.length > 0 && (
+                {item.importerOrganization && (
                     <div className="border-t pt-4">
                       <span className="text-muted-foreground block text-xs mb-1.5">
                         Nhà nhập khẩu / Đăng ký:
                       </span>
                       <div className="flex flex-wrap gap-1.5">
-                        {item.importerRegistrant.map((tag) => (
-                          <Badge
-                            key={tag}
-                            variant="outline"
-                            className="bg-slate-50"
-                          >
-                            {tag}
-                          </Badge>
-                        ))}
+                        <Badge variant="outline" className="bg-slate-50">
+                          {item.importerOrganization.name}
+                        </Badge>
                       </div>
                     </div>
                   )}
 
-                {item.distributor && item.distributor.length > 0 && (
+                {item.distributorOrganization && (
                   <div className="border-t pt-4">
                     <span className="text-muted-foreground block text-xs mb-1.5">
                       Nhà phân phối chính:
                     </span>
                     <div className="flex flex-wrap gap-1.5">
-                      {item.distributor.map((tag) => (
-                        <Badge
-                          key={tag}
-                          variant="outline"
-                          className="bg-slate-50"
-                        >
-                          {tag}
-                        </Badge>
-                      ))}
+                      <Badge variant="outline" className="bg-slate-50">
+                        {item.distributorOrganization.name}
+                      </Badge>
                     </div>
                   </div>
                 )}
@@ -259,9 +239,9 @@ const AhMaterialDetailPage = () => {
                   </div>
                 )}
 
-                {!item.manufacturerOrigin?.length &&
-                  !item.importerRegistrant?.length &&
-                  !item.distributor?.length &&
+                {!item.manufacturerOrganization &&
+                  !item.importerOrganization &&
+                  !item.distributorOrganization &&
                   !item.packagingSpecs?.length && (
                     <div className="text-center py-6 text-xs text-muted-foreground border border-dashed rounded-lg bg-slate-50">
                       Không cấu hình thông tin xuất xứ & phân phối

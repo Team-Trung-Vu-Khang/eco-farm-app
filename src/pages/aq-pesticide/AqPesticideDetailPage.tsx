@@ -418,13 +418,13 @@ const AqPesticideDetailPage = () => {
             <CardContent className="pt-4 space-y-4">
               <InfoRow
                 label="Nhà sản xuất / Xuất xứ"
-                value={item.manufacturerOrigin ?? item.origin}
+                value={item.manufacturerOrganization?.name ?? item.origin}
               />
               <InfoRow
                 label="Nhà nhập khẩu / Đăng ký"
-                value={item.importerRegistrant}
+                value={item.importerOrganization?.name}
               />
-              <InfoRow label="Nhà phân phối" value={item.distributor} />
+              <InfoRow label="Nhà phân phối" value={item.distributorOrganization?.name} />
               {item.referencePrice && (
                 <div>
                   <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1 flex items-center gap-1">
