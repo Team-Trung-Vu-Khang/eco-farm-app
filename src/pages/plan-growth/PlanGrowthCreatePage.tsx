@@ -463,12 +463,14 @@ export default function PlanGrowthCreatePage({
 
               {/* Ghi chú Section */}
               <div className="space-y-2">
-                <Label className="text-slate-700 font-bold">Ghi chú</Label>
+                <Label className="text-slate-700 font-bold">
+                  Ghi chú phạm vi
+                </Label>
                 <Textarea
-                  placeholder="Nhập thông tin ghi chú thêm..."
-                  value={formData.description}
+                  placeholder="Nhập ghi chú phạm vi..."
+                  value={formData.scopeNote}
                   onChange={(e) =>
-                    setFormData({ ...formData, description: e.target.value })
+                    setFormData({ ...formData, scopeNote: e.target.value })
                   }
                   className="bg-white border-slate-200 min-h-[100px]"
                 />
@@ -491,33 +493,34 @@ export default function PlanGrowthCreatePage({
                     <div className="w-14 h-14 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center shadow-lg ring-1 ring-white/30">
                       <MapPin className="w-7 h-7 text-white" />
                     </div>
-                    <div className="flex-1">
+                    <div className="flex-1 space-y-2">
                       <p className="text-emerald-100 text-[10px] font-bold uppercase tracking-[0.2em] mb-1">
                         Khu vực canh tác
                       </p>
                       <h4 className="text-2xl font-black leading-tight tracking-tight">
-                        {regions
-                          .filter((r) =>
-                            formData.selectedRegionIds.includes(
-                              r.id.toString(),
-                            ),
-                          )
-                          .map((r) => r.name)
+                        {selectionSummary
+                          .map((group) => group.regionName)
                           .join(", ") || "Chưa chọn vùng"}
                       </h4>
-                      <div className="flex items-center gap-3 mt-2">
-                        <Badge
-                          variant="secondary"
-                          className="bg-white/20 text-white border-transparent text-[10px] font-bold h-5"
-                        >
-                          {formData.selectedPlotIds.length} LÔ ĐẤT
-                        </Badge>
-                        <Badge
-                          variant="secondary"
-                          className="bg-white/20 text-white border-transparent text-[10px] font-bold h-5"
-                        >
-                          {calculateArea()} HA
-                        </Badge>
+                      <div className="flex flex-wrap gap-1.5 pt-1">
+                        {selectionSummary.flatMap((group) =>
+                          group.items.map((item, idx) => (
+                            <Badge
+                              key={`${group.regionId}-${item.type}-${item.id}-${idx}`}
+                              variant="secondary"
+                              className={cn(
+                                "bg-white/20 text-white border-transparent text-[10px] h-5",
+                                item.type === "region"
+                                  ? "bg-emerald-100/25"
+                                  : item.type === "area"
+                                    ? "bg-blue-100/20"
+                                    : "bg-white/15",
+                              )}
+                            >
+                              {item.name}
+                            </Badge>
+                          )),
+                        )}
                       </div>
                     </div>
                   </div>
@@ -595,61 +598,10 @@ export default function PlanGrowthCreatePage({
                     </div>
                   </div>
 
-                  {selectionSummary.length > 0 && (
-                    <div className="space-y-3 relative z-10">
-                      <div className="flex items-center justify-between">
-                        <p className="text-emerald-200 text-[10px] font-bold uppercase tracking-wider">
-                          Chi tiết phạm vi
-                        </p>
-                      </div>
-                      <ScrollArea className="h-32 pr-2">
-                        <div className="space-y-3">
-                          {selectionSummary.map((group) => (
-                            <div key={group.regionId} className="space-y-1.5">
-                              <div className="text-[10px] font-bold text-emerald-100 uppercase tracking-wider opacity-60">
-                                {group.regionName}
-                              </div>
-                              {group.items.map((item, idx) => (
-                                <div
-                                  key={idx}
-                                  className="flex items-center justify-between p-2 rounded-xl bg-white/10 border border-white/5 hover:bg-white/15 transition-colors"
-                                >
-                                  <div className="flex items-center gap-2">
-                                    <div
-                                      className={cn(
-                                        "w-1.5 h-1.5 rounded-full shadow-[0_0_8px_rgba(52,211,153,0.5)]",
-                                        item.type === "region"
-                                          ? "bg-amber-400"
-                                          : item.type === "area"
-                                            ? "bg-blue-400"
-                                            : "bg-emerald-400",
-                                      )}
-                                    />
-                                    <div className="flex flex-col">
-                                      <span className="text-[10px] uppercase font-black opacity-40 leading-none mb-0.5">
-                                        {item.type === "region"
-                                          ? "Toàn vùng"
-                                          : item.type === "area"
-                                            ? "Khu vực"
-                                            : "Lô đất"}
-                                      </span>
-                                      <span className="text-xs font-medium truncate max-w-[150px]">
-                                        {item.name}
-                                      </span>
-                                    </div>
-                                  </div>
-                                  {item.parentName && (
-                                    <span className="text-[9px] font-bold opacity-50 italic truncate max-w-[80px]">
-                                      {item.parentName}
-                                    </span>
-                                  )}
-                                </div>
-                              ))}
-                            </div>
-                          ))}
-                        </div>
-                      </ScrollArea>
-                    </div>
+                  {formData.scopeNote.trim() && (
+                    <p className="text-sm text-emerald-50/80 leading-relaxed italic relative z-10">
+                      {formData.scopeNote}
+                    </p>
                   )}
 
                   <div className="bg-black/20 p-4 rounded-2xl border border-white/10 relative z-10">
@@ -670,7 +622,7 @@ export default function PlanGrowthCreatePage({
           </div>
         </div>
       ),
-      isValid: formData.selectedPlotIds.length > 0 && !!formData.crop,
+      isValid: selectionSummary.length > 0,
     },
     {
       id: "process",

@@ -36,6 +36,7 @@ export interface Plan {
   code: string;
   name: string;
   description: string;
+  scopeNote?: string;
   workflowId?: string;
   seasonId: string;
   seasonName: string;

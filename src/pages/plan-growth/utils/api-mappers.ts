@@ -13,6 +13,7 @@ import type { DiagramInfoRecord } from "../hooks/usePlanWorkflowDraftStore";
 import type {
   GeographicalSelection,
   Plan,
+  SelectionSummaryGroup,
   Workflow,
 } from "../types";
 
@@ -171,6 +172,53 @@ export function mapWorkflowResponseToInfoRecord(
   };
 }
 
+// Groups a scope list by region straight from the API's embedded region/
+// area/plot names — mirrors mapWorkflowScopesToRegionLabels but keeps the
+// per-item type/parentName shape the plan form's scope summary UI expects,
+// so it renders correctly without depending on the (mock) region tree.
+export function mapScopesToSelectionSummary(
+  scopes: FarmWorkflowScopeResponse[],
+): SelectionSummaryGroup[] {
+  const groups = new Map<string, SelectionSummaryGroup>();
+
+  (scopes || []).forEach((scope) => {
+    const region =
+      scope.region ?? scope.area?.region ?? scope.plot?.area?.region;
+    if (!region) return;
+
+    const key = String(region.id);
+    let group = groups.get(key);
+    if (!group) {
+      group = {
+        regionId: key,
+        regionName: region.name || `Vùng #${region.id}`,
+        items: [],
+      };
+      groups.set(key, group);
+    }
+
+    if (scope.scopeType === "REGION") {
+      group.items.push({ type: "region", id: key, name: "Toàn bộ vùng" });
+    } else if (scope.scopeType === "AREA" && scope.area) {
+      group.items.push({
+        type: "area",
+        id: String(scope.area.id),
+        name: scope.area.name || `Khu vực #${scope.area.id}`,
+      });
+    } else if (scope.scopeType === "PLOT" && scope.plot) {
+      const area = scope.area ?? scope.plot.area;
+      group.items.push({
+        type: "plot",
+        id: String(scope.plot.id),
+        name: scope.plot.name || `Lô #${scope.plot.id}`,
+        parentName: area?.name,
+      });
+    }
+  });
+
+  return Array.from(groups.values());
+}
+
 export function mapPlanResponseToPlan(plan: FarmPlanResponse): Plan {
   const selections = plan.scopes
     .map(mapScopeToSelection)
@@ -191,6 +239,7 @@ export function mapPlanResponseToPlan(plan: FarmPlanResponse): Plan {
     code: plan.code,
     name: plan.name,
     description: plan.description || "",
+    scopeNote: plan.scopeNote || "",
     workflowId: plan.workflow?.id ? String(plan.workflow.id) : undefined,
     seasonId: "",
     seasonName: "",
@@ -210,6 +259,7 @@ export function mapPlanResponseToPlan(plan: FarmPlanResponse): Plan {
     status: planStatusMap[plan.status] ?? "draft",
     createdAt: plan.createdAt || new Date().toISOString(),
     scopes: selections,
+    selectionSummary: mapScopesToSelectionSummary(plan.scopes),
   } as Plan;
 }
 

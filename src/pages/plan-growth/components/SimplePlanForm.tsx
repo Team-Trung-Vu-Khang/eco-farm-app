@@ -30,9 +30,11 @@ import {
   X,
 } from "lucide-react";
 import { useState, type Dispatch, type SetStateAction } from "react";
-import type { Personnel } from "@/stores/usePersonnelStore";
 import GeographicalSelector from "./GeographicalSelector";
-import { PersonnelMultiSelectCard } from "./PersonnelMultiSelectCard";
+import {
+  PersonnelMultiSelectCard,
+  type PersonnelOption,
+} from "./PersonnelMultiSelectCard";
 import { RegimenSelector } from "./RegimenSelector";
 import { MATERIAL_OPTIONS, MATERIAL_TYPES, MATERIAL_UNITS } from "../data/mocks";
 import type { GeographicalSelection, MaterialAllocation, PlanFormData } from "../types";
@@ -76,7 +78,7 @@ interface SimplePlanFormProps {
   handleGeographicalConfirm: (selections: GeographicalSelection[]) => void;
   isWorkflowContext?: boolean;
   workflowInfo?: { name?: string } | null;
-  personnel: Personnel[];
+  personnel: PersonnelOption[];
 }
 
 function StageMaterialPicker({

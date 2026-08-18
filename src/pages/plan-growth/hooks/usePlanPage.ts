@@ -41,14 +41,14 @@ function getPlanDurationDays(startDate?: string, endDate?: string) {
   return Math.max(1, Math.round((end.getTime() - start.getTime()) / 86400000));
 }
 
-function mapStatus(planStatus: Plan["status"]): FarmPlanRequest["status"] {
+export function mapStatus(planStatus: Plan["status"]): FarmPlanRequest["status"] {
   if (planStatus === "active") return "IN_PROGRESS";
   if (planStatus === "completed") return "COMPLETED";
   if (planStatus === "cancelled") return "CANCELLED";
   return "DRAFT";
 }
 
-function mapPurpose(planPurpose: Plan["purpose"]): FarmPlanRequest["purpose"] {
+export function mapPurpose(planPurpose: Plan["purpose"]): FarmPlanRequest["purpose"] {
   switch (planPurpose) {
     case "facility-upgrade":
       return "FACILITY_UPGRADE";
@@ -68,9 +68,9 @@ function toFarmPlanRequest(plan: Plan): FarmPlanRequest {
     code: plan.code || null,
     name: `${plan.name} (Bản sao)`,
     description: plan.description || undefined,
+    scopeNote: plan.scopeNote || undefined,
     purpose: mapPurpose(plan.purpose),
     durationDays: getPlanDurationDays(plan.startDate, plan.endDate),
-    scopeNote: undefined,
     personnel: undefined,
     stages: undefined,
     status: mapStatus(plan.status),
