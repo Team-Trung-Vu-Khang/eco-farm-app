@@ -1,22 +1,27 @@
 import { useToast } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { useMemo, useState } from "react";
 import { useLocation } from "wouter";
-import { useFarmPlanMutations, useFarmWorkflowMutations } from "@/features/farm-workflow/hooks";
+import {
+  useFarmPlanMutations,
+  useFarmWorkflowMutations,
+} from "@/features/farm-workflow/hooks";
 import type {
   FarmPlanRequest,
   FarmWorkflowRequest,
+  FarmWorkflowRequestStatus,
 } from "@/features/farm-workflow/types/farm-workflow.type";
-import { useFarmPlans, useFarmWorkflows } from "@/features/farm-workflow/hooks";
 import {
-  deleteFallbackPlan,
-  duplicateFallbackPlan,
-  duplicateFallbackWorkflow,
-  getFallbackPlans,
-  getFallbackWorkflows,
+  useFarmPlans,
+  useFarmWorkflows,
+  useFarmWorkflowStats,
+} from "@/features/farm-workflow/hooks";
+import {
   mapPlanResponseToPlan,
   mapWorkflowResponseToWorkflow,
 } from "../utils/api-mappers";
 import type { Plan, Workflow } from "../types";
+
+const WORKFLOW_DOMAIN_CODE = "CROP" as const;
 
 function getPlanStatistics(plans: Plan[]) {
   return {
@@ -95,8 +100,25 @@ function toFarmWorkflowRequest(workflow: Workflow): FarmWorkflowRequest {
 export function usePlanPage(basePath = "/plan-growth") {
   const { toast } = useToast();
   const [, setLocation] = useLocation();
+
+  const [search, setSearch] = useState("");
+  const [status, setStatus] = useState<FarmWorkflowRequestStatus | "">("");
+  const [currentIndex, setCurrentIndex] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+
   const planQuery = useFarmPlans();
-  const workflowQuery = useFarmWorkflows();
+  const workflowQuery = useFarmWorkflows({
+    params: {
+      domainCode: WORKFLOW_DOMAIN_CODE,
+      keyword: search.trim() || undefined,
+      status: status || undefined,
+      page: currentIndex - 1,
+      size: pageSize,
+    },
+  });
+  const statsQuery = useFarmWorkflowStats({
+    params: { domainCode: WORKFLOW_DOMAIN_CODE },
+  });
   const { deletePlan, createPlan } = useFarmPlanMutations();
   const { createWorkflow } = useFarmWorkflowMutations();
 
@@ -112,9 +134,17 @@ export function usePlanPage(basePath = "/plan-growth") {
     [workflowQuery.items],
   );
 
-  const plans = apiPlans.length ? apiPlans : getFallbackPlans();
-  const workflows = apiWorkflows.length ? apiWorkflows : getFallbackWorkflows();
-  const statistics = useMemo(() => getPlanStatistics(plans), [plans]);
+  const plans = apiPlans;
+  const workflows = apiWorkflows;
+  const statistics = statsQuery.data
+    ? {
+        total: statsQuery.data.totalPlans,
+        active: statsQuery.data.inProgressPlans,
+        draft: statsQuery.data.draftPlans,
+        completed: statsQuery.data.completedPlans,
+        cancelled: statsQuery.data.cancelledPlans,
+      }
+    : getPlanStatistics(plans);
 
   const handleDelete = (item: Plan) => {
     setDeleteItem(item);
@@ -129,10 +159,8 @@ export function usePlanPage(basePath = "/plan-growth") {
 
     try {
       await deletePlan.mutateAsync(deleteItem.id);
-      deleteFallbackPlan(deleteItem.id);
       toast({ title: "Thành công", description: "Đã xóa kế hoạch" });
     } catch {
-      deleteFallbackPlan(deleteItem.id);
       toast({
         variant: "destructive",
         title: "Lỗi",
@@ -145,22 +173,22 @@ export function usePlanPage(basePath = "/plan-growth") {
   };
 
   const handleDuplicate = async (item: Plan) => {
+    if (!item.workflowId) {
+      toast({
+        variant: "destructive",
+        title: "Lỗi",
+        description: "Không thể nhân bản kế hoạch chưa gắn sơ đồ quy trình",
+      });
+      return;
+    }
+
     try {
-      if (item.workflowId) {
-        await createPlan.mutateAsync({
-          workflowId: item.workflowId,
-          payload: toFarmPlanRequest(item),
-        });
-      } else {
-        duplicateFallbackPlan(item.id);
-      }
-      if (!item.workflowId) {
-        toast({ title: "Thành công", description: "Đã nhân bản kế hoạch" });
-        return;
-      }
+      await createPlan.mutateAsync({
+        workflowId: item.workflowId,
+        payload: toFarmPlanRequest(item),
+      });
       toast({ title: "Thành công", description: "Đã nhân bản kế hoạch" });
     } catch {
-      duplicateFallbackPlan(item.id);
       toast({
         variant: "destructive",
         title: "Lỗi",
@@ -172,13 +200,11 @@ export function usePlanPage(basePath = "/plan-growth") {
   const handleCloneWorkflow = async (workflow: Workflow) => {
     try {
       await createWorkflow.mutateAsync(toFarmWorkflowRequest(workflow));
-      duplicateFallbackWorkflow(workflow.id);
       toast({
         title: "Đã nhân bản sơ đồ",
         description: `Đã tạo bản sao của "${workflow.name}".`,
       });
     } catch {
-      duplicateFallbackWorkflow(workflow.id);
       toast({
         variant: "destructive",
         title: "Lỗi",
@@ -201,5 +227,18 @@ export function usePlanPage(basePath = "/plan-growth") {
     goToView: (id: number) => setLocation(`${basePath}/${id}`),
     goToEdit: (id: number) =>
       setLocation(`${basePath}/create/workflow/plan/${id}/edit`),
+
+    // Workflow list — pagination / search / status filter (API-driven)
+    search,
+    setSearch,
+    status,
+    setStatus,
+    currentIndex,
+    setCurrentIndex,
+    pageSize,
+    setPageSize,
+    totalElements: workflowQuery.response?.totalElements ?? workflows.length,
+    totalPages: workflowQuery.response?.totalPages ?? 1,
+    loading: workflowQuery.loading,
   };
 }

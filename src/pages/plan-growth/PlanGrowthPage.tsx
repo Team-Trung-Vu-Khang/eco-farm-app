@@ -14,6 +14,7 @@ import {
 import { Plus } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useLocation } from "wouter";
+import type { FarmWorkflowRequestStatus } from "@/features/farm-workflow/types/farm-workflow.type";
 import {
   createWorkflowColumns,
   PlanGrowthStatisticsCards,
@@ -30,13 +31,21 @@ interface PlanGrowthPageProps {
 export default function PlanGrowthPage({
   basePath = "/plan-growth",
 }: PlanGrowthPageProps) {
-  const [search, setSearch] = useState("");
   const [, setLocation] = useLocation();
   const {
     plans,
     workflows,
     statistics,
     handleCloneWorkflow,
+    setSearch,
+    setStatus,
+    currentIndex,
+    setCurrentIndex,
+    pageSize,
+    setPageSize,
+    totalElements,
+    totalPages,
+    loading,
   } = usePlanPage(basePath);
   const resetWorkflowDraft = usePlanWorkflowDraftStore(
     (state) => state.resetDraft,
@@ -53,25 +62,19 @@ export default function PlanGrowthPage({
   };
 
   const workflowRows = useMemo<WorkflowRow[]>(() => {
-    const rows = workflows.map((workflow) => {
-      const workflowPlans = plans.filter(
-        (plan) => plan.workflowId === workflow.id,
-      );
-      return {
-        id: workflow.id,
-        name: workflow.name,
-        description: workflow.description,
-        totalCount: workflowPlans.length,
-        activeCount: workflowPlans.filter((p) => p.status === "active").length,
-        draftCount: workflowPlans.filter((p) => p.status === "draft").length,
-        completedCount: workflowPlans.filter((p) => p.status === "completed")
-          .length,
-        cancelledCount: workflowPlans.filter((p) => p.status === "cancelled")
-          .length,
-      };
-    });
+    const rows = workflows.map((workflow) => ({
+      id: workflow.id,
+      name: workflow.name,
+      description: workflow.description,
+      totalCount: workflow.planCount ?? 0,
+      activeCount: workflow.statusBreakdown?.inProgress ?? 0,
+      draftCount: workflow.statusBreakdown?.draft ?? 0,
+      completedCount: workflow.statusBreakdown?.completed ?? 0,
+      cancelledCount: workflow.statusBreakdown?.cancelled ?? 0,
+    }));
 
-    const unassignedPlans = plans.filter((plan) => !plan.workflowId);
+    const unassignedPlans =
+      currentIndex === 1 ? plans.filter((plan) => !plan.workflowId) : [];
     if (unassignedPlans.length) {
       rows.push({
         id: UNASSIGNED_WORKFLOW_ID,
@@ -90,7 +93,7 @@ export default function PlanGrowthPage({
     }
 
     return rows;
-  }, [workflows, plans]);
+  }, [workflows, plans, currentIndex]);
 
   const handleConfirmClone = () => {
     if (!workflowToClone) return;
@@ -109,19 +112,6 @@ export default function PlanGrowthPage({
       }),
     [basePath, setLocation],
   );
-
-  const filteredWorkflowRows = useMemo(() => {
-    const query = search.trim().toLowerCase();
-    if (!query) return workflowRows;
-
-    return workflowRows.filter((row) =>
-      [row.name, row.description]
-        .filter(Boolean)
-        .join(" ")
-        .toLowerCase()
-        .includes(query),
-    );
-  }, [workflowRows, search]);
 
   return (
     <PageWrapper
@@ -145,10 +135,40 @@ export default function PlanGrowthPage({
 
         <DataTable
           columns={columns}
-          data={filteredWorkflowRows}
+          data={workflowRows}
+          loading={loading}
           searchable
-          onSearch={setSearch}
+          onSearch={(value) => {
+            setSearch(value);
+            setCurrentIndex(1);
+          }}
           searchPlaceholder="Tìm kiếm sơ đồ quy trình..."
+          pageSize={pageSize}
+          currentIndex={currentIndex}
+          totalElements={totalElements}
+          totalPages={totalPages}
+          onIndexChange={setCurrentIndex}
+          onPageSize={(size) => {
+            setPageSize(size);
+            setCurrentIndex(1);
+          }}
+          onFilterChange={(key, value) => {
+            if (key === "status") {
+              setStatus((value as FarmWorkflowRequestStatus) || "");
+              setCurrentIndex(1);
+            }
+          }}
+          filters={[
+            {
+              key: "status",
+              label: "Trạng thái",
+              options: [
+                { label: "Hoạt động", value: "ACTIVE" },
+                { label: "Không hoạt động", value: "INACTIVE" },
+                { label: "Đã lưu trữ", value: "ARCHIVED" },
+              ],
+            },
+          ]}
         />
       </div>
 
