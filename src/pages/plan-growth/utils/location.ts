@@ -1,20 +1,35 @@
-import type { Plan } from "../../../stores/usePlanStore";
+import type { Region, SubArea } from "@/pages/region-chart/constants";
+import type { Plan } from "../types";
 import type {
   GeographicalSelection,
   PlanFormData,
   SelectionSummaryGroup,
 } from "../types";
 
+type RegionLike = Region & {
+  subAreas?: SubArea[];
+};
+
+function findRegion(regions: RegionLike[], regionId: string) {
+  return regions.find((item) => String(item.id) === String(regionId));
+}
+
+function findArea(region: RegionLike, areaId?: string) {
+  return region.subAreas?.find((item) => String(item.id) === String(areaId));
+}
+
+function findPlot(area: SubArea | undefined, plotId?: string) {
+  return area?.plots?.find((item) => String(item.id) === String(plotId));
+}
+
 export function summarizeSelections(
   selections: GeographicalSelection[],
-  regions: any[],
+  regions: RegionLike[],
 ): SelectionSummaryGroup[] {
   const summary: SelectionSummaryGroup[] = [];
 
   selections.forEach((selection) => {
-    const region = (regions || []).find(
-      (item) => String(item.id) === String(selection.regionId),
-    );
+    const region = findRegion(regions, selection.regionId);
     if (!region) return;
 
     let regionGroup = summary.find(
@@ -39,9 +54,7 @@ export function summarizeSelections(
     }
 
     if (selection.type === "area") {
-      const area = region.subAreas?.find(
-        (item: any) => String(item.id) === String(selection.areaId),
-      );
+      const area = findArea(region, selection.areaId);
       if (area) {
         regionGroup.items.push({
           type: "area",
@@ -52,12 +65,8 @@ export function summarizeSelections(
       return;
     }
 
-    const area = region.subAreas?.find(
-      (item: any) => String(item.id) === String(selection.areaId),
-    );
-    const plot = area?.plots?.find(
-      (item: any) => String(item.id) === String(selection.plotId),
-    );
+    const area = findArea(region, selection.areaId);
+    const plot = findPlot(area, selection.plotId);
     if (plot) {
       regionGroup.items.push({
         type: "plot",
@@ -73,7 +82,7 @@ export function summarizeSelections(
 
 export function summarizeTaskSelections(
   selections: GeographicalSelection[] | undefined,
-  regions: any[],
+  regions: RegionLike[],
 ) {
   if (!selections) return [];
 
@@ -89,7 +98,7 @@ export function summarizeTaskSelections(
 
 export function deriveSelectionState(
   selections: GeographicalSelection[],
-  regions: any[],
+  regions: RegionLike[],
   fallbackCrop = "",
   fallbackVariety = "",
 ) {
@@ -100,9 +109,7 @@ export function deriveSelectionState(
   let variety = fallbackVariety;
 
   selections.forEach((selection) => {
-    const region = (regions || []).find(
-      (item) => String(item.id) === String(selection.regionId),
-    );
+    const region = findRegion(regions, selection.regionId);
     if (!region) return;
 
     if (region.cropVarieties?.length) {
@@ -113,9 +120,9 @@ export function deriveSelectionState(
     regionIds.add(String(region.id));
 
     if (selection.type === "region") {
-      region.subAreas?.forEach((area: any) => {
+      region.subAreas?.forEach((area) => {
         zoneIds.add(String(area.id));
-        area.plots?.forEach((plot: any) => {
+        area.plots?.forEach((plot) => {
           plotIds.add(String(plot.id));
         });
       });
@@ -123,12 +130,10 @@ export function deriveSelectionState(
     }
 
     if (selection.type === "area") {
-      const area = region.subAreas?.find(
-        (item: any) => String(item.id) === String(selection.areaId),
-      );
+      const area = findArea(region, selection.areaId);
       if (area) {
         zoneIds.add(String(area.id));
-        area.plots?.forEach((plot: any) => {
+        area.plots?.forEach((plot) => {
           plotIds.add(String(plot.id));
         });
       }
@@ -136,9 +141,7 @@ export function deriveSelectionState(
     }
 
     plotIds.add(String(selection.plotId));
-    const area = region.subAreas?.find(
-      (item: any) => String(item.id) === String(selection.areaId),
-    );
+    const area = findArea(region, selection.areaId);
     if (area) {
       zoneIds.add(String(area.id));
     }
@@ -158,14 +161,14 @@ export function calculateSelectedArea(
     PlanFormData,
     "selectedRegionIds" | "selectedZoneIds" | "selectedPlotIds"
   >,
-  regions: any[],
+  regions: RegionLike[],
 ) {
   let total = 0;
 
   (regions || []).forEach((region) => {
     if (!formData.selectedRegionIds.includes(String(region.id))) return;
 
-    const regionZoneIds = region.subAreas?.map((item: any) => String(item.id)) || [];
+    const regionZoneIds = region.subAreas?.map((item) => String(item.id)) || [];
     const isWholeRegion =
       regionZoneIds.length > 0 &&
       regionZoneIds.every((id: string) => formData.selectedZoneIds.includes(id));
@@ -175,10 +178,10 @@ export function calculateSelectedArea(
       return;
     }
 
-    region.subAreas?.forEach((area: any) => {
+    region.subAreas?.forEach((area) => {
       if (!formData.selectedZoneIds.includes(String(area.id))) return;
 
-      const areaPlotIds = area.plots?.map((item: any) => String(item.id)) || [];
+      const areaPlotIds = area.plots?.map((item) => String(item.id)) || [];
       const isWholeArea =
         areaPlotIds.length > 0 &&
         areaPlotIds.every((id: string) => formData.selectedPlotIds.includes(id));
@@ -188,7 +191,7 @@ export function calculateSelectedArea(
         return;
       }
 
-      area.plots?.forEach((plot: any) => {
+      area.plots?.forEach((plot) => {
         if (formData.selectedPlotIds.includes(String(plot.id))) {
           total += plot.area || 0;
         }
@@ -199,18 +202,16 @@ export function calculateSelectedArea(
   return total.toFixed(1);
 }
 
-export function reconstructSelectionsFromPlan(plan: Plan, regions: any[]) {
+export function reconstructSelectionsFromPlan(plan: Plan, regions: RegionLike[]) {
   const selections: GeographicalSelection[] = [];
   let enterpriseId = "";
 
   (plan.selectedRegionIds || []).forEach((regionId) => {
-    const region = (regions || []).find(
-      (item) => String(item.id) === String(regionId),
-    );
+    const region = findRegion(regions, regionId);
     if (!region) return;
 
     const regionZoneIds =
-      region.subAreas?.map((item: any) => String(item.id)) || [];
+      region.subAreas?.map((item) => String(item.id)) || [];
     const isWholeRegion =
       regionZoneIds.length === 0 ||
       (regionZoneIds.length > 0 &&
@@ -228,10 +229,10 @@ export function reconstructSelectionsFromPlan(plan: Plan, regions: any[]) {
       return;
     }
 
-    region.subAreas?.forEach((area: any) => {
+    region.subAreas?.forEach((area) => {
       if (!(plan.selectedZoneIds || []).includes(String(area.id))) return;
 
-      const areaPlotIds = area.plots?.map((item: any) => String(item.id)) || [];
+      const areaPlotIds = area.plots?.map((item) => String(item.id)) || [];
       const isWholeArea =
         areaPlotIds.length === 0 ||
         (areaPlotIds.length > 0 &&
@@ -250,7 +251,7 @@ export function reconstructSelectionsFromPlan(plan: Plan, regions: any[]) {
         return;
       }
 
-      area.plots?.forEach((plot: any) => {
+      area.plots?.forEach((plot) => {
         if (!(plan.selectedPlotIds || []).includes(String(plot.id))) return;
         selections.push({
           id: `plot-${plot.id}`,
@@ -267,6 +268,6 @@ export function reconstructSelectionsFromPlan(plan: Plan, regions: any[]) {
   return { selections, enterpriseId };
 }
 
-export function summarizePlanSelections(plan: Plan, regions: any[]) {
+export function summarizePlanSelections(plan: Plan, regions: RegionLike[]) {
   return summarizeSelections(reconstructSelectionsFromPlan(plan, regions).selections, regions);
 }

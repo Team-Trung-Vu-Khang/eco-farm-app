@@ -1,0 +1,191 @@
+import type {
+  FarmPlanResponse,
+  FarmWorkflowResponse,
+} from "@/features/farm-workflow/types/farm-workflow.type";
+import { initialPlans, initialWorkflows } from "@/stores/planWorkflowSeed";
+import type {
+  GeographicalSelection,
+  Plan,
+  Workflow,
+} from "../types";
+
+const planStatusMap: Record<string, Plan["status"]> = {
+  DRAFT: "draft",
+  IN_PROGRESS: "active",
+  COMPLETED: "completed",
+  CANCELLED: "cancelled",
+};
+
+let fallbackPlans: Plan[] = initialPlans as Plan[];
+let fallbackWorkflows: Workflow[] = initialWorkflows as Workflow[];
+
+function mapScopeToSelection(
+  scope: FarmPlanResponse["scopes"][number],
+): GeographicalSelection | null {
+  if (scope.scopeType === "REGION" && scope.region) {
+    return {
+      id: `region-${scope.region.id}`,
+      type: "region",
+      regionId: String(scope.region.id),
+    };
+  }
+
+  if (scope.scopeType === "AREA" && scope.region && scope.area) {
+    return {
+      id: `area-${scope.area.id}`,
+      type: "area",
+      regionId: String(scope.region.id),
+      areaId: String(scope.area.id),
+    };
+  }
+
+  if (scope.scopeType === "PLOT" && scope.region && scope.area && scope.plot) {
+    return {
+      id: `plot-${scope.plot.id}`,
+      type: "plot",
+      regionId: String(scope.region.id),
+      areaId: String(scope.area.id),
+      plotId: String(scope.plot.id),
+    };
+  }
+
+  return null;
+}
+
+export function mapWorkflowResponseToWorkflow(
+  workflow: FarmWorkflowResponse,
+): Workflow {
+  return {
+    id: String(workflow.id),
+    name: workflow.name,
+    description: workflow.description || "",
+    selections: [],
+    isActive: workflow.status === "active",
+    createdAt: workflow.createdAt || new Date().toISOString(),
+    planCount: workflow.planCount ?? 0,
+    statusBreakdown: workflow.statusBreakdown
+      ? {
+          draft: workflow.statusBreakdown.draft,
+          inProgress: workflow.statusBreakdown.inProgress,
+          completed: workflow.statusBreakdown.completed,
+          cancelled: workflow.statusBreakdown.cancelled,
+        }
+      : undefined,
+  };
+}
+
+export function mapPlanResponseToPlan(plan: FarmPlanResponse): Plan {
+  const selections = plan.scopes
+    .map(mapScopeToSelection)
+    .filter(Boolean) as GeographicalSelection[];
+
+  const regionIds = Array.from(
+    new Set(selections.map((selection) => selection.regionId)),
+  );
+  const zoneIds = selections
+    .filter((selection) => selection.type !== "region" && selection.areaId)
+    .map((selection) => String(selection.areaId));
+  const plotIds = selections
+    .filter((selection) => selection.type === "plot" && selection.plotId)
+    .map((selection) => String(selection.plotId));
+
+  return {
+    id: plan.id,
+    code: plan.code,
+    name: plan.name,
+    description: plan.description || "",
+    workflowId: plan.workflow?.id ? String(plan.workflow.id) : undefined,
+    seasonId: "",
+    seasonName: "",
+    startDate: plan.plannedStartDate || "",
+    endDate: plan.plannedEndDate || "",
+    selectedRegionIds: regionIds,
+    selectedZoneIds: zoneIds,
+    selectedPlotIds: plotIds,
+    crop: "",
+    variety: "",
+    purpose: "cultivation",
+    growthCycleId: "",
+    regimenId: undefined,
+    selectedStages: [],
+    materialAllocations: [],
+    taskAllocations: [],
+    status: planStatusMap[plan.status] ?? "draft",
+    createdAt: plan.createdAt || new Date().toISOString(),
+    scopes: selections,
+  } as Plan;
+}
+
+export function getFallbackPlans(): Plan[] {
+  return fallbackPlans;
+}
+
+export function getFallbackWorkflows(): Workflow[] {
+  return fallbackWorkflows;
+}
+
+export function upsertFallbackPlan(plan: Plan) {
+  const existingIndex = fallbackPlans.findIndex((item) => item.id === plan.id);
+  if (existingIndex === -1) {
+    fallbackPlans = [...fallbackPlans, plan];
+    return;
+  }
+
+  fallbackPlans = fallbackPlans.map((item) => (item.id === plan.id ? plan : item));
+}
+
+export function deleteFallbackPlan(id: number) {
+  fallbackPlans = fallbackPlans.filter((plan) => plan.id !== id);
+}
+
+export function duplicateFallbackPlan(sourceId: number) {
+  const source = fallbackPlans.find((plan) => plan.id === sourceId);
+  if (!source) return undefined;
+
+  const nextId =
+    fallbackPlans.length > 0
+      ? Math.max(...fallbackPlans.map((plan) => plan.id)) + 1
+      : 1;
+  const duplicate: Plan = {
+    ...source,
+    id: nextId,
+    name: `${source.name} (Bản sao)`,
+    code: `${source.code}-COPY`,
+    status: "draft",
+    createdAt: new Date().toISOString().split("T")[0],
+  };
+  fallbackPlans = [...fallbackPlans, duplicate];
+  return duplicate;
+}
+
+export function upsertFallbackWorkflow(workflow: Workflow) {
+  const existingIndex = fallbackWorkflows.findIndex(
+    (item) => item.id === workflow.id,
+  );
+  if (existingIndex === -1) {
+    fallbackWorkflows = [...fallbackWorkflows, workflow];
+    return;
+  }
+
+  fallbackWorkflows = fallbackWorkflows.map((item) =>
+    item.id === workflow.id ? workflow : item,
+  );
+}
+
+export function deleteFallbackWorkflow(id: string) {
+  fallbackWorkflows = fallbackWorkflows.filter((workflow) => workflow.id !== id);
+}
+
+export function duplicateFallbackWorkflow(sourceId: string) {
+  const source = fallbackWorkflows.find((workflow) => workflow.id === sourceId);
+  if (!source) return undefined;
+
+  const duplicate: Workflow = {
+    ...source,
+    id: `workflow-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    name: `${source.name} (Bản sao)`,
+    createdAt: new Date().toISOString(),
+  };
+  fallbackWorkflows = [...fallbackWorkflows, duplicate];
+  return duplicate;
+}

@@ -15,11 +15,12 @@ export const farmWorkflowKeys = {
   all: () => ["farm-workflows"] as const,
   list: (params?: FarmWorkflowQueryParams) =>
     [...farmWorkflowKeys.all(), "list", params ?? {}] as const,
-  detail: (id: number) => [...farmWorkflowKeys.all(), "detail", id] as const,
+  detail: (id: number | string) =>
+    [...farmWorkflowKeys.all(), "detail", id] as const,
   stats: (params?: FarmWorkflowStatsQueryParams) =>
     [...farmWorkflowKeys.all(), "stats", params ?? {}] as const,
   plans: (
-    workflowId: number,
+    workflowId: number | string,
     params?: Omit<FarmPlanQueryParams, "workflowId">,
   ) => [...farmWorkflowKeys.all(), "plans", workflowId, params ?? {}] as const,
 };
@@ -28,7 +29,8 @@ export const farmPlanKeys = {
   all: () => ["farm-plans"] as const,
   list: (params?: FarmPlanQueryParams) =>
     [...farmPlanKeys.all(), "list", params ?? {}] as const,
-  detail: (id: number) => [...farmPlanKeys.all(), "detail", id] as const,
+  detail: (id: number | string) =>
+    [...farmPlanKeys.all(), "detail", id] as const,
 };
 
 interface UseFarmWorkflowsOptions {
@@ -62,7 +64,7 @@ interface UseFarmWorkflowByIdOptions {
 }
 
 export function useFarmWorkflowById(
-  id: number,
+  id: number | string,
   { enabled = true }: UseFarmWorkflowByIdOptions = {},
 ) {
   return useQuery<FarmWorkflowResponse, Error>({
@@ -98,7 +100,7 @@ interface UseFarmWorkflowPlansOptions {
 }
 
 export function useFarmWorkflowPlans(
-  workflowId: number,
+  workflowId: number | string,
   { params, enabled = true }: UseFarmWorkflowPlansOptions = {},
 ) {
   const queryResult = useQuery<FarmPlanPageResponse, Error>({
@@ -149,7 +151,7 @@ interface UseFarmPlanByIdOptions {
 }
 
 export function useFarmPlanById(
-  id: number,
+  id: number | string,
   { enabled = true }: UseFarmPlanByIdOptions = {},
 ) {
   return useQuery<FarmPlanResponse, Error>({

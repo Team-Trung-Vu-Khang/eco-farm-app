@@ -1,5 +1,4 @@
 import PageWrapper from "@/components/PageWrapper";
-import usePlanStore from "@/stores/usePlanStore";
 import useRegionStore from "@/stores/useRegionStore";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
@@ -35,6 +34,8 @@ import {
   type DiagramInfoRecord,
 } from "./hooks/usePlanWorkflowDraftStore";
 import type { GeographicalSelection } from "./types";
+import type { Plan } from "./types";
+import { getFallbackPlans, upsertFallbackPlan } from "./utils/api-mappers";
 import { summarizeSelections } from "./utils/location";
 
 const WORKFLOW_PATH = "/plan-growth/create/workflow";
@@ -56,7 +57,6 @@ export default function PlanGrowthWorkflowInfoFormPage() {
   const setInfoNodes = usePlanWorkflowDraftStore((state) => state.setInfoNodes);
   const nodes = usePlanWorkflowDraftStore((state) => state.nodes);
   const addNode = usePlanWorkflowDraftStore((state) => state.addNode);
-  const addPlan = usePlanStore((state) => state.addPlan);
 
   const editingRecord = nodeId
     ? infoNodes.find((item) => item.id === nodeId)
@@ -151,8 +151,17 @@ export default function PlanGrowthWorkflowInfoFormPage() {
       // First info node in an empty draft seeds the tree with a starter plan
       // node, mirroring the previous dialog-driven flow.
       if (isFirstInfoNode && nodes.length === 0) {
-        addPlan(createEmptyPlanDraft(DEFAULT_DRAFT_PLAN_NAME));
-        const created = usePlanStore.getState().plans.at(-1);
+        const nextPlanId =
+          getFallbackPlans().reduce(
+            (maxId, item) => Math.max(maxId, item.id),
+            0,
+          ) + 1;
+        const created = {
+          ...createEmptyPlanDraft(DEFAULT_DRAFT_PLAN_NAME),
+          id: nextPlanId,
+          createdAt: new Date().toISOString().split("T")[0],
+        } as Plan;
+        upsertFallbackPlan(created);
         if (created) {
           addNode({
             id: createNodeId("plan"),

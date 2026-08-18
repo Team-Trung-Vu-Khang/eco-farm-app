@@ -1,5 +1,4 @@
 import PageWrapper from "@/components/PageWrapper";
-import useWorkflowStore from "@/stores/useWorkflowStore";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -11,7 +10,6 @@ import {
   AlertDialogTitle,
   Button,
   DataTable,
-  useToast,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { Plus } from "lucide-react";
 import { useMemo, useState } from "react";
@@ -34,10 +32,12 @@ export default function PlanGrowthPage({
 }: PlanGrowthPageProps) {
   const [search, setSearch] = useState("");
   const [, setLocation] = useLocation();
-  const { toast } = useToast();
-  const { plans, statistics } = usePlanPage(basePath);
-  const workflows = useWorkflowStore((state) => state.workflows);
-  const cloneWorkflow = useWorkflowStore((state) => state.cloneWorkflow);
+  const {
+    plans,
+    workflows,
+    statistics,
+    handleCloneWorkflow,
+  } = usePlanPage(basePath);
   const resetWorkflowDraft = usePlanWorkflowDraftStore(
     (state) => state.resetDraft,
   );
@@ -94,11 +94,8 @@ export default function PlanGrowthPage({
 
   const handleConfirmClone = () => {
     if (!workflowToClone) return;
-    cloneWorkflow(workflowToClone.id);
-    toast({
-      title: "Đã nhân bản sơ đồ",
-      description: `Đã tạo bản sao của "${workflowToClone.name}".`,
-    });
+    const workflow = workflows.find((w) => w.id === workflowToClone.id);
+    if (workflow) void handleCloneWorkflow(workflow);
     setWorkflowToClone(null);
   };
 

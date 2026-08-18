@@ -26,7 +26,7 @@ export function useFarmWorkflowMutations() {
   const updateWorkflow = useMutation<
     FarmWorkflowResponse,
     Error,
-    { id: number; payload: FarmWorkflowRequest }
+    { id: number | string; payload: FarmWorkflowRequest }
   >({
     mutationFn: ({ id, payload }) => farmWorkflowApi.update(id, payload),
     onSuccess: (_, { id }) => {
@@ -35,7 +35,7 @@ export function useFarmWorkflowMutations() {
     },
   });
 
-  const deleteWorkflow = useMutation<void, Error, number>({
+  const deleteWorkflow = useMutation<void, Error, number | string>({
     mutationFn: (id) => farmWorkflowApi.delete(id).then(() => undefined),
     onSuccess: invalidateWorkflows,
   });
@@ -52,7 +52,7 @@ export function useFarmPlanMutations() {
   const createPlan = useMutation<
     FarmPlanResponse,
     Error,
-    { workflowId: number; payload: FarmPlanRequest }
+    { workflowId: number | string; payload: FarmPlanRequest }
   >({
     mutationFn: ({ workflowId, payload }) =>
       farmPlanApi.create(workflowId, payload),
@@ -68,7 +68,7 @@ export function useFarmPlanMutations() {
   const updatePlan = useMutation<
     FarmPlanResponse,
     Error,
-    { id: number; payload: FarmPlanRequest }
+    { id: number | string; payload: FarmPlanRequest }
   >({
     mutationFn: ({ id, payload }) => farmPlanApi.update(id, payload),
     onSuccess: (_, { id }) => {
@@ -78,7 +78,7 @@ export function useFarmPlanMutations() {
     },
   });
 
-  const deletePlan = useMutation<void, Error, number>({
+  const deletePlan = useMutation<void, Error, number | string>({
     mutationFn: (id) => farmPlanApi.delete(id).then(() => undefined),
     onSuccess: invalidatePlans,
   });

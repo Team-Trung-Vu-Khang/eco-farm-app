@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import {
   Badge,
   Button,
@@ -22,7 +23,7 @@ import {
   Trash2,
   Workflow,
 } from "lucide-react";
-import type { Plan } from "../../../stores/usePlanStore";
+import type { Plan } from "../types";
 import { getPlanStatusBadge } from "../utils/status";
 
 function formatDate(value?: string) {

@@ -1,8 +1,7 @@
 import { applyEdgeChanges, applyNodeChanges } from "reactflow";
 import type { Edge, EdgeChange, Node, NodeChange } from "reactflow";
 import { create } from "zustand";
-import type { Plan } from "@/stores/usePlanStore";
-import type { GeographicalSelection } from "../types";
+import type { Plan, GeographicalSelection } from "../types";
 
 export type WorkflowSetupKind = "plan" | "stage" | "detail";
 

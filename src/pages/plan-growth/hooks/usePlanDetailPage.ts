@@ -5,27 +5,39 @@ import { useToast } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { useEffect, useMemo, useState } from "react";
 import { useLocation, useParams } from "wouter";
 import { useAmendmentRegimenStore } from "../../../stores/useAmendmentRegimenStore";
-import usePlanStore from "../../../stores/usePlanStore";
 import { useTreatmentStore } from "../../../stores/useTreatmentStore";
+import { useFarmPlanMutations } from "@/features/farm-workflow/hooks";
+import type { TreatmentProcedure } from "@/pages/treatment/types/treatment.types";
+import { usePlanPage } from "./usePlanPage";
+import type { GeographicalSelection, Plan } from "../types";
 import {
   summarizePlanSelections,
   summarizeTaskSelections,
 } from "../utils/location";
+
+type AmendmentRegimenSummary = {
+  id: number;
+  name: string;
+  soilIssue?: string;
+  cropType?: string;
+  authors?: Array<{ name: string }>;
+  procedures?: TreatmentProcedure[];
+};
 
 export function usePlanDetailPage(basePath = "/plan-growth") {
   const params = useParams();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
 
-  const getPlanById = usePlanStore((state) => state.getPlanById);
-  const deletePlan = usePlanStore((state) => state.deletePlan);
+  const { plans } = usePlanPage(basePath);
+  const { deletePlan } = useFarmPlanMutations();
   const { regions } = useRegionStore();
   const { growthCycles } = useGrowthCycleStore();
   const { seasons } = useSeasonStore();
   const treatments = useTreatmentStore((state) => state.treatments);
   const amendmentRegimensRaw = useAmendmentRegimenStore(
     (state) => state.regimens,
-  );
+  ) as AmendmentRegimenSummary[];
 
   const regimens = useMemo(() => {
     const mappedTreatments = treatments.map((t) => ({
@@ -37,7 +49,7 @@ export function usePlanDetailPage(basePath = "/plan-growth") {
       category: t.disease || "Điều trị",
       crop: t.crop || "Tất cả",
       steps:
-        t.procedures?.map((p: any) => ({
+        t.procedures?.map((p) => ({
           id: String(p.id),
           day: p.startDay ? `Ngày ${p.startDay}` : `Ngày ${p.stepNumber}`,
           title: p.name,
@@ -54,7 +66,7 @@ export function usePlanDetailPage(basePath = "/plan-growth") {
       category: t.soilIssue || "Cải tạo",
       crop: t.cropType || "Tất cả",
       steps:
-        t.procedures?.map((p: any) => ({
+        t.procedures?.map((p) => ({
           id: String(p.id),
           day: p.timing || `Ngày ${p.stepNumber}`,
           title: p.name,
@@ -66,7 +78,10 @@ export function usePlanDetailPage(basePath = "/plan-growth") {
   }, [treatments, amendmentRegimensRaw]);
 
   const [deleteOpen, setDeleteOpen] = useState(false);
-  const plan = getPlanById(Number(params.id));
+  const plan = useMemo(
+    () => plans.find((item) => item.id === Number(params.id)),
+    [plans, params.id],
+  );
 
   useEffect(() => {
     if (!plan) {
@@ -77,16 +92,32 @@ export function usePlanDetailPage(basePath = "/plan-growth") {
       });
       setLocation(basePath);
     }
-  }, [plan, setLocation, toast]);
+  }, [basePath, plan, setLocation, toast]);
 
   const selectionSummary = useMemo(
     () => (plan ? summarizePlanSelections(plan, regions) : []),
     [plan, regions],
   );
 
+  const handleConfirmDelete = async () => {
+    if (!plan) return;
+
+    try {
+      await deletePlan.mutateAsync(plan.id);
+      toast({ title: "Thành công", description: "Đã xóa kế hoạch" });
+      setLocation(basePath);
+    } catch {
+      toast({
+        variant: "destructive",
+        title: "Lỗi",
+        description: "Không thể xóa kế hoạch",
+      });
+    }
+  };
+
   return {
     params,
-    plan,
+    plan: plan as Plan | undefined,
     regions,
     growthCycles,
     seasons,
@@ -94,18 +125,13 @@ export function usePlanDetailPage(basePath = "/plan-growth") {
     deleteOpen,
     setDeleteOpen,
     selectionSummary,
-    summarizeTaskSelections: (selections: any[] | undefined) =>
-      summarizeTaskSelections(selections as any, regions),
+    summarizeTaskSelections: (selections: GeographicalSelection[] | undefined) =>
+      summarizeTaskSelections(selections, regions),
     handleEdit: () =>
       setLocation(`${basePath}/create/workflow/plan/${params.id}/edit`),
     handleDelete: () => setDeleteOpen(true),
     goToWorkflow: () => setLocation(`${basePath}/${params.id}/workflow`),
-    handleConfirmDelete: () => {
-      if (!plan) return;
-      deletePlan(plan.id);
-      toast({ title: "Thành công", description: "Đã xóa kế hoạch" });
-      setLocation(basePath);
-    },
+    handleConfirmDelete,
     goBack: () => setLocation(basePath),
   };
 }

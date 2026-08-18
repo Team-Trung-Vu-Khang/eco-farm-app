@@ -40,14 +40,20 @@ import {
   type Node,
 } from "reactflow";
 import { useLocation, useParams } from "wouter";
-import usePlanStore, { type Plan } from "../../stores/usePlanStore";
 import { usePlanWorkflowDraftStore } from "./hooks/usePlanWorkflowDraftStore";
+import { useFarmPlanMutations } from "@/features/farm-workflow/hooks";
+import { usePlanPage } from "./hooks/usePlanPage";
 import type { Region } from "../region-chart/constants";
+import type { Plan } from "./types";
 import type {
   WorkflowCardNodeData,
   WorkflowNodeStatus,
 } from "./../growth-cycle/components/workflow/WorkflowCardNode";
 import { WorkflowCardNode } from "./../growth-cycle/components/workflow/WorkflowCardNode";
+import {
+  deleteFallbackPlan,
+  upsertFallbackPlan,
+} from "./utils/api-mappers";
 import { summarizePlanSelections } from "./utils/location";
 import { getPlanStatusBadge } from "./utils/status";
 
@@ -426,7 +432,8 @@ export default function PlanGrowthWorkflowPage({
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const { regions } = useRegionStore();
-  const updatePlan = usePlanStore((state) => state.updatePlan);
+  const { plans } = usePlanPage(basePath);
+  const { updatePlan, deletePlan } = useFarmPlanMutations();
   const resetWorkflowDraft = usePlanWorkflowDraftStore(
     (state) => state.resetDraft,
   );
@@ -438,7 +445,7 @@ export default function PlanGrowthWorkflowPage({
   }, [basePath, resetWorkflowDraft, setLocation]);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
-  const [viewMode, setViewMode] = useState<WorkflowViewMode>("workflow");
+  const [viewMode] = useState<WorkflowViewMode>("workflow");
   const [editDraft, setEditDraft] = useState<{
     name: string;
     description: string;
@@ -448,8 +455,7 @@ export default function PlanGrowthWorkflowPage({
     description: "",
     regionIds: [],
   });
-  const plan = usePlanStore((state) => state.getPlanById(Number(params.id)));
-  const deletePlan = usePlanStore((state) => state.deletePlan);
+  const plan = plans.find((item) => item.id === Number(params.id));
   const primaryRegionLabels = useMemo(
     () => (plan ? getRegionLabels(plan, regions || []) : []),
     [plan, regions],
@@ -468,7 +474,8 @@ export default function PlanGrowthWorkflowPage({
 
   const handleConfirmDelete = () => {
     if (!plan) return;
-    deletePlan(plan.id);
+    void deletePlan.mutateAsync(plan.id);
+    deleteFallbackPlan(plan.id);
     toast({
       title: "Thành công",
       description: "Đã xóa kế hoạch",
@@ -485,7 +492,8 @@ export default function PlanGrowthWorkflowPage({
     );
     const regionLabel = selectedRegions.map((region) => region.name).join(", ");
 
-    updatePlan(plan.id, {
+    upsertFallbackPlan({
+      ...plan,
       name: editDraft.name.trim() || plan.name,
       description: editDraft.description.trim(),
       selectedRegionIds: editDraft.regionIds,
@@ -494,6 +502,27 @@ export default function PlanGrowthWorkflowPage({
       cultivationRegion: regionLabel || plan.cultivationRegion,
       zone: undefined,
       plot: undefined,
+    });
+    void updatePlan.mutateAsync({
+      id: plan.id,
+      payload: {
+        code: plan.code || null,
+        name: editDraft.name.trim() || plan.name,
+        description: editDraft.description.trim() || undefined,
+        purpose: "CULTIVATION",
+        durationDays: Math.max(
+          1,
+          Math.round(
+            (new Date(`${plan.endDate}T00:00:00`).getTime() -
+              new Date(`${plan.startDate}T00:00:00`).getTime()) /
+              86400000,
+          ) || 1,
+        ),
+        scopeNote: undefined,
+        personnel: undefined,
+        stages: undefined,
+        status: plan.status === "draft" ? "DRAFT" : "IN_PROGRESS",
+      },
     });
 
     toast({

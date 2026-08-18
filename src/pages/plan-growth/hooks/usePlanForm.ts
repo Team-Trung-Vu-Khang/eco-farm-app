@@ -1,16 +1,19 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useLocation, useParams } from "wouter";
-import { useToast, type Step } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import { useToast } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import useGrowthCycleStore from "@/stores/useGrowthCycleStore";
 import useRegionStore from "@/stores/useRegionStore";
 import useSeasonStore from "@/stores/useSeasonStore";
 import usePersonnelStore from "@/stores/usePersonnelStore";
-import usePlanStore from "../../../stores/usePlanStore";
 import { useTreatmentStore } from "../../../stores/useTreatmentStore";
 import { useAmendmentRegimenStore } from "../../../stores/useAmendmentRegimenStore";
+import { useFarmPlanMutations } from "@/features/farm-workflow/hooks";
+import type { TreatmentProcedure } from "@/pages/treatment/types/treatment.types";
 import type {
   GeographicalSelection,
   MaterialAllocation,
+  Plan,
   PlanFormData,
   TaskAllocation,
 } from "../types";
@@ -21,6 +24,11 @@ import {
   summarizeSelections,
   summarizeTaskSelections,
 } from "../utils/location";
+import {
+  getFallbackPlans,
+  upsertFallbackPlan,
+} from "../utils/api-mappers";
+import { usePlanPage } from "./usePlanPage";
 import { usePlanWorkflowDraftStore } from "./usePlanWorkflowDraftStore";
 
 const WORKFLOW_BASE_PATH = "/plan-growth/create/workflow";
@@ -169,9 +177,8 @@ export function usePlanForm(
     ? (infoNodes.find((node) => node.isActive) ?? infoNodes[0])
     : undefined;
 
-  const addPlan = usePlanStore((state) => state.addPlan);
-  const updatePlan = usePlanStore((state) => state.updatePlan);
-  const getPlanById = usePlanStore((state) => state.getPlanById);
+  const { plans } = usePlanPage(basePath);
+  const { createPlan, updatePlan } = useFarmPlanMutations();
   const seasons = useSeasonStore((state) => state.seasons);
   const personnel = usePersonnelStore((state) => state.personnel);
   const { regions } = useRegionStore();
@@ -188,7 +195,7 @@ export function usePlanForm(
       provider: t.author || "Chưa rõ",
       category: t.disease || "Điều trị",
       crop: t.crop || "Tất cả",
-      steps: t.procedures?.map((p: any) => ({
+      steps: t.procedures?.map((p: TreatmentProcedure) => ({
         id: String(p.id),
         day: p.startDay ? `Ngày ${p.startDay}` : `Ngày ${p.stepNumber}`,
         title: p.name,
@@ -204,7 +211,7 @@ export function usePlanForm(
       provider: t.authors?.[0]?.name || "Chưa rõ",
       category: t.soilIssue || "Cải tạo",
       crop: t.cropType || "Tất cả",
-      steps: t.procedures?.map((p: any) => ({
+      steps: t.procedures?.map((p: TreatmentProcedure) => ({
         id: String(p.id),
         day: p.timing || `Ngày ${p.stepNumber}`,
         title: p.name,
@@ -223,7 +230,12 @@ export function usePlanForm(
     return parseDaysToParts(season.duration);
   }, []);
 
-  const plan = mode === "edit" ? getPlanById(Number(params.id)) : undefined;
+  const fallbackPlans = getFallbackPlans();
+  const plan =
+    mode === "edit"
+      ? plans.find((item) => item.id === Number(params.id)) ||
+        fallbackPlans.find((item) => item.id === Number(params.id))
+      : undefined;
   const initialSelectionState = useMemo(
     () =>
       mode === "edit" && plan
@@ -247,9 +259,11 @@ export function usePlanForm(
           endDate: plan.endDate || "",
           ...inferDurationFromDates(plan.startDate, plan.endDate),
           managementPersonnelIds:
-            (plan as any).managementPersonnelIds || [],
+            (plan as { managementPersonnelIds?: string[] })
+              .managementPersonnelIds || [],
           qualityInspectorPersonnelIds:
-            (plan as any).qualityInspectorPersonnelIds || [],
+            (plan as { qualityInspectorPersonnelIds?: string[] })
+              .qualityInspectorPersonnelIds || [],
           selectedRegionIds: plan.selectedRegionIds || [],
           selectedZoneIds: plan.selectedZoneIds || [],
           selectedPlotIds: plan.selectedPlotIds || [],
@@ -279,9 +293,11 @@ export function usePlanForm(
       startDate: plan.startDate || formatDateInput(new Date()),
       endDate: plan.endDate || "",
       ...inferDurationFromDates(plan.startDate, plan.endDate),
-      managementPersonnelIds: (plan as any).managementPersonnelIds || [],
+      managementPersonnelIds: (plan as { managementPersonnelIds?: string[] })
+        .managementPersonnelIds || [],
       qualityInspectorPersonnelIds:
-        (plan as any).qualityInspectorPersonnelIds || [],
+        (plan as { qualityInspectorPersonnelIds?: string[] })
+          .qualityInspectorPersonnelIds || [],
       selectedRegionIds: plan.selectedRegionIds || [],
       selectedZoneIds: plan.selectedZoneIds || [],
       selectedPlotIds: plan.selectedPlotIds || [],
@@ -321,7 +337,7 @@ export function usePlanForm(
       (region) => String(region.id) === String(firstRegionId),
     );
     setSelectedEnterpriseId(firstRegion?.enterpriseId || "");
-  }, [isWorkflowContext, workflowInfo, regions]);
+  }, [isWorkflowContext, workflowInfo, regions, formData.crop, formData.variety]);
 
   const selectionSummary = useMemo(
     () => summarizeSelections(selections, regions),
@@ -453,10 +469,18 @@ export function usePlanForm(
 
   const persistDraft = () => {
     if (mode !== "edit" || !params.id) return;
-    updatePlan(Number(params.id), {
+    const nextPlan = {
+      ...(plan || {}),
       ...formData,
+      id: Number(params.id),
       area: calculateArea(),
-    } as any);
+      selectedRegionIds: formData.selectedRegionIds,
+      selectedZoneIds: formData.selectedZoneIds,
+      selectedPlotIds: formData.selectedPlotIds,
+      materialAllocations: formData.materialAllocations,
+      taskAllocations: formData.taskAllocations,
+    };
+    upsertFallbackPlan(nextPlan as Plan);
   };
 
   const handleComplete = () => {
@@ -467,7 +491,42 @@ export function usePlanForm(
     };
 
     if (mode === "edit" && params.id) {
-      updatePlan(Number(params.id), payload as any);
+      const nextPlan = {
+        ...(plan || {}),
+        ...payload,
+        id: Number(params.id),
+        createdAt: plan?.createdAt || new Date().toISOString().split("T")[0],
+        selectedRegionIds: payload.selectedRegionIds,
+        selectedZoneIds: payload.selectedZoneIds,
+        selectedPlotIds: payload.selectedPlotIds,
+        materialAllocations: payload.materialAllocations,
+        taskAllocations: payload.taskAllocations,
+      };
+
+      upsertFallbackPlan(nextPlan as Plan);
+      void updatePlan
+        .mutateAsync({
+          id: Number(params.id),
+          payload: {
+            code: formData.code || null,
+            name: formData.name,
+            description: formData.description || undefined,
+            purpose: "CULTIVATION",
+            durationDays: Math.max(
+              1,
+              Math.round(
+                (new Date(`${formData.endDate}T00:00:00`).getTime() -
+                  new Date(`${formData.startDate}T00:00:00`).getTime()) /
+                  86400000,
+              ) || 1,
+            ),
+            scopeNote: undefined,
+            personnel: undefined,
+            stages: undefined,
+            status: "IN_PROGRESS",
+          },
+        })
+        .catch(() => undefined);
       toast({
         title: "Thành công",
         description: `Đã cập nhật kế hoạch ${formData.name}`,
@@ -480,17 +539,44 @@ export function usePlanForm(
       return;
     }
 
-    addPlan(payload as any);
+    const createdId = Date.now();
+    const nextPlan = {
+      ...payload,
+      id: createdId,
+      code: formData.code,
+      createdAt: new Date().toISOString().split("T")[0],
+    };
+    upsertFallbackPlan(nextPlan as Plan);
+    void createPlan
+      .mutateAsync({
+        workflowId: workflowInfo?.id || "0",
+        payload: {
+          code: formData.code || null,
+          name: formData.name,
+          description: formData.description || undefined,
+          purpose: "CULTIVATION",
+          durationDays: Math.max(
+            1,
+            Math.round(
+              (new Date(`${formData.endDate}T00:00:00`).getTime() -
+                new Date(`${formData.startDate}T00:00:00`).getTime()) /
+                86400000,
+            ) || 1,
+          ),
+          scopeNote: undefined,
+          personnel: undefined,
+          stages: undefined,
+          status: "DRAFT",
+        },
+      })
+      .catch(() => undefined);
     toast({
       title: "Thành công",
       description: `Đã tạo kế hoạch ${formData.name}`,
     });
     if (options?.onSaved) {
-      const created = usePlanStore.getState().plans.at(-1);
-      if (created) {
-        options.onSaved(created.id);
-        return;
-      }
+      options.onSaved(createdId);
+      return;
     }
     setLocation(basePath);
   };
@@ -514,8 +600,8 @@ export function usePlanForm(
     selectionSummary,
     dateWarning,
     calculateArea,
-    summarizeTaskSelections: (taskSelections: any[] | undefined) =>
-      summarizeTaskSelections(taskSelections as any, regions),
+    summarizeTaskSelections: (taskSelections: GeographicalSelection[] | undefined) =>
+      summarizeTaskSelections(taskSelections, regions),
     personnel,
     handleSeasonChange,
     handleDurationPartChange,

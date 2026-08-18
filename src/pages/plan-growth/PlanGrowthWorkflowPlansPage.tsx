@@ -7,12 +7,8 @@ import {
 import { ArrowLeft, Workflow } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Link, useParams } from "wouter";
-import useWorkflowStore from "@/stores/useWorkflowStore";
-import {
-  createPlanGrowthColumns,
-  planGrowthFilters,
-  UNASSIGNED_WORKFLOW_ID,
-} from "./data/table";
+import { createPlanGrowthColumns } from "./data/table";
+import { planGrowthFilters, UNASSIGNED_WORKFLOW_ID } from "./data/table";
 import { usePlanPage } from "./hooks/usePlanPage";
 
 interface PlanGrowthWorkflowPlansPageProps {
@@ -24,10 +20,12 @@ export default function PlanGrowthWorkflowPlansPage({
 }: PlanGrowthWorkflowPlansPageProps) {
   const params = useParams<{ workflowId: string }>();
   const workflowId = params.workflowId || "";
+  const isUnassigned = workflowId === UNASSIGNED_WORKFLOW_ID;
   const [search, setSearch] = useState("");
 
   const {
     plans,
+    workflows,
     deleteOpen,
     setDeleteOpen,
     handleDelete,
@@ -36,17 +34,17 @@ export default function PlanGrowthWorkflowPlansPage({
     goToEdit,
   } = usePlanPage(basePath);
 
-  const workflow = useWorkflowStore((state) =>
-    state.workflows.find((item) => item.id === workflowId),
-  );
-  const isUnassigned = workflowId === UNASSIGNED_WORKFLOW_ID;
-
   const workflowPlans = useMemo(
     () =>
       plans.filter((plan) =>
         isUnassigned ? !plan.workflowId : plan.workflowId === workflowId,
       ),
     [plans, workflowId, isUnassigned],
+  );
+
+  const workflow = useMemo(
+    () => workflows.find((item) => item.id === workflowId),
+    [workflows, workflowId],
   );
 
   const columns = useMemo(
