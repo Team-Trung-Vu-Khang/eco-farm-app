@@ -246,6 +246,12 @@ export default function PlanGrowthWorkflowInfoFormPage() {
           ...prev.filter((item) => item.id !== editingRecord?.id),
           record,
         ]);
+        // Mark this freshly-created workflow as the active draft — otherwise
+        // navigating to its numeric-id canvas URL right after would look
+        // like opening a different (persisted) workflow, and the canvas
+        // page's API-detail fetch would wipe the starter plan node just
+        // added below.
+        usePlanWorkflowDraftStore.setState({ activeWorkflowId: record.id });
 
         // First info node in an empty draft seeds the tree with a starter plan
         // node, mirroring the previous dialog-driven flow.
@@ -276,7 +282,9 @@ export default function PlanGrowthWorkflowInfoFormPage() {
           ? "Đã cập nhật node thông tin quy trình"
           : "Đã thêm node thông tin quy trình",
       });
-      setLocation(WORKFLOW_PATH);
+      // Route with the persisted workflow id so the canvas page's URL keeps
+      // reflecting which workflow is open (bookmarkable/reload-safe).
+      setLocation(`${WORKFLOW_PATH}/${record.id}`);
     } catch {
       toast({
         variant: "destructive",

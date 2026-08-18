@@ -37,7 +37,10 @@ import {
   type NodeChange,
 } from "reactflow";
 import { useLocation, useParams } from "wouter";
-import { useFarmWorkflowById } from "@/features/farm-workflow/hooks";
+import {
+  useFarmWorkflowById,
+  useFarmWorkflowPlans,
+} from "@/features/farm-workflow/hooks";
 import { useDialogBugWorkaround } from "../../shared/hooks/useDialogBugWorkaround";
 import usePlanStore, { type Plan } from "../../stores/usePlanStore";
 import useWorkflowStore from "../../stores/useWorkflowStore";
@@ -50,6 +53,7 @@ import {
 import {
   createEmptyPlanDraft,
   createNodeId,
+  DEFAULT_DRAFT_PLAN_NAME,
   getDirectChildren,
   getParentId,
   INFO_NODE_X,
@@ -59,7 +63,10 @@ import {
   type DraftNode,
 } from "./hooks/usePlanWorkflowDraftStore";
 import type { GeographicalSelection } from "./types";
-import { mapWorkflowResponseToInfoRecord } from "./utils/api-mappers";
+import {
+  mapPlanResponseToPlan,
+  mapWorkflowResponseToInfoRecord,
+} from "./utils/api-mappers";
 import { summarizePlanSelections, summarizeSelections } from "./utils/location";
 
 // Local draft-only nodes carry a `workflow-<timestamp>-<rand>` id; only
@@ -465,6 +472,13 @@ export default function PlanGrowthCreateWorkflowPage() {
       routeWorkflowId !== activeWorkflowId &&
       isRoutePersistedId,
   });
+  const { items: workflowPlans, loading: isLoadingWorkflowPlans } =
+    useFarmWorkflowPlans(routeWorkflowId ?? "", {
+      enabled:
+        !!routeWorkflowId &&
+        routeWorkflowId !== activeWorkflowId &&
+        isRoutePersistedId,
+    });
 
   useEffect(() => {
     const workflowId = params.workflowId ?? null;
@@ -498,14 +512,53 @@ export default function PlanGrowthCreateWorkflowPage() {
 
   useEffect(() => {
     if (!workflowDetail) return;
+    // Wait for the plans list to settle too — otherwise an empty in-flight
+    // `workflowPlans` would look like "no plans" and seed a spurious draft.
+    if (isLoadingWorkflowPlans) return;
     const workflowId = String(workflowDetail.id);
     if (workflowId === activeWorkflowId) return;
 
+    let planNodePlans: Plan[] = workflowPlans.map(mapPlanResponseToPlan);
+    if (planNodePlans.length === 0) {
+      // No plans on this workflow yet — seed a first draft plan so the
+      // canvas isn't empty, mirroring the info form's "first node" flow.
+      const nextPlanId =
+        usePlanStore
+          .getState()
+          .plans.reduce((max, item) => Math.max(max, item.id), 0) + 1;
+      planNodePlans = [
+        {
+          ...createEmptyPlanDraft(DEFAULT_DRAFT_PLAN_NAME),
+          id: nextPlanId,
+          workflowId,
+          createdAt: new Date().toISOString().split("T")[0],
+        } as Plan,
+      ];
+    }
+
+    // Upsert by id into the local plan store so the existing plan-node UI
+    // (edit / allocate work, both keyed by plan id) keeps working off it.
+    usePlanStore.setState((state) => ({
+      plans: [
+        ...state.plans.filter(
+          (item) => !planNodePlans.some((plan) => plan.id === item.id),
+        ),
+        ...planNodePlans,
+      ],
+    }));
+
+    const planNodes: DraftNode[] = planNodePlans.map((plan) => ({
+      id: createNodeId("plan"),
+      type: "workflowCard",
+      position: PLACEHOLDER_POSITION,
+      data: { setupKind: "plan", planId: plan.id },
+    }));
+
     // The backend only stores the workflow's own info (name/description/
-    // duration/scopes) — plan/stage/detail nodes still live in the local
-    // draft, so they start empty here.
+    // duration/scopes) — stage/detail nodes under each plan still live in
+    // the local draft only, so they start empty here.
     loadWorkflow({
-      nodes: [],
+      nodes: planNodes,
       edges: [],
       infoNodes: [
         mapWorkflowResponseToInfoRecord(workflowDetail, {
@@ -515,7 +568,7 @@ export default function PlanGrowthCreateWorkflowPage() {
       ],
       activeWorkflowId: workflowId,
     });
-  }, [workflowDetail, activeWorkflowId, loadWorkflow]);
+  }, [workflowDetail, isLoadingWorkflowPlans, workflowPlans, activeWorkflowId, loadWorkflow]);
 
   const [confirmAction, setConfirmAction] = useState<ConfirmActionState | null>(
     null,

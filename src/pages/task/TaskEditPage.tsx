@@ -1462,37 +1462,11 @@ export default function TaskEditPage() {
             <Card>
               <CardHeader>
                 <CardTitle className="text-lg flex items-center gap-2">
-                  <CalendarIcon className="w-5 h-5 text-primary" />
-                  Thời gian triển khai
+                  <StickyNote className="w-5 h-5 text-primary" />
+                  Ưu tiên & Ghi chú
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label className="text-sm font-bold text-slate-700">
-                    Ngày bắt đầu *
-                  </Label>
-                  <Input
-                    type="date"
-                    value={formData.startDate}
-                    onChange={(e) =>
-                      setFormData({ ...formData, startDate: e.target.value })
-                    }
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label className="text-sm font-bold text-slate-700">
-                    Ngày kết thúc *
-                  </Label>
-                  <Input
-                    type="date"
-                    value={formData.endDate}
-                    onChange={(e) =>
-                      setFormData({ ...formData, endDate: e.target.value })
-                    }
-                  />
-                </div>
-
                 <div className="space-y-3">
                   <Label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
                     Độ ưu tiên *
@@ -1544,25 +1518,20 @@ export default function TaskEditPage() {
                     ))}
                   </div>
                 </div>
-              </CardContent>
-            </Card>
 
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <StickyNote className="w-5 h-5 text-primary" />
-                  Ghi chú
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <Textarea
-                  value={formData.description}
-                  onChange={(e) =>
-                    setFormData({ ...formData, description: e.target.value })
-                  }
-                  placeholder="Mô tả chi tiết công việc..."
-                  rows={4}
-                />
+                <div className="space-y-2">
+                  <Label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                    Ghi chú
+                  </Label>
+                  <Textarea
+                    value={formData.description}
+                    onChange={(e) =>
+                      setFormData({ ...formData, description: e.target.value })
+                    }
+                    placeholder="Mô tả chi tiết công việc..."
+                    rows={4}
+                  />
+                </div>
               </CardContent>
             </Card>
           </div>
