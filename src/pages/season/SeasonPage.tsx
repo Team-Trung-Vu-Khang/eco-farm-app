@@ -8,33 +8,56 @@ import {
   TabsList,
   TabsTrigger,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { PawPrint, Plus, Trees } from "lucide-react";
-import { useMemo, useState } from "react";
+import { PawPrint, Plus, Fish, TreeDeciduous } from "lucide-react";
+import { useState } from "react";
+import { useSeasons } from "@/features/master-data/hooks/useSeasons";
 import { seasonColumns } from "./data/columns";
 import { useSeasonPage } from "./hooks/useSeasonPage";
-import type { Season } from "./types/types";
+import type {
+  MasterDataSeasonResponse,
+  SeasonDomainCode,
+} from "@/features/master-data/types/master-data.type";
 
-function resolveSeasonType(season: Season) {
-  return season.seasonType ?? "plant";
-}
+const DEFAULT_PAGE_SIZE = 20;
 
-function SeasonTableView({
-  seasons,
+function SeasonTabContent({
+  domainCode,
   onEdit,
   onDelete,
 }: {
-  seasons: Season[];
-  onEdit: (season: Season) => void;
-  onDelete: (season: Season) => void;
+  domainCode: SeasonDomainCode;
+  onEdit: (season: MasterDataSeasonResponse) => void;
+  onDelete: (season: MasterDataSeasonResponse) => void;
 }) {
+  const [currentIndex, setCurrentIndex] = useState(1);
+  const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
+
+  const { data, isLoading } = useSeasons({
+    params: {
+      domainCode,
+      page: Math.max(currentIndex - 1, 0),
+      size: pageSize,
+    },
+  });
+
   return (
     <DataTable
-      data={seasons}
+      data={data?.content || []}
       selectable={false}
       columns={seasonColumns}
       onEdit={onEdit}
       onDelete={onDelete}
       searchPlaceholder="Tìm kiếm mã, tên mùa vụ..."
+      pageSize={pageSize}
+      currentIndex={currentIndex}
+      totalPages={data?.totalPages ?? 0}
+      totalElements={data?.totalElements ?? 0}
+      onPageSize={(size) => {
+        setPageSize(size);
+        setCurrentIndex(1);
+      }}
+      onIndexChange={setCurrentIndex}
+      loading={isLoading}
     />
   );
 }
@@ -46,25 +69,13 @@ export default function SeasonPage() {
     handleConfirmDelete,
     handleDelete,
     handleEdit,
-    seasons,
     setDeleteOpen,
   } = useSeasonPage();
-  const [tab, setTab] = useState<"plant" | "animal">("plant");
-
-  const plantSeasons = useMemo(
-    () => seasons.filter((season) => resolveSeasonType(season) === "plant"),
-    [seasons],
-  );
-
-  const animalSeasons = useMemo(
-    () => seasons.filter((season) => resolveSeasonType(season) === "animal"),
-    [seasons],
-  );
 
   return (
     <PageWrapper
       title="Quản lý mùa vụ"
-      description="Quản lý riêng vụ mùa và vụ nuôi trong cùng một không gian"
+      description="Quản lý riêng vụ mùa, vụ nuôi và vụ nuôi thủy sản"
       actions={
         <Button
           className="bg-green-600 shadow-sm transition-all hover:bg-green-700 hover:shadow-md active:scale-95"
@@ -76,32 +87,41 @@ export default function SeasonPage() {
       }
     >
       <div className="space-y-6">
-        <Tabs
-          value={tab}
-          onValueChange={(value) => setTab(value as "plant" | "animal")}
-        >
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="plant" className="gap-2">
-              <Trees className="h-4 w-4" />
+        <Tabs defaultValue="CROP">
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="CROP" className="gap-2">
+              <TreeDeciduous className="h-4 w-4" />
               Vụ mùa
             </TabsTrigger>
-            <TabsTrigger value="animal" className="gap-2">
+            <TabsTrigger value="LIVESTOCK" className="gap-2">
               <PawPrint className="h-4 w-4" />
               Vụ nuôi
             </TabsTrigger>
+            <TabsTrigger value="AQUACULTURE" className="gap-2">
+              <Fish className="h-4 w-4" />
+              Thủy sản
+            </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="plant" className="mt-5">
-            <SeasonTableView
-              seasons={plantSeasons}
+          <TabsContent value="CROP" className="mt-5">
+            <SeasonTabContent
+              domainCode="CROP"
               onEdit={handleEdit}
               onDelete={handleDelete}
             />
           </TabsContent>
 
-          <TabsContent value="animal" className="mt-5">
-            <SeasonTableView
-              seasons={animalSeasons}
+          <TabsContent value="LIVESTOCK" className="mt-5">
+            <SeasonTabContent
+              domainCode="LIVESTOCK"
+              onEdit={handleEdit}
+              onDelete={handleDelete}
+            />
+          </TabsContent>
+
+          <TabsContent value="AQUACULTURE" className="mt-5">
+            <SeasonTabContent
+              domainCode="AQUACULTURE"
               onEdit={handleEdit}
               onDelete={handleDelete}
             />

@@ -1,16 +1,40 @@
 import { CROP_OPTIONS } from "@/constants/crops";
 
-export const plantCycleOptions = CROP_OPTIONS.map((crop) => ({
-  id: crop.id,
-  name: crop.name,
-  group: crop.group,
-  image: crop.image,
-  description: `${crop.group} phổ biến trong hệ thống trồng trọt.`,
-}));
+export interface MockPrimaryOption {
+  id: string;
+  numericId: number;
+  name: string;
+  group: string;
+  image: string;
+  description?: string;
+}
 
-export const animalCycleOptions = [
+export interface MockChildOption {
+  id: string;
+  numericId: number;
+  primaryId: string;
+  name: string;
+  code?: string;
+  image: string;
+  description?: string;
+  group?: string;
+}
+
+export const plantCycleOptions: MockPrimaryOption[] = CROP_OPTIONS.map(
+  (crop, index) => ({
+    id: crop.id,
+    numericId: index + 1,
+    name: crop.name,
+    group: crop.group,
+    image: crop.image,
+    description: `${crop.group} phổ biến trong hệ thống trồng trọt.`,
+  }),
+);
+
+export const animalCycleOptions: MockPrimaryOption[] = [
   {
     id: "heo",
+    numericId: 101,
     name: "Heo",
     group: "Gia súc",
     image:
@@ -19,6 +43,7 @@ export const animalCycleOptions = [
   },
   {
     id: "ga",
+    numericId: 102,
     name: "Gà",
     group: "Gia cầm",
     image:
@@ -27,6 +52,7 @@ export const animalCycleOptions = [
   },
   {
     id: "bo",
+    numericId: 103,
     name: "Bò sữa",
     group: "Gia súc",
     image:
@@ -35,6 +61,7 @@ export const animalCycleOptions = [
   },
   {
     id: "ca-rolphi",
+    numericId: 104,
     name: "Cá rô phi",
     group: "Thủy sản",
     image:
@@ -43,9 +70,10 @@ export const animalCycleOptions = [
   },
 ];
 
-export const animalBreedOptions = [
+export const animalBreedOptions: MockChildOption[] = [
   {
     id: "heo-thit",
+    numericId: 201,
     primaryId: "heo",
     name: "Heo thịt",
     code: "PIG-FEED",
@@ -55,6 +83,7 @@ export const animalBreedOptions = [
   },
   {
     id: "heo-nai",
+    numericId: 202,
     primaryId: "heo",
     name: "Heo nái sinh sản",
     code: "PIG-BREED",
@@ -64,6 +93,7 @@ export const animalBreedOptions = [
   },
   {
     id: "ga-thit",
+    numericId: 203,
     primaryId: "ga",
     name: "Gà thịt công nghiệp",
     code: "BROILER",
@@ -73,6 +103,7 @@ export const animalBreedOptions = [
   },
   {
     id: "ga-trung",
+    numericId: 204,
     primaryId: "ga",
     name: "Gà đẻ trứng",
     code: "LAYING-HEN",
@@ -82,6 +113,7 @@ export const animalBreedOptions = [
   },
   {
     id: "bo-sua",
+    numericId: 205,
     primaryId: "bo",
     name: "Bò sữa Holstein",
     code: "HOLSTEIN",
@@ -91,6 +123,7 @@ export const animalBreedOptions = [
   },
   {
     id: "bo-thit",
+    numericId: 206,
     primaryId: "bo",
     name: "Bò thịt",
     code: "BEEF",
@@ -100,6 +133,7 @@ export const animalBreedOptions = [
   },
   {
     id: "ca-rolphi-thit",
+    numericId: 207,
     primaryId: "ca-rolphi",
     name: "Cá rô phi đơn tính",
     code: "TILAPIA-SM",
@@ -109,6 +143,7 @@ export const animalBreedOptions = [
   },
   {
     id: "ca-rolphi-bo-me",
+    numericId: 208,
     primaryId: "ca-rolphi",
     name: "Cá rô phi bố mẹ",
     code: "TILAPIA-BR",

@@ -1,5 +1,4 @@
 import PageWrapper from "@/components/PageWrapper";
-import { CROP_OPTIONS } from "@/constants/crops";
 import {
   Badge,
   Button,
@@ -14,89 +13,83 @@ import {
   Calendar,
   Edit,
   FileText,
-  Flower,
   Hash,
+  Layers,
   Leaf,
-  Sprout,
-  Trees,
 } from "lucide-react";
 import { Link, useRoute } from "wouter";
-import useCropStore from "../../stores/useCropStore";
-import useGrowthCycleStore from "../../stores/useGrowthCycleStore";
-import useSeasonStore from "../../stores/useSeasonStore";
-import useVarietyStore from "../../stores/useVarietyStore";
-import {
-  animalBreedOptions,
-  animalCycleOptions,
-} from "./data/cycleSelectionData";
-import type { SeasonDocument } from "./types/types";
+import { useSeasonById } from "@/features/master-data/hooks/useSeasons";
+import { getDomainLabel } from "./utils/utils";
+import type { MasterDataSeasonResponse } from "@/features/master-data/types/master-data.type";
 
-function resolveSeasonType(season: { seasonType?: "plant" | "animal" }) {
-  return season.seasonType ?? "plant";
+function StatusBadge({ status }: { status: string }) {
+  const config: Record<
+    string,
+    { label: string; variant: "default" | "secondary" | "outline" | "destructive" }
+  > = {
+    active: { label: "Đang hoạt động", variant: "default" },
+    inactive: { label: "Tạm ngưng", variant: "secondary" },
+    archived: { label: "Lưu trữ", variant: "outline" },
+  };
+
+  const { label, variant } = config[status] || { label: status, variant: "outline" as const };
+
+  return (
+    <Badge variant={variant} className="text-sm">
+      {label}
+    </Badge>
+  );
 }
 
-function resolveSeasonTargetLabel(
-  season: {
-    seasonType?: "plant" | "animal";
-    scope: "crop" | "variety";
-    cropId?: string;
-    varietyId?: string;
-  },
-  getCropById: (id: number) => { name: string } | undefined,
-  getVarietyById: (id: string) => { varietyName: string } | undefined,
-) {
-  const seasonType = resolveSeasonType(season);
-
-  if (seasonType === "animal") {
-    const primary = animalCycleOptions.find(
-      (option) => option.id === season.cropId || option.name === season.cropId,
-    );
-    const breed = season.varietyId
-      ? animalBreedOptions.find((option) => option.id === season.varietyId)
-      : undefined;
-
-    if (season.scope === "variety") {
-      return (
-        breed?.name ||
-        season.varietyId ||
-        primary?.name ||
-        season.cropId ||
-        "Chưa xác định"
-      );
-    }
-
-    return primary?.name || season.cropId || "Chưa xác định";
-  }
-
-  const crop =
-    CROP_OPTIONS.find(
-      (item) => item.id === season.cropId || item.name === season.cropId,
-    ) || (season.cropId ? getCropById(Number(season.cropId)) : undefined);
-  const variety = season.varietyId
-    ? getVarietyById(season.varietyId)
-    : undefined;
-
-  if (season.scope === "variety") {
-    return (
-      variety?.varietyName ||
-      season.varietyId ||
-      crop?.name ||
-      season.cropId ||
-      "Chưa xác định"
-    );
-  }
-
-  return crop?.name || season.cropId || "Chưa xác định";
+function StageCard({ stage, index }: { stage: MasterDataSeasonResponse["stages"][number]; index: number }) {
+  return (
+    <div className="flex items-start gap-3 p-3 rounded-lg border bg-white hover:shadow-sm transition-all">
+      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-green-100 text-green-700 text-sm font-bold">
+        {index + 1}
+      </div>
+      <div className="flex-1 min-w-0">
+        <h4 className="font-medium text-sm">{stage.name}</h4>
+        {stage.description && (
+          <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
+            {stage.description}
+          </p>
+        )}
+        <div className="flex items-center gap-3 mt-2">
+          {stage.durationDays > 0 && (
+            <span className="flex items-center gap-1 text-xs text-muted-foreground">
+              <Calendar className="h-3 w-3" />
+              {stage.durationDays} ngày
+            </span>
+          )}
+          {stage.documents && stage.documents.length > 0 && (
+            <span className="flex items-center gap-1 text-xs text-muted-foreground">
+              <FileText className="h-3 w-3" />
+              {stage.documents.length} tài liệu
+            </span>
+          )}
+        </div>
+      </div>
+    </div>
+  );
 }
 
 export default function SeasonDetailPage() {
   const [, params] = useRoute("/season/:id");
-  const { getSeasonById } = useSeasonStore();
-  const { growthCycles } = useGrowthCycleStore();
-  const { getCropById } = useCropStore();
-  const { getVarietyById } = useVarietyStore();
+  const { data: season, isLoading } = useSeasonById(
+    params?.id ? Number(params.id) : 0,
+    { enabled: !!params?.id },
+  );
 
-  const season = params?.id ? getSeasonById(params.id) : undefined;
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4" />
+          <p className="text-muted-foreground">Đang tải dữ liệu...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (!season) {
     return (
@@ -111,29 +104,10 @@ export default function SeasonDetailPage() {
     );
   }
 
-  const selectedCycles = growthCycles.filter((c) =>
-    season.growthCycleIds.includes(c.id),
+  const totalDuration = (season.stages || []).reduce(
+    (sum, stage) => sum + (stage.durationDays || 0),
+    0,
   );
-
-  const statusMap: Record<
-    string,
-    {
-      label: string;
-      variant: "default" | "secondary" | "outline" | "destructive";
-    }
-  > = {
-    planning: { label: "Lập kế hoạch", variant: "secondary" },
-    active: { label: "Đang triển khai", variant: "default" },
-    completed: { label: "Hoàn thành", variant: "outline" },
-    cancelled: { label: "Đã hủy", variant: "destructive" },
-  };
-
-  const statusConfig = statusMap[season.status] || {
-    label: season.status,
-    variant: "outline",
-  };
-
-  const seasonType = resolveSeasonType(season);
 
   return (
     <PageWrapper
@@ -189,9 +163,7 @@ export default function SeasonDetailPage() {
                     Trạng thái
                   </span>
                   <div>
-                    <Badge variant={statusConfig.variant} className="text-sm">
-                      {statusConfig.label}
-                    </Badge>
+                    <StatusBadge status={season.status} />
                   </div>
                 </div>
               </div>
@@ -213,158 +185,71 @@ export default function SeasonDetailPage() {
                     <Calendar className="w-4 h-4 text-green-600" />
                     Thời gian
                   </span>
-                  <p className="font-bold text-lg">{season.duration} ngày</p>
+                  <p className="font-bold text-lg">{totalDuration} ngày</p>
                 </div>
                 <div className="space-y-1">
                   <span className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                    {seasonType === "animal" ? (
-                      <Flower className="w-4 h-4 text-green-600" />
-                    ) : season.scope === "crop" ? (
-                      <Trees className="w-4 h-4 text-green-600" />
-                    ) : (
-                      <Flower className="w-4 h-4 text-green-600" />
-                    )}
-                    Phạm vi áp dụng
+                    <Leaf className="w-4 h-4 text-green-600" />
+                    Loại mùa vụ
                   </span>
                   <p className="font-bold text-lg">
-                    {seasonType === "animal"
-                      ? season.scope === "crop"
-                        ? "Theo loại vật nuôi"
-                        : "Theo giống / dòng"
-                      : season.scope === "crop"
-                        ? "Theo loại cây trồng"
-                        : "Theo giống cụ thể"}
+                    {getDomainLabel(season.domainCode)}
                   </p>
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-slate-50 p-4 rounded-xl border border-slate-100">
-                <div className="space-y-1">
-                  <span className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                    {seasonType === "animal" ? (
-                      <Flower className="w-4 h-4 text-green-600" />
-                    ) : (
-                      <Trees className="w-4 h-4 text-green-600" />
-                    )}
-                    {seasonType === "animal"
-                      ? "Đối tượng nuôi"
-                      : "Loại cây trồng"}
-                  </span>
-                  <p className="font-bold text-lg">
-                    {resolveSeasonTargetLabel(
-                      season,
-                      getCropById,
-                      getVarietyById,
-                    )}
-                  </p>
-                </div>
-                {season.scope === "variety" && (
+              {season.productionSubject && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-slate-50 p-4 rounded-xl border border-slate-100">
                   <div className="space-y-1">
                     <span className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                      <Flower className="w-4 h-4 text-green-600" />
-                      {seasonType === "animal"
-                        ? "Giống / dòng"
-                        : "Giống cây trồng"}
+                      <Leaf className="w-4 h-4 text-green-600" />
+                      Đối tượng
                     </span>
                     <p className="font-bold text-lg">
-                      {season.varietyId
-                        ? seasonType === "animal"
-                          ? animalBreedOptions.find(
-                              (item) => item.id === season.varietyId,
-                            )?.name || season.varietyId
-                          : getVarietyById(season.varietyId)?.varietyName ||
-                            season.varietyId
-                        : "Chưa xác định"}
+                      {season.productionSubject.name}
                     </p>
                   </div>
-                )}
-              </div>
+                  {season.productionSubjectVariant && (
+                    <div className="space-y-1">
+                      <span className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                        <Leaf className="w-4 h-4 text-green-600" />
+                        Giống / dòng
+                      </span>
+                      <p className="font-bold text-lg">
+                        {season.productionSubjectVariant.name}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
             </CardContent>
           </Card>
 
-          {/* Connected Growth Cycles Card */}
+          {/* Stages Card */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-lg">
-                <Sprout className="w-5 h-5 text-green-600" />
-                Chu kỳ sinh trưởng áp dụng
+                <Layers className="w-5 h-5 text-green-600" />
+                Các giai đoạn
               </CardTitle>
             </CardHeader>
             <CardContent>
-              {selectedCycles.length > 0 ? (
-                <div className="grid grid-cols-1 gap-4">
-                  {selectedCycles.map((cycle) => {
-                    const selectedStageMap =
-                      season.selectedStages?.[cycle.id] || {};
-                    const selectedStages =
-                      cycle.stages?.filter((s) => !!selectedStageMap[s.id]) ||
-                      [];
-
-                    return (
-                      <div
-                        key={cycle.id}
-                        className="flex flex-col p-4 rounded-xl border bg-white hover:shadow-sm transition-all gap-4"
-                      >
-                        <div className="flex items-center gap-4">
-                          <div className="w-12 h-12 rounded-full bg-green-100 text-green-600 flex items-center justify-center shrink-0">
-                            <Leaf className="w-6 h-6" />
-                          </div>
-                          <div className="flex-1">
-                            <h3 className="font-bold text-base">
-                              {cycle.name}
-                            </h3>
-                            <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-1 text-sm text-muted-foreground">
-                              <span className="flex items-center gap-1.5">
-                                <Sprout className="w-3.5 h-3.5" />
-                                {cycle.cropName} - {cycle.variety}
-                              </span>
-                              <span className="w-1 h-1 rounded-full bg-muted-foreground/30" />
-                              <span>{cycle.totalDays} ngày gốc</span>
-                            </div>
-                          </div>
-                          <Link href={`/growth-cycle/${cycle.id}/edit`}>
-                            <Button variant="outline" size="sm">
-                              Xem gốc
-                            </Button>
-                          </Link>
-                        </div>
-
-                        {selectedStages.length > 0 && (
-                          <div className="pl-16">
-                            <div className="bg-slate-50 rounded-lg p-3 border border-slate-100">
-                              <h4 className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-2">
-                                Giai đoạn áp dụng & Thời gian tùy chỉnh
-                              </h4>
-                              <div className="flex flex-wrap gap-2">
-                                {selectedStages.map((stage) => (
-                                  <Badge
-                                    key={stage.id}
-                                    variant="secondary"
-                                    className="bg-white border-slate-200 text-slate-700 font-normal shadow-sm"
-                                  >
-                                    <span className="w-1.5 h-1.5 rounded-full bg-green-500 mr-1.5" />
-                                    {stage.name} ({selectedStageMap[stage.id]}{" "}
-                                    ngày)
-                                  </Badge>
-                                ))}
-                              </div>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
+              {season.stages && season.stages.length > 0 ? (
+                <div className="grid grid-cols-1 gap-3">
+                  {season.stages.map((stage, index) => (
+                    <StageCard key={stage.id} stage={stage} index={index} />
+                  ))}
                 </div>
               ) : (
                 <div className="text-center py-8 text-muted-foreground italic bg-muted/20 rounded-xl border border-dashed">
-                  Chưa có chu kỳ sinh trưởng nào được liên kết
+                  Chưa có giai đoạn nào
                 </div>
               )}
             </CardContent>
           </Card>
         </div>
 
-        {/* Sidebar Column: Documents & Metadata */}
+        {/* Sidebar Column */}
         <div className="space-y-6">
           <Card>
             <CardHeader>
@@ -374,30 +259,36 @@ export default function SeasonDetailPage() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              {season.documents.length > 0 ? (
-                season.documents.map((doc: SeasonDocument) => (
-                  <div
-                    key={doc.id}
-                    className="flex items-start gap-3 p-3 rounded-lg border bg-blue-50/50 hover:bg-blue-50 transition-colors cursor-pointer group"
-                  >
-                    <div className="mt-1">
-                      <FileText className="w-5 h-5 text-blue-500" />
+              {(() => {
+                const allDocs = (season.stages || []).flatMap(
+                  (stage) => stage.documents || [],
+                );
+                if (allDocs.length > 0) {
+                  return allDocs.map((doc) => (
+                    <div
+                      key={doc.id}
+                      className="flex items-start gap-3 p-3 rounded-lg border bg-blue-50/50 hover:bg-blue-50 transition-colors cursor-pointer group"
+                    >
+                      <div className="mt-1">
+                        <FileText className="w-5 h-5 text-blue-500" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-sm truncate group-hover:text-blue-700 transition-colors">
+                          {doc.name}
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          {doc.type === "pdf" ? "PDF" : "Editor"}
+                        </p>
+                      </div>
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium text-sm truncate group-hover:text-blue-700 transition-colors">
-                        {doc.name}
-                      </p>
-                      <p className="text-xs text-muted-foreground mt-0.5">
-                        {doc.uploadedAt}
-                      </p>
-                    </div>
+                  ));
+                }
+                return (
+                  <div className="text-sm text-muted-foreground text-center py-6 border border-dashed rounded-lg">
+                    Chưa có tài liệu nào
                   </div>
-                ))
-              ) : (
-                <div className="text-sm text-muted-foreground text-center py-6 border border-dashed rounded-lg">
-                  Chưa có tài liệu nào
-                </div>
-              )}
+                );
+              })()}
             </CardContent>
           </Card>
         </div>

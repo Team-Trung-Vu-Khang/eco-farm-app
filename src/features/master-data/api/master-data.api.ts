@@ -25,6 +25,8 @@ import type {
   MasterDataPageResponse,
   MasterDataQueryParams,
   MasterDataRecord,
+  MasterDataSeasonRequest,
+  MasterDataSeasonResponse,
   MasterDataUpdateRequest,
   FertilizerGroupCreateRequest,
   FertilizerGroupRecord,
@@ -665,5 +667,43 @@ export const masterDataApi = {
   deleteCertificateStandard: (id: number | string): Promise<void> =>
     apiClient
       .delete(`${MASTER_DATA_PATHS.base}/certificate-standards/${id}`)
+      .then(() => undefined),
+
+  listSeasons: (params?: MasterDataQueryParams) =>
+    apiClient
+      .get<
+        MasterDataPageResponse<MasterDataSeasonResponse>
+      >(`${MASTER_DATA_PATHS.seasons}`, { params })
+      .then((response) => response.data),
+
+  getSeasonById: (id: number | string) =>
+    apiClient
+      .get<MasterDataSeasonResponse>(
+        `${MASTER_DATA_PATHS.seasons}/${id}`,
+      )
+      .then((response) => response.data),
+
+  createSeason: (payload: MasterDataSeasonRequest) =>
+    apiClient
+      .post<MasterDataSeasonResponse>(
+        `${MASTER_DATA_PATHS.seasons}`,
+        payload,
+      )
+      .then((response) => response.data),
+
+  updateSeason: (
+    id: number | string,
+    payload: MasterDataSeasonRequest,
+  ) =>
+    apiClient
+      .put<MasterDataSeasonResponse>(
+        `${MASTER_DATA_PATHS.seasons}/${id}`,
+        payload,
+      )
+      .then((response) => response.data),
+
+  deleteSeason: (id: number | string): Promise<void> =>
+    apiClient
+      .delete(`${MASTER_DATA_PATHS.seasons}/${id}`)
       .then(() => undefined),
 };

@@ -18,6 +18,7 @@ export const MASTER_DATA_PATHS = {
   planGroups: `${MASTER_DATA_BASE_PATH}/plan-groups`,
   planTypes: `${MASTER_DATA_BASE_PATH}/plan-types`,
   vsicIndustries: `${MASTER_DATA_BASE_PATH}/vsic-industries`,
+  seasons: `${MASTER_DATA_BASE_PATH}/seasons`,
 } as const;
 
 export const MASTER_DATA_CATALOGS = [

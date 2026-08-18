@@ -20,7 +20,6 @@ import {
 import {
   ChevronDown,
   Fish,
-  Flower2,
   Info,
   PawPrint,
   TreeDeciduous,
@@ -35,9 +34,12 @@ import {
   animalBreedOptions,
   animalCycleOptions,
   plantCycleOptions,
+  type MockChildOption,
+  type MockPrimaryOption,
 } from "../data/cycleSelectionData";
-import { SEASON_STATUS_OPTIONS } from "../utils/utils";
-import type { SeasonFormData, SeasonStatus } from "../types/types";
+import { DOMAIN_OPTIONS } from "../utils/utils";
+import type { SeasonFormData } from "../types/types";
+import type { SeasonDomainCode } from "@/features/master-data/types/master-data.type";
 import type { Variety } from "@/pages/variety/types";
 
 interface SeasonBasicInfoCardProps {
@@ -45,6 +47,8 @@ interface SeasonBasicInfoCardProps {
   onChange: (formData: SeasonFormData) => void;
   showStatusField?: boolean;
   varieties: Variety[];
+  disabled?: boolean;
+  hideDomainTabs?: boolean;
 }
 
 function SelectionCard({
@@ -159,310 +163,220 @@ function SelectionCard({
   );
 }
 
+function getOptionsForDomain(
+  domainCode: SeasonDomainCode,
+  varieties: Variety[],
+): {
+  primaryOptions: MockPrimaryOption[];
+  childOptions: MockChildOption[];
+} {
+  if (domainCode === "CROP") {
+    const primaryOptions = plantCycleOptions;
+    const childOptions: MockChildOption[] = varieties.map((variety) => ({
+      id: String(variety.id),
+      numericId: Number(variety.id) || 0,
+      primaryId: variety.crop,
+      name: variety.varietyName,
+      group: variety.scientificName || variety.crop,
+      image:
+        typeof variety.illustration === "string" ? variety.illustration : "",
+      description: variety.description || "",
+      code: variety.varietyCode,
+    }));
+    return { primaryOptions, childOptions };
+  }
+
+  if (domainCode === "LIVESTOCK") {
+    const primaryOptions = animalCycleOptions;
+    const childOptions: MockChildOption[] = animalBreedOptions.map((breed) => ({
+      ...breed,
+      group: primaryOptions.find((p) => p.id === breed.primaryId)?.group || breed.group,
+    }));
+    return { primaryOptions, childOptions };
+  }
+
+  // AQUACULTURE
+  const primaryOptions = animalCycleOptions.filter(
+    (item) => item.group === "Thủy sản",
+  );
+  const childOptions: MockChildOption[] = animalBreedOptions
+    .filter((breed) => primaryOptions.some((p) => p.id === breed.primaryId))
+    .map((breed) => ({
+      ...breed,
+      group: primaryOptions.find((p) => p.id === breed.primaryId)?.group || breed.group,
+    }));
+  return { primaryOptions, childOptions };
+}
+
 export function SeasonBasicInfoCard({
   formData,
   onChange,
   showStatusField = false,
   varieties,
+  disabled = false,
+  hideDomainTabs = false,
 }: SeasonBasicInfoCardProps) {
   const [dialogOpen, setDialogOpen] = useState(false);
-  const isPlant = (formData.seasonType ?? "plant") === "plant";
 
-  const primaryOptions = isPlant ? plantCycleOptions : animalCycleOptions;
-  const primaryMap = new Map<string, GrowthCycleHierarchyPrimaryOption>(
-    primaryOptions.map((item) => [item.id, item]),
+  const { primaryOptions, childOptions } = getOptionsForDomain(
+    formData.domainCode,
+    varieties,
   );
 
-  const childOptions: GrowthCycleHierarchyChildOption[] = isPlant
-    ? varieties.map((variety) => ({
-        id: variety.id,
-        primaryId: variety.crop,
-        name: variety.varietyName,
-        group: variety.scientificName || variety.crop,
-        image:
-          typeof variety.illustration === "string" ? variety.illustration : "",
-        description: variety.description || "",
-        code: variety.varietyCode,
-      }))
-    : animalBreedOptions.map((breed) => ({
-        ...breed,
-        group: primaryMap.get(breed.primaryId)?.group || breed.group,
-      }));
+  const selectedPrimary = primaryOptions.find(
+    (item) => item.id === formData.selectedPrimaryId,
+  );
+  const selectedChild = childOptions.find(
+    (item) => item.id === formData.selectedChildId,
+  );
 
-  const selectedPrimary = primaryOptions.find((item) => item.id === formData.cropId);
-  const selectedChild = childOptions.find((item) => item.id === formData.varietyId);
+  const hasVarietyScope = !!formData.productionSubjectVariantId;
 
-  const handleSeasonTypeChange = (seasonType: "plant" | "animal") => {
-    if (formData.seasonType === seasonType) return;
+  const handleDomainChange = (domainCode: SeasonDomainCode) => {
+    if (formData.domainCode === domainCode) return;
 
     onChange({
       ...formData,
-      seasonType,
-      scope: "crop",
-      cropId: undefined,
-      varietyId: undefined,
-      duration: 0,
-      growthCycleIds: [],
-      selectedStages: {},
-    });
-  };
-
-  const handleScopeChange = (scope: SeasonFormData["scope"]) => {
-    if (formData.scope === scope) return;
-
-    onChange({
-      ...formData,
-      scope,
-      cropId: undefined,
-      varietyId: undefined,
-      duration: 0,
-      growthCycleIds: [],
-      selectedStages: {},
-    });
-  };
-
-  const updateForm = <K extends keyof SeasonFormData>(
-    field: K,
-    value: SeasonFormData[K],
-  ) => {
-    onChange({
-      ...formData,
-      [field]: value,
+      domainCode,
+      productionSubjectId: undefined,
+      productionSubjectVariantId: undefined,
+      selectedPrimaryId: undefined,
+      selectedChildId: undefined,
     });
   };
 
   const selectionTitle = selectedPrimary
     ? selectedPrimary.name
-    : isPlant
-      ? "Chọn loại cây"
-      : "Chọn đối tượng nuôi";
+    : `Chọn đối tượng`;
 
   const selectionSubtitle = selectedPrimary
     ? selectedPrimary.group
-    : isPlant
-      ? "Mở dialog để chọn loại cây"
-      : "Mở dialog để chọn đối tượng nuôi";
+    : `Mở dialog để chọn`;
 
   const selectionDetail = selectedPrimary?.description;
 
   const varietyTitle = selectedChild
     ? selectedChild.name
-    : isPlant
-      ? "Chọn giống cây"
-      : "Chọn giống / dòng";
+    : "Chọn giống / dòng";
 
   const varietySubtitle = !selectedPrimary
-    ? isPlant
-      ? "Chọn loại cây trước"
-      : "Chọn đối tượng nuôi trước"
+    ? "Chọn đối tượng trước"
     : selectedChild
       ? selectedChild.group
-      : isPlant
-        ? "Mở dialog để chọn giống cây"
-        : "Mở dialog để chọn giống / dòng";
+      : "Mở dialog để chọn giống / dòng";
 
   const varietyDetail = !selectedPrimary
-    ? isPlant
-      ? "Vùng chọn này sẽ bật sau khi chọn loại cây."
-      : "Vùng chọn này sẽ bật sau khi chọn đối tượng nuôi."
-    : formData.scope === "variety"
+    ? "Vùng chọn này sẽ bật sau khi chọn đối tượng."
+    : hasVarietyScope
       ? selectedChild
         ? selectedChild.description || ""
-        : isPlant
-          ? "Bấm vào đây để chọn giống trong cùng dialog."
-          : "Bấm vào đây để chọn giống / dòng trong cùng dialog."
-      : isPlant
-        ? "Phạm vi đang là theo loại cây nên không cần chọn giống riêng."
-        : "Phạm vi đang là theo đối tượng nuôi nên không cần chọn giống riêng.";
+        : "Bấm vào đây để chọn giống trong cùng dialog."
+      : "Phạm vi đang là theo đối tượng nên không cần chọn giống riêng.";
 
-  const primaryFallbackIcon = isPlant ? (
-    <TreeDeciduous className="h-5 w-5" />
-  ) : (
-    <PawPrint className="h-5 w-5" />
-  );
+  const fallbackIcon = <PawPrint className="h-5 w-5" />;
 
-  const primaryLabel = isPlant ? "Loại cây trồng" : "Đối tượng nuôi";
-  const childLabel = isPlant ? "Giống cây trồng" : "Giống / dòng";
-  const dialogTitle = isPlant
-    ? "Chọn loại và giống cây"
-    : "Chọn đối tượng nuôi và giống / dòng";
-  const dialogDescription = isPlant
-    ? "Chọn loại cây ở trên, sau đó chọn giống ở bên dưới nếu cần."
-    : "Chọn đối tượng nuôi ở trên, sau đó chọn giống / dòng ở bên dưới nếu cần.";
-  const dialogSearchPlaceholder = isPlant
-    ? "Tìm loại cây hoặc giống..."
-    : "Tìm đối tượng nuôi hoặc giống...";
+  const domainLabel =
+    DOMAIN_OPTIONS.find((d) => d.value === formData.domainCode)?.label ||
+    "Đối tượng";
+
+  const toHierarchyPrimary = (opt: MockPrimaryOption): GrowthCycleHierarchyPrimaryOption => ({
+    id: opt.id,
+    name: opt.name,
+    group: opt.group,
+    image: opt.image,
+    description: opt.description,
+  });
+
+  const toHierarchyChild = (opt: MockChildOption): GrowthCycleHierarchyChildOption => ({
+    id: opt.id,
+    primaryId: opt.primaryId,
+    name: opt.name,
+    group: opt.group || "",
+    image: opt.image,
+    description: opt.description,
+    code: opt.code,
+  });
 
   return (
     <Card>
       <CardHeader>
         <div className="flex items-center gap-2">
           <div className="rounded-lg bg-primary/10 p-2 text-primary">
-            <Info className="h-5 w-5" />
+            <Info className="h-5 h-5" />
           </div>
           <CardTitle>Thông tin chung</CardTitle>
         </div>
       </CardHeader>
       <CardContent className="space-y-6">
-        <div className="space-y-3">
-          <Label className="text-base font-bold text-slate-800">
-            Loại mùa vụ
-          </Label>
-          <Tabs
-            value={formData.seasonType ?? "plant"}
-            onValueChange={(value) =>
-              handleSeasonTypeChange(value as "plant" | "animal")
-            }
-            className="w-full"
-          >
-            <TabsList className="grid w-full grid-cols-2 mb-0">
-              <TabsTrigger value="plant" className="gap-2">
-                <TreeDeciduous className="w-4 h-4" />
-                Vụ mùa
-              </TabsTrigger>
-              <TabsTrigger value="animal" className="gap-2">
-                <Fish className="w-4 h-4" />
-                Vụ nuôi
-              </TabsTrigger>
-            </TabsList>
-            <TabsContent value="plant" className="mt-4 space-y-3">
-              <div className="rounded-lg border bg-emerald-50/40 p-4 text-sm text-emerald-900">
-                Dùng cho mùa vụ của cây trồng, theo loại hoặc theo giống cụ thể.
-              </div>
-            </TabsContent>
-            <TabsContent value="animal" className="mt-4 space-y-3">
-              <div className="rounded-lg border bg-blue-50/50 p-4 text-sm text-blue-900">
-                Dùng cho mùa vụ của vật nuôi hoặc thủy sản, theo đối tượng hoặc
-                theo giống / dòng.
-              </div>
-            </TabsContent>
-          </Tabs>
-        </div>
-
-        <div className="space-y-3">
-          <Label className="text-base font-bold text-slate-800">
-            Phạm vi áp dụng
-          </Label>
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-            <button
-              type="button"
-              className={`relative flex items-start gap-4 rounded-xl border-2 p-4 text-left transition-all ${
-                formData.scope === "crop"
-                  ? "border-green-600 bg-green-50/30"
-                  : "border-slate-100 bg-white hover:border-green-200"
-              }`}
-              onClick={() => handleScopeChange("crop")}
+        {!hideDomainTabs && (
+          <div className="space-y-3">
+            <Label className="text-base font-bold text-slate-800">
+              Loại mùa vụ
+            </Label>
+            <Tabs
+              value={formData.domainCode}
+              onValueChange={(value) =>
+                handleDomainChange(value as SeasonDomainCode)
+              }
+              className="w-full"
             >
-              <div
-                className={`shrink-0 rounded-full p-3 ${
-                  formData.scope === "crop"
-                    ? "bg-green-600 text-white"
-                    : "bg-slate-100 text-slate-500"
-                }`}
-              >
-                {isPlant ? (
-                  <TreeDeciduous className="h-6 w-6" />
-                ) : (
-                  <PawPrint className="h-6 w-6" />
-                )}
-              </div>
-              <div className="flex-1 space-y-1">
-                <div className="flex items-center justify-between">
-                  <span className="font-bold text-slate-800">
-                    {isPlant ? "Theo loại cây trồng" : "Theo loại vật nuôi"}
-                  </span>
-                  <div
-                    className={`flex h-5 w-5 items-center justify-center rounded-full border-2 ${
-                      formData.scope === "crop"
-                        ? "border-green-600"
-                        : "border-slate-300"
-                    }`}
-                  >
-                    {formData.scope === "crop" && (
-                      <div className="h-2.5 w-2.5 rounded-full bg-green-600" />
-                    )}
-                  </div>
+              <TabsList className="grid w-full grid-cols-3 mb-0">
+                <TabsTrigger value="CROP" className="gap-2">
+                  <TreeDeciduous className="w-4 h-4" />
+                  Vụ mùa
+                </TabsTrigger>
+                <TabsTrigger value="LIVESTOCK" className="gap-2">
+                  <PawPrint className="w-4 h-4" />
+                  Vụ nuôi
+                </TabsTrigger>
+                <TabsTrigger value="AQUACULTURE" className="gap-2">
+                  <Fish className="w-4 h-4" />
+                  Thủy sản
+                </TabsTrigger>
+              </TabsList>
+              <TabsContent value="CROP" className="mt-4 space-y-3">
+                <div className="rounded-lg border bg-emerald-50/40 p-4 text-sm text-emerald-900">
+                  Dùng cho mùa vụ của cây trồng, theo loại hoặc theo giống cụ thể.
                 </div>
-                <p className="text-xs leading-relaxed text-slate-500">
-                  {isPlant
-                    ? "Áp dụng cho tất cả các giống thuộc loại cây trồng này."
-                    : "Áp dụng cho tất cả các giống thuộc đối tượng nuôi này."}
-                </p>
-              </div>
-            </button>
-
-            <button
-              type="button"
-              className={`relative flex items-start gap-4 rounded-xl border-2 p-4 text-left transition-all ${
-                formData.scope === "variety"
-                  ? "border-green-600 bg-green-50/30"
-                  : "border-slate-100 bg-white hover:border-green-200"
-              }`}
-              onClick={() => handleScopeChange("variety")}
-            >
-              <div
-                className={`shrink-0 rounded-full p-3 ${
-                  formData.scope === "variety"
-                    ? "bg-green-600 text-white"
-                    : "bg-slate-100 text-slate-500"
-                }`}
-              >
-                {isPlant ? (
-                  <Flower2 className="h-6 w-6" />
-                ) : (
-                  <Fish className="h-6 w-6" />
-                )}
-              </div>
-              <div className="flex-1 space-y-1">
-                <div className="flex items-center justify-between">
-                  <span className="font-bold text-slate-800">
-                    Theo giống cụ thể
-                  </span>
-                  <div
-                    className={`flex h-5 w-5 items-center justify-center rounded-full border-2 ${
-                      formData.scope === "variety"
-                        ? "border-green-600"
-                        : "border-slate-300"
-                    }`}
-                  >
-                    {formData.scope === "variety" && (
-                      <div className="h-2.5 w-2.5 rounded-full bg-green-600" />
-                    )}
-                  </div>
+              </TabsContent>
+              <TabsContent value="LIVESTOCK" className="mt-4 space-y-3">
+                <div className="rounded-lg border bg-blue-50/50 p-4 text-sm text-blue-900">
+                  Dùng cho mùa vụ của vật nuôi, theo đối tượng hoặc theo giống / dòng.
                 </div>
-                <p className="text-xs leading-relaxed text-slate-500">
-                  {isPlant
-                    ? "Chọn loại và giống trong cùng một dialog."
-                    : "Chọn đối tượng và giống / dòng trong cùng một dialog."}
-                </p>
-              </div>
-            </button>
+              </TabsContent>
+              <TabsContent value="AQUACULTURE" className="mt-4 space-y-3">
+                <div className="rounded-lg border bg-cyan-50/50 p-4 text-sm text-cyan-900">
+                  Dùng cho mùa vụ của thủy sản, theo đối tượng hoặc theo giống / dòng.
+                </div>
+              </TabsContent>
+            </Tabs>
           </div>
+        )}
 
+        <div className="space-y-3">
+          <Label className="text-base font-bold text-slate-800">
+            {domainLabel}
+          </Label>
           <div className="space-y-2">
             <Label className="text-sm font-semibold">
-              {primaryLabel}
+              {domainLabel}
               <span className="text-destructive"> *</span>
             </Label>
             <SelectionCard
               title={selectionTitle}
               subtitle={selectionSubtitle}
               image={selectedPrimary?.image}
-              fallbackIcon={primaryFallbackIcon}
+              fallbackIcon={fallbackIcon}
               group={selectedPrimary?.group}
               detail={selectionDetail}
-              placeholder={
-                isPlant ? "Chọn loại cây trong dialog" : "Chọn đối tượng nuôi trong dialog"
-              }
-              showSecondary={formData.scope === "variety"}
+              placeholder="Chọn trong dialog"
+              showSecondary={true}
               secondaryTitle={varietyTitle}
               secondarySubtitle={varietySubtitle}
-              secondaryPlaceholder={
-                isPlant ? "Chọn giống cây trong dialog" : "Chọn giống / dòng trong dialog"
-              }
+              secondaryPlaceholder="Chọn giống / dòng trong dialog"
               secondaryDetail={varietyDetail}
               secondaryGroup={
-                formData.scope === "variety" && selectedChild?.group
+                hasVarietyScope && selectedChild?.group
                   ? selectedChild.group
                   : undefined
               }
@@ -482,12 +396,15 @@ export function SeasonBasicInfoCard({
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <div className="space-y-2">
               <Label>
-                Mã mùa vụ <span className="text-destructive">*</span>
+                Mã mùa vụ
               </Label>
               <Input
-                placeholder="VD: MV2024-01"
+                placeholder="Để trống để tự sinh mã"
                 value={formData.code}
-                onChange={(event) => updateForm("code", event.target.value)}
+                disabled={disabled}
+                onChange={(event) =>
+                  onChange({ ...formData, code: event.target.value })
+                }
               />
             </div>
 
@@ -498,7 +415,9 @@ export function SeasonBasicInfoCard({
               <Input
                 placeholder="VD: Vụ Xuân 2024"
                 value={formData.name}
-                onChange={(event) => updateForm("name", event.target.value)}
+                onChange={(event) =>
+                  onChange({ ...formData, name: event.target.value })
+                }
               />
             </div>
           </div>
@@ -510,60 +429,66 @@ export function SeasonBasicInfoCard({
               rows={3}
               value={formData.description}
               onChange={(event) =>
-                updateForm("description", event.target.value)
+                onChange({ ...formData, description: event.target.value })
               }
             />
           </div>
 
-          <div
-            className={`grid grid-cols-1 gap-4 ${showStatusField ? "md:grid-cols-2" : ""}`}
-          >
-            {showStatusField && (
-              <div className="space-y-2">
-                <Label>Trạng thái</Label>
-                <Select
-                  value={formData.status}
-                  onValueChange={(value) =>
-                    updateForm("status", value as SeasonStatus)
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Chọn trạng thái" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {SEASON_STATUS_OPTIONS.map((option) => (
-                      <SelectItem key={option.value} value={option.value}>
-                        {option.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
-          </div>
+          {showStatusField && (
+            <div className="space-y-2">
+              <Label>Trạng thái</Label>
+              <Select
+                value={formData.status}
+                onValueChange={(value) =>
+                  onChange({
+                    ...formData,
+                    status: value as SeasonFormData["status"],
+                  })
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Chọn trạng thái" />
+                </SelectTrigger>
+                <SelectContent>
+                  {DOMAIN_OPTIONS.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
         </div>
       </CardContent>
 
       <GrowthCycleHierarchyDialog
         open={dialogOpen}
         onOpenChange={setDialogOpen}
-        title={dialogTitle}
-        description={dialogDescription}
-        searchPlaceholder={dialogSearchPlaceholder}
-        selectedPrimaryId={formData.cropId || ""}
-        selectedChildId={formData.varietyId || ""}
-        primaryOptions={primaryOptions}
-        childOptions={childOptions}
-        primaryLabel={primaryLabel}
-        childLabel={childLabel}
-        showChildSection={formData.scope === "variety"}
+        title={`Chọn ${domainLabel.toLowerCase()} và giống`}
+        description="Chọn đối tượng ở trên, sau đó chọn giống ở bên dưới nếu cần."
+        searchPlaceholder="Tìm đối tượng hoặc giống..."
+        selectedPrimaryId={formData.selectedPrimaryId || ""}
+        selectedChildId={formData.selectedChildId || ""}
+        primaryOptions={primaryOptions.map(toHierarchyPrimary)}
+        childOptions={childOptions.map(toHierarchyChild)}
+        primaryLabel={domainLabel}
+        childLabel="Giống / dòng"
+        showChildSection={true}
         onConfirm={({ primary, child }) => {
+          const matchedPrimary = primaryOptions.find(
+            (p) => p.id === primary.id,
+          );
+          const matchedChild = child
+            ? childOptions.find((c) => c.id === child.id)
+            : undefined;
+
           onChange({
             ...formData,
-            cropId: primary.id,
-            varietyId: formData.scope === "variety" ? child?.id : undefined,
-            growthCycleIds: [],
-            selectedStages: {},
+            selectedPrimaryId: matchedPrimary?.id,
+            selectedChildId: matchedChild?.id,
+            productionSubjectId: matchedPrimary?.numericId,
+            productionSubjectVariantId: matchedChild?.numericId,
           });
         }}
       />

@@ -1,107 +1,99 @@
 import PageWrapper from "@/components/PageWrapper";
-import { Button } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { ArrowLeft } from "lucide-react";
-import type { GrowthCycle } from "../../growth-cycle/types/types";
+import { StepperForm } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import type { SeasonFormData } from "../types/types";
-import { GrowthCycleSelectDialog } from "./GrowthCycleSelectDialog";
 import { SeasonBasicInfoCard } from "./SeasonBasicInfoCard";
 import { SeasonDocumentsCard } from "./SeasonDocumentsCard";
-import { SeasonGrowthCyclesCard } from "./SeasonGrowthCyclesCard";
+import { SeasonStagesCard } from "./SeasonStagesCard";
+import { calculateTotalDuration } from "../utils/utils";
+import type { Variety } from "@/pages/variety/types";
+import type { Step } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 
 interface SeasonFormPageProps {
   description: string;
-  dialogOpen: boolean;
   formData: SeasonFormData;
-  growthCycles: GrowthCycle[];
+  isEdit?: boolean;
   onBack: () => void;
-  onCycleConfirm: (
-    growthCycleId: string,
-    selectedStages: Record<string, Record<string, string>>,
-  ) => void;
-  onDialogOpenChange: (open: boolean) => void;
   onFormChange: (formData: SeasonFormData) => void;
-  onRemoveCycle: (cycleId: string) => void;
   onSubmit: () => void;
   showStatusField?: boolean;
   submitLabel: string;
   title: string;
-  varieties: { id: string; crop: string; varietyName: string }[];
+  varieties: Variety[];
 }
 
 export function SeasonFormPage({
   description,
-  dialogOpen,
   formData,
-  growthCycles,
+  isEdit = false,
   onBack,
-  onCycleConfirm,
-  onDialogOpenChange,
   onFormChange,
-  onRemoveCycle,
   onSubmit,
   showStatusField = false,
   submitLabel,
   title,
   varieties,
 }: SeasonFormPageProps) {
-  const selectedCycles = growthCycles.filter((cycle) =>
-    formData.growthCycleIds.includes(cycle.id),
-  );
+  const totalDuration = calculateTotalDuration(formData.stages);
 
-  return (
-    <PageWrapper title={title} description={description}>
-      <div className="mb-6">
-        <Button
-          variant="ghost"
-          size="sm"
-          className="-ml-2 text-muted-foreground hover:text-foreground"
-          onClick={onBack}
-        >
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          Quay lại danh sách
-        </Button>
-      </div>
+  const isStep1Valid =
+    formData.name.trim().length > 0 && formData.domainCode.length > 0;
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        <div className="space-y-6 lg:col-span-2">
-          <SeasonBasicInfoCard
-            formData={formData}
-            onChange={onFormChange}
-            showStatusField={showStatusField}
-            varieties={varieties}
-          />
+  const isStep2Valid =
+    formData.stages.length > 0 &&
+    formData.stages.every((s) => s.name.trim().length > 0);
 
-          <SeasonGrowthCyclesCard
-            growthCycleIds={formData.growthCycleIds}
-            onAddCycle={() => onDialogOpenChange(true)}
-            onRemoveCycle={onRemoveCycle}
-            selectedCycles={selectedCycles}
-            selectedStages={formData.selectedStages}
-          />
-        </div>
-
+  const steps: Step[] = [
+    {
+      id: "basic",
+      title: "Thông tin cơ bản",
+      description: "Đối tượng, tên, mã mùa vụ",
+      content: (
+        <SeasonBasicInfoCard
+          formData={formData}
+          onChange={onFormChange}
+          showStatusField={showStatusField}
+          varieties={varieties}
+          disabled={isEdit}
+          hideDomainTabs={isEdit}
+        />
+      ),
+      isValid: isStep1Valid,
+    },
+    {
+      id: "stages",
+      title: "Các giai đoạn",
+      description: "Quy trình canh tác",
+      content: (
+        <SeasonStagesCard
+          stages={formData.stages}
+          onChange={(stages) => onFormChange({ ...formData, stages })}
+          totalDuration={totalDuration}
+        />
+      ),
+      isValid: isStep2Valid,
+    },
+    {
+      id: "documents",
+      title: "Tài liệu",
+      description: "Tài liệu kỹ thuật đính kèm",
+      content: (
         <SeasonDocumentsCard
-          documents={formData.documents}
-          onDocumentsChange={(documents) =>
-            onFormChange({
-              ...formData,
-              documents,
-            })
-          }
+          documents={[]}
+          onDocumentsChange={() => {}}
           onSubmit={onSubmit}
           submitLabel={submitLabel}
         />
-      </div>
+      ),
+    },
+  ];
 
-      <GrowthCycleSelectDialog
-        open={dialogOpen}
-        onOpenChange={onDialogOpenChange}
-        scope={formData.scope}
-        cropId={formData.cropId}
-        varietyId={formData.varietyId}
-        selectedId={formData.growthCycleIds[0] || ""}
-        selectedStages={formData.selectedStages}
-        onConfirm={onCycleConfirm}
+  return (
+    <PageWrapper title={title} description={description}>
+      <StepperForm
+        steps={steps}
+        onComplete={onSubmit}
+        onCancel={onBack}
+        completeLabel={submitLabel}
       />
     </PageWrapper>
   );

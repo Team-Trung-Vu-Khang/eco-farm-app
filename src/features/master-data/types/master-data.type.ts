@@ -459,3 +459,83 @@ export interface CertificateStandardUpdateRequest {
   status: MasterDataStatus;
   metadataJson?: Record<string, unknown> | null;
 }
+
+export type SeasonDomainCode = "CROP" | "LIVESTOCK" | "AQUACULTURE";
+
+export interface MasterDataSeasonStageRequest {
+  id?: number;
+  name: string;
+  description?: string;
+  durationDays?: number;
+  displayOrder?: number;
+  documents?: FoundationDocumentRequest[];
+}
+
+export interface FoundationDocumentRequest {
+  id?: number;
+  type: "editor" | "pdf";
+  name: string;
+  content?: string;
+  fileUrl?: string;
+  fileName?: string;
+}
+
+export interface FoundationDocumentResponse {
+  id: number;
+  workspaceId: number;
+  type: "editor" | "pdf";
+  name: string;
+  content: string;
+  fileUrl: string;
+  fileName: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface MasterDataSeasonStageResponse {
+  id: number;
+  name: string;
+  description: string;
+  durationDays: number;
+  displayOrder: number;
+  documents: FoundationDocumentResponse[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface MasterDataSeasonResponse {
+  id: number;
+  code: string;
+  name: string;
+  description: string;
+  domainCode: SeasonDomainCode;
+  productionSubject?: {
+    id: number;
+    code: string;
+    name: string;
+  } | null;
+  productionSubjectVariant?: {
+    id: number;
+    code: string;
+    name: string;
+  } | null;
+  stages: MasterDataSeasonStageResponse[];
+  displayOrder: number;
+  status: MasterDataStatus;
+  metadataJson?: Record<string, unknown> | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface MasterDataSeasonRequest {
+  domainCode: SeasonDomainCode;
+  code?: string;
+  name: string;
+  description?: string;
+  productionSubjectId?: number;
+  productionSubjectVariantId?: number;
+  stages?: MasterDataSeasonStageRequest[];
+  displayOrder?: number;
+  status?: MasterDataStatus;
+  metadataJson?: Record<string, unknown> | null;
+}
