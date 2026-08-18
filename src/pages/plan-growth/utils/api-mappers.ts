@@ -2,6 +2,11 @@ import type {
   FarmPlanResponse,
   FarmWorkflowResponse,
 } from "@/features/farm-workflow/types/farm-workflow.type";
+import type {
+  FarmCultivationZoneResponse,
+  FarmCultivationZoneScopeResponse,
+} from "@/features/farm/types/farm.type";
+import type { Region } from "@/pages/region-chart/constants";
 import { initialPlans, initialWorkflows } from "@/stores/planWorkflowSeed";
 import type {
   GeographicalSelection,
@@ -188,4 +193,100 @@ export function duplicateFallbackWorkflow(sourceId: string) {
   };
   fallbackWorkflows = [...fallbackWorkflows, duplicate];
   return duplicate;
+}
+
+// Reconstructs a region → area → plot tree from cultivation zones' scopes so
+// GeographicalSelector/location.ts (which expect that hierarchy shape) can
+// work directly off /api/farm/production-zones data instead of the local
+// mock region store.
+interface ZoneTreePlot {
+  id: string;
+  name: string;
+}
+
+interface ZoneTreeArea {
+  id: string;
+  name: string;
+  regionId: number;
+  plots: ZoneTreePlot[];
+}
+
+interface ZoneTreeRegion {
+  id: number;
+  name: string;
+  enterpriseId: string;
+  subAreas: ZoneTreeArea[];
+}
+
+export function mapCultivationZonesToRegionTree(
+  zones: FarmCultivationZoneResponse[],
+): Region[] {
+  const regionsById = new Map<number, ZoneTreeRegion>();
+
+  function ensureRegion(id: number, name: string): ZoneTreeRegion {
+    let region = regionsById.get(id);
+    if (!region) {
+      region = { id, name, enterpriseId: "", subAreas: [] };
+      regionsById.set(id, region);
+    }
+    return region;
+  }
+
+  function ensureArea(
+    region: ZoneTreeRegion,
+    id: number,
+    name: string,
+  ): ZoneTreeArea {
+    let area = region.subAreas.find((item) => item.id === String(id));
+    if (!area) {
+      area = { id: String(id), name, regionId: region.id, plots: [] };
+      region.subAreas.push(area);
+    }
+    return area;
+  }
+
+  function handleScope(scope: FarmCultivationZoneScopeResponse) {
+    if (scope.scopeType === "REGION" && scope.region) {
+      ensureRegion(scope.region.id, scope.region.name || `Vùng #${scope.region.id}`);
+      return;
+    }
+
+    if (scope.scopeType === "AREA" && scope.area?.region) {
+      const region = ensureRegion(
+        scope.area.region.id,
+        scope.area.region.name || `Vùng #${scope.area.region.id}`,
+      );
+      ensureArea(
+        region,
+        scope.area.id,
+        scope.area.name || `Khu vực #${scope.area.id}`,
+      );
+      return;
+    }
+
+    if (scope.scopeType === "PLOT" && scope.plot?.area?.region) {
+      const region = ensureRegion(
+        scope.plot.area.region.id,
+        scope.plot.area.region.name || `Vùng #${scope.plot.area.region.id}`,
+      );
+      const area = ensureArea(
+        region,
+        scope.plot.area.id,
+        scope.plot.area.name || `Khu vực #${scope.plot.area.id}`,
+      );
+      const plotId = String(scope.plot.id);
+      if (!area.plots.some((item) => item.id === plotId)) {
+        area.plots.push({
+          id: plotId,
+          name: scope.plot.name || `Lô #${scope.plot.id}`,
+        });
+      }
+    }
+  }
+
+  zones.forEach((zone) => {
+    (zone.scopes || []).forEach(handleScope);
+  });
+
+  return Array.from(regionsById.values()) as unknown as Region[];
 }

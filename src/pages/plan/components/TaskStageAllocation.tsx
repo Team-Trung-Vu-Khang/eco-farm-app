@@ -1,6 +1,7 @@
 import {
   Badge,
   Button,
+  Calendar,
   Checkbox,
   Combobox,
   Dialog,
@@ -18,6 +19,7 @@ import {
   SelectValue,
   cn,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import { vi } from "date-fns/locale";
 import {
   CalendarIcon,
   CheckCircle2,
@@ -29,14 +31,18 @@ import {
   Wrench,
   X,
 } from "lucide-react";
-import { memo, useState } from "react";
+import { memo, useState, type CSSProperties } from "react";
 import { MATERIAL_OPTIONS, TASK_OPTIONS } from "../data/mocks";
 import type {
   GeographicalSelection,
   MaterialAllocation,
   TaskAllocation,
 } from "../types";
-import { DAYS_OF_WEEK, getFrequencyText } from "../utils/task";
+import {
+  formatLocalISODate,
+  getRepeatDatesText,
+  parseLocalISODate,
+} from "../utils/task";
 
 export const TaskStageAllocation = memo(
   ({
@@ -457,7 +463,10 @@ const TaskBlock = ({
                 id={`repeat-${task.id}`}
                 checked={task.isRepeating}
                 onCheckedChange={(checked) =>
-                  onUpdateTask?.(task.id, { isRepeating: !!checked })
+                  onUpdateTask?.(task.id, {
+                    isRepeating: !!checked,
+                    repeatDates: checked ? task.repeatDates : [],
+                  })
                 }
               />
             </div>
@@ -480,83 +489,71 @@ const TaskBlock = ({
                 </div>
               </div>
 
-              {!task.isRepeating ? (
-                <div className="space-y-1.5">
-                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                    Ngày kết thúc
-                  </span>
-                  <div className="relative">
-                    <CalendarIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 z-10" />
-                    <Input
-                      type="date"
-                      className="pl-10 h-10 text-sm bg-slate-50 border-slate-200"
-                      value={task.endDate || ""}
-                      onChange={(e) =>
-                        syncDates(task.startDate || "", e.target.value)
-                      }
-                    />
-                  </div>
+              <div className="space-y-1.5">
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                  Ngày kết thúc
+                </span>
+                <div className="relative">
+                  <CalendarIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 z-10" />
+                  <Input
+                    type="date"
+                    className="pl-10 h-10 text-sm bg-slate-50 border-slate-200"
+                    value={task.endDate || ""}
+                    onChange={(e) =>
+                      syncDates(task.startDate || "", e.target.value)
+                    }
+                  />
                 </div>
-              ) : (
-                <div className="space-y-1.5">
-                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                    Số tuần lặp lại
-                  </span>
-                  <div className="relative">
-                    <Input
-                      type="number"
-                      min={1}
-                      className="h-10 text-sm bg-slate-50 border-slate-200 font-bold"
-                      value={task.repeatWeeks || ""}
-                      placeholder="Số tuần..."
-                      onChange={(e) =>
-                        onUpdateTask?.(task.id, {
-                          repeatWeeks: parseInt(e.target.value, 10),
-                        })
-                      }
-                    />
-                  </div>
-                </div>
-              )}
+              </div>
             </div>
 
             {task.isRepeating && (
               <div className="space-y-3 p-3 bg-blue-50/50 rounded-xl border border-blue-100 animate-in fade-in slide-in-from-top-2">
-                <div className="flex flex-wrap gap-2 justify-between">
-                  {DAYS_OF_WEEK.map((day) => {
-                    const isSelected = (task.repeatDays || []).includes(
-                      day.value,
-                    );
-                    return (
-                      <button
-                        key={day.value}
-                        type="button"
-                        onClick={() => {
-                          const currentDays = task.repeatDays || [];
-                          const newDays = isSelected
-                            ? currentDays.filter((d: number) => d !== day.value)
-                            : [...currentDays, day.value];
-                          onUpdateTask?.(task.id, { repeatDays: newDays });
-                        }}
-                        className={cn(
-                          "w-8 h-8 rounded-full text-[10px] font-bold transition-all border",
-                          isSelected
-                            ? "bg-blue-600 border-blue-600 text-white shadow-sm"
-                            : "bg-white border-slate-200 text-slate-400 hover:border-blue-300 hover:text-blue-500",
-                        )}
-                      >
-                        {day.label}
-                      </button>
-                    );
-                  })}
-                </div>
-                <div className="pt-2 border-t border-blue-100/50">
-                  <p className="text-[11px] font-medium text-blue-700 italic">
-                    {getFrequencyText(
-                      task.repeatDays || [],
-                      task.repeatWeeks || 0,
-                    )}
+                <div className="flex items-center justify-between">
+                  <p className="text-xs font-bold text-slate-700">
+                    Chọn các ngày lặp lại
                   </p>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 px-2 text-[11px] text-slate-500 hover:text-rose-600 hover:bg-rose-50"
+                    disabled={(task.repeatDates || []).length === 0}
+                    onClick={() => onUpdateTask?.(task.id, { repeatDates: [] })}
+                  >
+                    <X className="w-3 h-3 mr-1" />
+                    Xóa
+                  </Button>
+                </div>
+                <Calendar
+                  mode="multiple"
+                  locale={vi}
+                  selected={(task.repeatDates || []).map(parseLocalISODate)}
+                  onSelect={(dates) =>
+                    onUpdateTask?.(task.id, {
+                      repeatDates: (dates || []).map(formatLocalISODate),
+                    })
+                  }
+                  disabled={{
+                    before: new Date(new Date().setHours(0, 0, 0, 0)),
+                  }}
+                  className="mx-auto w-full bg-white"
+                  style={{ "--cell-size": "3.25rem" } as CSSProperties}
+                />
+                <div className="pt-2 border-t border-blue-100/50">
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="text-[11px] font-medium text-blue-700 italic">
+                      {getRepeatDatesText(task.repeatDates || [])}
+                    </p>
+                    {(task.repeatDates || []).length > 0 && (
+                      <Badge
+                        variant="outline"
+                        className="shrink-0 bg-white text-[10px] font-bold text-blue-700 border-blue-200"
+                      >
+                        {(task.repeatDates || []).length} ngày
+                      </Badge>
+                    )}
+                  </div>
                 </div>
               </div>
             )}
