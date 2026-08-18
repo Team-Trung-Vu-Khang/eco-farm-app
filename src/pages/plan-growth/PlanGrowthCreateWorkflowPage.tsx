@@ -37,6 +37,7 @@ import {
   type NodeChange,
 } from "reactflow";
 import { useLocation, useParams } from "wouter";
+import { useFarmWorkflowById } from "@/features/farm-workflow/hooks";
 import { useDialogBugWorkaround } from "../../shared/hooks/useDialogBugWorkaround";
 import usePlanStore, { type Plan } from "../../stores/usePlanStore";
 import useWorkflowStore from "../../stores/useWorkflowStore";
@@ -58,7 +59,14 @@ import {
   type DraftNode,
 } from "./hooks/usePlanWorkflowDraftStore";
 import type { GeographicalSelection } from "./types";
+import { mapWorkflowResponseToInfoRecord } from "./utils/api-mappers";
 import { summarizePlanSelections, summarizeSelections } from "./utils/location";
+
+// Local draft-only nodes carry a `workflow-<timestamp>-<rand>` id; only
+// numeric ids are real backend workflow ids worth fetching from the API.
+function isPersistedWorkflowId(id: string) {
+  return /^\d+$/.test(id);
+}
 
 type PlanDisplayStatus =
   | "missing_info"
@@ -396,7 +404,9 @@ function toInfoDisplayNode(
       title: record.name,
       wide: true,
       description: record.description || "Chưa có mô tả cho node này.",
-      regionLabels: getRegionLabelsFromSelections(record.selections, regions),
+      regionLabels:
+        record.regionLabels ??
+        getRegionLabelsFromSelections(record.selections, regions),
       actions: [
         {
           label: "Chỉnh sửa",
@@ -443,6 +453,19 @@ export default function PlanGrowthCreateWorkflowPage() {
     (state) => state.activeWorkflowId,
   );
 
+  const routeWorkflowId = params.workflowId ?? null;
+  // Numeric ids are real backend workflows — fetch their detail instead of
+  // relying on the local-only draft store, which never has them.
+  const isRoutePersistedId = routeWorkflowId
+    ? isPersistedWorkflowId(routeWorkflowId)
+    : false;
+  const { data: workflowDetail } = useFarmWorkflowById(routeWorkflowId ?? "", {
+    enabled:
+      !!routeWorkflowId &&
+      routeWorkflowId !== activeWorkflowId &&
+      isRoutePersistedId,
+  });
+
   useEffect(() => {
     const workflowId = params.workflowId ?? null;
     // Bare route ("/create/workflow" with no id) always means "continue the
@@ -451,6 +474,7 @@ export default function PlanGrowthCreateWorkflowPage() {
     // infer a reset from the URL alone (that would also fire every time a
     // plan/stage/detail sub-route routes back to this same bare path).
     if (!workflowId || workflowId === activeWorkflowId) return;
+    if (isPersistedWorkflowId(workflowId)) return;
 
     const saved = useWorkflowStore.getState().getWorkflowById(workflowId);
     if (!saved) return;
@@ -471,6 +495,27 @@ export default function PlanGrowthCreateWorkflowPage() {
       activeWorkflowId: workflowId,
     });
   }, [params.workflowId, activeWorkflowId, loadWorkflow, resetDraft]);
+
+  useEffect(() => {
+    if (!workflowDetail) return;
+    const workflowId = String(workflowDetail.id);
+    if (workflowId === activeWorkflowId) return;
+
+    // The backend only stores the workflow's own info (name/description/
+    // duration/scopes) — plan/stage/detail nodes still live in the local
+    // draft, so they start empty here.
+    loadWorkflow({
+      nodes: [],
+      edges: [],
+      infoNodes: [
+        mapWorkflowResponseToInfoRecord(workflowDetail, {
+          x: INFO_NODE_X,
+          y: 0,
+        }),
+      ],
+      activeWorkflowId: workflowId,
+    });
+  }, [workflowDetail, activeWorkflowId, loadWorkflow]);
 
   const [confirmAction, setConfirmAction] = useState<ConfirmActionState | null>(
     null,

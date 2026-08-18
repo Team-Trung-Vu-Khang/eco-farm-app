@@ -1,6 +1,7 @@
 import type {
   FarmPlanResponse,
   FarmWorkflowResponse,
+  FarmWorkflowScopeResponse,
 } from "@/features/farm-workflow/types/farm-workflow.type";
 import type {
   FarmCultivationZoneResponse,
@@ -8,6 +9,7 @@ import type {
 } from "@/features/farm/types/farm.type";
 import type { Region } from "@/pages/region-chart/constants";
 import { initialPlans, initialWorkflows } from "@/stores/planWorkflowSeed";
+import type { DiagramInfoRecord } from "../hooks/usePlanWorkflowDraftStore";
 import type {
   GeographicalSelection,
   Plan,
@@ -24,8 +26,8 @@ const planStatusMap: Record<string, Plan["status"]> = {
 let fallbackPlans: Plan[] = initialPlans as Plan[];
 let fallbackWorkflows: Workflow[] = initialWorkflows as Workflow[];
 
-function mapScopeToSelection(
-  scope: FarmPlanResponse["scopes"][number],
+export function mapScopeToSelection(
+  scope: FarmWorkflowScopeResponse,
 ): GeographicalSelection | null {
   if (scope.scopeType === "REGION" && scope.region) {
     return {
@@ -35,21 +37,28 @@ function mapScopeToSelection(
     };
   }
 
-  if (scope.scopeType === "AREA" && scope.region && scope.area) {
+  // An AREA scope's top-level `region` is null — the region only comes
+  // through `area.region`. A PLOT scope nests both under `plot.area`.
+  if (scope.scopeType === "AREA" && scope.area) {
+    const region = scope.region ?? scope.area.region;
+    if (!region) return null;
     return {
       id: `area-${scope.area.id}`,
       type: "area",
-      regionId: String(scope.region.id),
+      regionId: String(region.id),
       areaId: String(scope.area.id),
     };
   }
 
-  if (scope.scopeType === "PLOT" && scope.region && scope.area && scope.plot) {
+  if (scope.scopeType === "PLOT" && scope.plot) {
+    const area = scope.area ?? scope.plot.area;
+    const region = scope.region ?? area?.region;
+    if (!region || !area) return null;
     return {
       id: `plot-${scope.plot.id}`,
       type: "plot",
-      regionId: String(scope.region.id),
-      areaId: String(scope.area.id),
+      regionId: String(region.id),
+      areaId: String(area.id),
       plotId: String(scope.plot.id),
     };
   }
@@ -76,6 +85,89 @@ export function mapWorkflowResponseToWorkflow(
           cancelled: workflow.statusBreakdown.cancelled,
         }
       : undefined,
+  };
+}
+
+export function mapWorkflowScopesToSelections(
+  scopes: FarmWorkflowScopeResponse[],
+): GeographicalSelection[] {
+  return (scopes || [])
+    .map(mapScopeToSelection)
+    .filter(Boolean) as GeographicalSelection[];
+}
+
+// Builds "Vùng A (Khu 1, Khu 2)"-style labels straight from the scopes'
+// embedded region/area/plot names — no id lookup against a region tree
+// needed, so it works even when that tree doesn't know the API's ids.
+export function mapWorkflowScopesToRegionLabels(
+  scopes: FarmWorkflowScopeResponse[],
+): string[] {
+  const groups = new Map<
+    string,
+    { regionName: string; items: string[]; wholeRegion: boolean }
+  >();
+
+  (scopes || []).forEach((scope) => {
+    // Same as mapScopeToSelection: an AREA scope's region only lives under
+    // `area.region`, and a PLOT scope nests both under `plot.area`.
+    const region =
+      scope.region ?? scope.area?.region ?? scope.plot?.area?.region;
+    if (!region) return;
+
+    const key = String(region.id);
+    const group = groups.get(key) ?? {
+      regionName: region.name || `Vùng #${region.id}`,
+      items: [],
+      wholeRegion: false,
+    };
+
+    if (scope.scopeType === "REGION") {
+      group.wholeRegion = true;
+    } else if (scope.scopeType === "AREA" && scope.area) {
+      group.items.push(scope.area.name || `Khu vực #${scope.area.id}`);
+    } else if (scope.scopeType === "PLOT" && scope.plot) {
+      group.items.push(scope.plot.name || `Lô #${scope.plot.id}`);
+    }
+
+    groups.set(key, group);
+  });
+
+  return Array.from(groups.values()).map((group) =>
+    group.wholeRegion || group.items.length === 0
+      ? group.regionName
+      : `${group.regionName} (${group.items.join(", ")})`,
+  );
+}
+
+// Inverse of the years*365 + months*30 + days weighting used to submit
+// `durationDays` — keeps the years/months/days inputs consistent on reload.
+export function mapDurationDaysToParts(durationDays?: number) {
+  let remaining = Math.max(0, Math.floor(Number(durationDays) || 0));
+  const years = Math.floor(remaining / 365);
+  remaining -= years * 365;
+  const months = Math.floor(remaining / 30);
+  remaining -= months * 30;
+
+  return {
+    plannedDurationYears: years > 0 ? String(years) : "",
+    plannedDurationMonths: months > 0 ? String(months) : "",
+    plannedDurationDays: remaining > 0 ? String(remaining) : "",
+  };
+}
+
+export function mapWorkflowResponseToInfoRecord(
+  workflow: FarmWorkflowResponse,
+  position: { x: number; y: number },
+): DiagramInfoRecord {
+  return {
+    id: String(workflow.id),
+    name: workflow.name,
+    description: workflow.description || "",
+    selections: mapWorkflowScopesToSelections(workflow.scopes),
+    regionLabels: mapWorkflowScopesToRegionLabels(workflow.scopes),
+    ...mapDurationDaysToParts(workflow.durationDays),
+    isActive: workflow.status === "active",
+    position,
   };
 }
 

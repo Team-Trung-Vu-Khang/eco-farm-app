@@ -17,11 +17,14 @@ import {
   useToast,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { ArrowLeft, Calendar, Layers, Save } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useLocation, useParams } from "wouter";
 import * as z from "zod";
-import { useFarmWorkflowMutations } from "@/features/farm-workflow/hooks";
+import {
+  useFarmWorkflowById,
+  useFarmWorkflowMutations,
+} from "@/features/farm-workflow/hooks";
 import type { FarmWorkflowScopeRequest } from "@/features/farm-workflow/types/farm-workflow.type";
 import { useCultivationZones } from "@/features/farm";
 import GeographicalSelector from "./components/GeographicalSelector";
@@ -39,6 +42,7 @@ import type { Plan } from "./types";
 import {
   getFallbackPlans,
   mapCultivationZonesToRegionTree,
+  mapWorkflowResponseToInfoRecord,
   upsertFallbackPlan,
 } from "./utils/api-mappers";
 import { summarizeSelections } from "./utils/location";
@@ -99,9 +103,23 @@ export default function PlanGrowthWorkflowInfoFormPage() {
   const addNode = usePlanWorkflowDraftStore((state) => state.addNode);
   const { createWorkflow, updateWorkflow } = useFarmWorkflowMutations();
 
-  const editingRecord = nodeId
+  const localRecord = nodeId
     ? infoNodes.find((item) => item.id === nodeId)
     : undefined;
+  // Only persisted (numeric-id) workflows exist on the backend — local
+  // draft-only nodes fall back to the in-memory record below.
+  const isPersistedNodeId = nodeId ? isPersistedWorkflowId(nodeId) : false;
+  const { data: workflowDetail, isLoading: isLoadingWorkflowDetail } =
+    useFarmWorkflowById(nodeId ?? "", {
+      enabled: isEdit && isPersistedNodeId,
+    });
+
+  const editingRecord: DiagramInfoRecord | undefined = workflowDetail
+    ? mapWorkflowResponseToInfoRecord(
+        workflowDetail,
+        localRecord?.position ?? getNextInfoNodePosition(infoNodes),
+      )
+    : localRecord;
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -130,7 +148,23 @@ export default function PlanGrowthWorkflowInfoFormPage() {
     [regions, selections],
   );
 
-  if (isEdit && !editingRecord) {
+  // `useForm`/`useState` above only see `editingRecord` at first render —
+  // the API detail resolves later, so re-sync once it lands.
+  useEffect(() => {
+    if (!workflowDetail) return;
+    const record = mapWorkflowResponseToInfoRecord(
+      workflowDetail,
+      localRecord?.position ?? getNextInfoNodePosition(infoNodes),
+    );
+    form.reset({ name: record.name, description: record.description });
+    setSelections(record.selections);
+    setPlannedDurationYears(record.plannedDurationYears);
+    setPlannedDurationMonths(record.plannedDurationMonths);
+    setPlannedDurationDays(record.plannedDurationDays);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [workflowDetail]);
+
+  if (isEdit && !editingRecord && !(isPersistedNodeId && isLoadingWorkflowDetail)) {
     return (
       <PageWrapper title="Không tìm thấy node quy trình" description="">
         <Card>

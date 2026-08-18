@@ -97,7 +97,17 @@ function toFarmWorkflowRequest(workflow: Workflow): FarmWorkflowRequest {
   };
 }
 
-export function usePlanPage(basePath = "/plan-growth") {
+interface UsePlanPageOptions {
+  // The workflow list page only needs the workflow API — plans are only
+  // fetched for pages that actually list/derive plan rows (workflow detail,
+  // unassigned-plans view).
+  includePlans?: boolean;
+}
+
+export function usePlanPage(
+  basePath = "/plan-growth",
+  { includePlans = true }: UsePlanPageOptions = {},
+) {
   const { toast } = useToast();
   const [, setLocation] = useLocation();
 
@@ -106,7 +116,7 @@ export function usePlanPage(basePath = "/plan-growth") {
   const [currentIndex, setCurrentIndex] = useState(1);
   const [pageSize, setPageSize] = useState(10);
 
-  const planQuery = useFarmPlans();
+  const planQuery = useFarmPlans({ enabled: includePlans });
   const workflowQuery = useFarmWorkflows({
     params: {
       domainCode: WORKFLOW_DOMAIN_CODE,

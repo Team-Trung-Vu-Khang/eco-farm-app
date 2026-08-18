@@ -18,7 +18,6 @@ import type { FarmWorkflowRequestStatus } from "@/features/farm-workflow/types/f
 import {
   createWorkflowColumns,
   PlanGrowthStatisticsCards,
-  UNASSIGNED_WORKFLOW_ID,
   type WorkflowRow,
 } from "./data/table";
 import { usePlanPage } from "./hooks/usePlanPage";
@@ -33,7 +32,6 @@ export default function PlanGrowthPage({
 }: PlanGrowthPageProps) {
   const [, setLocation] = useLocation();
   const {
-    plans,
     workflows,
     statistics,
     handleCloneWorkflow,
@@ -46,7 +44,7 @@ export default function PlanGrowthPage({
     totalElements,
     totalPages,
     loading,
-  } = usePlanPage(basePath);
+  } = usePlanPage(basePath, { includePlans: false });
   const resetWorkflowDraft = usePlanWorkflowDraftStore(
     (state) => state.resetDraft,
   );
@@ -61,39 +59,20 @@ export default function PlanGrowthPage({
     setLocation(`${basePath}/create/workflow`);
   };
 
-  const workflowRows = useMemo<WorkflowRow[]>(() => {
-    const rows = workflows.map((workflow) => ({
-      id: workflow.id,
-      name: workflow.name,
-      description: workflow.description,
-      totalCount: workflow.planCount ?? 0,
-      activeCount: workflow.statusBreakdown?.inProgress ?? 0,
-      draftCount: workflow.statusBreakdown?.draft ?? 0,
-      completedCount: workflow.statusBreakdown?.completed ?? 0,
-      cancelledCount: workflow.statusBreakdown?.cancelled ?? 0,
-    }));
-
-    const unassignedPlans =
-      currentIndex === 1 ? plans.filter((plan) => !plan.workflowId) : [];
-    if (unassignedPlans.length) {
-      rows.push({
-        id: UNASSIGNED_WORKFLOW_ID,
-        name: "Kế hoạch chưa gắn sơ đồ",
-        description:
-          "Kế hoạch được tạo trước khi lưu sơ đồ quy trình hoặc chưa bấm Lưu quy trình.",
-        totalCount: unassignedPlans.length,
-        activeCount: unassignedPlans.filter((p) => p.status === "active")
-          .length,
-        draftCount: unassignedPlans.filter((p) => p.status === "draft").length,
-        completedCount: unassignedPlans.filter((p) => p.status === "completed")
-          .length,
-        cancelledCount: unassignedPlans.filter((p) => p.status === "cancelled")
-          .length,
-      });
-    }
-
-    return rows;
-  }, [workflows, plans, currentIndex]);
+  const workflowRows = useMemo<WorkflowRow[]>(
+    () =>
+      workflows.map((workflow) => ({
+        id: workflow.id,
+        name: workflow.name,
+        description: workflow.description,
+        totalCount: workflow.planCount ?? 0,
+        activeCount: workflow.statusBreakdown?.inProgress ?? 0,
+        draftCount: workflow.statusBreakdown?.draft ?? 0,
+        completedCount: workflow.statusBreakdown?.completed ?? 0,
+        cancelledCount: workflow.statusBreakdown?.cancelled ?? 0,
+      })),
+    [workflows],
+  );
 
   const handleConfirmClone = () => {
     if (!workflowToClone) return;
