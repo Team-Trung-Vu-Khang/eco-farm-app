@@ -49,6 +49,7 @@ import { PersonnelMultiSelectCard } from "./components/PersonnelMultiSelectCard"
 import { RegimenSelector } from "./components/RegimenSelector";
 import SimplePlanForm from "./components/SimplePlanForm";
 import { StageAllocation } from "./components/StageAllocation";
+import { useCropSupplyCatalog } from "./hooks/useCropSupplyCatalog";
 import { usePlanForm } from "./hooks/usePlanForm";
 
 interface PlanGrowthEditPageProps {
@@ -92,6 +93,7 @@ export default function PlanGrowthEditPage({
     pageDescription,
     completeLabel,
   } = usePlanForm("edit", basePath, { onSaved, onCancel });
+  const supplyCatalog = useCropSupplyCatalog();
 
   const [newManualStage, setNewManualStage] = useState("");
   const [isSimpleMode, setIsSimpleMode] = useState(true);
@@ -1099,6 +1101,7 @@ export default function PlanGrowthEditPage({
                     handleAddTask({ ...item, stageId: "Thu hoạch" })
                   }
                   onRemoveTask={handleRemoveTask}
+                  supplyCatalog={supplyCatalog}
                 />
               </div>
             ) : (
@@ -1136,6 +1139,7 @@ export default function PlanGrowthEditPage({
                       handleAddTask({ ...item, stageId: stageKey })
                     }
                     onRemoveTask={handleRemoveTask}
+                    supplyCatalog={supplyCatalog}
                   />
                 );
               })
@@ -1793,6 +1797,7 @@ export default function PlanGrowthEditPage({
             isWorkflowContext={isWorkflowContext}
             workflowInfo={workflowInfo}
             personnel={personnel}
+            supplyCatalog={supplyCatalog}
           />
         ) : (
           <StepperForm

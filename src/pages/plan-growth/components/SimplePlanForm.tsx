@@ -36,8 +36,11 @@ import {
   type PersonnelOption,
 } from "./PersonnelMultiSelectCard";
 import { RegimenSelector } from "./RegimenSelector";
-import { MATERIAL_OPTIONS, MATERIAL_TYPES, MATERIAL_UNITS } from "../data/mocks";
 import type { GeographicalSelection, MaterialAllocation, PlanFormData } from "../types";
+import type {
+  CropSupplyCatalog,
+  CropSupplyType,
+} from "../hooks/useCropSupplyCatalog";
 
 const PURPOSE_OPTIONS = [
   { id: "cultivation", label: "Canh tác", icon: Layers, color: "blue" },
@@ -79,6 +82,7 @@ interface SimplePlanFormProps {
   isWorkflowContext?: boolean;
   workflowInfo?: { name?: string } | null;
   personnel: PersonnelOption[];
+  supplyCatalog: CropSupplyCatalog;
 }
 
 function StageMaterialPicker({
@@ -86,30 +90,51 @@ function StageMaterialPicker({
   allocations,
   onAddMaterial,
   onRemoveMaterial,
+  supplyCatalog,
 }: {
   stageKey: string;
   allocations: MaterialAllocation[];
   onAddMaterial: (item: Omit<MaterialAllocation, "id">) => void;
   onRemoveMaterial: (id: number) => void;
+  supplyCatalog: CropSupplyCatalog;
 }) {
+  const defaultType = supplyCatalog.typeOptions[1]?.value || supplyCatalog.typeOptions[0]?.value || "fertilizer";
   const [newItem, setNewItem] = useState({
     name: "",
     qty: "",
-    unit: MATERIAL_UNITS[MATERIAL_TYPES[0]?.value]?.[0] || "kg",
-    type: MATERIAL_TYPES[0]?.value || "",
+    unit:
+      supplyCatalog.unitOptionsByType[defaultType]?.[0] ||
+      "kg",
+    type: defaultType as CropSupplyType,
   });
 
+  const selectedTypeOption = supplyCatalog.typeOptions.find(
+    (option) => option.value === newItem.type,
+  );
+  const selectedMaterial = supplyCatalog.optionsByType[newItem.type].find(
+    (option) => option.value === newItem.name,
+  );
+  const unitOptions =
+    supplyCatalog.unitOptionsByType[newItem.type].length > 0
+      ? supplyCatalog.unitOptionsByType[newItem.type]
+      : ["kg"];
+
   const handleAdd = () => {
-    if (!newItem.name || !newItem.qty) return;
+    if (!selectedMaterial || !newItem.qty) return;
     onAddMaterial({
       stageId: stageKey,
-      materialCategory: newItem.type,
-      materialType: newItem.type,
-      materialName: newItem.name,
+      materialCategory: selectedTypeOption?.label || newItem.type,
+      materialType: selectedTypeOption?.label || newItem.type,
+      materialName: selectedMaterial.label,
       quantity: newItem.qty,
-      unit: newItem.unit,
+      unit: newItem.unit || selectedMaterial.unit,
     });
-    setNewItem({ name: "", qty: "", unit: MATERIAL_UNITS[newItem.type as keyof typeof MATERIAL_UNITS]?.[0] || "kg", type: newItem.type });
+    setNewItem({
+      name: "",
+      qty: "",
+      unit: unitOptions[0] || "kg",
+      type: newItem.type,
+    });
   };
 
   return (
@@ -144,15 +169,17 @@ function StageMaterialPicker({
           <Select
             value={newItem.type}
             onValueChange={(v) => {
-              const defaultUnit = MATERIAL_UNITS[v as keyof typeof MATERIAL_UNITS]?.[0] || "kg";
-              setNewItem({ ...newItem, type: v, name: "", unit: defaultUnit });
+              const type = v as CropSupplyType;
+              const defaultUnit =
+                supplyCatalog.unitOptionsByType[type]?.[0] || "kg";
+              setNewItem({ ...newItem, type, name: "", unit: defaultUnit });
             }}
           >
             <SelectTrigger className="w-full h-9 text-xs bg-white">
               <SelectValue placeholder="Loại..." />
             </SelectTrigger>
             <SelectContent>
-              {MATERIAL_TYPES.map((type) => (
+              {supplyCatalog.typeOptions.map((type) => (
                 <SelectItem key={type.value} value={type.value}>
                   {type.label}
                 </SelectItem>
@@ -162,19 +189,25 @@ function StageMaterialPicker({
         </div>
         <div className="col-span-8">
           <Combobox
-            options={(MATERIAL_OPTIONS[newItem.type as keyof typeof MATERIAL_OPTIONS] || []).map((opt) => ({
+            options={supplyCatalog.optionsByType[newItem.type].map((opt) => ({
               value: opt.value,
               label: opt.label,
             }))}
             value={newItem.name}
             onChange={(v) => {
-              const category = MATERIAL_OPTIONS[newItem.type as keyof typeof MATERIAL_OPTIONS] || [];
-              const item = category.find((i) => i.value === v);
+              const item = supplyCatalog.optionsByType[newItem.type].find(
+                (i) => i.value === v,
+              );
               setNewItem({ ...newItem, name: v, unit: item?.unit || newItem.unit });
             }}
             placeholder="Chọn vật tư..."
             searchPlaceholder="Tìm vật tư..."
-            emptyText="Không tìm thấy vật tư."
+            emptyText={
+              supplyCatalog.isLoading
+                ? "Đang tải danh sách vật tư..."
+                : "Không tìm thấy vật tư."
+            }
+            disabled={supplyCatalog.isLoading}
             className="h-9 text-xs w-full bg-white"
           />
         </div>
@@ -193,7 +226,7 @@ function StageMaterialPicker({
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              {(MATERIAL_UNITS[newItem.type as keyof typeof MATERIAL_UNITS] || ["kg"]).map((u) => (
+              {unitOptions.map((u) => (
                 <SelectItem key={u} value={u}>
                   {u}
                 </SelectItem>
@@ -235,6 +268,7 @@ export default function SimplePlanForm({
   isWorkflowContext,
   workflowInfo,
   personnel,
+  supplyCatalog,
 }: SimplePlanFormProps) {
   const [newStage, setNewStage] = useState("");
   const isTreatmentOrAmendment = formData.purpose === "treatment" || formData.purpose === "amendment";
@@ -614,6 +648,7 @@ export default function SimplePlanForm({
                       )}
                       onAddMaterial={handleAddMaterial}
                       onRemoveMaterial={handleRemoveMaterial}
+                      supplyCatalog={supplyCatalog}
                     />
                   </div>
                 </div>

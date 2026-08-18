@@ -36,13 +36,9 @@ import {
 import { memo, useState } from "react";
 import usePersonnelStore from "../../../stores/usePersonnelStore";
 import type { GeographicalSelection } from "../types";
-import {
-  MATERIAL_OPTIONS,
-  MATERIAL_TYPES,
-  MATERIAL_UNITS,
-  TASK_OPTIONS,
-} from "../data/mocks";
+import { TASK_OPTIONS } from "../data/mocks";
 import type { MaterialAllocation, TaskAllocation } from "../types";
+import type { CropSupplyCatalog, CropSupplyType } from "../hooks/useCropSupplyCatalog";
 
 export const StageAllocation = memo(
   ({
@@ -57,6 +53,7 @@ export const StageAllocation = memo(
     onRemoveTask,
     masterSelections = [],
     isDetail = true,
+    supplyCatalog,
   }: {
     stageName: string;
     cycleName?: string | null;
@@ -71,13 +68,14 @@ export const StageAllocation = memo(
     masterSelections?: GeographicalSelection[];
     enterpriseId?: string;
     isDetail?: boolean;
+    supplyCatalog: CropSupplyCatalog;
   }) => {
     const [isExpanded, setIsExpanded] = useState(false);
     const [newItem, setNewItem] = useState({
       name: "",
       qty: "",
-      unit: "kg",
-      type: "Phân bón",
+      unit: supplyCatalog.unitOptionsByType.fertilizer[0] || "kg",
+      type: "fertilizer" as CropSupplyType,
     });
 
     const specificPersonnel = isDetail;
@@ -104,17 +102,33 @@ export const StageAllocation = memo(
         )
       : personnel;
 
+    const selectedTypeOption = supplyCatalog.typeOptions.find(
+      (option) => option.value === newItem.type,
+    );
+    const selectedMaterial = supplyCatalog.optionsByType[newItem.type].find(
+      (option) => option.value === newItem.name,
+    );
+    const unitOptions =
+      supplyCatalog.unitOptionsByType[newItem.type].length > 0
+        ? supplyCatalog.unitOptionsByType[newItem.type]
+        : ["kg"];
+
     const handleAddMaterial = () => {
-      if (!newItem.name || !newItem.qty) return;
+      if (!selectedMaterial || !newItem.qty) return;
       onAddMaterial({
         stageId: stageName,
-        materialCategory: newItem.type,
-        materialType: newItem.type,
-        materialName: newItem.name,
+        materialCategory: selectedTypeOption?.label || newItem.type,
+        materialType: selectedTypeOption?.label || newItem.type,
+        materialName: selectedMaterial.label,
         quantity: newItem.qty,
-        unit: newItem.unit,
+        unit: newItem.unit || selectedMaterial.unit,
       });
-      setNewItem({ name: "", qty: "", unit: "kg", type: "Phân bón" });
+      setNewItem({
+        name: "",
+        qty: "",
+        unit: unitOptions[0] || "kg",
+        type: newItem.type,
+      });
     };
 
     const handleAddTask = () => {
@@ -297,12 +311,12 @@ export const StageAllocation = memo(
                           value={newItem.type}
                           onValueChange={(v) => {
                             const defaultUnit =
-                              MATERIAL_UNITS[
-                                v as keyof typeof MATERIAL_UNITS
+                              supplyCatalog.unitOptionsByType[
+                                v as CropSupplyType
                               ]?.[0] || "kg";
                             setNewItem({
                               ...newItem,
-                              type: v,
+                              type: v as CropSupplyType,
                               name: "",
                               unit: defaultUnit,
                             });
@@ -312,7 +326,7 @@ export const StageAllocation = memo(
                             <SelectValue placeholder="Loại..." />
                           </SelectTrigger>
                           <SelectContent>
-                            {MATERIAL_TYPES.map((type) => (
+                            {supplyCatalog.typeOptions.map((type) => (
                               <SelectItem key={type.value} value={type.value}>
                                 {type.label}
                               </SelectItem>
@@ -323,21 +337,18 @@ export const StageAllocation = memo(
 
                       <div className="col-span-8">
                         <Combobox
-                          options={(
-                            MATERIAL_OPTIONS[
-                              newItem.type as keyof typeof MATERIAL_OPTIONS
-                            ] || []
-                          ).map((opt) => ({
-                            value: opt.value,
-                            label: opt.label,
-                          }))}
+                          options={supplyCatalog.optionsByType[newItem.type].map(
+                            (opt) => ({
+                              value: opt.value,
+                              label: opt.label,
+                            }),
+                          )}
                           value={newItem.name}
                           onChange={(v) => {
-                            const category =
-                              MATERIAL_OPTIONS[
-                                newItem.type as keyof typeof MATERIAL_OPTIONS
-                              ] || [];
-                            const item = category.find((i) => i.value === v);
+                            const item =
+                              supplyCatalog.optionsByType[newItem.type].find(
+                                (i) => i.value === v,
+                              );
                             setNewItem({
                               ...newItem,
                               name: v,
@@ -346,7 +357,12 @@ export const StageAllocation = memo(
                           }}
                           placeholder="Chọn vật tư cụ thể..."
                           searchPlaceholder="Tìm vật tư..."
-                          emptyText="Không tìm thấy vật tư."
+                          emptyText={
+                            supplyCatalog.isLoading
+                              ? "Đang tải danh sách vật tư..."
+                              : "Không tìm thấy vật tư."
+                          }
+                          disabled={supplyCatalog.isLoading}
                           className="h-9 text-xs w-full bg-slate-50/50"
                         />
                       </div>
@@ -376,11 +392,7 @@ export const StageAllocation = memo(
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            {(
-                              MATERIAL_UNITS[
-                                newItem.type as keyof typeof MATERIAL_UNITS
-                              ] || ["kg"]
-                            ).map((u) => (
+                            {unitOptions.map((u) => (
                               <SelectItem key={u} value={u}>
                                 {u}
                               </SelectItem>

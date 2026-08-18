@@ -52,6 +52,7 @@ import SimplePlanForm from "./components/SimplePlanForm";
 import { StageAllocation } from "./components/StageAllocation";
 import { StageItem } from "./components/StageItem";
 import { TASK_OPTIONS } from "./data/mocks";
+import { useCropSupplyCatalog } from "./hooks/useCropSupplyCatalog";
 import { usePlanForm } from "./hooks/usePlanForm";
 
 interface PlanGrowthCreatePageProps {
@@ -88,6 +89,7 @@ export default function PlanGrowthCreatePage({
     pageDescription,
     completeLabel,
   } = usePlanForm("create", basePath);
+  const supplyCatalog = useCropSupplyCatalog();
 
   const [newManualStage, setNewManualStage] = useState("");
   const [stageSearch, setStageSearch] = useState("");
@@ -1315,6 +1317,7 @@ export default function PlanGrowthCreatePage({
                     handleAddTask({ ...item, stageId: stageKey })
                   }
                   onRemoveTask={handleRemoveTask}
+                  supplyCatalog={supplyCatalog}
                 />
               );
             })}
@@ -1966,6 +1969,7 @@ export default function PlanGrowthCreatePage({
             selectionSummary={selectionSummary}
             handleGeographicalConfirm={handleGeographicalConfirm}
             personnel={personnel}
+            supplyCatalog={supplyCatalog}
           />
         ) : (
           <StepperForm
