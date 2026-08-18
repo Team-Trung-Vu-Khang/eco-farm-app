@@ -1,5 +1,4 @@
 import PageWrapper from "@/components/PageWrapper";
-import useRegionStore from "@/stores/useRegionStore";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   Badge,
@@ -18,14 +17,19 @@ import {
   useToast,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { ArrowLeft, Calendar, Layers, Save } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useLocation, useParams } from "wouter";
 import * as z from "zod";
+import {
+  useFarmWorkflowById,
+  useFarmWorkflowMutations,
+} from "@/features/farm-workflow/hooks";
+import type { FarmWorkflowScopeRequest } from "@/features/farm-workflow/types/farm-workflow.type";
+import { useCultivationZones } from "@/features/farm";
 import GeographicalSelector from "./components/GeographicalSelector";
 import {
   createEmptyPlanDraft,
-  createInfoNodeId,
   createNodeId,
   DEFAULT_DRAFT_PLAN_NAME,
   getNextInfoNodePosition,
@@ -35,10 +39,44 @@ import {
 } from "./hooks/usePlanWorkflowDraftStore";
 import type { GeographicalSelection } from "./types";
 import type { Plan } from "./types";
-import { getFallbackPlans, upsertFallbackPlan } from "./utils/api-mappers";
+import {
+  getFallbackPlans,
+  mapCultivationZonesToRegionTree,
+  mapWorkflowResponseToInfoRecord,
+  upsertFallbackPlan,
+} from "./utils/api-mappers";
 import { summarizeSelections } from "./utils/location";
 
 const WORKFLOW_PATH = "/plan-growth/create/workflow";
+const WORKFLOW_DOMAIN_CODE = "CROP" as const;
+
+function toWorkflowScopes(
+  selections: GeographicalSelection[],
+): FarmWorkflowScopeRequest[] {
+  return selections.map((selection) => ({
+    scopeType:
+      selection.type === "plot"
+        ? "PLOT"
+        : selection.type === "area"
+          ? "AREA"
+          : "REGION",
+    scopeId: Number(
+      selection.plotId || selection.areaId || selection.regionId,
+    ),
+  }));
+}
+
+function toDurationDays(years: string, months: string, days: string) {
+  const totalDays =
+    (Number(years) || 0) * 365 + (Number(months) || 0) * 30 + (Number(days) || 0);
+  return Math.max(1, totalDays);
+}
+
+// Info nodes created before the API integration carry a local
+// `info-<timestamp>-<rand>` id; only numeric ids are real backend workflow ids.
+function isPersistedWorkflowId(id: string) {
+  return /^\d+$/.test(id);
+}
 
 const formSchema = z.object({
   name: z.string().min(1, { message: "Tên sơ đồ là bắt buộc" }),
@@ -52,15 +90,36 @@ export default function PlanGrowthWorkflowInfoFormPage() {
   const nodeId = params.nodeId;
   const isEdit = Boolean(nodeId);
 
-  const { regions } = useRegionStore();
+  const { items: cultivationZones } = useCultivationZones({
+    params: { domainCode: WORKFLOW_DOMAIN_CODE, page: 0, size: 100 },
+  });
+  const regions = useMemo(
+    () => mapCultivationZonesToRegionTree(cultivationZones),
+    [cultivationZones],
+  );
   const infoNodes = usePlanWorkflowDraftStore((state) => state.infoNodes);
   const setInfoNodes = usePlanWorkflowDraftStore((state) => state.setInfoNodes);
   const nodes = usePlanWorkflowDraftStore((state) => state.nodes);
   const addNode = usePlanWorkflowDraftStore((state) => state.addNode);
+  const { createWorkflow, updateWorkflow } = useFarmWorkflowMutations();
 
-  const editingRecord = nodeId
+  const localRecord = nodeId
     ? infoNodes.find((item) => item.id === nodeId)
     : undefined;
+  // Only persisted (numeric-id) workflows exist on the backend — local
+  // draft-only nodes fall back to the in-memory record below.
+  const isPersistedNodeId = nodeId ? isPersistedWorkflowId(nodeId) : false;
+  const { data: workflowDetail, isLoading: isLoadingWorkflowDetail } =
+    useFarmWorkflowById(nodeId ?? "", {
+      enabled: isEdit && isPersistedNodeId,
+    });
+
+  const editingRecord: DiagramInfoRecord | undefined = workflowDetail
+    ? mapWorkflowResponseToInfoRecord(
+        workflowDetail,
+        localRecord?.position ?? getNextInfoNodePosition(infoNodes),
+      )
+    : localRecord;
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -89,7 +148,23 @@ export default function PlanGrowthWorkflowInfoFormPage() {
     [regions, selections],
   );
 
-  if (isEdit && !editingRecord) {
+  // `useForm`/`useState` above only see `editingRecord` at first render —
+  // the API detail resolves later, so re-sync once it lands.
+  useEffect(() => {
+    if (!workflowDetail) return;
+    const record = mapWorkflowResponseToInfoRecord(
+      workflowDetail,
+      localRecord?.position ?? getNextInfoNodePosition(infoNodes),
+    );
+    form.reset({ name: record.name, description: record.description });
+    setSelections(record.selections);
+    setPlannedDurationYears(record.plannedDurationYears);
+    setPlannedDurationMonths(record.plannedDurationMonths);
+    setPlannedDurationDays(record.plannedDurationDays);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [workflowDetail]);
+
+  if (isEdit && !editingRecord && !(isPersistedNodeId && isLoadingWorkflowDetail)) {
     return (
       <PageWrapper title="Không tìm thấy node quy trình" description="">
         <Card>
@@ -110,76 +185,113 @@ export default function PlanGrowthWorkflowInfoFormPage() {
     );
   }
 
-  const handleSave = (values: z.infer<typeof formSchema>) => {
+  const isSaving = createWorkflow.isPending || updateWorkflow.isPending;
+
+  const handleSave = async (values: z.infer<typeof formSchema>) => {
     if (selections.length === 0) {
       setRegionsTouched(true);
       return;
     }
 
     const isFirstInfoNode = infoNodes.length === 0;
-
-    if (editingRecord) {
-      setInfoNodes((prev) =>
-        prev.map((item) =>
-          item.id === editingRecord.id
-            ? {
-                ...item,
-                name: values.name,
-                description: values.description || "",
-                selections,
-                plannedDurationYears,
-                plannedDurationMonths,
-                plannedDurationDays,
-              }
-            : item,
-        ),
-      );
-    } else {
-      const newRecord: DiagramInfoRecord = {
-        id: createInfoNodeId(),
-        name: values.name,
-        description: values.description || "",
-        selections,
+    const payload = {
+      domainCode: WORKFLOW_DOMAIN_CODE,
+      name: values.name,
+      description: values.description || undefined,
+      durationDays: toDurationDays(
         plannedDurationYears,
         plannedDurationMonths,
         plannedDurationDays,
-        isActive: true,
-        position: getNextInfoNodePosition(infoNodes),
-      };
-      setInfoNodes((prev) => [...prev, newRecord]);
+      ),
+      scopes: toWorkflowScopes(selections),
+      status: "ACTIVE" as const,
+    };
 
-      // First info node in an empty draft seeds the tree with a starter plan
-      // node, mirroring the previous dialog-driven flow.
-      if (isFirstInfoNode && nodes.length === 0) {
-        const nextPlanId =
-          getFallbackPlans().reduce(
-            (maxId, item) => Math.max(maxId, item.id),
-            0,
-          ) + 1;
-        const created = {
-          ...createEmptyPlanDraft(DEFAULT_DRAFT_PLAN_NAME),
-          id: nextPlanId,
-          createdAt: new Date().toISOString().split("T")[0],
-        } as Plan;
-        upsertFallbackPlan(created);
-        if (created) {
+    try {
+      const record: DiagramInfoRecord =
+        editingRecord && isPersistedWorkflowId(editingRecord.id)
+          ? {
+              ...editingRecord,
+              name: values.name,
+              description: values.description || "",
+              selections,
+              plannedDurationYears,
+              plannedDurationMonths,
+              plannedDurationDays,
+            }
+          : {
+              id: "",
+              name: values.name,
+              description: values.description || "",
+              selections,
+              plannedDurationYears,
+              plannedDurationMonths,
+              plannedDurationDays,
+              isActive: true,
+              position: editingRecord?.position ?? getNextInfoNodePosition(infoNodes),
+            };
+
+      if (editingRecord && isPersistedWorkflowId(editingRecord.id)) {
+        await updateWorkflow.mutateAsync({
+          id: editingRecord.id,
+          payload,
+        });
+        setInfoNodes((prev) =>
+          prev.map((item) => (item.id === record.id ? record : item)),
+        );
+      } else {
+        const created = await createWorkflow.mutateAsync(payload);
+        record.id = String(created.id);
+        setInfoNodes((prev) => [
+          ...prev.filter((item) => item.id !== editingRecord?.id),
+          record,
+        ]);
+        // Mark this freshly-created workflow as the active draft — otherwise
+        // navigating to its numeric-id canvas URL right after would look
+        // like opening a different (persisted) workflow, and the canvas
+        // page's API-detail fetch would wipe the starter plan node just
+        // added below.
+        usePlanWorkflowDraftStore.setState({ activeWorkflowId: record.id });
+
+        // First info node in an empty draft seeds the tree with a starter plan
+        // node, mirroring the previous dialog-driven flow.
+        if (isFirstInfoNode && nodes.length === 0) {
+          const nextPlanId =
+            getFallbackPlans().reduce(
+              (maxId, item) => Math.max(maxId, item.id),
+              0,
+            ) + 1;
+          const createdPlan = {
+            ...createEmptyPlanDraft(DEFAULT_DRAFT_PLAN_NAME),
+            id: nextPlanId,
+            createdAt: new Date().toISOString().split("T")[0],
+          } as Plan;
+          upsertFallbackPlan(createdPlan);
           addNode({
             id: createNodeId("plan"),
             type: "workflowCard",
             position: PLACEHOLDER_POSITION,
-            data: { setupKind: "plan", planId: created.id },
+            data: { setupKind: "plan", planId: createdPlan.id },
           });
         }
       }
-    }
 
-    toast({
-      title: "Thành công",
-      description: editingRecord
-        ? "Đã cập nhật node thông tin quy trình"
-        : "Đã thêm node thông tin quy trình",
-    });
-    setLocation(WORKFLOW_PATH);
+      toast({
+        title: "Thành công",
+        description: editingRecord
+          ? "Đã cập nhật node thông tin quy trình"
+          : "Đã thêm node thông tin quy trình",
+      });
+      // Route with the persisted workflow id so the canvas page's URL keeps
+      // reflecting which workflow is open (bookmarkable/reload-safe).
+      setLocation(`${WORKFLOW_PATH}/${record.id}`);
+    } catch {
+      toast({
+        variant: "destructive",
+        title: "Lỗi",
+        description: "Không thể lưu sơ đồ quy trình",
+      });
+    }
   };
 
   return (
@@ -196,9 +308,13 @@ export default function PlanGrowthWorkflowInfoFormPage() {
             <ArrowLeft className="mr-2 h-4 w-4" />
             Quay lại
           </Button>
-          <Button className="h-9 px-3" onClick={form.handleSubmit(handleSave)}>
+          <Button
+            className="h-9 px-3"
+            disabled={isSaving}
+            onClick={form.handleSubmit(handleSave)}
+          >
             <Save className="mr-2 h-4 w-4" />
-            Lưu sơ đồ
+            {isSaving ? "Đang lưu..." : "Lưu sơ đồ"}
           </Button>
         </div>
       }

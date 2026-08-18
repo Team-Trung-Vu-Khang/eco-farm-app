@@ -39,6 +39,7 @@ export interface Plan {
   code: string;
   name: string;
   description: string;
+  scopeNote?: string;
   workflowId?: string;
   seasonId: string;
   seasonName: string;
@@ -69,6 +70,10 @@ export interface Plan {
   status: "draft" | "active" | "completed" | "cancelled";
   createdAt: string;
   scopes?: GeographicalSelection[];
+  // Pre-grouped, human-readable version of `scopes` straight from the API's
+  // embedded region/area/plot names — unlike `scopes`, it doesn't need a
+  // matching entry in the (mock) region tree to display correctly.
+  selectionSummary?: SelectionSummaryGroup[];
 }
 
 export type PlanStatus = Plan["status"];
@@ -95,6 +100,7 @@ export interface PlanFormData {
   code: string;
   name: string;
   description: string;
+  scopeNote: string;
   seasonId: string;
   seasonName: string;
   startDate: string;

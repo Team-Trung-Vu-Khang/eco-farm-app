@@ -49,6 +49,7 @@ import { PersonnelMultiSelectCard } from "./components/PersonnelMultiSelectCard"
 import { RegimenSelector } from "./components/RegimenSelector";
 import SimplePlanForm from "./components/SimplePlanForm";
 import { StageAllocation } from "./components/StageAllocation";
+import { useCropSupplyCatalog } from "./hooks/useCropSupplyCatalog";
 import { usePlanForm } from "./hooks/usePlanForm";
 
 interface PlanGrowthEditPageProps {
@@ -92,6 +93,7 @@ export default function PlanGrowthEditPage({
     pageDescription,
     completeLabel,
   } = usePlanForm("edit", basePath, { onSaved, onCancel });
+  const supplyCatalog = useCropSupplyCatalog();
 
   const [newManualStage, setNewManualStage] = useState("");
   const [isSimpleMode, setIsSimpleMode] = useState(true);
@@ -477,10 +479,10 @@ export default function PlanGrowthEditPage({
                   Ghi chú phạm vi
                 </Label>
                 <Textarea
-                  placeholder="Nhập ghi chú thêm..."
-                  value={formData.description}
+                  placeholder="Nhập ghi chú phạm vi..."
+                  value={formData.scopeNote}
                   onChange={(e) =>
-                    setFormData({ ...formData, description: e.target.value })
+                    setFormData({ ...formData, scopeNote: e.target.value })
                   }
                   className="bg-white"
                 />
@@ -498,27 +500,34 @@ export default function PlanGrowthEditPage({
                     <div className="w-14 h-14 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center">
                       <MapPin className="w-7 h-7 text-white" />
                     </div>
-                    <div className="flex-1">
+                    <div className="flex-1 space-y-2">
                       <p className="text-emerald-100 text-[10px] font-bold uppercase tracking-widest mb-1">
                         Khu vực canh tác
                       </p>
                       <h4 className="text-xl font-black leading-tight">
-                        {regions
-                          .filter((r) =>
-                            formData.selectedRegionIds.includes(
-                              r.id.toString(),
-                            ),
-                          )
-                          .map((r) => r.name)
+                        {selectionSummary
+                          .map((group) => group.regionName)
                           .join(", ") || "Chưa chọn vùng"}
                       </h4>
-                      <div className="flex items-center gap-3 mt-2">
-                        <Badge className="bg-white/20 text-white font-bold h-5">
-                          {formData.selectedPlotIds.length} LÔ ĐẤT
-                        </Badge>
-                        <Badge className="bg-white/20 text-white font-bold h-5">
-                          {calculateArea()} HA
-                        </Badge>
+                      <div className="flex flex-wrap gap-1.5 pt-1">
+                        {selectionSummary.flatMap((group) =>
+                          group.items.map((item, idx) => (
+                            <Badge
+                              key={`${group.regionId}-${item.type}-${item.id}-${idx}`}
+                              variant="secondary"
+                              className={cn(
+                                "bg-white/20 text-white border-transparent text-[10px] h-5",
+                                item.type === "region"
+                                  ? "bg-emerald-100/25"
+                                  : item.type === "area"
+                                    ? "bg-blue-100/20"
+                                    : "bg-white/15",
+                              )}
+                            >
+                              {item.name}
+                            </Badge>
+                          )),
+                        )}
                       </div>
                     </div>
                   </div>
@@ -577,45 +586,10 @@ export default function PlanGrowthEditPage({
                     </div>
                   </div>
 
-                  {selectionSummary.length > 0 && (
-                    <div className="space-y-3">
-                      <p className="text-emerald-200 text-[10px] font-bold uppercase tracking-wider">
-                        Chi tiết phạm vi
-                      </p>
-                      <ScrollArea className="h-40 pr-2">
-                        <div className="space-y-3">
-                          {selectionSummary.map((group) => (
-                            <div key={group.regionId} className="space-y-1.5">
-                              <div className="text-[10px] font-bold text-emerald-100 uppercase opacity-60">
-                                {group.regionName}
-                              </div>
-                              {group.items.map((item, idx) => (
-                                <div
-                                  key={idx}
-                                  className="flex items-center justify-between p-2 rounded-xl bg-white/10 border border-white/5"
-                                >
-                                  <div className="flex items-center gap-2">
-                                    <div
-                                      className={cn(
-                                        "w-1.5 h-1.5 rounded-full",
-                                        item.type === "region"
-                                          ? "bg-amber-400"
-                                          : item.type === "area"
-                                            ? "bg-blue-400"
-                                            : "bg-emerald-400",
-                                      )}
-                                    />
-                                    <span className="text-xs font-medium">
-                                      {item.name}
-                                    </span>
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                          ))}
-                        </div>
-                      </ScrollArea>
-                    </div>
+                  {formData.scopeNote.trim() && (
+                    <p className="text-sm text-emerald-50/80 leading-relaxed italic">
+                      {formData.scopeNote}
+                    </p>
                   )}
                 </div>
               </div>
@@ -623,7 +597,7 @@ export default function PlanGrowthEditPage({
           </div>
         </div>
       ),
-      isValid: formData.selectedPlotIds.length > 0 && !!formData.crop,
+      isValid: selectionSummary.length > 0,
     },
     {
       id: "process",
@@ -1127,6 +1101,7 @@ export default function PlanGrowthEditPage({
                     handleAddTask({ ...item, stageId: "Thu hoạch" })
                   }
                   onRemoveTask={handleRemoveTask}
+                  supplyCatalog={supplyCatalog}
                 />
               </div>
             ) : (
@@ -1164,6 +1139,7 @@ export default function PlanGrowthEditPage({
                       handleAddTask({ ...item, stageId: stageKey })
                     }
                     onRemoveTask={handleRemoveTask}
+                    supplyCatalog={supplyCatalog}
                   />
                 );
               })
@@ -1821,6 +1797,7 @@ export default function PlanGrowthEditPage({
             isWorkflowContext={isWorkflowContext}
             workflowInfo={workflowInfo}
             personnel={personnel}
+            supplyCatalog={supplyCatalog}
           />
         ) : (
           <StepperForm

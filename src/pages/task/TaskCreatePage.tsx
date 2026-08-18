@@ -2,7 +2,6 @@ import PageWrapper from "@/components/PageWrapper";
 import {
   Badge,
   Button,
-  Calendar,
   Card,
   CardContent,
   CardHeader,
@@ -51,9 +50,8 @@ import {
   Users,
   X,
 } from "lucide-react";
-import { useMemo, useState, type CSSProperties } from "react";
+import { useMemo, useState } from "react";
 import { useLocation, useSearch } from "wouter";
-import { vi } from "date-fns/locale";
 
 import useAmendmentPlanStore from "../../stores/useAmendmentPlanStore";
 import usePersonnelStore from "../../stores/usePersonnelStore";
@@ -62,18 +60,14 @@ import useRegionStore from "../../stores/useRegionStore";
 import useTaskStore from "../../stores/useTaskStore";
 import GeographicalSelector from "../plan/components/GeographicalSelector";
 import { TaskStageAllocation } from "../plan/components/TaskStageAllocation";
-import SimpleTaskForm from "./components/SimpleTaskForm";
 import type {
   GeographicalSelection,
   MaterialAllocation,
   TaskAllocation,
 } from "../plan/types";
-import {
-  formatLocalISODate,
-  getFrequencyText,
-  getRepeatDatesText,
-  parseLocalISODate,
-} from "../plan/utils/task";
+import { getRepeatDatesText } from "../plan/utils/task";
+import SimpleTaskForm from "./components/SimpleTaskForm";
+import type { AmendmentPlan } from "../../stores/useAmendmentPlanStore";
 
 type TaskObjectiveType =
   | "phat-sinh"
@@ -96,6 +90,76 @@ const PURPOSE_TO_OBJECTIVE_TYPE: Partial<
 
 type TaskCreateMode = "plan" | "phat-sinh";
 
+type TaskRegimenOption = {
+  id: string;
+  name: string;
+  description: string;
+  objectiveType: TaskObjectiveType;
+  planPurpose: Exclude<Plan["purpose"], "incurred">;
+};
+
+const TASK_REGIMEN_OPTIONS: TaskRegimenOption[] = [
+  {
+    id: "reg-cultivation",
+    name: "Quy trình canh tác",
+    description: "Áp dụng cho các kế hoạch canh tác định kỳ",
+    objectiveType: "theo-ke-hoach",
+    planPurpose: "cultivation",
+  },
+  {
+    id: "reg-facility-upgrade",
+    name: "Quy trình nâng cấp CSVC",
+    description: "Dành cho kế hoạch nâng cấp cơ sở vật chất",
+    objectiveType: "theo-ke-hoach",
+    planPurpose: "facility-upgrade",
+  },
+  {
+    id: "reg-treatment",
+    name: "Quy trình điều trị",
+    description: "Lọc các kế hoạch xử lý bệnh / điều trị",
+    objectiveType: "tri-benh",
+    planPurpose: "treatment",
+  },
+  {
+    id: "reg-amendment",
+    name: "Quy trình cải tạo đất",
+    description: "Lọc các kế hoạch cải tạo và phục hồi đất",
+    objectiveType: "cai-tao-dat",
+    planPurpose: "amendment",
+  },
+  {
+    id: "reg-harvest",
+    name: "Quy trình thu hoạch",
+    description: "Lọc các kế hoạch thu hoạch theo mùa vụ",
+    objectiveType: "thu-hoach",
+    planPurpose: "harvest",
+  },
+];
+
+function hasTaskAllocations(
+  plan: Plan | AmendmentPlan | undefined,
+): plan is Plan {
+  return !!plan && "taskAllocations" in plan && "materialAllocations" in plan;
+}
+
+function mapPurposeToObjectiveType(
+  purpose?: Plan["purpose"] | AmendmentPlan["purpose"],
+): TaskObjectiveType {
+  switch (purpose) {
+    case "cultivation":
+    case "facility-upgrade":
+      return "theo-ke-hoach";
+    case "harvest":
+      return "thu-hoach";
+    case "treatment":
+      return "tri-benh";
+    case "amendment":
+      return "cai-tao-dat";
+    default:
+      return "phat-sinh";
+  }
+}
+
 export type TaskCreateFormData = {
   code: string;
   name: string;
@@ -114,8 +178,6 @@ export type TaskCreateFormData = {
   qualityInspectors: string[];
   startDate: string;
   endDate: string;
-  isRepeating: boolean;
-  repeatDates: string[];
   priority: "low" | "medium" | "high";
   description: string;
   materials: MaterialAllocation[];
@@ -145,25 +207,28 @@ export default function TaskCreatePage() {
   const [formData, setFormData] = useState<TaskCreateFormData>({
     code: "CV-" + Math.floor(1000 + Math.random() * 9000),
     name: "",
-    mode: presetPlan ? "plan" : "phat-sinh",
-    objectiveType: (presetPlan
-      ? (PURPOSE_TO_OBJECTIVE_TYPE[presetPlan.purpose] ?? "phat-sinh")
-      : "phat-sinh") as TaskObjectiveType,
+    mode: "plan",
+    objectiveType: presetPlan
+      ? mapPurposeToObjectiveType(presetPlan.purpose)
+      : "theo-ke-hoach",
     planId: presetPlan ? String(presetPlan.id) : "",
     planName: presetPlan?.name || "",
     mainTaskId: "",
     mainTaskIds: [],
     selectedStages: [] as string[],
     selectedPlotIds: [] as string[],
-    regimenId: "",
+    regimenId:
+      presetPlan
+        ? TASK_REGIMEN_OPTIONS.find(
+            (option) => option.planPurpose === presetPlan.purpose,
+          )?.id || ""
+        : "",
     assignedType: "individual" as "individual" | "team",
     assignedTo: [] as string[],
     supervisors: [] as string[],
     qualityInspectors: [] as string[],
     startDate: new Date().toISOString().split("T")[0],
     endDate: new Date().toISOString().split("T")[0],
-    isRepeating: false,
-    repeatDates: [] as string[],
     priority: "medium" as "low" | "medium" | "high",
     description: "",
     materials: [] as MaterialAllocation[],
@@ -175,6 +240,7 @@ export default function TaskCreatePage() {
   const [searchSupervisor, setSearchSupervisor] = useState("");
   const [isInspectorDialogOpen, setIsInspectorDialogOpen] = useState(false);
   const [searchInspector, setSearchInspector] = useState("");
+  const [regimenSearchTerm, setRegimenSearchTerm] = useState("");
   const [planSearchTerm, setPlanSearchTerm] = useState("");
   const [selectedEnterpriseId] = useState<string>("");
   const [selections, setSelections] = useState<GeographicalSelection[]>([]);
@@ -186,37 +252,49 @@ export default function TaskCreatePage() {
     unit: "kg",
   });
 
-  const activePlans = useMemo(() => {
-    const basePlans = plans.filter((p) => {
-      if (formData.objectiveType === "theo-ke-hoach")
-        return p.purpose === "cultivation";
-      if (formData.objectiveType === "thu-hoach")
-        return p.purpose === "harvest";
-      if (formData.objectiveType === "tri-benh")
-        return p.purpose === "treatment";
-      if (formData.objectiveType === "cai-tao-dat")
-        return p.purpose === "amendment";
-      return false;
-    });
+  const selectedRegimen = useMemo(
+    () =>
+      TASK_REGIMEN_OPTIONS.find((option) => option.id === formData.regimenId),
+    [formData.regimenId],
+  );
 
-    if (formData.objectiveType === "cai-tao-dat") {
-      return [...basePlans, ...amendmentPlans];
-    }
-    return basePlans;
-  }, [formData.objectiveType, plans, amendmentPlans]);
+  const filteredRegimens = useMemo(() => {
+    const query = regimenSearchTerm.trim().toLowerCase();
+    if (!query) return TASK_REGIMEN_OPTIONS;
+    return TASK_REGIMEN_OPTIONS.filter((option) =>
+      `${option.name} ${option.description}`.toLowerCase().includes(query),
+    );
+  }, [regimenSearchTerm]);
 
   const filteredPlans = useMemo(() => {
     const query = planSearchTerm.trim().toLowerCase();
-    if (!query) return plans;
+    if (!selectedRegimen) return [];
 
-    return plans.filter((plan) =>
+    const candidates =
+      selectedRegimen.planPurpose === "amendment"
+        ? [...plans, ...amendmentPlans]
+        : plans;
+
+    const filteredByRegimen = candidates.filter(
+      (plan) => plan.purpose === selectedRegimen.planPurpose,
+    );
+
+    if (!query) return filteredByRegimen;
+
+    return filteredByRegimen.filter((plan) =>
       `${plan.name} ${plan.code}`.toLowerCase().includes(query),
     );
-  }, [plans, planSearchTerm]);
+  }, [amendmentPlans, plans, planSearchTerm, selectedRegimen]);
 
-  const selectedPlan = (activePlans as any[]).find(
-    (p) => String(p.id) === formData.planId,
-  );
+  const selectedPlan = (
+    formData.mode === "phat-sinh" ? plans : filteredPlans
+  ).find((p: any) => String(p.id) === formData.planId);
+  const selectedPlanTaskAllocations = hasTaskAllocations(selectedPlan)
+    ? selectedPlan.taskAllocations
+    : [];
+  const selectedPlanMaterialAllocations = hasTaskAllocations(selectedPlan)
+    ? selectedPlan.materialAllocations
+    : [];
 
   const { regions, getRegionById } = useRegionStore();
 
@@ -451,26 +529,6 @@ export default function TaskCreatePage() {
     }));
   };
 
-  // Step 1's top-level repeat toggle is a convenience default for the whole
-  // task. It only kicks in when nobody has already added explicit sub-tasks
-  // in step 2 for that stage — explicit sub-tasks always win.
-  const buildFallbackRepeatingSubtask = (
-    stageId: string,
-    taskName: string,
-  ) => [
-    {
-      id: Date.now() + Math.floor(Math.random() * 1000),
-      stageId,
-      name: taskName,
-      description: formData.description,
-      isRepeating: true,
-      repeatDates: formData.repeatDates,
-      startDate: formData.startDate,
-      endDate: formData.endDate,
-      geographicalSelections: selections,
-    },
-  ];
-
   const handleComplete = () => {
     if (
       formData.selectedStages.length > 0 &&
@@ -485,7 +543,10 @@ export default function TaskCreatePage() {
         const taskData = {
           code: `${formData.code}-${index + 1}`,
           name: `${formData.name} - ${stageName}`,
-          plan: formData.planName || "Công việc theo kế hoạch",
+          plan:
+            formData.planName ||
+            selectedRegimen?.name ||
+            "Công việc theo kế hoạch",
           planId: formData.planId || undefined,
           stage: stageName,
           assignedTo: formData.assignedTo,
@@ -497,15 +558,7 @@ export default function TaskCreatePage() {
           priority: formData.priority,
           description: formData.description,
           materials: mats.filter((m) => m.stageId === stageName),
-          tasks:
-            stageTasks.length > 0
-              ? stageTasks
-              : formData.isRepeating
-                ? buildFallbackRepeatingSubtask(
-                    stageName,
-                    `${formData.name} - ${stageName}`,
-                  )
-                : [],
+          tasks: stageTasks,
           geographicalSelections: selections,
         };
         addTask(taskData as any);
@@ -513,18 +566,14 @@ export default function TaskCreatePage() {
     } else {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const mats2 = formData.materials as any[];
-      const fallbackStageId =
-        formData.objectiveType === "phat-sinh"
-          ? "Công việc phát sinh"
-          : formData.objectiveType === "thu-hoach"
-            ? "Công việc thu hoạch"
-            : "";
       const taskData = {
         code: formData.code,
         name: formData.name,
         plan:
           formData.objectiveType !== "phat-sinh"
-            ? formData.planName || "Công việc theo kế hoạch"
+            ? formData.planName ||
+              selectedRegimen?.name ||
+              "Công việc theo kế hoạch"
             : "Công việc phát sinh",
         planId:
           formData.objectiveType !== "phat-sinh"
@@ -540,12 +589,7 @@ export default function TaskCreatePage() {
         priority: formData.priority,
         description: formData.description,
         materials: mats2,
-        tasks:
-          formData.tasks.length > 0
-            ? formData.tasks
-            : formData.isRepeating
-              ? buildFallbackRepeatingSubtask(fallbackStageId, formData.name)
-              : formData.tasks,
+        tasks: formData.tasks,
         geographicalSelections: selections,
       };
       addTask(taskData as any);
@@ -567,6 +611,22 @@ export default function TaskCreatePage() {
       )
       .filter(Boolean);
 
+  const handleRegimenChange = (regimenId: string) => {
+    const regimen = TASK_REGIMEN_OPTIONS.find((option) => option.id === regimenId);
+    setFormData((prev) => ({
+      ...prev,
+      regimenId,
+      objectiveType: regimen?.objectiveType ?? "theo-ke-hoach",
+      planId: "",
+      planName: "",
+      mainTaskId: "",
+      mainTaskIds: [],
+      selectedPlotIds: [],
+    }));
+    setSelections([]);
+    setPlanSearchTerm("");
+  };
+
   const steps: Step[] = [
     {
       id: "objective",
@@ -583,19 +643,6 @@ export default function TaskCreatePage() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label className="text-sm font-bold text-slate-700">
-                    Hạng mục công việc triển khai *
-                  </Label>
-                  <Input
-                    value={formData.name}
-                    onChange={(e) =>
-                      setFormData({ ...formData, name: e.target.value })
-                    }
-                    placeholder="VD: Bón phân thúc đợt 1"
-                  />
-                </div>
-
                 <div className="space-y-3">
                   <Label className="text-sm font-bold text-slate-700">
                     Loại công việc *
@@ -639,14 +686,18 @@ export default function TaskCreatePage() {
                           // Reset to a neutral placeholder — picking a plan
                           // below immediately derives the real value from
                           // its purpose.
-                          objectiveType: "phat-sinh",
+                          objectiveType: checked
+                            ? "phat-sinh"
+                            : "theo-ke-hoach",
                           planId: "",
                           planName: "",
+                          regimenId: "",
                           mainTaskIds: [],
                           selectedPlotIds: [],
                         });
                         setSelections([]);
                         setPlanSearchTerm("");
+                        setRegimenSearchTerm("");
                       }}
                     />
 
@@ -680,18 +731,90 @@ export default function TaskCreatePage() {
                   </div>
                 </div>
 
+                <div className="space-y-2">
+                  <Label className="text-sm font-bold text-slate-700">
+                    {formData.mode === "phat-sinh"
+                      ? "Công việc phát sinh *"
+                      : "Hạng mục công việc triển khai *"}
+                  </Label>
+                  <Input
+                    value={formData.name}
+                    onChange={(e) =>
+                      setFormData({ ...formData, name: e.target.value })
+                    }
+                    placeholder="VD: Bón phân thúc đợt 1"
+                  />
+                </div>
+
                 {formData.mode === "plan" && (
                   <div className="space-y-6 animation-fade-in border-t pt-6 mt-6 border-slate-100">
                     <div className="space-y-4">
                       <div className="space-y-2">
                         <Label className="text-sm font-bold text-slate-700">
-                          Thông tin kế hoạch triển khai *
+                          Quy trình *
+                        </Label>
+                        <Select
+                          value={formData.regimenId}
+                          disabled={!!presetPlanId}
+                          onValueChange={handleRegimenChange}
+                        >
+                          <SelectTrigger className="h-12 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-500 disabled:opacity-80">
+                            <SelectValue placeholder="Chọn quy trình..." />
+                          </SelectTrigger>
+                          <SelectContent className="max-h-80 overflow-hidden p-0">
+                            <div
+                              className="sticky top-0 z-10 border-b border-slate-100 bg-white p-2"
+                              onKeyDown={(event) => event.stopPropagation()}
+                            >
+                              <div className="relative">
+                                <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" />
+                                <Input
+                                  value={regimenSearchTerm}
+                                  onChange={(event) =>
+                                    setRegimenSearchTerm(event.target.value)
+                                  }
+                                  onClick={(event) => event.stopPropagation()}
+                                  onPointerDown={(event) =>
+                                    event.stopPropagation()
+                                  }
+                                  placeholder="Tìm quy trình..."
+                                  className="h-9 pl-8 text-sm"
+                                />
+                              </div>
+                            </div>
+                            <div className="max-h-64 overflow-y-auto p-1">
+                              {filteredRegimens.map((regimen) => (
+                                <SelectItem key={regimen.id} value={regimen.id}>
+                                  {regimen.name}
+                                </SelectItem>
+                              ))}
+                              {filteredRegimens.length === 0 && (
+                                <div className="p-4 text-center text-xs text-slate-400 italic">
+                                  Không tìm thấy quy trình phù hợp
+                                </div>
+                              )}
+                            </div>
+                          </SelectContent>
+                        </Select>
+                        <p className="text-[11px] font-medium text-slate-400">
+                          Chọn quy trình trước để lọc danh sách kế hoạch triển
+                          khai.
+                        </p>
+                      </div>
+                      <div className="space-y-2">
+                        <Label className="text-sm font-bold text-slate-700">
+                          Kế hoạch triển khai
+                          <span className="ml-2 text-[10px] font-medium text-slate-400 normal-case">
+                            Không bắt buộc
+                          </span>
                         </Label>
                         <Select
                           value={formData.planId}
-                          disabled={!!presetPlanId}
+                          disabled={!formData.regimenId || !!presetPlanId}
                           onValueChange={(val) => {
-                            const p = plans.find((p) => String(p.id) === val);
+                            const p = filteredPlans.find(
+                              (p) => String(p.id) === val,
+                            );
                             // Carry the plan's personnel across as a starting
                             // point; they stay removable below.
                             const planSupervisors = resolvePersonnelNames(
@@ -705,9 +828,9 @@ export default function TaskCreatePage() {
                               planId: val,
                               planName: p?.name || "",
                               objectiveType: p
-                                ? (PURPOSE_TO_OBJECTIVE_TYPE[p.purpose] ??
-                                  "phat-sinh")
-                                : "phat-sinh",
+                                ? mapPurposeToObjectiveType(p.purpose)
+                                : selectedRegimen?.objectiveType ||
+                                  "theo-ke-hoach",
                               mainTaskIds: [],
                               selectedPlotIds: [],
                               supervisors: planSupervisors,
@@ -749,12 +872,19 @@ export default function TaskCreatePage() {
                               ))}
                               {filteredPlans.length === 0 && (
                                 <div className="p-4 text-center text-xs text-slate-400 italic">
-                                  Không tìm thấy kế hoạch phù hợp
+                                  {formData.regimenId
+                                    ? "Không tìm thấy kế hoạch phù hợp"
+                                    : "Hãy chọn quy trình trước"}
                                 </div>
                               )}
                             </div>
                           </SelectContent>
                         </Select>
+                        {!formData.regimenId && (
+                          <p className="text-[11px] font-medium text-slate-400">
+                            Kế hoạch sẽ được lọc theo quy trình đã chọn.
+                          </p>
+                        )}
                         {presetPlanId && (
                           <p className="text-[11px] font-medium text-slate-400">
                             Kế hoạch đã được cố định từ liên kết phân bổ công
@@ -836,65 +966,65 @@ export default function TaskCreatePage() {
                         )}
 
                         {formData.planId &&
-                          (selectedPlan?.taskAllocations || []).length > 0 && (
+                          selectedPlanTaskAllocations.length > 0 && (
                             <div className="space-y-2">
                               <Label className="text-sm font-bold text-slate-700">
                                 Công việc chính
                                 <span className="ml-2 text-[10px] font-medium text-slate-400 normal-case">
-                                  Chọn 1 hoặc nhiều hạng mục dự kiến của kế hoạch
+                                  Chọn 1 hoặc nhiều hạng mục dự kiến của kế
+                                  hoạch
                                 </span>
                               </Label>
                               <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                                {(selectedPlan?.taskAllocations || []).map(
-                                  (t: any) => {
-                                    const taskId = String(t.id);
-                                    const checked =
-                                      formData.mainTaskIds.includes(taskId);
-                                    const toggle = () =>
-                                      setFormData((prev) => {
-                                        const isChecked =
-                                          prev.mainTaskIds.includes(taskId);
-                                        return {
-                                          ...prev,
-                                          mainTaskIds: isChecked
-                                            ? prev.mainTaskIds.filter(
-                                                (id) => id !== taskId,
-                                              )
-                                            : [...prev.mainTaskIds, taskId],
-                                          // Only seed the name while it is
-                                          // still empty so a typed-in name is
-                                          // never overwritten.
-                                          name:
-                                            prev.name ||
-                                            (!isChecked ? t.name : "") ||
-                                            "",
-                                        };
-                                      });
-                                    return (
-                                      <div
-                                        key={t.id}
-                                        onClick={toggle}
-                                        className={cn(
-                                          "flex items-center gap-3 p-3 rounded-xl border transition-all cursor-pointer group",
-                                          checked
-                                            ? "bg-primary/5 border-primary shadow-sm"
-                                            : "bg-white border-slate-200 hover:border-primary/20 hover:bg-slate-50/50",
-                                        )}
-                                      >
-                                        <Checkbox
-                                          checked={checked}
-                                          className="data-[state=checked]:bg-primary data-[state=checked]:border-primary"
-                                          onClick={(e) => e.stopPropagation()}
-                                          onCheckedChange={toggle}
-                                        />
-                                        <span className="text-sm font-bold text-slate-700 flex-1">
-                                          {t.name}
-                                          {t.stageId ? ` — ${t.stageId}` : ""}
-                                        </span>
-                                      </div>
-                                    );
-                                  },
-                                )}
+                                {selectedPlanTaskAllocations.map((t: any) => {
+                                  const taskId = String(t.id);
+                                  const checked =
+                                    formData.mainTaskIds.includes(taskId);
+                                  const toggle = () =>
+                                    setFormData((prev) => {
+                                      const isChecked =
+                                        prev.mainTaskIds.includes(taskId);
+                                      return {
+                                        ...prev,
+                                        mainTaskIds: isChecked
+                                          ? prev.mainTaskIds.filter(
+                                              (id) => id !== taskId,
+                                            )
+                                          : [...prev.mainTaskIds, taskId],
+                                        // Only seed the name while it is
+                                        // still empty so a typed-in name is
+                                        // never overwritten.
+                                        name:
+                                          prev.name ||
+                                          (!isChecked ? t.name : "") ||
+                                          "",
+                                      };
+                                    });
+
+                                  return (
+                                    <div
+                                      key={t.id}
+                                      onClick={toggle}
+                                      className={cn(
+                                        "flex items-center gap-3 p-3 rounded-xl border transition-all cursor-pointer group",
+                                        checked
+                                          ? "bg-primary/5 border-primary shadow-sm"
+                                          : "bg-white border-slate-200 hover:border-primary/20 hover:bg-slate-50/50",
+                                      )}
+                                    >
+                                      <Checkbox
+                                        checked={checked}
+                                        className="data-[state=checked]:bg-primary data-[state=checked]:border-primary"
+                                        onClick={(e) => e.stopPropagation()}
+                                        onCheckedChange={toggle}
+                                      />
+                                      <span className="text-sm font-bold text-slate-700 flex-1">
+                                        {t.name}
+                                        {t.stageId ? ` — ${t.stageId}` : ""}
+                                      </span>
+                                    </div>
+                                  );
+                                })}
                               </div>
                             </div>
                           )}
@@ -958,6 +1088,139 @@ export default function TaskCreatePage() {
                           </div>
                         )}
                       </div>
+                    </div>
+                  </div>
+                )}
+
+                {formData.mode === "phat-sinh" && (
+                  <div className="space-y-6 animation-fade-in border-t pt-6 mt-6 border-slate-100">
+                    <div className="space-y-2">
+                      <Label className="text-sm font-bold text-slate-700">
+                        Kế hoạch triển khai
+                      </Label>
+                      <Select
+                        value={formData.planId}
+                        onValueChange={(val) => {
+                          const p = plans.find((p) => String(p.id) === val);
+                          setFormData({
+                            ...formData,
+                            planId: val,
+                            planName: p?.name || "",
+                            selectedPlotIds: [],
+                          });
+                          setSelections([]);
+                          setPlanSearchTerm("");
+                        }}
+                      >
+                        <SelectTrigger className="h-12">
+                          <SelectValue placeholder="Chọn kế hoạch áp dụng..." />
+                        </SelectTrigger>
+                        <SelectContent className="max-h-80 overflow-hidden p-0">
+                          <div
+                            className="sticky top-0 z-10 border-b border-slate-100 bg-white p-2"
+                            onKeyDown={(event) => event.stopPropagation()}
+                          >
+                            <div className="relative">
+                              <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" />
+                              <Input
+                                value={planSearchTerm}
+                                onChange={(event) =>
+                                  setPlanSearchTerm(event.target.value)
+                                }
+                                onClick={(event) => event.stopPropagation()}
+                                onPointerDown={(event) =>
+                                  event.stopPropagation()
+                                }
+                                placeholder="Tìm theo tên hoặc mã kế hoạch..."
+                                className="h-9 pl-8 text-sm"
+                              />
+                            </div>
+                          </div>
+                          <div className="max-h-64 overflow-y-auto p-1">
+                            {filteredPlans.map((p) => (
+                              <SelectItem key={p.id} value={String(p.id)}>
+                                {p.name} ({p.code})
+                              </SelectItem>
+                            ))}
+                            {filteredPlans.length === 0 && (
+                              <div className="p-4 text-center text-xs text-slate-400 italic">
+                                Không tìm thấy kế hoạch phù hợp
+                              </div>
+                            )}
+                          </div>
+                        </SelectContent>
+                      </Select>
+
+                      {formData.planId && selectedPlan && (
+                        <div className="space-y-3 rounded-2xl border border-emerald-100 bg-emerald-50/30 p-4">
+                          <div className="flex items-center justify-between gap-3">
+                            <div>
+                              <Label className="text-sm font-bold text-slate-700">
+                                Vùng canh tác từ kế hoạch
+                                <span className="text-red-500"> *</span>
+                              </Label>
+                              <p className="mt-1 text-[11px] font-medium text-slate-400">
+                                Chỉ chọn được vùng/khu/lô thuộc kế hoạch triển
+                                khai đã chọn.
+                              </p>
+                            </div>
+                            <GeographicalSelector
+                              regions={planScopedRegions}
+                              enterpriseId={
+                                selectedEnterpriseId ||
+                                (selectedPlan as any)?.enterpriseId ||
+                                ""
+                              }
+                              existingSelections={selections}
+                              onConfirm={(nextSelections) => {
+                                setSelections(nextSelections);
+                                setFormData((prev) => ({
+                                  ...prev,
+                                  selectedPlotIds: nextSelections
+                                    .filter((item) => item.type === "plot")
+                                    .map((item) => String(item.plotId)),
+                                }));
+                              }}
+                              disabled={planScopedRegions.length === 0}
+                            />
+                          </div>
+
+                          {planScopedRegions.length === 0 ? (
+                            <div className="rounded-xl border border-dashed border-slate-200 bg-white/70 px-4 py-3 text-xs italic text-slate-400">
+                              Kế hoạch này chưa có phạm vi canh tác để chọn.
+                            </div>
+                          ) : selections.length === 0 ? (
+                            <div className="rounded-xl border border-dashed border-emerald-200 bg-white/70 px-4 py-3 text-xs italic text-slate-400">
+                              Chưa chọn vùng canh tác cụ thể.
+                            </div>
+                          ) : (
+                            <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                              {getSelectionSummary(selections).map((group) => (
+                                <div
+                                  key={group.regionId}
+                                  className="rounded-xl border border-emerald-100 bg-white/80 p-3"
+                                >
+                                  <div className="mb-2 flex items-center gap-2 text-[11px] font-black uppercase tracking-wider text-emerald-700">
+                                    <MapPin className="h-3.5 w-3.5" />
+                                    {group.regionName}
+                                  </div>
+                                  <div className="flex flex-wrap gap-1.5">
+                                    {group.items.map((item) => (
+                                      <Badge
+                                        key={`${item.type}-${item.id}`}
+                                        variant="outline"
+                                        className="h-auto border-emerald-100 bg-emerald-50/60 px-2 py-0.5 text-[10px] font-semibold text-emerald-700"
+                                      >
+                                        {item.name}
+                                      </Badge>
+                                    ))}
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
                   </div>
                 )}
@@ -1305,117 +1568,11 @@ export default function TaskCreatePage() {
             <Card>
               <CardHeader>
                 <CardTitle className="text-lg flex items-center gap-2">
-                  <CalendarIcon className="w-5 h-5 text-primary" />
-                  Thời gian triển khai
+                  <StickyNote className="w-5 h-5 text-primary" />
+                  Ưu tiên & Ghi chú
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label className="text-sm font-bold text-slate-700">
-                    Ngày bắt đầu *
-                  </Label>
-                  <Input
-                    type="date"
-                    value={formData.startDate}
-                    onChange={(e) =>
-                      setFormData({ ...formData, startDate: e.target.value })
-                    }
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label className="text-sm font-bold text-slate-700">
-                    Ngày kết thúc *
-                  </Label>
-                  <Input
-                    type="date"
-                    value={formData.endDate}
-                    onChange={(e) =>
-                      setFormData({ ...formData, endDate: e.target.value })
-                    }
-                  />
-                </div>
-
-                <div className="flex items-center gap-2 p-3 rounded-xl border border-slate-100 bg-slate-50/50">
-                  <Checkbox
-                    id="task-full-repeat"
-                    checked={formData.isRepeating}
-                    onCheckedChange={(checked) =>
-                      setFormData({
-                        ...formData,
-                        isRepeating: !!checked,
-                        repeatDates: checked ? formData.repeatDates : [],
-                      })
-                    }
-                  />
-                  <Label
-                    htmlFor="task-full-repeat"
-                    className="text-xs font-bold text-slate-700 cursor-pointer flex items-center gap-1.5"
-                  >
-                    <RefreshCw
-                      className={cn(
-                        "w-3.5 h-3.5",
-                        formData.isRepeating && "text-blue-500",
-                      )}
-                    />
-                    Lặp lại công việc
-                  </Label>
-                </div>
-
-                {formData.isRepeating && (
-                  <div className="space-y-3 p-3 bg-white rounded-xl border border-blue-100">
-                    <div className="flex items-center justify-between">
-                      <p className="text-xs font-bold text-slate-700">
-                        Chọn các ngày lặp lại
-                      </p>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        className="h-7 px-2 text-[11px] text-slate-500 hover:text-rose-600 hover:bg-rose-50"
-                        disabled={formData.repeatDates.length === 0}
-                        onClick={() =>
-                          setFormData({ ...formData, repeatDates: [] })
-                        }
-                      >
-                        <X className="w-3 h-3 mr-1" />
-                        Xóa
-                      </Button>
-                    </div>
-                    <Calendar
-                      mode="multiple"
-                      locale={vi}
-                      selected={formData.repeatDates.map(parseLocalISODate)}
-                      onSelect={(dates) =>
-                        setFormData({
-                          ...formData,
-                          repeatDates: (dates || []).map(formatLocalISODate),
-                        })
-                      }
-                      disabled={{
-                        before: new Date(new Date().setHours(0, 0, 0, 0)),
-                      }}
-                      className="mx-auto w-full bg-white"
-                      style={{ "--cell-size": "3.25rem" } as CSSProperties}
-                    />
-                    <div className="pt-2 border-t border-blue-100/50">
-                      <div className="flex items-center justify-between gap-2">
-                        <p className="text-[11px] font-medium text-blue-700 italic">
-                          {getRepeatDatesText(formData.repeatDates)}
-                        </p>
-                        {formData.repeatDates.length > 0 && (
-                          <Badge
-                            variant="outline"
-                            className="shrink-0 bg-white text-[10px] font-bold text-blue-700 border-blue-200"
-                          >
-                            {formData.repeatDates.length} ngày
-                          </Badge>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                )}
-
                 <div className="space-y-3">
                   <Label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
                     Độ ưu tiên *
@@ -1467,25 +1624,20 @@ export default function TaskCreatePage() {
                     ))}
                   </div>
                 </div>
-              </CardContent>
-            </Card>
 
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <StickyNote className="w-5 h-5 text-primary" />
-                  Ghi chú
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <Textarea
-                  value={formData.description}
-                  onChange={(e) =>
-                    setFormData({ ...formData, description: e.target.value })
-                  }
-                  placeholder="Mô tả chi tiết công việc..."
-                  rows={4}
-                />
+                <div className="space-y-2">
+                  <Label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                    Ghi chú
+                  </Label>
+                  <Textarea
+                    value={formData.description}
+                    onChange={(e) =>
+                      setFormData({ ...formData, description: e.target.value })
+                    }
+                    placeholder="Mô tả chi tiết công việc..."
+                    rows={4}
+                  />
+                </div>
               </CardContent>
             </Card>
           </div>
@@ -1566,10 +1718,10 @@ export default function TaskCreatePage() {
                       (selectedPlan as any)?.enterpriseId ||
                       ""
                     }
-                    availableTasks={selectedPlan?.taskAllocations?.filter(
+                    availableTasks={selectedPlanTaskAllocations.filter(
                       (t: any) => t.stageId === stageName,
                     )}
-                    availableMaterials={selectedPlan?.materialAllocations?.filter(
+                    availableMaterials={selectedPlanMaterialAllocations.filter(
                       (m: any) => m.stageId === stageName,
                     )}
                   />
@@ -1598,8 +1750,8 @@ export default function TaskCreatePage() {
                     (selectedPlan as any)?.enterpriseId ||
                     ""
                   }
-                  availableTasks={selectedPlan?.taskAllocations}
-                  availableMaterials={selectedPlan?.materialAllocations}
+                  availableTasks={selectedPlanTaskAllocations}
+                  availableMaterials={selectedPlanMaterialAllocations}
                 />
               ) : (
                 <div className="p-10 text-center border-2 border-dashed border-slate-200 rounded-3xl bg-slate-50">
@@ -1682,9 +1834,7 @@ export default function TaskCreatePage() {
                         className="bg-white/80 border-slate-200 text-slate-600 text-[11px] px-2 py-0.5 font-medium rounded-md"
                       >
                         <CalendarIcon className="w-3 h-3 mr-1 opacity-50" />
-                        {formData.isRepeating
-                          ? getRepeatDatesText(formData.repeatDates)
-                          : `${formData.startDate} → ${formData.endDate}`}
+                        {`${formData.startDate} → ${formData.endDate}`}
                       </Badge>
                       <Badge
                         className={cn(
@@ -1719,6 +1869,21 @@ export default function TaskCreatePage() {
             {/* Info rows card */}
             <Card className="border-slate-100">
               <CardContent className="p-0 divide-y divide-slate-50">
+                {formData.mode === "plan" && selectedRegimen && (
+                  <div className="flex items-start gap-4 px-5 py-4">
+                    <div className="w-8 h-8 rounded-xl bg-violet-50 flex items-center justify-center shrink-0 mt-0.5">
+                      <ClipboardList className="w-4 h-4 text-violet-500" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-0.5">
+                        Quy trình
+                      </p>
+                      <p className="text-sm font-bold text-slate-800 truncate">
+                        {selectedRegimen.name}
+                      </p>
+                    </div>
+                  </div>
+                )}
                 {/* Plan & Stages row */}
                 {formData.objectiveType !== "phat-sinh" && (
                   <div className="flex items-start gap-4 px-5 py-4">
@@ -1827,10 +1992,7 @@ export default function TaskCreatePage() {
                         {task.isRepeating ? (
                           <>
                             <RefreshCw className="w-3 h-3 mr-1 opacity-60" />
-                            {getFrequencyText(
-                              task.repeatDays || [],
-                              task.repeatWeeks || 0,
-                            )}
+                            {getRepeatDatesText(task.repeatDates || [])}
                           </>
                         ) : (
                           <>
@@ -1891,7 +2053,7 @@ export default function TaskCreatePage() {
                             </p>
                             <p className="text-xs font-semibold text-slate-700">
                               {task.isRepeating
-                                ? `${task.repeatWeeks || 0} tuần`
+                                ? getRepeatDatesText(task.repeatDates || [])
                                 : task.duration || "—"}
                             </p>
                           </div>
@@ -2053,35 +2215,18 @@ export default function TaskCreatePage() {
                 {/* divider */}
                 <div className="border-t border-white/10 pt-3">
                   <div className="space-y-1.5 text-sm">
-                    {formData.isRepeating ? (
-                      <div className="flex justify-between gap-3">
-                        <span className="text-slate-400 text-xs shrink-0">
-                          Tần suất
-                        </span>
-                        <span className="font-semibold text-slate-200 text-xs text-right">
-                          {getRepeatDatesText(formData.repeatDates)}
-                        </span>
-                      </div>
-                    ) : (
-                      <>
-                        <div className="flex justify-between">
-                          <span className="text-slate-400 text-xs">
-                            Bắt đầu
-                          </span>
-                          <span className="font-semibold text-slate-200 text-xs">
-                            {formData.startDate}
-                          </span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-slate-400 text-xs">
-                            Kết thúc
-                          </span>
-                          <span className="font-semibold text-slate-200 text-xs">
-                            {formData.endDate}
-                          </span>
-                        </div>
-                      </>
-                    )}
+                    <div className="flex justify-between">
+                      <span className="text-slate-400 text-xs">Bắt đầu</span>
+                      <span className="font-semibold text-slate-200 text-xs">
+                        {formData.startDate}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-slate-400 text-xs">Kết thúc</span>
+                      <span className="font-semibold text-slate-200 text-xs">
+                        {formData.endDate}
+                      </span>
+                    </div>
                     <div className="flex justify-between">
                       <span className="text-slate-400 text-xs">Ưu tiên</span>
                       <span
@@ -2138,7 +2283,10 @@ export default function TaskCreatePage() {
       actions={
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2.5 rounded-full border border-slate-200 bg-white px-4 py-2 shadow-sm">
-            <Label htmlFor="simple-task-mode-toggle" className="text-xs font-bold text-slate-700 whitespace-nowrap cursor-pointer">
+            <Label
+              htmlFor="simple-task-mode-toggle"
+              className="text-xs font-bold text-slate-700 whitespace-nowrap cursor-pointer"
+            >
               Thông tin chuyên sâu
             </Label>
             <Switch

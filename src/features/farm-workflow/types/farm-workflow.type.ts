@@ -35,11 +35,34 @@ export interface FarmWorkflowScopeRequest {
   scopeId: number;
 }
 
+// Only the scope's own type is guaranteed populated at the top level — e.g.
+// an AREA scope has `region: null` and carries the region under `area.region`
+// instead, and a PLOT scope nests both area and region under `plot`.
+export interface FarmWorkflowRegionRef {
+  id: number;
+  code?: string;
+  name?: string;
+}
+
+export interface FarmWorkflowAreaRef {
+  id: number;
+  code?: string;
+  name?: string;
+  region?: FarmWorkflowRegionRef | null;
+}
+
+export interface FarmWorkflowPlotRef {
+  id: number;
+  code?: string;
+  name?: string;
+  area?: FarmWorkflowAreaRef | null;
+}
+
 export interface FarmWorkflowScopeResponse {
   scopeType: FarmWorkflowScopeType;
-  region?: FarmCatalogRef | null;
-  area?: FarmCatalogRef | null;
-  plot?: FarmCatalogRef | null;
+  region?: FarmWorkflowRegionRef | null;
+  area?: FarmWorkflowAreaRef | null;
+  plot?: FarmWorkflowPlotRef | null;
 }
 
 export interface FarmWorkflowStatusBreakdown {

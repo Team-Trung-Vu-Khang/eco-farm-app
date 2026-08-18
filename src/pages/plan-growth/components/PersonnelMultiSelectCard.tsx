@@ -20,13 +20,20 @@ import {
   Users,
   X,
 } from "lucide-react";
-import type { Personnel } from "@/stores/usePersonnelStore";
+export interface PersonnelOption {
+  id: number | string;
+  fullName: string;
+  position: string;
+  department: string;
+  team: string;
+  avatar?: string;
+}
 
 interface PersonnelMultiSelectCardProps {
   title: string;
   description: string;
   selectedIds: string[];
-  personnel: Personnel[];
+  personnel: PersonnelOption[];
   onChange: (ids: string[]) => void;
   tone?: "blue" | "violet";
   emptyText?: string;
@@ -70,7 +77,7 @@ export function PersonnelMultiSelectCard({
     () =>
       selectedIds
         .map((id) => personnel.find((item) => String(item.id) === String(id)))
-        .filter(Boolean) as Personnel[],
+        .filter(Boolean) as PersonnelOption[],
     [personnel, selectedIds],
   );
 

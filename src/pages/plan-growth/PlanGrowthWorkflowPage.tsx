@@ -509,6 +509,7 @@ export default function PlanGrowthWorkflowPage({
         code: plan.code || null,
         name: editDraft.name.trim() || plan.name,
         description: editDraft.description.trim() || undefined,
+        scopeNote: plan.scopeNote || undefined,
         purpose: "CULTIVATION",
         durationDays: Math.max(
           1,
@@ -518,7 +519,6 @@ export default function PlanGrowthWorkflowPage({
               86400000,
           ) || 1,
         ),
-        scopeNote: undefined,
         personnel: undefined,
         stages: undefined,
         status: plan.status === "draft" ? "DRAFT" : "IN_PROGRESS",
