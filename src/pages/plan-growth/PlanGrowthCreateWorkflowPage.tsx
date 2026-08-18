@@ -22,7 +22,7 @@ import {
   Trash2,
   Workflow,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Background,
   BackgroundVariant,
@@ -38,6 +38,7 @@ import {
 } from "reactflow";
 import { useLocation, useParams } from "wouter";
 import {
+  useFarmPlanMutations,
   useFarmWorkflowById,
   useFarmWorkflowPlans,
 } from "@/features/farm-workflow/hooks";
@@ -435,6 +436,7 @@ export default function PlanGrowthCreateWorkflowPage() {
   const updatePlan = usePlanStore((state) => state.updatePlan);
   const deletePlan = usePlanStore((state) => state.deletePlan);
   const upsertWorkflow = useWorkflowStore((state) => state.upsertWorkflow);
+  const { createPlan } = useFarmPlanMutations();
 
   const nodes = usePlanWorkflowDraftStore((state) => state.nodes);
   const edges = usePlanWorkflowDraftStore((state) => state.edges);
@@ -502,6 +504,9 @@ export default function PlanGrowthCreateWorkflowPage() {
           name: saved.name,
           description: saved.description,
           selections: saved.selections,
+          plannedDurationYears: "",
+          plannedDurationMonths: "",
+          plannedDurationDays: "",
           isActive: true,
           position: { x: INFO_NODE_X, y: 0 },
         },
@@ -509,6 +514,11 @@ export default function PlanGrowthCreateWorkflowPage() {
       activeWorkflowId: workflowId,
     });
   }, [params.workflowId, activeWorkflowId, loadWorkflow, resetDraft]);
+
+  // Guards the "seed a first draft plan" API call below against firing
+  // twice for the same workflow while the request is still in flight (e.g.
+  // an unrelated re-render before the mutation resolves).
+  const seedingWorkflowIdRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (!workflowDetail) return;
@@ -518,57 +528,79 @@ export default function PlanGrowthCreateWorkflowPage() {
     const workflowId = String(workflowDetail.id);
     if (workflowId === activeWorkflowId) return;
 
-    let planNodePlans: Plan[] = workflowPlans.map(mapPlanResponseToPlan);
-    if (planNodePlans.length === 0) {
-      // No plans on this workflow yet — seed a first draft plan so the
-      // canvas isn't empty, mirroring the info form's "first node" flow.
-      const nextPlanId =
-        usePlanStore
-          .getState()
-          .plans.reduce((max, item) => Math.max(max, item.id), 0) + 1;
-      planNodePlans = [
-        {
-          ...createEmptyPlanDraft(DEFAULT_DRAFT_PLAN_NAME),
-          id: nextPlanId,
-          workflowId,
-          createdAt: new Date().toISOString().split("T")[0],
-        } as Plan,
-      ];
+    const applyWorkflow = (planNodePlans: Plan[]) => {
+      // Upsert by id into the local plan store so the existing plan-node UI
+      // (edit / allocate work, both keyed by plan id) keeps working off it.
+      usePlanStore.setState((state) => ({
+        plans: [
+          ...state.plans.filter(
+            (item) => !planNodePlans.some((plan) => plan.id === item.id),
+          ),
+          ...planNodePlans,
+        ],
+      }));
+
+      const planNodes: DraftNode[] = planNodePlans.map((plan) => ({
+        id: createNodeId("plan"),
+        type: "workflowCard",
+        position: PLACEHOLDER_POSITION,
+        data: { setupKind: "plan", planId: plan.id },
+      }));
+
+      // The backend only stores the workflow's own info (name/description/
+      // duration/scopes) — stage/detail nodes under each plan still live in
+      // the local draft only, so they start empty here.
+      loadWorkflow({
+        nodes: planNodes,
+        edges: [],
+        infoNodes: [
+          mapWorkflowResponseToInfoRecord(workflowDetail, {
+            x: INFO_NODE_X,
+            y: 0,
+          }),
+        ],
+        activeWorkflowId: workflowId,
+      });
+    };
+
+    const planNodePlans: Plan[] = workflowPlans.map(mapPlanResponseToPlan);
+    if (planNodePlans.length > 0) {
+      applyWorkflow(planNodePlans);
+      return;
     }
 
-    // Upsert by id into the local plan store so the existing plan-node UI
-    // (edit / allocate work, both keyed by plan id) keeps working off it.
-    usePlanStore.setState((state) => ({
-      plans: [
-        ...state.plans.filter(
-          (item) => !planNodePlans.some((plan) => plan.id === item.id),
-        ),
-        ...planNodePlans,
-      ],
-    }));
+    // No plans on this workflow yet — create a first draft plan through the
+    // API (instead of only seeding it locally) so it exists on the backend
+    // as soon as the canvas opens.
+    if (seedingWorkflowIdRef.current === workflowId) return;
+    seedingWorkflowIdRef.current = workflowId;
 
-    const planNodes: DraftNode[] = planNodePlans.map((plan) => ({
-      id: createNodeId("plan"),
-      type: "workflowCard",
-      position: PLACEHOLDER_POSITION,
-      data: { setupKind: "plan", planId: plan.id },
-    }));
-
-    // The backend only stores the workflow's own info (name/description/
-    // duration/scopes) — stage/detail nodes under each plan still live in
-    // the local draft only, so they start empty here.
-    loadWorkflow({
-      nodes: planNodes,
-      edges: [],
-      infoNodes: [
-        mapWorkflowResponseToInfoRecord(workflowDetail, {
-          x: INFO_NODE_X,
-          y: 0,
-        }),
-      ],
-      activeWorkflowId: workflowId,
-    });
-  }, [workflowDetail, isLoadingWorkflowPlans, workflowPlans, activeWorkflowId, loadWorkflow]);
+    createPlan
+      .mutateAsync({
+        workflowId: workflowDetail.id,
+        payload: {
+          name: DEFAULT_DRAFT_PLAN_NAME,
+          purpose: "CULTIVATION",
+          durationDays: 1,
+          status: "DRAFT",
+        },
+      })
+      .then((created) => {
+        applyWorkflow([mapPlanResponseToPlan(created)]);
+      })
+      .catch(() => {
+        seedingWorkflowIdRef.current = null;
+        toast({
+          variant: "destructive",
+          title: "Lỗi",
+          description: "Không thể tạo kế hoạch nháp cho quy trình này",
+        });
+      });
+    // createPlan (a mutation object) intentionally excluded — it's not
+    // stable across renders and the seedingWorkflowIdRef guard above already
+    // prevents duplicate submissions.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [workflowDetail, isLoadingWorkflowPlans, workflowPlans, activeWorkflowId, loadWorkflow, toast]);
 
   const [confirmAction, setConfirmAction] = useState<ConfirmActionState | null>(
     null,
@@ -579,11 +611,7 @@ export default function PlanGrowthCreateWorkflowPage() {
 
   useDialogBugWorkaround([confirmAction !== null]);
 
-  const createPlanNode = (sourceNodeId?: string, planName = "") => {
-    addPlan(createEmptyPlanDraft(planName));
-    const created = usePlanStore.getState().plans.at(-1);
-    if (!created) return;
-
+  const attachPlanNode = (planId: number, sourceNodeId?: string) => {
     const id = createNodeId("plan");
 
     if (!sourceNodeId) {
@@ -591,7 +619,7 @@ export default function PlanGrowthCreateWorkflowPage() {
         id,
         type: "workflowCard",
         position: PLACEHOLDER_POSITION,
-        data: { setupKind: "plan", planId: created.id },
+        data: { setupKind: "plan", planId },
       });
       return;
     }
@@ -601,10 +629,44 @@ export default function PlanGrowthCreateWorkflowPage() {
         id,
         type: "workflowCard",
         position: PLACEHOLDER_POSITION,
-        data: { setupKind: "plan", planId: created.id, parentId: sourceNodeId },
+        data: { setupKind: "plan", planId, parentId: sourceNodeId },
       },
       buildChildEdge(sourceNodeId, id),
     );
+  };
+
+  const createPlanNode = async (sourceNodeId?: string, planName = "") => {
+    // Only a persisted (numeric) workflow id can own plans on the backend —
+    // a still-local draft workflow keeps creating plans locally until it's
+    // saved, same as before.
+    if (activeWorkflowId && isPersistedWorkflowId(activeWorkflowId)) {
+      try {
+        const created = await createPlan.mutateAsync({
+          workflowId: activeWorkflowId,
+          payload: {
+            name: planName || DEFAULT_DRAFT_PLAN_NAME,
+            purpose: "CULTIVATION",
+            durationDays: 1,
+            status: "DRAFT",
+          },
+        });
+        const plan = mapPlanResponseToPlan(created);
+        usePlanStore.setState((state) => ({ plans: [...state.plans, plan] }));
+        attachPlanNode(plan.id, sourceNodeId);
+      } catch {
+        toast({
+          variant: "destructive",
+          title: "Lỗi",
+          description: "Không thể tạo kế hoạch nháp mới",
+        });
+      }
+      return;
+    }
+
+    addPlan(createEmptyPlanDraft(planName));
+    const created = usePlanStore.getState().plans.at(-1);
+    if (!created) return;
+    attachPlanNode(created.id, sourceNodeId);
   };
 
   const handleRequestCreatePlan = (sourceNodeId?: string) => {
