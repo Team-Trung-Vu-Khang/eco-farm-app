@@ -297,6 +297,7 @@ export function mapPlanResponseToPlan(plan: FarmPlanResponse): Plan {
     seasonName: "",
     startDate: plan.plannedStartDate || "",
     endDate: plan.plannedEndDate || "",
+    durationDays: plan.durationDays,
     selectedRegionIds: regionIds,
     selectedZoneIds: zoneIds,
     selectedPlotIds: plotIds,
@@ -310,6 +311,7 @@ export function mapPlanResponseToPlan(plan: FarmPlanResponse): Plan {
     taskAllocations,
     status: planStatusMap[plan.status] ?? "draft",
     createdAt: plan.createdAt || new Date().toISOString(),
+    metadataJson: plan.metadataJson,
     scopes: selections,
     selectionSummary: mapScopesToSelectionSummary(plan.scopes),
     personnel: (plan.personnel || []).map((person) => ({

@@ -218,6 +218,7 @@ export interface FarmPlanRequest {
   personnel?: FarmPlanPersonnelRequest[];
   stages?: FarmPlanStageRequest[];
   status?: FarmPlanStatus;
+  metadataJson?: Record<string, any>;
 }
 
 export interface FarmPlanResponse {
@@ -236,6 +237,7 @@ export interface FarmPlanResponse {
   stages?: FarmPlanStageResponse[];
   scopeNote?: string;
   status: FarmPlanStatus;
+  metadataJson?: Record<string, any>;
   createdAt?: string;
   updatedAt?: string;
 }

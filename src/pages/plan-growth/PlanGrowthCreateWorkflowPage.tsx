@@ -55,9 +55,11 @@ import {
   createEmptyPlanDraft,
   createNodeId,
   DEFAULT_DRAFT_PLAN_NAME,
+  getDescendantNodes,
   getDirectChildren,
   getParentId,
   INFO_NODE_X,
+  placeNewNode,
   PLACEHOLDER_POSITION,
   usePlanWorkflowDraftStore,
   type DiagramInfoRecord,
@@ -76,11 +78,7 @@ function isPersistedWorkflowId(id: string) {
   return /^\d+$/.test(id);
 }
 
-type PlanDisplayStatus =
-  | "missing_info"
-  | "pending"
-  | "in_progress"
-  | "completed";
+type PlanDisplayStatus = "pending" | "in_progress" | "completed" | "cancelled";
 
 interface ConfirmActionState {
   title: string;
@@ -98,10 +96,10 @@ const PLAN_STATUS_META: Record<
   PlanDisplayStatus,
   { nodeStatus: WorkflowNodeStatus; label: string }
 > = {
-  missing_info: { nodeStatus: "not_started", label: "Thiếu thông tin" },
-  pending: { nodeStatus: "ended", label: "Chờ triển khai" },
+  pending: { nodeStatus: "not_started", label: "Chờ triển khai" },
   in_progress: { nodeStatus: "in_progress", label: "Đang triển khai" },
   completed: { nodeStatus: "completed", label: "Đã kết thúc" },
+  cancelled: { nodeStatus: "paused", label: "Đã hủy" },
 };
 
 const DEFAULT_DIAGRAM_INFO_EYEBROW = "Quy trình canh tác";
@@ -114,32 +112,22 @@ type FlowViewInstance = {
   }) => void;
 };
 
-function getDurationLabel(startDate?: string, endDate?: string) {
-  if (!startDate || !endDate) return "Chưa xác định";
-
-  const start = new Date(startDate);
-  const end = new Date(endDate);
-  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime()))
-    return "Chưa xác định";
-  if (end < start) return "Chưa xác định";
-
-  let years = end.getFullYear() - start.getFullYear();
-  let months = end.getMonth() - start.getMonth();
-  let days = end.getDate() - start.getDate();
-
-  if (days < 0) {
-    months -= 1;
-    days += new Date(end.getFullYear(), end.getMonth(), 0).getDate();
-  }
-  if (months < 0) {
-    years -= 1;
-    months += 12;
-  }
+// Trusts the API's FarmPlanResponse.durationDays directly rather than
+// deriving a duration from plannedStartDate/plannedEndDate — those are often
+// unset (e.g. a freshly created draft plan) even though durationDays isn't.
+// Same years*365 + months*30 + days weighting as mapDurationDaysToParts, so
+// the label stays consistent with the duration inputs elsewhere in the app.
+function getDurationLabel(durationDays?: number) {
+  let remaining = Math.max(0, Math.floor(Number(durationDays) || 0));
+  const years = Math.floor(remaining / 365);
+  remaining -= years * 365;
+  const months = Math.floor(remaining / 30);
+  remaining -= months * 30;
 
   const parts: string[] = [];
   if (years > 0) parts.push(`${years} năm`);
   if (months > 0) parts.push(`${months} tháng`);
-  if (days > 0 || !parts.length) parts.push(`${days} ngày`);
+  if (remaining > 0 || !parts.length) parts.push(`${remaining} ngày`);
 
   return parts.join(" ");
 }
@@ -173,29 +161,84 @@ function buildChildEdge(sourceNodeId: string, targetNodeId: string): Edge {
   };
 }
 
-function isPlanInfoComplete(plan: Plan) {
-  return Boolean(
-    plan.name.trim() &&
-    plan.seasonId &&
-    plan.startDate &&
-    plan.endDate &&
-    plan.crop.trim() &&
-    plan.selectedRegionIds.length,
-  );
+// Rebuilds the plan-node tree (positions + parent/child edges) from the
+// backend's `metadataJson.parentId` on each plan — the canvas graph itself
+// is local-draft-only and doesn't survive a reload, so this is the only
+// place that link is reconstructed after fetching a workflow's plans.
+function buildPlanNodesFromApi(planNodePlans: Plan[]): {
+  nodes: DraftNode[];
+  edges: Edge[];
+} {
+  const nodeIdByPlanId = new Map<number, string>();
+  const pending = planNodePlans.map((plan) => {
+    const id = createNodeId("plan");
+    nodeIdByPlanId.set(plan.id, id);
+    return { plan, id };
+  });
+
+  const nodes: DraftNode[] = [];
+  const edges: Edge[] = [];
+  const placedNodeIds = new Set<string>();
+
+  const place = (plan: Plan, id: string, parentNodeId: string | undefined) => {
+    nodes.push({
+      id,
+      type: "workflowCard",
+      position: placeNewNode(nodes, parentNodeId),
+      data: parentNodeId
+        ? { setupKind: "plan", planId: plan.id, parentId: parentNodeId }
+        : { setupKind: "plan", planId: plan.id },
+    });
+    placedNodeIds.add(id);
+    if (parentNodeId) edges.push(buildChildEdge(parentNodeId, id));
+  };
+
+  // Multiple passes so parents get placed before children regardless of the
+  // array order the API returned them in.
+  let remaining = pending;
+  let progressed = true;
+  while (remaining.length > 0 && progressed) {
+    progressed = false;
+    const stillPending: typeof remaining = [];
+    for (const entry of remaining) {
+      const parentPlanId = entry.plan.metadataJson?.parentId;
+      const parentNodeId =
+        parentPlanId != null ? nodeIdByPlanId.get(Number(parentPlanId)) : undefined;
+      if (parentPlanId != null && parentNodeId && !placedNodeIds.has(parentNodeId)) {
+        stillPending.push(entry);
+        continue;
+      }
+      place(entry.plan, entry.id, parentNodeId);
+      progressed = true;
+    }
+    remaining = stillPending;
+  }
+  // Dangling parentId (parent plan not found in this workflow) — place as root.
+  remaining.forEach(({ plan, id }) => place(plan, id, undefined));
+
+  return { nodes, edges };
 }
 
-function getPlanDisplayStatus(plan: Plan, hasWork: boolean): PlanDisplayStatus {
-  if (plan.status === "completed" || plan.status === "cancelled")
-    return "completed";
-  if (!isPlanInfoComplete(plan)) return "missing_info";
-  return hasWork ? "in_progress" : "pending";
+// Trusts the API's own plan.status rather than inferring progress from
+// whether the plan "looks" filled in or has work allocated.
+function getPlanDisplayStatus(plan: Plan): PlanDisplayStatus {
+  switch (plan.status) {
+    case "active":
+      return "in_progress";
+    case "completed":
+      return "completed";
+    case "cancelled":
+      return "cancelled";
+    default:
+      return "pending";
+  }
 }
 
 function getPlanActionDisabled(status: PlanDisplayStatus) {
   return {
     edit: status === "completed",
     allocate: !(status === "pending" || status === "in_progress"),
-    remove: !(status === "pending" || status === "missing_info"),
+    remove: !(status === "pending" || status === "cancelled"),
   };
 }
 
@@ -317,12 +360,10 @@ function toDisplayNode(
     materialCategories,
   );
 
-  const hasWork =
-    plan.taskAllocations.length > 0 || plan.materialAllocations.length > 0;
-  const status = getPlanDisplayStatus(plan, hasWork);
+  const status = getPlanDisplayStatus(plan);
   const statusMeta = PLAN_STATUS_META[status];
   const actionDisabled = getPlanActionDisabled(status);
-  const duration = getDurationLabel(plan.startDate, plan.endDate);
+  const duration = getDurationLabel(plan.durationDays);
 
   const actions: WorkflowActionItem[] = [
     {
@@ -354,9 +395,7 @@ function toDisplayNode(
       posterTheme: "light",
       icon: ClipboardList,
       eyebrow: `Kế hoạch ${outlineCode}`,
-      title: plan.name
-        ? `${plan.name} (${duration})`
-        : `Kế hoạch mới (${duration})`,
+      title: `${plan.name || "Kế hoạch mới"} (${duration})`,
       subtitle: plan.seasonName || "Chưa chọn mùa vụ",
       status: statusMeta.nodeStatus,
       statusLabel: statusMeta.label,
@@ -434,9 +473,9 @@ export default function PlanGrowthCreateWorkflowPage() {
   const plans = usePlanStore((state) => state.plans);
   const addPlan = usePlanStore((state) => state.addPlan);
   const updatePlan = usePlanStore((state) => state.updatePlan);
-  const deletePlan = usePlanStore((state) => state.deletePlan);
+  const deletePlanLocal = usePlanStore((state) => state.deletePlan);
   const upsertWorkflow = useWorkflowStore((state) => state.upsertWorkflow);
-  const { createPlan } = useFarmPlanMutations();
+  const { createPlan, deletePlan } = useFarmPlanMutations();
 
   const nodes = usePlanWorkflowDraftStore((state) => state.nodes);
   const edges = usePlanWorkflowDraftStore((state) => state.edges);
@@ -540,19 +579,15 @@ export default function PlanGrowthCreateWorkflowPage() {
         ],
       }));
 
-      const planNodes: DraftNode[] = planNodePlans.map((plan) => ({
-        id: createNodeId("plan"),
-        type: "workflowCard",
-        position: PLACEHOLDER_POSITION,
-        data: { setupKind: "plan", planId: plan.id },
-      }));
+      // Plan-to-plan links (metadataJson.parentId) are the only relationship
+      // the backend persists — positions and stage/detail nodes under each
+      // plan still live in the local draft only, so those start empty here.
+      const { nodes: planNodes, edges: planEdges } =
+        buildPlanNodesFromApi(planNodePlans);
 
-      // The backend only stores the workflow's own info (name/description/
-      // duration/scopes) — stage/detail nodes under each plan still live in
-      // the local draft only, so they start empty here.
       loadWorkflow({
         nodes: planNodes,
-        edges: [],
+        edges: planEdges,
         infoNodes: [
           mapWorkflowResponseToInfoRecord(workflowDetail, {
             x: INFO_NODE_X,
@@ -641,6 +676,12 @@ export default function PlanGrowthCreateWorkflowPage() {
     // saved, same as before.
     if (activeWorkflowId && isPersistedWorkflowId(activeWorkflowId)) {
       try {
+        const sourceNode = sourceNodeId
+          ? nodes.find((node) => node.id === sourceNodeId)
+          : undefined;
+        const parentPlanId =
+          sourceNode?.data.setupKind === "plan" ? sourceNode.data.planId : undefined;
+
         const created = await createPlan.mutateAsync({
           workflowId: activeWorkflowId,
           payload: {
@@ -648,10 +689,20 @@ export default function PlanGrowthCreateWorkflowPage() {
             purpose: "CULTIVATION",
             durationDays: 1,
             status: "DRAFT",
+            ...(parentPlanId != null
+              ? { metadataJson: { parentId: parentPlanId } }
+              : {}),
           },
         });
         const plan = mapPlanResponseToPlan(created);
-        usePlanStore.setState((state) => ({ plans: [...state.plans, plan] }));
+        // Upsert by id, not append — the local plan store is preloaded with
+        // seed/mock plans whose ids are small sequential integers too, so a
+        // freshly created backend plan can collide with one of them. A plain
+        // append would leave both in the array and `.find()` would then
+        // resolve to the stale seed entry instead of the real plan.
+        usePlanStore.setState((state) => ({
+          plans: [...state.plans.filter((item) => item.id !== plan.id), plan],
+        }));
         attachPlanNode(plan.id, sourceNodeId);
       } catch {
         toast({
@@ -692,10 +743,42 @@ export default function PlanGrowthCreateWorkflowPage() {
       } cùng toàn bộ giai đoạn và chi tiết bên trong. Không thể hoàn tác.`,
       confirmLabel: "Xóa kế hoạch",
       tone: "destructive",
-      onConfirm: () => {
-        if (node && node.data.setupKind === "plan") {
-          deletePlan(node.data.planId);
+      onConfirm: async () => {
+        if (!node || node.data.setupKind !== "plan") {
+          removeNodeCascade(nodeId);
+          return;
         }
+
+        // Deleting a plan node cascades to its descendant plan nodes too —
+        // each one is a real backend plan, so it needs its own delete call.
+        const planIds = [
+          node.data.planId,
+          ...getDescendantNodes(nodes, nodeId)
+            .filter((item) => item.data.setupKind === "plan")
+            .map((item) => (item.data as { planId: number }).planId),
+        ];
+
+        if (activeWorkflowId && isPersistedWorkflowId(activeWorkflowId)) {
+          try {
+            await Promise.all(
+              planIds.map((planId) => deletePlan.mutateAsync(planId)),
+            );
+            usePlanStore.setState((state) => ({
+              plans: state.plans.filter((item) => !planIds.includes(item.id)),
+            }));
+            removeNodeCascade(nodeId);
+            toast({ title: "Thành công", description: "Đã xóa kế hoạch" });
+          } catch {
+            toast({
+              variant: "destructive",
+              title: "Lỗi",
+              description: "Không thể xóa kế hoạch",
+            });
+          }
+          return;
+        }
+
+        planIds.forEach((planId) => deletePlanLocal(planId));
         removeNodeCascade(nodeId);
       },
     });

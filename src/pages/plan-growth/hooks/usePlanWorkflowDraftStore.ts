@@ -145,7 +145,7 @@ const CHILD_GAP = 480;
 
 // Places a newly added node next to its existing siblings (or the last root)
 // without moving any already-positioned node, so the tree only grows outward.
-function placeNewNode(nodes: DraftNode[], parentId: string | undefined) {
+export function placeNewNode(nodes: DraftNode[], parentId: string | undefined) {
   if (!parentId) {
     const roots = nodes.filter((node) => !getParentId(node));
     if (!roots.length) return { x: 0, y: 0 };

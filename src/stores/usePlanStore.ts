@@ -42,6 +42,10 @@ export interface Plan {
   seasonName: string;
   startDate: string;
   endDate: string;
+  // Total planned duration in days, straight from the API's
+  // FarmPlanResponse.durationDays — the source of truth for display, since
+  // startDate/endDate are often unset on a freshly created draft plan.
+  durationDays?: number;
 
   // Location & Crop
   selectedRegionIds: string[];
@@ -76,6 +80,10 @@ export interface Plan {
   // Status
   status: "draft" | "active" | "completed" | "cancelled";
   createdAt: string;
+  // Free-form metadata from the API. `parentId` links this plan to the plan
+  // node it branched off from in the workflow canvas — the canvas graph is
+  // otherwise local-draft-only and doesn't survive a reload from the backend.
+  metadataJson?: Record<string, any>;
 }
 
 

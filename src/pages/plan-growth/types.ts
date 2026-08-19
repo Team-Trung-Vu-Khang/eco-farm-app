@@ -57,6 +57,10 @@ export interface Plan {
   seasonName: string;
   startDate: string;
   endDate: string;
+  // Total planned duration in days, straight from the API's
+  // FarmPlanResponse.durationDays — the source of truth for display, since
+  // startDate/endDate are often unset on a freshly created draft plan.
+  durationDays?: number;
   selectedRegionIds: string[];
   selectedZoneIds: string[];
   selectedPlotIds: string[];
@@ -87,6 +91,11 @@ export interface Plan {
   // matching entry in the (mock) region tree to display correctly.
   selectionSummary?: SelectionSummaryGroup[];
   personnel?: PlanPersonnel[];
+  // Free-form metadata from the API. `parentId` links this plan to the plan
+  // node it branched off from in the workflow canvas (see
+  // PlanGrowthCreateWorkflowPage) — the canvas graph is otherwise
+  // local-draft-only and doesn't survive a reload from the backend.
+  metadataJson?: Record<string, any>;
 }
 
 export interface PlanPersonnel {
