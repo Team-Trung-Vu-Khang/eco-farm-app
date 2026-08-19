@@ -130,7 +130,7 @@ export function usePlanPage(
     params: { domainCode: WORKFLOW_DOMAIN_CODE },
   });
   const { deletePlan, createPlan } = useFarmPlanMutations();
-  const { createWorkflow } = useFarmWorkflowMutations();
+  const { createWorkflow, deleteWorkflow } = useFarmWorkflowMutations();
 
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleteItem, setDeleteItem] = useState<Plan | null>(null);
@@ -207,6 +207,22 @@ export function usePlanPage(
     }
   };
 
+  const handleDeleteWorkflow = async (workflow: Workflow) => {
+    try {
+      await deleteWorkflow.mutateAsync(workflow.id);
+      toast({
+        title: "Đã xóa sơ đồ",
+        description: `Đã xóa "${workflow.name}".`,
+      });
+    } catch {
+      toast({
+        variant: "destructive",
+        title: "Lỗi",
+        description: "Không thể xóa sơ đồ quy trình",
+      });
+    }
+  };
+
   const handleCloneWorkflow = async (workflow: Workflow) => {
     try {
       await createWorkflow.mutateAsync(toFarmWorkflowRequest(workflow));
@@ -233,6 +249,7 @@ export function usePlanPage(
     handleConfirmDelete,
     handleDuplicate,
     handleCloneWorkflow,
+    handleDeleteWorkflow,
     goToCreate: () => setLocation(`${basePath}/create/workflow`),
     goToView: (id: number) => setLocation(`${basePath}/${id}`),
     goToEdit: (id: number) =>

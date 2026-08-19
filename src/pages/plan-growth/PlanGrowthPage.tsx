@@ -35,6 +35,7 @@ export default function PlanGrowthPage({
     workflows,
     statistics,
     handleCloneWorkflow,
+    handleDeleteWorkflow,
     setSearch,
     setStatus,
     currentIndex,
@@ -49,6 +50,9 @@ export default function PlanGrowthPage({
     (state) => state.resetDraft,
   );
   const [workflowToClone, setWorkflowToClone] = useState<WorkflowRow | null>(
+    null,
+  );
+  const [workflowToDelete, setWorkflowToDelete] = useState<WorkflowRow | null>(
     null,
   );
 
@@ -81,6 +85,13 @@ export default function PlanGrowthPage({
     setWorkflowToClone(null);
   };
 
+  const handleConfirmDeleteWorkflow = () => {
+    if (!workflowToDelete) return;
+    const workflow = workflows.find((w) => w.id === workflowToDelete.id);
+    if (workflow) void handleDeleteWorkflow(workflow);
+    setWorkflowToDelete(null);
+  };
+
   const columns = useMemo(
     () =>
       createWorkflowColumns({
@@ -88,6 +99,7 @@ export default function PlanGrowthPage({
         onOpenWorkflow: (row) =>
           setLocation(`${basePath}/create/workflow/${row.id}`),
         onClone: (row) => setWorkflowToClone(row),
+        onDelete: (row) => setWorkflowToDelete(row),
       }),
     [basePath, setLocation],
   );
@@ -170,6 +182,33 @@ export default function PlanGrowthPage({
             <AlertDialogCancel>Hủy</AlertDialogCancel>
             <AlertDialogAction onClick={handleConfirmClone}>
               Nhân bản
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog
+        open={workflowToDelete !== null}
+        onOpenChange={(open) => {
+          if (!open) setWorkflowToDelete(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Xóa sơ đồ quy trình?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Hành động này sẽ xóa vĩnh viễn sơ đồ
+              {workflowToDelete?.name ? ` "${workflowToDelete.name}"` : ""} và
+              không thể hoàn tác.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Hủy</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={handleConfirmDeleteWorkflow}
+            >
+              Xóa
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
