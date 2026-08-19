@@ -1,5 +1,6 @@
 import type {
   FarmPlanResponse,
+  FarmPlanStageRequest,
   FarmWorkflowResponse,
   FarmWorkflowScopeResponse,
 } from "@/features/farm-workflow/types/farm-workflow.type";
@@ -13,6 +14,7 @@ import type { DiagramInfoRecord } from "../hooks/usePlanWorkflowDraftStore";
 import type {
   GeographicalSelection,
   Plan,
+  PlanFormData,
   SelectionSummaryGroup,
   Workflow,
 } from "../types";
@@ -261,6 +263,42 @@ export function mapPlanResponseToPlan(plan: FarmPlanResponse): Plan {
     scopes: selections,
     selectionSummary: mapScopesToSelectionSummary(plan.scopes),
   } as Plan;
+}
+
+// Builds the FarmPlanRequest.stages payload from the form's selected stages
+// and task allocations. Material allocations are NOT included: the plan
+// API's supplyLines[] requires a packagingVariantId, but the supply catalog
+// (PackagingVariantResponse) never returns an id for a packaging variant —
+// only packagingType/unitBase/quantity — so there is no real id to send.
+// Sending a fabricated one would silently corrupt plan data, so materials
+// stay client-side only until the backend exposes a packaging-variant id.
+export function buildFarmPlanStagesRequest(
+  formData: PlanFormData,
+): FarmPlanStageRequest[] {
+  const stageKeys =
+    formData.purpose === "harvest" ? ["Thu hoạch"] : formData.selectedStages;
+
+  return stageKeys.map((stageKey) => {
+    const stageName = stageKey.includes(":")
+      ? stageKey.split(":")[1]
+      : stageKey;
+
+    const workItems = formData.taskAllocations
+      .filter((task) => task.stageId === stageKey)
+      .map((task) => ({
+        taskCategoryId: task.taskCategoryId,
+        name: task.name,
+        description: task.description || undefined,
+        headcount: task.headcount,
+        durationValue: task.durationValue,
+        durationUnit: task.durationUnit,
+      }));
+
+    return {
+      name: stageName,
+      workItems,
+    } satisfies FarmPlanStageRequest;
+  });
 }
 
 export function getFallbackPlans(): Plan[] {

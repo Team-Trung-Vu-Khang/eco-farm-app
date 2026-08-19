@@ -8,6 +8,12 @@ export interface MaterialAllocation {
   unit: string;
   cycle?: string;
   packaging?: string;
+  // Real supply-item catalog id. NOTE: the FarmPlanStageSupplyLineRequest
+  // API also requires a packagingVariantId, but the supply catalog's
+  // packaging variants (PackagingVariantResponse) carry no id — only
+  // packagingType/unitBase/quantity — so this line can't be sent to the
+  // plan-update API yet. Kept here for when the backend exposes one.
+  supplyItemId?: number;
 }
 
 export interface TaskAllocation {
@@ -24,6 +30,13 @@ export interface TaskAllocation {
   repeatDates?: string[];
   startDate?: string;
   endDate?: string;
+  // Real task-category catalog id (from /api/master-data/task-categories),
+  // plus the numeric fields the FarmPlanWorkItemRequest API expects — kept
+  // alongside the free-text `labor`/`duration` display fields above.
+  taskCategoryId?: number;
+  headcount?: number;
+  durationValue?: number;
+  durationUnit?: "MINUTE" | "HOUR" | "DAY" | "WEEK";
 }
 
 export interface GeographicalSelection {

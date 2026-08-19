@@ -36,9 +36,17 @@ import {
 import { memo, useState } from "react";
 import usePersonnelStore from "../../../stores/usePersonnelStore";
 import type { GeographicalSelection } from "../types";
-import { TASK_OPTIONS } from "../data/mocks";
 import type { MaterialAllocation, TaskAllocation } from "../types";
 import type { CropSupplyCatalog, CropSupplyType } from "../hooks/useCropSupplyCatalog";
+import { useTaskCategorySearch } from "@/features/task-category/hooks/useTaskCategory";
+import type { FarmWorkDurationUnit } from "@/features/farm-workflow/types/farm-workflow.type";
+
+const DURATION_UNIT_OPTIONS: { value: string; label: string; api: FarmWorkDurationUnit }[] = [
+  { value: "phút", label: "Phút", api: "MINUTE" },
+  { value: "giờ", label: "Giờ", api: "HOUR" },
+  { value: "ngày", label: "Ngày", api: "DAY" },
+  { value: "tuần", label: "Tuần", api: "WEEK" },
+];
 
 export const StageAllocation = memo(
   ({
@@ -83,6 +91,7 @@ export const StageAllocation = memo(
 
     const [newTask, setNewTask] = useState({
       name: "",
+      taskCategoryId: "",
       desc: "",
       labor: "",
       count: "1",
@@ -95,6 +104,7 @@ export const StageAllocation = memo(
 
     const { personnel } = usePersonnelStore();
     const [personnelSearch, setPersonnelSearch] = useState("");
+    const { items: taskCategories } = useTaskCategorySearch();
 
     const filteredPersonnel = personnelSearch.trim()
       ? personnel.filter((p) =>
@@ -122,6 +132,7 @@ export const StageAllocation = memo(
         materialName: selectedMaterial.label,
         quantity: newItem.qty,
         unit: newItem.unit || selectedMaterial.unit,
+        supplyItemId: selectedMaterial.item.id,
       });
       setNewItem({
         name: "",
@@ -144,6 +155,13 @@ export const StageAllocation = memo(
         laborValue = newTask.labor;
       }
 
+      const headcount = specificPersonnel
+        ? parseInt(newTask.count) || newTask.assignedPersonnel.length
+        : parseInt(laborValue.replace(/\D/g, ""), 10);
+      const durationUnitApi = DURATION_UNIT_OPTIONS.find(
+        (option) => option.value === durationUnit,
+      )?.api;
+
       onAddTask({
         stageId: stageName,
         name: newTask.name,
@@ -151,11 +169,18 @@ export const StageAllocation = memo(
         labor: laborValue,
         duration: durationValue ? `${durationValue} ${durationUnit}` : "",
         geographicalSelections: newTask.geographicalSelections,
+        taskCategoryId: newTask.taskCategoryId
+          ? Number(newTask.taskCategoryId)
+          : undefined,
+        headcount: Number.isFinite(headcount) && headcount > 0 ? headcount : undefined,
+        durationValue: durationValue ? Number(durationValue) : undefined,
+        durationUnit: durationValue ? durationUnitApi : undefined,
       });
 
       // Reset form but keep master selections as default for next task
       setNewTask({
         name: "",
+        taskCategoryId: "",
         desc: "",
         labor: "",
         count: "1",
@@ -487,12 +512,21 @@ export const StageAllocation = memo(
                 <div className="space-y-2 pt-3 border-t mt-auto text-sm shrink-0">
                   <div className="flex gap-2">
                     <Combobox
-                      options={TASK_OPTIONS.map((opt) => ({
-                        value: opt.value,
-                        label: opt.label,
+                      options={taskCategories.map((category) => ({
+                        value: String(category.id),
+                        label: category.name,
                       }))}
-                      value={newTask.name}
-                      onChange={(v) => setNewTask({ ...newTask, name: v })}
+                      value={newTask.taskCategoryId}
+                      onChange={(v) => {
+                        const category = taskCategories.find(
+                          (item) => String(item.id) === v,
+                        );
+                        setNewTask({
+                          ...newTask,
+                          taskCategoryId: v,
+                          name: category?.name || newTask.name,
+                        });
+                      }}
                       placeholder="Chọn công việc..."
                       searchPlaceholder="Tìm công việc..."
                       emptyText="Không tìm thấy công việc."
@@ -632,10 +666,11 @@ export const StageAllocation = memo(
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="phút">Phút</SelectItem>
-                          <SelectItem value="giờ">Giờ</SelectItem>
-                          <SelectItem value="ngày">Ngày</SelectItem>
-                          <SelectItem value="tuần">Tuần</SelectItem>
+                          {DURATION_UNIT_OPTIONS.map((option) => (
+                            <SelectItem key={option.value} value={option.value}>
+                              {option.label}
+                            </SelectItem>
+                          ))}
                         </SelectContent>
                       </Select>
                     </div>

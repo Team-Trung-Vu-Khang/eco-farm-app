@@ -2,7 +2,6 @@ import { useMemo, useState } from "react";
 import {
   Badge,
   Button,
-  Checkbox,
   Dialog,
   DialogContent,
   DialogFooter,
@@ -229,7 +228,10 @@ export function PersonnelMultiSelectCard({
                     {isSelected ? (
                       <CheckCircle2 className={cn("w-5 h-5", classes.check)} />
                     ) : (
-                      <Checkbox checked={false} />
+                      <div
+                        aria-hidden
+                        className="h-4 w-4 shrink-0 rounded-sm border border-slate-300 bg-white"
+                      />
                     )}
                   </button>
                 );

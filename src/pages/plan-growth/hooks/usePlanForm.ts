@@ -21,7 +21,11 @@ import type {
   PlanFormData,
   TaskAllocation,
 } from "../types";
-import { getFallbackPlans, upsertFallbackPlan } from "../utils/api-mappers";
+import {
+  buildFarmPlanStagesRequest,
+  getFallbackPlans,
+  upsertFallbackPlan,
+} from "../utils/api-mappers";
 import {
   calculateSelectedArea,
   deriveSelectionState,
@@ -572,14 +576,49 @@ export function usePlanForm(
     upsertFallbackPlan(nextPlan as Plan);
   };
 
-  const handleComplete = () => {
+  const handleComplete = async () => {
     const payload = {
       ...formData,
       area: calculateArea(),
       status: "active" as const,
     };
+    const durationDays = Math.max(
+      1,
+      Math.round(
+        (new Date(`${formData.endDate}T00:00:00`).getTime() -
+          new Date(`${formData.startDate}T00:00:00`).getTime()) /
+          86400000,
+      ) || 1,
+    );
+    const stages = buildFarmPlanStagesRequest(formData);
 
     if (mode === "edit" && params.id) {
+      try {
+        await updatePlan.mutateAsync({
+          id: Number(params.id),
+          payload: {
+            code: formData.code || null,
+            name: formData.name,
+            description: formData.description || undefined,
+            scopeNote: formData.scopeNote || undefined,
+            purpose: mapPurpose(formData.purpose),
+            durationDays,
+            personnel: buildPersonnelRequest(formData),
+            stages,
+            status: "IN_PROGRESS",
+          },
+        });
+      } catch (error: any) {
+        toast({
+          title: "Lỗi",
+          description:
+            error?.response?.data?.message ||
+            `Không thể cập nhật kế hoạch ${formData.name}`,
+          variant: "destructive",
+        });
+        return;
+      }
+
       const nextPlan = {
         ...(plan || {}),
         ...payload,
@@ -591,31 +630,8 @@ export function usePlanForm(
         materialAllocations: payload.materialAllocations,
         taskAllocations: payload.taskAllocations,
       };
-
       upsertFallbackPlan(nextPlan as Plan);
-      void updatePlan
-        .mutateAsync({
-          id: Number(params.id),
-          payload: {
-            code: formData.code || null,
-            name: formData.name,
-            description: formData.description || undefined,
-            scopeNote: formData.scopeNote || undefined,
-            purpose: mapPurpose(formData.purpose),
-            durationDays: Math.max(
-              1,
-              Math.round(
-                (new Date(`${formData.endDate}T00:00:00`).getTime() -
-                  new Date(`${formData.startDate}T00:00:00`).getTime()) /
-                  86400000,
-              ) || 1,
-            ),
-            personnel: buildPersonnelRequest(formData),
-            stages: undefined,
-            status: "IN_PROGRESS",
-          },
-        })
-        .catch(() => undefined);
+
       toast({
         title: "Thành công",
         description: `Đã cập nhật kế hoạch ${formData.name}`,
@@ -629,15 +645,8 @@ export function usePlanForm(
     }
 
     const createdId = Date.now();
-    const nextPlan = {
-      ...payload,
-      id: createdId,
-      code: formData.code,
-      createdAt: new Date().toISOString().split("T")[0],
-    };
-    upsertFallbackPlan(nextPlan as Plan);
-    void createPlan
-      .mutateAsync({
+    try {
+      await createPlan.mutateAsync({
         workflowId: workflowInfo?.id || "0",
         payload: {
           code: formData.code || null,
@@ -645,20 +654,31 @@ export function usePlanForm(
           description: formData.description || undefined,
           scopeNote: formData.scopeNote || undefined,
           purpose: mapPurpose(formData.purpose),
-          durationDays: Math.max(
-            1,
-            Math.round(
-              (new Date(`${formData.endDate}T00:00:00`).getTime() -
-                new Date(`${formData.startDate}T00:00:00`).getTime()) /
-                86400000,
-            ) || 1,
-          ),
+          durationDays,
           personnel: buildPersonnelRequest(formData),
-          stages: undefined,
+          stages,
           status: "DRAFT",
         },
-      })
-      .catch(() => undefined);
+      });
+    } catch (error: any) {
+      toast({
+        title: "Lỗi",
+        description:
+          error?.response?.data?.message ||
+          `Không thể tạo kế hoạch ${formData.name}`,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const nextPlan = {
+      ...payload,
+      id: createdId,
+      code: formData.code,
+      createdAt: new Date().toISOString().split("T")[0],
+    };
+    upsertFallbackPlan(nextPlan as Plan);
+
     toast({
       title: "Thành công",
       description: `Đã tạo kế hoạch ${formData.name}`,

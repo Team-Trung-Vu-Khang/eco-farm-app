@@ -1,4 +1,5 @@
 import { apiClient } from "@/shared/lib/axios";
+import type { PageResponse } from "@/features/foundation/types/foundation.type";
 import type {
   TaskCategoryLookupQueryParams,
   TaskCategoryLookupResponse,
@@ -19,7 +20,9 @@ export const taskCategoryApi = {
 
   search(params?: TaskCategoryLookupQueryParams) {
     return apiClient
-      .get<TaskCategoryLookupResponse[]>(TASK_CATEGORY_PATH, { params })
+      .get<PageResponse<TaskCategoryLookupResponse>>(TASK_CATEGORY_PATH, {
+        params,
+      })
       .then((response) => response.data);
   },
 };

@@ -1,11 +1,8 @@
 import type { DomainCode } from "@/features/farm-supply/types";
 
-export interface TaskCategoryStageResponse {
-  stage: string;
-  name?: string;
-  code?: string;
-  domainCode?: DomainCode;
-}
+// GET /api/master-data/task-categories/stages returns a bare string[] of
+// stage names (not objects).
+export type TaskCategoryStageResponse = string;
 
 export interface TaskCategoryLookupResponse {
   id: number;
@@ -13,7 +10,6 @@ export interface TaskCategoryLookupResponse {
   name: string;
   stage?: string;
   domainCode?: DomainCode;
-  description?: string;
 }
 
 export interface TaskCategoryStageQueryParams {
@@ -23,4 +19,7 @@ export interface TaskCategoryStageQueryParams {
 export interface TaskCategoryLookupQueryParams {
   stage?: string;
   keyword?: string;
+  domainCode?: DomainCode;
+  page?: number;
+  size?: number;
 }
