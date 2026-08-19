@@ -1,6 +1,8 @@
 import type {
+  FarmPlanPurpose,
   FarmPlanResponse,
   FarmPlanStageRequest,
+  FarmWorkDurationUnit,
   FarmWorkflowResponse,
   FarmWorkflowScopeResponse,
 } from "@/features/farm-workflow/types/farm-workflow.type";
@@ -221,6 +223,21 @@ export function mapScopesToSelectionSummary(
   return Array.from(groups.values());
 }
 
+const apiPurposeToPlanPurpose: Record<FarmPlanPurpose, Plan["purpose"]> = {
+  CULTIVATION: "cultivation",
+  FACILITY_UPGRADE: "facility-upgrade",
+  TREATMENT: "treatment",
+  SOIL_IMPROVEMENT: "amendment",
+  HARVEST: "harvest",
+};
+
+const durationUnitToLabel: Record<FarmWorkDurationUnit, string> = {
+  MINUTE: "phút",
+  HOUR: "giờ",
+  DAY: "ngày",
+  WEEK: "tuần",
+};
+
 export function mapPlanResponseToPlan(plan: FarmPlanResponse): Plan {
   const selections = plan.scopes
     .map(mapScopeToSelection)
@@ -235,6 +252,38 @@ export function mapPlanResponseToPlan(plan: FarmPlanResponse): Plan {
   const plotIds = selections
     .filter((selection) => selection.type === "plot" && selection.plotId)
     .map((selection) => String(selection.plotId));
+
+  const stages = plan.stages || [];
+  const selectedStages = stages.map((stage) => stage.name);
+  const materialAllocations = stages.flatMap((stage) =>
+    (stage.supplyLines || []).map((line) => ({
+      id: line.id,
+      stageId: stage.name,
+      materialCategory: line.supplyItem?.supplyType || "",
+      materialType: line.supplyItem?.supplyType || "",
+      materialName: line.supplyItem?.name || "",
+      quantity: String(line.quantity),
+      unit: line.packagingVariant?.unitBase?.name || "",
+      supplyItemId: line.supplyItem?.id,
+    })),
+  );
+  const taskAllocations = stages.flatMap((stage) =>
+    (stage.workItems || []).map((item) => ({
+      id: item.id,
+      stageId: stage.name,
+      name: item.name,
+      description: item.description || "",
+      labor: item.headcount ? `${item.headcount} người` : "",
+      duration:
+        item.durationValue && item.durationUnit
+          ? `${item.durationValue} ${durationUnitToLabel[item.durationUnit]}`
+          : "",
+      taskCategoryId: item.taskCategory?.id,
+      headcount: item.headcount,
+      durationValue: item.durationValue,
+      durationUnit: item.durationUnit,
+    })),
+  );
 
   return {
     id: plan.id,
@@ -252,16 +301,21 @@ export function mapPlanResponseToPlan(plan: FarmPlanResponse): Plan {
     selectedPlotIds: plotIds,
     crop: "",
     variety: "",
-    purpose: "cultivation",
+    purpose: apiPurposeToPlanPurpose[plan.purpose] || "cultivation",
     growthCycleId: "",
     regimenId: undefined,
-    selectedStages: [],
-    materialAllocations: [],
-    taskAllocations: [],
+    selectedStages,
+    materialAllocations,
+    taskAllocations,
     status: planStatusMap[plan.status] ?? "draft",
     createdAt: plan.createdAt || new Date().toISOString(),
     scopes: selections,
     selectionSummary: mapScopesToSelectionSummary(plan.scopes),
+    personnel: (plan.personnel || []).map((person) => ({
+      id: person.id,
+      fullName: person.fullName || `#${person.id}`,
+      role: person.role,
+    })),
   } as Plan;
 }
 

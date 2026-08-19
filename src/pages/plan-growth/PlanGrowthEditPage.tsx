@@ -1363,6 +1363,64 @@ export default function PlanGrowthEditPage({
                 </div>
                 <div className="space-y-4">
                   <label className="text-xs text-muted-foreground font-black uppercase tracking-widest">
+                    Nhân sự quản lý
+                  </label>
+                  <div className="flex flex-wrap gap-1.5">
+                    {formData.managementPersonnelIds.length === 0 ? (
+                      <span className="text-sm italic text-slate-400">
+                        Chưa chọn nhân sự quản lý
+                      </span>
+                    ) : (
+                      formData.managementPersonnelIds.map((id) => {
+                        const person = personnel.find(
+                          (item) => String(item.id) === String(id),
+                        );
+                        return person ? (
+                          <Badge
+                            key={id}
+                            variant="outline"
+                            className="bg-blue-50 text-blue-700 border-blue-100 text-[10px] font-medium py-0 px-2 h-5"
+                          >
+                            <Users className="w-3 h-3 mr-1" />
+                            {person.fullName}
+                          </Badge>
+                        ) : null;
+                      })
+                    )}
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  <label className="text-xs text-muted-foreground font-black uppercase tracking-widest">
+                    Nhân sự kiểm định chất lượng
+                  </label>
+                  <div className="flex flex-wrap gap-1.5">
+                    {formData.qualityInspectorPersonnelIds.length === 0 ? (
+                      <span className="text-sm italic text-slate-400">
+                        Chưa chọn nhân sự kiểm định
+                      </span>
+                    ) : (
+                      formData.qualityInspectorPersonnelIds.map((id) => {
+                        const person = personnel.find(
+                          (item) => String(item.id) === String(id),
+                        );
+                        return person ? (
+                          <Badge
+                            key={id}
+                            variant="outline"
+                            className="bg-violet-50 text-violet-700 border-violet-100 text-[10px] font-medium py-0 px-2 h-5"
+                          >
+                            <Users className="w-3 h-3 mr-1" />
+                            {person.fullName}
+                          </Badge>
+                        ) : null;
+                      })
+                    )}
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  <label className="text-xs text-muted-foreground font-black uppercase tracking-widest">
                     Ghi chú phạm vi canh tác
                   </label>
                   <p>{formData.scopeNote || ""}</p>

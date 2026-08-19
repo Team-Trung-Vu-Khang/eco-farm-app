@@ -156,6 +156,12 @@ function buildPersonnelRequest(
   return [...managers, ...inspectors];
 }
 
+function derivePersonnelIds(plan: Plan, role: "MANAGER" | "QUALITY_INSPECTOR") {
+  return (plan.personnel || [])
+    .filter((person) => person.role === role)
+    .map((person) => String(person.id));
+}
+
 function buildAutoPlanCode(seasonId: string, seasonName: string) {
   const seasonToken =
     (seasonId || seasonName || "PLAN")
@@ -331,12 +337,11 @@ export function usePlanForm(
           startDate: plan.startDate || formatDateInput(new Date()),
           endDate: plan.endDate || "",
           ...inferDurationFromDates(plan.startDate, plan.endDate),
-          managementPersonnelIds:
-            (plan as { managementPersonnelIds?: string[] })
-              .managementPersonnelIds || [],
-          qualityInspectorPersonnelIds:
-            (plan as { qualityInspectorPersonnelIds?: string[] })
-              .qualityInspectorPersonnelIds || [],
+          managementPersonnelIds: derivePersonnelIds(plan, "MANAGER"),
+          qualityInspectorPersonnelIds: derivePersonnelIds(
+            plan,
+            "QUALITY_INSPECTOR",
+          ),
           selectedRegionIds: plan.selectedRegionIds || [],
           selectedZoneIds: plan.selectedZoneIds || [],
           selectedPlotIds: plan.selectedPlotIds || [],
@@ -367,12 +372,11 @@ export function usePlanForm(
       startDate: plan.startDate || formatDateInput(new Date()),
       endDate: plan.endDate || "",
       ...inferDurationFromDates(plan.startDate, plan.endDate),
-      managementPersonnelIds:
-        (plan as { managementPersonnelIds?: string[] })
-          .managementPersonnelIds || [],
-      qualityInspectorPersonnelIds:
-        (plan as { qualityInspectorPersonnelIds?: string[] })
-          .qualityInspectorPersonnelIds || [],
+      managementPersonnelIds: derivePersonnelIds(plan, "MANAGER"),
+      qualityInspectorPersonnelIds: derivePersonnelIds(
+        plan,
+        "QUALITY_INSPECTOR",
+      ),
       selectedRegionIds: plan.selectedRegionIds || [],
       selectedZoneIds: plan.selectedZoneIds || [],
       selectedPlotIds: plan.selectedPlotIds || [],

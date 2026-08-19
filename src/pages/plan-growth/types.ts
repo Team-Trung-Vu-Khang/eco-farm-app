@@ -87,6 +87,13 @@ export interface Plan {
   // embedded region/area/plot names — unlike `scopes`, it doesn't need a
   // matching entry in the (mock) region tree to display correctly.
   selectionSummary?: SelectionSummaryGroup[];
+  personnel?: PlanPersonnel[];
+}
+
+export interface PlanPersonnel {
+  id: number;
+  fullName: string;
+  role: "MANAGER" | "QUALITY_INSPECTOR";
 }
 
 export type PlanStatus = Plan["status"];
