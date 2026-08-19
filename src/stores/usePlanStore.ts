@@ -84,6 +84,15 @@ export interface Plan {
   // node it branched off from in the workflow canvas — the canvas graph is
   // otherwise local-draft-only and doesn't survive a reload from the backend.
   metadataJson?: Record<string, any>;
+  // Pre-grouped, human-readable version of the API's `scopes` straight from
+  // its embedded region/area/plot names — unlike selectedRegionIds/etc, it
+  // doesn't need a matching entry in the (mock) region tree to display
+  // correctly, since the region tree won't have API-only scopes.
+  selectionSummary?: {
+    regionId: string;
+    regionName: string;
+    items: { type: "region" | "area" | "plot"; id: string; name: string; parentName?: string }[];
+  }[];
 }
 
 

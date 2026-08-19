@@ -80,6 +80,7 @@ export interface FarmWorkflowRequest {
   durationDays: number;
   scopes: FarmWorkflowScopeRequest[];
   status?: FarmWorkflowRequestStatus;
+  metadataJson?: Record<string, any>;
 }
 
 export interface FarmWorkflowResponse {
@@ -91,6 +92,7 @@ export interface FarmWorkflowResponse {
   durationDays: number;
   scopes: FarmWorkflowScopeResponse[];
   status: FarmWorkflowResponseStatus;
+  metadataJson?: Record<string, any>;
   planCount?: number;
   inProgressPlanCount?: number;
   statusBreakdown?: FarmWorkflowStatusBreakdown;

@@ -40,8 +40,14 @@ import { useLocation, useParams } from "wouter";
 import {
   useFarmPlanMutations,
   useFarmWorkflowById,
+  useFarmWorkflowMutations,
   useFarmWorkflowPlans,
 } from "@/features/farm-workflow/hooks";
+import type {
+  FarmWorkflowRequestStatus,
+  FarmWorkflowScopeRequest,
+  FarmWorkflowScopeResponse,
+} from "@/features/farm-workflow/types/farm-workflow.type";
 import { useDialogBugWorkaround } from "../../shared/hooks/useDialogBugWorkaround";
 import usePlanStore, { type Plan } from "../../stores/usePlanStore";
 import useWorkflowStore from "../../stores/useWorkflowStore";
@@ -165,7 +171,13 @@ function buildChildEdge(sourceNodeId: string, targetNodeId: string): Edge {
 // backend's `metadataJson.parentId` on each plan — the canvas graph itself
 // is local-draft-only and doesn't survive a reload, so this is the only
 // place that link is reconstructed after fetching a workflow's plans.
-function buildPlanNodesFromApi(planNodePlans: Plan[]): {
+// `savedPositions` (the workflow's own metadataJson.nodePositions, keyed by
+// plan id) restores manual layout from the last "Lưu quy trình"; a plan with
+// no saved entry (e.g. just created) falls back to auto-placement.
+function buildPlanNodesFromApi(
+  planNodePlans: Plan[],
+  savedPositions?: Record<string, { x: number; y: number }>,
+): {
   nodes: DraftNode[];
   edges: Edge[];
 } {
@@ -181,10 +193,11 @@ function buildPlanNodesFromApi(planNodePlans: Plan[]): {
   const placedNodeIds = new Set<string>();
 
   const place = (plan: Plan, id: string, parentNodeId: string | undefined) => {
+    const savedPosition = savedPositions?.[plan.id];
     nodes.push({
       id,
       type: "workflowCard",
-      position: placeNewNode(nodes, parentNodeId),
+      position: savedPosition ?? placeNewNode(nodes, parentNodeId),
       data: parentNodeId
         ? { setupKind: "plan", planId: plan.id, parentId: parentNodeId }
         : { setupKind: "plan", planId: plan.id },
@@ -275,7 +288,12 @@ function getRegionLabelsFromPlan(
   plan: Plan,
   regions: ReturnType<typeof useRegionStore.getState>["regions"],
 ) {
-  const summary = summarizePlanSelections(plan, regions);
+  // Prefer the API's own scopes (via selectionSummary) — a local-only draft
+  // plan won't have this, so it falls back to matching selectedRegionIds/etc
+  // against the mock region tree.
+  const summary = plan.selectionSummary?.length
+    ? plan.selectionSummary
+    : summarizePlanSelections(plan, regions);
   if (!summary.length) return ["Chưa thiết lập vùng canh tác"];
 
   return summary.map((group) => {
@@ -303,6 +321,22 @@ type NodeHandlers = {
   onAllocateWork: (planId: number) => void;
   onRequestDeletePlan: (nodeId: string) => void;
 };
+
+// The scope response only nests `scopeId` under region/area/plot depending
+// on scopeType (see FarmWorkflowScopeResponse) — this pulls it back out to
+// resubmit the workflow's own scopes unchanged on a metadata-only update.
+function toWorkflowScopeRequest(
+  scope: FarmWorkflowScopeResponse,
+): FarmWorkflowScopeRequest | null {
+  const scopeId =
+    scope.scopeType === "REGION"
+      ? scope.region?.id
+      : scope.scopeType === "AREA"
+        ? scope.area?.id
+        : scope.plot?.id;
+  if (scopeId == null) return null;
+  return { scopeType: scope.scopeType, scopeId };
+}
 
 function toDisplayNode(
   node: DraftNode,
@@ -476,6 +510,7 @@ export default function PlanGrowthCreateWorkflowPage() {
   const deletePlanLocal = usePlanStore((state) => state.deletePlan);
   const upsertWorkflow = useWorkflowStore((state) => state.upsertWorkflow);
   const { createPlan, deletePlan } = useFarmPlanMutations();
+  const { updateWorkflow } = useFarmWorkflowMutations();
 
   const nodes = usePlanWorkflowDraftStore((state) => state.nodes);
   const edges = usePlanWorkflowDraftStore((state) => state.edges);
@@ -579,20 +614,26 @@ export default function PlanGrowthCreateWorkflowPage() {
         ],
       }));
 
-      // Plan-to-plan links (metadataJson.parentId) are the only relationship
-      // the backend persists — positions and stage/detail nodes under each
-      // plan still live in the local draft only, so those start empty here.
-      const { nodes: planNodes, edges: planEdges } =
-        buildPlanNodesFromApi(planNodePlans);
+      // Plan-to-plan links (metadataJson.parentId) and, once saved via
+      // "Lưu quy trình", node positions (metadataJson.nodePositions) are the
+      // only things persisted — stage/detail nodes under each plan still
+      // live in the local draft only, so those start empty here.
+      const { nodes: planNodes, edges: planEdges } = buildPlanNodesFromApi(
+        planNodePlans,
+        workflowDetail.metadataJson?.nodePositions,
+      );
 
       loadWorkflow({
         nodes: planNodes,
         edges: planEdges,
         infoNodes: [
-          mapWorkflowResponseToInfoRecord(workflowDetail, {
-            x: INFO_NODE_X,
-            y: 0,
-          }),
+          mapWorkflowResponseToInfoRecord(
+            workflowDetail,
+            workflowDetail.metadataJson?.infoNodePosition ?? {
+              x: INFO_NODE_X,
+              y: 0,
+            },
+          ),
         ],
         activeWorkflowId: workflowId,
       });
@@ -800,13 +841,59 @@ export default function PlanGrowthCreateWorkflowPage() {
     setLocation(`${WORKFLOW_BASE_PATH}/info/${id}/edit`);
   };
 
-  const handleSaveWorkflow = () => {
+  const handleSaveWorkflow = async () => {
     if (!infoNodes.length) return;
 
     // Multiple info cards can exist in one draft, but only one drives the
     // plan tree today (see usePlanForm's workflowInfo lookup) — so every
     // plan in this draft gets linked to that same primary workflow.
     const primaryWorkflow = infoNodes.find((item) => item.isActive) ?? infoNodes[0];
+
+    // Node positions (plan nodes + the info/workflow node itself) only ever
+    // live in this local draft — reopening a persisted workflow always
+    // recomputes them from scratch (see buildPlanNodesFromApi and the
+    // INFO_NODE_X/0 fallback above). Save them onto the workflow's own
+    // metadataJson, keyed by plan id (the only thing stable across reloads,
+    // since node ids are regenerated every time).
+    if (activeWorkflowId && isPersistedWorkflowId(activeWorkflowId) && workflowDetail) {
+      const nodePositions: Record<number, { x: number; y: number }> = {};
+      nodes.forEach((node) => {
+        if (node.data.setupKind !== "plan") return;
+        nodePositions[node.data.planId] = {
+          x: node.position.x,
+          y: node.position.y,
+        };
+      });
+
+      try {
+        await updateWorkflow.mutateAsync({
+          id: activeWorkflowId,
+          payload: {
+            domainCode: workflowDetail.domainCode,
+            code: workflowDetail.code,
+            name: workflowDetail.name,
+            description: workflowDetail.description,
+            durationDays: workflowDetail.durationDays,
+            scopes: workflowDetail.scopes
+              .map(toWorkflowScopeRequest)
+              .filter((scope): scope is FarmWorkflowScopeRequest => scope !== null),
+            status: workflowDetail.status.toUpperCase() as FarmWorkflowRequestStatus,
+            metadataJson: {
+              ...workflowDetail.metadataJson,
+              nodePositions,
+              infoNodePosition: primaryWorkflow.position,
+            },
+          },
+        });
+      } catch {
+        toast({
+          variant: "destructive",
+          title: "Lỗi",
+          description: "Không thể lưu vị trí sơ đồ",
+        });
+        return;
+      }
+    }
 
     infoNodes.forEach((info) => {
       upsertWorkflow({
