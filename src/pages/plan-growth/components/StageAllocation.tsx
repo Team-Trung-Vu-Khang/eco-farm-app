@@ -82,7 +82,7 @@ export const StageAllocation = memo(
     const [newItem, setNewItem] = useState({
       name: "",
       qty: "",
-      unit: supplyCatalog.unitOptionsByType.fertilizer[0] || "kg",
+      unitBaseId: "",
       type: "fertilizer" as CropSupplyType,
     });
 
@@ -118,26 +118,32 @@ export const StageAllocation = memo(
     const selectedMaterial = supplyCatalog.optionsByType[newItem.type].find(
       (option) => option.value === newItem.name,
     );
-    const unitOptions =
-      supplyCatalog.unitOptionsByType[newItem.type].length > 0
-        ? supplyCatalog.unitOptionsByType[newItem.type]
-        : ["kg"];
+    const packagingVariantOptions = selectedMaterial?.item.packagingVariants || [];
+    const selectedPackagingVariant = packagingVariantOptions.find(
+      (variant) => String(variant.unitBase?.id) === newItem.unitBaseId,
+    );
+    const maxPackagingQuantity = selectedPackagingVariant?.quantity;
+    const exceedsPackagingQuantity =
+      maxPackagingQuantity != null &&
+      Number(newItem.qty) > maxPackagingQuantity;
 
     const handleAddMaterial = () => {
-      if (!selectedMaterial || !newItem.qty) return;
+      if (!selectedMaterial || !newItem.qty || !selectedPackagingVariant?.unitBase)
+        return;
       onAddMaterial({
         stageId: stageName,
         materialCategory: selectedTypeOption?.label || newItem.type,
         materialType: selectedTypeOption?.label || newItem.type,
         materialName: selectedMaterial.label,
         quantity: newItem.qty,
-        unit: newItem.unit || selectedMaterial.unit,
+        unit: selectedPackagingVariant.unitBase.name || selectedMaterial.unit,
         supplyItemId: selectedMaterial.item.id,
+        unitBaseId: selectedPackagingVariant.unitBase.id,
       });
       setNewItem({
         name: "",
         qty: "",
-        unit: unitOptions[0] || "kg",
+        unitBaseId: "",
         type: newItem.type,
       });
     };
@@ -335,15 +341,11 @@ export const StageAllocation = memo(
                         <Select
                           value={newItem.type}
                           onValueChange={(v) => {
-                            const defaultUnit =
-                              supplyCatalog.unitOptionsByType[
-                                v as CropSupplyType
-                              ]?.[0] || "kg";
                             setNewItem({
                               ...newItem,
                               type: v as CropSupplyType,
                               name: "",
-                              unit: defaultUnit,
+                              unitBaseId: "",
                             });
                           }}
                         >
@@ -374,10 +376,13 @@ export const StageAllocation = memo(
                               supplyCatalog.optionsByType[newItem.type].find(
                                 (i) => i.value === v,
                               );
+                            const firstVariant = item?.item.packagingVariants?.[0];
                             setNewItem({
                               ...newItem,
                               name: v,
-                              unit: item?.unit || newItem.unit,
+                              unitBaseId: firstVariant?.unitBase?.id
+                                ? String(firstVariant.unitBase.id)
+                                : "",
                             });
                           }}
                           placeholder="Chọn vật tư cụ thể..."
@@ -408,18 +413,24 @@ export const StageAllocation = memo(
                       </div>
                       <div className="col-span-4">
                         <Select
-                          value={newItem.unit}
+                          value={newItem.unitBaseId}
                           onValueChange={(v) =>
-                            setNewItem({ ...newItem, unit: v })
+                            setNewItem({ ...newItem, unitBaseId: v })
                           }
+                          disabled={packagingVariantOptions.length === 0}
                         >
                           <SelectTrigger className="h-9 text-xs px-2 w-full bg-white">
-                            <SelectValue />
+                            <SelectValue placeholder="Đơn vị..." />
                           </SelectTrigger>
                           <SelectContent>
-                            {unitOptions.map((u) => (
-                              <SelectItem key={u} value={u}>
-                                {u}
+                            {packagingVariantOptions.map((variant) => (
+                              <SelectItem
+                                key={variant.unitBase?.id ?? variant.unitBase?.name}
+                                value={String(variant.unitBase?.id)}
+                              >
+                                {variant.unitBase?.name ||
+                                  variant.packagingType?.name ||
+                                  ""}
                               </SelectItem>
                             ))}
                           </SelectContent>
@@ -436,6 +447,13 @@ export const StageAllocation = memo(
                         </Button>
                       </div>
                     </div>
+                    {exceedsPackagingQuantity && (
+                      <p className="text-[11px] text-amber-600 mt-1">
+                        Số lượng vượt quá định mức đóng gói (
+                        {maxPackagingQuantity} {selectedPackagingVariant?.unitBase?.name}
+                        /{selectedPackagingVariant?.packagingType?.name})
+                      </p>
+                    )}
                   </div>
                 </div>
               </TabsContent>

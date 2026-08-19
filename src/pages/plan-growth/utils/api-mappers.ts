@@ -265,6 +265,7 @@ export function mapPlanResponseToPlan(plan: FarmPlanResponse): Plan {
       quantity: String(line.quantity),
       unit: line.packagingVariant?.unitBase?.name || "",
       supplyItemId: line.supplyItem?.id,
+      unitBaseId: line.packagingVariant?.unitBase?.id,
     })),
   );
   const taskAllocations = stages.flatMap((stage) =>
@@ -319,13 +320,8 @@ export function mapPlanResponseToPlan(plan: FarmPlanResponse): Plan {
   } as Plan;
 }
 
-// Builds the FarmPlanRequest.stages payload from the form's selected stages
-// and task allocations. Material allocations are NOT included: the plan
-// API's supplyLines[] requires a packagingVariantId, but the supply catalog
-// (PackagingVariantResponse) never returns an id for a packaging variant —
-// only packagingType/unitBase/quantity — so there is no real id to send.
-// Sending a fabricated one would silently corrupt plan data, so materials
-// stay client-side only until the backend exposes a packaging-variant id.
+// Builds the FarmPlanRequest.stages payload from the form's selected stages,
+// material allocations, and task allocations.
 export function buildFarmPlanStagesRequest(
   formData: PlanFormData,
 ): FarmPlanStageRequest[] {
@@ -336,6 +332,19 @@ export function buildFarmPlanStagesRequest(
     const stageName = stageKey.includes(":")
       ? stageKey.split(":")[1]
       : stageKey;
+
+    const supplyLines = formData.materialAllocations
+      .filter(
+        (material) =>
+          material.stageId === stageKey &&
+          material.supplyItemId != null &&
+          material.unitBaseId != null,
+      )
+      .map((material) => ({
+        supplyItemId: material.supplyItemId as number,
+        unitBaseId: material.unitBaseId as number,
+        quantity: Number(material.quantity) || 0,
+      }));
 
     const workItems = formData.taskAllocations
       .filter((task) => task.stageId === stageKey)
@@ -350,6 +359,7 @@ export function buildFarmPlanStagesRequest(
 
     return {
       name: stageName,
+      supplyLines,
       workItems,
     } satisfies FarmPlanStageRequest;
   });

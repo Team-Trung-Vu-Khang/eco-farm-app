@@ -153,7 +153,7 @@ export interface FarmPackagingVariantRef {
 
 export interface FarmPlanStageSupplyLineRequest {
   supplyItemId: number;
-  packagingVariantId: number;
+  unitBaseId: number;
   quantity: number;
 }
 

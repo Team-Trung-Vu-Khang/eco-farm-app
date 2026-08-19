@@ -8,12 +8,11 @@ export interface MaterialAllocation {
   unit: string;
   cycle?: string;
   packaging?: string;
-  // Real supply-item catalog id. NOTE: the FarmPlanStageSupplyLineRequest
-  // API also requires a packagingVariantId, but the supply catalog's
-  // packaging variants (PackagingVariantResponse) carry no id — only
-  // packagingType/unitBase/quantity — so this line can't be sent to the
-  // plan-update API yet. Kept here for when the backend exposes one.
+  // Real supply-item catalog id, required to build FarmPlanStageSupplyLineRequest.
   supplyItemId?: number;
+  // Real unit-base catalog id (from the selected packaging variant's unitBase),
+  // required to build FarmPlanStageSupplyLineRequest.
+  unitBaseId?: number;
 }
 
 export interface TaskAllocation {
