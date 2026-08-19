@@ -726,14 +726,12 @@ export function usePlanForm(
     handleAddTask,
     handleRemoveTask,
     handleComplete,
-    goBack: options?.onCancel
-      ? () => {
-          persistDraft();
-          options.onCancel!();
-        }
-      : mode === "edit" && params.id
-        ? () => setLocation(`${basePath}/${params.id}`)
-        : () => setLocation(basePath),
+    // "Quay lại" always returns to wherever the user came from, regardless
+    // of context — draft edits are persisted first so nothing is lost.
+    goBack: () => {
+      persistDraft();
+      window.history.back();
+    },
     pageTitle: mode === "edit" ? "Chỉnh sửa Kế hoạch" : "Lập kế hoạch",
     pageDescription:
       mode === "edit" && plan
