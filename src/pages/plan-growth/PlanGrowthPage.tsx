@@ -145,7 +145,7 @@ export default function PlanGrowthPage({
           }}
           onFilterChange={(key, value) => {
             if (key === "status") {
-              setStatus((value as FarmWorkflowRequestStatus) || "");
+              setStatus(value === "all" ? "" : (value as FarmWorkflowRequestStatus));
               setCurrentIndex(1);
             }
           }}
