@@ -1,9 +1,5 @@
 import PageWrapper from "@/components/PageWrapper";
-import {
-  useFarmPlans,
-  useFarmWorkflowById,
-  useFarmWorkflowPlans,
-} from "@/features/farm-workflow/hooks";
+import { useFarmPlans, useFarmWorkflowById } from "@/features/farm-workflow/hooks";
 import type { FarmPlanStatus } from "@/features/farm-workflow/types/farm-workflow.type";
 import {
   Button,
@@ -23,7 +19,7 @@ interface PlanGrowthWorkflowPlansPageProps {
 }
 
 // Maps the (lowercase) Plan-domain status used by the filter UI to the
-// FarmPlanStatus enum the /api/farm/plans and /plans list endpoints expect.
+// FarmPlanStatus enum GET /api/farm/plans expects.
 const PLAN_STATUS_TO_API: Record<string, FarmPlanStatus> = {
   active: "IN_PROGRESS",
   draft: "DRAFT",
@@ -56,42 +52,27 @@ export default function PlanGrowthWorkflowPlansPage({
     enabled: !isUnassigned && !!workflowId,
   });
 
-  // Real server-side keyword/status/pagination for a specific workflow's
-  // plans, via GET /api/farm/workflows/{workflowId}/plans.
-  const workflowPlansQuery = useFarmWorkflowPlans(workflowId, {
-    enabled: !isUnassigned && !!workflowId,
+  // GET /api/farm/plans handles keyword/status/pagination server-side, and
+  // filters to a single workflow via `workflowId` when one is set. There's
+  // no "plan has no workflow" filter, so the unassigned view omits
+  // `workflowId` (gets every plan) and narrows to unassigned client-side
+  // below — pagination for that view is likewise handled client-side by
+  // DataTable rather than via the API's page/size, since post-fetch
+  // filtering would otherwise desync the reported page counts.
+  const plansQuery = useFarmPlans({
     params: {
+      workflowId: isUnassigned ? undefined : Number(workflowId) || undefined,
       keyword: search.trim() || undefined,
       status: status ? PLAN_STATUS_TO_API[status] : undefined,
-      page: currentIndex - 1,
-      size: pageSize,
+      page: isUnassigned ? 0 : currentIndex - 1,
+      size: isUnassigned ? 100 : pageSize,
     },
   });
-
-  // GET /api/farm/plans has no "plan has no workflow" filter, so the
-  // unassigned view still narrows client-side on top of the server's
-  // keyword/status filtering — pagination for this view is handled
-  // entirely client-side below (see DataTable props) rather than via the
-  // API's page/size, since post-fetch filtering would otherwise desync
-  // the reported page counts from what's actually displayed.
-  const unassignedPlansQuery = useFarmPlans({
-    enabled: isUnassigned,
-    params: {
-      keyword: search.trim() || undefined,
-      status: status ? PLAN_STATUS_TO_API[status] : undefined,
-      page: 0,
-      size: 100,
-    },
-  });
-
-  const activeQuery = isUnassigned ? unassignedPlansQuery : workflowPlansQuery;
 
   const plans = useMemo(() => {
-    const mapped = activeQuery.items.map(mapPlanResponseToPlan);
-    return isUnassigned
-      ? mapped.filter((plan) => !plan.workflowId)
-      : mapped;
-  }, [activeQuery.items, isUnassigned]);
+    const mapped = plansQuery.items.map(mapPlanResponseToPlan);
+    return isUnassigned ? mapped.filter((plan) => !plan.workflowId) : mapped;
+  }, [plansQuery.items, isUnassigned]);
 
   const columns = useMemo(
     () =>
@@ -138,7 +119,7 @@ export default function PlanGrowthWorkflowPlansPage({
         <DataTable
           columns={columns}
           data={plans}
-          loading={activeQuery.loading}
+          loading={plansQuery.loading}
           searchable
           onSearch={(value) => {
             setSearch(value);
@@ -162,8 +143,8 @@ export default function PlanGrowthWorkflowPlansPage({
             : {
                 currentIndex,
                 onIndexChange: setCurrentIndex,
-                totalElements: workflowPlansQuery.response?.totalElements ?? 0,
-                totalPages: workflowPlansQuery.response?.totalPages ?? 1,
+                totalElements: plansQuery.response?.totalElements ?? 0,
+                totalPages: plansQuery.response?.totalPages ?? 1,
               })}
         />
       </div>
