@@ -1,5 +1,11 @@
 import PageWrapper from "@/components/PageWrapper";
 import {
+  useFarmPlans,
+  useFarmWorkflowById,
+  useFarmWorkflowPlans,
+} from "@/features/farm-workflow/hooks";
+import type { FarmPlanStatus } from "@/features/farm-workflow/types/farm-workflow.type";
+import {
   Button,
   DataTable,
   DeleteDialog,
@@ -10,10 +16,20 @@ import { Link, useParams } from "wouter";
 import { createPlanGrowthColumns } from "./data/table";
 import { planGrowthFilters, UNASSIGNED_WORKFLOW_ID } from "./data/table";
 import { usePlanPage } from "./hooks/usePlanPage";
+import { mapPlanResponseToPlan } from "./utils/api-mappers";
 
 interface PlanGrowthWorkflowPlansPageProps {
   basePath?: string;
 }
+
+// Maps the (lowercase) Plan-domain status used by the filter UI to the
+// FarmPlanStatus enum the /api/farm/plans and /plans list endpoints expect.
+const PLAN_STATUS_TO_API: Record<string, FarmPlanStatus> = {
+  active: "IN_PROGRESS",
+  draft: "DRAFT",
+  completed: "COMPLETED",
+  cancelled: "CANCELLED",
+};
 
 export default function PlanGrowthWorkflowPlansPage({
   basePath = "/plan-growth",
@@ -21,31 +37,61 @@ export default function PlanGrowthWorkflowPlansPage({
   const params = useParams<{ workflowId: string }>();
   const workflowId = params.workflowId || "";
   const isUnassigned = workflowId === UNASSIGNED_WORKFLOW_ID;
+
   const [search, setSearch] = useState("");
+  const [status, setStatus] = useState("");
+  const [currentIndex, setCurrentIndex] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
 
   const {
-    plans,
-    workflows,
     deleteOpen,
     setDeleteOpen,
     handleDelete,
     handleConfirmDelete,
     goToView,
     goToEdit,
-  } = usePlanPage(basePath);
+  } = usePlanPage(basePath, { includePlans: false });
 
-  const workflowPlans = useMemo(
-    () =>
-      plans.filter((plan) =>
-        isUnassigned ? !plan.workflowId : plan.workflowId === workflowId,
-      ),
-    [plans, workflowId, isUnassigned],
-  );
+  const workflowDetailQuery = useFarmWorkflowById(workflowId, {
+    enabled: !isUnassigned && !!workflowId,
+  });
 
-  const workflow = useMemo(
-    () => workflows.find((item) => item.id === workflowId),
-    [workflows, workflowId],
-  );
+  // Real server-side keyword/status/pagination for a specific workflow's
+  // plans, via GET /api/farm/workflows/{workflowId}/plans.
+  const workflowPlansQuery = useFarmWorkflowPlans(workflowId, {
+    enabled: !isUnassigned && !!workflowId,
+    params: {
+      keyword: search.trim() || undefined,
+      status: status ? PLAN_STATUS_TO_API[status] : undefined,
+      page: currentIndex - 1,
+      size: pageSize,
+    },
+  });
+
+  // GET /api/farm/plans has no "plan has no workflow" filter, so the
+  // unassigned view still narrows client-side on top of the server's
+  // keyword/status filtering — pagination for this view is handled
+  // entirely client-side below (see DataTable props) rather than via the
+  // API's page/size, since post-fetch filtering would otherwise desync
+  // the reported page counts from what's actually displayed.
+  const unassignedPlansQuery = useFarmPlans({
+    enabled: isUnassigned,
+    params: {
+      keyword: search.trim() || undefined,
+      status: status ? PLAN_STATUS_TO_API[status] : undefined,
+      page: 0,
+      size: 100,
+    },
+  });
+
+  const activeQuery = isUnassigned ? unassignedPlansQuery : workflowPlansQuery;
+
+  const plans = useMemo(() => {
+    const mapped = activeQuery.items.map(mapPlanResponseToPlan);
+    return isUnassigned
+      ? mapped.filter((plan) => !plan.workflowId)
+      : mapped;
+  }, [activeQuery.items, isUnassigned]);
 
   const columns = useMemo(
     () =>
@@ -57,38 +103,13 @@ export default function PlanGrowthWorkflowPlansPage({
     [goToView, goToEdit, handleDelete],
   );
 
-  const filteredPlans = useMemo(() => {
-    const query = search.trim().toLowerCase();
-    if (!query) return workflowPlans;
-
-    return workflowPlans.filter((plan) => {
-      const searchable = [
-        plan.code,
-        plan.name,
-        plan.description,
-        plan.seasonName,
-        plan.startDate,
-        plan.endDate,
-        plan.cultivationRegion,
-        plan.zone,
-        plan.crop,
-        plan.variety,
-        plan.status,
-      ]
-        .filter(Boolean)
-        .join(" ")
-        .toLowerCase();
-
-      return searchable.includes(query);
-    });
-  }, [workflowPlans, search]);
-
   const title = isUnassigned
     ? "Kế hoạch chưa gắn sơ đồ"
-    : workflow?.name || "Sơ đồ quy trình";
+    : workflowDetailQuery.data?.name || "Sơ đồ quy trình";
   const description = isUnassigned
     ? "Kế hoạch được tạo trước khi lưu sơ đồ quy trình hoặc chưa bấm Lưu quy trình."
-    : workflow?.description || "Danh sách kế hoạch thuộc sơ đồ quy trình này";
+    : workflowDetailQuery.data?.description ||
+      "Danh sách kế hoạch thuộc sơ đồ quy trình này";
 
   return (
     <PageWrapper
@@ -116,11 +137,34 @@ export default function PlanGrowthWorkflowPlansPage({
       <div className="space-y-6">
         <DataTable
           columns={columns}
-          data={filteredPlans}
+          data={plans}
+          loading={activeQuery.loading}
           searchable
-          onSearch={setSearch}
+          onSearch={(value) => {
+            setSearch(value);
+            setCurrentIndex(1);
+          }}
           searchPlaceholder="Tìm kiếm kế hoạch..."
           filters={planGrowthFilters}
+          onFilterChange={(key, value) => {
+            if (key === "status") {
+              setStatus(value === "all" ? "" : value);
+              setCurrentIndex(1);
+            }
+          }}
+          pageSize={pageSize}
+          onPageSize={(size) => {
+            setPageSize(size);
+            setCurrentIndex(1);
+          }}
+          {...(isUnassigned
+            ? {}
+            : {
+                currentIndex,
+                onIndexChange: setCurrentIndex,
+                totalElements: workflowPlansQuery.response?.totalElements ?? 0,
+                totalPages: workflowPlansQuery.response?.totalPages ?? 1,
+              })}
         />
       </div>
 

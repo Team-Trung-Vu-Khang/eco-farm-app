@@ -328,25 +328,6 @@ export const planGrowthFilters = [
       { label: "Đã hủy", value: "cancelled" },
     ],
   },
-  {
-    key: "seasonName",
-    label: "Mùa vụ",
-    options: [
-      { label: "Vụ Xuân 2025", value: "Vụ Xuân 2025" },
-      { label: "Vụ Hè 2025", value: "Vụ Hè 2025" },
-      { label: "Vụ Thu 2025", value: "Vụ Thu 2025" },
-      { label: "Vụ Đông 2025", value: "Vụ Đông 2025" },
-    ],
-  },
-  {
-    key: "crop",
-    label: "Cây trồng",
-    options: [
-      { label: "Sầu riêng", value: "Sầu riêng" },
-      { label: "Xoài", value: "Xoài" },
-      { label: "Bưởi", value: "Bưởi" },
-    ],
-  },
 ];
 
 export function PlanGrowthStatisticsCards({
