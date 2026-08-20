@@ -17,7 +17,10 @@ export type FarmPlanPurpose =
   | "SOIL_IMPROVEMENT"
   | "HARVEST";
 
-export type FarmPlanPersonnelRole = "MANAGER" | "QUALITY_INSPECTOR";
+export type FarmPlanPersonnelRole =
+  | "MANAGER"
+  | "QUALITY_INSPECTOR"
+  | "EXECUTOR";
 export type FarmWorkDurationUnit = "MINUTE" | "HOUR" | "DAY" | "WEEK";
 export type FarmWorkflowScopeType = "REGION" | "AREA" | "PLOT";
 
