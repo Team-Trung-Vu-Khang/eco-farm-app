@@ -144,7 +144,6 @@ function StageMaterialPicker({
   onRemoveMaterial: (id: number) => void;
   supplyCatalog: AnimalSupplyCatalog;
 }) {
-  console.log(allocations);
   const defaultType =
     supplyCatalog.typeOptions[1]?.value ||
     supplyCatalog.typeOptions[0]?.value ||

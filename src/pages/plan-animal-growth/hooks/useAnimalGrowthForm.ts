@@ -12,7 +12,7 @@ import useGrowthCycleStore from "@/stores/useGrowthCycleStore";
 import useRegionStore from "@/stores/useRegionStore";
 import useSeasonStore from "@/stores/useSeasonStore";
 import { useToast } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useParams } from "wouter";
 import { useAmendmentRegimenStore } from "../../../stores/useAmendmentRegimenStore";
 import { useTreatmentStore } from "../../../stores/useTreatmentStore";
@@ -26,7 +26,6 @@ import type {
 } from "../types";
 import {
   buildFarmPlanStagesRequest,
-  getFallbackPlans,
   mapPlanResponseToPlan,
   upsertFallbackPlan,
 } from "../utils/api-mappers";
@@ -37,7 +36,7 @@ import {
   summarizeSelections,
   summarizeTaskSelections,
 } from "../utils/location";
-import { mapPurpose, useAnimalGrowthPage } from "./useAnimalGrowthPage";
+import { mapPurpose } from "./useAnimalGrowthPage";
 import { useAnimalGrowthWorkflowDraftStore } from "./useAnimalGrowthWorkflowDraftStore";
 
 function mapFarmPersonnelToOption(
@@ -251,8 +250,9 @@ export function useAnimalGrowthForm(
   const workflowInfo = isWorkflowContext
     ? (infoNodes.find((node) => node.isActive) ?? infoNodes[0])
     : undefined;
+  const hydratedPlanIdRef = useRef<number | null>(null);
+  const hydratedWorkflowInfoIdRef = useRef<string | null>(null);
 
-  const { plans } = useAnimalGrowthPage(basePath, { includePlans: false });
   const planId = params.id || "";
   const planDetailQuery = useFarmPlanById(planId, {
     enabled: mode === "edit" && !!planId,
@@ -324,16 +324,11 @@ export function useAnimalGrowthForm(
     [],
   );
 
-  const fallbackPlans = getFallbackPlans();
   const detailPlan =
     mode === "edit" && planDetailQuery.data
       ? mapPlanResponseToPlan(planDetailQuery.data)
       : undefined;
-  const plan =
-    mode === "edit"
-      ? detailPlan ||
-        fallbackPlans.find((item) => item.id === Number(params.id))
-      : undefined;
+  const plan = mode === "edit" ? detailPlan : undefined;
   const initialSelectionState = useMemo(
     () =>
       mode === "edit" && plan
@@ -387,6 +382,8 @@ export function useAnimalGrowthForm(
 
   useEffect(() => {
     if (mode !== "edit" || !plan || regions.length === 0) return;
+    if (hydratedPlanIdRef.current === plan.id) return;
+    hydratedPlanIdRef.current = plan.id;
 
     setFormData({
       code: plan.code || "",
@@ -429,6 +426,8 @@ export function useAnimalGrowthForm(
   useEffect(() => {
     if (planHasOwnScope) return;
     if (!isWorkflowContext || !workflowInfo || regions.length === 0) return;
+    if (hydratedWorkflowInfoIdRef.current === workflowInfo.id) return;
+    hydratedWorkflowInfoIdRef.current = workflowInfo.id;
 
     const nextSelectionState = deriveSelectionState(
       workflowInfo.selections,
