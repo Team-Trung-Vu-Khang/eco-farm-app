@@ -50,7 +50,7 @@ function resolveLocationLabel(plan: Plan) {
     plan.cultivationRegion ||
     plan.zone ||
     plan.plot ||
-    (regionCount > 0 ? `${regionCount} ao nuôi` : "") ||
+    (regionCount > 0 ? `${regionCount} khu nuôi trồng thủy sản` : "") ||
     "Chưa xác định"
   );
 }
@@ -110,7 +110,7 @@ export function createPlanAquacultureGrowthColumns({
     },
     {
       key: "zone",
-      label: "Ao nuôi",
+      label: "Khu nuôi trồng thủy sản",
       render: (_, item) => (
         <div className="flex items-center gap-2">
           <Layers className="h-3.5 w-3.5 text-emerald-500" />
@@ -149,15 +149,13 @@ export function createPlanAquacultureGrowthColumns({
               <PencilLine className="mr-2 h-4 w-4" />
               Chỉnh sửa
             </DropdownMenuItem>
-            {item.status === "draft" && (
-              <DropdownMenuItem
-                className="text-destructive focus:text-destructive"
-                onClick={() => onDelete(item)}
-              >
-                <Trash2 className="mr-2 h-4 w-4" />
-                Xóa
-              </DropdownMenuItem>
-            )}
+            <DropdownMenuItem
+              className="text-destructive focus:text-destructive"
+              onClick={() => onDelete(item)}
+            >
+              <Trash2 className="mr-2 h-4 w-4" />
+              Xóa
+            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       ),
@@ -182,10 +180,12 @@ export function createWorkflowColumns({
   onView,
   onOpenWorkflow,
   onClone,
+  onDelete,
 }: {
   onView: (row: WorkflowRow) => void;
   onOpenWorkflow: (row: WorkflowRow) => void;
   onClone: (row: WorkflowRow) => void;
+  onDelete: (row: WorkflowRow) => void;
 }): Column<WorkflowRow>[] {
   return [
     {
@@ -299,6 +299,14 @@ export function createWorkflowColumns({
               <Copy className="mr-2 h-4 w-4" />
               Nhân bản
             </DropdownMenuItem>
+            <DropdownMenuItem
+              disabled={item.id === UNASSIGNED_WORKFLOW_ID}
+              className="text-destructive focus:text-destructive"
+              onClick={() => onDelete(item)}
+            >
+              <Trash2 className="mr-2 h-4 w-4" />
+              Xóa
+            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       ),
@@ -319,7 +327,7 @@ export const aquacultureGrowthFilters = [
   },
   {
     key: "seasonName",
-    label: "Vụ nuôi",
+    label: "Lứa nuôi",
     options: [
       { label: "Vụ Xuân 2025", value: "Vụ Xuân 2025" },
       { label: "Vụ Hè 2025", value: "Vụ Hè 2025" },
@@ -329,11 +337,11 @@ export const aquacultureGrowthFilters = [
   },
   {
     key: "crop",
-    label: "Đối tượng nuôi",
+    label: "Vật nuôi",
     options: [
       { label: "Tôm thẻ", value: "Tôm thẻ" },
       { label: "Cá tra", value: "Cá tra" },
-      { label: "Cá rô phi", value: "Cá rô phi" },
+      { label: "Bò thịt", value: "Bò thịt" },
     ],
   },
 ];

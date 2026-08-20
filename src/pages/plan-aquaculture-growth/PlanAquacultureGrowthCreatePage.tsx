@@ -53,6 +53,7 @@ import { StageAllocation } from "./components/StageAllocation";
 import { StageItem } from "./components/StageItem";
 import { TASK_OPTIONS } from "./data/mocks";
 import { useAquacultureGrowthForm } from "./hooks/useAquacultureGrowthForm";
+import { useAquacultureSupplyCatalog } from "./hooks/useAquacultureSupplyCatalog";
 
 interface PlanAquacultureGrowthCreatePageProps {
   basePath?: string;
@@ -88,6 +89,7 @@ export default function PlanAquacultureGrowthCreatePage({
     pageDescription,
     completeLabel,
   } = useAquacultureGrowthForm("create", basePath);
+  const supplyCatalog = useAquacultureSupplyCatalog();
 
   const [newManualStage, setNewManualStage] = useState("");
   const [isSimpleMode, setIsSimpleMode] = useState(true);
@@ -134,7 +136,7 @@ export default function PlanAquacultureGrowthCreatePage({
     },
     {
       id: "amendment",
-      label: "Cải tạo ao trại",
+      label: "Cải tạo ao nuôi",
       icon: Sprout,
       borderColor: "border-green-500",
       bgColor: "bg-green-50/50",
@@ -144,7 +146,7 @@ export default function PlanAquacultureGrowthCreatePage({
     },
     {
       id: "harvest",
-      label: "Thu hoạch",
+      label: "Xuất bán",
       icon: Apple,
       borderColor: "border-orange-500",
       bgColor: "bg-orange-50/50",
@@ -156,7 +158,7 @@ export default function PlanAquacultureGrowthCreatePage({
 
   const harvestSuggestions = TASK_OPTIONS.map((item) => item.label).filter(
     (label) =>
-      /thu hoạch|phân loại|đóng gói|vận chuyển|bốc xếp|kiểm tra/i.test(label),
+      /xuất bán|phân loại|đóng gói|vận chuyển|bốc xếp|kiểm tra/i.test(label),
   );
 
   const purposeSelector = (
@@ -214,7 +216,7 @@ export default function PlanAquacultureGrowthCreatePage({
     {
       id: "general",
       title: "Thông tin chung",
-      description: "Vụ nuôi và thời gian",
+      description: "Lứa nuôi và thời gian",
       content: (
         <div className="max-w-2xl mx-auto space-y-6">
           <div className="flex items-center gap-4 p-4 bg-blue-50 text-blue-900 rounded-lg border border-blue-100">
@@ -224,21 +226,21 @@ export default function PlanAquacultureGrowthCreatePage({
             <div>
               <h3 className="font-semibold">Thiết lập kế hoạch</h3>
               <p className="text-sm text-blue-700">
-                Chọn vụ nuôi, nhập thời gian dự kiến và đặt tên cho kế hoạch của
-                bạn.
+                Chọn lứa nuôi, nhập thời gian dự kiến và đặt tên cho kế hoạch
+                của bạn.
               </p>
             </div>
           </div>
 
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label required>Vụ nuôi</Label>
+              <Label required>Lứa nuôi</Label>
               <Select
                 value={formData.seasonId}
                 onValueChange={handleSeasonChange}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Chọn vụ nuôi..." />
+                  <SelectValue placeholder="Chọn lứa nuôi..." />
                 </SelectTrigger>
                 <SelectContent>
                   {seasons.map((s) => (
@@ -357,7 +359,7 @@ export default function PlanAquacultureGrowthCreatePage({
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
                       <label className="text-xs text-muted-foreground font-black uppercase tracking-widest">
-                        Vùng canh tác <span className="text-red-500">*</span>
+                        Vùng nuôi trồng thủy sản <span className="text-red-500">*</span>
                       </label>
                       <span className="text-[10px] text-emerald-700 bg-emerald-100 px-2 py-1 rounded-full font-semibold">
                         Chọn 1 khu vực/lô từ sơ đồ ban đầu
@@ -525,7 +527,7 @@ export default function PlanAquacultureGrowthCreatePage({
                   <div className="grid grid-cols-2 gap-4 relative z-10">
                     <div className="bg-white/10 p-3 rounded-2xl border border-white/10 backdrop-blur-sm">
                       <p className="text-emerald-200 text-[10px] font-bold uppercase tracking-wider mb-1">
-                        Đối tượng nuôi
+                        Vật nuôi
                       </p>
                       <p className="font-bold text-sm truncate">
                         {formData.crop || "---"}
@@ -631,7 +633,7 @@ export default function PlanAquacultureGrowthCreatePage({
                                           ? "Toàn vùng"
                                           : item.type === "area"
                                             ? "Khu vực"
-                                            : "Ô ao"}
+                                            : "Ao nuôi"}
                                       </span>
                                       <span className="text-xs font-medium truncate max-w-[150px]">
                                         {item.name}
@@ -660,8 +662,8 @@ export default function PlanAquacultureGrowthCreatePage({
                       </span>
                     </div>
                     <p className="text-xs text-emerald-50/80 leading-relaxed italic text-justify">
-                      Quy trình nuôi trồng thủy sản sẽ được áp dụng đồng bộ cho
-                      tất cả các ô ao đã chọn trong danh sách trên.
+                      Quy trình nuôi trồng thủy sản sẽ được áp dụng đồng bộ cho tất cả các
+                      ao nuôi đã chọn trong danh sách trên.
                     </p>
                   </div>
                 </div>
@@ -716,7 +718,7 @@ export default function PlanAquacultureGrowthCreatePage({
                       <Label className="text-base uppercase tracking-wider text-slate-500 font-bold text-[10px]">
                         {purpose === "treatment"
                           ? "Phác đồ điều trị"
-                          : "Phác đồ cải tạo ao trại"}
+                          : "Phác đồ cải tạo ao nuôi"}
                       </Label>
                       {formData.regimenId && (
                         <Button
@@ -770,7 +772,7 @@ export default function PlanAquacultureGrowthCreatePage({
 
                     <div className="flex gap-2">
                       <Input
-                        placeholder="Nhập tên giai đoạn (VD: Bón vôi, Làm ao trại...)"
+                        placeholder="Nhập tên giai đoạn (VD: Bón vôi, Làm ao nuôi...)"
                         value={newManualStage}
                         onChange={(e) => setNewManualStage(e.target.value)}
                         onKeyDown={(e) => {
@@ -878,7 +880,7 @@ export default function PlanAquacultureGrowthCreatePage({
                     return (
                       <div className="p-10 text-center border-2 border-dashed border-slate-200 rounded-3xl bg-slate-50">
                         <p className="text-slate-400 font-medium">
-                          Vui lòng chọn vụ nuôi ở bước 1
+                          Vui lòng chọn lứa nuôi ở bước 1
                         </p>
                       </div>
                     );
@@ -888,10 +890,11 @@ export default function PlanAquacultureGrowthCreatePage({
                     return (
                       <div className="p-10 text-center border-2 border-dashed border-slate-200 rounded-3xl bg-slate-50">
                         <p className="text-slate-400 font-medium italic">
-                          Ao nuôi/Vụ nuôi này chưa được gán quy trình mẫu.
+                          Khu nuôi trồng thủy sản/Lứa nuôi này chưa được gán quy trình
+                          mẫu.
                         </p>
                         <p className="text-[10px] text-slate-400 mt-2">
-                          Vui lòng kiểm tra lại cấu hình vụ nuôi.
+                          Vui lòng kiểm tra lại cấu hình lứa nuôi.
                         </p>
                       </div>
                     );
@@ -1104,7 +1107,7 @@ export default function PlanAquacultureGrowthCreatePage({
                           <p className="leading-relaxed">
                             {purpose === "facility-upgrade"
                               ? "Các giai đoạn được dùng để liệt kê các hạng mục nâng cấp dự kiến. Bạn có thể tìm nhanh mục có sẵn hoặc tự nhập hạng mục riêng."
-                              : "Các giai đoạn được hiển thị dựa trên quy trình mẫu đã gán cho Vụ nuôi. Bạn có thể tìm nhanh giai đoạn có sẵn hoặc tự nhập hạng mục riêng."}
+                              : "Các giai đoạn được hiển thị dựa trên quy trình mẫu đã gán cho Lứa nuôi. Bạn có thể tìm nhanh giai đoạn có sẵn hoặc tự nhập hạng mục riêng."}
                           </p>
                         </div>
                       </div>
@@ -1310,7 +1313,7 @@ export default function PlanAquacultureGrowthCreatePage({
           <div className="text-center mb-6">
             <h3 className="text-xl font-bold text-slate-900">
               {isHarvest
-                ? "Cách thức & Nguồn lực Thu hoạch"
+                ? "Cách thức & Nguồn lực Xuất bán"
                 : isCultivationLike
                   ? "Định mức Vật tư & Giai đoạn"
                   : purpose === "amendment"
@@ -1319,11 +1322,11 @@ export default function PlanAquacultureGrowthCreatePage({
             </h3>
             <p className="text-slate-500 text-sm mt-1 max-w-lg mx-auto">
               {isHarvest
-                ? "Thiết lập các yêu cầu về vật tư, nhân sự và mô tả cách thức triển khai thu hoạch."
+                ? "Thiết lập các yêu cầu về vật tư, nhân sự và mô tả cách thức triển khai xuất bán."
                 : isCultivationLike
-                  ? "Thiết lập chi tiết các hạng mục đầu tư và quy trình kỹ thuật cho từng giai đoạn của vụ nuôi."
+                  ? "Thiết lập chi tiết các hạng mục đầu tư và quy trình kỹ thuật cho từng giai đoạn của lứa nuôi."
                   : purpose === "amendment"
-                    ? "Phân bổ vật tư và công việc cụ thể để thực hiện quy trình cải tạo ao trại đã chọn."
+                    ? "Phân bổ vật tư và công việc cụ thể để thực hiện quy trình cải tạo ao nuôi đã chọn."
                     : "Phân bổ vật tư và công việc cụ thể để thực hiện phác đồ điều trị đã chọn."}
             </p>
           </div>
@@ -1352,6 +1355,7 @@ export default function PlanAquacultureGrowthCreatePage({
                   tasks={formData.taskAllocations.filter(
                     (t) => t.stageId === stageKey,
                   )}
+                  supplyCatalog={supplyCatalog}
                   regions={regions}
                   masterSelections={selections}
                   enterpriseId={selectedEnterpriseId}
@@ -1447,7 +1451,7 @@ export default function PlanAquacultureGrowthCreatePage({
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="text-xs text-muted-foreground font-semibold uppercase tracking-wider">
-                      Vụ nuôi
+                      Lứa nuôi
                     </label>
                     <p className="font-medium mt-1 text-slate-800">
                       {formData.seasonName}
@@ -1455,7 +1459,7 @@ export default function PlanAquacultureGrowthCreatePage({
                   </div>
                   <div>
                     <label className="text-xs text-muted-foreground font-semibold uppercase tracking-wider">
-                      Đối tượng nuôi
+                      Vật nuôi
                     </label>
                     <p className="font-medium mt-1 text-slate-800">
                       {formData.crop} - {formData.variety}
@@ -1474,7 +1478,7 @@ export default function PlanAquacultureGrowthCreatePage({
                     <div>
                       <label className="text-xs text-muted-foreground font-semibold uppercase tracking-wider">
                         {formData.purpose === "amendment"
-                          ? "Phác đồ cải tạo ao trại"
+                          ? "Phác đồ cải tạo ao nuôi"
                           : formData.purpose === "harvest"
                             ? "Loại hình"
                             : "Phác đồ điều trị"}
@@ -1490,7 +1494,7 @@ export default function PlanAquacultureGrowthCreatePage({
                         )}
                       >
                         {formData.purpose === "harvest"
-                          ? "Kế hoạch thu hoạch"
+                          ? "Kế hoạch xuất bán"
                           : regimens.find((r) => r.id === formData.regimenId)
                               ?.name || "---"}
                       </p>
@@ -1603,7 +1607,7 @@ export default function PlanAquacultureGrowthCreatePage({
                   </div>
                   <div>
                     <p className="text-[10px] text-emerald-700 font-black uppercase tracking-wider mb-1">
-                      Đối tượng nuôi & Giống
+                      Vật nuôi & Giống
                     </p>
                     <p className="text-xl font-black text-emerald-800">
                       {formData.crop} - {formData.variety}
@@ -1704,9 +1708,9 @@ export default function PlanAquacultureGrowthCreatePage({
                               )}
                             >
                               {formData.purpose === "amendment"
-                                ? "Hoạt động cải tạo ao trại"
+                                ? "Hoạt động cải tạo ao nuôi"
                                 : formData.purpose === "harvest"
-                                  ? "Hoạt động thu hoạch"
+                                  ? "Hoạt động xuất bán"
                                   : "Hoạt động điều trị bệnh"}
                             </p>
                           )}
@@ -2014,6 +2018,7 @@ export default function PlanAquacultureGrowthCreatePage({
             selectionSummary={selectionSummary}
             handleGeographicalConfirm={handleGeographicalConfirm}
             personnel={personnel}
+            supplyCatalog={supplyCatalog}
           />
         ) : (
           <StepperForm

@@ -50,6 +50,7 @@ import { RegimenSelector } from "./components/RegimenSelector";
 import SimplePlanForm from "./components/SimplePlanForm";
 import { StageAllocation } from "./components/StageAllocation";
 import { useAquacultureGrowthForm } from "./hooks/useAquacultureGrowthForm";
+import { useAquacultureSupplyCatalog } from "./hooks/useAquacultureSupplyCatalog";
 
 interface PlanAquacultureGrowthEditPageProps {
   basePath?: string;
@@ -92,6 +93,7 @@ export default function PlanAquacultureGrowthEditPage({
     pageDescription,
     completeLabel,
   } = useAquacultureGrowthForm("edit", basePath, { onSaved, onCancel });
+  const supplyCatalog = useAquacultureSupplyCatalog();
 
   const [newManualStage, setNewManualStage] = useState("");
   const [isSimpleMode, setIsSimpleMode] = useState(true);
@@ -136,7 +138,7 @@ export default function PlanAquacultureGrowthEditPage({
     },
     {
       id: "amendment",
-      label: "Cải tạo ao trại",
+      label: "Cải tạo ao nuôi",
       icon: Sprout,
       borderColor: "border-green-500",
       bgColor: "bg-green-50/50",
@@ -146,7 +148,7 @@ export default function PlanAquacultureGrowthEditPage({
     },
     {
       id: "harvest",
-      label: "Thu hoạch",
+      label: "Xuất bán",
       icon: Apple,
       borderColor: "border-orange-500",
       bgColor: "bg-orange-50/50",
@@ -210,7 +212,7 @@ export default function PlanAquacultureGrowthEditPage({
     {
       id: "general",
       title: "Thông tin chung",
-      description: isWorkflowContext ? "Thời gian" : "Vụ nuôi và thời gian",
+      description: isWorkflowContext ? "Thời gian" : "Lứa nuôi và thời gian",
       content: (
         <div className="max-w-2xl mx-auto space-y-6">
           <div className="flex items-center gap-4 p-4 bg-blue-50 text-blue-900 rounded-lg border border-blue-100">
@@ -220,8 +222,8 @@ export default function PlanAquacultureGrowthEditPage({
             <div>
               <h3 className="font-semibold">Chỉnh sửa kế hoạch</h3>
               <p className="text-sm text-blue-700">
-                Chọn vụ nuôi, nhập thời gian dự kiến và đặt tên cho kế hoạch của
-                bạn.
+                Chọn lứa nuôi, nhập thời gian dự kiến và đặt tên cho kế hoạch
+                của bạn.
               </p>
             </div>
           </div>
@@ -229,13 +231,13 @@ export default function PlanAquacultureGrowthEditPage({
           <div className="space-y-4">
             {!isWorkflowContext && (
               <div className="space-y-2">
-                <Label required>Vụ nuôi</Label>
+                <Label required>Lứa nuôi</Label>
                 <Select
                   value={formData.seasonId}
                   onValueChange={handleSeasonChange}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Chọn vụ nuôi..." />
+                    <SelectValue placeholder="Chọn lứa nuôi..." />
                   </SelectTrigger>
                   <SelectContent>
                     {seasons.map((s) => (
@@ -355,7 +357,7 @@ export default function PlanAquacultureGrowthEditPage({
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
                       <label className="text-xs text-muted-foreground font-black uppercase tracking-widest">
-                        Vùng canh tác{" "}
+                        Vùng nuôi trồng thủy sản{" "}
                         {!isWorkflowContext && (
                           <span className="text-red-500">*</span>
                         )}
@@ -426,7 +428,7 @@ export default function PlanAquacultureGrowthEditPage({
 
                     {isWorkflowContext && selectionSummary.length === 0 && (
                       <p className="text-xs text-emerald-800/60 italic text-center py-2">
-                        Quy trình chưa có vùng canh tác được thiết lập
+                        Quy trình chưa có vùng nuôi trồng thủy sản được thiết lập
                       </p>
                     )}
                   </div>
@@ -477,10 +479,10 @@ export default function PlanAquacultureGrowthEditPage({
                   Ghi chú phạm vi
                 </Label>
                 <Textarea
-                  placeholder="Nhập ghi chú thêm..."
-                  value={formData.description}
+                  placeholder="Nhập ghi chú phạm vi..."
+                  value={formData.scopeNote}
                   onChange={(e) =>
-                    setFormData({ ...formData, description: e.target.value })
+                    setFormData({ ...formData, scopeNote: e.target.value })
                   }
                   className="bg-white"
                 />
@@ -498,27 +500,34 @@ export default function PlanAquacultureGrowthEditPage({
                     <div className="w-14 h-14 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center">
                       <MapPin className="w-7 h-7 text-white" />
                     </div>
-                    <div className="flex-1">
+                    <div className="flex-1 space-y-2">
                       <p className="text-emerald-100 text-[10px] font-bold uppercase tracking-widest mb-1">
                         Khu vực nuôi trồng thủy sản
                       </p>
                       <h4 className="text-xl font-black leading-tight">
-                        {regions
-                          .filter((r) =>
-                            formData.selectedRegionIds.includes(
-                              r.id.toString(),
-                            ),
-                          )
-                          .map((r) => r.name)
+                        {selectionSummary
+                          .map((group) => group.regionName)
                           .join(", ") || "Chưa chọn vùng"}
                       </h4>
-                      <div className="flex items-center gap-3 mt-2">
-                        <Badge className="bg-white/20 text-white font-bold h-5">
-                          {formData.selectedPlotIds.length} LÔ ĐẤT
-                        </Badge>
-                        <Badge className="bg-white/20 text-white font-bold h-5">
-                          {calculateArea()} HA
-                        </Badge>
+                      <div className="flex flex-wrap gap-1.5 pt-1">
+                        {selectionSummary.flatMap((group) =>
+                          group.items.map((item, idx) => (
+                            <Badge
+                              key={`${group.regionId}-${item.type}-${item.id}-${idx}`}
+                              variant="secondary"
+                              className={cn(
+                                "bg-white/20 text-white border-transparent text-[10px] h-5",
+                                item.type === "region"
+                                  ? "bg-emerald-100/25"
+                                  : item.type === "area"
+                                    ? "bg-blue-100/20"
+                                    : "bg-white/15",
+                              )}
+                            >
+                              {item.name}
+                            </Badge>
+                          )),
+                        )}
                       </div>
                     </div>
                   </div>
@@ -577,45 +586,10 @@ export default function PlanAquacultureGrowthEditPage({
                     </div>
                   </div>
 
-                  {selectionSummary.length > 0 && (
-                    <div className="space-y-3">
-                      <p className="text-emerald-200 text-[10px] font-bold uppercase tracking-wider">
-                        Chi tiết phạm vi
-                      </p>
-                      <ScrollArea className="h-40 pr-2">
-                        <div className="space-y-3">
-                          {selectionSummary.map((group) => (
-                            <div key={group.regionId} className="space-y-1.5">
-                              <div className="text-[10px] font-bold text-emerald-100 uppercase opacity-60">
-                                {group.regionName}
-                              </div>
-                              {group.items.map((item, idx) => (
-                                <div
-                                  key={idx}
-                                  className="flex items-center justify-between p-2 rounded-xl bg-white/10 border border-white/5"
-                                >
-                                  <div className="flex items-center gap-2">
-                                    <div
-                                      className={cn(
-                                        "w-1.5 h-1.5 rounded-full",
-                                        item.type === "region"
-                                          ? "bg-amber-400"
-                                          : item.type === "area"
-                                            ? "bg-blue-400"
-                                            : "bg-emerald-400",
-                                      )}
-                                    />
-                                    <span className="text-xs font-medium">
-                                      {item.name}
-                                    </span>
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                          ))}
-                        </div>
-                      </ScrollArea>
-                    </div>
+                  {formData.scopeNote.trim() && (
+                    <p className="text-sm text-emerald-50/80 leading-relaxed italic">
+                      {formData.scopeNote}
+                    </p>
                   )}
                 </div>
               </div>
@@ -623,7 +597,7 @@ export default function PlanAquacultureGrowthEditPage({
           </div>
         </div>
       ),
-      isValid: formData.selectedPlotIds.length > 0 && !!formData.crop,
+      isValid: selectionSummary.length > 0,
     },
     {
       id: "process",
@@ -669,7 +643,7 @@ export default function PlanAquacultureGrowthEditPage({
                       <Label className="text-base uppercase tracking-wider text-slate-500 font-bold text-[10px]">
                         {purpose === "treatment"
                           ? "Phác đồ điều trị"
-                          : "Phác đồ cải tạo ao trại"}
+                          : "Phác đồ cải tạo ao nuôi"}
                       </Label>
                       {formData.regimenId && (
                         <Button
@@ -790,7 +764,7 @@ export default function PlanAquacultureGrowthEditPage({
 
                     <div className="flex gap-2">
                       <Input
-                        placeholder="Nhập tên hạng mục (VD: Bón vôi, Làm ao trại...)"
+                        placeholder="Nhập tên hạng mục (VD: Bón vôi, Làm ao nuôi...)"
                         value={newManualStage}
                         onChange={(e) => setNewManualStage(e.target.value)}
                         onKeyDown={(e) => {
@@ -1084,7 +1058,7 @@ export default function PlanAquacultureGrowthEditPage({
           <div className="text-center mb-6">
             <h3 className="text-xl font-bold text-slate-900">
               {formData.purpose === "harvest"
-                ? "Cách thức & Nguồn lực Thu hoạch"
+                ? "Cách thức & Nguồn lực Xuất bán"
                 : formData.purpose === "cultivation"
                   ? "Định mức Vật tư & Giai đoạn"
                   : formData.purpose === "amendment"
@@ -1093,11 +1067,11 @@ export default function PlanAquacultureGrowthEditPage({
             </h3>
             <p className="text-slate-500 text-sm mt-1 max-w-lg mx-auto">
               {formData.purpose === "harvest"
-                ? "Thiết lập các yêu cầu về vật tư, nhân sự và mô tả cách thức triển khai thu hoạch."
+                ? "Thiết lập các yêu cầu về vật tư, nhân sự và mô tả cách thức triển khai xuất bán."
                 : formData.purpose === "cultivation"
-                  ? "Thiết lập chi tiết các hạng mục đầu tư và quy trình kỹ thuật cho từng giai đoạn của vụ nuôi."
+                  ? "Thiết lập chi tiết các hạng mục đầu tư và quy trình kỹ thuật cho từng giai đoạn của lứa nuôi."
                   : formData.purpose === "amendment"
-                    ? "Phân bổ vật tư và công việc cụ thể để thực hiện quy trình cải tạo ao trại đã chọn."
+                    ? "Phân bổ vật tư và công việc cụ thể để thực hiện quy trình cải tạo ao nuôi đã chọn."
                     : "Phân bổ vật tư và công việc cụ thể để thực hiện phác đồ điều trị đã chọn."}
             </p>
           </div>
@@ -1108,23 +1082,24 @@ export default function PlanAquacultureGrowthEditPage({
                 <StageAllocation
                   isDetail={false}
                   index={0}
-                  stageName="Thu hoạch"
-                  cycleName="Kế hoạch thu hoạch"
+                  stageName="Xuất bán"
+                  cycleName="Kế hoạch xuất bán"
                   allocations={formData.materialAllocations.filter(
-                    (m) => m.stageId === "Thu hoạch",
+                    (m) => m.stageId === "Xuất bán",
                   )}
                   tasks={formData.taskAllocations.filter(
-                    (t) => t.stageId === "Thu hoạch",
+                    (t) => t.stageId === "Xuất bán",
                   )}
+                  supplyCatalog={supplyCatalog}
                   regions={regions}
                   masterSelections={selections}
                   enterpriseId={selectedEnterpriseId}
                   onAddMaterial={(item) =>
-                    handleAddMaterial({ ...item, stageId: "Thu hoạch" })
+                    handleAddMaterial({ ...item, stageId: "Xuất bán" })
                   }
                   onRemoveMaterial={handleRemoveMaterial}
                   onAddTask={(item) =>
-                    handleAddTask({ ...item, stageId: "Thu hoạch" })
+                    handleAddTask({ ...item, stageId: "Xuất bán" })
                   }
                   onRemoveTask={handleRemoveTask}
                 />
@@ -1153,6 +1128,7 @@ export default function PlanAquacultureGrowthEditPage({
                     tasks={formData.taskAllocations.filter(
                       (t) => t.stageId === stageKey,
                     )}
+                    supplyCatalog={supplyCatalog}
                     regions={regions}
                     masterSelections={selections}
                     enterpriseId={selectedEnterpriseId}
@@ -1249,21 +1225,13 @@ export default function PlanAquacultureGrowthEditPage({
                   {!isWorkflowContext && (
                     <div>
                       <label className="text-xs text-muted-foreground font-semibold uppercase tracking-wider">
-                        Vụ nuôi
+                        Mùa vụ
                       </label>
                       <p className="font-medium mt-1 text-slate-800">
                         {formData.seasonName}
                       </p>
                     </div>
                   )}
-                  <div>
-                    <label className="text-xs text-muted-foreground font-semibold uppercase tracking-wider">
-                      Đối tượng nuôi
-                    </label>
-                    <p className="font-medium mt-1 text-slate-800">
-                      {formData.crop} - {formData.variety}
-                    </p>
-                  </div>
                   {formData.purpose === "cultivation" ? (
                     <div>
                       <label className="text-xs text-muted-foreground font-semibold uppercase tracking-wider">
@@ -1277,7 +1245,7 @@ export default function PlanAquacultureGrowthEditPage({
                     <div>
                       <label className="text-xs text-muted-foreground font-semibold uppercase tracking-wider">
                         {formData.purpose === "amendment"
-                          ? "Phác đồ cải tạo ao trại"
+                          ? "Phác đồ cải tạo đất"
                           : formData.purpose === "harvest"
                             ? "Loại hình"
                             : "Phác đồ điều trị"}
@@ -1338,13 +1306,13 @@ export default function PlanAquacultureGrowthEditPage({
               <CardHeader className="pb-3 border-b bg-slate-50/80">
                 <CardTitle className="text-base flex items-center gap-2 text-green-700">
                   <MapPin className="w-5 h-5" />
-                  Thông tin nuôi trồng thủy sản
+                  Thông tin canh tác
                 </CardTitle>
               </CardHeader>
               <CardContent className="pt-4 space-y-5 px-6">
                 <div className="space-y-4">
                   <label className="text-xs text-muted-foreground font-black uppercase tracking-widest">
-                    Chi tiết phạm vi nuôi trồng thủy sản
+                    Chi tiết phạm vi canh tác
                   </label>
                   <div className="space-y-3">
                     {selectionSummary.length === 0 && (
@@ -1406,7 +1374,7 @@ export default function PlanAquacultureGrowthEditPage({
                   </div>
                   <div>
                     <p className="text-[10px] text-emerald-700 font-black uppercase tracking-wider mb-1">
-                      Đối tượng nuôi & Giống
+                      Vật nuôi & Giống
                     </p>
                     <p className="text-xl font-black text-emerald-800">
                       {formData.crop} - {formData.variety}
@@ -1507,9 +1475,9 @@ export default function PlanAquacultureGrowthEditPage({
                               )}
                             >
                               {formData.purpose === "amendment"
-                                ? "Hoạt động cải tạo ao trại"
+                                ? "Hoạt động cải tạo ao nuôi"
                                 : formData.purpose === "harvest"
-                                  ? "Hoạt động thu hoạch"
+                                  ? "Hoạt động xuất bán"
                                   : "Hoạt động điều trị bệnh"}
                             </p>
                           )}
@@ -1821,6 +1789,7 @@ export default function PlanAquacultureGrowthEditPage({
             isWorkflowContext={isWorkflowContext}
             workflowInfo={workflowInfo}
             personnel={personnel}
+            supplyCatalog={supplyCatalog}
           />
         ) : (
           <StepperForm

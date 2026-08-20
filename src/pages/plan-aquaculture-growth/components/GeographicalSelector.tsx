@@ -151,7 +151,7 @@ const GeographicalSelector = ({
         variant="outline"
       >
         <Plus className="w-5 h-5" />
-        Chọn vùng canh tác
+        Chọn vùng nuôi trồng thủy sản
       </Button>
       <Dialog
         open={isOpen}
@@ -167,7 +167,7 @@ const GeographicalSelector = ({
               Chọn phạm vi nuôi trồng thủy sản
             </DialogTitle>
             <p className="text-xs text-muted-foreground mt-1">
-              Chọn 1 Ao nuôi, Khu vực hoặc Ô ao cụ thể
+              Chọn 1 Khu nuôi trồng thủy sản, Khu vực hoặc Ao nuôi cụ thể
             </p>
           </DialogHeader>
 
@@ -217,7 +217,7 @@ const GeographicalSelector = ({
                             {r.name}
                           </div>
                           <div className="text-[10px] text-muted-foreground uppercase tracking-wider">
-                            Ao nuôi
+                            Khu nuôi trồng thủy sản
                           </div>
                         </div>
                       </div>

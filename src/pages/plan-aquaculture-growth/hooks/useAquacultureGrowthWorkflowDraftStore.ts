@@ -35,6 +35,11 @@ export type DiagramInfoRecord = {
   name: string;
   description: string;
   selections: GeographicalSelection[];
+  // Human-readable region/area/plot labels straight from the source (e.g.
+  // API scope names) — set when the region tree used for on-screen lookup
+  // (mock `useRegionStore`) can't resolve the selections' ids, such as for
+  // API-backed workflows.
+  regionLabels?: string[];
   plannedDurationYears: string;
   plannedDurationMonths: string;
   plannedDurationDays: string;
@@ -141,7 +146,7 @@ const CHILD_GAP = 480;
 
 // Places a newly added node next to its existing siblings (or the last root)
 // without moving any already-positioned node, so the tree only grows outward.
-function placeNewNode(nodes: DraftNode[], parentId: string | undefined) {
+export function placeNewNode(nodes: DraftNode[], parentId: string | undefined) {
   if (!parentId) {
     const roots = nodes.filter((node) => !getParentId(node));
     if (!roots.length) return { x: 0, y: 0 };

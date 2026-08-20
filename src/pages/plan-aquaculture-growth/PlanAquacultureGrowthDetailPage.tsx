@@ -208,7 +208,7 @@ export default function PlanAquacultureGrowthDetailPage({
                   <div>
                     <label className="text-xs text-muted-foreground font-semibold uppercase tracking-wider">
                       {plan.purpose === "amendment"
-                        ? "Phác đồ cải tạo ao trại"
+                        ? "Phác đồ cải tạo ao nuôi"
                         : plan.purpose === "harvest"
                           ? "Mục đích"
                           : "Phác đồ điều trị"}
@@ -224,7 +224,7 @@ export default function PlanAquacultureGrowthDetailPage({
                       )}
                     >
                       {plan.purpose === "harvest"
-                        ? "Kế hoạch thu hoạch"
+                        ? "Kế hoạch xuất bán"
                         : regimens.find((r) => r.id === plan.regimenId)?.name ||
                           "Chưa chọn phác đồ"}
                     </p>
@@ -382,7 +382,7 @@ export default function PlanAquacultureGrowthDetailPage({
                   : plan.purpose === "amendment"
                     ? "Lộ trình cải tạo & Quy trình"
                     : plan.purpose === "harvest"
-                      ? "Lịch trình thu hoạch"
+                      ? "Lịch trình xuất bán"
                       : "Lộ trình triển khai & Giai đoạn"}
               </h3>
               <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider mt-0.5">
@@ -444,9 +444,9 @@ export default function PlanAquacultureGrowthDetailPage({
                             )}
                           >
                             {plan.purpose === "amendment"
-                              ? "Hoạt động cải tạo ao trại"
+                              ? "Hoạt động cải tạo ao nuôi"
                               : plan.purpose === "harvest"
-                                ? "Hoạt động thu hoạch"
+                                ? "Hoạt động xuất bán"
                                 : "Hoạt động điều trị bệnh"}
                           </p>
                         )}
