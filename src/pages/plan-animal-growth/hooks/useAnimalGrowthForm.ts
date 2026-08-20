@@ -1,4 +1,7 @@
-import { useFarmPlanMutations } from "@/features/farm-workflow/hooks";
+import {
+  useFarmPlanById,
+  useFarmPlanMutations,
+} from "@/features/farm-workflow/hooks";
 import type { FarmPlanPersonnelRequest } from "@/features/farm-workflow/types/farm-workflow.type";
 import type { FarmPersonnelResponse } from "@/features/master-data";
 import { useFarmPersonnel } from "@/features/master-data";
@@ -82,8 +85,10 @@ function addDurationPartsToDate(startDate: string, parts: DurationParts) {
   const next = new Date(`${startDate}T00:00:00`);
   if (Number.isNaN(next.getTime())) return "";
 
-  if (Number.isFinite(years) && years > 0) next.setFullYear(next.getFullYear() + years);
-  if (Number.isFinite(months) && months > 0) next.setMonth(next.getMonth() + months);
+  if (Number.isFinite(years) && years > 0)
+    next.setFullYear(next.getFullYear() + years);
+  if (Number.isFinite(months) && months > 0)
+    next.setMonth(next.getMonth() + months);
   if (Number.isFinite(days) && days > 0) next.setDate(next.getDate() + days);
 
   return formatDateInput(next);
@@ -240,12 +245,18 @@ export function useAnimalGrowthForm(
   const [selectedEnterpriseId, setSelectedEnterpriseId] = useState("");
 
   const isWorkflowContext = basePath.startsWith(WORKFLOW_BASE_PATH);
-  const infoNodes = useAnimalGrowthWorkflowDraftStore((state) => state.infoNodes);
+  const infoNodes = useAnimalGrowthWorkflowDraftStore(
+    (state) => state.infoNodes,
+  );
   const workflowInfo = isWorkflowContext
     ? (infoNodes.find((node) => node.isActive) ?? infoNodes[0])
     : undefined;
 
-  const { plans } = useAnimalGrowthPage(basePath);
+  const { plans } = useAnimalGrowthPage(basePath, { includePlans: false });
+  const planId = params.id || "";
+  const planDetailQuery = useFarmPlanById(planId, {
+    enabled: mode === "edit" && !!planId,
+  });
   const { createPlan, updatePlan } = useFarmPlanMutations();
   const seasons = useSeasonStore((state) => state.seasons);
   const workspaceId = useSelectedWorkspaceId();
@@ -314,9 +325,13 @@ export function useAnimalGrowthForm(
   );
 
   const fallbackPlans = getFallbackPlans();
+  const detailPlan =
+    mode === "edit" && planDetailQuery.data
+      ? mapPlanResponseToPlan(planDetailQuery.data)
+      : undefined;
   const plan =
     mode === "edit"
-      ? plans.find((item) => item.id === Number(params.id)) ||
+      ? detailPlan ||
         fallbackPlans.find((item) => item.id === Number(params.id))
       : undefined;
   const initialSelectionState = useMemo(

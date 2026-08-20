@@ -1,7 +1,4 @@
-import type {
-  DomainCode,
-  SupplyType,
-} from "@/features/farm-supply/types";
+import type { DomainCode, SupplyType } from "@/features/farm-supply/types";
 import type { PageResponse } from "@/features/foundation/types/foundation.type";
 
 export type FarmWorkflowRequestStatus = "ACTIVE" | "INACTIVE" | "ARCHIVED";
@@ -159,6 +156,11 @@ export interface FarmPlanStageSupplyLineRequest {
   quantity: number;
 }
 
+export interface FarmPlanStageSupplyUnitBaseRef {
+  id: number;
+  name: string;
+  code: string;
+}
 export interface FarmPlanStageSupplyLineResponse {
   id: number;
   workflowId: number;
@@ -166,6 +168,7 @@ export interface FarmPlanStageSupplyLineResponse {
   stageId: number;
   supplyItem: FarmSupplyItemRef;
   packagingVariant: FarmPackagingVariantRef;
+  unitBase: FarmPlanStageSupplyUnitBaseRef;
   quantity: number;
 }
 

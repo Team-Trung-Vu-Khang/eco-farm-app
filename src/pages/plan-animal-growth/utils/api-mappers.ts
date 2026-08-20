@@ -266,9 +266,9 @@ export function mapPlanResponseToPlan(plan: FarmPlanResponse): Plan {
       materialType: line.supplyItem?.supplyType || "",
       materialName: line.supplyItem?.name || "",
       quantity: String(line.quantity),
-      unit: line.packagingVariant?.unitBase?.name || "",
+      unit: line.unitBase.name || "",
       supplyItemId: line.supplyItem?.id,
-      unitBaseId: line.packagingVariant?.unitBase?.id,
+      unitBaseId: line.unitBase?.id,
     })),
   );
   const taskAllocations = stages.flatMap((stage) =>
@@ -389,7 +389,9 @@ export function upsertFallbackPlan(plan: Plan) {
     return;
   }
 
-  fallbackPlans = fallbackPlans.map((item) => (item.id === plan.id ? plan : item));
+  fallbackPlans = fallbackPlans.map((item) =>
+    item.id === plan.id ? plan : item,
+  );
 }
 
 export function deleteFallbackPlan(id: number) {
@@ -431,7 +433,9 @@ export function upsertFallbackWorkflow(workflow: Workflow) {
 }
 
 export function deleteFallbackWorkflow(id: string) {
-  fallbackWorkflows = fallbackWorkflows.filter((workflow) => workflow.id !== id);
+  fallbackWorkflows = fallbackWorkflows.filter(
+    (workflow) => workflow.id !== id,
+  );
 }
 
 export function duplicateFallbackWorkflow(sourceId: string) {
@@ -500,7 +504,10 @@ export function mapCultivationZonesToRegionTree(
 
   function handleScope(scope: FarmCultivationZoneScopeResponse) {
     if (scope.scopeType === "REGION" && scope.region) {
-      ensureRegion(scope.region.id, scope.region.name || `Vùng #${scope.region.id}`);
+      ensureRegion(
+        scope.region.id,
+        scope.region.name || `Vùng #${scope.region.id}`,
+      );
       return;
     }
 
