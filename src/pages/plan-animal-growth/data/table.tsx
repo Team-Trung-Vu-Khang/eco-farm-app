@@ -149,15 +149,13 @@ export function createPlanAnimalGrowthColumns({
               <PencilLine className="mr-2 h-4 w-4" />
               Chỉnh sửa
             </DropdownMenuItem>
-            {item.status === "draft" && (
-              <DropdownMenuItem
-                className="text-destructive focus:text-destructive"
-                onClick={() => onDelete(item)}
-              >
-                <Trash2 className="mr-2 h-4 w-4" />
-                Xóa
-              </DropdownMenuItem>
-            )}
+            <DropdownMenuItem
+              className="text-destructive focus:text-destructive"
+              onClick={() => onDelete(item)}
+            >
+              <Trash2 className="mr-2 h-4 w-4" />
+              Xóa
+            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       ),
@@ -182,10 +180,12 @@ export function createWorkflowColumns({
   onView,
   onOpenWorkflow,
   onClone,
+  onDelete,
 }: {
   onView: (row: WorkflowRow) => void;
   onOpenWorkflow: (row: WorkflowRow) => void;
   onClone: (row: WorkflowRow) => void;
+  onDelete: (row: WorkflowRow) => void;
 }): Column<WorkflowRow>[] {
   return [
     {
@@ -298,6 +298,14 @@ export function createWorkflowColumns({
             >
               <Copy className="mr-2 h-4 w-4" />
               Nhân bản
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              disabled={item.id === UNASSIGNED_WORKFLOW_ID}
+              className="text-destructive focus:text-destructive"
+              onClick={() => onDelete(item)}
+            >
+              <Trash2 className="mr-2 h-4 w-4" />
+              Xóa
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

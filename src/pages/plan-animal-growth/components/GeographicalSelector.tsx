@@ -151,7 +151,7 @@ const GeographicalSelector = ({
         variant="outline"
       >
         <Plus className="w-5 h-5" />
-        Chọn vùng canh tác
+        Chọn vùng chăn nuôi
       </Button>
       <Dialog
         open={isOpen}

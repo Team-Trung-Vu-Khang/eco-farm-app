@@ -30,12 +30,18 @@ import {
   X,
 } from "lucide-react";
 import { useState, type Dispatch, type SetStateAction } from "react";
-import type { Personnel } from "@/stores/usePersonnelStore";
 import GeographicalSelector from "./GeographicalSelector";
-import { PersonnelMultiSelectCard } from "./PersonnelMultiSelectCard";
+import {
+  PersonnelMultiSelectCard,
+  type PersonnelOption,
+} from "./PersonnelMultiSelectCard";
 import { RegimenSelector } from "./RegimenSelector";
-import { MATERIAL_OPTIONS, MATERIAL_TYPES, MATERIAL_UNITS } from "../data/mocks";
 import type { GeographicalSelection, MaterialAllocation, PlanFormData } from "../types";
+import {
+  resolveMaterialUnit,
+  type AnimalSupplyCatalog,
+  type AnimalSupplyType,
+} from "../hooks/useAnimalSupplyCatalog";
 
 const PURPOSE_OPTIONS = [
   { id: "cultivation", label: "Chăn nuôi", icon: Layers, color: "blue" },
@@ -76,7 +82,8 @@ interface SimplePlanFormProps {
   handleGeographicalConfirm: (selections: GeographicalSelection[]) => void;
   isWorkflowContext?: boolean;
   workflowInfo?: { name?: string } | null;
-  personnel: Personnel[];
+  personnel: PersonnelOption[];
+  supplyCatalog: AnimalSupplyCatalog;
 }
 
 function StageMaterialPicker({
@@ -84,30 +91,55 @@ function StageMaterialPicker({
   allocations,
   onAddMaterial,
   onRemoveMaterial,
+  supplyCatalog,
 }: {
   stageKey: string;
   allocations: MaterialAllocation[];
   onAddMaterial: (item: Omit<MaterialAllocation, "id">) => void;
   onRemoveMaterial: (id: number) => void;
+  supplyCatalog: AnimalSupplyCatalog;
 }) {
+  const defaultType = supplyCatalog.typeOptions[1]?.value || supplyCatalog.typeOptions[0]?.value || "medicine";
   const [newItem, setNewItem] = useState({
     name: "",
     qty: "",
-    unit: MATERIAL_UNITS[MATERIAL_TYPES[0]?.value]?.[0] || "kg",
-    type: MATERIAL_TYPES[0]?.value || "",
+    unitBaseId: "",
+    type: defaultType as AnimalSupplyType,
   });
 
+  const selectedTypeOption = supplyCatalog.typeOptions.find(
+    (option) => option.value === newItem.type,
+  );
+  const selectedMaterial = supplyCatalog.optionsByType[newItem.type].find(
+    (option) => option.value === newItem.name,
+  );
+  const packagingVariantOptions = selectedMaterial?.item.packagingVariants || [];
+  const selectedPackagingVariant = packagingVariantOptions.find(
+    (variant) => String(variant.unitBase?.id) === newItem.unitBaseId,
+  );
+  const maxPackagingQuantity = selectedPackagingVariant?.quantity;
+  const exceedsPackagingQuantity =
+    maxPackagingQuantity != null && Number(newItem.qty) > maxPackagingQuantity;
+
   const handleAdd = () => {
-    if (!newItem.name || !newItem.qty) return;
+    if (!selectedMaterial || !newItem.qty || !selectedPackagingVariant?.unitBase)
+      return;
     onAddMaterial({
       stageId: stageKey,
-      materialCategory: newItem.type,
-      materialType: newItem.type,
-      materialName: newItem.name,
+      materialCategory: selectedTypeOption?.label || newItem.type,
+      materialType: selectedTypeOption?.label || newItem.type,
+      materialName: selectedMaterial.label,
       quantity: newItem.qty,
-      unit: newItem.unit,
+      unit: selectedPackagingVariant.unitBase.name || selectedMaterial.unit,
+      supplyItemId: selectedMaterial.item.id,
+      unitBaseId: selectedPackagingVariant.unitBase.id,
     });
-    setNewItem({ name: "", qty: "", unit: MATERIAL_UNITS[newItem.type as keyof typeof MATERIAL_UNITS]?.[0] || "kg", type: newItem.type });
+    setNewItem({
+      name: "",
+      qty: "",
+      unitBaseId: "",
+      type: newItem.type,
+    });
   };
 
   return (
@@ -122,7 +154,7 @@ function StageMaterialPicker({
               <span className="font-medium text-slate-700">{a.materialName}</span>
               <div className="flex items-center gap-2">
                 <span className="text-xs font-semibold text-slate-600 bg-slate-50 px-2 py-0.5 rounded border">
-                  {a.quantity} {a.unit}
+                  {a.quantity} {resolveMaterialUnit(a, supplyCatalog)}
                 </span>
                 <button
                   type="button"
@@ -142,15 +174,15 @@ function StageMaterialPicker({
           <Select
             value={newItem.type}
             onValueChange={(v) => {
-              const defaultUnit = MATERIAL_UNITS[v as keyof typeof MATERIAL_UNITS]?.[0] || "kg";
-              setNewItem({ ...newItem, type: v, name: "", unit: defaultUnit });
+              const type = v as AnimalSupplyType;
+              setNewItem({ ...newItem, type, name: "", unitBaseId: "" });
             }}
           >
             <SelectTrigger className="w-full h-9 text-xs bg-white">
               <SelectValue placeholder="Loại..." />
             </SelectTrigger>
             <SelectContent>
-              {MATERIAL_TYPES.map((type) => (
+              {supplyCatalog.typeOptions.map((type) => (
                 <SelectItem key={type.value} value={type.value}>
                   {type.label}
                 </SelectItem>
@@ -160,19 +192,32 @@ function StageMaterialPicker({
         </div>
         <div className="col-span-8">
           <Combobox
-            options={(MATERIAL_OPTIONS[newItem.type as keyof typeof MATERIAL_OPTIONS] || []).map((opt) => ({
+            options={supplyCatalog.optionsByType[newItem.type].map((opt) => ({
               value: opt.value,
               label: opt.label,
             }))}
             value={newItem.name}
             onChange={(v) => {
-              const category = MATERIAL_OPTIONS[newItem.type as keyof typeof MATERIAL_OPTIONS] || [];
-              const item = category.find((i) => i.value === v);
-              setNewItem({ ...newItem, name: v, unit: item?.unit || newItem.unit });
+              const item = supplyCatalog.optionsByType[newItem.type].find(
+                (i) => i.value === v,
+              );
+              const firstVariant = item?.item.packagingVariants?.[0];
+              setNewItem({
+                ...newItem,
+                name: v,
+                unitBaseId: firstVariant?.unitBase?.id
+                  ? String(firstVariant.unitBase.id)
+                  : "",
+              });
             }}
             placeholder="Chọn vật tư..."
             searchPlaceholder="Tìm vật tư..."
-            emptyText="Không tìm thấy vật tư."
+            emptyText={
+              supplyCatalog.isLoading
+                ? "Đang tải danh sách vật tư..."
+                : "Không tìm thấy vật tư."
+            }
+            disabled={supplyCatalog.isLoading}
             className="h-9 text-xs w-full bg-white"
           />
         </div>
@@ -186,14 +231,18 @@ function StageMaterialPicker({
           />
         </div>
         <div className="col-span-4">
-          <Select value={newItem.unit} onValueChange={(v) => setNewItem({ ...newItem, unit: v })}>
+          <Select
+            value={newItem.unitBaseId}
+            onValueChange={(v) => setNewItem({ ...newItem, unitBaseId: v })}
+            disabled={packagingVariantOptions.length === 0}
+          >
             <SelectTrigger className="h-9 text-xs w-full bg-white">
-              <SelectValue />
+              <SelectValue placeholder="Đơn vị..." />
             </SelectTrigger>
             <SelectContent>
-              {(MATERIAL_UNITS[newItem.type as keyof typeof MATERIAL_UNITS] || ["kg"]).map((u) => (
-                <SelectItem key={u} value={u}>
-                  {u}
+              {packagingVariantOptions.map((variant) => (
+                <SelectItem key={variant.unitBase?.id ?? variant.unitBase?.name} value={String(variant.unitBase?.id)}>
+                  {variant.unitBase?.name || variant.packagingType?.name || ""}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -211,6 +260,13 @@ function StageMaterialPicker({
           </Button>
         </div>
       </div>
+      {exceedsPackagingQuantity && (
+        <p className="text-[11px] text-amber-600">
+          Số lượng vượt quá định mức đóng gói ({maxPackagingQuantity}{" "}
+          {selectedPackagingVariant?.unitBase?.name}/
+          {selectedPackagingVariant?.packagingType?.name})
+        </p>
+      )}
     </div>
   );
 }
@@ -233,6 +289,7 @@ export default function SimplePlanForm({
   isWorkflowContext,
   workflowInfo,
   personnel,
+  supplyCatalog,
 }: SimplePlanFormProps) {
   const [newStage, setNewStage] = useState("");
   const isTreatmentOrAmendment = formData.purpose === "treatment" || formData.purpose === "amendment";
@@ -373,7 +430,7 @@ export default function SimplePlanForm({
 
       <div className="space-y-2">
         <div className="flex items-center justify-between">
-          <Label required={!isWorkflowContext}>Vùng canh tác</Label>
+          <Label required={!isWorkflowContext}>Vùng chăn nuôi</Label>
           <span className="text-[10px] text-emerald-700 bg-emerald-100 px-2 py-1 rounded-full font-semibold">
             {isWorkflowContext
               ? `Kế thừa từ quy trình${workflowInfo?.name ? ` "${workflowInfo.name}"` : ""}`
@@ -606,6 +663,7 @@ export default function SimplePlanForm({
                       )}
                       onAddMaterial={handleAddMaterial}
                       onRemoveMaterial={handleRemoveMaterial}
+                      supplyCatalog={supplyCatalog}
                     />
                   </div>
                 </div>

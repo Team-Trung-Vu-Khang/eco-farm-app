@@ -53,6 +53,7 @@ import { StageAllocation } from "./components/StageAllocation";
 import { StageItem } from "./components/StageItem";
 import { TASK_OPTIONS } from "./data/mocks";
 import { useAnimalGrowthForm } from "./hooks/useAnimalGrowthForm";
+import { useAnimalSupplyCatalog } from "./hooks/useAnimalSupplyCatalog";
 
 interface PlanAnimalGrowthCreatePageProps {
   basePath?: string;
@@ -88,6 +89,7 @@ export default function PlanAnimalGrowthCreatePage({
     pageDescription,
     completeLabel,
   } = useAnimalGrowthForm("create", basePath);
+  const supplyCatalog = useAnimalSupplyCatalog();
 
   const [newManualStage, setNewManualStage] = useState("");
   const [isSimpleMode, setIsSimpleMode] = useState(true);
@@ -357,7 +359,7 @@ export default function PlanAnimalGrowthCreatePage({
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
                       <label className="text-xs text-muted-foreground font-black uppercase tracking-widest">
-                        Vùng canh tác <span className="text-red-500">*</span>
+                        Vùng chăn nuôi <span className="text-red-500">*</span>
                       </label>
                       <span className="text-[10px] text-emerald-700 bg-emerald-100 px-2 py-1 rounded-full font-semibold">
                         Chọn 1 khu vực/lô từ sơ đồ ban đầu
@@ -1353,6 +1355,7 @@ export default function PlanAnimalGrowthCreatePage({
                   tasks={formData.taskAllocations.filter(
                     (t) => t.stageId === stageKey,
                   )}
+                  supplyCatalog={supplyCatalog}
                   regions={regions}
                   masterSelections={selections}
                   enterpriseId={selectedEnterpriseId}
@@ -2015,6 +2018,7 @@ export default function PlanAnimalGrowthCreatePage({
             selectionSummary={selectionSummary}
             handleGeographicalConfirm={handleGeographicalConfirm}
             personnel={personnel}
+            supplyCatalog={supplyCatalog}
           />
         ) : (
           <StepperForm

@@ -32,11 +32,16 @@ export interface Plan {
   code: string;
   name: string;
   description: string;
+  scopeNote?: string;
   workflowId?: string;
   seasonId: string;
   seasonName: string;
   startDate: string;
   endDate: string;
+  // Total planned duration in days, straight from the API's
+  // FarmPlanResponse.durationDays — the source of truth for display, since
+  // startDate/endDate are often unset on a freshly created draft plan.
+  durationDays?: number;
   selectedRegionIds: string[];
   selectedZoneIds: string[];
   selectedPlotIds: string[];
@@ -61,6 +66,19 @@ export interface Plan {
   taskAllocations: TaskAllocation[];
   status: "draft" | "active" | "completed" | "cancelled";
   createdAt: string;
+  // Free-form metadata from the API. `parentId` links this plan to the plan
+  // node it branched off from in the workflow canvas — the canvas graph is
+  // otherwise local-draft-only and doesn't survive a reload from the backend.
+  metadataJson?: Record<string, any>;
+  // Pre-grouped, human-readable version of the API's `scopes` straight from
+  // its embedded region/area/plot names — unlike selectedRegionIds/etc, it
+  // doesn't need a matching entry in the (mock) region tree to display
+  // correctly, since the region tree won't have API-only scopes.
+  selectionSummary?: {
+    regionId: string;
+    regionName: string;
+    items: { type: "region" | "area" | "plot"; id: string; name: string; parentName?: string }[];
+  }[];
 }
 
 export { initialAnimalGrowthPlans };

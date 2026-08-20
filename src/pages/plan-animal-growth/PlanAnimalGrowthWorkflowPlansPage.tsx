@@ -1,4 +1,6 @@
 import PageWrapper from "@/components/PageWrapper";
+import { useFarmPlans, useFarmWorkflowById } from "@/features/farm-workflow/hooks";
+import type { FarmPlanStatus } from "@/features/farm-workflow/types/farm-workflow.type";
 import {
   Button,
   DataTable,
@@ -7,47 +9,70 @@ import {
 import { ArrowLeft, Workflow } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Link, useParams } from "wouter";
-import useAnimalGrowthWorkflowStore from "@/stores/useAnimalGrowthWorkflowStore";
-import {
-  createPlanAnimalGrowthColumns,
-  animalGrowthFilters,
-  UNASSIGNED_WORKFLOW_ID,
-} from "./data/table";
+import { createPlanAnimalGrowthColumns } from "./data/table";
+import { animalGrowthFilters, UNASSIGNED_WORKFLOW_ID } from "./data/table";
 import { useAnimalGrowthPage } from "./hooks/useAnimalGrowthPage";
+import { mapPlanResponseToPlan } from "./utils/api-mappers";
 
 interface PlanAnimalGrowthWorkflowPlansPageProps {
   basePath?: string;
 }
+
+// Maps the (lowercase) Plan-domain status used by the filter UI to the
+// FarmPlanStatus enum GET /api/farm/plans expects.
+const PLAN_STATUS_TO_API: Record<string, FarmPlanStatus> = {
+  active: "IN_PROGRESS",
+  draft: "DRAFT",
+  completed: "COMPLETED",
+  cancelled: "CANCELLED",
+};
 
 export default function PlanAnimalGrowthWorkflowPlansPage({
   basePath = "/plan-animal-growth",
 }: PlanAnimalGrowthWorkflowPlansPageProps) {
   const params = useParams<{ workflowId: string }>();
   const workflowId = params.workflowId || "";
+  const isUnassigned = workflowId === UNASSIGNED_WORKFLOW_ID;
+
   const [search, setSearch] = useState("");
+  const [status, setStatus] = useState("");
+  const [currentIndex, setCurrentIndex] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
 
   const {
-    plans,
     deleteOpen,
     setDeleteOpen,
     handleDelete,
     handleConfirmDelete,
     goToView,
     goToEdit,
-  } = useAnimalGrowthPage(basePath);
+  } = useAnimalGrowthPage(basePath, { includePlans: false });
 
-  const workflow = useAnimalGrowthWorkflowStore((state) =>
-    state.workflows.find((item) => item.id === workflowId),
-  );
-  const isUnassigned = workflowId === UNASSIGNED_WORKFLOW_ID;
+  const workflowDetailQuery = useFarmWorkflowById(workflowId, {
+    enabled: !isUnassigned && !!workflowId,
+  });
 
-  const workflowPlans = useMemo(
-    () =>
-      plans.filter((plan) =>
-        isUnassigned ? !plan.workflowId : plan.workflowId === workflowId,
-      ),
-    [plans, workflowId, isUnassigned],
-  );
+  // GET /api/farm/plans handles keyword/status/pagination server-side, and
+  // filters to a single workflow via `workflowId` when one is set. There's
+  // no "plan has no workflow" filter, so the unassigned view omits
+  // `workflowId` (gets every plan) and narrows to unassigned client-side
+  // below — pagination for that view is likewise handled client-side by
+  // DataTable rather than via the API's page/size, since post-fetch
+  // filtering would otherwise desync the reported page counts.
+  const plansQuery = useFarmPlans({
+    params: {
+      workflowId: isUnassigned ? undefined : Number(workflowId) || undefined,
+      keyword: search.trim() || undefined,
+      status: status ? PLAN_STATUS_TO_API[status] : undefined,
+      page: isUnassigned ? 0 : currentIndex - 1,
+      size: isUnassigned ? 100 : pageSize,
+    },
+  });
+
+  const plans = useMemo(() => {
+    const mapped = plansQuery.items.map(mapPlanResponseToPlan);
+    return isUnassigned ? mapped.filter((plan) => !plan.workflowId) : mapped;
+  }, [plansQuery.items, isUnassigned]);
 
   const columns = useMemo(
     () =>
@@ -59,38 +84,12 @@ export default function PlanAnimalGrowthWorkflowPlansPage({
     [goToView, goToEdit, handleDelete],
   );
 
-  const filteredPlans = useMemo(() => {
-    const query = search.trim().toLowerCase();
-    if (!query) return workflowPlans;
-
-    return workflowPlans.filter((plan) => {
-      const searchable = [
-        plan.code,
-        plan.name,
-        plan.description,
-        plan.seasonName,
-        plan.startDate,
-        plan.endDate,
-        plan.cultivationRegion,
-        plan.zone,
-        plan.crop,
-        plan.variety,
-        plan.status,
-      ]
-        .filter(Boolean)
-        .join(" ")
-        .toLowerCase();
-
-      return searchable.includes(query);
-    });
-  }, [workflowPlans, search]);
-
   const title = isUnassigned
     ? "Kế hoạch chưa gắn sơ đồ"
-    : workflow?.name || "Sơ đồ quy trình chăn nuôi";
+    : workflowDetailQuery.data?.name || "Sơ đồ quy trình chăn nuôi";
   const description = isUnassigned
     ? "Kế hoạch được tạo trước khi lưu sơ đồ quy trình hoặc chưa bấm Lưu quy trình."
-    : workflow?.description ||
+    : workflowDetailQuery.data?.description ||
       "Danh sách kế hoạch chăn nuôi thuộc sơ đồ quy trình này";
 
   return (
@@ -119,11 +118,34 @@ export default function PlanAnimalGrowthWorkflowPlansPage({
       <div className="space-y-6">
         <DataTable
           columns={columns}
-          data={filteredPlans}
+          data={plans}
+          loading={plansQuery.loading}
           searchable
-          onSearch={setSearch}
+          onSearch={(value) => {
+            setSearch(value);
+            setCurrentIndex(1);
+          }}
           searchPlaceholder="Tìm kiếm kế hoạch..."
           filters={animalGrowthFilters}
+          onFilterChange={(key, value) => {
+            if (key === "status") {
+              setStatus(value === "all" ? "" : value);
+              setCurrentIndex(1);
+            }
+          }}
+          pageSize={pageSize}
+          onPageSize={(size) => {
+            setPageSize(size);
+            setCurrentIndex(1);
+          }}
+          {...(isUnassigned
+            ? {}
+            : {
+                currentIndex,
+                onIndexChange: setCurrentIndex,
+                totalElements: plansQuery.response?.totalElements ?? 0,
+                totalPages: plansQuery.response?.totalPages ?? 1,
+              })}
         />
       </div>
 

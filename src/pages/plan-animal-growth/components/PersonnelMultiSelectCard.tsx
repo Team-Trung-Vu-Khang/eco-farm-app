@@ -2,7 +2,6 @@ import { useMemo, useState } from "react";
 import {
   Badge,
   Button,
-  Checkbox,
   Dialog,
   DialogContent,
   DialogFooter,
@@ -20,13 +19,20 @@ import {
   Users,
   X,
 } from "lucide-react";
-import type { Personnel } from "@/stores/usePersonnelStore";
+export interface PersonnelOption {
+  id: number | string;
+  fullName: string;
+  position: string;
+  department: string;
+  team: string;
+  avatar?: string;
+}
 
 interface PersonnelMultiSelectCardProps {
   title: string;
   description: string;
   selectedIds: string[];
-  personnel: Personnel[];
+  personnel: PersonnelOption[];
   onChange: (ids: string[]) => void;
   tone?: "blue" | "violet";
   emptyText?: string;
@@ -70,7 +76,7 @@ export function PersonnelMultiSelectCard({
     () =>
       selectedIds
         .map((id) => personnel.find((item) => String(item.id) === String(id)))
-        .filter(Boolean) as Personnel[],
+        .filter(Boolean) as PersonnelOption[],
     [personnel, selectedIds],
   );
 
@@ -222,7 +228,10 @@ export function PersonnelMultiSelectCard({
                     {isSelected ? (
                       <CheckCircle2 className={cn("w-5 h-5", classes.check)} />
                     ) : (
-                      <Checkbox checked={false} />
+                      <div
+                        aria-hidden
+                        className="h-4 w-4 shrink-0 rounded-sm border border-slate-300 bg-white"
+                      />
                     )}
                   </button>
                 );

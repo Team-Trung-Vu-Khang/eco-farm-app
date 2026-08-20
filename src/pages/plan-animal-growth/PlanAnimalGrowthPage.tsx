@@ -1,5 +1,4 @@
 import PageWrapper from "@/components/PageWrapper";
-import useAnimalGrowthWorkflowStore from "@/stores/useAnimalGrowthWorkflowStore";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -11,15 +10,14 @@ import {
   AlertDialogTitle,
   Button,
   DataTable,
-  useToast,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { Plus } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useLocation } from "wouter";
+import type { FarmWorkflowRequestStatus } from "@/features/farm-workflow/types/farm-workflow.type";
 import {
   createWorkflowColumns,
   PlanAnimalGrowthStatisticsCards,
-  UNASSIGNED_WORKFLOW_ID,
   type WorkflowRow,
 } from "./data/table";
 import { useAnimalGrowthPage } from "./hooks/useAnimalGrowthPage";
@@ -32,18 +30,29 @@ interface PlanAnimalGrowthPageProps {
 export default function PlanAnimalGrowthPage({
   basePath = "/plan-animal-growth",
 }: PlanAnimalGrowthPageProps) {
-  const [search, setSearch] = useState("");
   const [, setLocation] = useLocation();
-  const { toast } = useToast();
-  const { plans, statistics } = useAnimalGrowthPage(basePath);
-  const workflows = useAnimalGrowthWorkflowStore((state) => state.workflows);
-  const cloneWorkflow = useAnimalGrowthWorkflowStore(
-    (state) => state.cloneWorkflow,
-  );
+  const {
+    workflows,
+    statistics,
+    handleCloneWorkflow,
+    handleDeleteWorkflow,
+    setSearch,
+    setStatus,
+    currentIndex,
+    setCurrentIndex,
+    pageSize,
+    setPageSize,
+    totalElements,
+    totalPages,
+    loading,
+  } = useAnimalGrowthPage(basePath, { includePlans: false });
   const resetWorkflowDraft = useAnimalGrowthWorkflowDraftStore(
     (state) => state.resetDraft,
   );
   const [workflowToClone, setWorkflowToClone] = useState<WorkflowRow | null>(
+    null,
+  );
+  const [workflowToDelete, setWorkflowToDelete] = useState<WorkflowRow | null>(
     null,
   );
 
@@ -54,54 +63,33 @@ export default function PlanAnimalGrowthPage({
     setLocation(`${basePath}/create/workflow`);
   };
 
-  const workflowRows = useMemo<WorkflowRow[]>(() => {
-    const rows = workflows.map((workflow) => {
-      const workflowPlans = plans.filter(
-        (plan) => plan.workflowId === workflow.id,
-      );
-      return {
+  const workflowRows = useMemo<WorkflowRow[]>(
+    () =>
+      workflows.map((workflow) => ({
         id: workflow.id,
         name: workflow.name,
         description: workflow.description,
-        totalCount: workflowPlans.length,
-        activeCount: workflowPlans.filter((p) => p.status === "active").length,
-        draftCount: workflowPlans.filter((p) => p.status === "draft").length,
-        completedCount: workflowPlans.filter((p) => p.status === "completed")
-          .length,
-        cancelledCount: workflowPlans.filter((p) => p.status === "cancelled")
-          .length,
-      };
-    });
-
-    const unassignedPlans = plans.filter((plan) => !plan.workflowId);
-    if (unassignedPlans.length) {
-      rows.push({
-        id: UNASSIGNED_WORKFLOW_ID,
-        name: "Kế hoạch chưa gắn sơ đồ",
-        description:
-          "Kế hoạch được tạo trước khi lưu sơ đồ quy trình hoặc chưa bấm Lưu quy trình.",
-        totalCount: unassignedPlans.length,
-        activeCount: unassignedPlans.filter((p) => p.status === "active")
-          .length,
-        draftCount: unassignedPlans.filter((p) => p.status === "draft").length,
-        completedCount: unassignedPlans.filter((p) => p.status === "completed")
-          .length,
-        cancelledCount: unassignedPlans.filter((p) => p.status === "cancelled")
-          .length,
-      });
-    }
-
-    return rows;
-  }, [workflows, plans]);
+        totalCount: workflow.planCount ?? 0,
+        activeCount: workflow.statusBreakdown?.inProgress ?? 0,
+        draftCount: workflow.statusBreakdown?.draft ?? 0,
+        completedCount: workflow.statusBreakdown?.completed ?? 0,
+        cancelledCount: workflow.statusBreakdown?.cancelled ?? 0,
+      })),
+    [workflows],
+  );
 
   const handleConfirmClone = () => {
     if (!workflowToClone) return;
-    cloneWorkflow(workflowToClone.id);
-    toast({
-      title: "Đã nhân bản sơ đồ",
-      description: `Đã tạo bản sao của "${workflowToClone.name}".`,
-    });
+    const workflow = workflows.find((w) => w.id === workflowToClone.id);
+    if (workflow) void handleCloneWorkflow(workflow);
     setWorkflowToClone(null);
+  };
+
+  const handleConfirmDeleteWorkflow = () => {
+    if (!workflowToDelete) return;
+    const workflow = workflows.find((w) => w.id === workflowToDelete.id);
+    if (workflow) void handleDeleteWorkflow(workflow);
+    setWorkflowToDelete(null);
   };
 
   const columns = useMemo(
@@ -111,22 +99,10 @@ export default function PlanAnimalGrowthPage({
         onOpenWorkflow: (row) =>
           setLocation(`${basePath}/create/workflow/${row.id}`),
         onClone: (row) => setWorkflowToClone(row),
+        onDelete: (row) => setWorkflowToDelete(row),
       }),
     [basePath, setLocation],
   );
-
-  const filteredWorkflowRows = useMemo(() => {
-    const query = search.trim().toLowerCase();
-    if (!query) return workflowRows;
-
-    return workflowRows.filter((row) =>
-      [row.name, row.description]
-        .filter(Boolean)
-        .join(" ")
-        .toLowerCase()
-        .includes(query),
-    );
-  }, [workflowRows, search]);
 
   return (
     <PageWrapper
@@ -150,10 +126,40 @@ export default function PlanAnimalGrowthPage({
 
         <DataTable
           columns={columns}
-          data={filteredWorkflowRows}
+          data={workflowRows}
+          loading={loading}
           searchable
-          onSearch={setSearch}
+          onSearch={(value) => {
+            setSearch(value);
+            setCurrentIndex(1);
+          }}
           searchPlaceholder="Tìm kiếm sơ đồ quy trình chăn nuôi..."
+          pageSize={pageSize}
+          currentIndex={currentIndex}
+          totalElements={totalElements}
+          totalPages={totalPages}
+          onIndexChange={setCurrentIndex}
+          onPageSize={(size) => {
+            setPageSize(size);
+            setCurrentIndex(1);
+          }}
+          onFilterChange={(key, value) => {
+            if (key === "status") {
+              setStatus(value === "all" ? "" : (value as FarmWorkflowRequestStatus));
+              setCurrentIndex(1);
+            }
+          }}
+          filters={[
+            {
+              key: "status",
+              label: "Trạng thái",
+              options: [
+                { label: "Hoạt động", value: "ACTIVE" },
+                { label: "Không hoạt động", value: "INACTIVE" },
+                { label: "Đã lưu trữ", value: "ARCHIVED" },
+              ],
+            },
+          ]}
         />
       </div>
 
@@ -176,6 +182,33 @@ export default function PlanAnimalGrowthPage({
             <AlertDialogCancel>Hủy</AlertDialogCancel>
             <AlertDialogAction onClick={handleConfirmClone}>
               Nhân bản
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog
+        open={workflowToDelete !== null}
+        onOpenChange={(open) => {
+          if (!open) setWorkflowToDelete(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Xóa sơ đồ quy trình?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Hành động này sẽ xóa vĩnh viễn sơ đồ
+              {workflowToDelete?.name ? ` "${workflowToDelete.name}"` : ""} và
+              không thể hoàn tác.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Hủy</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={handleConfirmDeleteWorkflow}
+            >
+              Xóa
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

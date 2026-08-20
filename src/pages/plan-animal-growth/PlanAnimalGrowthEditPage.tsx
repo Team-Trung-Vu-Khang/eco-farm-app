@@ -50,6 +50,7 @@ import { RegimenSelector } from "./components/RegimenSelector";
 import SimplePlanForm from "./components/SimplePlanForm";
 import { StageAllocation } from "./components/StageAllocation";
 import { useAnimalGrowthForm } from "./hooks/useAnimalGrowthForm";
+import { useAnimalSupplyCatalog } from "./hooks/useAnimalSupplyCatalog";
 
 interface PlanAnimalGrowthEditPageProps {
   basePath?: string;
@@ -92,6 +93,7 @@ export default function PlanAnimalGrowthEditPage({
     pageDescription,
     completeLabel,
   } = useAnimalGrowthForm("edit", basePath, { onSaved, onCancel });
+  const supplyCatalog = useAnimalSupplyCatalog();
 
   const [newManualStage, setNewManualStage] = useState("");
   const [isSimpleMode, setIsSimpleMode] = useState(true);
@@ -355,7 +357,7 @@ export default function PlanAnimalGrowthEditPage({
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
                       <label className="text-xs text-muted-foreground font-black uppercase tracking-widest">
-                        Vùng canh tác{" "}
+                        Vùng chăn nuôi{" "}
                         {!isWorkflowContext && (
                           <span className="text-red-500">*</span>
                         )}
@@ -426,7 +428,7 @@ export default function PlanAnimalGrowthEditPage({
 
                     {isWorkflowContext && selectionSummary.length === 0 && (
                       <p className="text-xs text-emerald-800/60 italic text-center py-2">
-                        Quy trình chưa có vùng canh tác được thiết lập
+                        Quy trình chưa có vùng chăn nuôi được thiết lập
                       </p>
                     )}
                   </div>
@@ -1116,6 +1118,7 @@ export default function PlanAnimalGrowthEditPage({
                   tasks={formData.taskAllocations.filter(
                     (t) => t.stageId === "Xuất bán",
                   )}
+                  supplyCatalog={supplyCatalog}
                   regions={regions}
                   masterSelections={selections}
                   enterpriseId={selectedEnterpriseId}
@@ -1153,6 +1156,7 @@ export default function PlanAnimalGrowthEditPage({
                     tasks={formData.taskAllocations.filter(
                       (t) => t.stageId === stageKey,
                     )}
+                    supplyCatalog={supplyCatalog}
                     regions={regions}
                     masterSelections={selections}
                     enterpriseId={selectedEnterpriseId}
@@ -1821,6 +1825,7 @@ export default function PlanAnimalGrowthEditPage({
             isWorkflowContext={isWorkflowContext}
             workflowInfo={workflowInfo}
             personnel={personnel}
+            supplyCatalog={supplyCatalog}
           />
         ) : (
           <StepperForm
