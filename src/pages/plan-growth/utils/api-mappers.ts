@@ -263,9 +263,13 @@ export function mapPlanResponseToPlan(plan: FarmPlanResponse): Plan {
       materialType: line.supplyItem?.supplyType || "",
       materialName: line.supplyItem?.name || "",
       quantity: String(line.quantity),
-      unit: line.packagingVariant?.unitBase?.name || "",
+      unit:
+        line.unitBase?.name ||
+        line.packagingVariant?.unitBase?.name ||
+        "",
       supplyItemId: line.supplyItem?.id,
-      unitBaseId: line.packagingVariant?.unitBase?.id,
+      unitBaseId:
+        line.unitBase?.id ?? line.packagingVariant?.unitBase?.id,
     })),
   );
   const taskAllocations = stages.flatMap((stage) =>
