@@ -6,7 +6,6 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
-  Checkbox,
   Dialog,
   DialogContent,
   DialogFooter,
@@ -53,17 +52,28 @@ import {
 import { useEffect, useMemo, useState } from "react";
 import { useLocation, useSearch } from "wouter";
 
-import { useCreateFarmTask } from "@/features/farm-task";
 import type { FarmTaskRequest } from "@/features/farm-task";
-import usePersonnelStore from "../../stores/usePersonnelStore";
-import useRegionStore from "../../stores/useRegionStore";
-import { useFarmPersonnel, type FarmPersonnelResponse } from "../../features/master-data";
-import { useFarmPlanById, useFarmPlans, useFarmWorkflows } from "../../features/farm-workflow/hooks";
+import { useCreateFarmTask } from "@/features/farm-task";
+import {
+  useFarmPlanById,
+  useFarmPlans,
+  useFarmWorkflows,
+} from "../../features/farm-workflow/hooks";
 import type {
   FarmPlanResponse,
   FarmWorkflowResponse,
 } from "../../features/farm-workflow/types/farm-workflow.type";
+import {
+  useFarmPersonnel,
+  type FarmPersonnelResponse,
+} from "../../features/master-data";
 import { useSelectedWorkspaceId } from "../../features/workspace";
+import usePersonnelStore from "../../stores/usePersonnelStore";
+import useRegionStore from "../../stores/useRegionStore";
+import {
+  mapPlanResponseToPlan,
+  mapWorkflowScopesToSelections,
+} from "../plan-growth/utils/api-mappers";
 import GeographicalSelector from "../plan/components/GeographicalSelector";
 import { TaskStageAllocation } from "../plan/components/TaskStageAllocation";
 import type {
@@ -71,7 +81,6 @@ import type {
   MaterialAllocation,
   TaskAllocation,
 } from "../plan/types";
-import { mapPlanResponseToPlan } from "../plan-growth/utils/api-mappers";
 import { getRepeatDatesText } from "../plan/utils/task";
 import SimpleTaskForm from "./components/SimpleTaskForm";
 
@@ -110,23 +119,40 @@ type PersonnelOption = {
   positionName?: string;
 };
 
+// Raw API purpose (FarmPlanResponse.purpose) — used when hydrating from a
+// preset plan fetched straight from the API.
 function mapPurposeToObjectiveType(
   purpose?: FarmPlanResponse["purpose"],
 ): TaskObjectiveType {
   switch (purpose) {
-    case "cultivation":
-    case "facility-upgrade":
+    case "CULTIVATION":
+    case "FACILITY_UPGRADE":
       return "theo-ke-hoach";
-    case "harvest":
+    case "HARVEST":
       return "thu-hoach";
-    case "treatment":
+    case "TREATMENT":
       return "tri-benh";
-    case "amendment":
+    case "SOIL_IMPROVEMENT":
       return "cai-tao-dat";
     default:
       return "phat-sinh";
   }
 }
+
+// Mapped plan purpose (Plan.purpose, from mapPlanResponseToPlan) — used for
+// plans picked out of planOptions, which already went through that mapping.
+const PLAN_PURPOSE_TO_OBJECTIVE_TYPE: Partial<
+  Record<
+    NonNullable<ReturnType<typeof mapPlanResponseToPlan>["purpose"]>,
+    TaskObjectiveType
+  >
+> = {
+  cultivation: "theo-ke-hoach",
+  "facility-upgrade": "theo-ke-hoach",
+  harvest: "thu-hoach",
+  treatment: "tri-benh",
+  amendment: "cai-tao-dat",
+};
 
 export type TaskCreateFormData = {
   code: string;
@@ -203,6 +229,8 @@ export default function TaskCreatePage() {
     params: { page: 0, size: MAX_API_PAGE_SIZE },
   });
 
+  const [selections, setSelections] = useState<GeographicalSelection[]>([]);
+
   const [formData, setFormData] = useState<TaskCreateFormData>({
     code: "CV-0000",
     name: "",
@@ -245,6 +273,8 @@ export default function TaskCreatePage() {
         .map((stage) => stage.name)
         .filter(Boolean),
     }));
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setSelections(mapWorkflowScopesToSelections(presetPlan.scopes || []));
   }, [presetPlanId, presetPlanQuery.data]);
 
   const [isSimpleMode, setIsSimpleMode] = useState(true);
@@ -255,7 +285,6 @@ export default function TaskCreatePage() {
   const [regimenSearchTerm, setRegimenSearchTerm] = useState("");
   const [planSearchTerm, setPlanSearchTerm] = useState("");
   const [selectedEnterpriseId] = useState<string>("");
-  const [selections, setSelections] = useState<GeographicalSelection[]>([]);
 
   const [newMaterial, setNewMaterial] = useState({
     type: "fertilizer" as "fertilizer" | "pesticide" | "tool" | "other",
@@ -324,10 +353,11 @@ export default function TaskCreatePage() {
 
   const allPlanQuery = useFarmPlans({
     params: {
+      workflowId: formData.regimenId ? Number(formData.regimenId) : undefined,
       page: 0,
       size: MAX_API_PAGE_SIZE,
     },
-    enabled: formData.mode === "phat-sinh",
+    enabled: formData.mode === "phat-sinh" && !!formData.regimenId,
   });
 
   const planOptions = useMemo(() => {
@@ -360,7 +390,8 @@ export default function TaskCreatePage() {
     .map(mapPlanResponseToPlan)
     .find((p) => String(p.id) === formData.planId);
   const selectedPlanTaskAllocations = selectedPlan?.taskAllocations || [];
-  const selectedPlanMaterialAllocations = selectedPlan?.materialAllocations || [];
+  const selectedPlanMaterialAllocations =
+    selectedPlan?.materialAllocations || [];
   const resolvedSelectedStages =
     formData.selectedStages.length > 0
       ? formData.selectedStages
@@ -393,7 +424,9 @@ export default function TaskCreatePage() {
       return {
         id: `plan-${scope.plot.id}`,
         type: "plot" as const,
-        regionId: String(scope.plot.area?.region?.id ?? scope.plot.area?.id ?? scope.plot.id),
+        regionId: String(
+          scope.plot.area?.region?.id ?? scope.plot.area?.id ?? scope.plot.id,
+        ),
         areaId: String(scope.plot.area?.id ?? ""),
         plotId: String(scope.plot.id),
       };
@@ -411,13 +444,13 @@ export default function TaskCreatePage() {
     const groupedRegions = new Map<string, GeographicalTreeRegion>();
 
     scopes.forEach((scope) => {
-      const region = scope.region ?? scope.area?.region ?? scope.plot?.area?.region;
+      const region =
+        scope.region ?? scope.area?.region ?? scope.plot?.area?.region;
       if (!region) return;
 
       const regionKey = String(region.id);
-      const regionEntry =
-        groupedRegions.get(regionKey) ??
-        ({
+      const regionEntry: GeographicalTreeRegion =
+        groupedRegions.get(regionKey) ?? {
           id: regionKey,
           name: region.name || `Vùng #${region.id}`,
           enterpriseId:
@@ -425,7 +458,7 @@ export default function TaskCreatePage() {
             selectedEnterpriseId ||
             undefined,
           subAreas: [],
-        } satisfies GeographicalTreeRegion);
+        };
 
       if (scope.scopeType === "REGION") {
         groupedRegions.set(regionKey, {
@@ -461,13 +494,11 @@ export default function TaskCreatePage() {
         const existingArea = regionEntry.subAreas.find(
           (item) => item.id === areaKey,
         );
-        const areaEntry =
-          existingArea ??
-          {
-            id: areaKey,
-            name: area.name || `Khu vực #${area.id}`,
-            plots: [],
-          };
+        const areaEntry = existingArea ?? {
+          id: areaKey,
+          name: area.name || `Khu vực #${area.id}`,
+          plots: [],
+        };
 
         const plotKey = String(scope.plot.id);
         if (!areaEntry.plots.some((plot) => plot.id === plotKey)) {
@@ -536,7 +567,15 @@ export default function TaskCreatePage() {
 
   const getSelectionSummary = (
     targetSelections: GeographicalSelection[],
-    sourceRegions = regions,
+    sourceRegions: Array<{
+      id: string | number;
+      name: string;
+      subAreas?: Array<{
+        id: string | number;
+        name: string;
+        plots?: Array<{ id: string | number; name: string }>;
+      }>;
+    }> = regions,
   ) => {
     if (!targetSelections || targetSelections.length === 0) return [];
     const summary: {
@@ -690,6 +729,14 @@ export default function TaskCreatePage() {
 
   const handleComplete = () => {
     const isPlannedMode = !isSimpleMode && formData.mode === "plan";
+    if (!isPlannedMode && !formData.regimenId) {
+      toast({
+        title: "Thiếu quy trình",
+        description: "Vui lòng chọn quy trình cho công việc phát sinh.",
+        variant: "destructive",
+      });
+      return;
+    }
     const stageNames =
       isSimpleMode || resolvedSelectedStages.length === 0
         ? [""]
@@ -723,15 +770,22 @@ export default function TaskCreatePage() {
 
       const planTask =
         selectedPlanTaskAllocations.find(
+          (task: any) => task.name && task.name === stageTask?.name,
+        ) ||
+        selectedPlanTaskAllocations.find(
           (task: any) => task.stageId === stageName,
-        ) || selectedPlanTaskAllocations[index];
+        ) ||
+        selectedPlanTaskAllocations[index];
       const sourceWorkItemId = isPlannedMode
-        ? toFiniteNumber(
-            formData.mainTaskIds[index] ||
-              formData.mainTaskId ||
-              planTask?.id,
-          )
+        ? toFiniteNumber(planTask?.id)
         : null;
+
+      // "Chọn nhân sự" per task block encodes assigned names into
+      // `labor` as "N người: A, B" rather than formData.assignedTo — mirror
+      // TaskStageAllocation's parsing so those picks actually get submitted.
+      const executorNames = stageTask?.labor?.includes(":")
+        ? stageTask.labor.split(":")[1].trim().split(", ").filter(Boolean)
+        : formData.assignedTo;
 
       const personnelRequests = [
         ...formData.supervisors
@@ -748,7 +802,7 @@ export default function TaskCreatePage() {
             personnelId,
             role: "QUALITY_INSPECTOR" as const,
           })),
-        ...formData.assignedTo
+        ...executorNames
           .map((name) => personnel.find((item) => item.fullName === name)?.id)
           .filter((id): id is number => typeof id === "number")
           .map((personnelId) => ({
@@ -757,25 +811,53 @@ export default function TaskCreatePage() {
           })),
       ];
 
+      const stageMaterials = isSimpleMode
+        ? formData.materials
+        : formData.materials.filter(
+            (material) => material.stageId === stageName,
+          );
+      const supplyLines = stageMaterials
+        .filter(
+          (
+            material,
+          ): material is typeof material & {
+            supplyItemId: number;
+            unitBaseId: number;
+          } =>
+            typeof material.supplyItemId === "number" &&
+            typeof material.unitBaseId === "number",
+        )
+        .map((material) => ({
+          supplyItemId: material.supplyItemId,
+          unitBaseId: material.unitBaseId,
+          quantity: Number(material.quantity) || 0,
+        }));
+
       const repeatSource =
         stageTask?.isRepeating && (stageTask.repeatDates?.length || 0) > 0
-          ? stageTask.repeatDates
+          ? (stageTask.repeatDates ?? [])
           : formData.tasks[0]?.isRepeating &&
               (formData.tasks[0].repeatDates?.length || 0) > 0
-            ? formData.tasks[0].repeatDates
+            ? (formData.tasks[0].repeatDates ?? [])
             : [];
 
+      const origin = isSimpleMode
+        ? "AD_HOC"
+        : isPlannedMode
+          ? "PLANNED"
+          : "AD_HOC";
+
       return {
-        origin: isSimpleMode
-          ? "AD_HOC"
-          : isPlannedMode
-            ? "PLANNED"
-            : "AD_HOC",
+        origin,
         planId: isPlannedMode ? toFiniteNumber(formData.planId) : null,
+        workflowId: isPlannedMode
+          ? undefined
+          : toFiniteNumber(formData.regimenId),
         scopeType,
         scopeId,
         sourceWorkItemId,
-        taskCategoryId: planTask?.taskCategoryId ?? null,
+        taskCategoryId:
+          origin === "PLANNED" ? null : (planTask?.taskCategoryId ?? null),
         name:
           isSimpleMode || !stageName
             ? formData.name
@@ -794,7 +876,7 @@ export default function TaskCreatePage() {
               repeatMode: "NONE" as const,
               repeatDates: null,
             },
-        supplyLines: [],
+        supplyLines,
         status: null,
       };
     });
@@ -836,6 +918,19 @@ export default function TaskCreatePage() {
       planName: "",
       mainTaskId: "",
       mainTaskIds: [],
+      selectedPlotIds: [],
+    }));
+    setSelections([]);
+    setPlanSearchTerm("");
+  };
+
+  const handleAdHocWorkflowChange = (workflowId: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      regimenId: workflowId,
+      planId: "",
+      planName: "",
+      selectedStages: [],
       selectedPlotIds: [],
     }));
     setSelections([]);
@@ -962,8 +1057,41 @@ export default function TaskCreatePage() {
                   />
                 </div>
 
+                {formData.mode === "phat-sinh" && (
+                  <div className="space-y-2 pt-2 border-slate-100">
+                    <Label className="text-sm font-bold text-slate-700">
+                      Quy trình *
+                    </Label>
+                    <Select
+                      value={formData.regimenId}
+                      onValueChange={(value) =>
+                        handleAdHocWorkflowChange(value)
+                      }
+                    >
+                      <SelectTrigger className="h-12">
+                        <SelectValue placeholder="Chọn quy trình..." />
+                      </SelectTrigger>
+                      <SelectContent className="max-h-80">
+                        {workflowOptions.map((workflow) => (
+                          <SelectItem
+                            key={workflow.id}
+                            value={String(workflow.id)}
+                          >
+                            {workflow.code
+                              ? `${workflow.code} - ${workflow.name}`
+                              : workflow.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <p className="text-[11px] font-medium text-slate-400">
+                      Chọn quy trình bắt buộc cho công việc phát sinh.
+                    </p>
+                  </div>
+                )}
+
                 {formData.mode === "plan" && (
-                  <div className="space-y-6 animation-fade-in border-t pt-6 mt-6 border-slate-100">
+                  <div className="space-y-6 animation-fade-in pt-2 border-slate-100">
                     <div className="space-y-4">
                       <div className="space-y-2">
                         <Label className="text-sm font-bold text-slate-700">
@@ -1049,7 +1177,8 @@ export default function TaskCreatePage() {
                               planId: val,
                               planName: p?.name || "",
                               objectiveType: p
-                                ? mapPurposeToObjectiveType(p.purpose)
+                                ? (PLAN_PURPOSE_TO_OBJECTIVE_TYPE[p.purpose] ??
+                                  "phat-sinh")
                                 : "theo-ke-hoach",
                               selectedStages: p?.selectedStages || [],
                               mainTaskIds: [],
@@ -1057,7 +1186,7 @@ export default function TaskCreatePage() {
                               supervisors: planSupervisors,
                               qualityInspectors: planInspectors,
                             });
-                            setSelections([]);
+                            setSelections(p?.scopes || []);
                             setPlanSearchTerm("");
                           }}
                         >
@@ -1156,102 +1285,36 @@ export default function TaskCreatePage() {
                                 Chưa chọn vùng canh tác cụ thể.
                               </div>
                             ) : (
-                          <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                              <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
                                 {getSelectionSummary(
                                   selections,
                                   planScopedRegions,
-                                ).map(
-                                  (group) => (
-                                    <div
-                                      key={group.regionId}
-                                      className="rounded-xl border border-emerald-100 bg-white/80 p-3"
-                                    >
-                                      <div className="mb-2 flex items-center gap-2 text-[11px] font-black uppercase tracking-wider text-emerald-700">
-                                        <MapPin className="h-3.5 w-3.5" />
-                                        {group.regionName}
-                                      </div>
-                                      <div className="flex flex-wrap gap-1.5">
-                                        {group.items.map((item) => (
-                                          <Badge
-                                            key={`${item.type}-${item.id}`}
-                                            variant="outline"
-                                            className="h-auto border-emerald-100 bg-emerald-50/60 px-2 py-0.5 text-[10px] font-semibold text-emerald-700"
-                                          >
-                                            {item.name}
-                                          </Badge>
-                                        ))}
-                                      </div>
+                                ).map((group) => (
+                                  <div
+                                    key={group.regionId}
+                                    className="rounded-xl border border-emerald-100 bg-white/80 p-3"
+                                  >
+                                    <div className="mb-2 flex items-center gap-2 text-[11px] font-black uppercase tracking-wider text-emerald-700">
+                                      <MapPin className="h-3.5 w-3.5" />
+                                      {group.regionName}
                                     </div>
-                                  ),
-                                )}
+                                    <div className="flex flex-wrap gap-1.5">
+                                      {group.items.map((item) => (
+                                        <Badge
+                                          key={`${item.type}-${item.id}`}
+                                          variant="outline"
+                                          className="h-auto border-emerald-100 bg-emerald-50/60 px-2 py-0.5 text-[10px] font-semibold text-emerald-700"
+                                        >
+                                          {item.name}
+                                        </Badge>
+                                      ))}
+                                    </div>
+                                  </div>
+                                ))}
                               </div>
                             )}
                           </div>
                         )}
-
-                        {formData.planId &&
-                          selectedPlanTaskAllocations.length > 0 && (
-                            <div className="space-y-2">
-                              <Label className="text-sm font-bold text-slate-700">
-                                Công việc chính
-                                <span className="ml-2 text-[10px] font-medium text-slate-400 normal-case">
-                                  Chọn 1 hoặc nhiều hạng mục dự kiến của kế
-                                  hoạch
-                                </span>
-                              </Label>
-                              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                                {selectedPlanTaskAllocations.map((t: any) => {
-                                  const taskId = String(t.id);
-                                  const checked =
-                                    formData.mainTaskIds.includes(taskId);
-                                  const toggle = () =>
-                                    setFormData((prev) => {
-                                      const isChecked =
-                                        prev.mainTaskIds.includes(taskId);
-                                      return {
-                                        ...prev,
-                                        mainTaskIds: isChecked
-                                          ? prev.mainTaskIds.filter(
-                                              (id) => id !== taskId,
-                                            )
-                                          : [...prev.mainTaskIds, taskId],
-                                        // Only seed the name while it is
-                                        // still empty so a typed-in name is
-                                        // never overwritten.
-                                        name:
-                                          prev.name ||
-                                          (!isChecked ? t.name : "") ||
-                                          "",
-                                      };
-                                    });
-
-                                  return (
-                                    <div
-                                      key={t.id}
-                                      onClick={toggle}
-                                      className={cn(
-                                        "flex items-center gap-3 p-3 rounded-xl border transition-all cursor-pointer group",
-                                        checked
-                                          ? "bg-primary/5 border-primary shadow-sm"
-                                          : "bg-white border-slate-200 hover:border-primary/20 hover:bg-slate-50/50",
-                                      )}
-                                    >
-                                      <Checkbox
-                                        checked={checked}
-                                        className="data-[state=checked]:bg-primary data-[state=checked]:border-primary"
-                                        onClick={(e) => e.stopPropagation()}
-                                        onCheckedChange={toggle}
-                                      />
-                                      <span className="text-sm font-bold text-slate-700 flex-1">
-                                        {t.name}
-                                        {t.stageId ? ` — ${t.stageId}` : ""}
-                                      </span>
-                                    </div>
-                                  );
-                                })}
-                              </div>
-                            </div>
-                          )}
 
                         {/* Thông tin kế hoạch chi tiết */}
                         {formData.planId && selectedPlan && (
@@ -1317,15 +1380,17 @@ export default function TaskCreatePage() {
                 )}
 
                 {formData.mode === "phat-sinh" && (
-                  <div className="space-y-6 animation-fade-in border-t pt-6 mt-6 border-slate-100">
+                  <div className="space-y-6 animation-fade-in border-slate-100">
                     <div className="space-y-2">
                       <Label className="text-sm font-bold text-slate-700">
                         Kế hoạch triển khai
                       </Label>
-                        <Select
-                          value={formData.planId}
-                          onValueChange={(val) => {
-                          const p = planOptions.find((p) => String(p.id) === val);
+                      <Select
+                        value={formData.planId}
+                        onValueChange={(val) => {
+                          const p = planOptions.find(
+                            (p) => String(p.id) === val,
+                          );
                           setFormData({
                             ...formData,
                             planId: val,
@@ -1333,16 +1398,16 @@ export default function TaskCreatePage() {
                             selectedStages: p?.selectedStages || [],
                             selectedPlotIds: [],
                           });
-                          setSelections([]);
+                          setSelections(p?.scopes || []);
                           setPlanSearchTerm("");
                         }}
                       >
                         <SelectTrigger className="h-12">
                           <SelectValue placeholder="Chọn kế hoạch áp dụng..." />
                         </SelectTrigger>
-                          <SelectContent className="max-h-80 overflow-hidden p-0">
-                            <div
-                              className="sticky top-0 z-10 border-b border-slate-100 bg-white p-2"
+                        <SelectContent className="max-h-80 overflow-hidden p-0">
+                          <div
+                            className="sticky top-0 z-10 border-b border-slate-100 bg-white p-2"
                             onKeyDown={(event) => event.stopPropagation()}
                           >
                             <div className="relative">
@@ -1360,21 +1425,21 @@ export default function TaskCreatePage() {
                                 className="h-9 pl-8 text-sm"
                               />
                             </div>
-                            </div>
-                            <div className="max-h-64 overflow-y-auto p-1">
-                              {planOptions.map((p) => (
-                                <SelectItem key={p.id} value={String(p.id)}>
-                                  {p.name} ({p.code})
-                                </SelectItem>
-                              ))}
-                              {planOptions.length === 0 && (
+                          </div>
+                          <div className="max-h-64 overflow-y-auto p-1">
+                            {planOptions.map((p) => (
+                              <SelectItem key={p.id} value={String(p.id)}>
+                                {p.name} ({p.code})
+                              </SelectItem>
+                            ))}
+                            {planOptions.length === 0 && (
                               <div className="p-4 text-center text-xs text-slate-400 italic">
                                 Không tìm thấy kế hoạch phù hợp
                               </div>
-                              )}
-                            </div>
-                          </SelectContent>
-                        </Select>
+                            )}
+                          </div>
+                        </SelectContent>
+                      </Select>
 
                       {formData.planId && selectedPlan && (
                         <div className="space-y-3 rounded-2xl border border-emerald-100 bg-emerald-50/30 p-4">
@@ -1496,7 +1561,10 @@ export default function TaskCreatePage() {
                               <p className="text-[10px] text-slate-400 mt-0.5">
                                 {[item?.departmentName, item?.positionName]
                                   .filter(Boolean)
-                                  .join(" · ") || item?.taxCode || item?.code || "Quản lý"}
+                                  .join(" · ") ||
+                                  item?.taxCode ||
+                                  item?.code ||
+                                  "Quản lý"}
                               </p>
                             </div>
                           </div>
@@ -1572,7 +1640,10 @@ export default function TaskCreatePage() {
                               <p className="text-[10px] text-slate-400 mt-0.5">
                                 {[item?.departmentName, item?.positionName]
                                   .filter(Boolean)
-                                  .join(" · ") || item?.taxCode || item?.code || "Kiểm định"}
+                                  .join(" · ") ||
+                                  item?.taxCode ||
+                                  item?.code ||
+                                  "Kiểm định"}
                               </p>
                             </div>
                           </div>
@@ -1680,7 +1751,9 @@ export default function TaskCreatePage() {
                                   <p className="text-[11px] text-slate-500 truncate">
                                     {[p.departmentName, p.positionName]
                                       .filter(Boolean)
-                                      .join(" · ") || p.code || "—"}
+                                      .join(" · ") ||
+                                      p.code ||
+                                      "—"}
                                   </p>
                                 </div>
                                 {isSelected && (
@@ -1775,7 +1848,9 @@ export default function TaskCreatePage() {
                                   <p className="text-[11px] text-slate-500 truncate">
                                     {[p.departmentName, p.positionName]
                                       .filter(Boolean)
-                                      .join(" · ") || p.code || "—"}
+                                      .join(" · ") ||
+                                      p.code ||
+                                      "—"}
                                   </p>
                                 </div>
                                 {isSelected && (
@@ -2540,6 +2615,7 @@ export default function TaskCreatePage() {
           <SimpleTaskForm
             formData={formData}
             setFormData={setFormData}
+            workflows={workflowOptions}
             handleComplete={handleComplete}
             goBack={() => setLocation("/task")}
             completeLabel="Hoàn tất & Khởi tạo"

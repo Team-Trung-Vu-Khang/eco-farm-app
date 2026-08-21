@@ -121,6 +121,8 @@ export function farmTaskToLegacyTask(task: FarmTaskResponse): Task {
       materialCategory: line.supplyItem.supplyType || "other",
       materialType: line.supplyItem.supplyType || "other",
       materialName: line.supplyItem.name || line.supplyItem.code || `Vật tư #${line.id}`,
+      supplyItemId: line.supplyItem.id,
+      unitBaseId: line.unitBase.id,
     })),
     tasks: [],
     geographicalSelections: mapScopeToSelections(task),

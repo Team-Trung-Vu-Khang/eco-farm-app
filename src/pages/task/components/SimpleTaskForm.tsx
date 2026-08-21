@@ -7,6 +7,11 @@ import {
   Checkbox,
   Input,
   Label,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
   Textarea,
   cn,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
@@ -57,6 +62,7 @@ const PRIORITY_OPTIONS = [
 interface SimpleTaskFormProps {
   formData: TaskCreateFormData;
   setFormData: Dispatch<SetStateAction<TaskCreateFormData>>;
+  workflows?: Array<{ id: number; code?: string; name: string }>;
   handleComplete: () => void;
   goBack: () => void;
   completeLabel?: string;
@@ -65,6 +71,7 @@ interface SimpleTaskFormProps {
 export default function SimpleTaskForm({
   formData,
   setFormData,
+  workflows = [],
   handleComplete,
   goBack,
   completeLabel = "Hoàn tất & Khởi tạo",
@@ -133,6 +140,29 @@ export default function SimpleTaskForm({
           }
           placeholder="VD: Bón phân thúc đợt 1"
         />
+      </div>
+
+      <div className="space-y-2">
+        <Label required>Quy trình</Label>
+        <Select
+          value={formData.regimenId}
+          onValueChange={(value) =>
+            setFormData((prev) => ({ ...prev, regimenId: value }))
+          }
+        >
+          <SelectTrigger>
+            <SelectValue placeholder="Chọn quy trình..." />
+          </SelectTrigger>
+          <SelectContent>
+            {workflows.map((workflow) => (
+              <SelectItem key={workflow.id} value={String(workflow.id)}>
+                {workflow.code
+                  ? `${workflow.code} - ${workflow.name}`
+                  : workflow.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
       <div className="space-y-2">

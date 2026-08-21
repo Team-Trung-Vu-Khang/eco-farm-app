@@ -56,7 +56,16 @@ import { useLocation, useParams } from "wouter";
 import { AppLoadingState } from "@/components/AppLoadingState";
 import { useFarmTaskById, useUpdateFarmTask } from "@/features/farm-task";
 import type { FarmTaskRequest } from "@/features/farm-task";
-import { useFarmPlanById } from "@/features/farm-workflow/hooks";
+import {
+  useFarmPersonnel,
+  type FarmPersonnelResponse,
+} from "@/features/master-data";
+import { useSelectedWorkspaceId } from "@/features/workspace";
+import {
+  useFarmPlanById,
+  useFarmPlans,
+  useFarmWorkflows,
+} from "@/features/farm-workflow/hooks";
 import useAmendmentPlanStore from "../../stores/useAmendmentPlanStore";
 import usePersonnelStore from "../../stores/usePersonnelStore";
 import usePlanStore, { type Plan } from "../../stores/usePlanStore";
@@ -138,6 +147,46 @@ function toFiniteNumber(value: string | number | undefined | null) {
   return Number.isFinite(next) ? next : null;
 }
 
+function pickText(...values: Array<string | null | undefined>) {
+  for (const value of values) {
+    if (typeof value === "string" && value.trim()) return value;
+  }
+  return "";
+}
+
+function pickArray<T>(...values: Array<T[] | null | undefined>) {
+  for (const value of values) {
+    if (Array.isArray(value) && value.length > 0) return value;
+  }
+  for (const value of values) {
+    if (Array.isArray(value)) return value;
+  }
+  return [];
+}
+
+function buildTaskDraftFromTask(task: ReturnType<typeof farmTaskToLegacyTask>) {
+  const stageId = task.stage || "Công việc phát sinh";
+  return {
+    id: task.id,
+    stageId,
+    name: task.name,
+    description: task.description,
+    labor:
+      task.assignedTo.length > 0
+        ? `Nhân sự: ${task.assignedTo.join(", ")}`
+        : "",
+    duration:
+      task.startDate && task.endDate
+        ? `${task.startDate} → ${task.endDate}`
+        : "",
+    startDate: task.startDate,
+    endDate: task.endDate,
+    geographicalSelections: task.geographicalSelections || [],
+    isRepeating: false,
+    repeatDates: [],
+  };
+}
+
 function mapSelectionsToScope(
   selections: GeographicalSelection[],
 ): Pick<FarmTaskRequest, "scopeType" | "scopeId"> {
@@ -197,7 +246,46 @@ export default function TaskEditPage() {
   });
   const plans = usePlanStore((state) => state.plans);
   const amendmentPlans = useAmendmentPlanStore((state) => state.plans);
-  const personnel = usePersonnelStore((state) => state.personnel);
+  const workflowsQuery = useFarmWorkflows({
+    params: { page: 0, size: 100 },
+  });
+  const localPersonnel = usePersonnelStore((state) => state.personnel);
+  const workspaceId = useSelectedWorkspaceId();
+  const numericWorkspaceId =
+    typeof workspaceId === "number" ? workspaceId : undefined;
+  const farmPersonnelQuery = useFarmPersonnel({
+    workspaceId: numericWorkspaceId,
+    params: {
+      page: 0,
+      size: 100,
+      status: "active",
+    },
+    enabled: numericWorkspaceId !== undefined,
+  });
+  const personnel = useMemo(() => {
+    if (numericWorkspaceId !== undefined) {
+      return farmPersonnelQuery.items.map((item: FarmPersonnelResponse) => ({
+        id: item.id,
+        fullName: item.fullName,
+        avatar: (item as any).avatarUrl || (item as any).avatar || "",
+        position:
+          (item as any).position?.name ||
+          (item as any).positionName ||
+          (item as any).position?.code ||
+          "",
+        department:
+          (item as any).department?.name ||
+          (item as any).departmentName ||
+          (item as any).department?.code ||
+          "",
+        team:
+          item.teams?.map((team) => team.name).filter(Boolean).join(", ") ||
+          "",
+      }));
+    }
+
+    return localPersonnel;
+  }, [farmPersonnelQuery.items, localPersonnel, numericWorkspaceId]);
   const localTask = useTaskStore((state) =>
     state.tasks.find((item) => item.id === Number(params.id)),
   );
@@ -223,6 +311,17 @@ export default function TaskEditPage() {
   const [selectedEnterpriseId] = useState<string>("");
   const [selections, setSelections] = useState<GeographicalSelection[]>([]);
 
+  const workflowPlansQuery = useFarmPlans({
+    params: {
+      workflowId: formData.regimenId
+        ? Number(formData.regimenId)
+        : undefined,
+      page: 0,
+      size: 100,
+    },
+    enabled: !!formData.regimenId,
+  });
+
   const [newMaterial, setNewMaterial] = useState({
     type: "fertilizer" as "fertilizer" | "pesticide" | "tool" | "other",
     name: "",
@@ -234,18 +333,27 @@ export default function TaskEditPage() {
     if (!taskResponse && !localTask) return;
 
     const apiTask = taskResponse ? farmTaskToLegacyTask(taskResponse) : undefined;
-    const sourceTask = localTask ?? apiTask;
+    const isPlannedTask =
+      taskResponse?.origin === "PLANNED" || Boolean(localTask?.planId);
+    const repeatDates =
+      taskResponse?.recurrence?.repeatMode === "SPECIFIC_DATES"
+        ? taskResponse.recurrence.repeatDates?.filter(Boolean) || []
+        : [];
+    const isRepeating = repeatDates.length > 0;
     const planDetail = planDetailQuery.data;
     const allPlans = [...plans, ...amendmentPlans] as any[];
     const planMatch = planDetail
       ? mapPlanResponseToPlan(planDetail)
       : taskResponse?.plan?.id
         ? allPlans.find((plan) => String(plan.id) === String(taskResponse.plan?.id))
-        : allPlans.find((plan) =>
-            plan.name?.normalize?.() === sourceTask?.plan?.normalize?.(),
+        : allPlans.find(
+            (plan) =>
+              plan.name?.normalize?.() === task?.plan?.normalize?.(),
           );
 
-    const stageSource = localTask?.stage || apiTask?.stage || "";
+    const stageSource = isPlannedTask
+      ? task?.stage || ""
+      : "Công việc phát sinh";
     const selectedStages =
       stageSource && stageSource !== "N/A"
         ? stageSource
@@ -257,13 +365,17 @@ export default function TaskEditPage() {
       ? mapWorkflowScopesToSelections(planDetail.scopes)
       : [];
     const taskSelections =
-      localTask?.geographicalSelections?.length
-        ? localTask.geographicalSelections
-        : apiTask?.geographicalSelections?.length
-          ? apiTask.geographicalSelections
-          : [];
+      isPlannedTask && scopeSelections.length > 0
+        ? scopeSelections
+        : localTask?.geographicalSelections?.length
+          ? localTask.geographicalSelections
+          : apiTask?.geographicalSelections?.length
+            ? apiTask.geographicalSelections
+            : [];
     const selectedPlotIds =
-      taskSelections.length > 0
+      isPlannedTask
+        ? []
+        : taskSelections.length > 0
         ? taskSelections
             .filter((item) => item.type === "plot")
             .map((item) => String(item.plotId))
@@ -276,6 +388,8 @@ export default function TaskEditPage() {
       ? (localTask as any).mainTaskIds.map(String)
       : Array.isArray((taskResponse as any)?.mainTaskIds)
         ? (taskResponse as any).mainTaskIds.map(String)
+        : taskResponse?.sourceWorkItem?.id
+          ? [String(taskResponse.sourceWorkItem.id)]
         : (localTask as any)?.mainTaskId || (taskResponse as any)?.mainTaskId
           ? [
               String(
@@ -285,13 +399,55 @@ export default function TaskEditPage() {
             ]
         : [];
 
+    const hydratedMaterials = pickArray(localTask?.materials, apiTask?.materials).map(
+      (material) => ({
+        ...material,
+        stageId: isPlannedTask
+          ? material.stageId?.normalize?.() || material.stageId
+          : "Công việc phát sinh",
+      }),
+    ) as MaterialAllocation[];
+    const hydratedTasks = pickArray(localTask?.tasks, apiTask?.tasks).map((item) => ({
+      ...item,
+      name: item.name || apiTask?.name || "",
+      stageId:
+        isPlannedTask
+          ? item.stageId?.normalize?.() || apiTask?.stage || item.stageId || ""
+          : "Công việc phát sinh",
+      startDate: item.startDate || apiTask?.startDate,
+      endDate: item.endDate || apiTask?.endDate,
+      isRepeating: item.isRepeating ?? isRepeating,
+      repeatDates:
+        item.repeatDates && item.repeatDates.length > 0
+          ? item.repeatDates
+          : repeatDates,
+      geographicalSelections:
+        isPlannedTask && scopeSelections.length > 0
+          ? scopeSelections
+          : item.geographicalSelections,
+    })) as TaskAllocation[];
+    const seededTask =
+      hydratedTasks.length > 0 && taskResponse
+        ? hydratedTasks
+        : taskResponse
+          ? [
+              {
+                ...buildTaskDraftFromTask(
+                  apiTask ?? farmTaskToLegacyTask(taskResponse),
+                ),
+                geographicalSelections: taskSelections,
+                isRepeating,
+                repeatDates,
+              },
+            ]
+          : [];
+
     setSelections(taskSelections.length > 0 ? taskSelections : scopeSelections);
     setFormData({
       code:
-        taskResponse?.code ||
-        (localTask as any)?.code ||
+        pickText(taskResponse?.code, (localTask as any)?.code) ||
         createEmptyTaskFormData().code,
-      name: taskResponse?.name || localTask?.name || "",
+      name: pickText(taskResponse?.name, localTask?.name),
       mode:
         taskResponse?.origin === "PLANNED" || localTask?.planId
           ? "plan"
@@ -304,37 +460,28 @@ export default function TaskEditPage() {
         taskResponse?.plan?.id
           ? String(taskResponse.plan.id)
           : (localTask as any)?.planId || "",
-      planName: taskResponse?.plan?.name || localTask?.plan || "",
+      planName: pickText(taskResponse?.plan?.name, localTask?.plan),
       mainTaskId: (localTask as any)?.mainTaskId || mainTaskIds[0] || "",
       mainTaskIds,
       selectedStages,
       selectedPlotIds,
       regimenId: String((taskResponse as any)?.workflow?.id || ""),
-      assignedType: localTask?.assignedType || apiTask?.assignedType || "individual",
-      assignedTo: localTask?.assignedTo || apiTask?.assignedTo || [],
-      supervisors: localTask?.supervisors || apiTask?.supervisors || [],
+      assignedType:
+        localTask?.assignedType || apiTask?.assignedType || "individual",
+      assignedTo: pickArray(localTask?.assignedTo, apiTask?.assignedTo),
+      supervisors: pickArray(localTask?.supervisors, apiTask?.supervisors),
       qualityInspectors:
-        localTask?.qualityInspectors || apiTask?.qualityInspectors || [],
+        pickArray(localTask?.qualityInspectors, apiTask?.qualityInspectors),
       startDate:
-        taskResponse?.startDate ||
-        localTask?.startDate ||
+        pickText(taskResponse?.startDate, localTask?.startDate) ||
         new Date().toISOString().split("T")[0],
       endDate:
-        taskResponse?.endDate ||
-        localTask?.endDate ||
+        pickText(taskResponse?.endDate, localTask?.endDate) ||
         new Date().toISOString().split("T")[0],
       priority: localTask?.priority || apiTask?.priority || "medium",
-      description: taskResponse?.note || localTask?.description || "",
-      materials:
-        ((localTask?.materials || apiTask?.materials) as MaterialAllocation[])?.map((material) => ({
-          ...material,
-          stageId: material.stageId?.normalize?.() || material.stageId,
-        })) || [],
-      tasks:
-        ((localTask?.tasks || apiTask?.tasks) as TaskAllocation[])?.map((item) => ({
-          ...item,
-          stageId: item.stageId?.normalize?.() || item.stageId,
-        })) || [],
+      description: pickText(taskResponse?.note, localTask?.description),
+      materials: hydratedMaterials,
+      tasks: seededTask,
     });
   }, [taskResponse, localTask, planDetailQuery.data, plans, amendmentPlans]);
 
@@ -366,15 +513,44 @@ export default function TaskEditPage() {
     );
   }, [plans, planSearchTerm]);
 
+  const apiPlans = useMemo(
+    () => workflowPlansQuery.items.map(mapPlanResponseToPlan),
+    [workflowPlansQuery.items],
+  );
+  const planOptionsFromApi = useMemo(() => {
+    const query = planSearchTerm.trim().toLowerCase();
+    if (!query) return apiPlans;
+    return apiPlans.filter((plan) =>
+      `${plan.name} ${plan.code}`.toLowerCase().includes(query),
+    );
+  }, [apiPlans, planSearchTerm]);
+
   // Phát sinh tasks aren't scoped to a purpose, so they can reference any
   // plan directly instead of the purpose-filtered `activePlans` list.
   const selectedPlan =
     (planDetailQuery.data
       ? mapPlanResponseToPlan(planDetailQuery.data)
       : undefined) ||
+    apiPlans.find((plan) => String(plan.id) === formData.planId) ||
     (
       formData.mode === "phat-sinh" ? plans : (activePlans as any[])
     ).find((p: any) => String(p.id) === formData.planId);
+  const mergedPlanOptions = [
+    ...planOptionsFromApi,
+    ...filteredPlans.filter(
+      (plan) =>
+        !planOptionsFromApi.some(
+          (apiPlan) => String(apiPlan.id) === String(plan.id),
+        ),
+    ),
+  ];
+  const planOptionsForSelect =
+    selectedPlan &&
+    !mergedPlanOptions.some(
+      (plan) => String(plan.id) === String(selectedPlan.id),
+    )
+      ? [selectedPlan, ...mergedPlanOptions]
+      : mergedPlanOptions;
 
   const { regions, getRegionById } = useRegionStore();
 
@@ -683,12 +859,31 @@ export default function TaskEditPage() {
     id: number,
     updatedTask: Partial<TaskAllocation>,
   ) => {
-    setFormData((prev) => ({
-      ...prev,
-      tasks: prev.tasks.map((t) =>
-        t.id === id ? { ...t, ...updatedTask } : t,
-      ),
-    }));
+    setFormData((prev) => {
+      const tasks = prev.tasks.map((task) =>
+        task.id === id ? { ...task, ...updatedTask } : task,
+      );
+      const updatedTaskRow = tasks.find((task) => task.id === id);
+      const hasStartDate = Object.prototype.hasOwnProperty.call(
+        updatedTask,
+        "startDate",
+      );
+      const hasEndDate = Object.prototype.hasOwnProperty.call(
+        updatedTask,
+        "endDate",
+      );
+
+      return {
+        ...prev,
+        tasks,
+        ...(hasStartDate && updatedTaskRow
+          ? { startDate: updatedTaskRow.startDate || prev.startDate }
+          : {}),
+        ...(hasEndDate && updatedTaskRow
+          ? { endDate: updatedTaskRow.endDate || prev.endDate }
+          : {}),
+      };
+    });
   };
 
   const handleRemoveTask = (taskId: number) => {
@@ -805,12 +1000,20 @@ export default function TaskEditPage() {
       startDate: formData.startDate,
       endDate: formData.endDate,
       recurrence,
-      supplyLines:
-        taskResponse.supplyLines?.map((line) => ({
-          supplyItemId: line.supplyItem.id,
-          unitBaseId: line.unitBase.id,
-          quantity: line.quantity,
-        })) || [],
+      supplyLines: formData.materials
+        .filter(
+          (material): material is typeof material & {
+            supplyItemId: number;
+            unitBaseId: number;
+          } =>
+            typeof material.supplyItemId === "number" &&
+            typeof material.unitBaseId === "number",
+        )
+        .map((material) => ({
+          supplyItemId: material.supplyItemId,
+          unitBaseId: material.unitBaseId,
+          quantity: Number(material.quantity) || 0,
+        })),
       status: taskResponse.status,
     };
 
@@ -1037,33 +1240,14 @@ export default function TaskEditPage() {
                             <div className="flex items-center justify-between gap-3">
                               <div>
                                 <Label className="text-sm font-bold text-slate-700">
-                                  Vùng canh tác từ kế hoạch
+                                  Phạm vi thực hiện từ kế hoạch
                                   <span className="text-red-500"> *</span>
                                 </Label>
                                 <p className="mt-1 text-[11px] font-medium text-slate-400">
-                                  Chỉ chọn được vùng/khu/lô thuộc kế hoạch triển
+                                  Phạm vi được lấy trực tiếp từ kế hoạch triển
                                   khai đã chọn.
                                 </p>
                               </div>
-                              <GeographicalSelector
-                                regions={planScopedRegions}
-                                enterpriseId={
-                                  selectedEnterpriseId ||
-                                  (selectedPlan as any)?.enterpriseId ||
-                                  ""
-                                }
-                                existingSelections={selections}
-                                onConfirm={(nextSelections) => {
-                                  setSelections(nextSelections);
-                                  setFormData((prev) => ({
-                                    ...prev,
-                                    selectedPlotIds: nextSelections
-                                      .filter((item) => item.type === "plot")
-                                      .map((item) => String(item.plotId)),
-                                  }));
-                                }}
-                                disabled={planScopedRegions.length === 0}
-                              />
                             </div>
 
                             {planScopedRegions.length === 0 ? (
@@ -1107,70 +1291,6 @@ export default function TaskEditPage() {
                             )}
                           </div>
                         )}
-
-                        {formData.planId &&
-                          (selectedPlan?.taskAllocations || []).length > 0 && (
-                            <div className="space-y-2">
-                              <Label className="text-sm font-bold text-slate-700">
-                                Công việc chính
-                                <span className="ml-2 text-[10px] font-medium text-slate-400 normal-case">
-                                  Chọn 1 hoặc nhiều hạng mục dự kiến của kế hoạch
-                                </span>
-                              </Label>
-                              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                                {(selectedPlan?.taskAllocations || []).map(
-                                  (t: any) => {
-                                    const taskId = String(t.id);
-                                    const checked =
-                                      formData.mainTaskIds.includes(taskId);
-                                    const toggle = () =>
-                                      setFormData((prev) => {
-                                        const isChecked =
-                                          prev.mainTaskIds.includes(taskId);
-                                        return {
-                                          ...prev,
-                                          mainTaskIds: isChecked
-                                            ? prev.mainTaskIds.filter(
-                                                (id) => id !== taskId,
-                                              )
-                                            : [...prev.mainTaskIds, taskId],
-                                          // Only seed the name while it is
-                                          // still empty so a typed-in name is
-                                          // never overwritten.
-                                          name:
-                                            prev.name ||
-                                            (!isChecked ? t.name : "") ||
-                                            "",
-                                        };
-                                      });
-                                    return (
-                                      <div
-                                        key={t.id}
-                                        onClick={toggle}
-                                        className={cn(
-                                          "flex items-center gap-3 p-3 rounded-xl border transition-all cursor-pointer group",
-                                          checked
-                                            ? "bg-primary/5 border-primary shadow-sm"
-                                            : "bg-white border-slate-200 hover:border-primary/20 hover:bg-slate-50/50",
-                                        )}
-                                      >
-                                        <Checkbox
-                                          checked={checked}
-                                          className="data-[state=checked]:bg-primary data-[state=checked]:border-primary"
-                                          onClick={(e) => e.stopPropagation()}
-                                          onCheckedChange={toggle}
-                                        />
-                                        <span className="text-sm font-bold text-slate-700 flex-1">
-                                          {t.name}
-                                          {t.stageId ? ` — ${t.stageId}` : ""}
-                                        </span>
-                                      </div>
-                                    );
-                                  },
-                                )}
-                              </div>
-                            </div>
-                          )}
 
                         {/* Thông tin kế hoạch chi tiết */}
                         {formData.planId && selectedPlan && (
@@ -1239,6 +1359,37 @@ export default function TaskEditPage() {
                   <div className="space-y-6 animation-fade-in border-t pt-6 mt-6 border-slate-100">
                     <div className="space-y-2">
                       <Label className="text-sm font-bold text-slate-700">
+                        Quy trình *
+                      </Label>
+                      <Select
+                        value={formData.regimenId}
+                        onValueChange={(value) =>
+                          setFormData((prev) => ({
+                            ...prev,
+                            regimenId: value,
+                          }))
+                        }
+                      >
+                        <SelectTrigger className="h-12">
+                          <SelectValue placeholder="Chọn quy trình..." />
+                        </SelectTrigger>
+                        <SelectContent className="max-h-80">
+                          {workflowsQuery.items.map((workflow) => (
+                            <SelectItem
+                              key={workflow.id}
+                              value={String(workflow.id)}
+                            >
+                              {workflow.code
+                                ? `${workflow.code} - ${workflow.name}`
+                                : workflow.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label className="text-sm font-bold text-slate-700">
                         Kế hoạch triển khai tham chiếu
                         <span className="ml-2 text-[10px] font-medium text-slate-400 normal-case">
                           Không bắt buộc — dùng để giới hạn vùng canh tác bên
@@ -1248,7 +1399,9 @@ export default function TaskEditPage() {
                       <Select
                         value={formData.planId}
                         onValueChange={(val) => {
-                          const p = plans.find((p) => String(p.id) === val);
+                          const p = planOptionsForSelect.find(
+                            (p) => String(p.id) === val,
+                          );
                           setFormData({
                             ...formData,
                             planId: val,
@@ -1284,12 +1437,12 @@ export default function TaskEditPage() {
                             </div>
                           </div>
                           <div className="max-h-64 overflow-y-auto p-1">
-                            {filteredPlans.map((p) => (
+                            {planOptionsForSelect.map((p) => (
                               <SelectItem key={p.id} value={String(p.id)}>
                                 {p.name} ({p.code})
                               </SelectItem>
                             ))}
-                            {filteredPlans.length === 0 && (
+                            {planOptionsForSelect.length === 0 && (
                               <div className="p-4 text-center text-xs text-slate-400 italic">
                                 Không tìm thấy kế hoạch phù hợp
                               </div>
@@ -1860,6 +2013,7 @@ export default function TaskEditPage() {
                     onAddTask={handleAddTask}
                     onRemoveTask={handleRemoveTask}
                     onUpdateTask={handleUpdateTask}
+                    showTaskPicker={false}
                     regions={regions}
                     personnel={personnel}
                     masterSelections={selections}
@@ -1892,6 +2046,7 @@ export default function TaskEditPage() {
                   onAddTask={handleAddTask}
                   onRemoveTask={handleRemoveTask}
                   onUpdateTask={handleUpdateTask}
+                  showTaskPicker={false}
                   regions={regions}
                   personnel={personnel}
                   masterSelections={selections}
@@ -2050,14 +2205,25 @@ export default function TaskEditPage() {
                         </div>
                       )}
                     </div>
-                    {formData.selectedPlotIds.length > 0 && (
+                    {selections.length > 0 && (
                       <div className="shrink-0 text-right">
                         <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-0.5">
-                          Phạm vi lô đất
+                          Phạm vi thực hiện
                         </p>
-                        <p className="text-xs font-semibold text-slate-700 max-w-[160px] text-right leading-snug">
-                          {formData.selectedPlotIds.join("; ")}
-                        </p>
+                        <div className="flex max-w-[220px] flex-wrap justify-end gap-1">
+                          {getSelectionSummary(selections, planScopedRegions).flatMap(
+                            (group) =>
+                              group.items.map((item) => (
+                                <Badge
+                                  key={`${group.regionId}-${item.id}`}
+                                  variant="secondary"
+                                  className="text-[10px] bg-emerald-50 text-emerald-700 border-none px-2 py-0 h-5 font-medium"
+                                >
+                                  {item.name}
+                                </Badge>
+                              )),
+                          )}
+                        </div>
                       </div>
                     )}
                   </div>
@@ -2196,8 +2362,10 @@ export default function TaskEditPage() {
                       </div>
 
                       {/* Scope MapPin */}
-                      {task.geographicalSelections &&
-                        task.geographicalSelections.length > 0 && (
+                      {(formData.mode === "plan"
+                        ? selections
+                        : task.geographicalSelections
+                      )?.length > 0 && (
                           <div className="flex items-start gap-2.5 pt-3 border-t border-slate-50">
                             <MapPin className="w-3.5 h-3.5 text-slate-400 mt-1" />
                             <div className="flex-1">
@@ -2206,7 +2374,12 @@ export default function TaskEditPage() {
                               </p>
                               <div className="flex flex-wrap gap-1.5">
                                 {getSelectionSummary(
-                                  task.geographicalSelections,
+                                  formData.mode === "plan"
+                                    ? selections
+                                    : task.geographicalSelections || [],
+                                  formData.mode === "plan"
+                                    ? planScopedRegions
+                                    : regions,
                                 ).map((group) => (
                                   <div
                                     key={group.regionId}
@@ -2325,9 +2498,9 @@ export default function TaskEditPage() {
                       sub: "áp dụng",
                     },
                     {
-                      label: "Lô đất",
-                      value: formData.selectedPlotIds.length || "—",
-                      sub: "phạm vi",
+                      label: "Phạm vi",
+                      value: selections.length || "—",
+                      sub: "khu vực",
                     },
                   ].map((stat) => (
                     <div
@@ -2443,6 +2616,7 @@ export default function TaskEditPage() {
           <SimpleTaskForm
             formData={formData}
             setFormData={setFormData}
+            workflows={workflowsQuery.items}
             handleComplete={handleComplete}
             goBack={() => setLocation("/task")}
             completeLabel="Hoàn tất & Cập nhật"

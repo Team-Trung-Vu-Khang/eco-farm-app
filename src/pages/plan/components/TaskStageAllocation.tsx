@@ -58,6 +58,7 @@ export const TaskStageAllocation = memo(
     masterSelections = [],
     availableTasks,
     availableMaterials,
+    showTaskPicker = true,
     personnel = [],
     onUpdateMaterial,
   }: {
@@ -77,6 +78,7 @@ export const TaskStageAllocation = memo(
     enterpriseId?: string;
     availableTasks?: TaskAllocation[];
     availableMaterials?: MaterialAllocation[];
+    showTaskPicker?: boolean;
   }) => {
     // When the user clicks "Thêm" for the stage, we add a blank task
     const handleAddBlankTask = () => {
@@ -143,6 +145,7 @@ export const TaskStageAllocation = memo(
                   stageName={stageName}
                   availableTasks={availableTasks}
                   availableMaterials={availableMaterials}
+                  showTaskPicker={showTaskPicker}
                   onUpdateMaterial={onUpdateMaterial}
                 />
               );
@@ -165,6 +168,7 @@ const TaskBlock = ({
   stageName,
   availableTasks,
   availableMaterials,
+  showTaskPicker = true,
   onUpdateMaterial,
 }: any) => {
   const [isPersonnelDialogOpen, setIsPersonnelDialogOpen] = useState(false);
@@ -217,6 +221,8 @@ const TaskBlock = ({
               unit: m.unit,
               maxQty: m.quantity,
               category: m.materialCategory,
+              supplyItemId: m.supplyItemId,
+              unitBaseId: m.unitBaseId,
             });
           }
           return acc;
@@ -344,32 +350,41 @@ const TaskBlock = ({
         <div className="p-5 space-y-5">
           {/* Task Combobox */}
           <div>
-            <Combobox
-              options={
-                availableTasks
-                  ? availableTasks.map((t: any) => ({
-                      value: t.name,
-                      label: t.name,
-                    }))
-                  : (TASK_OPTIONS as any[])
-              }
-              value={task.name}
-              onChange={(val) => {
-                const selectedTask = availableTasks?.find(
-                  (t: any) => t.name === val,
-                );
-                onUpdateTask?.(task.id, {
-                  name: val,
-                  liter: selectedTask?.liter,
-                  labor: selectedTask?.labor || "",
-                  geographicalSelections:
-                    selectedTask?.geographicalSelections || [],
-                });
-              }}
-              placeholder="Danh sách công việc trong kế hoạch"
-              searchPlaceholder="Tìm kiếm công việc..."
-              className="w-full font-bold bg-slate-50 border-slate-200"
-            />
+            {showTaskPicker ? (
+              <Combobox
+                options={
+                  availableTasks
+                    ? availableTasks.map((t: any) => ({
+                        value: t.name,
+                        label: t.name,
+                      }))
+                    : (TASK_OPTIONS as any[])
+                }
+                value={task.name}
+                onChange={(val) => {
+                  const selectedTask = availableTasks?.find(
+                    (t: any) => t.name === val,
+                  );
+                  onUpdateTask?.(task.id, {
+                    name: val,
+                    liter: selectedTask?.liter,
+                    labor: selectedTask?.labor || "",
+                    geographicalSelections:
+                      selectedTask?.geographicalSelections || [],
+                  });
+                }}
+                placeholder="Danh sách công việc trong kế hoạch"
+                searchPlaceholder="Tìm kiếm công việc..."
+                className="w-full font-bold bg-slate-50 border-slate-200"
+              />
+            ) : (
+              <Input
+                value={task.name}
+                readOnly
+                placeholder="Tên công việc"
+                className="w-full font-bold bg-slate-50 border-slate-200"
+              />
+            )}
           </div>
 
           <div className="flex flex-col gap-3">
@@ -670,6 +685,8 @@ const TaskBlock = ({
                                       materialName: item.name,
                                       quantity: "0",
                                       unit: item.unit,
+                                      supplyItemId: item.supplyItemId,
+                                      unitBaseId: item.unitBaseId,
                                     });
                                   } else if (allocation) {
                                     onRemoveMaterial(allocation.id);

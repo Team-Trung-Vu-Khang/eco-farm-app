@@ -14,6 +14,10 @@ export interface GeographicalSelection {
 
 export interface MaterialAllocation extends StoreMaterialAllocation {
   taskId?: number;
+  // Only present when picked from the plan's own supply catalog — matches
+  // FarmTaskRequest.supplyLines' shape so it can be submitted directly.
+  supplyItemId?: number;
+  unitBaseId?: number;
 }
 
 export interface TaskAllocation extends StoreTaskAllocation {
