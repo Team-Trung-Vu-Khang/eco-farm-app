@@ -1,4 +1,5 @@
 import PageWrapper from "@/components/PageWrapper";
+import { AppLoadingState } from "@/components/AppLoadingState";
 import {
   Button,
   DataTable,
@@ -11,7 +12,7 @@ import { TaskStatsGrid } from "./components/TaskStatsGrid";
 import { TaskViewToggle } from "./components/TaskViewToggle";
 import { taskColumns } from "./data/columns";
 import {
-  TASK_ASSIGNED_TYPE_FILTER_OPTIONS,
+  TASK_ORIGIN_FILTER_OPTIONS,
   TASK_PRIORITY_FILTER_OPTIONS,
   TASK_STATUS_FILTER_OPTIONS,
 } from "./data/constants";
@@ -20,6 +21,8 @@ import { useTaskPage } from "./hooks/useTaskPage";
 export default function TaskPage() {
   const {
     tasks,
+    tasksLoading,
+    response,
     stats,
     viewMode,
     setViewMode,
@@ -31,12 +34,22 @@ export default function TaskPage() {
     isPlanScoped,
     planNotFound,
     clearPlanScope,
+    handleSearchChange,
+    handleFilterChange,
+    currentIndex,
+    setCurrentIndex,
+    pageSize,
+    setPageSize,
     handleAdd,
     handleEdit,
     handleView,
     handleDelete,
     handleConfirmDelete,
   } = useTaskPage();
+
+  if (tasksLoading && tasks.length === 0) {
+    return <AppLoadingState />;
+  }
 
   return (
     <PageWrapper
@@ -54,7 +67,13 @@ export default function TaskPage() {
               Tất cả công việc
             </Button>
           )}
-          <TaskViewToggle value={viewMode} onChange={setViewMode} />
+          <TaskViewToggle
+            value={viewMode}
+            onChange={(mode) => {
+              setCurrentIndex(1);
+              setViewMode(mode);
+            }}
+          />
           <Button onClick={handleAdd} data-testid="add-task">
             <Plus className="w-4 h-4 mr-2" />
             Phân bổ công việc
@@ -62,7 +81,12 @@ export default function TaskPage() {
         </div>
       }
     >
-      {plan && <TaskPlanContextCard plan={plan} taskCount={tasks.length} />}
+      {plan && (
+        <TaskPlanContextCard
+          plan={plan}
+          taskCount={response?.totalElements ?? tasks.length}
+        />
+      )}
 
       {planNotFound && (
         <div className="mb-4 p-4 rounded-lg border border-amber-200 bg-amber-50 text-sm text-amber-800">
@@ -84,10 +108,12 @@ export default function TaskPage() {
         <DataTable
           columns={taskColumns}
           data={tasks}
+          searchable
           onView={handleView}
           onEdit={handleEdit}
           onDelete={handleDelete}
           searchPlaceholder="Tìm kiếm công việc..."
+          onSearch={handleSearchChange}
           filters={[
             {
               key: "status",
@@ -100,11 +126,20 @@ export default function TaskPage() {
               options: [...TASK_PRIORITY_FILTER_OPTIONS],
             },
             {
-              key: "assignedType",
-              label: "Loại phân công",
-              options: [...TASK_ASSIGNED_TYPE_FILTER_OPTIONS],
+              key: "origin",
+              label: "Nguồn gốc",
+              options: [...TASK_ORIGIN_FILTER_OPTIONS],
             },
           ]}
+          onFilterChange={handleFilterChange}
+          onPageSize={setPageSize}
+          onIndexChange={setCurrentIndex}
+          pageSize={pageSize}
+          currentIndex={currentIndex}
+          totalElements={response?.totalElements}
+          totalPages={response?.totalPages}
+          loading={tasksLoading}
+          selectable={false}
         />
       ) : (
         <TaskCalendarView

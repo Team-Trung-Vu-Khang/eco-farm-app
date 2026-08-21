@@ -1,5 +1,8 @@
 import type {
+  FarmPlanPurpose,
   FarmPlanResponse,
+  FarmPlanStageRequest,
+  FarmWorkDurationUnit,
   FarmWorkflowResponse,
   FarmWorkflowScopeResponse,
 } from "@/features/farm-workflow/types/farm-workflow.type";
@@ -13,6 +16,7 @@ import type { DiagramInfoRecord } from "../hooks/usePlanWorkflowDraftStore";
 import type {
   GeographicalSelection,
   Plan,
+  PlanFormData,
   SelectionSummaryGroup,
   Workflow,
 } from "../types";
@@ -219,6 +223,21 @@ export function mapScopesToSelectionSummary(
   return Array.from(groups.values());
 }
 
+const apiPurposeToPlanPurpose: Record<FarmPlanPurpose, Plan["purpose"]> = {
+  CULTIVATION: "cultivation",
+  FACILITY_UPGRADE: "facility-upgrade",
+  TREATMENT: "treatment",
+  SOIL_IMPROVEMENT: "amendment",
+  HARVEST: "harvest",
+};
+
+const durationUnitToLabel: Record<FarmWorkDurationUnit, string> = {
+  MINUTE: "phút",
+  HOUR: "giờ",
+  DAY: "ngày",
+  WEEK: "tuần",
+};
+
 export function mapPlanResponseToPlan(plan: FarmPlanResponse): Plan {
   const selections = plan.scopes
     .map(mapScopeToSelection)
@@ -234,6 +253,43 @@ export function mapPlanResponseToPlan(plan: FarmPlanResponse): Plan {
     .filter((selection) => selection.type === "plot" && selection.plotId)
     .map((selection) => String(selection.plotId));
 
+  const stages = plan.stages || [];
+  const selectedStages = stages.map((stage) => stage.name);
+  const materialAllocations = stages.flatMap((stage) =>
+    (stage.supplyLines || []).map((line) => ({
+      id: line.id,
+      stageId: stage.name,
+      materialCategory: line.supplyItem?.supplyType || "",
+      materialType: line.supplyItem?.supplyType || "",
+      materialName: line.supplyItem?.name || "",
+      quantity: String(line.quantity),
+      unit:
+        line.unitBase?.name ||
+        line.packagingVariant?.unitBase?.name ||
+        "",
+      supplyItemId: line.supplyItem?.id,
+      unitBaseId:
+        line.unitBase?.id ?? line.packagingVariant?.unitBase?.id,
+    })),
+  );
+  const taskAllocations = stages.flatMap((stage) =>
+    (stage.workItems || []).map((item) => ({
+      id: item.id,
+      stageId: stage.name,
+      name: item.name,
+      description: item.description || "",
+      labor: item.headcount ? `${item.headcount} người` : "",
+      duration:
+        item.durationValue && item.durationUnit
+          ? `${item.durationValue} ${durationUnitToLabel[item.durationUnit]}`
+          : "",
+      taskCategoryId: item.taskCategory?.id,
+      headcount: item.headcount,
+      durationValue: item.durationValue,
+      durationUnit: item.durationUnit,
+    })),
+  );
+
   return {
     id: plan.id,
     code: plan.code,
@@ -245,22 +301,74 @@ export function mapPlanResponseToPlan(plan: FarmPlanResponse): Plan {
     seasonName: "",
     startDate: plan.plannedStartDate || "",
     endDate: plan.plannedEndDate || "",
+    durationDays: plan.durationDays,
     selectedRegionIds: regionIds,
     selectedZoneIds: zoneIds,
     selectedPlotIds: plotIds,
     crop: "",
     variety: "",
-    purpose: "cultivation",
+    purpose: apiPurposeToPlanPurpose[plan.purpose] || "cultivation",
     growthCycleId: "",
     regimenId: undefined,
-    selectedStages: [],
-    materialAllocations: [],
-    taskAllocations: [],
+    selectedStages,
+    materialAllocations,
+    taskAllocations,
     status: planStatusMap[plan.status] ?? "draft",
     createdAt: plan.createdAt || new Date().toISOString(),
+    metadataJson: plan.metadataJson,
     scopes: selections,
     selectionSummary: mapScopesToSelectionSummary(plan.scopes),
+    personnel: (plan.personnel || []).map((person) => ({
+      id: person.id,
+      fullName: person.fullName || `#${person.id}`,
+      role: person.role,
+    })),
   } as Plan;
+}
+
+// Builds the FarmPlanRequest.stages payload from the form's selected stages,
+// material allocations, and task allocations.
+export function buildFarmPlanStagesRequest(
+  formData: PlanFormData,
+): FarmPlanStageRequest[] {
+  const stageKeys =
+    formData.purpose === "harvest" ? ["Thu hoạch"] : formData.selectedStages;
+
+  return stageKeys.map((stageKey) => {
+    const stageName = stageKey.includes(":")
+      ? stageKey.split(":")[1]
+      : stageKey;
+
+    const supplyLines = formData.materialAllocations
+      .filter(
+        (material) =>
+          material.stageId === stageKey &&
+          material.supplyItemId != null &&
+          material.unitBaseId != null,
+      )
+      .map((material) => ({
+        supplyItemId: material.supplyItemId as number,
+        unitBaseId: material.unitBaseId as number,
+        quantity: Number(material.quantity) || 0,
+      }));
+
+    const workItems = formData.taskAllocations
+      .filter((task) => task.stageId === stageKey)
+      .map((task) => ({
+        taskCategoryId: task.taskCategoryId,
+        name: task.name,
+        description: task.description || undefined,
+        headcount: task.headcount,
+        durationValue: task.durationValue,
+        durationUnit: task.durationUnit,
+      }));
+
+    return {
+      name: stageName,
+      supplyLines,
+      workItems,
+    } satisfies FarmPlanStageRequest;
+  });
 }
 
 export function getFallbackPlans(): Plan[] {

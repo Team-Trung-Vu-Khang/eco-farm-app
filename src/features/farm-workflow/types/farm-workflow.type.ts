@@ -1,7 +1,4 @@
-import type {
-  DomainCode,
-  SupplyType,
-} from "@/features/farm-supply/types";
+import type { DomainCode, SupplyType } from "@/features/farm-supply/types";
 import type { PageResponse } from "@/features/foundation/types/foundation.type";
 
 export type FarmWorkflowRequestStatus = "ACTIVE" | "INACTIVE" | "ARCHIVED";
@@ -20,7 +17,10 @@ export type FarmPlanPurpose =
   | "SOIL_IMPROVEMENT"
   | "HARVEST";
 
-export type FarmPlanPersonnelRole = "MANAGER" | "QUALITY_INSPECTOR";
+export type FarmPlanPersonnelRole =
+  | "MANAGER"
+  | "QUALITY_INSPECTOR"
+  | "EXECUTOR";
 export type FarmWorkDurationUnit = "MINUTE" | "HOUR" | "DAY" | "WEEK";
 export type FarmWorkflowScopeType = "REGION" | "AREA" | "PLOT";
 
@@ -80,6 +80,7 @@ export interface FarmWorkflowRequest {
   durationDays: number;
   scopes: FarmWorkflowScopeRequest[];
   status?: FarmWorkflowRequestStatus;
+  metadataJson?: Record<string, any>;
 }
 
 export interface FarmWorkflowResponse {
@@ -91,6 +92,7 @@ export interface FarmWorkflowResponse {
   durationDays: number;
   scopes: FarmWorkflowScopeResponse[];
   status: FarmWorkflowResponseStatus;
+  metadataJson?: Record<string, any>;
   planCount?: number;
   inProgressPlanCount?: number;
   statusBreakdown?: FarmWorkflowStatusBreakdown;
@@ -153,10 +155,15 @@ export interface FarmPackagingVariantRef {
 
 export interface FarmPlanStageSupplyLineRequest {
   supplyItemId: number;
-  packagingVariantId: number;
+  unitBaseId: number;
   quantity: number;
 }
 
+export interface FarmPlanStageSupplyUnitBaseRef {
+  id: number;
+  name: string;
+  code: string;
+}
 export interface FarmPlanStageSupplyLineResponse {
   id: number;
   workflowId: number;
@@ -164,6 +171,7 @@ export interface FarmPlanStageSupplyLineResponse {
   stageId: number;
   supplyItem: FarmSupplyItemRef;
   packagingVariant: FarmPackagingVariantRef;
+  unitBase: FarmPlanStageSupplyUnitBaseRef;
   quantity: number;
 }
 
@@ -218,6 +226,7 @@ export interface FarmPlanRequest {
   personnel?: FarmPlanPersonnelRequest[];
   stages?: FarmPlanStageRequest[];
   status?: FarmPlanStatus;
+  metadataJson?: Record<string, any>;
 }
 
 export interface FarmPlanResponse {
@@ -236,6 +245,7 @@ export interface FarmPlanResponse {
   stages?: FarmPlanStageResponse[];
   scopeNote?: string;
   status: FarmPlanStatus;
+  metadataJson?: Record<string, any>;
   createdAt?: string;
   updatedAt?: string;
 }

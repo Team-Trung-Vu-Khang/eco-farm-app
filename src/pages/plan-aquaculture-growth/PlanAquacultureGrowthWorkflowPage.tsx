@@ -126,14 +126,14 @@ function countMaterialsByCategory(materials: Plan["materialAllocations"]) {
       if (
         category.includes("thuốc") ||
         category.includes("vaccine") ||
-        category.includes("chế phẩm")
+        category.includes("thủy sản")
       ) {
         acc.pesticide += 1;
         return acc;
       }
       if (
         category.includes("thức ăn") ||
-        category.includes("viên") ||
+        category.includes("cám") ||
         category.includes("premix") ||
         category.includes("khoáng")
       ) {
@@ -194,20 +194,20 @@ function createDemoWorkflowPlans(base: Plan) {
   const plan2 = clonePlan(base, {
     id: 2001,
     code: "KH-DEMO-002",
-    name: "Kế hoạch nuôi tăng trưởng tôm sú",
+    name: "Kế hoạch nuôi tăng trọng heo thịt Duroc",
     description:
-      "Tối ưu khẩu phần thức ăn, theo dõi sinh khối và kiểm soát môi trường nước trước thu hoạch.",
-    seasonName: "Vụ tôm sú Cà Mau",
+      "Tối ưu khẩu phần cám, theo dõi tăng trọng và kiểm soát sức khỏe đàn trước xuất bán.",
+    seasonName: "Lứa heo thịt Đông Nam Bộ",
     startDate: "2024-03-01",
     endDate: "2024-06-30",
     status: "active",
-    selectedStages: ["Nuôi tăng trưởng", "Phòng bệnh"],
+    selectedStages: ["Nuôi tăng trọng", "Phòng bệnh"],
     taskAllocations: [
       {
         id: 20011,
-        stageId: "Nuôi tăng trưởng",
-        name: "Điều chỉnh khẩu phần thức ăn",
-        description: "Tăng khẩu phần theo sinh khối và kiểm tra sàng ăn",
+        stageId: "Nuôi tăng trọng",
+        name: "Điều chỉnh khẩu phần cám",
+        description: "Tăng khẩu phần theo trọng lượng đàn và kiểm tra máng ăn",
         labor: "3 người",
         duration: "7 ngày",
       },
@@ -215,10 +215,10 @@ function createDemoWorkflowPlans(base: Plan) {
     materialAllocations: [
       {
         id: 20012,
-        stageId: "Nuôi tăng trưởng",
-        materialCategory: "Thức ăn thủy sản",
-        materialType: "Thức ăn thủy sản hỗn hợp",
-        materialName: "Thức ăn tôm giai đoạn tăng trưởng",
+        stageId: "Nuôi tăng trọng",
+        materialCategory: "Thức ăn",
+        materialType: "Thức ăn hỗn hợp",
+        materialName: "Cám heo thịt giai đoạn tăng trọng",
         quantity: "2",
         unit: "bao",
       },
@@ -228,10 +228,10 @@ function createDemoWorkflowPlans(base: Plan) {
   const plan3 = clonePlan(base, {
     id: 2002,
     code: "KH-DEMO-003",
-    name: "Kế hoạch phòng bệnh gan tụy sau mưa",
+    name: "Kế hoạch phòng bệnh hô hấp sau mưa",
     description:
-      "Theo dõi màu nước và biểu hiện bất thường, xử lý nước và bổ sung vitamin C sau biến động thời tiết.",
-    seasonName: "Vụ tôm thẻ Bạc Liêu",
+      "Theo dõi biểu hiện hô hấp, xử lý ao nuôi và bổ sung điện giải sau biến động thời tiết.",
+    seasonName: "Lứa heo thịt Đông Nam Bộ",
     startDate: "2024-07-01",
     endDate: "2024-08-15",
     status: "draft",
@@ -241,7 +241,7 @@ function createDemoWorkflowPlans(base: Plan) {
         id: 20021,
         stageId: "Phòng ngừa",
         name: "Sát trùng ao nuôi",
-        description: "Phun sát trùng định kỳ theo lịch kỹ thuật thủy sản",
+        description: "Phun sát trùng định kỳ theo lịch thủy sản",
         labor: "2 người",
         duration: "3 ngày",
       },
@@ -250,9 +250,9 @@ function createDemoWorkflowPlans(base: Plan) {
       {
         id: 20022,
         stageId: "Phòng ngừa",
-        materialCategory: "Chế phẩm thủy sản",
-        materialType: "Chế phẩm xử lý nước",
-        materialName: "Chế phẩm vi sinh xử lý nước",
+        materialCategory: "Thuốc thủy sản",
+        materialType: "Thuốc phòng bệnh",
+        materialName: "Thuốc sát trùng ao nuôi",
         quantity: "1",
         unit: "lít",
       },
@@ -262,20 +262,20 @@ function createDemoWorkflowPlans(base: Plan) {
   const plan11 = clonePlan(base, {
     id: 2003,
     code: "KH-DEMO-011",
-    name: "Kế hoạch 1.1 - Ổn định môi trường nước sau thả",
+    name: "Kế hoạch 1.1 - Ổn định đàn sau nhập",
     description:
-      "Nhánh phụ cho giai đoạn thích nghi, tập trung giảm stress và ổn định môi trường nước.",
-    seasonName: "Vụ tôm thẻ Bạc Liêu",
+      "Nhánh phụ cho giai đoạn thích nghi, tập trung giảm stress và ổn định sức khỏe đàn.",
+    seasonName: "Lứa heo thịt Đông Nam Bộ",
     startDate: "2024-03-15",
     endDate: "2024-05-10",
     status: "active",
-    selectedStages: ["Ổn định môi trường nước", "Bổ sung vitamin C"],
+    selectedStages: ["Ổn định đàn", "Bổ sung điện giải"],
     taskAllocations: [
       {
         id: 20031,
-        stageId: "Ổn định môi trường nước",
-        name: "Theo dõi sức khỏe sau thả",
-        description: "Kiểm tra bắt mồi, màu nước và biểu hiện bất thường",
+        stageId: "Ổn định đàn",
+        name: "Theo dõi sức khỏe sau nhập",
+        description: "Kiểm tra ăn uống, thân nhiệt và biểu hiện bất thường",
         labor: "4 người",
         duration: "5 ngày",
       },
@@ -283,10 +283,10 @@ function createDemoWorkflowPlans(base: Plan) {
     materialAllocations: [
       {
         id: 20032,
-        stageId: "Bổ sung vitamin C",
-        materialCategory: "Chế phẩm thủy sản",
-        materialType: "Vitamin thủy sản",
-        materialName: "Vitamin C giảm stress",
+        stageId: "Bổ sung điện giải",
+        materialCategory: "Thuốc thủy sản",
+        materialType: "Điện giải",
+        materialName: "Điện giải - vitamin tổng hợp",
         quantity: "2",
         unit: "gói",
       },
@@ -296,20 +296,20 @@ function createDemoWorkflowPlans(base: Plan) {
   const plan12 = clonePlan(base, {
     id: 2004,
     code: "KH-DEMO-012",
-    name: "Kế hoạch 1.2 - Chăm sóc vụ trước thu hoạch",
+    name: "Kế hoạch 1.2 - Chăm sóc đàn trước xuất bán",
     description:
-      "Nhánh tiếp nối sau 1.1, tập trung tăng trưởng, kiểm tra sinh khối và chuẩn bị thu hoạch.",
-    seasonName: "Vụ tôm thẻ Bạc Liêu",
+      "Nhánh tiếp nối sau 1.1, tập trung vỗ béo, kiểm tra trọng lượng và chuẩn bị xuất bán.",
+    seasonName: "Lứa heo thịt Đông Nam Bộ",
     startDate: "2024-05-15",
     endDate: "2024-07-20",
     status: "completed",
-    selectedStages: ["Tăng trưởng", "Kiểm tra sinh khối"],
+    selectedStages: ["Vỗ béo", "Kiểm tra trọng lượng"],
     taskAllocations: [
       {
         id: 20041,
-        stageId: "Kiểm tra sinh khối",
+        stageId: "Kiểm tra trọng lượng",
         name: "Cân kiểm tra cuối kỳ",
-        description: "Kiểm tra sinh khối mẫu để xác nhận điều kiện thu hoạch",
+        description: "Cân mẫu đàn để xác nhận điều kiện xuất bán",
         labor: "2 người",
         duration: "4 ngày",
       },
@@ -317,10 +317,10 @@ function createDemoWorkflowPlans(base: Plan) {
     materialAllocations: [
       {
         id: 20042,
-        stageId: "Tăng trưởng",
-        materialCategory: "Thức ăn thủy sản",
-        materialType: "Thức ăn thủy sản hỗn hợp",
-        materialName: "Thức ăn hoàn thiện trước thu hoạch",
+        stageId: "Vỗ béo",
+        materialCategory: "Thức ăn",
+        materialType: "Thức ăn hỗn hợp",
+        materialName: "Cám hoàn thiện trước xuất bán",
         quantity: "1",
         unit: "bao",
       },
@@ -391,8 +391,8 @@ function buildPlanNode(
       tags: (plan.selectedStages || []).slice(0, 3),
       summaries: [
         { label: "Nhân lực", value: countWorkers(plan.taskAllocations) },
-        { label: "Chế phẩm thủy sản", value: `${materialGroups.pesticide}` },
-        { label: "Thức ăn thủy sản", value: `${materialGroups.fertilizer}` },
+        { label: "Thuốc thủy sản", value: `${materialGroups.pesticide}` },
+        { label: "Thức ăn", value: `${materialGroups.fertilizer}` },
         { label: "Vật tư khác", value: `${materialGroups.other}` },
       ],
       description: plan.description || "Chưa có mô tả cho kế hoạch này.",

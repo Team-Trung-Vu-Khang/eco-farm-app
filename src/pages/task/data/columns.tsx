@@ -2,6 +2,12 @@ import { Users } from "lucide-react";
 import { Badge, type Column } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import type { Task } from "../../../stores/useTaskStore";
 
+const ROLE_LABELS: Record<string, string> = {
+  MANAGER: "Quản lý",
+  QUALITY_INSPECTOR: "Kiểm định",
+  EXECUTOR: "Thực hiện",
+};
+
 export const taskColumns: Column<Task>[] = [
   { key: "code", label: "Mã" },
   { key: "name", label: "Tên công việc" },
@@ -11,15 +17,32 @@ export const taskColumns: Column<Task>[] = [
     key: "assignedTo",
     label: "Phân công",
     render: (value, row) => (
-      <div className="flex items-center gap-2">
+      <div className="flex items-start gap-2">
         <Users
           className={
             row.assignedType === "team"
-              ? "w-4 h-4 text-blue-500"
-              : "w-4 h-4 text-green-500"
+              ? "mt-0.5 w-4 h-4 text-blue-500 shrink-0"
+              : "mt-0.5 w-4 h-4 text-green-500 shrink-0"
           }
         />
-        <span>{Array.isArray(value) ? value.join(", ") : value}</span>
+        <div className="flex flex-wrap gap-1.5">
+          {row.personnel && row.personnel.length > 0 ? (
+            row.personnel.map((person, index) => (
+              <Badge key={`${person.id}-${index}`} variant="outline" className="text-xs">
+                {ROLE_LABELS[person.role] || person.role}
+                {person.fullName ? `: ${person.fullName}` : ""}
+              </Badge>
+            ))
+          ) : Array.isArray(value) && value.length > 0 ? (
+            value.map((person, index) => (
+              <Badge key={`${person}-${index}`} variant="outline" className="text-xs">
+                {person}
+              </Badge>
+            ))
+          ) : (
+            <span className="text-sm text-muted-foreground">Chưa phân công</span>
+          )}
+        </div>
       </div>
     ),
   },

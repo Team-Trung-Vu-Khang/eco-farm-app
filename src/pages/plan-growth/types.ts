@@ -8,6 +8,11 @@ export interface MaterialAllocation {
   unit: string;
   cycle?: string;
   packaging?: string;
+  // Real supply-item catalog id, required to build FarmPlanStageSupplyLineRequest.
+  supplyItemId?: number;
+  // Real unit-base catalog id (from the selected packaging variant's unitBase),
+  // required to build FarmPlanStageSupplyLineRequest.
+  unitBaseId?: number;
 }
 
 export interface TaskAllocation {
@@ -24,6 +29,13 @@ export interface TaskAllocation {
   repeatDates?: string[];
   startDate?: string;
   endDate?: string;
+  // Real task-category catalog id (from /api/master-data/task-categories),
+  // plus the numeric fields the FarmPlanWorkItemRequest API expects — kept
+  // alongside the free-text `labor`/`duration` display fields above.
+  taskCategoryId?: number;
+  headcount?: number;
+  durationValue?: number;
+  durationUnit?: "MINUTE" | "HOUR" | "DAY" | "WEEK";
 }
 
 export interface GeographicalSelection {
@@ -45,6 +57,10 @@ export interface Plan {
   seasonName: string;
   startDate: string;
   endDate: string;
+  // Total planned duration in days, straight from the API's
+  // FarmPlanResponse.durationDays — the source of truth for display, since
+  // startDate/endDate are often unset on a freshly created draft plan.
+  durationDays?: number;
   selectedRegionIds: string[];
   selectedZoneIds: string[];
   selectedPlotIds: string[];
@@ -74,6 +90,18 @@ export interface Plan {
   // embedded region/area/plot names — unlike `scopes`, it doesn't need a
   // matching entry in the (mock) region tree to display correctly.
   selectionSummary?: SelectionSummaryGroup[];
+  personnel?: PlanPersonnel[];
+  // Free-form metadata from the API. `parentId` links this plan to the plan
+  // node it branched off from in the workflow canvas (see
+  // PlanGrowthCreateWorkflowPage) — the canvas graph is otherwise
+  // local-draft-only and doesn't survive a reload from the backend.
+  metadataJson?: Record<string, any>;
+}
+
+export interface PlanPersonnel {
+  id: number;
+  fullName: string;
+  role: "MANAGER" | "QUALITY_INSPECTOR";
 }
 
 export type PlanStatus = Plan["status"];

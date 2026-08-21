@@ -150,15 +150,13 @@ export function createPlanGrowthColumns({
               <PencilLine className="mr-2 h-4 w-4" />
               Chỉnh sửa
             </DropdownMenuItem>
-            {item.status === "draft" && (
-              <DropdownMenuItem
-                className="text-destructive focus:text-destructive"
-                onClick={() => onDelete(item)}
-              >
-                <Trash2 className="mr-2 h-4 w-4" />
-                Xóa
-              </DropdownMenuItem>
-            )}
+            <DropdownMenuItem
+              className="text-destructive focus:text-destructive"
+              onClick={() => onDelete(item)}
+            >
+              <Trash2 className="mr-2 h-4 w-4" />
+              Xóa
+            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       ),
@@ -183,10 +181,12 @@ export function createWorkflowColumns({
   onView,
   onOpenWorkflow,
   onClone,
+  onDelete,
 }: {
   onView: (row: WorkflowRow) => void;
   onOpenWorkflow: (row: WorkflowRow) => void;
   onClone: (row: WorkflowRow) => void;
+  onDelete: (row: WorkflowRow) => void;
 }): Column<WorkflowRow>[] {
   return [
     {
@@ -300,6 +300,14 @@ export function createWorkflowColumns({
               <Copy className="mr-2 h-4 w-4" />
               Nhân bản
             </DropdownMenuItem>
+            <DropdownMenuItem
+              disabled={item.id === UNASSIGNED_WORKFLOW_ID}
+              className="text-destructive focus:text-destructive"
+              onClick={() => onDelete(item)}
+            >
+              <Trash2 className="mr-2 h-4 w-4" />
+              Xóa
+            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       ),
@@ -316,25 +324,6 @@ export const planGrowthFilters = [
       { label: "Bản nháp", value: "draft" },
       { label: "Đã hoàn thành", value: "completed" },
       { label: "Đã hủy", value: "cancelled" },
-    ],
-  },
-  {
-    key: "seasonName",
-    label: "Mùa vụ",
-    options: [
-      { label: "Vụ Xuân 2025", value: "Vụ Xuân 2025" },
-      { label: "Vụ Hè 2025", value: "Vụ Hè 2025" },
-      { label: "Vụ Thu 2025", value: "Vụ Thu 2025" },
-      { label: "Vụ Đông 2025", value: "Vụ Đông 2025" },
-    ],
-  },
-  {
-    key: "crop",
-    label: "Cây trồng",
-    options: [
-      { label: "Sầu riêng", value: "Sầu riêng" },
-      { label: "Xoài", value: "Xoài" },
-      { label: "Bưởi", value: "Bưởi" },
     ],
   },
 ];

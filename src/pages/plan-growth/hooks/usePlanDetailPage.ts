@@ -6,14 +6,14 @@ import { useEffect, useMemo, useState } from "react";
 import { useLocation, useParams } from "wouter";
 import { useAmendmentRegimenStore } from "../../../stores/useAmendmentRegimenStore";
 import { useTreatmentStore } from "../../../stores/useTreatmentStore";
-import { useFarmPlanMutations } from "@/features/farm-workflow/hooks";
-import type { TreatmentProcedure } from "@/pages/treatment/types/treatment.types";
-import { usePlanPage } from "./usePlanPage";
-import type { GeographicalSelection, Plan } from "../types";
 import {
-  summarizePlanSelections,
-  summarizeTaskSelections,
-} from "../utils/location";
+  useFarmPlanById,
+  useFarmPlanMutations,
+} from "@/features/farm-workflow/hooks";
+import type { TreatmentProcedure } from "@/pages/treatment/types/treatment.types";
+import type { GeographicalSelection, Plan } from "../types";
+import { mapPlanResponseToPlan } from "../utils/api-mappers";
+import { summarizeTaskSelections } from "../utils/location";
 
 type AmendmentRegimenSummary = {
   id: number;
@@ -29,7 +29,8 @@ export function usePlanDetailPage(basePath = "/plan-growth") {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
 
-  const { plans } = usePlanPage(basePath);
+  const planId = params.id || "";
+  const planQuery = useFarmPlanById(planId, { enabled: !!planId });
   const { deletePlan } = useFarmPlanMutations();
   const { regions } = useRegionStore();
   const { growthCycles } = useGrowthCycleStore();
@@ -79,12 +80,12 @@ export function usePlanDetailPage(basePath = "/plan-growth") {
 
   const [deleteOpen, setDeleteOpen] = useState(false);
   const plan = useMemo(
-    () => plans.find((item) => item.id === Number(params.id)),
-    [plans, params.id],
+    () => (planQuery.data ? mapPlanResponseToPlan(planQuery.data) : undefined),
+    [planQuery.data],
   );
 
   useEffect(() => {
-    if (!plan) {
+    if (!planQuery.isLoading && !planQuery.isError && !plan) {
       toast({
         title: "Lỗi",
         description: "Không tìm thấy kế hoạch",
@@ -92,12 +93,24 @@ export function usePlanDetailPage(basePath = "/plan-growth") {
       });
       setLocation(basePath);
     }
-  }, [basePath, plan, setLocation, toast]);
+  }, [basePath, plan, planQuery.isLoading, planQuery.isError, setLocation, toast]);
 
-  const selectionSummary = useMemo(
-    () => (plan ? summarizePlanSelections(plan, regions) : []),
-    [plan, regions],
-  );
+  useEffect(() => {
+    if (planQuery.isError) {
+      toast({
+        title: "Lỗi",
+        description: "Không thể tải kế hoạch",
+        variant: "destructive",
+      });
+      setLocation(basePath);
+    }
+  }, [basePath, planQuery.isError, setLocation, toast]);
+
+  // Built directly from the plan's own embedded scopes (real region/area/plot
+  // names from the API), not by re-matching selectedRegionIds/etc against the
+  // local region-tree store — that store won't have entries for scopes that
+  // only exist in the API, so it would silently show "Chưa xác định vùng chọn".
+  const selectionSummary = plan?.selectionSummary || [];
 
   const handleConfirmDelete = async () => {
     if (!plan) return;
@@ -118,6 +131,7 @@ export function usePlanDetailPage(basePath = "/plan-growth") {
   return {
     params,
     plan: plan as Plan | undefined,
+    loading: planQuery.isLoading,
     regions,
     growthCycles,
     seasons,

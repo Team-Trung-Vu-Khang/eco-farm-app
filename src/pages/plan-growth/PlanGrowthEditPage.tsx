@@ -9,7 +9,6 @@ import {
   Checkbox,
   Input,
   Label,
-  ScrollArea,
   Select,
   SelectContent,
   SelectItem,
@@ -1232,14 +1231,6 @@ export default function PlanGrowthEditPage({
                       </p>
                     </div>
                   )}
-                  <div>
-                    <label className="text-xs text-muted-foreground font-semibold uppercase tracking-wider">
-                      Cây trồng
-                    </label>
-                    <p className="font-medium mt-1 text-slate-800">
-                      {formData.crop} - {formData.variety}
-                    </p>
-                  </div>
                   {formData.purpose === "cultivation" ? (
                     <div>
                       <label className="text-xs text-muted-foreground font-semibold uppercase tracking-wider">
@@ -1370,24 +1361,69 @@ export default function PlanGrowthEditPage({
                     ))}
                   </div>
                 </div>
+                <div className="space-y-4">
+                  <label className="text-xs text-muted-foreground font-black uppercase tracking-widest">
+                    Nhân sự quản lý
+                  </label>
+                  <div className="flex flex-wrap gap-1.5">
+                    {formData.managementPersonnelIds.length === 0 ? (
+                      <span className="text-sm italic text-slate-400">
+                        Chưa chọn nhân sự quản lý
+                      </span>
+                    ) : (
+                      formData.managementPersonnelIds.map((id) => {
+                        const person = personnel.find(
+                          (item) => String(item.id) === String(id),
+                        );
+                        return person ? (
+                          <Badge
+                            key={id}
+                            variant="outline"
+                            className="bg-blue-50 text-blue-700 border-blue-100 text-[10px] font-medium py-0 px-2 h-5"
+                          >
+                            <Users className="w-3 h-3 mr-1" />
+                            {person.fullName}
+                          </Badge>
+                        ) : null;
+                      })
+                    )}
+                  </div>
+                </div>
 
-                <div className="grid grid-cols-2 gap-4 bg-emerald-50/50 p-4 rounded-xl border border-emerald-100">
-                  <div>
-                    <p className="text-[10px] text-emerald-700 font-black uppercase tracking-wider mb-1">
-                      Tổng diện tích
-                    </p>
-                    <p className="text-xl font-black text-emerald-800">
-                      {calculateArea()} ha
-                    </p>
+                <div className="space-y-4">
+                  <label className="text-xs text-muted-foreground font-black uppercase tracking-widest">
+                    Nhân sự kiểm định chất lượng
+                  </label>
+                  <div className="flex flex-wrap gap-1.5">
+                    {formData.qualityInspectorPersonnelIds.length === 0 ? (
+                      <span className="text-sm italic text-slate-400">
+                        Chưa chọn nhân sự kiểm định
+                      </span>
+                    ) : (
+                      formData.qualityInspectorPersonnelIds.map((id) => {
+                        const person = personnel.find(
+                          (item) => String(item.id) === String(id),
+                        );
+                        return person ? (
+                          <Badge
+                            key={id}
+                            variant="outline"
+                            className="bg-violet-50 text-violet-700 border-violet-100 text-[10px] font-medium py-0 px-2 h-5"
+                          >
+                            <Users className="w-3 h-3 mr-1" />
+                            {person.fullName}
+                          </Badge>
+                        ) : null;
+                      })
+                    )}
                   </div>
-                  <div>
-                    <p className="text-[10px] text-emerald-700 font-black uppercase tracking-wider mb-1">
-                      Cây trồng & Giống
-                    </p>
-                    <p className="text-xl font-black text-emerald-800">
-                      {formData.crop} - {formData.variety}
-                    </p>
-                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  <label className="text-xs text-muted-foreground font-black uppercase tracking-widest">
+                    Ghi chú phạm vi canh tác
+                  </label>
+                  <p>{formData.scopeNote || ""}</p>
                 </div>
               </CardContent>
             </Card>
@@ -1696,7 +1732,7 @@ export default function PlanGrowthEditPage({
           {/* Dark Summary Footer Card */}
           <Card className="bg-slate-900 text-slate-50 border-none shadow-lg mt-8">
             <CardContent className="p-8">
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-8">
                 <div className="text-center md:text-left">
                   <p className="text-slate-400 text-xs font-bold uppercase tracking-wider mb-2">
                     Tổng giai đoạn
@@ -1728,17 +1764,6 @@ export default function PlanGrowthEditPage({
                       {formData.taskAllocations.length}
                     </span>
                     <span className="text-slate-500 font-medium">đầu việc</span>
-                  </div>
-                </div>
-                <div className="text-center md:text-left">
-                  <p className="text-slate-400 text-xs font-bold uppercase tracking-wider mb-2">
-                    Diện tích
-                  </p>
-                  <div className="flex items-baseline justify-center md:justify-start gap-1">
-                    <span className="text-4xl font-bold text-emerald-400">
-                      {calculateArea()}
-                    </span>
-                    <span className="text-slate-500 font-medium">ha</span>
                   </div>
                 </div>
               </div>

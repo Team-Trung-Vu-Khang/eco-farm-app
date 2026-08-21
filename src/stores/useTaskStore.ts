@@ -30,6 +30,11 @@ export interface Task {
   assignedTo: string[];
   assignedToIds?: string[];
   assignedType: "individual" | "team";
+  personnel?: Array<{
+    id: number;
+    fullName?: string;
+    role: "MANAGER" | "QUALITY_INSPECTOR" | "EXECUTOR";
+  }>;
   supervisors?: string[];
   qualityInspectors?: string[];
   startDate: string;

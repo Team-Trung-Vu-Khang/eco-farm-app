@@ -102,9 +102,7 @@ function StageMaterialPicker({
   const [newItem, setNewItem] = useState({
     name: "",
     qty: "",
-    unit:
-      supplyCatalog.unitOptionsByType[defaultType]?.[0] ||
-      "kg",
+    unitBaseId: "",
     type: defaultType as CropSupplyType,
   });
 
@@ -114,25 +112,31 @@ function StageMaterialPicker({
   const selectedMaterial = supplyCatalog.optionsByType[newItem.type].find(
     (option) => option.value === newItem.name,
   );
-  const unitOptions =
-    supplyCatalog.unitOptionsByType[newItem.type].length > 0
-      ? supplyCatalog.unitOptionsByType[newItem.type]
-      : ["kg"];
+  const packagingVariantOptions = selectedMaterial?.item.packagingVariants || [];
+  const selectedPackagingVariant = packagingVariantOptions.find(
+    (variant) => String(variant.unitBase?.id) === newItem.unitBaseId,
+  );
+  const maxPackagingQuantity = selectedPackagingVariant?.quantity;
+  const exceedsPackagingQuantity =
+    maxPackagingQuantity != null && Number(newItem.qty) > maxPackagingQuantity;
 
   const handleAdd = () => {
-    if (!selectedMaterial || !newItem.qty) return;
+    if (!selectedMaterial || !newItem.qty || !selectedPackagingVariant?.unitBase)
+      return;
     onAddMaterial({
       stageId: stageKey,
       materialCategory: selectedTypeOption?.label || newItem.type,
       materialType: selectedTypeOption?.label || newItem.type,
       materialName: selectedMaterial.label,
       quantity: newItem.qty,
-      unit: newItem.unit || selectedMaterial.unit,
+      unit: selectedPackagingVariant.unitBase.name || selectedMaterial.unit,
+      supplyItemId: selectedMaterial.item.id,
+      unitBaseId: selectedPackagingVariant.unitBase.id,
     });
     setNewItem({
       name: "",
       qty: "",
-      unit: unitOptions[0] || "kg",
+      unitBaseId: "",
       type: newItem.type,
     });
   };
@@ -170,9 +174,7 @@ function StageMaterialPicker({
             value={newItem.type}
             onValueChange={(v) => {
               const type = v as CropSupplyType;
-              const defaultUnit =
-                supplyCatalog.unitOptionsByType[type]?.[0] || "kg";
-              setNewItem({ ...newItem, type, name: "", unit: defaultUnit });
+              setNewItem({ ...newItem, type, name: "", unitBaseId: "" });
             }}
           >
             <SelectTrigger className="w-full h-9 text-xs bg-white">
@@ -198,7 +200,14 @@ function StageMaterialPicker({
               const item = supplyCatalog.optionsByType[newItem.type].find(
                 (i) => i.value === v,
               );
-              setNewItem({ ...newItem, name: v, unit: item?.unit || newItem.unit });
+              const firstVariant = item?.item.packagingVariants?.[0];
+              setNewItem({
+                ...newItem,
+                name: v,
+                unitBaseId: firstVariant?.unitBase?.id
+                  ? String(firstVariant.unitBase.id)
+                  : "",
+              });
             }}
             placeholder="Chọn vật tư..."
             searchPlaceholder="Tìm vật tư..."
@@ -221,14 +230,21 @@ function StageMaterialPicker({
           />
         </div>
         <div className="col-span-4">
-          <Select value={newItem.unit} onValueChange={(v) => setNewItem({ ...newItem, unit: v })}>
+          <Select
+            value={newItem.unitBaseId}
+            onValueChange={(v) => setNewItem({ ...newItem, unitBaseId: v })}
+            disabled={packagingVariantOptions.length === 0}
+          >
             <SelectTrigger className="h-9 text-xs w-full bg-white">
-              <SelectValue />
+              <SelectValue placeholder="Đơn vị..." />
             </SelectTrigger>
             <SelectContent>
-              {unitOptions.map((u) => (
-                <SelectItem key={u} value={u}>
-                  {u}
+              {packagingVariantOptions.map((variant) => (
+                <SelectItem
+                  key={variant.unitBase?.id ?? variant.unitBase?.name}
+                  value={String(variant.unitBase?.id)}
+                >
+                  {variant.unitBase?.name || variant.packagingType?.name || ""}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -246,6 +262,13 @@ function StageMaterialPicker({
           </Button>
         </div>
       </div>
+      {exceedsPackagingQuantity && (
+        <p className="text-[11px] text-amber-600">
+          Số lượng vượt quá định mức đóng gói ({maxPackagingQuantity}{" "}
+          {selectedPackagingVariant?.unitBase?.name}/
+          {selectedPackagingVariant?.packagingType?.name})
+        </p>
+      )}
     </div>
   );
 }

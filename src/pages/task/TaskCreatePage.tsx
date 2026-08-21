@@ -50,14 +50,20 @@ import {
   Users,
   X,
 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useLocation, useSearch } from "wouter";
 
-import useAmendmentPlanStore from "../../stores/useAmendmentPlanStore";
+import { useCreateFarmTask } from "@/features/farm-task";
+import type { FarmTaskRequest } from "@/features/farm-task";
 import usePersonnelStore from "../../stores/usePersonnelStore";
-import usePlanStore, { type Plan } from "../../stores/usePlanStore";
 import useRegionStore from "../../stores/useRegionStore";
-import useTaskStore from "../../stores/useTaskStore";
+import { useFarmPersonnel, type FarmPersonnelResponse } from "../../features/master-data";
+import { useFarmPlanById, useFarmPlans, useFarmWorkflows } from "../../features/farm-workflow/hooks";
+import type {
+  FarmPlanResponse,
+  FarmWorkflowResponse,
+} from "../../features/farm-workflow/types/farm-workflow.type";
+import { useSelectedWorkspaceId } from "../../features/workspace";
 import GeographicalSelector from "../plan/components/GeographicalSelector";
 import { TaskStageAllocation } from "../plan/components/TaskStageAllocation";
 import type {
@@ -65,9 +71,9 @@ import type {
   MaterialAllocation,
   TaskAllocation,
 } from "../plan/types";
+import { mapPlanResponseToPlan } from "../plan-growth/utils/api-mappers";
 import { getRepeatDatesText } from "../plan/utils/task";
 import SimpleTaskForm from "./components/SimpleTaskForm";
-import type { AmendmentPlan } from "../../stores/useAmendmentPlanStore";
 
 type TaskObjectiveType =
   | "phat-sinh"
@@ -76,74 +82,36 @@ type TaskObjectiveType =
   | "cai-tao-dat"
   | "tri-benh";
 
-// Inverse of the purpose filter in `activePlans`. Partial on purpose: an
-// "incurred" plan has no objective type and falls back to "phat-sinh".
-const PURPOSE_TO_OBJECTIVE_TYPE: Partial<
-  Record<Plan["purpose"], TaskObjectiveType>
-> = {
-  cultivation: "theo-ke-hoach",
-  "facility-upgrade": "theo-ke-hoach",
-  harvest: "thu-hoach",
-  treatment: "tri-benh",
-  amendment: "cai-tao-dat",
-};
-
 type TaskCreateMode = "plan" | "phat-sinh";
 
-type TaskRegimenOption = {
+const MAX_API_PAGE_SIZE = 100;
+
+type GeographicalTreeRegion = {
   id: string;
   name: string;
-  description: string;
-  objectiveType: TaskObjectiveType;
-  planPurpose: Exclude<Plan["purpose"], "incurred">;
+  enterpriseId?: string;
+  subAreas: Array<{
+    id: string;
+    name: string;
+    plots: Array<{
+      id: string;
+      name: string;
+    }>;
+  }>;
 };
 
-const TASK_REGIMEN_OPTIONS: TaskRegimenOption[] = [
-  {
-    id: "reg-cultivation",
-    name: "Quy trình canh tác",
-    description: "Áp dụng cho các kế hoạch canh tác định kỳ",
-    objectiveType: "theo-ke-hoach",
-    planPurpose: "cultivation",
-  },
-  {
-    id: "reg-facility-upgrade",
-    name: "Quy trình nâng cấp CSVC",
-    description: "Dành cho kế hoạch nâng cấp cơ sở vật chất",
-    objectiveType: "theo-ke-hoach",
-    planPurpose: "facility-upgrade",
-  },
-  {
-    id: "reg-treatment",
-    name: "Quy trình điều trị",
-    description: "Lọc các kế hoạch xử lý bệnh / điều trị",
-    objectiveType: "tri-benh",
-    planPurpose: "treatment",
-  },
-  {
-    id: "reg-amendment",
-    name: "Quy trình cải tạo đất",
-    description: "Lọc các kế hoạch cải tạo và phục hồi đất",
-    objectiveType: "cai-tao-dat",
-    planPurpose: "amendment",
-  },
-  {
-    id: "reg-harvest",
-    name: "Quy trình thu hoạch",
-    description: "Lọc các kế hoạch thu hoạch theo mùa vụ",
-    objectiveType: "thu-hoach",
-    planPurpose: "harvest",
-  },
-];
-
-function hasTaskAllocations(
-  plan: Plan | AmendmentPlan | undefined,
-): plan is Plan {
-  return !!plan && "taskAllocations" in plan && "materialAllocations" in plan;
-}
+type PersonnelOption = {
+  id: number;
+  fullName: string;
+  code?: string;
+  avatar?: string;
+  taxCode?: string;
+  departmentName?: string;
+  positionName?: string;
+};
 
 function mapPurposeToObjectiveType(
-  purpose?: Plan["purpose"] | AmendmentPlan["purpose"],
+  purpose?: FarmPlanResponse["purpose"],
 ): TaskObjectiveType {
   switch (purpose) {
     case "cultivation":
@@ -184,45 +152,69 @@ export type TaskCreateFormData = {
   tasks: TaskAllocation[];
 };
 
+function toFiniteNumber(value: string | number | undefined | null) {
+  if (value === undefined || value === null || value === "") return null;
+  const next = typeof value === "number" ? value : Number(value);
+  return Number.isFinite(next) ? next : null;
+}
+
+function mapPriorityToApi(
+  priority: TaskCreateFormData["priority"],
+): FarmTaskRequest["priority"] {
+  switch (priority) {
+    case "low":
+      return "LOW";
+    case "high":
+      return "HIGH";
+    case "medium":
+    default:
+      return "MEDIUM";
+  }
+}
+
 export default function TaskCreatePage() {
   const { toast } = useToast();
   const [, setLocation] = useLocation();
   const search = useSearch();
-  const addTask = useTaskStore((state) => state.addTask);
-  const plans = usePlanStore((state) => state.plans);
-  const amendmentPlans = useAmendmentPlanStore((state) => state.plans);
-  const personnel = usePersonnelStore((state) => state.personnel);
+  const createTaskMutation = useCreateFarmTask();
+  const localPersonnel = usePersonnelStore((state) => state.personnel);
+  const workspaceId = useSelectedWorkspaceId();
+  const numericWorkspaceId =
+    typeof workspaceId === "number" ? workspaceId : undefined;
+  const farmPersonnelQuery = useFarmPersonnel({
+    workspaceId: numericWorkspaceId,
+    params: {
+      page: 0,
+      size: MAX_API_PAGE_SIZE,
+      status: "active",
+    },
+    enabled: numericWorkspaceId !== undefined,
+  });
 
   const presetPlanId = useMemo(
     () => new URLSearchParams(search).get("planId"),
     [search],
   );
 
-  // Arriving from a plan's "Phân bổ công việc" pre-selects that plan.
-  const presetPlan = useMemo(() => {
-    if (!presetPlanId) return undefined;
-    return plans.find((p) => String(p.id) === presetPlanId);
-  }, [plans, presetPlanId]);
+  const presetPlanQuery = useFarmPlanById(presetPlanId || "0", {
+    enabled: !!presetPlanId,
+  });
+  const workflowsQuery = useFarmWorkflows({
+    params: { page: 0, size: MAX_API_PAGE_SIZE },
+  });
 
   const [formData, setFormData] = useState<TaskCreateFormData>({
-    code: "CV-" + Math.floor(1000 + Math.random() * 9000),
+    code: "CV-0000",
     name: "",
     mode: "plan",
-    objectiveType: presetPlan
-      ? mapPurposeToObjectiveType(presetPlan.purpose)
-      : "theo-ke-hoach",
-    planId: presetPlan ? String(presetPlan.id) : "",
-    planName: presetPlan?.name || "",
+    objectiveType: "theo-ke-hoach",
+    planId: "",
+    planName: "",
     mainTaskId: "",
     mainTaskIds: [],
     selectedStages: [] as string[],
     selectedPlotIds: [] as string[],
-    regimenId:
-      presetPlan
-        ? TASK_REGIMEN_OPTIONS.find(
-            (option) => option.planPurpose === presetPlan.purpose,
-          )?.id || ""
-        : "",
+    regimenId: "",
     assignedType: "individual" as "individual" | "team",
     assignedTo: [] as string[],
     supervisors: [] as string[],
@@ -234,6 +226,26 @@ export default function TaskCreatePage() {
     materials: [] as MaterialAllocation[],
     tasks: [] as TaskAllocation[],
   });
+
+  useEffect(() => {
+    const presetPlan = presetPlanQuery.data;
+    if (!presetPlan || !presetPlanId) return;
+
+    // The form needs to hydrate from the preset plan once the query returns.
+    // This is a one-time sync from URL state into local form state.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setFormData((prev) => ({
+      ...prev,
+      mode: "plan",
+      objectiveType: mapPurposeToObjectiveType(presetPlan.purpose),
+      regimenId: String(presetPlan.workflow.id),
+      planId: String(presetPlan.id),
+      planName: presetPlan.name,
+      selectedStages: (presetPlan.stages || [])
+        .map((stage) => stage.name)
+        .filter(Boolean),
+    }));
+  }, [presetPlanId, presetPlanQuery.data]);
 
   const [isSimpleMode, setIsSimpleMode] = useState(true);
   const [isSupervisorDialogOpen, setIsSupervisorDialogOpen] = useState(false);
@@ -252,88 +264,229 @@ export default function TaskCreatePage() {
     unit: "kg",
   });
 
-  const selectedRegimen = useMemo(
-    () =>
-      TASK_REGIMEN_OPTIONS.find((option) => option.id === formData.regimenId),
-    [formData.regimenId],
+  const workflows = useMemo(
+    () => workflowsQuery.items as FarmWorkflowResponse[],
+    [workflowsQuery.items],
   );
+  const personnel = useMemo<PersonnelOption[]>(() => {
+    if (numericWorkspaceId !== undefined) {
+      return farmPersonnelQuery.items.map((item: FarmPersonnelResponse) => ({
+        id: item.id,
+        fullName: item.fullName,
+        code: item.code,
+        avatar: (item as any).avatarUrl || (item as any).avatar,
+        taxCode: item.code,
+        departmentName:
+          (item as any).department?.name ||
+          (item as any).departmentName ||
+          (item as any).department?.code ||
+          "",
+        positionName:
+          (item as any).position?.name ||
+          (item as any).positionName ||
+          (item as any).position?.code ||
+          "",
+      }));
+    }
 
-  const filteredRegimens = useMemo(() => {
+    return localPersonnel.map((item) => ({
+      id: item.id,
+      fullName: item.fullName,
+      code: item.taxCode,
+      avatar: item.avatar,
+      taxCode: item.taxCode,
+      departmentName: item.department,
+      positionName: item.position,
+    }));
+  }, [farmPersonnelQuery.items, localPersonnel, numericWorkspaceId]);
+  const workflowOptions = useMemo(() => {
     const query = regimenSearchTerm.trim().toLowerCase();
-    if (!query) return TASK_REGIMEN_OPTIONS;
-    return TASK_REGIMEN_OPTIONS.filter((option) =>
-      `${option.name} ${option.description}`.toLowerCase().includes(query),
-    );
-  }, [regimenSearchTerm]);
+    if (!query) return workflows;
 
-  const filteredPlans = useMemo(() => {
+    return workflows.filter((workflow) =>
+      `${workflow.code || ""} ${workflow.name || ""} ${
+        workflow.description || ""
+      }`
+        .toLowerCase()
+        .includes(query),
+    );
+  }, [regimenSearchTerm, workflows]);
+
+  const workflowPlanQuery = useFarmPlans({
+    params: {
+      workflowId:
+        formData.mode === "plan" ? Number(formData.regimenId) : undefined,
+      page: 0,
+      size: MAX_API_PAGE_SIZE,
+    },
+    enabled: formData.mode === "plan" && !!formData.regimenId,
+  });
+
+  const allPlanQuery = useFarmPlans({
+    params: {
+      page: 0,
+      size: MAX_API_PAGE_SIZE,
+    },
+    enabled: formData.mode === "phat-sinh",
+  });
+
+  const planOptions = useMemo(() => {
+    const rawPlans =
+      formData.mode === "phat-sinh"
+        ? allPlanQuery.items
+        : workflowPlanQuery.items;
+    const mappedPlans = rawPlans.map(mapPlanResponseToPlan);
     const query = planSearchTerm.trim().toLowerCase();
-    if (!selectedRegimen) return [];
+    if (!query) return mappedPlans;
 
-    const candidates =
-      selectedRegimen.planPurpose === "amendment"
-        ? [...plans, ...amendmentPlans]
-        : plans;
-
-    const filteredByRegimen = candidates.filter(
-      (plan) => plan.purpose === selectedRegimen.planPurpose,
-    );
-
-    if (!query) return filteredByRegimen;
-
-    return filteredByRegimen.filter((plan) =>
+    return mappedPlans.filter((plan) =>
       `${plan.name} ${plan.code}`.toLowerCase().includes(query),
     );
-  }, [amendmentPlans, plans, planSearchTerm, selectedRegimen]);
+  }, [
+    allPlanQuery.items,
+    formData.mode,
+    planSearchTerm,
+    workflowPlanQuery.items,
+  ]);
 
-  const selectedPlan = (
-    formData.mode === "phat-sinh" ? plans : filteredPlans
-  ).find((p: any) => String(p.id) === formData.planId);
-  const selectedPlanTaskAllocations = hasTaskAllocations(selectedPlan)
-    ? selectedPlan.taskAllocations
-    : [];
-  const selectedPlanMaterialAllocations = hasTaskAllocations(selectedPlan)
-    ? selectedPlan.materialAllocations
-    : [];
+  const selectedPlanSource =
+    formData.mode === "phat-sinh"
+      ? allPlanQuery.items
+      : workflowPlanQuery.items;
+  const selectedPlanResponse = selectedPlanSource.find(
+    (plan) => String(plan.id) === formData.planId,
+  );
+  const selectedPlan = selectedPlanSource
+    .map(mapPlanResponseToPlan)
+    .find((p) => String(p.id) === formData.planId);
+  const selectedPlanTaskAllocations = selectedPlan?.taskAllocations || [];
+  const selectedPlanMaterialAllocations = selectedPlan?.materialAllocations || [];
+  const resolvedSelectedStages =
+    formData.selectedStages.length > 0
+      ? formData.selectedStages
+      : selectedPlan?.selectedStages || [];
+  const selectedWorkflow = workflows.find(
+    (workflow) => String(workflow.id) === formData.regimenId,
+  );
+  const fallbackSelection = useMemo(() => {
+    const scope = selectedPlanResponse?.scopes?.[0];
+    if (!scope) return undefined;
+
+    if (scope.scopeType === "REGION" && scope.region) {
+      return {
+        id: `plan-${scope.region.id}`,
+        type: "region" as const,
+        regionId: String(scope.region.id),
+      };
+    }
+
+    if (scope.scopeType === "AREA" && scope.area) {
+      return {
+        id: `plan-${scope.area.id}`,
+        type: "area" as const,
+        regionId: String(scope.area.region?.id ?? scope.area.id),
+        areaId: String(scope.area.id),
+      };
+    }
+
+    if (scope.scopeType === "PLOT" && scope.plot) {
+      return {
+        id: `plan-${scope.plot.id}`,
+        type: "plot" as const,
+        regionId: String(scope.plot.area?.region?.id ?? scope.plot.area?.id ?? scope.plot.id),
+        areaId: String(scope.plot.area?.id ?? ""),
+        plotId: String(scope.plot.id),
+      };
+    }
+
+    return undefined;
+  }, [selectedPlanResponse?.scopes]);
 
   const { regions, getRegionById } = useRegionStore();
 
-  const planScopedRegions = useMemo(() => {
-    if (!selectedPlan) return [];
+  const planScopedRegions = useMemo<GeographicalTreeRegion[]>(() => {
+    const scopes = selectedPlanResponse?.scopes || [];
+    if (scopes.length === 0) return [];
 
-    const regionIds = ((selectedPlan as any).selectedRegionIds || []).map(
-      String,
-    );
-    const zoneIds = ((selectedPlan as any).selectedZoneIds || []).map(String);
-    const plotIds = ((selectedPlan as any).selectedPlotIds || []).map(String);
-    if (!regionIds.length && !zoneIds.length && !plotIds.length) return [];
+    const groupedRegions = new Map<string, GeographicalTreeRegion>();
 
-    return regions
-      .map((region: any) => {
-        const regionId = String(region.id);
-        const isWholeRegionSelected = regionIds.includes(regionId);
+    scopes.forEach((scope) => {
+      const region = scope.region ?? scope.area?.region ?? scope.plot?.area?.region;
+      if (!region) return;
 
-        if (isWholeRegionSelected) return region;
+      const regionKey = String(region.id);
+      const regionEntry =
+        groupedRegions.get(regionKey) ??
+        ({
+          id: regionKey,
+          name: region.name || `Vùng #${region.id}`,
+          enterpriseId:
+            (selectedPlanResponse as any)?.enterpriseId ||
+            selectedEnterpriseId ||
+            undefined,
+          subAreas: [],
+        } satisfies GeographicalTreeRegion);
 
-        const subAreas = (region.subAreas || [])
-          .map((area: any) => {
-            const areaId = String(area.id);
-            const isWholeAreaSelected = zoneIds.includes(areaId);
+      if (scope.scopeType === "REGION") {
+        groupedRegions.set(regionKey, {
+          ...regionEntry,
+          subAreas: regionEntry.subAreas,
+        });
+        return;
+      }
 
-            if (isWholeAreaSelected) return area;
+      if (scope.scopeType === "AREA" && scope.area) {
+        const areaKey = String(scope.area.id);
+        const existingArea = regionEntry.subAreas.find(
+          (area) => area.id === areaKey,
+        );
 
-            const plots = (area.plots || []).filter((plot: any) =>
-              plotIds.includes(String(plot.id)),
-            );
+        if (!existingArea) {
+          regionEntry.subAreas.push({
+            id: areaKey,
+            name: scope.area.name || `Khu vực #${scope.area.id}`,
+            plots: [],
+          });
+        }
 
-            return plots.length > 0 ? { ...area, plots } : null;
-          })
-          .filter(Boolean);
+        groupedRegions.set(regionKey, regionEntry);
+        return;
+      }
 
-        return subAreas.length > 0 ? { ...region, subAreas } : null;
-      })
-      .filter(Boolean) as any[];
-  }, [regions, selectedPlan]);
+      if (scope.scopeType === "PLOT" && scope.plot) {
+        const area = scope.area ?? scope.plot.area;
+        if (!area) return;
+
+        const areaKey = String(area.id);
+        const existingArea = regionEntry.subAreas.find(
+          (item) => item.id === areaKey,
+        );
+        const areaEntry =
+          existingArea ??
+          {
+            id: areaKey,
+            name: area.name || `Khu vực #${area.id}`,
+            plots: [],
+          };
+
+        const plotKey = String(scope.plot.id);
+        if (!areaEntry.plots.some((plot) => plot.id === plotKey)) {
+          areaEntry.plots.push({
+            id: plotKey,
+            name: scope.plot.name || `Lô #${scope.plot.id}`,
+          });
+        }
+
+        if (!existingArea) {
+          regionEntry.subAreas.push(areaEntry);
+        }
+
+        groupedRegions.set(regionKey, regionEntry);
+      }
+    });
+
+    return Array.from(groupedRegions.values());
+  }, [selectedEnterpriseId, selectedPlanResponse]);
 
   const filteredRegionsForPhatSinh = useMemo(() => {
     if (formData.objectiveType !== "phat-sinh" || selections.length === 0) {
@@ -381,7 +534,10 @@ export default function TaskCreatePage() {
       .filter(Boolean) as any[];
   }, [regions, selections, formData.objectiveType]);
 
-  const getSelectionSummary = (targetSelections: GeographicalSelection[]) => {
+  const getSelectionSummary = (
+    targetSelections: GeographicalSelection[],
+    sourceRegions = regions,
+  ) => {
     if (!targetSelections || targetSelections.length === 0) return [];
     const summary: {
       regionId: string;
@@ -395,7 +551,10 @@ export default function TaskCreatePage() {
     }[] = [];
 
     targetSelections.forEach((sel) => {
-      const region = getRegionById(Number(sel.regionId));
+      const regionFromSource = sourceRegions.find(
+        (item) => String(item.id) === String(sel.regionId),
+      );
+      const region = regionFromSource || getRegionById(Number(sel.regionId));
       if (!region) return;
       let regionGroup = summary.find((s) => s.regionId === String(region.id));
       if (!regionGroup) {
@@ -530,76 +689,133 @@ export default function TaskCreatePage() {
   };
 
   const handleComplete = () => {
-    if (
-      formData.selectedStages.length > 0 &&
-      formData.objectiveType !== "phat-sinh"
-    ) {
-      formData.selectedStages.forEach((stageName, index) => {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const mats = formData.materials as any[];
-        const stageTasks = (formData.tasks as any[]).filter(
-          (t) => t.stageId === stageName,
-        );
-        const taskData = {
-          code: `${formData.code}-${index + 1}`,
-          name: `${formData.name} - ${stageName}`,
-          plan:
-            formData.planName ||
-            selectedRegimen?.name ||
-            "Công việc theo kế hoạch",
-          planId: formData.planId || undefined,
-          stage: stageName,
-          assignedTo: formData.assignedTo,
-          assignedType: formData.assignedType,
-          supervisors: formData.supervisors,
-          qualityInspectors: formData.qualityInspectors,
-          startDate: formData.startDate,
-          endDate: formData.endDate,
-          priority: formData.priority,
-          description: formData.description,
-          materials: mats.filter((m) => m.stageId === stageName),
-          tasks: stageTasks,
-          geographicalSelections: selections,
-        };
-        addTask(taskData as any);
-      });
-    } else {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const mats2 = formData.materials as any[];
-      const taskData = {
-        code: formData.code,
-        name: formData.name,
-        plan:
-          formData.objectiveType !== "phat-sinh"
-            ? formData.planName ||
-              selectedRegimen?.name ||
-              "Công việc theo kế hoạch"
-            : "Công việc phát sinh",
-        planId:
-          formData.objectiveType !== "phat-sinh"
-            ? formData.planId || undefined
-            : undefined,
-        stage: formData.selectedStages.join("; ") || "N/A",
-        assignedTo: formData.assignedTo,
-        assignedType: formData.assignedType,
-        supervisors: formData.supervisors,
-        qualityInspectors: formData.qualityInspectors,
+    const isPlannedMode = !isSimpleMode && formData.mode === "plan";
+    const stageNames =
+      isSimpleMode || resolvedSelectedStages.length === 0
+        ? [""]
+        : resolvedSelectedStages;
+
+    const requests: FarmTaskRequest[] = stageNames.map((stageName, index) => {
+      const stageTask =
+        formData.tasks.find((task) => task.stageId === stageName) ||
+        formData.tasks[0];
+      const scopeSelection =
+        stageTask?.geographicalSelections?.[0] ||
+        selections[0] ||
+        fallbackSelection;
+
+      const scopeType =
+        scopeSelection?.type === "region"
+          ? "REGION"
+          : scopeSelection?.type === "area"
+            ? "AREA"
+            : scopeSelection?.type === "plot"
+              ? "PLOT"
+              : null;
+      const scopeId =
+        scopeSelection?.type === "region"
+          ? toFiniteNumber(scopeSelection.regionId)
+          : scopeSelection?.type === "area"
+            ? toFiniteNumber(scopeSelection.areaId)
+            : scopeSelection?.type === "plot"
+              ? toFiniteNumber(scopeSelection.plotId)
+              : null;
+
+      const planTask =
+        selectedPlanTaskAllocations.find(
+          (task: any) => task.stageId === stageName,
+        ) || selectedPlanTaskAllocations[index];
+      const sourceWorkItemId = isPlannedMode
+        ? toFiniteNumber(
+            formData.mainTaskIds[index] ||
+              formData.mainTaskId ||
+              planTask?.id,
+          )
+        : null;
+
+      const personnelRequests = [
+        ...formData.supervisors
+          .map((name) => personnel.find((item) => item.fullName === name)?.id)
+          .filter((id): id is number => typeof id === "number")
+          .map((personnelId) => ({
+            personnelId,
+            role: "MANAGER" as const,
+          })),
+        ...formData.qualityInspectors
+          .map((name) => personnel.find((item) => item.fullName === name)?.id)
+          .filter((id): id is number => typeof id === "number")
+          .map((personnelId) => ({
+            personnelId,
+            role: "QUALITY_INSPECTOR" as const,
+          })),
+        ...formData.assignedTo
+          .map((name) => personnel.find((item) => item.fullName === name)?.id)
+          .filter((id): id is number => typeof id === "number")
+          .map((personnelId) => ({
+            personnelId,
+            role: "EXECUTOR" as const,
+          })),
+      ];
+
+      const repeatSource =
+        stageTask?.isRepeating && (stageTask.repeatDates?.length || 0) > 0
+          ? stageTask.repeatDates
+          : formData.tasks[0]?.isRepeating &&
+              (formData.tasks[0].repeatDates?.length || 0) > 0
+            ? formData.tasks[0].repeatDates
+            : [];
+
+      return {
+        origin: isSimpleMode
+          ? "AD_HOC"
+          : isPlannedMode
+            ? "PLANNED"
+            : "AD_HOC",
+        planId: isPlannedMode ? toFiniteNumber(formData.planId) : null,
+        scopeType,
+        scopeId,
+        sourceWorkItemId,
+        taskCategoryId: planTask?.taskCategoryId ?? null,
+        name:
+          isSimpleMode || !stageName
+            ? formData.name
+            : `${formData.name} - ${stageName}`,
+        priority: mapPriorityToApi(formData.priority),
+        note: formData.description || null,
+        personnel: personnelRequests,
         startDate: formData.startDate,
         endDate: formData.endDate,
-        priority: formData.priority,
-        description: formData.description,
-        materials: mats2,
-        tasks: formData.tasks,
-        geographicalSelections: selections,
+        recurrence: repeatSource.length
+          ? {
+              repeatMode: "SPECIFIC_DATES" as const,
+              repeatDates: repeatSource,
+            }
+          : {
+              repeatMode: "NONE" as const,
+              repeatDates: null,
+            },
+        supplyLines: [],
+        status: null,
       };
-      addTask(taskData as any);
-    }
-
-    toast({
-      title: "Thành công",
-      description: `Đã phân bổ ${formData.objectiveType !== "phat-sinh" ? formData.selectedStages.length || 1 : 1} công việc mới`,
     });
-    setLocation("/task");
+
+    Promise.all(
+      requests.map((payload) => createTaskMutation.createFarmTask(payload)),
+    )
+      .then((createdTasks) => {
+        toast({
+          title: "Thành công",
+          description: `Đã tạo ${createdTasks.length} công việc mới`,
+        });
+        setLocation("/task");
+      })
+      .catch((error: Error) => {
+        toast({
+          title: "Không thể tạo công việc",
+          description: error.message,
+          variant: "destructive",
+        });
+      });
   };
 
   // Plan personnel are stored as ids; the task form works with display names.
@@ -611,12 +827,11 @@ export default function TaskCreatePage() {
       )
       .filter(Boolean);
 
-  const handleRegimenChange = (regimenId: string) => {
-    const regimen = TASK_REGIMEN_OPTIONS.find((option) => option.id === regimenId);
+  const handleWorkflowChange = (workflowId: string) => {
     setFormData((prev) => ({
       ...prev,
-      regimenId,
-      objectiveType: regimen?.objectiveType ?? "theo-ke-hoach",
+      regimenId: workflowId,
+      objectiveType: "theo-ke-hoach",
       planId: "",
       planName: "",
       mainTaskId: "",
@@ -689,10 +904,11 @@ export default function TaskCreatePage() {
                           objectiveType: checked
                             ? "phat-sinh"
                             : "theo-ke-hoach",
+                          regimenId: "",
                           planId: "",
                           planName: "",
-                          regimenId: "",
                           mainTaskIds: [],
+                          selectedStages: [],
                           selectedPlotIds: [],
                         });
                         setSelections([]);
@@ -756,7 +972,7 @@ export default function TaskCreatePage() {
                         <Select
                           value={formData.regimenId}
                           disabled={!!presetPlanId}
-                          onValueChange={handleRegimenChange}
+                          onValueChange={handleWorkflowChange}
                         >
                           <SelectTrigger className="h-12 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-500 disabled:opacity-80">
                             <SelectValue placeholder="Chọn quy trình..." />
@@ -783,12 +999,17 @@ export default function TaskCreatePage() {
                               </div>
                             </div>
                             <div className="max-h-64 overflow-y-auto p-1">
-                              {filteredRegimens.map((regimen) => (
-                                <SelectItem key={regimen.id} value={regimen.id}>
-                                  {regimen.name}
+                              {workflowOptions.map((workflow) => (
+                                <SelectItem
+                                  key={workflow.id}
+                                  value={String(workflow.id)}
+                                >
+                                  {workflow.code
+                                    ? `${workflow.code} - ${workflow.name}`
+                                    : workflow.name}
                                 </SelectItem>
                               ))}
-                              {filteredRegimens.length === 0 && (
+                              {workflowOptions.length === 0 && (
                                 <div className="p-4 text-center text-xs text-slate-400 italic">
                                   Không tìm thấy quy trình phù hợp
                                 </div>
@@ -812,7 +1033,7 @@ export default function TaskCreatePage() {
                           value={formData.planId}
                           disabled={!formData.regimenId || !!presetPlanId}
                           onValueChange={(val) => {
-                            const p = filteredPlans.find(
+                            const p = planOptions.find(
                               (p) => String(p.id) === val,
                             );
                             // Carry the plan's personnel across as a starting
@@ -829,8 +1050,8 @@ export default function TaskCreatePage() {
                               planName: p?.name || "",
                               objectiveType: p
                                 ? mapPurposeToObjectiveType(p.purpose)
-                                : selectedRegimen?.objectiveType ||
-                                  "theo-ke-hoach",
+                                : "theo-ke-hoach",
+                              selectedStages: p?.selectedStages || [],
                               mainTaskIds: [],
                               selectedPlotIds: [],
                               supervisors: planSupervisors,
@@ -865,12 +1086,12 @@ export default function TaskCreatePage() {
                               </div>
                             </div>
                             <div className="max-h-64 overflow-y-auto p-1">
-                              {filteredPlans.map((p) => (
+                              {planOptions.map((p) => (
                                 <SelectItem key={p.id} value={String(p.id)}>
                                   {p.name} ({p.code})
                                 </SelectItem>
                               ))}
-                              {filteredPlans.length === 0 && (
+                              {planOptions.length === 0 && (
                                 <div className="p-4 text-center text-xs text-slate-400 italic">
                                   {formData.regimenId
                                     ? "Không tìm thấy kế hoạch phù hợp"
@@ -935,8 +1156,11 @@ export default function TaskCreatePage() {
                                 Chưa chọn vùng canh tác cụ thể.
                               </div>
                             ) : (
-                              <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-                                {getSelectionSummary(selections).map(
+                          <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                                {getSelectionSummary(
+                                  selections,
+                                  planScopedRegions,
+                                ).map(
                                   (group) => (
                                     <div
                                       key={group.regionId}
@@ -1098,14 +1322,15 @@ export default function TaskCreatePage() {
                       <Label className="text-sm font-bold text-slate-700">
                         Kế hoạch triển khai
                       </Label>
-                      <Select
-                        value={formData.planId}
-                        onValueChange={(val) => {
-                          const p = plans.find((p) => String(p.id) === val);
+                        <Select
+                          value={formData.planId}
+                          onValueChange={(val) => {
+                          const p = planOptions.find((p) => String(p.id) === val);
                           setFormData({
                             ...formData,
                             planId: val,
                             planName: p?.name || "",
+                            selectedStages: p?.selectedStages || [],
                             selectedPlotIds: [],
                           });
                           setSelections([]);
@@ -1115,9 +1340,9 @@ export default function TaskCreatePage() {
                         <SelectTrigger className="h-12">
                           <SelectValue placeholder="Chọn kế hoạch áp dụng..." />
                         </SelectTrigger>
-                        <SelectContent className="max-h-80 overflow-hidden p-0">
-                          <div
-                            className="sticky top-0 z-10 border-b border-slate-100 bg-white p-2"
+                          <SelectContent className="max-h-80 overflow-hidden p-0">
+                            <div
+                              className="sticky top-0 z-10 border-b border-slate-100 bg-white p-2"
                             onKeyDown={(event) => event.stopPropagation()}
                           >
                             <div className="relative">
@@ -1135,21 +1360,21 @@ export default function TaskCreatePage() {
                                 className="h-9 pl-8 text-sm"
                               />
                             </div>
-                          </div>
-                          <div className="max-h-64 overflow-y-auto p-1">
-                            {filteredPlans.map((p) => (
-                              <SelectItem key={p.id} value={String(p.id)}>
-                                {p.name} ({p.code})
-                              </SelectItem>
-                            ))}
-                            {filteredPlans.length === 0 && (
+                            </div>
+                            <div className="max-h-64 overflow-y-auto p-1">
+                              {planOptions.map((p) => (
+                                <SelectItem key={p.id} value={String(p.id)}>
+                                  {p.name} ({p.code})
+                                </SelectItem>
+                              ))}
+                              {planOptions.length === 0 && (
                               <div className="p-4 text-center text-xs text-slate-400 italic">
                                 Không tìm thấy kế hoạch phù hợp
                               </div>
-                            )}
-                          </div>
-                        </SelectContent>
-                      </Select>
+                              )}
+                            </div>
+                          </SelectContent>
+                        </Select>
 
                       {formData.planId && selectedPlan && (
                         <div className="space-y-3 rounded-2xl border border-emerald-100 bg-emerald-50/30 p-4">
@@ -1195,7 +1420,10 @@ export default function TaskCreatePage() {
                             </div>
                           ) : (
                             <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-                              {getSelectionSummary(selections).map((group) => (
+                              {getSelectionSummary(
+                                selections,
+                                planScopedRegions,
+                              ).map((group) => (
                                 <div
                                   key={group.regionId}
                                   className="rounded-xl border border-emerald-100 bg-white/80 p-3"
@@ -1265,8 +1493,10 @@ export default function TaskCreatePage() {
                               <p className="text-sm font-bold text-slate-800 leading-none">
                                 {name}
                               </p>
-                              <p className="text-[10px] text-slate-400 font-mono mt-0.5">
-                                {item?.taxCode || "Quản lý"}
+                              <p className="text-[10px] text-slate-400 mt-0.5">
+                                {[item?.departmentName, item?.positionName]
+                                  .filter(Boolean)
+                                  .join(" · ") || item?.taxCode || item?.code || "Quản lý"}
                               </p>
                             </div>
                           </div>
@@ -1339,8 +1569,10 @@ export default function TaskCreatePage() {
                               <p className="text-sm font-bold text-slate-800 leading-none">
                                 {name}
                               </p>
-                              <p className="text-[10px] text-slate-400 font-mono mt-0.5">
-                                {item?.taxCode || "Kiểm định"}
+                              <p className="text-[10px] text-slate-400 mt-0.5">
+                                {[item?.departmentName, item?.positionName]
+                                  .filter(Boolean)
+                                  .join(" · ") || item?.taxCode || item?.code || "Kiểm định"}
                               </p>
                             </div>
                           </div>
@@ -1401,7 +1633,7 @@ export default function TaskCreatePage() {
                       <div className="space-y-1 pb-2">
                         {personnel
                           .filter((p) =>
-                            p.fullName
+                            `${p.fullName} ${p.code || ""}`
                               .toLowerCase()
                               .includes(searchSupervisor.toLowerCase()),
                           )
@@ -1445,8 +1677,10 @@ export default function TaskCreatePage() {
                                   <p className="text-sm font-semibold text-slate-800 truncate">
                                     {p.fullName}
                                   </p>
-                                  <p className="text-[11px] text-slate-400 truncate">
-                                    {p.taxCode || "—"}
+                                  <p className="text-[11px] text-slate-500 truncate">
+                                    {[p.departmentName, p.positionName]
+                                      .filter(Boolean)
+                                      .join(" · ") || p.code || "—"}
                                   </p>
                                 </div>
                                 {isSelected && (
@@ -1495,7 +1729,7 @@ export default function TaskCreatePage() {
                       <div className="space-y-1 pb-2">
                         {personnel
                           .filter((p) =>
-                            p.fullName
+                            `${p.fullName} ${p.code || ""}`
                               .toLowerCase()
                               .includes(searchInspector.toLowerCase()),
                           )
@@ -1538,8 +1772,10 @@ export default function TaskCreatePage() {
                                   <p className="text-sm font-semibold text-slate-800 truncate">
                                     {p.fullName}
                                   </p>
-                                  <p className="text-[11px] text-slate-400 truncate">
-                                    {p.taxCode || "—"}
+                                  <p className="text-[11px] text-slate-500 truncate">
+                                    {[p.departmentName, p.positionName]
+                                      .filter(Boolean)
+                                      .join(" · ") || p.code || "—"}
                                   </p>
                                 </div>
                                 {isSelected && (
@@ -1686,8 +1922,8 @@ export default function TaskCreatePage() {
             formData.objectiveType === "thu-hoach" ||
             formData.objectiveType === "cai-tao-dat" ||
             formData.objectiveType === "tri-benh" ? (
-              formData.selectedStages.length > 0 ? (
-                formData.selectedStages.map((stageName) => (
+              resolvedSelectedStages.length > 0 ? (
+                resolvedSelectedStages.map((stageName) => (
                   <TaskStageAllocation
                     key={stageName}
                     stageName={stageName}
@@ -1869,7 +2105,7 @@ export default function TaskCreatePage() {
             {/* Info rows card */}
             <Card className="border-slate-100">
               <CardContent className="p-0 divide-y divide-slate-50">
-                {formData.mode === "plan" && selectedRegimen && (
+                {formData.mode === "plan" && selectedWorkflow && (
                   <div className="flex items-start gap-4 px-5 py-4">
                     <div className="w-8 h-8 rounded-xl bg-violet-50 flex items-center justify-center shrink-0 mt-0.5">
                       <ClipboardList className="w-4 h-4 text-violet-500" />
@@ -1879,7 +2115,9 @@ export default function TaskCreatePage() {
                         Quy trình
                       </p>
                       <p className="text-sm font-bold text-slate-800 truncate">
-                        {selectedRegimen.name}
+                        {selectedWorkflow.code
+                          ? `${selectedWorkflow.code} - ${selectedWorkflow.name}`
+                          : selectedWorkflow.name}
                       </p>
                     </div>
                   </div>
@@ -1901,9 +2139,9 @@ export default function TaskCreatePage() {
                           </span>
                         )}
                       </p>
-                      {formData.selectedStages.length > 0 && (
+                      {resolvedSelectedStages.length > 0 && (
                         <div className="flex flex-wrap gap-1 mt-1.5">
-                          {formData.selectedStages.map((s) => (
+                          {resolvedSelectedStages.map((s) => (
                             <Badge
                               key={s}
                               variant="secondary"
@@ -2186,13 +2424,8 @@ export default function TaskCreatePage() {
                     },
                     {
                       label: "Giai đoạn",
-                      value: formData.selectedStages.length || "—",
+                      value: resolvedSelectedStages.length || "—",
                       sub: "áp dụng",
-                    },
-                    {
-                      label: "Lô đất",
-                      value: formData.selectedPlotIds.length || "—",
-                      sub: "phạm vi",
                     },
                   ].map((stat) => (
                     <div

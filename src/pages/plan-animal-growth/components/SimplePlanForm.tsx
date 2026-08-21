@@ -30,27 +30,75 @@ import {
   X,
 } from "lucide-react";
 import { useState, type Dispatch, type SetStateAction } from "react";
-import type { Personnel } from "@/stores/usePersonnelStore";
+import {
+  resolveMaterialUnit,
+  type AnimalSupplyCatalog,
+  type AnimalSupplyType,
+} from "../hooks/useAnimalSupplyCatalog";
+import type {
+  GeographicalSelection,
+  MaterialAllocation,
+  PlanFormData,
+} from "../types";
 import GeographicalSelector from "./GeographicalSelector";
-import { PersonnelMultiSelectCard } from "./PersonnelMultiSelectCard";
+import {
+  PersonnelMultiSelectCard,
+  type PersonnelOption,
+} from "./PersonnelMultiSelectCard";
 import { RegimenSelector } from "./RegimenSelector";
-import { MATERIAL_OPTIONS, MATERIAL_TYPES, MATERIAL_UNITS } from "../data/mocks";
-import type { GeographicalSelection, MaterialAllocation, PlanFormData } from "../types";
 
 const PURPOSE_OPTIONS = [
   { id: "cultivation", label: "Chăn nuôi", icon: Layers, color: "blue" },
-  { id: "facility-upgrade", label: "Nâng cấp CSVC", icon: Wrench, color: "slate" },
+  {
+    id: "facility-upgrade",
+    label: "Nâng cấp CSVC",
+    icon: Wrench,
+    color: "slate",
+  },
   { id: "treatment", label: "Điều trị", icon: Bug, color: "red" },
-  { id: "amendment", label: "Cải tạo chuồng trại", icon: Sprout, color: "green" },
+  {
+    id: "amendment",
+    label: "Cải tạo chuồng trại",
+    icon: Sprout,
+    color: "green",
+  },
   { id: "harvest", label: "Xuất bán", icon: Apple, color: "orange" },
 ] as const;
 
-const PURPOSE_COLOR_CLASSES: Record<string, { active: string; text: string; border: string; bg: string }> = {
-  blue: { active: "bg-blue-500", text: "text-blue-700", border: "border-blue-500", bg: "bg-blue-50/50" },
-  slate: { active: "bg-slate-700", text: "text-slate-700", border: "border-slate-500", bg: "bg-slate-50/80" },
-  red: { active: "bg-red-500", text: "text-red-700", border: "border-red-500", bg: "bg-red-50/50" },
-  green: { active: "bg-green-500", text: "text-green-700", border: "border-green-500", bg: "bg-green-50/50" },
-  orange: { active: "bg-orange-500", text: "text-orange-700", border: "border-orange-500", bg: "bg-orange-50/50" },
+const PURPOSE_COLOR_CLASSES: Record<
+  string,
+  { active: string; text: string; border: string; bg: string }
+> = {
+  blue: {
+    active: "bg-blue-500",
+    text: "text-blue-700",
+    border: "border-blue-500",
+    bg: "bg-blue-50/50",
+  },
+  slate: {
+    active: "bg-slate-700",
+    text: "text-slate-700",
+    border: "border-slate-500",
+    bg: "bg-slate-50/80",
+  },
+  red: {
+    active: "bg-red-500",
+    text: "text-red-700",
+    border: "border-red-500",
+    bg: "bg-red-50/50",
+  },
+  green: {
+    active: "bg-green-500",
+    text: "text-green-700",
+    border: "border-green-500",
+    bg: "bg-green-50/50",
+  },
+  orange: {
+    active: "bg-orange-500",
+    text: "text-orange-700",
+    border: "border-orange-500",
+    bg: "bg-orange-50/50",
+  },
 };
 
 interface ScopeSelectionSummaryGroup {
@@ -63,7 +111,10 @@ interface SimplePlanFormProps {
   formData: PlanFormData;
   setFormData: Dispatch<SetStateAction<PlanFormData>>;
   regimens: Parameters<typeof RegimenSelector>[0]["regimens"];
-  handleDurationPartChange: (part: "years" | "months" | "days", value: string) => void;
+  handleDurationPartChange: (
+    part: "years" | "months" | "days",
+    value: string,
+  ) => void;
   handleAddMaterial: (item: Omit<MaterialAllocation, "id">) => void;
   handleRemoveMaterial: (id: number) => void;
   handleComplete: () => void;
@@ -76,7 +127,8 @@ interface SimplePlanFormProps {
   handleGeographicalConfirm: (selections: GeographicalSelection[]) => void;
   isWorkflowContext?: boolean;
   workflowInfo?: { name?: string } | null;
-  personnel: Personnel[];
+  personnel: PersonnelOption[];
+  supplyCatalog: AnimalSupplyCatalog;
 }
 
 function StageMaterialPicker({
@@ -84,30 +136,63 @@ function StageMaterialPicker({
   allocations,
   onAddMaterial,
   onRemoveMaterial,
+  supplyCatalog,
 }: {
   stageKey: string;
   allocations: MaterialAllocation[];
   onAddMaterial: (item: Omit<MaterialAllocation, "id">) => void;
   onRemoveMaterial: (id: number) => void;
+  supplyCatalog: AnimalSupplyCatalog;
 }) {
+  const defaultType =
+    supplyCatalog.typeOptions[1]?.value ||
+    supplyCatalog.typeOptions[0]?.value ||
+    "medicine";
   const [newItem, setNewItem] = useState({
     name: "",
     qty: "",
-    unit: MATERIAL_UNITS[MATERIAL_TYPES[0]?.value]?.[0] || "kg",
-    type: MATERIAL_TYPES[0]?.value || "",
+    unitBaseId: "",
+    type: defaultType as AnimalSupplyType,
   });
 
+  const selectedTypeOption = supplyCatalog.typeOptions.find(
+    (option) => option.value === newItem.type,
+  );
+  const selectedMaterial = supplyCatalog.optionsByType[newItem.type].find(
+    (option) => option.value === newItem.name,
+  );
+  const packagingVariantOptions =
+    selectedMaterial?.item.packagingVariants || [];
+  const selectedPackagingVariant = packagingVariantOptions.find(
+    (variant) => String(variant.unitBase?.id) === newItem.unitBaseId,
+  );
+  const maxPackagingQuantity = selectedPackagingVariant?.quantity;
+  const exceedsPackagingQuantity =
+    maxPackagingQuantity != null && Number(newItem.qty) > maxPackagingQuantity;
+
   const handleAdd = () => {
-    if (!newItem.name || !newItem.qty) return;
+    if (
+      !selectedMaterial ||
+      !newItem.qty ||
+      !selectedPackagingVariant?.unitBase
+    )
+      return;
     onAddMaterial({
       stageId: stageKey,
-      materialCategory: newItem.type,
-      materialType: newItem.type,
-      materialName: newItem.name,
+      materialCategory: selectedTypeOption?.label || newItem.type,
+      materialType: selectedTypeOption?.label || newItem.type,
+      materialName: selectedMaterial.label,
       quantity: newItem.qty,
-      unit: newItem.unit,
+      unit: selectedPackagingVariant.unitBase.name || selectedMaterial.unit,
+      supplyItemId: selectedMaterial.item.id,
+      unitBaseId: selectedPackagingVariant.unitBase.id,
     });
-    setNewItem({ name: "", qty: "", unit: MATERIAL_UNITS[newItem.type as keyof typeof MATERIAL_UNITS]?.[0] || "kg", type: newItem.type });
+    setNewItem({
+      name: "",
+      qty: "",
+      unitBaseId: "",
+      type: newItem.type,
+    });
   };
 
   return (
@@ -119,10 +204,12 @@ function StageMaterialPicker({
               key={a.id}
               className="flex items-center justify-between bg-white rounded-lg border border-slate-100 px-3 py-1.5 text-sm"
             >
-              <span className="font-medium text-slate-700">{a.materialName}</span>
+              <span className="font-medium text-slate-700">
+                {a.materialName}
+              </span>
               <div className="flex items-center gap-2">
                 <span className="text-xs font-semibold text-slate-600 bg-slate-50 px-2 py-0.5 rounded border">
-                  {a.quantity} {a.unit}
+                  {a.quantity} {resolveMaterialUnit(a, supplyCatalog)}
                 </span>
                 <button
                   type="button"
@@ -142,15 +229,15 @@ function StageMaterialPicker({
           <Select
             value={newItem.type}
             onValueChange={(v) => {
-              const defaultUnit = MATERIAL_UNITS[v as keyof typeof MATERIAL_UNITS]?.[0] || "kg";
-              setNewItem({ ...newItem, type: v, name: "", unit: defaultUnit });
+              const type = v as AnimalSupplyType;
+              setNewItem({ ...newItem, type, name: "", unitBaseId: "" });
             }}
           >
             <SelectTrigger className="w-full h-9 text-xs bg-white">
               <SelectValue placeholder="Loại..." />
             </SelectTrigger>
             <SelectContent>
-              {MATERIAL_TYPES.map((type) => (
+              {supplyCatalog.typeOptions.map((type) => (
                 <SelectItem key={type.value} value={type.value}>
                   {type.label}
                 </SelectItem>
@@ -160,19 +247,32 @@ function StageMaterialPicker({
         </div>
         <div className="col-span-8">
           <Combobox
-            options={(MATERIAL_OPTIONS[newItem.type as keyof typeof MATERIAL_OPTIONS] || []).map((opt) => ({
+            options={supplyCatalog.optionsByType[newItem.type].map((opt) => ({
               value: opt.value,
               label: opt.label,
             }))}
             value={newItem.name}
             onChange={(v) => {
-              const category = MATERIAL_OPTIONS[newItem.type as keyof typeof MATERIAL_OPTIONS] || [];
-              const item = category.find((i) => i.value === v);
-              setNewItem({ ...newItem, name: v, unit: item?.unit || newItem.unit });
+              const item = supplyCatalog.optionsByType[newItem.type].find(
+                (i) => i.value === v,
+              );
+              const firstVariant = item?.item.packagingVariants?.[0];
+              setNewItem({
+                ...newItem,
+                name: v,
+                unitBaseId: firstVariant?.unitBase?.id
+                  ? String(firstVariant.unitBase.id)
+                  : "",
+              });
             }}
             placeholder="Chọn vật tư..."
             searchPlaceholder="Tìm vật tư..."
-            emptyText="Không tìm thấy vật tư."
+            emptyText={
+              supplyCatalog.isLoading
+                ? "Đang tải danh sách vật tư..."
+                : "Không tìm thấy vật tư."
+            }
+            disabled={supplyCatalog.isLoading}
             className="h-9 text-xs w-full bg-white"
           />
         </div>
@@ -186,14 +286,21 @@ function StageMaterialPicker({
           />
         </div>
         <div className="col-span-4">
-          <Select value={newItem.unit} onValueChange={(v) => setNewItem({ ...newItem, unit: v })}>
+          <Select
+            value={newItem.unitBaseId}
+            onValueChange={(v) => setNewItem({ ...newItem, unitBaseId: v })}
+            disabled={packagingVariantOptions.length === 0}
+          >
             <SelectTrigger className="h-9 text-xs w-full bg-white">
-              <SelectValue />
+              <SelectValue placeholder="Đơn vị..." />
             </SelectTrigger>
             <SelectContent>
-              {(MATERIAL_UNITS[newItem.type as keyof typeof MATERIAL_UNITS] || ["kg"]).map((u) => (
-                <SelectItem key={u} value={u}>
-                  {u}
+              {packagingVariantOptions.map((variant) => (
+                <SelectItem
+                  key={variant.unitBase?.id ?? variant.unitBase?.name}
+                  value={String(variant.unitBase?.id)}
+                >
+                  {variant.unitBase?.name || variant.packagingType?.name || ""}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -211,6 +318,13 @@ function StageMaterialPicker({
           </Button>
         </div>
       </div>
+      {exceedsPackagingQuantity && (
+        <p className="text-[11px] text-amber-600">
+          Số lượng vượt quá định mức đóng gói ({maxPackagingQuantity}{" "}
+          {selectedPackagingVariant?.unitBase?.name}/
+          {selectedPackagingVariant?.packagingType?.name})
+        </p>
+      )}
     </div>
   );
 }
@@ -233,14 +347,19 @@ export default function SimplePlanForm({
   isWorkflowContext,
   workflowInfo,
   personnel,
+  supplyCatalog,
 }: SimplePlanFormProps) {
   const [newStage, setNewStage] = useState("");
-  const isTreatmentOrAmendment = formData.purpose === "treatment" || formData.purpose === "amendment";
+  const isTreatmentOrAmendment =
+    formData.purpose === "treatment" || formData.purpose === "amendment";
 
   const addStage = () => {
     const name = newStage.trim();
     if (!name || formData.selectedStages.includes(name)) return;
-    setFormData((prev) => ({ ...prev, selectedStages: [...prev.selectedStages, name] }));
+    setFormData((prev) => ({
+      ...prev,
+      selectedStages: [...prev.selectedStages, name],
+    }));
     setNewStage("");
   };
 
@@ -248,15 +367,21 @@ export default function SimplePlanForm({
     setFormData((prev) => ({
       ...prev,
       selectedStages: prev.selectedStages.filter((s) => s !== name),
-      materialAllocations: prev.materialAllocations.filter((m) => m.stageId !== name),
+      materialAllocations: prev.materialAllocations.filter(
+        (m) => m.stageId !== name,
+      ),
     }));
   };
 
   const manualStages = formData.selectedStages.filter((s) => !s.includes(":"));
-  const regimenStages = formData.selectedStages.filter((s) => s.startsWith(`${formData.regimenId}:`));
+  const regimenStages = formData.selectedStages.filter((s) =>
+    s.startsWith(`${formData.regimenId}:`),
+  );
 
   const hasDuration = Boolean(
-    formData.plannedDurationYears || formData.plannedDurationMonths || formData.plannedDurationDays,
+    formData.plannedDurationYears ||
+    formData.plannedDurationMonths ||
+    formData.plannedDurationDays,
   );
   const isValid =
     Boolean(formData.name) &&
@@ -274,8 +399,8 @@ export default function SimplePlanForm({
         <div>
           <h3 className="font-semibold">Chế độ đơn giản</h3>
           <p className="text-sm text-blue-700">
-            Nhập nhanh những thông tin cần thiết nhất. Bạn có thể chuyển sang chế độ chi tiết để bổ sung công việc cụ
-            thể sau.
+            Nhập nhanh những thông tin cần thiết nhất. Bạn có thể chuyển sang
+            chế độ chi tiết để bổ sung công việc cụ thể sau.
           </p>
         </div>
       </div>
@@ -284,7 +409,9 @@ export default function SimplePlanForm({
         <Label required>Tên kế hoạch</Label>
         <Input
           value={formData.name}
-          onChange={(e) => setFormData((prev) => ({ ...prev, name: e.target.value }))}
+          onChange={(e) =>
+            setFormData((prev) => ({ ...prev, name: e.target.value }))
+          }
           placeholder="VD: Tiêm phòng đợt 1"
         />
       </div>
@@ -298,22 +425,30 @@ export default function SimplePlanForm({
               type="number"
               min="0"
               value={formData.plannedDurationYears}
-              onChange={(e) => handleDurationPartChange("years", e.target.value)}
+              onChange={(e) =>
+                handleDurationPartChange("years", e.target.value)
+              }
               placeholder="0"
               className="w-16 h-9 border-0 bg-transparent px-0 text-center text-base shadow-none focus-visible:ring-0"
             />
-            <span className="text-sm text-slate-500 whitespace-nowrap">năm</span>
+            <span className="text-sm text-slate-500 whitespace-nowrap">
+              năm
+            </span>
           </div>
           <div className="flex items-center gap-2">
             <Input
               type="number"
               min="0"
               value={formData.plannedDurationMonths}
-              onChange={(e) => handleDurationPartChange("months", e.target.value)}
+              onChange={(e) =>
+                handleDurationPartChange("months", e.target.value)
+              }
               placeholder="0"
               className="w-16 h-9 border-0 bg-transparent px-0 text-center text-base shadow-none focus-visible:ring-0"
             />
-            <span className="text-sm text-slate-500 whitespace-nowrap">tháng</span>
+            <span className="text-sm text-slate-500 whitespace-nowrap">
+              tháng
+            </span>
           </div>
           <div className="flex items-center gap-2">
             <Input
@@ -324,7 +459,9 @@ export default function SimplePlanForm({
               placeholder="0"
               className="w-16 h-9 border-0 bg-transparent px-0 text-center text-base shadow-none focus-visible:ring-0"
             />
-            <span className="text-sm text-slate-500 whitespace-nowrap">ngày</span>
+            <span className="text-sm text-slate-500 whitespace-nowrap">
+              ngày
+            </span>
           </div>
         </div>
       </div>
@@ -333,7 +470,9 @@ export default function SimplePlanForm({
         <Label>Mục đích kế hoạch</Label>
         <Textarea
           value={formData.description}
-          onChange={(e) => setFormData((prev) => ({ ...prev, description: e.target.value }))}
+          onChange={(e) =>
+            setFormData((prev) => ({ ...prev, description: e.target.value }))
+          }
           placeholder="Mô tả ngắn gọn mục đích của kế hoạch..."
           rows={2}
         />
@@ -353,18 +492,24 @@ export default function SimplePlanForm({
                 }
                 className={cn(
                   "cursor-pointer p-3 rounded-xl border-2 transition-all flex flex-col items-center text-center gap-1",
-                  isActive ? `${colors.border} ${colors.bg} ${colors.text} shadow-sm` : "border-slate-100 bg-white hover:border-slate-200",
+                  isActive
+                    ? `${colors.border} ${colors.bg} ${colors.text} shadow-sm`
+                    : "border-slate-100 bg-white hover:border-slate-200",
                 )}
               >
                 <div
                   className={cn(
                     "w-8 h-8 rounded-lg flex items-center justify-center",
-                    isActive ? `${colors.active} text-white` : "bg-slate-50 text-slate-400",
+                    isActive
+                      ? `${colors.active} text-white`
+                      : "bg-slate-50 text-slate-400",
                   )}
                 >
                   <type.icon className="w-4 h-4" />
                 </div>
-                <span className="text-[10px] font-black uppercase tracking-tight">{type.label}</span>
+                <span className="text-[10px] font-black uppercase tracking-tight">
+                  {type.label}
+                </span>
               </button>
             );
           })}
@@ -373,7 +518,7 @@ export default function SimplePlanForm({
 
       <div className="space-y-2">
         <div className="flex items-center justify-between">
-          <Label required={!isWorkflowContext}>Vùng canh tác</Label>
+          <Label required={!isWorkflowContext}>Vùng chăn nuôi</Label>
           <span className="text-[10px] text-emerald-700 bg-emerald-100 px-2 py-1 rounded-full font-semibold">
             {isWorkflowContext
               ? `Kế thừa từ quy trình${workflowInfo?.name ? ` "${workflowInfo.name}"` : ""}`
@@ -418,11 +563,17 @@ export default function SimplePlanForm({
                           )}
                         >
                           <span className="opacity-70 mr-1 uppercase text-[8px] font-black">
-                            {item.type === "region" ? "Vùng" : item.type === "area" ? "Khu" : "Lô"}
+                            {item.type === "region"
+                              ? "Vùng"
+                              : item.type === "area"
+                                ? "Khu"
+                                : "Lô"}
                           </span>
                           {item.name}
                           {item.parentName && (
-                            <span className="ml-1 opacity-50 font-normal italic">({item.parentName})</span>
+                            <span className="ml-1 opacity-50 font-normal italic">
+                              ({item.parentName})
+                            </span>
                           )}
                         </Badge>
                       ))}
@@ -473,7 +624,9 @@ export default function SimplePlanForm({
         <div className="space-y-3">
           <div className="flex items-center justify-between">
             <Label required>
-              {formData.purpose === "treatment" ? "Phác đồ điều trị" : "Phác đồ cải tạo chuồng trại"}
+              {formData.purpose === "treatment"
+                ? "Phác đồ điều trị"
+                : "Phác đồ cải tạo chuồng trại"}
             </Label>
             {formData.regimenId && (
               <Button
@@ -507,7 +660,9 @@ export default function SimplePlanForm({
                 ...prev,
                 regimenId: regimen.id,
                 selectedStages: [
-                  ...prev.selectedStages.filter((stage) => !stage.includes(":")),
+                  ...prev.selectedStages.filter(
+                    (stage) => !stage.includes(":"),
+                  ),
                   ...stages,
                 ],
               }));
@@ -526,7 +681,9 @@ export default function SimplePlanForm({
                       if (value) return;
                       setFormData((prev) => ({
                         ...prev,
-                        selectedStages: prev.selectedStages.filter((s) => s !== stage),
+                        selectedStages: prev.selectedStages.filter(
+                          (s) => s !== stage,
+                        ),
                       }));
                     }}
                   />
@@ -541,9 +698,14 @@ export default function SimplePlanForm({
       <div className="space-y-3">
         <div className="flex items-center justify-between">
           <Label required={!isTreatmentOrAmendment}>
-            {isTreatmentOrAmendment ? "Hạng mục dự kiến thêm (tự tạo)" : "Chọn hạng mục (tự tạo)"}
+            {isTreatmentOrAmendment
+              ? "Hạng mục dự kiến thêm (tự tạo)"
+              : "Chọn hạng mục (tự tạo)"}
           </Label>
-          <Badge variant="outline" className="text-[10px] bg-amber-50 text-amber-700 border-amber-200 font-bold">
+          <Badge
+            variant="outline"
+            className="text-[10px] bg-amber-50 text-amber-700 border-amber-200 font-bold"
+          >
             {manualStages.length} mục
           </Badge>
         </div>
@@ -559,7 +721,11 @@ export default function SimplePlanForm({
               }
             }}
           />
-          <Button type="button" onClick={addStage} className="px-6 font-bold uppercase text-xs">
+          <Button
+            type="button"
+            onClick={addStage}
+            className="px-6 font-bold uppercase text-xs"
+          >
             Thêm
           </Button>
         </div>
@@ -570,7 +736,9 @@ export default function SimplePlanForm({
           <Label>Chọn vật tư / ước lượng theo hạng mục</Label>
           <div className="space-y-2">
             {formData.selectedStages.map((stageKey, idx) => {
-              const stageName = stageKey.includes(":") ? stageKey.split(":").slice(1).join(":") : stageKey;
+              const stageName = stageKey.includes(":")
+                ? stageKey.split(":").slice(1).join(":")
+                : stageKey;
               const materialCount = formData.materialAllocations.filter(
                 (m) => m.stageId === stageKey,
               ).length;
@@ -606,6 +774,7 @@ export default function SimplePlanForm({
                       )}
                       onAddMaterial={handleAddMaterial}
                       onRemoveMaterial={handleRemoveMaterial}
+                      supplyCatalog={supplyCatalog}
                     />
                   </div>
                 </div>
@@ -619,8 +788,9 @@ export default function SimplePlanForm({
         <CardContent className="p-4 flex items-start gap-2">
           <Info className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
           <p className="text-xs text-amber-800">
-            Chế độ đơn giản không phân bổ công việc chi tiết theo từng giai đoạn. Chuyển sang chế độ chi tiết bất cứ
-            lúc nào để bổ sung công việc cụ thể.
+            Chế độ đơn giản không phân bổ công việc chi tiết theo từng giai
+            đoạn. Chuyển sang chế độ chi tiết bất cứ lúc nào để bổ sung công
+            việc cụ thể.
           </p>
         </CardContent>
       </Card>
@@ -630,7 +800,12 @@ export default function SimplePlanForm({
           <ArrowLeft className="w-4 h-4 mr-2" />
           Quay lại
         </Button>
-        <Button type="button" disabled={!isValid} onClick={handleComplete} className="font-bold">
+        <Button
+          type="button"
+          disabled={!isValid}
+          onClick={handleComplete}
+          className="font-bold"
+        >
           {completeLabel}
         </Button>
       </div>

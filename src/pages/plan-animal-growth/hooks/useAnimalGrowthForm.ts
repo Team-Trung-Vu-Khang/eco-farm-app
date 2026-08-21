@@ -1,19 +1,34 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { useLocation, useParams } from "wouter";
-import { useToast, type Step } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import {
+  useFarmPlanById,
+  useFarmPlanMutations,
+} from "@/features/farm-workflow/hooks";
+import type { FarmPlanPersonnelRequest } from "@/features/farm-workflow/types/farm-workflow.type";
+import type { FarmPersonnelResponse } from "@/features/master-data";
+import { useFarmPersonnel } from "@/features/master-data";
+import { useSelectedWorkspaceId } from "@/features/workspace";
+import type { TreatmentProcedure } from "@/pages/treatment/types/treatment.types";
+import useAnimalGrowthPlanStore from "@/stores/useAnimalGrowthPlanStore";
 import useGrowthCycleStore from "@/stores/useGrowthCycleStore";
 import useRegionStore from "@/stores/useRegionStore";
 import useSeasonStore from "@/stores/useSeasonStore";
-import usePersonnelStore from "@/stores/usePersonnelStore";
-import useAnimalGrowthPlanStore from "../../../stores/useAnimalGrowthPlanStore";
-import { useTreatmentStore } from "../../../stores/useTreatmentStore";
+import { useToast } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useLocation, useParams } from "wouter";
 import { useAmendmentRegimenStore } from "../../../stores/useAmendmentRegimenStore";
+import { useTreatmentStore } from "../../../stores/useTreatmentStore";
+import type { PersonnelOption } from "../components/PersonnelMultiSelectCard";
 import type {
   GeographicalSelection,
   MaterialAllocation,
+  Plan,
   PlanFormData,
   TaskAllocation,
 } from "../types";
+import {
+  buildFarmPlanStagesRequest,
+  mapPlanResponseToPlan,
+  upsertFallbackPlan,
+} from "../utils/api-mappers";
 import {
   calculateSelectedArea,
   deriveSelectionState,
@@ -21,7 +36,21 @@ import {
   summarizeSelections,
   summarizeTaskSelections,
 } from "../utils/location";
+import { mapPurpose } from "./useAnimalGrowthPage";
 import { useAnimalGrowthWorkflowDraftStore } from "./useAnimalGrowthWorkflowDraftStore";
+
+function mapFarmPersonnelToOption(
+  item: FarmPersonnelResponse,
+): PersonnelOption {
+  return {
+    id: item.id,
+    fullName: item.fullName,
+    position: item.positionName || item.position?.name || "",
+    department: item.departmentName || item.department?.name || "",
+    team: (item.teams || []).map((team) => team.name).join(", "),
+    avatar: item.avatarUrl || item.metadataJson?.avatarUrl || undefined,
+  };
+}
 
 const WORKFLOW_BASE_PATH = "/plan-animal-growth/create/workflow";
 
@@ -45,7 +74,9 @@ function addDurationPartsToDate(startDate: string, parts: DurationParts) {
 
   if (
     !startDate ||
-    [years, months, days].every((value) => !Number.isFinite(value) || value <= 0)
+    [years, months, days].every(
+      (value) => !Number.isFinite(value) || value <= 0,
+    )
   ) {
     return "";
   }
@@ -53,8 +84,10 @@ function addDurationPartsToDate(startDate: string, parts: DurationParts) {
   const next = new Date(`${startDate}T00:00:00`);
   if (Number.isNaN(next.getTime())) return "";
 
-  if (Number.isFinite(years) && years > 0) next.setFullYear(next.getFullYear() + years);
-  if (Number.isFinite(months) && months > 0) next.setMonth(next.getMonth() + months);
+  if (Number.isFinite(years) && years > 0)
+    next.setFullYear(next.getFullYear() + years);
+  if (Number.isFinite(months) && months > 0)
+    next.setMonth(next.getMonth() + months);
   if (Number.isFinite(days) && days > 0) next.setDate(next.getDate() + days);
 
   return formatDateInput(next);
@@ -81,13 +114,21 @@ function parseDaysToParts(totalDays?: number): DurationParts {
 
 function inferDurationFromDates(startDate?: string, endDate?: string) {
   if (!startDate || !endDate) {
-    return { plannedDurationYears: "", plannedDurationMonths: "", plannedDurationDays: "" };
+    return {
+      plannedDurationYears: "",
+      plannedDurationMonths: "",
+      plannedDurationDays: "",
+    };
   }
 
   const start = new Date(`${startDate}T00:00:00`).getTime();
   const end = new Date(`${endDate}T00:00:00`).getTime();
   if (Number.isNaN(start) || Number.isNaN(end) || end < start) {
-    return { plannedDurationYears: "", plannedDurationMonths: "", plannedDurationDays: "" };
+    return {
+      plannedDurationYears: "",
+      plannedDurationMonths: "",
+      plannedDurationDays: "",
+    };
   }
 
   const diffDays = Math.max(0, Math.round((end - start) / 86400000));
@@ -99,11 +140,49 @@ function inferDurationFromDates(startDate?: string, endDate?: string) {
   };
 }
 
+function buildPersonnelRequest(
+  formData: PlanFormData,
+): FarmPlanPersonnelRequest[] {
+  const managers = formData.managementPersonnelIds
+    .map((id) => Number(id))
+    .filter((id) => Number.isFinite(id))
+    .map((personnelId) => ({ personnelId, role: "MANAGER" as const }));
+
+  const inspectors = formData.qualityInspectorPersonnelIds
+    .map((id) => Number(id))
+    .filter((id) => Number.isFinite(id))
+    .map((personnelId) => ({
+      personnelId,
+      role: "QUALITY_INSPECTOR" as const,
+    }));
+
+  return [...managers, ...inspectors];
+}
+
+// Keeps every local view of a plan in sync with what the API just returned:
+// the seed/fallback list (used before any API data has loaded) and the
+// workflow canvas's own plan store (PlanAnimalGrowthCreateWorkflowPage reads
+// from useAnimalGrowthPlanStore, not this hook's `plans`/`getFallbackPlans`,
+// so without this the canvas kept showing stale data after an edit).
+function syncPlanToLocalStores(plan: Plan) {
+  upsertFallbackPlan(plan);
+  useAnimalGrowthPlanStore.setState((state) => ({
+    plans: [...state.plans.filter((item) => item.id !== plan.id), plan],
+  }));
+}
+
+function derivePersonnelIds(plan: Plan, role: "MANAGER" | "QUALITY_INSPECTOR") {
+  return (plan.personnel || [])
+    .filter((person) => person.role === role)
+    .map((person) => String(person.id));
+}
+
 function buildAutoPlanCode(seasonId: string, seasonName: string) {
-  const seasonToken = (seasonId || seasonName || "PLAN")
-    .replace(/[^a-zA-Z0-9]/g, "")
-    .toUpperCase()
-    .slice(0, 12) || "PLAN";
+  const seasonToken =
+    (seasonId || seasonName || "PLAN")
+      .replace(/[^a-zA-Z0-9]/g, "")
+      .toUpperCase()
+      .slice(0, 12) || "PLAN";
 
   const now = new Date();
   const timestamp = [
@@ -123,6 +202,7 @@ function createEmptyFormData(): PlanFormData {
     code: "",
     name: "",
     description: "",
+    scopeNote: "",
     seasonId: "",
     seasonName: "",
     startDate: formatDateInput(new Date()),
@@ -147,7 +227,7 @@ function createEmptyFormData(): PlanFormData {
   };
 }
 
-type UsePlanFormOptions = {
+type UseAnimalGrowthFormOptions = {
   onSaved?: (planId: number) => void;
   onCancel?: () => void;
 };
@@ -155,7 +235,7 @@ type UsePlanFormOptions = {
 export function useAnimalGrowthForm(
   mode: "create" | "edit",
   basePath = "/plan-animal-growth",
-  options?: UsePlanFormOptions,
+  options?: UseAnimalGrowthFormOptions,
 ) {
   const [, setLocation] = useLocation();
   const params = useParams();
@@ -164,20 +244,36 @@ export function useAnimalGrowthForm(
   const [selectedEnterpriseId, setSelectedEnterpriseId] = useState("");
 
   const isWorkflowContext = basePath.startsWith(WORKFLOW_BASE_PATH);
-  const infoNodes = useAnimalGrowthWorkflowDraftStore((state) => state.infoNodes);
+  const infoNodes = useAnimalGrowthWorkflowDraftStore(
+    (state) => state.infoNodes,
+  );
   const workflowInfo = isWorkflowContext
     ? (infoNodes.find((node) => node.isActive) ?? infoNodes[0])
     : undefined;
+  const hydratedPlanIdRef = useRef<number | null>(null);
+  const hydratedWorkflowInfoIdRef = useRef<string | null>(null);
 
-  const addPlan = useAnimalGrowthPlanStore((state) => state.addPlan);
-  const updatePlan = useAnimalGrowthPlanStore((state) => state.updatePlan);
-  const getPlanById = useAnimalGrowthPlanStore((state) => state.getPlanById);
+  const planId = params.id || "";
+  const planDetailQuery = useFarmPlanById(planId, {
+    enabled: mode === "edit" && !!planId,
+  });
+  const { createPlan, updatePlan } = useFarmPlanMutations();
   const seasons = useSeasonStore((state) => state.seasons);
-  const personnel = usePersonnelStore((state) => state.personnel);
+  const workspaceId = useSelectedWorkspaceId();
+  const { items: personnelItems } = useFarmPersonnel({
+    params: { size: 100 },
+    workspaceId: typeof workspaceId === "number" ? workspaceId : undefined,
+  });
+  const personnel = useMemo(
+    () => personnelItems.map(mapFarmPersonnelToOption),
+    [personnelItems],
+  );
   const { regions } = useRegionStore();
   const { growthCycles } = useGrowthCycleStore();
   const treatments = useTreatmentStore((state) => state.treatments);
-  const amendmentRegimensRaw = useAmendmentRegimenStore((state) => state.regimens);
+  const amendmentRegimensRaw = useAmendmentRegimenStore(
+    (state) => state.regimens,
+  );
 
   const regimens = useMemo(() => {
     const mappedTreatments = treatments.map((t) => ({
@@ -188,12 +284,13 @@ export function useAnimalGrowthForm(
       provider: t.author || "Chưa rõ",
       category: t.disease || "Điều trị",
       crop: t.crop || "Tất cả",
-      steps: t.procedures?.map((p: any) => ({
-        id: String(p.id),
-        day: p.startDay ? `Ngày ${p.startDay}` : `Ngày ${p.stepNumber}`,
-        title: p.name,
-        description: p.description,
-      })) || [],
+      steps:
+        t.procedures?.map((p: TreatmentProcedure) => ({
+          id: String(p.id),
+          day: p.startDay ? `Ngày ${p.startDay}` : `Ngày ${p.stepNumber}`,
+          title: p.name,
+          description: p.description,
+        })) || [],
     }));
 
     const mappedAmendments = amendmentRegimensRaw.map((t) => ({
@@ -204,26 +301,34 @@ export function useAnimalGrowthForm(
       provider: t.authors?.[0]?.name || "Chưa rõ",
       category: t.soilIssue || "Cải tạo",
       crop: t.cropType || "Tất cả",
-      steps: t.procedures?.map((p: any) => ({
-        id: String(p.id),
-        day: p.timing || `Ngày ${p.stepNumber}`,
-        title: p.name,
-        description: p.description,
-      })) || [],
+      steps:
+        t.procedures?.map((p: TreatmentProcedure) => ({
+          id: String(p.id),
+          day: p.timing || `Ngày ${p.stepNumber}`,
+          title: p.name,
+          description: p.description,
+        })) || [],
     }));
 
     return [...mappedTreatments, ...mappedAmendments];
   }, [treatments, amendmentRegimensRaw]);
 
-  const getSeasonDurationParts = useCallback((season: { duration?: number } | null | undefined) => {
-    if (!season || typeof season.duration !== "number") {
-      return { years: "", months: "", days: "" };
-    }
+  const getSeasonDurationParts = useCallback(
+    (season: { duration?: number } | null | undefined) => {
+      if (!season || typeof season.duration !== "number") {
+        return { years: "", months: "", days: "" };
+      }
 
-    return parseDaysToParts(season.duration);
-  }, []);
+      return parseDaysToParts(season.duration);
+    },
+    [],
+  );
 
-  const plan = mode === "edit" ? getPlanById(Number(params.id)) : undefined;
+  const detailPlan =
+    mode === "edit" && planDetailQuery.data
+      ? mapPlanResponseToPlan(planDetailQuery.data)
+      : undefined;
+  const plan = mode === "edit" ? detailPlan : undefined;
   const initialSelectionState = useMemo(
     () =>
       mode === "edit" && plan
@@ -231,6 +336,12 @@ export function useAnimalGrowthForm(
         : null,
     [mode, plan, regions],
   );
+
+  // A plan already carries its own scope straight from the plan API
+  // response (`plan.scopes`/`plan.selectionSummary`) once it's been saved —
+  // that takes priority over the diagram draft store's info-node selection,
+  // which only matters for a plan that hasn't picked a scope of its own yet.
+  const planHasOwnScope = mode === "edit" && !!plan?.scopes?.length;
 
   const [selections, setSelections] = useState<GeographicalSelection[]>(
     initialSelectionState?.selections || [],
@@ -241,15 +352,17 @@ export function useAnimalGrowthForm(
           code: plan.code || "",
           name: plan.name || "",
           description: plan.description || "",
+          scopeNote: plan.scopeNote || "",
           seasonId: plan.seasonId || "",
           seasonName: plan.seasonName || "",
           startDate: plan.startDate || formatDateInput(new Date()),
           endDate: plan.endDate || "",
           ...inferDurationFromDates(plan.startDate, plan.endDate),
-          managementPersonnelIds:
-            (plan as any).managementPersonnelIds || [],
-          qualityInspectorPersonnelIds:
-            (plan as any).qualityInspectorPersonnelIds || [],
+          managementPersonnelIds: derivePersonnelIds(plan, "MANAGER"),
+          qualityInspectorPersonnelIds: derivePersonnelIds(
+            plan,
+            "QUALITY_INSPECTOR",
+          ),
           selectedRegionIds: plan.selectedRegionIds || [],
           selectedZoneIds: plan.selectedZoneIds || [],
           selectedPlotIds: plan.selectedPlotIds || [],
@@ -269,19 +382,24 @@ export function useAnimalGrowthForm(
 
   useEffect(() => {
     if (mode !== "edit" || !plan || regions.length === 0) return;
+    if (hydratedPlanIdRef.current === plan.id) return;
+    hydratedPlanIdRef.current = plan.id;
 
     setFormData({
       code: plan.code || "",
       name: plan.name || "",
       description: plan.description || "",
+      scopeNote: plan.scopeNote || "",
       seasonId: plan.seasonId || "",
       seasonName: plan.seasonName || "",
       startDate: plan.startDate || formatDateInput(new Date()),
       endDate: plan.endDate || "",
       ...inferDurationFromDates(plan.startDate, plan.endDate),
-      managementPersonnelIds: (plan as any).managementPersonnelIds || [],
-      qualityInspectorPersonnelIds:
-        (plan as any).qualityInspectorPersonnelIds || [],
+      managementPersonnelIds: derivePersonnelIds(plan, "MANAGER"),
+      qualityInspectorPersonnelIds: derivePersonnelIds(
+        plan,
+        "QUALITY_INSPECTOR",
+      ),
       selectedRegionIds: plan.selectedRegionIds || [],
       selectedZoneIds: plan.selectedZoneIds || [],
       selectedPlotIds: plan.selectedPlotIds || [],
@@ -303,8 +421,13 @@ export function useAnimalGrowthForm(
   // Plans created inside a workflow diagram don't pick their own cultivation
   // scope — they inherit whatever region/zone/plot the diagram's info node
   // was set up with, so the field can't drift out of sync with the diagram.
+  // Once a plan has been saved with its own scope, though, that takes
+  // priority (see `planHasOwnScope`) and this sync is skipped.
   useEffect(() => {
+    if (planHasOwnScope) return;
     if (!isWorkflowContext || !workflowInfo || regions.length === 0) return;
+    if (hydratedWorkflowInfoIdRef.current === workflowInfo.id) return;
+    hydratedWorkflowInfoIdRef.current = workflowInfo.id;
 
     const nextSelectionState = deriveSelectionState(
       workflowInfo.selections,
@@ -321,12 +444,24 @@ export function useAnimalGrowthForm(
       (region) => String(region.id) === String(firstRegionId),
     );
     setSelectedEnterpriseId(firstRegion?.enterpriseId || "");
-  }, [isWorkflowContext, workflowInfo, regions]);
+  }, [
+    planHasOwnScope,
+    isWorkflowContext,
+    workflowInfo,
+    regions,
+    formData.crop,
+    formData.variety,
+  ]);
 
-  const selectionSummary = useMemo(
-    () => summarizeSelections(selections, regions),
-    [regions, selections],
-  );
+  // `plan.selectionSummary` is built straight from the API's embedded
+  // region/area/plot names, so it displays correctly even when the (mock)
+  // region tree doesn't have matching entries for the plan's own scope ids.
+  const selectionSummary = useMemo(() => {
+    if (planHasOwnScope && plan?.selectionSummary?.length) {
+      return plan.selectionSummary;
+    }
+    return summarizeSelections(selections, regions);
+  }, [planHasOwnScope, plan, regions, selections]);
 
   const calculateArea = useCallback(
     () => calculateSelectedArea(formData, regions),
@@ -366,7 +501,10 @@ export function useAnimalGrowthForm(
       ...prev,
       seasonId: season.id,
       seasonName: season.name,
-      code: mode === "create" ? buildAutoPlanCode(season.id, season.name) : prev.code,
+      code:
+        mode === "create"
+          ? buildAutoPlanCode(season.id, season.name)
+          : prev.code,
       endDate:
         addDurationPartsToDate(prev.startDate, {
           years: prev.plannedDurationYears || durationParts.years,
@@ -453,44 +591,117 @@ export function useAnimalGrowthForm(
 
   const persistDraft = () => {
     if (mode !== "edit" || !params.id) return;
-    updatePlan(Number(params.id), {
+    const nextPlan = {
+      ...(plan || {}),
       ...formData,
+      id: Number(params.id),
       area: calculateArea(),
-    } as any);
+      selectedRegionIds: formData.selectedRegionIds,
+      selectedZoneIds: formData.selectedZoneIds,
+      selectedPlotIds: formData.selectedPlotIds,
+      materialAllocations: formData.materialAllocations,
+      taskAllocations: formData.taskAllocations,
+    };
+    upsertFallbackPlan(nextPlan as Plan);
   };
 
-  const handleComplete = () => {
-    const payload = {
-      ...formData,
-      area: calculateArea(),
-      status: "active" as const,
-    };
+  const handleComplete = async () => {
+    const durationDays = Math.max(
+      1,
+      Math.round(
+        (new Date(`${formData.endDate}T00:00:00`).getTime() -
+          new Date(`${formData.startDate}T00:00:00`).getTime()) /
+          86400000,
+      ) || 1,
+    );
+    const stages = buildFarmPlanStagesRequest(formData);
 
     if (mode === "edit" && params.id) {
-      updatePlan(Number(params.id), payload as any);
+      let updated;
+      try {
+        updated = await updatePlan.mutateAsync({
+          id: Number(params.id),
+          payload: {
+            code: formData.code || null,
+            name: formData.name,
+            description: formData.description || undefined,
+            scopeNote: formData.scopeNote || undefined,
+            purpose: mapPurpose(formData.purpose),
+            durationDays,
+            personnel: buildPersonnelRequest(formData),
+            stages,
+            status: "IN_PROGRESS",
+          },
+        });
+      } catch (error: any) {
+        toast({
+          title: "Lỗi",
+          description:
+            error?.response?.data?.message ||
+            `Không thể cập nhật kế hoạch ${formData.name}`,
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Trust the API's own response rather than re-deriving the plan from
+      // local form state — it carries the resolved personnel names, scopes,
+      // and status the backend actually saved.
+      const nextPlan = mapPlanResponseToPlan(updated);
+      syncPlanToLocalStores(nextPlan);
+
       toast({
         title: "Thành công",
         description: `Đã cập nhật kế hoạch ${formData.name}`,
       });
       if (options?.onSaved) {
-        options.onSaved(Number(params.id));
+        options.onSaved(nextPlan.id);
         return;
       }
-      setLocation(`${basePath}/${params.id}`);
+      setLocation(`${basePath}/${nextPlan.id}`);
       return;
     }
 
-    addPlan(payload as any);
+    let created;
+    try {
+      created = await createPlan.mutateAsync({
+        workflowId: workflowInfo?.id || "0",
+        payload: {
+          code: formData.code || null,
+          name: formData.name,
+          description: formData.description || undefined,
+          scopeNote: formData.scopeNote || undefined,
+          purpose: mapPurpose(formData.purpose),
+          durationDays,
+          personnel: buildPersonnelRequest(formData),
+          stages,
+          status: "DRAFT",
+        },
+      });
+    } catch (error: any) {
+      toast({
+        title: "Lỗi",
+        description:
+          error?.response?.data?.message ||
+          `Không thể tạo kế hoạch ${formData.name}`,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Same as above — build the local plan from the backend's own response,
+    // not a fabricated Date.now() id, so it stays in sync with what the API
+    // actually persisted.
+    const nextPlan = mapPlanResponseToPlan(created);
+    syncPlanToLocalStores(nextPlan);
+
     toast({
       title: "Thành công",
       description: `Đã tạo kế hoạch ${formData.name}`,
     });
     if (options?.onSaved) {
-      const created = useAnimalGrowthPlanStore.getState().plans.at(-1);
-      if (created) {
-        options.onSaved(created.id);
-        return;
-      }
+      options.onSaved(nextPlan.id);
+      return;
     }
     setLocation(basePath);
   };
@@ -514,8 +725,9 @@ export function useAnimalGrowthForm(
     selectionSummary,
     dateWarning,
     calculateArea,
-    summarizeTaskSelections: (taskSelections: any[] | undefined) =>
-      summarizeTaskSelections(taskSelections as any, regions),
+    summarizeTaskSelections: (
+      taskSelections: GeographicalSelection[] | undefined,
+    ) => summarizeTaskSelections(taskSelections, regions),
     personnel,
     handleSeasonChange,
     handleDurationPartChange,
@@ -526,14 +738,12 @@ export function useAnimalGrowthForm(
     handleAddTask,
     handleRemoveTask,
     handleComplete,
-    goBack: options?.onCancel
-      ? () => {
-          persistDraft();
-          options.onCancel!();
-        }
-      : mode === "edit" && params.id
-        ? () => setLocation(`${basePath}/${params.id}`)
-        : () => setLocation(basePath),
+    // "Quay lại" always returns to wherever the user came from, regardless
+    // of context — draft edits are persisted first so nothing is lost.
+    goBack: () => {
+      persistDraft();
+      window.history.back();
+    },
     pageTitle: mode === "edit" ? "Chỉnh sửa Kế hoạch" : "Lập kế hoạch",
     pageDescription:
       mode === "edit" && plan

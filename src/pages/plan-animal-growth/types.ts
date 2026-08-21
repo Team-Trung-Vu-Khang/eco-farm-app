@@ -1,8 +1,42 @@
-import type {
-  MaterialAllocation as StoreMaterialAllocation,
-  Plan,
-  TaskAllocation as StoreTaskAllocation,
-} from "../../stores/useAnimalGrowthPlanStore";
+export interface MaterialAllocation {
+  id: number;
+  stageId: string;
+  materialCategory: string;
+  materialType: string;
+  materialName: string;
+  quantity: string;
+  unit: string;
+  cycle?: string;
+  packaging?: string;
+  // Real supply-item catalog id, required to build FarmPlanStageSupplyLineRequest.
+  supplyItemId?: number;
+  // Real unit-base catalog id (from the selected packaging variant's unitBase),
+  // required to build FarmPlanStageSupplyLineRequest.
+  unitBaseId?: number;
+}
+
+export interface TaskAllocation {
+  id: number;
+  stageId: string;
+  name: string;
+  description: string;
+  labor: string;
+  duration: string;
+  geographicalSelections?: GeographicalSelection[];
+  isRepeating?: boolean;
+  repeatDays?: number[];
+  repeatWeeks?: number;
+  repeatDates?: string[];
+  startDate?: string;
+  endDate?: string;
+  // Real task-category catalog id (from /api/master-data/task-categories),
+  // plus the numeric fields the FarmPlanWorkItemRequest API expects — kept
+  // alongside the free-text `labor`/`duration` display fields above.
+  taskCategoryId?: number;
+  headcount?: number;
+  durationValue?: number;
+  durationUnit?: "MINUTE" | "HOUR" | "DAY" | "WEEK";
+}
 
 export interface GeographicalSelection {
   id: string;
@@ -12,26 +46,89 @@ export interface GeographicalSelection {
   plotId?: string;
 }
 
-export interface MaterialAllocation extends StoreMaterialAllocation {
-  taskId?: number;
+export interface Plan {
+  id: number;
+  code: string;
+  name: string;
+  description: string;
+  scopeNote?: string;
+  workflowId?: string;
+  seasonId: string;
+  seasonName: string;
+  startDate: string;
+  endDate: string;
+  // Total planned duration in days, straight from the API's
+  // FarmPlanResponse.durationDays — the source of truth for display, since
+  // startDate/endDate are often unset on a freshly created draft plan.
+  durationDays?: number;
+  selectedRegionIds: string[];
+  selectedZoneIds: string[];
+  selectedPlotIds: string[];
+  crop: string;
+  variety: string;
+  purpose:
+    | "cultivation"
+    | "facility-upgrade"
+    | "treatment"
+    | "amendment"
+    | "harvest"
+    | "incurred";
+  zone?: string;
+  cultivationRegion?: string;
+  plot?: string;
+  area?: string;
+  expectedYield?: string;
+  growthCycleId: string;
+  regimenId?: string;
+  selectedStages: string[];
+  materialAllocations: MaterialAllocation[];
+  taskAllocations: TaskAllocation[];
+  status: "draft" | "active" | "completed" | "cancelled";
+  createdAt: string;
+  scopes?: GeographicalSelection[];
+  // Pre-grouped, human-readable version of `scopes` straight from the API's
+  // embedded region/area/plot names — unlike `scopes`, it doesn't need a
+  // matching entry in the (mock) region tree to display correctly.
+  selectionSummary?: SelectionSummaryGroup[];
+  personnel?: PlanPersonnel[];
+  // Free-form metadata from the API. `parentId` links this plan to the plan
+  // node it branched off from in the workflow canvas (see
+  // PlanAnimalGrowthCreateWorkflowPage) — the canvas graph is otherwise
+  // local-draft-only and doesn't survive a reload from the backend.
+  metadataJson?: Record<string, any>;
 }
 
-export interface TaskAllocation extends StoreTaskAllocation {
-  geographicalSelections?: GeographicalSelection[];
-  startDate?: string;
-  endDate?: string;
-  isRepeating?: boolean;
-  repeatDays?: number[];
-  repeatWeeks?: number;
+export interface PlanPersonnel {
+  id: number;
+  fullName: string;
+  role: "MANAGER" | "QUALITY_INSPECTOR";
 }
 
-export type PlanPurpose = Plan["purpose"];
 export type PlanStatus = Plan["status"];
+
+export interface Workflow {
+  id: string;
+  name: string;
+  description: string;
+  selections: GeographicalSelection[];
+  isActive: boolean;
+  createdAt: string;
+  nodes?: unknown[];
+  edges?: unknown[];
+  planCount?: number;
+  statusBreakdown?: {
+    draft?: number;
+    inProgress?: number;
+    completed?: number;
+    cancelled?: number;
+  };
+}
 
 export interface PlanFormData {
   code: string;
   name: string;
   description: string;
+  scopeNote: string;
   seasonId: string;
   seasonName: string;
   startDate: string;
@@ -46,11 +143,11 @@ export interface PlanFormData {
   selectedPlotIds: string[];
   crop: string;
   variety: string;
-  purpose: PlanPurpose;
+  purpose: Plan["purpose"];
   growthCycleId: string;
   regimenId: string;
   selectedStages: string[];
-  status: PlanStatus;
+  status: Plan["status"];
   materialAllocations: MaterialAllocation[];
   taskAllocations: TaskAllocation[];
 }

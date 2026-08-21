@@ -53,6 +53,10 @@ import {
 import { useEffect, useMemo, useState } from "react";
 import { useLocation, useParams } from "wouter";
 
+import { AppLoadingState } from "@/components/AppLoadingState";
+import { useFarmTaskById, useUpdateFarmTask } from "@/features/farm-task";
+import type { FarmTaskRequest } from "@/features/farm-task";
+import { useFarmPlanById } from "@/features/farm-workflow/hooks";
 import useAmendmentPlanStore from "../../stores/useAmendmentPlanStore";
 import usePersonnelStore from "../../stores/usePersonnelStore";
 import usePlanStore, { type Plan } from "../../stores/usePlanStore";
@@ -66,7 +70,10 @@ import type {
   MaterialAllocation,
   TaskAllocation,
 } from "../plan/types";
+import { mapPlanResponseToPlan, mapWorkflowScopesToSelections } from "../plan-growth/utils/api-mappers";
 import { getRepeatDatesText } from "../plan/utils/task";
+import { farmTaskToLegacyTask } from "./utils/task-mappers";
+import type { TaskCreateFormData } from "./TaskCreatePage";
 
 type TaskObjectiveType =
   | "phat-sinh"
@@ -87,70 +94,125 @@ const PURPOSE_TO_OBJECTIVE_TYPE: Partial<
   amendment: "cai-tao-dat",
 };
 
-type TaskCreateMode = "plan" | "phat-sinh";
+const createEmptyTaskFormData = (): TaskCreateFormData => ({
+  code: "CV-" + Math.floor(1000 + Math.random() * 9000),
+  name: "",
+  mode: "phat-sinh",
+  objectiveType: "phat-sinh",
+  planId: "",
+  planName: "",
+  mainTaskId: "",
+  mainTaskIds: [],
+  selectedStages: [],
+  selectedPlotIds: [],
+  regimenId: "",
+  assignedType: "individual",
+  assignedTo: [],
+  supervisors: [],
+  qualityInspectors: [],
+  startDate: new Date().toISOString().split("T")[0],
+  endDate: new Date().toISOString().split("T")[0],
+  priority: "medium",
+  description: "",
+  materials: [],
+  tasks: [],
+});
 
-type TaskCreateFormData = {
-  code: string;
-  name: string;
-  mode: TaskCreateMode;
-  objectiveType: TaskObjectiveType;
-  planId: string;
-  planName: string;
-  mainTaskId: string;
-  mainTaskIds: string[];
-  selectedStages: string[];
-  selectedPlotIds: string[];
-  regimenId: string;
-  assignedType: "individual" | "team";
-  assignedTo: string[];
-  supervisors: string[];
-  qualityInspectors: string[];
-  startDate: string;
-  endDate: string;
-  priority: "low" | "medium" | "high";
-  description: string;
-  materials: MaterialAllocation[];
-  tasks: TaskAllocation[];
+const mapPriorityToApi = (
+  priority: TaskCreateFormData["priority"],
+): FarmTaskRequest["priority"] => {
+  switch (priority) {
+    case "low":
+      return "LOW";
+    case "high":
+      return "HIGH";
+    case "medium":
+    default:
+      return "MEDIUM";
+  }
 };
+
+function toFiniteNumber(value: string | number | undefined | null) {
+  if (value === undefined || value === null || value === "") return null;
+  const next = typeof value === "number" ? value : Number(value);
+  return Number.isFinite(next) ? next : null;
+}
+
+function mapSelectionsToScope(
+  selections: GeographicalSelection[],
+): Pick<FarmTaskRequest, "scopeType" | "scopeId"> {
+  const regionSelection = selections.find((item) => item.type === "region");
+  if (regionSelection) {
+    return {
+      scopeType: "REGION",
+      scopeId: toFiniteNumber(regionSelection.regionId),
+    };
+  }
+
+  const areaSelection = selections.find((item) => item.type === "area");
+  if (areaSelection) {
+    return {
+      scopeType: "AREA",
+      scopeId: toFiniteNumber(areaSelection.areaId),
+    };
+  }
+
+  const plotSelection = selections.find((item) => item.type === "plot");
+  if (plotSelection) {
+    return {
+      scopeType: "PLOT",
+      scopeId: toFiniteNumber(plotSelection.plotId),
+    };
+  }
+
+  return {
+    scopeType: null,
+    scopeId: null,
+  };
+}
 
 export default function TaskEditPage() {
   const { toast } = useToast();
   const [, setLocation] = useLocation();
   const params = useParams<{ id: string }>();
-  const taskId = Number(params.id);
-  const tasks = useTaskStore((state) => state.tasks);
-  const updateTask = useTaskStore((state) => state.updateTask);
+  const { item: taskResponse, loading: taskLoading } = useFarmTaskById(
+    params.id ?? null,
+    { enabled: !!params.id },
+  );
+  const updateTaskMutation = useUpdateFarmTask({
+    onSuccess: () => {
+      toast({
+        title: "Cập nhật thành công",
+        description: "Đã lưu thay đổi công việc",
+      });
+      setLocation("/task");
+    },
+    onError: (error) => {
+      toast({
+        title: "Không thể cập nhật",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
   const plans = usePlanStore((state) => state.plans);
   const amendmentPlans = useAmendmentPlanStore((state) => state.plans);
   const personnel = usePersonnelStore((state) => state.personnel);
+  const localTask = useTaskStore((state) =>
+    state.tasks.find((item) => item.id === Number(params.id)),
+  );
+  const planIdForDetail = taskResponse?.plan?.id ?? localTask?.planId ?? "";
+  const planDetailQuery = useFarmPlanById(planIdForDetail || "0", {
+    enabled: !!planIdForDetail,
+  });
   const task = useMemo(
-    () => tasks.find((item) => item.id === taskId),
-    [tasks, taskId],
+    () => (taskResponse ? farmTaskToLegacyTask(taskResponse) : localTask),
+    [taskResponse, localTask],
   );
 
-  const [formData, setFormData] = useState<TaskCreateFormData>({
-    code: "CV-" + Math.floor(1000 + Math.random() * 9000),
-    name: "",
-    mode: "phat-sinh",
-    objectiveType: "phat-sinh",
-    planId: "",
-    planName: "",
-    mainTaskId: "",
-    mainTaskIds: [],
-    selectedStages: [] as string[],
-    selectedPlotIds: [] as string[],
-    regimenId: "",
-    assignedType: "individual" as "individual" | "team",
-    assignedTo: [] as string[],
-    supervisors: [] as string[],
-    qualityInspectors: [] as string[],
-    startDate: new Date().toISOString().split("T")[0],
-    endDate: new Date().toISOString().split("T")[0],
-    priority: "medium" as "low" | "medium" | "high",
-    description: "",
-    materials: [] as MaterialAllocation[],
-    tasks: [] as TaskAllocation[],
-  });
+  const [formData, setFormData] = useState<TaskCreateFormData>(
+    createEmptyTaskFormData(),
+  );
 
   const [isSimpleMode, setIsSimpleMode] = useState(true);
   const [isSupervisorDialogOpen, setIsSupervisorDialogOpen] = useState(false);
@@ -167,6 +229,114 @@ export default function TaskEditPage() {
     quantity: "",
     unit: "kg",
   });
+
+  useEffect(() => {
+    if (!taskResponse && !localTask) return;
+
+    const apiTask = taskResponse ? farmTaskToLegacyTask(taskResponse) : undefined;
+    const sourceTask = localTask ?? apiTask;
+    const planDetail = planDetailQuery.data;
+    const allPlans = [...plans, ...amendmentPlans] as any[];
+    const planMatch = planDetail
+      ? mapPlanResponseToPlan(planDetail)
+      : taskResponse?.plan?.id
+        ? allPlans.find((plan) => String(plan.id) === String(taskResponse.plan?.id))
+        : allPlans.find((plan) =>
+            plan.name?.normalize?.() === sourceTask?.plan?.normalize?.(),
+          );
+
+    const stageSource = localTask?.stage || apiTask?.stage || "";
+    const selectedStages =
+      stageSource && stageSource !== "N/A"
+        ? stageSource
+            .split("; ")
+            .map((stage) => stage.normalize())
+            .filter(Boolean)
+        : [];
+    const scopeSelections = planDetail?.scopes?.length
+      ? mapWorkflowScopesToSelections(planDetail.scopes)
+      : [];
+    const taskSelections =
+      localTask?.geographicalSelections?.length
+        ? localTask.geographicalSelections
+        : apiTask?.geographicalSelections?.length
+          ? apiTask.geographicalSelections
+          : [];
+    const selectedPlotIds =
+      taskSelections.length > 0
+        ? taskSelections
+            .filter((item) => item.type === "plot")
+            .map((item) => String(item.plotId))
+        : scopeSelections.length > 0
+          ? scopeSelections
+              .filter((item) => item.type === "plot")
+              .map((item) => String(item.plotId))
+          : [];
+    const mainTaskIds = Array.isArray((localTask as any)?.mainTaskIds)
+      ? (localTask as any).mainTaskIds.map(String)
+      : Array.isArray((taskResponse as any)?.mainTaskIds)
+        ? (taskResponse as any).mainTaskIds.map(String)
+        : (localTask as any)?.mainTaskId || (taskResponse as any)?.mainTaskId
+          ? [
+              String(
+                (localTask as any)?.mainTaskId ||
+                  (taskResponse as any)?.mainTaskId,
+              ),
+            ]
+        : [];
+
+    setSelections(taskSelections.length > 0 ? taskSelections : scopeSelections);
+    setFormData({
+      code:
+        taskResponse?.code ||
+        (localTask as any)?.code ||
+        createEmptyTaskFormData().code,
+      name: taskResponse?.name || localTask?.name || "",
+      mode:
+        taskResponse?.origin === "PLANNED" || localTask?.planId
+          ? "plan"
+          : "phat-sinh",
+      objectiveType: (planMatch
+        ? PURPOSE_TO_OBJECTIVE_TYPE[planMatch.purpose as Plan["purpose"]] ??
+          "phat-sinh"
+        : "phat-sinh") as TaskObjectiveType,
+      planId:
+        taskResponse?.plan?.id
+          ? String(taskResponse.plan.id)
+          : (localTask as any)?.planId || "",
+      planName: taskResponse?.plan?.name || localTask?.plan || "",
+      mainTaskId: (localTask as any)?.mainTaskId || mainTaskIds[0] || "",
+      mainTaskIds,
+      selectedStages,
+      selectedPlotIds,
+      regimenId: String((taskResponse as any)?.workflow?.id || ""),
+      assignedType: localTask?.assignedType || apiTask?.assignedType || "individual",
+      assignedTo: localTask?.assignedTo || apiTask?.assignedTo || [],
+      supervisors: localTask?.supervisors || apiTask?.supervisors || [],
+      qualityInspectors:
+        localTask?.qualityInspectors || apiTask?.qualityInspectors || [],
+      startDate:
+        taskResponse?.startDate ||
+        localTask?.startDate ||
+        new Date().toISOString().split("T")[0],
+      endDate:
+        taskResponse?.endDate ||
+        localTask?.endDate ||
+        new Date().toISOString().split("T")[0],
+      priority: localTask?.priority || apiTask?.priority || "medium",
+      description: taskResponse?.note || localTask?.description || "",
+      materials:
+        ((localTask?.materials || apiTask?.materials) as MaterialAllocation[])?.map((material) => ({
+          ...material,
+          stageId: material.stageId?.normalize?.() || material.stageId,
+        })) || [],
+      tasks:
+        ((localTask?.tasks || apiTask?.tasks) as TaskAllocation[])?.map((item) => ({
+          ...item,
+          stageId: item.stageId?.normalize?.() || item.stageId,
+        })) || [],
+    });
+  }, [taskResponse, localTask, planDetailQuery.data, plans, amendmentPlans]);
 
   const activePlans = useMemo(() => {
     const basePlans = plans.filter((p) => {
@@ -198,13 +368,94 @@ export default function TaskEditPage() {
 
   // Phát sinh tasks aren't scoped to a purpose, so they can reference any
   // plan directly instead of the purpose-filtered `activePlans` list.
-  const selectedPlan = (
-    formData.mode === "phat-sinh" ? plans : (activePlans as any[])
-  ).find((p: any) => String(p.id) === formData.planId);
+  const selectedPlan =
+    (planDetailQuery.data
+      ? mapPlanResponseToPlan(planDetailQuery.data)
+      : undefined) ||
+    (
+      formData.mode === "phat-sinh" ? plans : (activePlans as any[])
+    ).find((p: any) => String(p.id) === formData.planId);
 
   const { regions, getRegionById } = useRegionStore();
 
   const planScopedRegions = useMemo(() => {
+    const apiScopes = planDetailQuery.data?.scopes || [];
+    if (apiScopes.length > 0) {
+      const groupedRegions = new Map<string, any>();
+
+      apiScopes.forEach((scope) => {
+        const region =
+          scope.region ?? scope.area?.region ?? scope.plot?.area?.region;
+        if (!region) return;
+
+        const regionKey = String(region.id);
+        const regionEntry =
+          groupedRegions.get(regionKey) ??
+          ({
+            id: regionKey,
+            name: region.name || `Vùng #${region.id}`,
+            enterpriseId:
+              (planDetailQuery.data as any)?.enterpriseId ||
+              selectedEnterpriseId ||
+              undefined,
+            subAreas: [],
+          } as any);
+
+        if (scope.scopeType === "REGION") {
+          groupedRegions.set(regionKey, regionEntry);
+          return;
+        }
+
+        if (scope.scopeType === "AREA" && scope.area) {
+          const areaKey = String(scope.area.id);
+          const existingArea = regionEntry.subAreas.find(
+            (area: any) => area.id === areaKey,
+          );
+          if (!existingArea) {
+            regionEntry.subAreas.push({
+              id: areaKey,
+              name: scope.area.name || `Khu vực #${scope.area.id}`,
+              plots: [],
+            });
+          }
+          groupedRegions.set(regionKey, regionEntry);
+          return;
+        }
+
+        if (scope.scopeType === "PLOT" && scope.plot) {
+          const area = scope.area ?? scope.plot.area;
+          if (!area) return;
+          const areaKey = String(area.id);
+          const existingArea = regionEntry.subAreas.find(
+            (item: any) => item.id === areaKey,
+          );
+          const areaEntry =
+            existingArea ??
+            {
+              id: areaKey,
+              name: area.name || `Khu vực #${area.id}`,
+              plots: [],
+            };
+
+          const plotKey = String(scope.plot.id);
+          if (!areaEntry.plots.some((plot: any) => plot.id === plotKey)) {
+            areaEntry.plots.push({
+              id: plotKey,
+              name: scope.plot.name || `Lô #${scope.plot.id}`,
+            });
+          }
+
+          if (!existingArea) {
+            regionEntry.subAreas.push(areaEntry);
+          }
+
+          groupedRegions.set(regionKey, regionEntry);
+        }
+      });
+
+      return Array.from(groupedRegions.values());
+    }
+
     if (!selectedPlan) return [];
 
     const regionIds = ((selectedPlan as any).selectedRegionIds || []).map(
@@ -239,7 +490,7 @@ export default function TaskEditPage() {
         return subAreas.length > 0 ? { ...region, subAreas } : null;
       })
       .filter(Boolean) as any[];
-  }, [regions, selectedPlan]);
+  }, [planDetailQuery.data, regions, selectedPlan, selectedEnterpriseId]);
 
   const filteredRegionsForPhatSinh = useMemo(() => {
     if (formData.objectiveType !== "phat-sinh" || selections.length === 0) {
@@ -287,7 +538,10 @@ export default function TaskEditPage() {
       .filter(Boolean) as any[];
   }, [regions, selections, formData.objectiveType]);
 
-  const getSelectionSummary = (targetSelections: GeographicalSelection[]) => {
+  const getSelectionSummary = (
+    targetSelections: GeographicalSelection[],
+    sourceRegions = regions,
+  ) => {
     if (!targetSelections || targetSelections.length === 0) return [];
     const summary: {
       regionId: string;
@@ -301,7 +555,10 @@ export default function TaskEditPage() {
     }[] = [];
 
     targetSelections.forEach((sel) => {
-      const region = getRegionById(Number(sel.regionId));
+      const regionFromSource = sourceRegions.find(
+        (item) => String(item.id) === String(sel.regionId),
+      );
+      const region = regionFromSource || getRegionById(Number(sel.regionId));
       if (!region) return;
       let regionGroup = summary.find((s) => s.regionId === String(region.id));
       if (!regionGroup) {
@@ -347,81 +604,9 @@ export default function TaskEditPage() {
     return summary;
   };
 
-  useEffect(() => {
-    if (!task) return;
-
-    const allPlans = [...plans, ...amendmentPlans] as any[];
-    const planMatch = allPlans.find((plan) =>
-      (task as any).planId
-        ? String(plan.id) === String((task as any).planId)
-        : plan.name?.normalize() === task.plan?.normalize(),
-    );
-    const objectiveType = (planMatch
-      ? (PURPOSE_TO_OBJECTIVE_TYPE[planMatch.purpose as Plan["purpose"]] ??
-        "phat-sinh")
-      : "phat-sinh") as TaskObjectiveType;
-    const existingSelections =
-      ((task as any).geographicalSelections || []) as GeographicalSelection[];
-    const taskSelectedPlotIds =
-      ((task as any).selectedPlotIds as string[] | undefined) || [];
-    const selectionPlotIds = existingSelections
-      .filter((item) => item.type === "plot")
-      .map((item) => String(item.plotId));
-    const selectedPlotIds =
-      taskSelectedPlotIds.length > 0
-        ? taskSelectedPlotIds
-        : selectionPlotIds.length > 0
-          ? selectionPlotIds
-          : ((planMatch?.selectedPlotIds || []) as string[]);
-    const mainTaskIds = Array.isArray((task as any).mainTaskIds)
-      ? (task as any).mainTaskIds.map(String)
-      : (task as any).mainTaskId
-        ? [String((task as any).mainTaskId)]
-        : [];
-
-    const existingSubtasks = (((task as any).tasks || []) as TaskAllocation[]).map(
-      (item) => ({
-        ...item,
-        stageId: item.stageId?.normalize?.() || item.stageId,
-      }),
-    );
-
-    setSelections(existingSelections);
-    setFormData({
-      code: task.code,
-      name: task.name,
-      mode: planMatch ? "plan" : "phat-sinh",
-      objectiveType,
-      planId: planMatch ? String(planMatch.id) : "",
-      planName: planMatch?.name || task.plan || "",
-      mainTaskId: (task as any).mainTaskId || mainTaskIds[0] || "",
-      mainTaskIds,
-      selectedStages:
-        task.stage && task.stage !== "N/A"
-          ? task.stage
-              .split("; ")
-              .map((stage) => stage.normalize())
-              .filter(Boolean)
-          : [],
-      selectedPlotIds,
-      regimenId: planMatch?.regimenId || "",
-      assignedType: task.assignedType,
-      assignedTo: task.assignedTo || [],
-      supervisors: task.supervisors || [],
-      qualityInspectors: task.qualityInspectors || [],
-      startDate: task.startDate,
-      endDate: task.endDate,
-      priority: task.priority,
-      description: task.description,
-      materials: ((task.materials || []) as MaterialAllocation[]).map(
-        (material) => ({
-          ...material,
-          stageId: material.stageId?.normalize?.() || material.stageId,
-        }),
-      ),
-      tasks: existingSubtasks,
-    });
-  }, [task, plans, amendmentPlans]);
+  if (taskLoading && !task) {
+    return <AppLoadingState />;
+  }
 
   if (!task) {
     return (
@@ -532,42 +717,107 @@ export default function TaskEditPage() {
     }));
   };
 
-  const handleComplete = () => {
-    if (!task) return;
+  const handleComplete = async () => {
+    if (!task || !taskResponse) return;
 
-    updateTask(task.id, {
-      code: formData.code,
+    const personnelRequests = [
+      ...formData.supervisors
+        .map((name) => personnel.find((item) => item.fullName === name)?.id)
+        .filter((id): id is number => typeof id === "number")
+        .map((personnelId) => ({
+          personnelId,
+          role: "MANAGER" as const,
+        })),
+      ...formData.qualityInspectors
+        .map((name) => personnel.find((item) => item.fullName === name)?.id)
+        .filter((id): id is number => typeof id === "number")
+        .map((personnelId) => ({
+          personnelId,
+          role: "QUALITY_INSPECTOR" as const,
+        })),
+      ...formData.assignedTo
+        .map((name) => personnel.find((item) => item.fullName === name)?.id)
+        .filter((id): id is number => typeof id === "number")
+        .map((personnelId) => ({
+          personnelId,
+          role: "EXECUTOR" as const,
+        })),
+    ];
+
+    const repeatDates = (formData.tasks[0]?.repeatDates || []).filter(Boolean);
+    const recurrence =
+      formData.tasks[0]?.isRepeating && repeatDates.length > 0
+        ? {
+            repeatMode: "SPECIFIC_DATES" as const,
+            repeatDates,
+          }
+        : {
+            repeatMode: "NONE" as const,
+            repeatDates: null,
+          };
+
+    const existingScope =
+      taskResponse.scopeType === "REGION"
+        ? {
+            scopeType: "REGION" as const,
+            scopeId: taskResponse.region?.id ?? null,
+          }
+        : taskResponse.scopeType === "AREA"
+          ? {
+              scopeType: "AREA" as const,
+              scopeId: taskResponse.area?.id ?? null,
+            }
+          : taskResponse.scopeType === "PLOT"
+            ? {
+                scopeType: "PLOT" as const,
+                scopeId: taskResponse.plot?.id ?? null,
+              }
+            : {
+                scopeType: null,
+                scopeId: null,
+              };
+
+    const selectedScope =
+      selections.length > 0
+        ? mapSelectionsToScope(selections)
+        : existingScope;
+    const isPlanned = formData.mode === "plan";
+
+    const payload: FarmTaskRequest = {
+      origin: isPlanned ? "PLANNED" : "AD_HOC",
+      ...(isPlanned
+        ? {
+            planId: toFiniteNumber(formData.planId),
+            sourceWorkItemId: toFiniteNumber(
+              formData.mainTaskId || formData.mainTaskIds[0],
+            ),
+          }
+        : {
+            workflowId: toFiniteNumber(formData.regimenId),
+            taskCategoryId: taskResponse.taskCategory?.id ?? null,
+          }),
+      scopeType: selectedScope.scopeType,
+      scopeId: selectedScope.scopeId,
       name: formData.name,
-      plan:
-        formData.objectiveType !== "phat-sinh"
-          ? formData.planName || "Công việc theo kế hoạch"
-          : "Công việc phát sinh",
-      planId:
-        formData.objectiveType !== "phat-sinh"
-          ? formData.planId || undefined
-          : undefined,
-      stage: formData.selectedStages.join("; ") || "N/A",
-      assignedTo: formData.assignedTo,
-      assignedType: formData.assignedType,
-      supervisors: formData.supervisors,
-      qualityInspectors: formData.qualityInspectors,
+      priority: mapPriorityToApi(formData.priority),
+      note: formData.description || null,
+      personnel: personnelRequests,
       startDate: formData.startDate,
       endDate: formData.endDate,
-      priority: formData.priority,
-      description: formData.description,
-      materials: formData.materials as any,
-      tasks: formData.tasks,
-      geographicalSelections: selections,
-      selectedPlotIds: formData.selectedPlotIds,
-      mainTaskId: formData.mainTaskId,
-      mainTaskIds: formData.mainTaskIds,
-    } as any);
+      recurrence,
+      supplyLines:
+        taskResponse.supplyLines?.map((line) => ({
+          supplyItemId: line.supplyItem.id,
+          unitBaseId: line.unitBase.id,
+          quantity: line.quantity,
+        })) || [],
+      status: taskResponse.status,
+    };
 
-    toast({
-      title: "Cập nhật thành công",
-      description: "Đã lưu thay đổi công việc",
+    await updateTaskMutation.updateFarmTask({
+      id: task.id,
+      payload,
     });
-    setLocation("/task");
   };
 
   // Plan personnel are stored as ids; the task form works with display names.
@@ -826,7 +1076,10 @@ export default function TaskEditPage() {
                               </div>
                             ) : (
                               <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-                                {getSelectionSummary(selections).map(
+                                {getSelectionSummary(
+                                  selections,
+                                  planScopedRegions,
+                                ).map(
                                   (group) => (
                                     <div
                                       key={group.regionId}
@@ -1089,7 +1342,10 @@ export default function TaskEditPage() {
                             </div>
                           ) : (
                             <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-                              {getSelectionSummary(selections).map((group) => (
+                              {getSelectionSummary(
+                                selections,
+                                planScopedRegions,
+                              ).map((group) => (
                                 <div
                                   key={group.regionId}
                                   className="rounded-xl border border-emerald-100 bg-white/80 p-3"

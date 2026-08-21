@@ -36,9 +36,17 @@ import {
 import { memo, useState } from "react";
 import usePersonnelStore from "../../../stores/usePersonnelStore";
 import type { GeographicalSelection } from "../types";
-import { TASK_OPTIONS } from "../data/mocks";
 import type { MaterialAllocation, TaskAllocation } from "../types";
 import type { CropSupplyCatalog, CropSupplyType } from "../hooks/useCropSupplyCatalog";
+import { useTaskCategorySearch } from "@/features/task-category/hooks/useTaskCategory";
+import type { FarmWorkDurationUnit } from "@/features/farm-workflow/types/farm-workflow.type";
+
+const DURATION_UNIT_OPTIONS: { value: string; label: string; api: FarmWorkDurationUnit }[] = [
+  { value: "phút", label: "Phút", api: "MINUTE" },
+  { value: "giờ", label: "Giờ", api: "HOUR" },
+  { value: "ngày", label: "Ngày", api: "DAY" },
+  { value: "tuần", label: "Tuần", api: "WEEK" },
+];
 
 export const StageAllocation = memo(
   ({
@@ -74,7 +82,7 @@ export const StageAllocation = memo(
     const [newItem, setNewItem] = useState({
       name: "",
       qty: "",
-      unit: supplyCatalog.unitOptionsByType.fertilizer[0] || "kg",
+      unitBaseId: "",
       type: "fertilizer" as CropSupplyType,
     });
 
@@ -83,6 +91,7 @@ export const StageAllocation = memo(
 
     const [newTask, setNewTask] = useState({
       name: "",
+      taskCategoryId: "",
       desc: "",
       labor: "",
       count: "1",
@@ -95,6 +104,7 @@ export const StageAllocation = memo(
 
     const { personnel } = usePersonnelStore();
     const [personnelSearch, setPersonnelSearch] = useState("");
+    const { items: taskCategories } = useTaskCategorySearch();
 
     const filteredPersonnel = personnelSearch.trim()
       ? personnel.filter((p) =>
@@ -108,25 +118,32 @@ export const StageAllocation = memo(
     const selectedMaterial = supplyCatalog.optionsByType[newItem.type].find(
       (option) => option.value === newItem.name,
     );
-    const unitOptions =
-      supplyCatalog.unitOptionsByType[newItem.type].length > 0
-        ? supplyCatalog.unitOptionsByType[newItem.type]
-        : ["kg"];
+    const packagingVariantOptions = selectedMaterial?.item.packagingVariants || [];
+    const selectedPackagingVariant = packagingVariantOptions.find(
+      (variant) => String(variant.unitBase?.id) === newItem.unitBaseId,
+    );
+    const maxPackagingQuantity = selectedPackagingVariant?.quantity;
+    const exceedsPackagingQuantity =
+      maxPackagingQuantity != null &&
+      Number(newItem.qty) > maxPackagingQuantity;
 
     const handleAddMaterial = () => {
-      if (!selectedMaterial || !newItem.qty) return;
+      if (!selectedMaterial || !newItem.qty || !selectedPackagingVariant?.unitBase)
+        return;
       onAddMaterial({
         stageId: stageName,
         materialCategory: selectedTypeOption?.label || newItem.type,
         materialType: selectedTypeOption?.label || newItem.type,
         materialName: selectedMaterial.label,
         quantity: newItem.qty,
-        unit: newItem.unit || selectedMaterial.unit,
+        unit: selectedPackagingVariant.unitBase.name || selectedMaterial.unit,
+        supplyItemId: selectedMaterial.item.id,
+        unitBaseId: selectedPackagingVariant.unitBase.id,
       });
       setNewItem({
         name: "",
         qty: "",
-        unit: unitOptions[0] || "kg",
+        unitBaseId: "",
         type: newItem.type,
       });
     };
@@ -144,6 +161,13 @@ export const StageAllocation = memo(
         laborValue = newTask.labor;
       }
 
+      const headcount = specificPersonnel
+        ? parseInt(newTask.count) || newTask.assignedPersonnel.length
+        : parseInt(laborValue.replace(/\D/g, ""), 10);
+      const durationUnitApi = DURATION_UNIT_OPTIONS.find(
+        (option) => option.value === durationUnit,
+      )?.api;
+
       onAddTask({
         stageId: stageName,
         name: newTask.name,
@@ -151,11 +175,18 @@ export const StageAllocation = memo(
         labor: laborValue,
         duration: durationValue ? `${durationValue} ${durationUnit}` : "",
         geographicalSelections: newTask.geographicalSelections,
+        taskCategoryId: newTask.taskCategoryId
+          ? Number(newTask.taskCategoryId)
+          : undefined,
+        headcount: Number.isFinite(headcount) && headcount > 0 ? headcount : undefined,
+        durationValue: durationValue ? Number(durationValue) : undefined,
+        durationUnit: durationValue ? durationUnitApi : undefined,
       });
 
       // Reset form but keep master selections as default for next task
       setNewTask({
         name: "",
+        taskCategoryId: "",
         desc: "",
         labor: "",
         count: "1",
@@ -310,15 +341,11 @@ export const StageAllocation = memo(
                         <Select
                           value={newItem.type}
                           onValueChange={(v) => {
-                            const defaultUnit =
-                              supplyCatalog.unitOptionsByType[
-                                v as CropSupplyType
-                              ]?.[0] || "kg";
                             setNewItem({
                               ...newItem,
                               type: v as CropSupplyType,
                               name: "",
-                              unit: defaultUnit,
+                              unitBaseId: "",
                             });
                           }}
                         >
@@ -349,10 +376,13 @@ export const StageAllocation = memo(
                               supplyCatalog.optionsByType[newItem.type].find(
                                 (i) => i.value === v,
                               );
+                            const firstVariant = item?.item.packagingVariants?.[0];
                             setNewItem({
                               ...newItem,
                               name: v,
-                              unit: item?.unit || newItem.unit,
+                              unitBaseId: firstVariant?.unitBase?.id
+                                ? String(firstVariant.unitBase.id)
+                                : "",
                             });
                           }}
                           placeholder="Chọn vật tư cụ thể..."
@@ -383,18 +413,24 @@ export const StageAllocation = memo(
                       </div>
                       <div className="col-span-4">
                         <Select
-                          value={newItem.unit}
+                          value={newItem.unitBaseId}
                           onValueChange={(v) =>
-                            setNewItem({ ...newItem, unit: v })
+                            setNewItem({ ...newItem, unitBaseId: v })
                           }
+                          disabled={packagingVariantOptions.length === 0}
                         >
                           <SelectTrigger className="h-9 text-xs px-2 w-full bg-white">
-                            <SelectValue />
+                            <SelectValue placeholder="Đơn vị..." />
                           </SelectTrigger>
                           <SelectContent>
-                            {unitOptions.map((u) => (
-                              <SelectItem key={u} value={u}>
-                                {u}
+                            {packagingVariantOptions.map((variant) => (
+                              <SelectItem
+                                key={variant.unitBase?.id ?? variant.unitBase?.name}
+                                value={String(variant.unitBase?.id)}
+                              >
+                                {variant.unitBase?.name ||
+                                  variant.packagingType?.name ||
+                                  ""}
                               </SelectItem>
                             ))}
                           </SelectContent>
@@ -411,6 +447,13 @@ export const StageAllocation = memo(
                         </Button>
                       </div>
                     </div>
+                    {exceedsPackagingQuantity && (
+                      <p className="text-[11px] text-amber-600 mt-1">
+                        Số lượng vượt quá định mức đóng gói (
+                        {maxPackagingQuantity} {selectedPackagingVariant?.unitBase?.name}
+                        /{selectedPackagingVariant?.packagingType?.name})
+                      </p>
+                    )}
                   </div>
                 </div>
               </TabsContent>
@@ -487,12 +530,21 @@ export const StageAllocation = memo(
                 <div className="space-y-2 pt-3 border-t mt-auto text-sm shrink-0">
                   <div className="flex gap-2">
                     <Combobox
-                      options={TASK_OPTIONS.map((opt) => ({
-                        value: opt.value,
-                        label: opt.label,
+                      options={taskCategories.map((category) => ({
+                        value: String(category.id),
+                        label: category.name,
                       }))}
-                      value={newTask.name}
-                      onChange={(v) => setNewTask({ ...newTask, name: v })}
+                      value={newTask.taskCategoryId}
+                      onChange={(v) => {
+                        const category = taskCategories.find(
+                          (item) => String(item.id) === v,
+                        );
+                        setNewTask({
+                          ...newTask,
+                          taskCategoryId: v,
+                          name: category?.name || newTask.name,
+                        });
+                      }}
                       placeholder="Chọn công việc..."
                       searchPlaceholder="Tìm công việc..."
                       emptyText="Không tìm thấy công việc."
@@ -632,10 +684,11 @@ export const StageAllocation = memo(
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="phút">Phút</SelectItem>
-                          <SelectItem value="giờ">Giờ</SelectItem>
-                          <SelectItem value="ngày">Ngày</SelectItem>
-                          <SelectItem value="tuần">Tuần</SelectItem>
+                          {DURATION_UNIT_OPTIONS.map((option) => (
+                            <SelectItem key={option.value} value={option.value}>
+                              {option.label}
+                            </SelectItem>
+                          ))}
                         </SelectContent>
                       </Select>
                     </div>

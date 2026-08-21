@@ -24,6 +24,7 @@ import {
   Edit,
   Layers,
   Leaf,
+  Loader2,
   MapPin,
   Package,
   Sprout,
@@ -31,7 +32,6 @@ import {
   Users,
   Wrench,
 } from "lucide-react";
-import { useMemo } from "react";
 import { usePlanDetailPage } from "./hooks/usePlanDetailPage";
 import { getPlanStatusBadge } from "./utils/status";
 
@@ -44,7 +44,7 @@ export default function PlanGrowthDetailPage({
 }: PlanGrowthDetailPageProps) {
   const {
     plan,
-    regions,
+    loading,
     growthCycles,
     seasons,
     regimens,
@@ -59,53 +59,20 @@ export default function PlanGrowthDetailPage({
     goBack,
   } = usePlanDetailPage(basePath);
 
+  if (loading) {
+    return (
+      <PageWrapper title="Chi tiết kế hoạch" description="Đang tải...">
+        <div className="flex items-center justify-center py-24 text-muted-foreground">
+          <Loader2 className="w-6 h-6 animate-spin mr-2" />
+          Đang tải kế hoạch...
+        </div>
+      </PageWrapper>
+    );
+  }
+
   if (!plan) {
     return null;
   }
-
-  const totalArea = useMemo(() => {
-    if (!plan || !regions || regions.length === 0) return "0.0";
-
-    let total = 0;
-    const regionIds = plan.selectedRegionIds || [];
-    const zoneIds = plan.selectedZoneIds || [];
-    const plotIds = plan.selectedPlotIds || [];
-
-    regionIds.forEach((rid) => {
-      const region = regions.find((r) => String(r.id) === String(rid));
-      if (!region) return;
-
-      const regionZoneIds = region.subAreas?.map((sa) => sa.id) || [];
-      const isWholeRegion =
-        regionZoneIds.length > 0 &&
-        regionZoneIds.every((zid) => zoneIds.includes(zid));
-
-      if (isWholeRegion) {
-        total += region.area || 0;
-      } else {
-        region.subAreas?.forEach((sa) => {
-          if (zoneIds.includes(sa.id)) {
-            const zonePlotIds = sa.plots?.map((p) => p.id) || [];
-            const isWholeArea =
-              zonePlotIds.length > 0 &&
-              zonePlotIds.every((pid) => plotIds.includes(pid));
-
-            if (isWholeArea) {
-              total += sa.area || 0;
-            } else {
-              sa.plots?.forEach((p) => {
-                if (plotIds.includes(p.id)) {
-                  total += p.area || 0;
-                }
-              });
-            }
-          }
-        });
-      }
-    });
-
-    return total.toFixed(1);
-  }, [plan, regions]);
 
   return (
     <PageWrapper
@@ -150,7 +117,8 @@ export default function PlanGrowthDetailPage({
                   </span>
                   <span className="text-slate-300">|</span>
                   <span className="flex items-center gap-1">
-                    <Clock className="w-4 h-4" /> Ngày tạo: {plan.createdAt}
+                    <Clock className="w-4 h-4" /> {plan.startDate} -{" "}
+                    {plan.endDate}
                   </span>
                 </div>
               </div>
@@ -320,23 +288,67 @@ export default function PlanGrowthDetailPage({
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4 bg-emerald-50/50 p-4 rounded-xl border border-emerald-100">
-                <div>
-                  <p className="text-[10px] text-emerald-700 font-black uppercase tracking-wider mb-1">
-                    Tổng diện tích
-                  </p>
-                  <p className="text-xl font-black text-emerald-800">
-                    {totalArea} ha
-                  </p>
+              <div className="space-y-4">
+                <label className="text-xs text-muted-foreground font-black uppercase tracking-widest">
+                  Nhân sự quản lý
+                </label>
+                <div className="flex flex-wrap gap-1.5">
+                  {(plan.personnel || []).filter(
+                    (person) => person.role === "MANAGER",
+                  ).length === 0 ? (
+                    <span className="text-sm italic text-slate-400">
+                      Chưa chọn nhân sự quản lý
+                    </span>
+                  ) : (
+                    (plan.personnel || [])
+                      .filter((person) => person.role === "MANAGER")
+                      .map((person) => (
+                        <Badge
+                          key={person.id}
+                          variant="outline"
+                          className="bg-blue-50 text-blue-700 border-blue-100 text-[10px] font-medium py-0 px-2 h-5"
+                        >
+                          <Users className="w-3 h-3 mr-1" />
+                          {person.fullName}
+                        </Badge>
+                      ))
+                  )}
                 </div>
-                <div>
-                  <p className="text-[10px] text-emerald-700 font-black uppercase tracking-wider mb-1">
-                    Sản lượng dự kiến
-                  </p>
-                  <p className="text-xl font-black text-emerald-800">
-                    {plan.expectedYield || "0"} tấn
-                  </p>
+              </div>
+
+              <div className="space-y-4">
+                <label className="text-xs text-muted-foreground font-black uppercase tracking-widest">
+                  Nhân sự kiểm định chất lượng
+                </label>
+                <div className="flex flex-wrap gap-1.5">
+                  {(plan.personnel || []).filter(
+                    (person) => person.role === "QUALITY_INSPECTOR",
+                  ).length === 0 ? (
+                    <span className="text-sm italic text-slate-400">
+                      Chưa chọn nhân sự kiểm định
+                    </span>
+                  ) : (
+                    (plan.personnel || [])
+                      .filter((person) => person.role === "QUALITY_INSPECTOR")
+                      .map((person) => (
+                        <Badge
+                          key={person.id}
+                          variant="outline"
+                          className="bg-violet-50 text-violet-700 border-violet-100 text-[10px] font-medium py-0 px-2 h-5"
+                        >
+                          <Users className="w-3 h-3 mr-1" />
+                          {person.fullName}
+                        </Badge>
+                      ))
+                  )}
                 </div>
+              </div>
+
+              <div className="space-y-4">
+                <label className="text-xs text-muted-foreground font-black uppercase tracking-widest">
+                  Ghi chú phạm vi canh tác
+                </label>
+                <p>{plan.scopeNote || ""}</p>
               </div>
             </CardContent>
           </Card>
@@ -650,7 +662,7 @@ export default function PlanGrowthDetailPage({
         {/* Summary Card */}
         <Card className="bg-slate-900 text-slate-50 border-none shadow-lg mt-8">
           <CardContent className="p-8">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-8">
               <div className="text-center md:text-left">
                 <p className="text-slate-400 text-xs font-bold uppercase tracking-wider mb-2">
                   Tổng giai đoạn
@@ -682,14 +694,6 @@ export default function PlanGrowthDetailPage({
                     {plan.taskAllocations?.length || 0}
                   </span>
                   <span className="text-slate-500 font-medium">đầu việc</span>
-                </div>
-              </div>
-              <div className="text-center md:text-left">
-                <p className="text-slate-400 text-xs font-bold uppercase tracking-wider mb-2">
-                  Trạng thái
-                </p>
-                <div className="flex justify-center md:justify-start">
-                  {getPlanStatusBadge(plan.status)}
                 </div>
               </div>
             </div>

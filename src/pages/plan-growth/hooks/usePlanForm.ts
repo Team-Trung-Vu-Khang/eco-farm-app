@@ -1,5 +1,8 @@
 /* eslint-disable react-hooks/set-state-in-effect */
-import { useFarmPlanMutations } from "@/features/farm-workflow/hooks";
+import {
+  useFarmPlanById,
+  useFarmPlanMutations,
+} from "@/features/farm-workflow/hooks";
 import type { FarmPlanPersonnelRequest } from "@/features/farm-workflow/types/farm-workflow.type";
 import type { FarmPersonnelResponse } from "@/features/master-data";
 import { useFarmPersonnel } from "@/features/master-data";
@@ -9,7 +12,7 @@ import useGrowthCycleStore from "@/stores/useGrowthCycleStore";
 import useRegionStore from "@/stores/useRegionStore";
 import useSeasonStore from "@/stores/useSeasonStore";
 import { useToast } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useParams } from "wouter";
 import { useAmendmentRegimenStore } from "../../../stores/useAmendmentRegimenStore";
 import { useTreatmentStore } from "../../../stores/useTreatmentStore";
@@ -21,7 +24,11 @@ import type {
   PlanFormData,
   TaskAllocation,
 } from "../types";
-import { getFallbackPlans, upsertFallbackPlan } from "../utils/api-mappers";
+import {
+  buildFarmPlanStagesRequest,
+  mapPlanResponseToPlan,
+  upsertFallbackPlan,
+} from "../utils/api-mappers";
 import {
   calculateSelectedArea,
   deriveSelectionState,
@@ -29,7 +36,7 @@ import {
   summarizeSelections,
   summarizeTaskSelections,
 } from "../utils/location";
-import { mapPurpose, usePlanPage } from "./usePlanPage";
+import { mapPurpose } from "./usePlanPage";
 import { usePlanWorkflowDraftStore } from "./usePlanWorkflowDraftStore";
 
 function mapFarmPersonnelToOption(
@@ -152,6 +159,12 @@ function buildPersonnelRequest(
   return [...managers, ...inspectors];
 }
 
+function derivePersonnelIds(plan: Plan, role: "MANAGER" | "QUALITY_INSPECTOR") {
+  return (plan.personnel || [])
+    .filter((person) => person.role === role)
+    .map((person) => String(person.id));
+}
+
 function buildAutoPlanCode(seasonId: string, seasonName: string) {
   const seasonToken =
     (seasonId || seasonName || "PLAN")
@@ -223,8 +236,13 @@ export function usePlanForm(
   const workflowInfo = isWorkflowContext
     ? (infoNodes.find((node) => node.isActive) ?? infoNodes[0])
     : undefined;
+  const planId = params.id || "";
+  const planDetailQuery = useFarmPlanById(planId, {
+    enabled: mode === "edit" && !!planId,
+  });
+  const hydratedPlanIdRef = useRef<number | null>(null);
+  const hydratedWorkflowInfoIdRef = useRef<string | null>(null);
 
-  const { plans } = usePlanPage(basePath);
   const { createPlan, updatePlan } = useFarmPlanMutations();
   const seasons = useSeasonStore((state) => state.seasons);
   const workspaceId = useSelectedWorkspaceId();
@@ -292,12 +310,11 @@ export function usePlanForm(
     [],
   );
 
-  const fallbackPlans = getFallbackPlans();
-  const plan =
-    mode === "edit"
-      ? plans.find((item) => item.id === Number(params.id)) ||
-        fallbackPlans.find((item) => item.id === Number(params.id))
+  const detailPlan =
+    mode === "edit" && planDetailQuery.data
+      ? mapPlanResponseToPlan(planDetailQuery.data)
       : undefined;
+  const plan = mode === "edit" ? detailPlan : undefined;
   const initialSelectionState = useMemo(
     () =>
       mode === "edit" && plan
@@ -327,12 +344,11 @@ export function usePlanForm(
           startDate: plan.startDate || formatDateInput(new Date()),
           endDate: plan.endDate || "",
           ...inferDurationFromDates(plan.startDate, plan.endDate),
-          managementPersonnelIds:
-            (plan as { managementPersonnelIds?: string[] })
-              .managementPersonnelIds || [],
-          qualityInspectorPersonnelIds:
-            (plan as { qualityInspectorPersonnelIds?: string[] })
-              .qualityInspectorPersonnelIds || [],
+          managementPersonnelIds: derivePersonnelIds(plan, "MANAGER"),
+          qualityInspectorPersonnelIds: derivePersonnelIds(
+            plan,
+            "QUALITY_INSPECTOR",
+          ),
           selectedRegionIds: plan.selectedRegionIds || [],
           selectedZoneIds: plan.selectedZoneIds || [],
           selectedPlotIds: plan.selectedPlotIds || [],
@@ -352,6 +368,8 @@ export function usePlanForm(
 
   useEffect(() => {
     if (mode !== "edit" || !plan || regions.length === 0) return;
+    if (hydratedPlanIdRef.current === plan.id) return;
+    hydratedPlanIdRef.current = plan.id;
 
     setFormData({
       code: plan.code || "",
@@ -363,12 +381,11 @@ export function usePlanForm(
       startDate: plan.startDate || formatDateInput(new Date()),
       endDate: plan.endDate || "",
       ...inferDurationFromDates(plan.startDate, plan.endDate),
-      managementPersonnelIds:
-        (plan as { managementPersonnelIds?: string[] })
-          .managementPersonnelIds || [],
-      qualityInspectorPersonnelIds:
-        (plan as { qualityInspectorPersonnelIds?: string[] })
-          .qualityInspectorPersonnelIds || [],
+      managementPersonnelIds: derivePersonnelIds(plan, "MANAGER"),
+      qualityInspectorPersonnelIds: derivePersonnelIds(
+        plan,
+        "QUALITY_INSPECTOR",
+      ),
       selectedRegionIds: plan.selectedRegionIds || [],
       selectedZoneIds: plan.selectedZoneIds || [],
       selectedPlotIds: plan.selectedPlotIds || [],
@@ -395,6 +412,10 @@ export function usePlanForm(
   useEffect(() => {
     if (planHasOwnScope) return;
     if (!isWorkflowContext || !workflowInfo || regions.length === 0) return;
+    if (hydratedWorkflowInfoIdRef.current === workflowInfo.id) return;
+    hydratedWorkflowInfoIdRef.current = workflowInfo.id;
+    if (hydratedWorkflowInfoIdRef.current === workflowInfo.id) return;
+    hydratedWorkflowInfoIdRef.current = workflowInfo.id;
 
     const nextSelectionState = deriveSelectionState(
       workflowInfo.selections,
@@ -572,29 +593,25 @@ export function usePlanForm(
     upsertFallbackPlan(nextPlan as Plan);
   };
 
-  const handleComplete = () => {
+  const handleComplete = async () => {
     const payload = {
       ...formData,
       area: calculateArea(),
       status: "active" as const,
     };
+    const durationDays = Math.max(
+      1,
+      Math.round(
+        (new Date(`${formData.endDate}T00:00:00`).getTime() -
+          new Date(`${formData.startDate}T00:00:00`).getTime()) /
+          86400000,
+      ) || 1,
+    );
+    const stages = buildFarmPlanStagesRequest(formData);
 
     if (mode === "edit" && params.id) {
-      const nextPlan = {
-        ...(plan || {}),
-        ...payload,
-        id: Number(params.id),
-        createdAt: plan?.createdAt || new Date().toISOString().split("T")[0],
-        selectedRegionIds: payload.selectedRegionIds,
-        selectedZoneIds: payload.selectedZoneIds,
-        selectedPlotIds: payload.selectedPlotIds,
-        materialAllocations: payload.materialAllocations,
-        taskAllocations: payload.taskAllocations,
-      };
-
-      upsertFallbackPlan(nextPlan as Plan);
-      void updatePlan
-        .mutateAsync({
+      try {
+        await updatePlan.mutateAsync({
           id: Number(params.id),
           payload: {
             code: formData.code || null,
@@ -602,20 +619,28 @@ export function usePlanForm(
             description: formData.description || undefined,
             scopeNote: formData.scopeNote || undefined,
             purpose: mapPurpose(formData.purpose),
-            durationDays: Math.max(
-              1,
-              Math.round(
-                (new Date(`${formData.endDate}T00:00:00`).getTime() -
-                  new Date(`${formData.startDate}T00:00:00`).getTime()) /
-                  86400000,
-              ) || 1,
-            ),
+            durationDays,
             personnel: buildPersonnelRequest(formData),
-            stages: undefined,
+            stages,
             status: "IN_PROGRESS",
           },
-        })
-        .catch(() => undefined);
+        });
+      } catch (error: any) {
+        toast({
+          title: "Lỗi",
+          description:
+            error?.response?.data?.message ||
+            `Không thể cập nhật kế hoạch ${formData.name}`,
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const refreshedPlan = await planDetailQuery.refetch();
+      if (refreshedPlan.data) {
+        upsertFallbackPlan(mapPlanResponseToPlan(refreshedPlan.data));
+      }
+
       toast({
         title: "Thành công",
         description: `Đã cập nhật kế hoạch ${formData.name}`,
@@ -624,20 +649,14 @@ export function usePlanForm(
         options.onSaved(Number(params.id));
         return;
       }
-      setLocation(`${basePath}/${params.id}`);
+      persistDraft();
+      window.history.back();
       return;
     }
 
     const createdId = Date.now();
-    const nextPlan = {
-      ...payload,
-      id: createdId,
-      code: formData.code,
-      createdAt: new Date().toISOString().split("T")[0],
-    };
-    upsertFallbackPlan(nextPlan as Plan);
-    void createPlan
-      .mutateAsync({
+    try {
+      await createPlan.mutateAsync({
         workflowId: workflowInfo?.id || "0",
         payload: {
           code: formData.code || null,
@@ -645,20 +664,31 @@ export function usePlanForm(
           description: formData.description || undefined,
           scopeNote: formData.scopeNote || undefined,
           purpose: mapPurpose(formData.purpose),
-          durationDays: Math.max(
-            1,
-            Math.round(
-              (new Date(`${formData.endDate}T00:00:00`).getTime() -
-                new Date(`${formData.startDate}T00:00:00`).getTime()) /
-                86400000,
-            ) || 1,
-          ),
+          durationDays,
           personnel: buildPersonnelRequest(formData),
-          stages: undefined,
+          stages,
           status: "DRAFT",
         },
-      })
-      .catch(() => undefined);
+      });
+    } catch (error: any) {
+      toast({
+        title: "Lỗi",
+        description:
+          error?.response?.data?.message ||
+          `Không thể tạo kế hoạch ${formData.name}`,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const nextPlan = {
+      ...payload,
+      id: createdId,
+      code: formData.code,
+      createdAt: new Date().toISOString().split("T")[0],
+    };
+    upsertFallbackPlan(nextPlan as Plan);
+
     toast({
       title: "Thành công",
       description: `Đã tạo kế hoạch ${formData.name}`,
@@ -667,7 +697,7 @@ export function usePlanForm(
       options.onSaved(createdId);
       return;
     }
-    setLocation(basePath);
+    window.history.back();
   };
 
   return {
@@ -702,14 +732,12 @@ export function usePlanForm(
     handleAddTask,
     handleRemoveTask,
     handleComplete,
-    goBack: options?.onCancel
-      ? () => {
-          persistDraft();
-          options.onCancel!();
-        }
-      : mode === "edit" && params.id
-        ? () => setLocation(`${basePath}/${params.id}`)
-        : () => setLocation(basePath),
+    // "Quay lại" always returns to wherever the user came from, regardless
+    // of context — draft edits are persisted first so nothing is lost.
+    goBack: () => {
+      persistDraft();
+      window.history.back();
+    },
     pageTitle: mode === "edit" ? "Chỉnh sửa Kế hoạch" : "Lập kế hoạch",
     pageDescription:
       mode === "edit" && plan

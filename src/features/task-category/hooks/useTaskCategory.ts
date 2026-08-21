@@ -1,3 +1,4 @@
+import type { PageResponse } from "@/features/foundation/types/foundation.type";
 import { useQuery } from "@tanstack/react-query";
 import { taskCategoryApi } from "../api/task-category.api";
 import type {
@@ -42,9 +43,9 @@ export function useTaskCategorySearch({
   params,
   enabled = true,
 }: UseTaskCategorySearchOptions = {}) {
-  const queryResult = useQuery<TaskCategoryLookupResponse[], Error>({
+  const queryResult = useQuery<PageResponse<TaskCategoryLookupResponse>, Error>({
     queryKey: taskCategoryKeys.search(params),
-    queryFn: () => taskCategoryApi.search(params),
+    queryFn: () => taskCategoryApi.search({ size: 100, ...params }),
     enabled,
     staleTime: 5 * 60 * 1000,
     refetchOnWindowFocus: false,
@@ -52,7 +53,7 @@ export function useTaskCategorySearch({
 
   return {
     ...queryResult,
-    items: queryResult.data ?? [],
+    items: queryResult.data?.content ?? [],
     loading: queryResult.isLoading,
     error: queryResult.error?.message ?? null,
   };

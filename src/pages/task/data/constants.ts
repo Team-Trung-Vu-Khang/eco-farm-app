@@ -19,9 +19,9 @@ export const TASK_PRIORITY_FILTER_OPTIONS = [
   { label: "Thấp", value: "low" },
 ] as const;
 
-export const TASK_ASSIGNED_TYPE_FILTER_OPTIONS = [
-  { label: "Cá nhân", value: "individual" },
-  { label: "Đội nhóm", value: "team" },
+export const TASK_ORIGIN_FILTER_OPTIONS = [
+  { label: "Dự kiến", value: "PLANNED" },
+  { label: "Phát sinh", value: "AD_HOC" },
 ] as const;
 
 export const TASK_WEEK_DAYS = ["T2", "T3", "T4", "T5", "T6", "T7", "CN"] as const;

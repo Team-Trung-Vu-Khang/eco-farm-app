@@ -16,13 +16,14 @@ import {
   ArrowLeft,
   ClipboardList,
   Layers,
+  Loader2,
   PencilLine,
   Plus,
   Save,
   Trash2,
   Workflow,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Background,
   BackgroundVariant,
@@ -37,8 +38,21 @@ import {
   type NodeChange,
 } from "reactflow";
 import { useLocation, useParams } from "wouter";
+import {
+  useFarmPlanMutations,
+  useFarmWorkflowById,
+  useFarmWorkflowMutations,
+  useFarmWorkflowPlans,
+} from "@/features/farm-workflow/hooks";
+import type {
+  FarmWorkflowRequestStatus,
+  FarmWorkflowScopeRequest,
+  FarmWorkflowScopeResponse,
+} from "@/features/farm-workflow/types/farm-workflow.type";
 import { useDialogBugWorkaround } from "../../shared/hooks/useDialogBugWorkaround";
-import useAnimalGrowthPlanStore, { type Plan } from "../../stores/useAnimalGrowthPlanStore";
+import useAnimalGrowthPlanStore, {
+  type Plan,
+} from "../../stores/useAnimalGrowthPlanStore";
 import useAnimalGrowthWorkflowStore from "../../stores/useAnimalGrowthWorkflowStore";
 import {
   WorkflowCardNode,
@@ -49,22 +63,31 @@ import {
 import {
   createEmptyPlanDraft,
   createNodeId,
+  DEFAULT_DRAFT_PLAN_NAME,
+  getDescendantNodes,
   getDirectChildren,
   getParentId,
   INFO_NODE_X,
+  placeNewNode,
   PLACEHOLDER_POSITION,
   useAnimalGrowthWorkflowDraftStore,
   type DiagramInfoRecord,
   type DraftNode,
 } from "./hooks/useAnimalGrowthWorkflowDraftStore";
 import type { GeographicalSelection } from "./types";
+import {
+  mapPlanResponseToPlan,
+  mapWorkflowResponseToInfoRecord,
+} from "./utils/api-mappers";
 import { summarizePlanSelections, summarizeSelections } from "./utils/location";
 
-type PlanDisplayStatus =
-  | "missing_info"
-  | "pending"
-  | "in_progress"
-  | "completed";
+// Local draft-only nodes carry a `workflow-<timestamp>-<rand>` id; only
+// numeric ids are real backend workflow ids worth fetching from the API.
+function isPersistedWorkflowId(id: string) {
+  return /^\d+$/.test(id);
+}
+
+type PlanDisplayStatus = "pending" | "in_progress" | "completed" | "cancelled";
 
 interface ConfirmActionState {
   title: string;
@@ -82,10 +105,10 @@ const PLAN_STATUS_META: Record<
   PlanDisplayStatus,
   { nodeStatus: WorkflowNodeStatus; label: string }
 > = {
-  missing_info: { nodeStatus: "not_started", label: "Thiếu thông tin" },
-  pending: { nodeStatus: "ended", label: "Chờ triển khai" },
+  pending: { nodeStatus: "not_started", label: "Chờ triển khai" },
   in_progress: { nodeStatus: "in_progress", label: "Đang triển khai" },
   completed: { nodeStatus: "completed", label: "Đã kết thúc" },
+  cancelled: { nodeStatus: "paused", label: "Đã hủy" },
 };
 
 const DEFAULT_DIAGRAM_INFO_EYEBROW = "Quy trình chăn nuôi";
@@ -98,32 +121,22 @@ type FlowViewInstance = {
   }) => void;
 };
 
-function getDurationLabel(startDate?: string, endDate?: string) {
-  if (!startDate || !endDate) return "Chưa xác định";
-
-  const start = new Date(startDate);
-  const end = new Date(endDate);
-  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime()))
-    return "Chưa xác định";
-  if (end < start) return "Chưa xác định";
-
-  let years = end.getFullYear() - start.getFullYear();
-  let months = end.getMonth() - start.getMonth();
-  let days = end.getDate() - start.getDate();
-
-  if (days < 0) {
-    months -= 1;
-    days += new Date(end.getFullYear(), end.getMonth(), 0).getDate();
-  }
-  if (months < 0) {
-    years -= 1;
-    months += 12;
-  }
+// Trusts the API's FarmPlanResponse.durationDays directly rather than
+// deriving a duration from plannedStartDate/plannedEndDate — those are often
+// unset (e.g. a freshly created draft plan) even though durationDays isn't.
+// Same years*365 + months*30 + days weighting as mapDurationDaysToParts, so
+// the label stays consistent with the duration inputs elsewhere in the app.
+function getDurationLabel(durationDays?: number) {
+  let remaining = Math.max(0, Math.floor(Number(durationDays) || 0));
+  const years = Math.floor(remaining / 365);
+  remaining -= years * 365;
+  const months = Math.floor(remaining / 30);
+  remaining -= months * 30;
 
   const parts: string[] = [];
   if (years > 0) parts.push(`${years} năm`);
   if (months > 0) parts.push(`${months} tháng`);
-  if (days > 0 || !parts.length) parts.push(`${days} ngày`);
+  if (remaining > 0 || !parts.length) parts.push(`${remaining} ngày`);
 
   return parts.join(" ");
 }
@@ -157,29 +170,91 @@ function buildChildEdge(sourceNodeId: string, targetNodeId: string): Edge {
   };
 }
 
-function isPlanInfoComplete(plan: Plan) {
-  return Boolean(
-    plan.name.trim() &&
-    plan.seasonId &&
-    plan.startDate &&
-    plan.endDate &&
-    plan.crop.trim() &&
-    plan.selectedRegionIds.length,
-  );
+// Rebuilds the plan-node tree (positions + parent/child edges) from the
+// backend's `metadataJson.parentId` on each plan — the canvas graph itself
+// is local-draft-only and doesn't survive a reload, so this is the only
+// place that link is reconstructed after fetching a workflow's plans.
+// `savedPositions` (the workflow's own metadataJson.nodePositions, keyed by
+// plan id) restores manual layout from the last "Lưu quy trình"; a plan with
+// no saved entry (e.g. just created) falls back to auto-placement.
+function buildPlanNodesFromApi(
+  planNodePlans: Plan[],
+  savedPositions?: Record<string, { x: number; y: number }>,
+): {
+  nodes: DraftNode[];
+  edges: Edge[];
+} {
+  const nodeIdByPlanId = new Map<number, string>();
+  const pending = planNodePlans.map((plan) => {
+    const id = createNodeId("plan");
+    nodeIdByPlanId.set(plan.id, id);
+    return { plan, id };
+  });
+
+  const nodes: DraftNode[] = [];
+  const edges: Edge[] = [];
+  const placedNodeIds = new Set<string>();
+
+  const place = (plan: Plan, id: string, parentNodeId: string | undefined) => {
+    const savedPosition = savedPositions?.[plan.id];
+    nodes.push({
+      id,
+      type: "workflowCard",
+      position: savedPosition ?? placeNewNode(nodes, parentNodeId),
+      data: parentNodeId
+        ? { setupKind: "plan", planId: plan.id, parentId: parentNodeId }
+        : { setupKind: "plan", planId: plan.id },
+    });
+    placedNodeIds.add(id);
+    if (parentNodeId) edges.push(buildChildEdge(parentNodeId, id));
+  };
+
+  // Multiple passes so parents get placed before children regardless of the
+  // array order the API returned them in.
+  let remaining = pending;
+  let progressed = true;
+  while (remaining.length > 0 && progressed) {
+    progressed = false;
+    const stillPending: typeof remaining = [];
+    for (const entry of remaining) {
+      const parentPlanId = entry.plan.metadataJson?.parentId;
+      const parentNodeId =
+        parentPlanId != null ? nodeIdByPlanId.get(Number(parentPlanId)) : undefined;
+      if (parentPlanId != null && parentNodeId && !placedNodeIds.has(parentNodeId)) {
+        stillPending.push(entry);
+        continue;
+      }
+      place(entry.plan, entry.id, parentNodeId);
+      progressed = true;
+    }
+    remaining = stillPending;
+  }
+  // Dangling parentId (parent plan not found in this workflow) — place as root.
+  remaining.forEach(({ plan, id }) => place(plan, id, undefined));
+
+  return { nodes, edges };
 }
 
-function getPlanDisplayStatus(plan: Plan, hasWork: boolean): PlanDisplayStatus {
-  if (plan.status === "completed" || plan.status === "cancelled")
-    return "completed";
-  if (!isPlanInfoComplete(plan)) return "missing_info";
-  return hasWork ? "in_progress" : "pending";
+// Trusts the API's own plan.status rather than inferring progress from
+// whether the plan "looks" filled in or has work allocated.
+function getPlanDisplayStatus(plan: Plan): PlanDisplayStatus {
+  switch (plan.status) {
+    case "active":
+      return "in_progress";
+    case "completed":
+      return "completed";
+    case "cancelled":
+      return "cancelled";
+    default:
+      return "pending";
+  }
 }
 
 function getPlanActionDisabled(status: PlanDisplayStatus) {
   return {
     edit: status === "completed",
     allocate: !(status === "pending" || status === "in_progress"),
-    remove: !(status === "pending" || status === "missing_info"),
+    remove: !(status === "pending" || status === "cancelled"),
   };
 }
 
@@ -187,15 +262,15 @@ function getMaterialBreakdown(
   materialNames: string[],
   materialCategories: string[],
 ) {
-  const breakdown = { "Thuốc thú y": 0, "Thức ăn": 0, "Vật tư khác": 0 };
+  const breakdown = { "Thuốc thú y": 0, "Thức ăn chăn nuôi": 0, "Vật tư khác": 0 };
 
   materialNames.forEach((materialName, index) => {
     if (!materialName.trim()) return;
     const category = (materialCategories[index] || "").toLowerCase();
-    if (category.includes("thuốc") || category.includes("bvtv")) {
+    if (category.includes("thuốc") || category.includes("thú y")) {
       breakdown["Thuốc thú y"] += 1;
-    } else if (category.includes("phân")) {
-      breakdown["Thức ăn"] += 1;
+    } else if (category.includes("thức ăn") || category.includes("phân")) {
+      breakdown["Thức ăn chăn nuôi"] += 1;
     } else {
       breakdown["Vật tư khác"] += 1;
     }
@@ -216,8 +291,13 @@ function getRegionLabelsFromPlan(
   plan: Plan,
   regions: ReturnType<typeof useRegionStore.getState>["regions"],
 ) {
-  const summary = summarizePlanSelections(plan, regions);
-  if (!summary.length) return ["Chưa thiết lập vùng canh tác"];
+  // Prefer the API's own scopes (via selectionSummary) — a local-only draft
+  // plan won't have this, so it falls back to matching selectedRegionIds/etc
+  // against the mock region tree.
+  const summary = plan.selectionSummary?.length
+    ? plan.selectionSummary
+    : summarizePlanSelections(plan, regions);
+  if (!summary.length) return ["Chưa thiết lập khu vực chăn nuôi"];
 
   return summary.map((group) => {
     const itemLabel = group.items.map((item) => item.name).join(", ");
@@ -230,7 +310,7 @@ function getRegionLabelsFromSelections(
   regions: ReturnType<typeof useRegionStore.getState>["regions"],
 ) {
   const summary = summarizeSelections(selections, regions || []);
-  if (!summary.length) return ["Chưa thiết lập vùng canh tác"];
+  if (!summary.length) return ["Chưa thiết lập khu vực chăn nuôi"];
 
   return summary.map((group) => {
     const itemLabel = group.items.map((item) => item.name).join(", ");
@@ -244,6 +324,22 @@ type NodeHandlers = {
   onAllocateWork: (planId: number) => void;
   onRequestDeletePlan: (nodeId: string) => void;
 };
+
+// The scope response only nests `scopeId` under region/area/plot depending
+// on scopeType (see FarmWorkflowScopeResponse) — this pulls it back out to
+// resubmit the workflow's own scopes unchanged on a metadata-only update.
+function toWorkflowScopeRequest(
+  scope: FarmWorkflowScopeResponse,
+): FarmWorkflowScopeRequest | null {
+  const scopeId =
+    scope.scopeType === "REGION"
+      ? scope.region?.id
+      : scope.scopeType === "AREA"
+        ? scope.area?.id
+        : scope.plot?.id;
+  if (scopeId == null) return null;
+  return { scopeType: scope.scopeType, scopeId };
+}
 
 function toDisplayNode(
   node: DraftNode,
@@ -301,12 +397,10 @@ function toDisplayNode(
     materialCategories,
   );
 
-  const hasWork =
-    plan.taskAllocations.length > 0 || plan.materialAllocations.length > 0;
-  const status = getPlanDisplayStatus(plan, hasWork);
+  const status = getPlanDisplayStatus(plan);
   const statusMeta = PLAN_STATUS_META[status];
   const actionDisabled = getPlanActionDisabled(status);
-  const duration = getDurationLabel(plan.startDate, plan.endDate);
+  const duration = getDurationLabel(plan.durationDays);
 
   const actions: WorkflowActionItem[] = [
     {
@@ -338,9 +432,7 @@ function toDisplayNode(
       posterTheme: "light",
       icon: ClipboardList,
       eyebrow: `Kế hoạch ${outlineCode}`,
-      title: plan.name
-        ? `${plan.name} (${duration})`
-        : `Kế hoạch mới (${duration})`,
+      title: `${plan.name || "Kế hoạch mới"} (${duration})`,
       subtitle: plan.seasonName || "Chưa chọn lứa nuôi",
       status: statusMeta.nodeStatus,
       statusLabel: statusMeta.label,
@@ -355,7 +447,10 @@ function toDisplayNode(
           label: "Thuốc thú y",
           value: String(materialBreakdown["Thuốc thú y"]),
         },
-        { label: "Thức ăn", value: String(materialBreakdown["Thức ăn"]) },
+        {
+          label: "Thức ăn",
+          value: String(materialBreakdown["Thức ăn chăn nuôi"]),
+        },
         {
           label: "Vật tư khác",
           value: String(materialBreakdown["Vật tư khác"]),
@@ -396,7 +491,9 @@ function toInfoDisplayNode(
       title: record.name,
       wide: true,
       description: record.description || "Chưa có mô tả cho node này.",
-      regionLabels: getRegionLabelsFromSelections(record.selections, regions),
+      regionLabels:
+        record.regionLabels ??
+        getRegionLabelsFromSelections(record.selections, regions),
       actions: [
         {
           label: "Chỉnh sửa",
@@ -416,8 +513,10 @@ export default function PlanAnimalGrowthCreateWorkflowPage() {
   const plans = useAnimalGrowthPlanStore((state) => state.plans);
   const addPlan = useAnimalGrowthPlanStore((state) => state.addPlan);
   const updatePlan = useAnimalGrowthPlanStore((state) => state.updatePlan);
-  const deletePlan = useAnimalGrowthPlanStore((state) => state.deletePlan);
+  const deletePlanLocal = useAnimalGrowthPlanStore((state) => state.deletePlan);
   const upsertWorkflow = useAnimalGrowthWorkflowStore((state) => state.upsertWorkflow);
+  const { createPlan, deletePlan } = useFarmPlanMutations();
+  const { updateWorkflow } = useFarmWorkflowMutations();
 
   const nodes = useAnimalGrowthWorkflowDraftStore((state) => state.nodes);
   const edges = useAnimalGrowthWorkflowDraftStore((state) => state.edges);
@@ -443,6 +542,43 @@ export default function PlanAnimalGrowthCreateWorkflowPage() {
     (state) => state.activeWorkflowId,
   );
 
+  const routeWorkflowId = params.workflowId ?? null;
+  // Numeric ids are real backend workflows — fetch their detail instead of
+  // relying on the local-only draft store, which never has them.
+  const isRoutePersistedId = routeWorkflowId
+    ? isPersistedWorkflowId(routeWorkflowId)
+    : false;
+  const { data: workflowDetail, isLoading: isLoadingWorkflowDetail } =
+    useFarmWorkflowById(routeWorkflowId ?? "", {
+      enabled:
+        !!routeWorkflowId &&
+        routeWorkflowId !== activeWorkflowId &&
+        isRoutePersistedId,
+    });
+  const { items: workflowPlans, loading: isLoadingWorkflowPlans } =
+    useFarmWorkflowPlans(routeWorkflowId ?? "", {
+      enabled:
+        !!routeWorkflowId &&
+        routeWorkflowId !== activeWorkflowId &&
+        isRoutePersistedId,
+    });
+
+  // True from the moment a persisted workflow's URL is opened until its
+  // detail + plans have loaded (and, if it had no plans yet, until the
+  // seeded first draft plan finishes creating) — covers both "loading an
+  // existing workflow" and "creating its first plan" under one gate.
+  const isLoadingRouteWorkflow =
+    !!routeWorkflowId &&
+    isRoutePersistedId &&
+    routeWorkflowId !== activeWorkflowId &&
+    (isLoadingWorkflowDetail || isLoadingWorkflowPlans || createPlan.isPending);
+
+  // Once the canvas is already showing, a user-triggered "create plan" (the
+  // "+" footer action) reuses the same `createPlan` mutation — distinguish
+  // it from the initial-load case above so the canvas overlay only shows
+  // for this one, not on top of the full-page loading state.
+  const isCreatingPlan = createPlan.isPending && !isLoadingRouteWorkflow;
+
   useEffect(() => {
     const workflowId = params.workflowId ?? null;
     // Bare route ("/create/workflow" with no id) always means "continue the
@@ -451,6 +587,7 @@ export default function PlanAnimalGrowthCreateWorkflowPage() {
     // infer a reset from the URL alone (that would also fire every time a
     // plan/stage/detail sub-route routes back to this same bare path).
     if (!workflowId || workflowId === activeWorkflowId) return;
+    if (isPersistedWorkflowId(workflowId)) return;
 
     const saved = useAnimalGrowthWorkflowStore.getState().getWorkflowById(workflowId);
     if (!saved) return;
@@ -464,6 +601,9 @@ export default function PlanAnimalGrowthCreateWorkflowPage() {
           name: saved.name,
           description: saved.description,
           selections: saved.selections,
+          plannedDurationYears: "",
+          plannedDurationMonths: "",
+          plannedDurationDays: "",
           isActive: true,
           position: { x: INFO_NODE_X, y: 0 },
         },
@@ -471,6 +611,95 @@ export default function PlanAnimalGrowthCreateWorkflowPage() {
       activeWorkflowId: workflowId,
     });
   }, [params.workflowId, activeWorkflowId, loadWorkflow, resetDraft]);
+
+  // Guards the "seed a first draft plan" API call below against firing
+  // twice for the same workflow while the request is still in flight (e.g.
+  // an unrelated re-render before the mutation resolves).
+  const seedingWorkflowIdRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (!workflowDetail) return;
+    // Wait for the plans list to settle too — otherwise an empty in-flight
+    // `workflowPlans` would look like "no plans" and seed a spurious draft.
+    if (isLoadingWorkflowPlans) return;
+    const workflowId = String(workflowDetail.id);
+    if (workflowId === activeWorkflowId) return;
+
+    const applyWorkflow = (planNodePlans: Plan[]) => {
+      // Upsert by id into the local plan store so the existing plan-node UI
+      // (edit / allocate work, both keyed by plan id) keeps working off it.
+      useAnimalGrowthPlanStore.setState((state) => ({
+        plans: [
+          ...state.plans.filter(
+            (item) => !planNodePlans.some((plan) => plan.id === item.id),
+          ),
+          ...planNodePlans,
+        ],
+      }));
+
+      // Plan-to-plan links (metadataJson.parentId) and, once saved via
+      // "Lưu quy trình", node positions (metadataJson.nodePositions) are the
+      // only things persisted — stage/detail nodes under each plan still
+      // live in the local draft only, so those start empty here.
+      const { nodes: planNodes, edges: planEdges } = buildPlanNodesFromApi(
+        planNodePlans,
+        workflowDetail.metadataJson?.nodePositions,
+      );
+
+      loadWorkflow({
+        nodes: planNodes,
+        edges: planEdges,
+        infoNodes: [
+          mapWorkflowResponseToInfoRecord(
+            workflowDetail,
+            workflowDetail.metadataJson?.infoNodePosition ?? {
+              x: INFO_NODE_X,
+              y: 0,
+            },
+          ),
+        ],
+        activeWorkflowId: workflowId,
+      });
+    };
+
+    const planNodePlans: Plan[] = workflowPlans.map(mapPlanResponseToPlan);
+    if (planNodePlans.length > 0) {
+      applyWorkflow(planNodePlans);
+      return;
+    }
+
+    // No plans on this workflow yet — create a first draft plan through the
+    // API (instead of only seeding it locally) so it exists on the backend
+    // as soon as the canvas opens.
+    if (seedingWorkflowIdRef.current === workflowId) return;
+    seedingWorkflowIdRef.current = workflowId;
+
+    createPlan
+      .mutateAsync({
+        workflowId: workflowDetail.id,
+        payload: {
+          name: DEFAULT_DRAFT_PLAN_NAME,
+          purpose: "CULTIVATION",
+          durationDays: 1,
+          status: "DRAFT",
+        },
+      })
+      .then((created) => {
+        applyWorkflow([mapPlanResponseToPlan(created)]);
+      })
+      .catch(() => {
+        seedingWorkflowIdRef.current = null;
+        toast({
+          variant: "destructive",
+          title: "Lỗi",
+          description: "Không thể tạo kế hoạch nháp cho quy trình này",
+        });
+      });
+    // createPlan (a mutation object) intentionally excluded — it's not
+    // stable across renders and the seedingWorkflowIdRef guard above already
+    // prevents duplicate submissions.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [workflowDetail, isLoadingWorkflowPlans, workflowPlans, activeWorkflowId, loadWorkflow, toast]);
 
   const [confirmAction, setConfirmAction] = useState<ConfirmActionState | null>(
     null,
@@ -481,11 +710,7 @@ export default function PlanAnimalGrowthCreateWorkflowPage() {
 
   useDialogBugWorkaround([confirmAction !== null]);
 
-  const createPlanNode = (sourceNodeId?: string, planName = "") => {
-    addPlan(createEmptyPlanDraft(planName));
-    const created = useAnimalGrowthPlanStore.getState().plans.at(-1);
-    if (!created) return;
-
+  const attachPlanNode = (planId: number, sourceNodeId?: string) => {
     const id = createNodeId("plan");
 
     if (!sourceNodeId) {
@@ -493,7 +718,7 @@ export default function PlanAnimalGrowthCreateWorkflowPage() {
         id,
         type: "workflowCard",
         position: PLACEHOLDER_POSITION,
-        data: { setupKind: "plan", planId: created.id },
+        data: { setupKind: "plan", planId },
       });
       return;
     }
@@ -503,10 +728,60 @@ export default function PlanAnimalGrowthCreateWorkflowPage() {
         id,
         type: "workflowCard",
         position: PLACEHOLDER_POSITION,
-        data: { setupKind: "plan", planId: created.id, parentId: sourceNodeId },
+        data: { setupKind: "plan", planId, parentId: sourceNodeId },
       },
       buildChildEdge(sourceNodeId, id),
     );
+  };
+
+  const createPlanNode = async (sourceNodeId?: string, planName = "") => {
+    // Only a persisted (numeric) workflow id can own plans on the backend —
+    // a still-local draft workflow keeps creating plans locally until it's
+    // saved, same as before.
+    if (activeWorkflowId && isPersistedWorkflowId(activeWorkflowId)) {
+      try {
+        const sourceNode = sourceNodeId
+          ? nodes.find((node) => node.id === sourceNodeId)
+          : undefined;
+        const parentPlanId =
+          sourceNode?.data.setupKind === "plan" ? sourceNode.data.planId : undefined;
+
+        const created = await createPlan.mutateAsync({
+          workflowId: activeWorkflowId,
+          payload: {
+            name: planName || DEFAULT_DRAFT_PLAN_NAME,
+            purpose: "CULTIVATION",
+            durationDays: 1,
+            status: "DRAFT",
+            ...(parentPlanId != null
+              ? { metadataJson: { parentId: parentPlanId } }
+              : {}),
+          },
+        });
+        const plan = mapPlanResponseToPlan(created);
+        // Upsert by id, not append — the local plan store is preloaded with
+        // seed/mock plans whose ids are small sequential integers too, so a
+        // freshly created backend plan can collide with one of them. A plain
+        // append would leave both in the array and `.find()` would then
+        // resolve to the stale seed entry instead of the real plan.
+        useAnimalGrowthPlanStore.setState((state) => ({
+          plans: [...state.plans.filter((item) => item.id !== plan.id), plan],
+        }));
+        attachPlanNode(plan.id, sourceNodeId);
+      } catch {
+        toast({
+          variant: "destructive",
+          title: "Lỗi",
+          description: "Không thể tạo kế hoạch nháp mới",
+        });
+      }
+      return;
+    }
+
+    addPlan(createEmptyPlanDraft(planName));
+    const created = useAnimalGrowthPlanStore.getState().plans.at(-1);
+    if (!created) return;
+    attachPlanNode(created.id, sourceNodeId);
   };
 
   const handleRequestCreatePlan = (sourceNodeId?: string) => {
@@ -532,10 +807,42 @@ export default function PlanAnimalGrowthCreateWorkflowPage() {
       } cùng toàn bộ giai đoạn và chi tiết bên trong. Không thể hoàn tác.`,
       confirmLabel: "Xóa kế hoạch",
       tone: "destructive",
-      onConfirm: () => {
-        if (node && node.data.setupKind === "plan") {
-          deletePlan(node.data.planId);
+      onConfirm: async () => {
+        if (!node || node.data.setupKind !== "plan") {
+          removeNodeCascade(nodeId);
+          return;
         }
+
+        // Deleting a plan node cascades to its descendant plan nodes too —
+        // each one is a real backend plan, so it needs its own delete call.
+        const planIds = [
+          node.data.planId,
+          ...getDescendantNodes(nodes, nodeId)
+            .filter((item) => item.data.setupKind === "plan")
+            .map((item) => (item.data as { planId: number }).planId),
+        ];
+
+        if (activeWorkflowId && isPersistedWorkflowId(activeWorkflowId)) {
+          try {
+            await Promise.all(
+              planIds.map((planId) => deletePlan.mutateAsync(planId)),
+            );
+            useAnimalGrowthPlanStore.setState((state) => ({
+              plans: state.plans.filter((item) => !planIds.includes(item.id)),
+            }));
+            removeNodeCascade(nodeId);
+            toast({ title: "Thành công", description: "Đã xóa kế hoạch" });
+          } catch {
+            toast({
+              variant: "destructive",
+              title: "Lỗi",
+              description: "Không thể xóa kế hoạch",
+            });
+          }
+          return;
+        }
+
+        planIds.forEach((planId) => deletePlanLocal(planId));
         removeNodeCascade(nodeId);
       },
     });
@@ -557,13 +864,59 @@ export default function PlanAnimalGrowthCreateWorkflowPage() {
     setLocation(`${WORKFLOW_BASE_PATH}/info/${id}/edit`);
   };
 
-  const handleSaveWorkflow = () => {
+  const handleSaveWorkflow = async () => {
     if (!infoNodes.length) return;
 
     // Multiple info cards can exist in one draft, but only one drives the
-    // plan tree today (see useAnimalGrowthForm's workflowInfo lookup) — so every
-    // plan in this draft gets linked to that same primary workflow.
+    // plan tree today (see useAnimalGrowthForm's workflowInfo lookup) — so
+    // every plan in this draft gets linked to that same primary workflow.
     const primaryWorkflow = infoNodes.find((item) => item.isActive) ?? infoNodes[0];
+
+    // Node positions (plan nodes + the info/workflow node itself) only ever
+    // live in this local draft — reopening a persisted workflow always
+    // recomputes them from scratch (see buildPlanNodesFromApi and the
+    // INFO_NODE_X/0 fallback above). Save them onto the workflow's own
+    // metadataJson, keyed by plan id (the only thing stable across reloads,
+    // since node ids are regenerated every time).
+    if (activeWorkflowId && isPersistedWorkflowId(activeWorkflowId) && workflowDetail) {
+      const nodePositions: Record<number, { x: number; y: number }> = {};
+      nodes.forEach((node) => {
+        if (node.data.setupKind !== "plan") return;
+        nodePositions[node.data.planId] = {
+          x: node.position.x,
+          y: node.position.y,
+        };
+      });
+
+      try {
+        await updateWorkflow.mutateAsync({
+          id: activeWorkflowId,
+          payload: {
+            domainCode: workflowDetail.domainCode,
+            code: workflowDetail.code,
+            name: workflowDetail.name,
+            description: workflowDetail.description,
+            durationDays: workflowDetail.durationDays,
+            scopes: workflowDetail.scopes
+              .map(toWorkflowScopeRequest)
+              .filter((scope): scope is FarmWorkflowScopeRequest => scope !== null),
+            status: workflowDetail.status.toUpperCase() as FarmWorkflowRequestStatus,
+            metadataJson: {
+              ...workflowDetail.metadataJson,
+              nodePositions,
+              infoNodePosition: primaryWorkflow.position,
+            },
+          },
+        });
+      } catch {
+        toast({
+          variant: "destructive",
+          title: "Lỗi",
+          description: "Không thể lưu vị trí sơ đồ",
+        });
+        return;
+      }
+    }
 
     infoNodes.forEach((info) => {
       upsertWorkflow({
@@ -588,8 +941,9 @@ export default function PlanAnimalGrowthCreateWorkflowPage() {
       title: "Đã lưu quy trình",
       description: "Sơ đồ quy trình chăn nuôi đã được lưu lại.",
     });
-    // Already persisted to useAnimalGrowthWorkflowStore above — clear the draft so a
-    // later bare "/create/workflow" visit doesn't reopen this canvas.
+    // Already persisted to useAnimalGrowthWorkflowStore above — clear the
+    // draft so a later bare "/create/workflow" visit doesn't reopen this
+    // canvas.
     resetDraft();
     setLocation("/plan-animal-growth");
   };
@@ -688,7 +1042,16 @@ export default function PlanAnimalGrowthCreateWorkflowPage() {
       }
     >
       <div className="space-y-5">
-        {infoNodes.length === 0 ? (
+        {isLoadingRouteWorkflow ? (
+          <div className="flex flex-col items-center justify-center gap-3 rounded-3xl border border-slate-200 bg-white p-24 text-center shadow-sm">
+            <Loader2 className="h-8 w-8 animate-spin text-emerald-600" />
+            <p className="text-sm font-medium text-slate-600">
+              {isLoadingWorkflowDetail || isLoadingWorkflowPlans
+                ? "Đang tải sơ đồ quy trình..."
+                : "Đang khởi tạo kế hoạch đầu tiên..."}
+            </p>
+          </div>
+        ) : infoNodes.length === 0 ? (
           <div className="rounded-3xl border border-dashed border-slate-300 bg-white p-10 text-center shadow-sm">
             <Workflow className="mx-auto h-10 w-10 text-slate-400" />
             <p className="mt-4 text-lg font-semibold text-slate-900">
@@ -752,6 +1115,16 @@ export default function PlanAnimalGrowthCreateWorkflowPage() {
                   className="!rounded-xl !border !border-slate-200 !bg-white/95 !shadow-lg"
                 />
               </ReactFlow>
+              {isCreatingPlan && (
+                <div className="absolute inset-0 z-10 flex items-center justify-center gap-2 rounded-3xl bg-white/70 backdrop-blur-[1px]">
+                  <div className="flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 shadow-lg">
+                    <Loader2 className="h-4 w-4 animate-spin text-emerald-600" />
+                    <span className="text-sm font-medium text-slate-700">
+                      Đang tạo kế hoạch...
+                    </span>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         )}
@@ -771,8 +1144,11 @@ export default function PlanAnimalGrowthCreateWorkflowPage() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Hủy</AlertDialogCancel>
+            <AlertDialogCancel disabled={createPlan.isPending || deletePlan.isPending}>
+              Hủy
+            </AlertDialogCancel>
             <AlertDialogAction
+              disabled={createPlan.isPending || deletePlan.isPending}
               onClick={() => {
                 confirmAction?.onConfirm();
                 setConfirmAction(null);
