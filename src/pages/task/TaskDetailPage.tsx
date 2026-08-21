@@ -1,24 +1,33 @@
 import PageWrapper from "@/components/PageWrapper";
+import { AppLoadingState } from "@/components/AppLoadingState";
 import { Button } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { ChevronLeft, PencilLine } from "lucide-react";
 import { useLocation, useRoute, useSearch } from "wouter";
-import useTaskStore from "../../stores/useTaskStore";
+import { useFarmTaskById } from "@/features/farm-task";
 import {
   TaskDetailBody,
   TaskDetailHeader,
 } from "./components/TaskDetailContent";
+import { farmTaskToLegacyTask } from "./utils/task-mappers";
 
 export default function TaskDetailPage() {
   const [, setLocation] = useLocation();
   const [, params] = useRoute("/task/:id");
   const search = useSearch();
-  const getTaskById = useTaskStore((state) => state.getTaskById);
 
   // Preserve the plan scope so "back" returns to the filtered list.
   const planId = new URLSearchParams(search).get("planId") || "";
   const backTo = planId ? `/task?planId=${planId}` : "/task";
 
-  const task = params?.id ? getTaskById(Number(params.id)) : undefined;
+  const { item: taskResponse, loading } = useFarmTaskById(
+    params?.id ?? null,
+    { enabled: !!params?.id },
+  );
+  const task = taskResponse ? farmTaskToLegacyTask(taskResponse) : undefined;
+
+  if (loading) {
+    return <AppLoadingState />;
+  }
 
   if (!task) {
     return (
