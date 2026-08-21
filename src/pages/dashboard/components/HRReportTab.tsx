@@ -13,7 +13,24 @@ import {
   Badge,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { Search } from "lucide-react";
+import {
+  ResponsiveContainer,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip as RechartsTooltip,
+  Legend,
+} from "recharts";
 import { type HRFilterState, EMPTY_HR_FILTER, hrByDepartment, hrByPosition } from "../constants";
+
+const CHART_TOOLTIP_STYLE = {
+  backgroundColor: "hsl(0, 0%, 100%)",
+  border: "1px solid hsl(140, 15%, 88%)",
+  borderRadius: "8px",
+  fontSize: "12px",
+};
 
 // Mock list of individual staff members for detailed search
 const mockPersonnelList = [
@@ -95,7 +112,7 @@ export function HRReportTab({ hrFilter = EMPTY_HR_FILTER }: HRReportTabProps) {
               placeholder="Tìm theo tên nhân sự..."
               value={searchName}
               onChange={(e) => setSearchName(e.target.value)}
-              className="w-full text-xs pl-9 pr-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-emerald-500"
+              className="w-full text-xs pl-9 pr-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-emerald-500 bg-white"
             />
           </div>
         </CardHeader>
@@ -116,8 +133,8 @@ export function HRReportTab({ hrFilter = EMPTY_HR_FILTER }: HRReportTabProps) {
                 {filteredPersonnel.map((staff) => (
                   <TableRow key={staff.id} className="hover:bg-slate-50/40">
                     <TableCell className="font-semibold text-slate-700">{staff.name}</TableCell>
-                    <TableCell className="text-slate-600">{staff.department}</TableCell>
-                    <TableCell className="text-slate-600">{staff.position}</TableCell>
+                    <TableCell className="text-slate-650">{staff.department}</TableCell>
+                    <TableCell className="text-slate-650">{staff.position}</TableCell>
                     <TableCell className="text-center font-semibold text-amber-600 font-mono">
                       {staff.pendingTasks}
                     </TableCell>
@@ -129,7 +146,7 @@ export function HRReportTab({ hrFilter = EMPTY_HR_FILTER }: HRReportTabProps) {
                         variant="outline"
                         className={`text-[9px] font-bold ${
                           staff.status === "Đang làm việc"
-                            ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                            ? "bg-emerald-50 text-emerald-700 border-emerald-250"
                             : "bg-slate-100 text-slate-600 border-slate-200"
                         }`}
                       >
@@ -151,105 +168,128 @@ export function HRReportTab({ hrFilter = EMPTY_HR_FILTER }: HRReportTabProps) {
         </CardContent>
       </Card>
 
-      {/* Aggregate tables */}
+      {/* Aggregate Visualizations & Tables */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        
+        {/* Department Card */}
         <Card>
-          <CardHeader className="pb-3">
+          <CardHeader className="pb-3 border-b border-slate-100">
             <CardTitle className="text-sm font-semibold">
-              Báo cáo nhân sự theo phòng ban
+              Nhân sự theo Phòng ban
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Tên Phòng Ban</TableHead>
-                  <TableHead className="text-center">Tổng nhân sự</TableHead>
-                  <TableHead className="text-center">Chờ triển khai</TableHead>
-                  <TableHead className="text-center">Đang triển khai</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredDepartments.map((dept) => (
-                  <TableRow key={dept.id}>
-                    <TableCell className="font-medium text-slate-700">{dept.name}</TableCell>
-                    <TableCell className="text-center">
-                      <span className="text-sm font-bold text-slate-800 font-mono">
+          <CardContent className="pt-4 space-y-4">
+            {/* Chart */}
+            <div className="h-[200px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart
+                  data={filteredDepartments.map((d) => ({
+                    ...d,
+                    displayName: d.name.replace("Phòng ", ""),
+                  }))}
+                  margin={{ top: 10, right: 5, left: -20, bottom: 0 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(140, 15%, 92%)" vertical={false} />
+                  <XAxis dataKey="displayName" fontSize={10} tickLine={false} axisLine={false} />
+                  <YAxis fontSize={10} tickLine={false} axisLine={false} />
+                  <RechartsTooltip contentStyle={CHART_TOOLTIP_STYLE} />
+                  <Legend verticalAlign="top" height={30} iconType="circle" iconSize={8} wrapperStyle={{ fontSize: "10px" }} />
+                  <Bar dataKey="totalStaff" name="Tổng nhân sự" fill="hsl(142, 60%, 40%)" radius={[3, 3, 0, 0]} barSize={12} />
+                  <Bar dataKey="inProgressTasks" name="Đang làm việc" fill="hsl(217, 89%, 60%)" radius={[3, 3, 0, 0]} barSize={12} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+
+            {/* Table */}
+            <div className="border border-slate-100 rounded-lg overflow-hidden">
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-slate-50/50">
+                    <TableHead className="text-xs">Tên Phòng Ban</TableHead>
+                    <TableHead className="text-center text-xs">Tổng</TableHead>
+                    <TableHead className="text-center text-xs">Chờ</TableHead>
+                    <TableHead className="text-center text-xs">Đang làm</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredDepartments.map((dept) => (
+                    <TableRow key={dept.id} className="hover:bg-slate-50/20">
+                      <TableCell className="font-semibold text-slate-700 text-xs">{dept.name}</TableCell>
+                      <TableCell className="text-center text-xs font-bold text-slate-800 font-mono">
                         {dept.totalStaff}
-                      </span>
-                    </TableCell>
-                    <TableCell className="text-center">
-                      <span className="text-xs font-semibold text-amber-650 font-mono">
+                      </TableCell>
+                      <TableCell className="text-center text-xs font-semibold text-amber-650 font-mono">
                         {dept.pendingTasks}
-                      </span>
-                    </TableCell>
-                    <TableCell className="text-center">
-                      <span className="text-xs font-semibold text-blue-650 font-mono">
+                      </TableCell>
+                      <TableCell className="text-center text-xs font-semibold text-blue-650 font-mono">
                         {dept.inProgressTasks}
-                      </span>
-                    </TableCell>
-                  </TableRow>
-                ))}
-                {filteredDepartments.length === 0 && (
-                  <TableRow>
-                    <TableCell colSpan={4} className="text-center text-muted-foreground py-8 text-xs">
-                      Không có dữ liệu phù hợp bộ lọc
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
           </CardContent>
         </Card>
 
+        {/* Position Card */}
         <Card>
-          <CardHeader className="pb-3">
+          <CardHeader className="pb-3 border-b border-slate-100">
             <CardTitle className="text-sm font-semibold">
-              Báo cáo nhân sự theo chức vụ
+              Nhân sự theo Chức vụ
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Tên Chức Vụ</TableHead>
-                  <TableHead className="text-center">Tổng nhân sự</TableHead>
-                  <TableHead className="text-center">Chờ triển khai</TableHead>
-                  <TableHead className="text-center">Đang triển khai</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredPositions.map((pos) => (
-                  <TableRow key={pos.id}>
-                    <TableCell className="font-medium text-slate-700">{pos.name}</TableCell>
-                    <TableCell className="text-center">
-                      <span className="text-sm font-bold text-slate-800 font-mono">
+          <CardContent className="pt-4 space-y-4">
+            {/* Chart */}
+            <div className="h-[200px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart
+                  data={filteredPositions}
+                  margin={{ top: 10, right: 5, left: -20, bottom: 0 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(140, 15%, 92%)" vertical={false} />
+                  <XAxis dataKey="name" fontSize={10} tickLine={false} axisLine={false} />
+                  <YAxis fontSize={10} tickLine={false} axisLine={false} />
+                  <RechartsTooltip contentStyle={CHART_TOOLTIP_STYLE} />
+                  <Legend verticalAlign="top" height={30} iconType="circle" iconSize={8} wrapperStyle={{ fontSize: "10px" }} />
+                  <Bar dataKey="totalStaff" name="Tổng nhân sự" fill="hsl(38, 92%, 50%)" radius={[3, 3, 0, 0]} barSize={12} />
+                  <Bar dataKey="inProgressTasks" name="Đang làm việc" fill="hsl(142, 60%, 40%)" radius={[3, 3, 0, 0]} barSize={12} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+
+            {/* Table */}
+            <div className="border border-slate-100 rounded-lg overflow-hidden">
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-slate-50/50">
+                    <TableHead className="text-xs">Tên Chức Vụ</TableHead>
+                    <TableHead className="text-center text-xs">Tổng</TableHead>
+                    <TableHead className="text-center text-xs">Chờ</TableHead>
+                    <TableHead className="text-center text-xs">Đang làm</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredPositions.map((pos) => (
+                    <TableRow key={pos.id} className="hover:bg-slate-50/20">
+                      <TableCell className="font-semibold text-slate-700 text-xs">{pos.name}</TableCell>
+                      <TableCell className="text-center text-xs font-bold text-slate-800 font-mono">
                         {pos.totalStaff}
-                      </span>
-                    </TableCell>
-                    <TableCell className="text-center">
-                      <span className="text-xs font-semibold text-amber-650 font-mono">
+                      </TableCell>
+                      <TableCell className="text-center text-xs font-semibold text-amber-650 font-mono">
                         {pos.pendingTasks}
-                      </span>
-                    </TableCell>
-                    <TableCell className="text-center">
-                      <span className="text-xs font-semibold text-blue-650 font-mono">
+                      </TableCell>
+                      <TableCell className="text-center text-xs font-semibold text-blue-650 font-mono">
                         {pos.inProgressTasks}
-                      </span>
-                    </TableCell>
-                  </TableRow>
-                ))}
-                {filteredPositions.length === 0 && (
-                  <TableRow>
-                    <TableCell colSpan={4} className="text-center text-muted-foreground py-8 text-xs">
-                      Không có dữ liệu phù hợp bộ lọc
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
           </CardContent>
         </Card>
+
       </div>
     </div>
   );

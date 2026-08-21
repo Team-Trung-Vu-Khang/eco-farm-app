@@ -770,6 +770,10 @@ const ProductionCultivationReportPage = lazy(
 const TreatmentReportPage = lazy(
   () => import("./pages/treatment-report/TreatmentReportPage"),
 );
+const InternalReportPage = lazy(
+  () => import("./pages/reports/InternalReportPage"),
+);
+const FarmerReportPage = lazy(() => import("./pages/reports/FarmerReportPage"));
 const ProvincePage = lazy(() => import("./pages/province/ProvincePage"));
 const LandSpecsPage = lazy(() => import("./pages/land-specs/LandSpecsPage"));
 const TaskCategoryPage = lazy(
@@ -1858,6 +1862,11 @@ function Router() {
         component={ProductionCultivationReportPage}
       />
       <Route path="/treatment-report" component={TreatmentReportPage} />
+      <Route
+        path="/material-consumption-report"
+        component={InternalReportPage}
+      />
+      <Route path="/admin-farmer-report" component={FarmerReportPage} />
       <Route path="/task" component={TaskPage} />
       <Route path="/task/create" component={TaskCreatePage} />
       <Route path="/task/:id/edit" component={TaskEditPage} />

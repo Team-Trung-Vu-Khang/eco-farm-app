@@ -90,6 +90,7 @@ interface OverviewTabProps {
     dateFrom: string;
     dateTo: string;
   };
+  mode?: "simple" | "full" | "consumption-only";
 }
 
 function formatNumber(n: number) {
@@ -138,7 +139,7 @@ const CHART_TOOLTIP_STYLE = {
   fontSize: "12px",
 };
 
-export function OverviewTab({ farmingFilter }: OverviewTabProps) {
+export function OverviewTab({ farmingFilter, mode = "simple" }: OverviewTabProps) {
   const totalCropHealth = cropHealthData.reduce((s, d) => s + d.value, 0);
 
   const [loading, setLoading] = useState(false);
@@ -160,7 +161,137 @@ export function OverviewTab({ farmingFilter }: OverviewTabProps) {
       setLoading(false);
     }, 300);
     return () => clearTimeout(timer);
-  }, [farmingFilter?.selectedPlots]);
+  }, [farmingFilter]);
+
+  const consumptionWidget = (
+    <Card>
+      <CardHeader className="pb-3 border-b border-slate-100 flex flex-row items-center justify-between">
+        <div className="space-y-1">
+          <CardTitle className="text-sm font-semibold">
+            Vật tư tiêu thụ (Theo Địa lý)
+          </CardTitle>
+          <p className="text-xs text-muted-foreground">
+            {farmingFilter?.selectedPlots && farmingFilter.selectedPlots.length > 0
+              ? `Hiển thị lượng vật tư tiêu thụ của ${data.length} lô được chọn`
+              : "Hiển thị lượng vật tư tiêu thụ của 5 lô điển hình (Chưa chọn bộ lọc)"}
+          </p>
+        </div>
+        <div className="flex bg-slate-100 p-0.5 rounded-lg border border-slate-200">
+          <button
+            onClick={() => setViewType("chart")}
+            className={`p-1.5 rounded-md transition-all cursor-pointer ${
+              viewType === "chart"
+                ? "bg-white text-emerald-800 shadow-xs"
+                : "text-slate-500 hover:text-slate-900"
+            }`}
+            title="Xem biểu đồ"
+          >
+            <BarChart4 className="w-4 h-4" />
+          </button>
+          <button
+            onClick={() => setViewType("table")}
+            className={`p-1.5 rounded-md transition-all cursor-pointer ${
+              viewType === "table"
+                ? "bg-white text-emerald-800 shadow-xs"
+                : "text-slate-500 hover:text-slate-900"
+            }`}
+            title="Xem bảng dữ liệu"
+          >
+            <Table2 className="w-4 h-4" />
+          </button>
+        </div>
+      </CardHeader>
+      <CardContent className="pt-6">
+        {loading ? (
+          <div className="h-[250px] flex items-center justify-center animate-pulse bg-slate-50 rounded-lg">
+            <span className="text-xs text-muted-foreground">Đang tải dữ liệu tiêu thụ vật tư...</span>
+          </div>
+        ) : viewType === "chart" ? (
+          <div className="h-[300px]">
+            {data.length === 0 ? (
+              <div className="h-full flex items-center justify-center">
+                <p className="text-xs text-muted-foreground">Không có dữ liệu tiêu thụ cho bộ lọc này.</p>
+              </div>
+            ) : (
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart
+                  data={data}
+                  margin={{ top: 10, right: 5, left: -20, bottom: 5 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(140, 15%, 92%)" vertical={false} />
+                  <XAxis
+                    dataKey="name"
+                    stroke="hsl(140, 10%, 45%)"
+                    fontSize={11}
+                    tickLine={false}
+                    axisLine={false}
+                  />
+                  <YAxis
+                    stroke="hsl(140, 10%, 45%)"
+                    fontSize={11}
+                    tickLine={false}
+                    axisLine={false}
+                  />
+                  <RechartsTooltip contentStyle={CHART_TOOLTIP_STYLE} />
+                  <Legend
+                    verticalAlign="bottom"
+                    height={36}
+                    iconType="circle"
+                    formatter={(value: string) => (
+                      <span className="text-xs font-medium text-slate-600 ml-1">
+                        {value}
+                      </span>
+                    )}
+                  />
+                  <Bar dataKey="pesticide" name="Thuốc BVTV (kg)" fill="hsl(172, 70%, 40%)" stackId="a" radius={[0, 0, 0, 0]} />
+                  <Bar dataKey="fertilizer" name="Phân bón (kg)" fill="hsl(142, 70%, 45%)" stackId="a" radius={[0, 0, 0, 0]} />
+                  <Bar dataKey="machinery" name="Máy móc (ngày)" fill="hsl(38, 92%, 50%)" stackId="a" radius={[0, 0, 0, 0]} />
+                  <Bar dataKey="others" name="Vật tư khác" fill="hsl(217, 91%, 60%)" stackId="a" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            )}
+          </div>
+        ) : (
+          <div className="overflow-x-auto border border-slate-100 rounded-lg">
+            <Table>
+              <TableHeader>
+                <TableRow className="bg-slate-50/50">
+                  <TableHead>Địa điểm / Lô</TableHead>
+                  <TableHead className="text-right">Thuốc BVTV (kg)</TableHead>
+                  <TableHead className="text-right">Phân bón (kg)</TableHead>
+                  <TableHead className="text-right">Máy móc (ngày)</TableHead>
+                  <TableHead className="text-right">Vật tư khác</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {data.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={5} className="text-center py-6 text-muted-foreground text-xs">
+                      Không có dữ liệu tiêu thụ.
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  data.map((row) => (
+                    <TableRow key={row.locationId} className="hover:bg-slate-50/40">
+                      <TableCell className="font-medium text-slate-700">{row.name}</TableCell>
+                      <TableCell className="text-right font-mono">{formatNumber(row.pesticide)}</TableCell>
+                      <TableCell className="text-right font-mono">{formatNumber(row.fertilizer)}</TableCell>
+                      <TableCell className="text-right font-mono">{formatNumber(row.machinery)}</TableCell>
+                      <TableCell className="text-right font-mono">{formatNumber(row.others)}</TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+
+  if (mode === "consumption-only") {
+    return <div className="space-y-6">{consumptionWidget}</div>;
+  }
 
   return (
     <div className="space-y-6">
@@ -403,130 +534,7 @@ export function OverviewTab({ farmingFilter }: OverviewTabProps) {
         </Card>
       </div>
 
-      {/* Vật tư tiêu thụ (Theo Địa lý) Widget */}
-      <Card>
-        <CardHeader className="pb-3 border-b border-slate-100 flex flex-row items-center justify-between">
-          <div className="space-y-1">
-            <CardTitle className="text-sm font-semibold">
-              Vật tư tiêu thụ (Theo Địa lý)
-            </CardTitle>
-            <p className="text-xs text-muted-foreground">
-              {farmingFilter?.selectedPlots && farmingFilter.selectedPlots.length > 0
-                ? `Hiển thị lượng vật tư tiêu thụ của ${data.length} lô được chọn`
-                : "Hiển thị lượng vật tư tiêu thụ của 5 lô điển hình (Chưa chọn bộ lọc)"}
-            </p>
-          </div>
-          <div className="flex bg-slate-100 p-0.5 rounded-lg border border-slate-200">
-            <button
-              onClick={() => setViewType("chart")}
-              className={`p-1.5 rounded-md transition-all cursor-pointer ${
-                viewType === "chart"
-                  ? "bg-white text-emerald-800 shadow-xs"
-                  : "text-slate-500 hover:text-slate-900"
-              }`}
-              title="Xem biểu đồ"
-            >
-              <BarChart4 className="w-4 h-4" />
-            </button>
-            <button
-              onClick={() => setViewType("table")}
-              className={`p-1.5 rounded-md transition-all cursor-pointer ${
-                viewType === "table"
-                  ? "bg-white text-emerald-800 shadow-xs"
-                  : "text-slate-500 hover:text-slate-900"
-              }`}
-              title="Xem bảng dữ liệu"
-            >
-              <Table2 className="w-4 h-4" />
-            </button>
-          </div>
-        </CardHeader>
-        <CardContent className="pt-6">
-          {loading ? (
-            <div className="h-[250px] flex items-center justify-center animate-pulse bg-slate-50 rounded-lg">
-              <span className="text-xs text-muted-foreground">Đang tải dữ liệu tiêu thụ vật tư...</span>
-            </div>
-          ) : viewType === "chart" ? (
-            <div className="h-[300px]">
-              {data.length === 0 ? (
-                <div className="h-full flex items-center justify-center">
-                  <p className="text-xs text-muted-foreground">Không có dữ liệu tiêu thụ cho bộ lọc này.</p>
-                </div>
-              ) : (
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart
-                    data={data}
-                    margin={{ top: 10, right: 5, left: -20, bottom: 5 }}
-                  >
-                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(140, 15%, 92%)" vertical={false} />
-                    <XAxis
-                      dataKey="name"
-                      stroke="hsl(140, 10%, 45%)"
-                      fontSize={11}
-                      tickLine={false}
-                      axisLine={false}
-                    />
-                    <YAxis
-                      stroke="hsl(140, 10%, 45%)"
-                      fontSize={11}
-                      tickLine={false}
-                      axisLine={false}
-                    />
-                    <RechartsTooltip contentStyle={CHART_TOOLTIP_STYLE} />
-                    <Legend
-                      verticalAlign="bottom"
-                      height={36}
-                      iconType="circle"
-                      formatter={(value: string) => (
-                        <span className="text-xs font-medium text-slate-600 ml-1">
-                          {value}
-                        </span>
-                      )}
-                    />
-                    <Bar dataKey="pesticide" name="Thuốc BVTV (kg)" fill="hsl(172, 70%, 40%)" stackId="a" radius={[0, 0, 0, 0]} />
-                    <Bar dataKey="fertilizer" name="Phân bón (kg)" fill="hsl(142, 70%, 45%)" stackId="a" radius={[0, 0, 0, 0]} />
-                    <Bar dataKey="machinery" name="Máy móc (ngày)" fill="hsl(38, 92%, 50%)" stackId="a" radius={[0, 0, 0, 0]} />
-                    <Bar dataKey="others" name="Vật tư khác" fill="hsl(217, 91%, 60%)" stackId="a" radius={[4, 4, 0, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
-              )}
-            </div>
-          ) : (
-            <div className="overflow-x-auto border border-slate-100 rounded-lg">
-              <Table>
-                <TableHeader>
-                  <TableRow className="bg-slate-50/50">
-                    <TableHead>Địa điểm / Lô</TableHead>
-                    <TableHead className="text-right">Thuốc BVTV (kg)</TableHead>
-                    <TableHead className="text-right">Phân bón (kg)</TableHead>
-                    <TableHead className="text-right">Máy móc (ngày)</TableHead>
-                    <TableHead className="text-right">Vật tư khác</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {data.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={5} className="text-center py-6 text-muted-foreground text-xs">
-                        Không có dữ liệu tiêu thụ.
-                      </TableCell>
-                    </TableRow>
-                  ) : (
-                    data.map((row) => (
-                      <TableRow key={row.locationId} className="hover:bg-slate-50/40">
-                        <TableCell className="font-medium text-slate-700">{row.name}</TableCell>
-                        <TableCell className="text-right font-mono">{formatNumber(row.pesticide)}</TableCell>
-                        <TableCell className="text-right font-mono">{formatNumber(row.fertilizer)}</TableCell>
-                        <TableCell className="text-right font-mono">{formatNumber(row.machinery)}</TableCell>
-                        <TableCell className="text-right font-mono">{formatNumber(row.others)}</TableCell>
-                      </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+      {mode === "full" && consumptionWidget}
     </div>
   );
 }

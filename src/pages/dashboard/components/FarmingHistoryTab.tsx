@@ -137,6 +137,7 @@ interface FarmingHistoryTabProps {
     dateFrom: string;
     dateTo: string;
   };
+  mode?: "simple" | "full" | "consumption-only";
 }
 
 const planList = [
@@ -146,7 +147,7 @@ const planList = [
   { id: "plan-4", name: "Kế hoạch Thu hoạch Sầu Riêng Monthon - Đợt 1 (Khu vực A1)", category: "harvest", categoryLabel: "Thu hoạch", date: "Tháng 8, 2026" },
 ];
 
-export function FarmingHistoryTab({ farmingFilter }: FarmingHistoryTabProps) {
+export function FarmingHistoryTab({ farmingFilter, mode = "simple" }: FarmingHistoryTabProps) {
   const [selectedPlanId, setSelectedPlanId] = useState("plan-1");
   const [loading, setLoading] = useState(false);
   const [planData, setPlanData] = useState(planConsumptionDatabase["plan-1"]);
@@ -183,244 +184,8 @@ export function FarmingHistoryTab({ farmingFilter }: FarmingHistoryTabProps) {
       : "bg-amber-100 text-amber-700 border-amber-200";
   const staleIconColor = daysSince > 3 ? "text-red-600" : "text-amber-600";
 
-  return (
-    <div className="space-y-6">
-      <Card>
-        <CardHeader className="pb-3">
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-sm font-semibold">
-              Trạng thái cập nhật Real-time
-            </CardTitle>
-            {isStale && (
-              <Badge
-                variant="outline"
-                className={`text-xs ${staleColor}`}
-              >
-                <AlertTriangle className={`mr-1 h-3 w-3 ${staleIconColor}`} />
-                Đã {daysSince} ngày chưa cập nhật
-              </Badge>
-            )}
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <Clock className="h-4 w-4" />
-            <span>
-              Cập nhật lần cuối:{" "}
-              <span className="font-medium text-foreground">
-                {formatDateTime(realtimeStatus.lastUpdated)}
-              </span>
-            </span>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            <div className="rounded-lg border p-3 space-y-1">
-              <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
-                <CheckCircle2 className="h-3.5 w-3.5 text-green-500" />
-                Công việc hoàn thành gần nhất
-              </div>
-              <p className="text-sm font-medium">
-                {realtimeStatus.lastCompletedTask}
-              </p>
-            </div>
-
-            <div className="rounded-lg border p-3 space-y-1">
-              <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
-                <AlertTriangle className="h-3.5 w-3.5 text-amber-500" />
-                Công việc phát sinh gần nhất
-              </div>
-              <p className="text-sm font-medium">
-                {realtimeStatus.lastCreatedTask}
-              </p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-sm font-semibold">
-            Tiến độ canh tác
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Workflow className="h-4 w-4 text-primary" />
-                <span className="text-sm font-medium">
-                  {farmingProgress.workflows.label}
-                </span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-bold">
-                  {farmingProgress.workflows.total}
-                </span>
-                <Button variant="ghost" size="sm" className="h-7 gap-1 text-xs">
-                  Xem sơ đồ <ArrowRight className="h-3 w-3" />
-                </Button>
-              </div>
-            </div>
-            <div className="flex items-center gap-2 text-xs text-muted-foreground ml-6">
-              <span>
-                Hoàn thành:{" "}
-                <span className="font-medium text-green-500">
-                  {farmingProgress.workflows.completed}
-                </span>
-              </span>
-              <span>•</span>
-              <span>
-                Còn lại:{" "}
-                <span className="font-medium">
-                  {farmingProgress.workflows.total -
-                    farmingProgress.workflows.completed}
-                </span>
-              </span>
-            </div>
-          </div>
-
-          <div className="space-y-3">
-            <div className="flex items-center gap-2">
-              <ClipboardList className="h-4 w-4 text-primary" />
-              <span className="text-sm font-medium">
-                {farmingProgress.plans.label}
-              </span>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 ml-6">
-              <div className="rounded-lg bg-green-50 border border-green-200 p-4 text-center">
-                <p className="text-2xl font-display font-bold text-green-700">
-                  {farmingProgress.plans.completed}
-                </p>
-                <p className="text-xs font-medium text-green-600 mt-1">
-                  Hoàn thành
-                </p>
-              </div>
-              <div className="rounded-lg bg-amber-50 border border-amber-200 p-4 text-center">
-                <p className="text-2xl font-display font-bold text-amber-700">
-                  {farmingProgress.plans.pending}
-                </p>
-                <p className="text-xs font-medium text-amber-600 mt-1">
-                  Chờ triển khai
-                </p>
-              </div>
-              <div className="rounded-lg bg-blue-50 border border-blue-200 p-4 text-center">
-                <p className="text-2xl font-display font-bold text-blue-700">
-                  {farmingProgress.plans.inProgress}
-                </p>
-                <p className="text-xs font-medium text-blue-600 mt-1">
-                  Đang triển khai
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div className="space-y-3">
-            <div className="flex items-center gap-2">
-              <CheckSquare className="h-4 w-4 text-primary" />
-              <span className="text-sm font-medium">
-                {farmingProgress.tasks.label}
-              </span>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 ml-6">
-              <div className="rounded-lg bg-green-50 border border-green-200 p-4 text-center">
-                <p className="text-2xl font-display font-bold text-green-700">
-                  {farmingProgress.tasks.completed}
-                </p>
-                <p className="text-xs font-medium text-green-600 mt-1">
-                  Hoàn thành
-                </p>
-              </div>
-              <div className="rounded-lg bg-amber-50 border border-amber-200 p-4 text-center">
-                <p className="text-2xl font-display font-bold text-amber-700">
-                  {farmingProgress.tasks.pending}
-                </p>
-                <p className="text-xs font-medium text-amber-600 mt-1">
-                  Chờ triển khai
-                </p>
-              </div>
-              <div className="rounded-lg bg-blue-50 border border-blue-200 p-4 text-center">
-                <p className="text-2xl font-display font-bold text-blue-700">
-                  {farmingProgress.tasks.inProgress}
-                </p>
-                <p className="text-xs font-medium text-blue-600 mt-1">
-                  Đang triển khai
-                </p>
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-sm font-semibold">
-            Xu hướng hoàn thành công việc (5 tuần gần nhất)
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="h-[250px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart
-                data={weeklyTaskTrend}
-                margin={{ top: 5, right: 5, left: -15, bottom: 0 }}
-              >
-                <CartesianGrid
-                  strokeDasharray="3 3"
-                  stroke="hsl(140, 15%, 88%)"
-                  vertical={false}
-                />
-                <XAxis
-                  dataKey="week"
-                  stroke="hsl(140, 10%, 45%)"
-                  fontSize={11}
-                  tickLine={false}
-                  axisLine={false}
-                />
-                <YAxis
-                  stroke="hsl(140, 10%, 45%)"
-                  fontSize={11}
-                  tickLine={false}
-                  axisLine={false}
-                />
-                <RechartsTooltip contentStyle={CHART_TOOLTIP_STYLE} />
-                <Legend
-                  verticalAlign="bottom"
-                  height={36}
-                  iconType="circle"
-                  formatter={(value: string) => (
-                    <span className="text-xs font-medium text-slate-600 ml-1">
-                      {value}
-                    </span>
-                  )}
-                />
-                <Area
-                  type="monotone"
-                  dataKey="completed"
-                  name="Hoàn thành"
-                  stroke="hsl(142, 70%, 45%)"
-                  fill="hsl(142, 70%, 45%)"
-                  fillOpacity={0.15}
-                  strokeWidth={2}
-                  dot={{ r: 3, fill: "white", strokeWidth: 2 }}
-                  activeDot={{ r: 5 }}
-                />
-                <Area
-                  type="monotone"
-                  dataKey="created"
-                  name="Phát sinh"
-                  stroke="hsl(38, 92%, 50%)"
-                  fill="hsl(38, 92%, 50%)"
-                  fillOpacity={0.1}
-                  strokeWidth={2}
-                  dot={{ r: 3, fill: "white", strokeWidth: 2 }}
-                  activeDot={{ r: 5 }}
-                />
-              </AreaChart>
-            </ResponsiveContainer>
-          </div>
-        </CardContent>
-      </Card>
-
+  const consumptionWidget = (
+    <>
       {/* Vật tư tiêu thụ (Theo Kế hoạch) Widget */}
       <Card>
         <CardHeader className="pb-3 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -622,6 +387,226 @@ export function FarmingHistoryTab({ farmingFilter }: FarmingHistoryTabProps) {
           </div>
         </div>
       )}
+    </>
+  );
+
+  if (mode === "consumption-only") {
+    return <div className="space-y-6">{consumptionWidget}</div>;
+  }
+
+  return (
+    <div className="space-y-6">
+      <Card>
+        <CardHeader className="pb-3">
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-sm font-semibold">
+              Trạng thái cập nhật Real-time
+            </CardTitle>
+            {isStale && (
+              <Badge
+                variant="outline"
+                className={`text-xs ${staleColor}`}
+              >
+                <AlertTriangle className={`mr-1 h-3 w-3 ${staleIconColor}`} />
+                Đã {daysSince} ngày chưa cập nhật
+              </Badge>
+            )}
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <Card className="bg-slate-50/50">
+              <CardContent className="pt-6">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-muted-foreground font-medium">
+                    Tốc độ tiến độ
+                  </span>
+                  <Workflow className="h-4 w-4 text-emerald-600" />
+                </div>
+                <div className="mt-2 flex items-baseline gap-2">
+                  <span className="text-2xl font-display font-bold">
+                    {farmingProgress.progressSpeed}%
+                  </span>
+                  <span className="text-[10px] text-green-600 font-semibold bg-green-50 px-1.5 py-0.5 rounded-sm">
+                    Ổn định
+                  </span>
+                </div>
+                <p className="text-[10px] text-muted-foreground mt-1">
+                  Đồng bộ kế hoạch & thực tế
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-slate-50/50">
+              <CardContent className="pt-6">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-muted-foreground font-medium">
+                    Nhiệm vụ tuần này
+                  </span>
+                  <ClipboardList className="h-4 w-4 text-blue-600" />
+                </div>
+                <div className="mt-2 flex items-baseline gap-2">
+                  <span className="text-2xl font-display font-bold">
+                    {farmingProgress.weeklyTasks}
+                  </span>
+                  <span className="text-[10px] text-blue-600 font-semibold bg-blue-50 px-1.5 py-0.5 rounded-sm">
+                    +{farmingProgress.weeklyTasksChange} mới
+                  </span>
+                </div>
+                <p className="text-[10px] text-muted-foreground mt-1">
+                  Đã hoàn thành {farmingProgress.completedTasks} nhiệm vụ
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-slate-50/50">
+              <CardContent className="pt-6">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-muted-foreground font-medium">
+                    Đúng hạn (SLA)
+                  </span>
+                  <CheckSquare className="h-4 w-4 text-emerald-600" />
+                </div>
+                <div className="mt-2 flex items-baseline gap-2">
+                  <span className="text-2xl font-display font-bold">
+                    {farmingProgress.slaCompliance}%
+                  </span>
+                  <span className="text-[10px] text-green-600 font-semibold bg-green-50 px-1.5 py-0.5 rounded-sm">
+                    Đạt tiêu chuẩn
+                  </span>
+                </div>
+                <p className="text-[10px] text-muted-foreground mt-1">
+                  Mục tiêu tối thiểu là 85%
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-slate-50/50">
+              <CardContent className="pt-6">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-muted-foreground font-medium">
+                    Độ lệch kế hoạch
+                  </span>
+                  <AlertTriangle className={`h-4 w-4 ${isStale ? "text-amber-500 animate-bounce" : "text-slate-400"}`} />
+                </div>
+                <div className="mt-2 flex items-baseline gap-2">
+                  <span className="text-2xl font-display font-bold">
+                    {farmingProgress.planDeviation}%
+                  </span>
+                  <span className="text-[10px] text-amber-600 font-semibold bg-amber-50 px-1.5 py-0.5 rounded-sm">
+                    Cần lưu ý
+                  </span>
+                </div>
+                <p className="text-[10px] text-muted-foreground mt-1">
+                  Thời gian trễ trung bình {farmingProgress.avgDelayDays} ngày
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Timeline chart */}
+          <div className="h-[280px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart
+                data={weeklyTaskTrend}
+                margin={{ top: 10, right: 5, left: -20, bottom: 0 }}
+              >
+                <defs>
+                  <linearGradient
+                    id="colorTask"
+                    x1="0"
+                    y1="0"
+                    x2="0"
+                    y2="1"
+                  >
+                    <stop
+                      offset="5%"
+                      stopColor="hsl(142, 70%, 45%)"
+                      stopOpacity={0.2}
+                    />
+                    <stop
+                      offset="95%"
+                      stopColor="hsl(142, 70%, 45%)"
+                      stopOpacity={0}
+                    />
+                  </linearGradient>
+                  <linearGradient
+                    id="colorCompliance"
+                    x1="0"
+                    y1="0"
+                    x2="0"
+                    y2="1"
+                  >
+                    <stop
+                      offset="5%"
+                      stopColor="hsl(38, 92%, 50%)"
+                      stopOpacity={0.2}
+                    />
+                    <stop
+                      offset="95%"
+                      stopColor="hsl(38, 92%, 50%)"
+                      stopOpacity={0}
+                    />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid
+                  strokeDasharray="3 3"
+                  stroke="hsl(140, 15%, 92%)"
+                  vertical={false}
+                />
+                <XAxis
+                  dataKey="week"
+                  stroke="hsl(140, 10%, 45%)"
+                  fontSize={11}
+                  tickLine={false}
+                  axisLine={false}
+                />
+                <YAxis
+                  stroke="hsl(140, 10%, 45%)"
+                  fontSize={11}
+                  tickLine={false}
+                  axisLine={false}
+                />
+                <RechartsTooltip contentStyle={CHART_TOOLTIP_STYLE} />
+                <Legend
+                  verticalAlign="top"
+                  height={36}
+                  iconType="circle"
+                  formatter={(value: string) => (
+                    <span className="text-xs font-medium text-slate-600 ml-1">
+                      {value}
+                    </span>
+                  )}
+                />
+                <Area
+                  type="monotone"
+                  dataKey="completed"
+                  name="Nhiệm vụ hoàn thành"
+                  stroke="hsl(142, 70%, 45%)"
+                  fillOpacity={1}
+                  fill="url(#colorTask)"
+                  strokeWidth={2}
+                  dot={{ r: 3, fill: "white", strokeWidth: 2 }}
+                  activeDot={{ r: 5 }}
+                />
+                <Area
+                  type="monotone"
+                  dataKey="compliance"
+                  name="Hiệu suất (%)"
+                  stroke="hsl(38, 92%, 50%)"
+                  fillOpacity={1}
+                  fill="url(#colorCompliance)"
+                  strokeWidth={2}
+                  dot={{ r: 3, fill: "white", strokeWidth: 2 }}
+                  activeDot={{ r: 5 }}
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        </CardContent>
+      </Card>
+
+      {mode === "full" && consumptionWidget}
     </div>
   );
 }

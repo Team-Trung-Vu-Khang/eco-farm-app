@@ -12,12 +12,12 @@ import {
 interface FilterTriggerProps {
   activeTab: string;
   farmingFilter: FilterState;
-  hrFilter: HRFilterState;
+  hrFilter?: HRFilterState;
   onOpenFarmingFilter: () => void;
-  onOpenHRFilter: () => void;
+  onOpenHRFilter?: () => void;
   onRemovePlot: (plotId: string) => void;
   onClearFarmingFilter: () => void;
-  onClearHRFilter: () => void;
+  onClearHRFilter?: () => void;
 }
 
 function formatDateRange(dateFrom: string, dateTo: string): string | null {
@@ -57,10 +57,12 @@ export function FilterTrigger({
     farmingFilter.dateTo;
 
   const hasHRFilters =
-    hrFilter.location ||
-    hrFilter.departments.length > 0 ||
-    hrFilter.positions.length > 0 ||
-    hrFilter.taskStatus.length > 0;
+    hrFilter && (
+      hrFilter.location ||
+      hrFilter.departments.length > 0 ||
+      hrFilter.positions.length > 0 ||
+      hrFilter.taskStatus.length > 0
+    );
 
   const hasFilters = isFarmingTab ? hasFarmingFilters : hasHRFilters;
 
@@ -95,6 +97,7 @@ export function FilterTrigger({
 
   const hrChips = (() => {
     const chips: string[] = [];
+    if (!hrFilter) return chips;
     if (hrFilter.location) chips.push("Vùng làm việc");
     hrFilter.departments.forEach((id) => {
       const dept = departmentOptions.find((d) => d.id === id);
@@ -174,7 +177,7 @@ export function FilterTrigger({
           <Button
             variant="ghost"
             size="sm"
-            onClick={isFarmingTab ? onClearFarmingFilter : onClearHRFilter}
+            onClick={isFarmingTab ? onClearFarmingFilter : onClearHRFilter || (() => {})}
             className="text-muted-foreground h-7"
           >
             Xoá bộ lọc
