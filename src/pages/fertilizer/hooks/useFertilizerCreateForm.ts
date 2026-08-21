@@ -17,9 +17,12 @@ import { useImageUploadWithCache } from "@/features/storage/hooks/useImageUpload
 
 export function useFertilizerCreateForm() {
   const queryClient = useQueryClient();
-  const [, setLocation] = useLocation();
-  const [match, params] = useRoute("/cultivation-material/fertilizer/:id/edit");
-  const isEdit = match && !!params?.id;
+  const [location, setLocation] = useLocation();
+  const [matchFarm, paramsFarm] = useRoute("/cultivation-material/fertilizer/:id/edit");
+  const [matchAdmin, paramsAdmin] = useRoute("/admin/fertilizer/:id/edit");
+  const isEdit = (matchFarm || matchAdmin) && !!(paramsFarm?.id || paramsAdmin?.id);
+  const params = paramsFarm || paramsAdmin;
+  const scope = matchAdmin || location.startsWith("/admin") ? "admin" : "farm";
   const { toast } = useToast();
   const { uploadImage } = useImageUploadWithCache();
 
@@ -105,7 +108,7 @@ export function useFertilizerCreateForm() {
 
         if (isEdit && params?.id) {
           return farmSupplyApi
-            .getById("fertilizer", Number(params.id), "OWNER")
+            .getById("fertilizer", Number(params.id), "OWNER", scope)
             .then((item) => {
               const mapped = mapResponseToFertilizer(item, certs);
               setFormData(mapped);
@@ -276,20 +279,20 @@ export function useFertilizerCreateForm() {
       };
 
       if (isEdit && params?.id) {
-        await farmSupplyApi.update("fertilizer", Number(params.id), payload);
+        await farmSupplyApi.update("fertilizer", Number(params.id), payload, scope);
         toast({
           title: "Thành công",
           description: "Đã cập nhật thông tin phân bón thành công",
         });
       } else {
-        await farmSupplyApi.create("fertilizer", payload);
+        await farmSupplyApi.create("fertilizer", payload, scope);
         toast({
           title: "Thành công",
           description: "Đã thêm mới phân bón thành công",
         });
       }
-      queryClient.invalidateQueries({ queryKey: ["farm-supplies"] });
-      setLocation("/cultivation-material/fertilizer");
+      queryClient.invalidateQueries({ queryKey: [scope === "admin" ? "admin-supplies" : "farm-supplies"] });
+      setLocation(scope === "admin" ? "/admin/fertilizer" : "/cultivation-material/fertilizer");
     } catch (err: any) {
       if (err.response?.status === 409) {
         toast({
@@ -331,6 +334,7 @@ export function useFertilizerCreateForm() {
     setLocation,
     loading,
     submitting,
+    scope,
   };
 }
 

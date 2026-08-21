@@ -17,9 +17,12 @@ const equipmentSchema = z.object({
 });
 
 export function useAqEquipmentCreateForm() {
-  const [, setLocation] = useLocation();
-  const [match, params] = useRoute("/aquaculture-material/equipment/:id/edit");
-  const isEdit = match && !!params?.id;
+  const [location, setLocation] = useLocation();
+  const [matchFarm, paramsFarm] = useRoute("/aquaculture-material/equipment/:id/edit");
+  const [matchAdmin, paramsAdmin] = useRoute("/admin/aq-equipment/:id/edit");
+  const isEdit = (matchFarm || matchAdmin) && !!(paramsFarm?.id || paramsAdmin?.id);
+  const params = paramsFarm || paramsAdmin;
+  const scope = matchAdmin || location.startsWith("/admin") ? "admin" : "farm";
   const { toast } = useToast();
   const { uploadImage } = useImageUploadWithCache();
   const queryClient = useQueryClient();
@@ -96,7 +99,7 @@ export function useAqEquipmentCreateForm() {
 
         if (isEdit && params?.id) {
           return farmSupplyApi
-            .getById("equipment", Number(params.id), "OWNER")
+            .getById("equipment", Number(params.id), "OWNER", scope)
             .then((item) => {
               const mapped = mapResponseToEquipment(item);
               setIsDetailMode(mapped.formType === "advanced");
@@ -226,20 +229,20 @@ export function useAqEquipmentCreateForm() {
       };
 
       if (isEdit && params?.id) {
-        await farmSupplyApi.update("equipment", Number(params.id), payload);
+        await farmSupplyApi.update("equipment", Number(params.id), payload, scope);
         toast({
           title: "Thành công",
           description: "Đã cập nhật thông tin thiết bị thành công",
         });
       } else {
-        await farmSupplyApi.create("equipment", payload);
+        await farmSupplyApi.create("equipment", payload, scope);
         toast({
           title: "Thành công",
           description: "Đã thêm mới thiết bị thành công",
         });
       }
-      queryClient.invalidateQueries({ queryKey: ["farm-supplies"] });
-      setLocation("/aquaculture-material/equipment");
+      queryClient.invalidateQueries({ queryKey: [scope === "admin" ? "admin-supplies" : "farm-supplies"] });
+      setLocation(scope === "admin" ? "/admin/aq-equipment" : "/aquaculture-material/equipment");
     } catch (err: any) {
       if (err.response?.status === 409) {
         toast({
@@ -281,7 +284,7 @@ export function useAqEquipmentCreateForm() {
     confirmOpen,
     setConfirmOpen,
     handleConfirmSubmit,
-    navigateBack: () => setLocation("/aquaculture-material/equipment"),
+    navigateBack: () => setLocation(scope === "admin" ? "/admin/aq-equipment" : "/aquaculture-material/equipment"),
     loading,
     submitting,
     isDetailMode,

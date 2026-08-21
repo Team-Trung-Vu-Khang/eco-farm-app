@@ -115,7 +115,10 @@ function InfoRow({
 }
 
 const FertilizerDetailPage = () => {
-  const [, params] = useRoute("/cultivation-material/fertilizer/:id");
+  const [matchFarm, paramsFarm] = useRoute("/cultivation-material/fertilizer/:id");
+  const [matchAdmin, paramsAdmin] = useRoute("/admin/fertilizer/:id");
+  const params = paramsFarm || paramsAdmin;
+  const matchAdminActive = !!matchAdmin;
   const [, setLocation] = useLocation();
   const id = params?.id ? Number(params.id) : 0;
   const { item, loading } = useFarmSupplyDetailHook("fertilizer", id);
@@ -143,7 +146,7 @@ const FertilizerDetailPage = () => {
             Không tìm thấy thông tin phân bón.
           </p>
           <Button
-            onClick={() => setLocation("/cultivation-material/fertilizer")}
+            onClick={() => setLocation(matchAdminActive ? "/admin/fertilizer" : "/cultivation-material/fertilizer")}
           >
             <ChevronLeft className="w-4 h-4 mr-2" />
             Quay lại danh sách
@@ -161,15 +164,19 @@ const FertilizerDetailPage = () => {
         <div className="flex gap-2">
           <Button
             variant="outline"
-            onClick={() => setLocation("/cultivation-material/fertilizer")}
+            onClick={() => setLocation(matchAdminActive ? "/admin/fertilizer" : "/cultivation-material/fertilizer")}
           >
             <ChevronLeft className="w-4 h-4 mr-2" />
             Quay lại
           </Button>
-          {item.source === "OWNER" && (
+          {(item.source === "OWNER" || matchAdminActive) && (
             <Button
               onClick={() =>
-                setLocation(`/cultivation-material/fertilizer/${id}/edit`)
+                setLocation(
+                  matchAdminActive
+                    ? `/admin/fertilizer/${id}/edit`
+                    : `/cultivation-material/fertilizer/${id}/edit`
+                )
               }
             >
               <Edit className="w-4 h-4 mr-2" />

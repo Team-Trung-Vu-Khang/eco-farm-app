@@ -1,16 +1,26 @@
 import { useQuery } from "@tanstack/react-query";
+import { useLocation } from "wouter";
 import { farmSupplyApi } from "../api/farm-supply.api";
 import type { SupplyType } from "../types";
 import { formatPackagingSpecs } from "../utils/packaging.mapper";
 
 export function useFarmSupplyDetailHook(type: SupplyType, id: number) {
+  const [location] = useLocation();
+  const scope = location.startsWith("/admin") ? "admin" : "farm";
+
   const searchParams = new URLSearchParams(window.location.search);
   const source = (searchParams.get("source") as "MASTER" | "OWNER") ?? "OWNER";
 
   const query = useQuery({
-    queryKey: ["farm-supplies", "detail", type, id, source],
+    queryKey: [
+      scope === "admin" ? "admin-supplies" : "farm-supplies",
+      "detail",
+      type,
+      id,
+      source,
+    ],
     queryFn: () =>
-      farmSupplyApi.getById(type, id, source).then((item) => {
+      farmSupplyApi.getById(type, id, source, scope).then((item) => {
         if (!item) return null;
         if (type === "medicine") {
           return mapMedicineDetail(item);

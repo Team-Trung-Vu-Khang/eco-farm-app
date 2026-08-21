@@ -16,41 +16,52 @@ const SUPPLY_PATHS: Record<SupplyType, string> = {
 };
 
 export const farmSupplyApi = {
-  list: (type: SupplyType, params?: SupplyQueryParams) => {
+  list: (type: SupplyType, params?: SupplyQueryParams, scope: "admin" | "farm" = "farm") => {
     const path = SUPPLY_PATHS[type];
+    const url = scope === "admin" ? `/api/admin/master-data/${path}` : `/api/farm/supplies/${path}`;
     return apiClient
-      .get<PageResponse<SupplyItemResponse>>(`/api/farm/supplies/${path}`, {
+      .get<PageResponse<SupplyItemResponse>>(url, {
         params,
       })
       .then((r) => r.data);
   },
 
-  getById: (type: SupplyType, id: number, source: "MASTER" | "OWNER") => {
+  getById: (
+    type: SupplyType,
+    id: number,
+    source: "MASTER" | "OWNER",
+    scope: "admin" | "farm" = "farm",
+  ) => {
     const path = SUPPLY_PATHS[type];
     const url =
-      source === "MASTER"
-        ? `/api/master-data/${path}/${id}`
-        : `/api/farm/supplies/${path}/${id}`;
+      scope === "admin"
+        ? `/api/admin/master-data/${path}/${id}`
+        : source === "MASTER"
+          ? `/api/master-data/${path}/${id}`
+          : `/api/farm/supplies/${path}/${id}`;
     return apiClient.get<SupplyItemResponse>(url).then((r) => r.data);
   },
 
-  create: (type: SupplyType, data: SupplyItemRequest) => {
+  create: (type: SupplyType, data: SupplyItemRequest, scope: "admin" | "farm" = "farm") => {
     const path = SUPPLY_PATHS[type];
+    const url = scope === "admin" ? `/api/admin/master-data/${path}` : `/api/farm/supplies/${path}`;
     return apiClient
-      .post<SupplyItemResponse>(`/api/farm/supplies/${path}`, data)
+      .post<SupplyItemResponse>(url, data)
       .then((r) => r.data);
   },
 
-  update: (type: SupplyType, id: number, data: SupplyItemRequest) => {
+  update: (type: SupplyType, id: number, data: SupplyItemRequest, scope: "admin" | "farm" = "farm") => {
     const path = SUPPLY_PATHS[type];
+    const url = scope === "admin" ? `/api/admin/master-data/${path}/${id}` : `/api/farm/supplies/${path}/${id}`;
     return apiClient
-      .put<SupplyItemResponse>(`/api/farm/supplies/${path}/${id}`, data)
+      .put<SupplyItemResponse>(url, data)
       .then((r) => r.data);
   },
 
-  delete: (type: SupplyType, id: number) => {
+  delete: (type: SupplyType, id: number, scope: "admin" | "farm" = "farm") => {
     const path = SUPPLY_PATHS[type];
-    return apiClient.delete(`/api/farm/supplies/${path}/${id}`);
+    const url = scope === "admin" ? `/api/admin/master-data/${path}/${id}` : `/api/farm/supplies/${path}/${id}`;
+    return apiClient.delete(url);
   },
 
   listPackagingTypes: () => {

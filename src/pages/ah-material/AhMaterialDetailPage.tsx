@@ -24,7 +24,10 @@ import { getMaterialGroupLabel } from "../material/data/constants";
 import { useFarmSupplyDetailHook } from "@/features/farm-supply/hooks/useFarmSupplyDetailHook";
 
 const AhMaterialDetailPage = () => {
-  const [, params] = useRoute("/animal-husbandry-material/material/:id");
+  const [matchFarm, paramsFarm] = useRoute("/animal-husbandry-material/material/:id");
+  const [matchAdmin, paramsAdmin] = useRoute("/admin/ah-material/:id");
+  const params = paramsFarm || paramsAdmin;
+  const matchAdminActive = !!matchAdmin;
   const [, setLocation] = useLocation();
   const id = params?.id ? Number(params.id) : 0;
   const { item, loading } = useFarmSupplyDetailHook("material", id);
@@ -49,7 +52,7 @@ const AhMaterialDetailPage = () => {
             Không tìm thấy thông tin vật tư.
           </p>
           <Button
-            onClick={() => setLocation("/animal-husbandry-material/material")}
+            onClick={() => setLocation(matchAdminActive ? "/admin/ah-material" : "/animal-husbandry-material/material")}
           >
             Quay lại danh sách
           </Button>
@@ -63,10 +66,14 @@ const AhMaterialDetailPage = () => {
       title="Chi tiết vật tư chăn nuôi"
       description={`Thông tin chi tiết cho ${item.name}`}
       actions={
-        item.source === "OWNER" && (
+        (item.source === "OWNER" || matchAdminActive) && (
           <Button
             onClick={() =>
-              setLocation(`/animal-husbandry-material/material/${id}/edit`)
+              setLocation(
+                matchAdminActive
+                  ? `/admin/ah-material/${id}/edit`
+                  : `/animal-husbandry-material/material/${id}/edit`
+              )
             }
           >
             <Edit className="w-4 h-4 mr-2" />
@@ -79,7 +86,7 @@ const AhMaterialDetailPage = () => {
         <Button
           variant="ghost"
           size="sm"
-          onClick={() => setLocation("/animal-husbandry-material/material")}
+          onClick={() => setLocation(matchAdminActive ? "/admin/ah-material" : "/animal-husbandry-material/material")}
           className="gap-2 pl-0 text-muted-foreground hover:text-primary"
         >
           <ChevronLeft className="w-4 h-4" />

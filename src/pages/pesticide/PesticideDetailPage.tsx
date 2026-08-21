@@ -73,7 +73,10 @@ function InfoRow({
 }
 
 const PesticideDetailPage = () => {
-  const [, params] = useRoute("/cultivation-material/pesticide/:id");
+  const [matchFarm, paramsFarm] = useRoute("/cultivation-material/pesticide/:id");
+  const [matchAdmin, paramsAdmin] = useRoute("/admin/pesticide/:id");
+  const params = paramsFarm || paramsAdmin;
+  const matchAdminActive = !!matchAdmin;
   const [, setLocation] = useLocation();
   const id = params?.id ? Number(params.id) : 0;
   const { item, loading } = useFarmSupplyDetailHook("medicine", id);
@@ -98,7 +101,7 @@ const PesticideDetailPage = () => {
             Không tìm thấy thông tin thuốc BVTV.
           </p>
           <Button
-            onClick={() => setLocation("/cultivation-material/pesticide")}
+            onClick={() => setLocation(matchAdminActive ? "/admin/pesticide" : "/cultivation-material/pesticide")}
           >
             Quay lại danh sách
           </Button>
@@ -114,10 +117,14 @@ const PesticideDetailPage = () => {
       title="Chi tiết thuốc BVTV"
       description={`Thông tin chi tiết cho sản phẩm ${item.name}`}
       actions={
-        item.source === "OWNER" && (
+        (item.source === "OWNER" || matchAdminActive) && (
           <Button
             onClick={() =>
-              setLocation(`/cultivation-material/pesticide/${id}/edit`)
+              setLocation(
+                matchAdminActive
+                  ? `/admin/pesticide/${id}/edit`
+                  : `/cultivation-material/pesticide/${id}/edit`
+              )
             }
           >
             <Edit className="w-4 h-4 mr-2" />
@@ -130,7 +137,7 @@ const PesticideDetailPage = () => {
         <Button
           variant="ghost"
           size="sm"
-          onClick={() => setLocation("/cultivation-material/pesticide")}
+          onClick={() => setLocation(matchAdminActive ? "/admin/pesticide" : "/cultivation-material/pesticide")}
           className="gap-2 pl-0 text-muted-foreground hover:text-primary"
         >
           <ChevronLeft className="w-4 h-4" />

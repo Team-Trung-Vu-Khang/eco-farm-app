@@ -9,7 +9,10 @@ import { EquipmentDetailSidebar } from "../equipment/components/detail/Equipment
 import { InfoTab } from "../equipment/components/detail/EquipmentDetailTabs";
 
 const AqEquipmentDetailPage = () => {
-  const [, params] = useRoute("/aquaculture-material/equipment/:id");
+  const [matchFarm, paramsFarm] = useRoute("/aquaculture-material/equipment/:id");
+  const [matchAdmin, paramsAdmin] = useRoute("/admin/aq-equipment/:id");
+  const params = paramsFarm || paramsAdmin;
+  const matchAdminActive = !!matchAdmin;
   const [, setLocation] = useLocation();
   const id = params?.id ? Number(params.id) : 0;
   const { item, loading } = useFarmSupplyDetailHook("equipment", id);
@@ -33,7 +36,7 @@ const AqEquipmentDetailPage = () => {
           <p className="text-muted-foreground mb-4">
             Không tìm thấy thông tin thiết bị.
           </p>
-          <Button onClick={() => setLocation("/aquaculture-material/equipment")}>
+          <Button onClick={() => setLocation(matchAdminActive ? "/admin/aq-equipment" : "/aquaculture-material/equipment")}>
             Quay lại danh sách
           </Button>
         </div>
@@ -46,10 +49,14 @@ const AqEquipmentDetailPage = () => {
       title="Chi tiết thiết bị thủy sản"
       description={`Thông tin và lịch sử bảo dưỡng của ${item.name}`}
       actions={
-        item.source === "OWNER" && (
+        (item.source === "OWNER" || matchAdminActive) && (
           <Button
             onClick={() =>
-              setLocation(`/aquaculture-material/equipment/${id}/edit`)
+              setLocation(
+                matchAdminActive
+                  ? `/admin/aq-equipment/${id}/edit`
+                  : `/aquaculture-material/equipment/${id}/edit`
+              )
             }
           >
             <Edit className="w-4 h-4 mr-2" />
@@ -62,7 +69,7 @@ const AqEquipmentDetailPage = () => {
         <Button
           variant="ghost"
           size="sm"
-          onClick={() => setLocation("/aquaculture-material/equipment")}
+          onClick={() => setLocation(matchAdminActive ? "/admin/aq-equipment" : "/aquaculture-material/equipment")}
           className="gap-2 pl-0 text-muted-foreground hover:text-primary"
         >
           <ChevronLeft className="w-4 h-4" />

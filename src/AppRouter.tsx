@@ -1,5 +1,6 @@
 import { lazy, useEffect } from "react";
 import { Route, Switch, useLocation, useParams } from "wouter";
+const DashboardPage = lazy(() => import("./pages/dashboard/Dashboard"));
 const TerrainPage = lazy(() => import("./pages/terrain/TerrainPage"));
 
 const EnterprisePage = lazy(() => import("./pages/enterprise/EnterprisePage"));
@@ -900,7 +901,7 @@ function RootRedirect() {
   const [, setLocation] = useLocation();
 
   useEffect(() => {
-    setLocation("/workspace", { replace: true });
+    setLocation("/dashboard", { replace: true });
   }, [setLocation]);
 
   return null;
@@ -910,6 +911,7 @@ function Router() {
   return (
     <Switch>
       <Route path="/" component={RootRedirect} />
+      <Route path="/dashboard" component={DashboardPage} />
       <Route path="/terrain" component={TerrainPage} />
       <Route path="/land-specs" component={LandSpecsPage} />
       <Route path="/task-category" component={TaskCategoryPage} />
@@ -1446,6 +1448,59 @@ function Router() {
         path="/cultivation-material/equipment/:id"
         component={EquipmentDetailPage}
       />
+
+      {/* Admin Master Data Supply Routes */}
+      <Route path="/admin/material" component={MaterialPage} />
+      <Route path="/admin/material/create" component={MaterialCreatePage} />
+      <Route path="/admin/material/:id/edit" component={MaterialCreatePage} />
+      <Route path="/admin/material/:id" component={MaterialDetailPage} />
+
+      <Route path="/admin/pesticide" component={PesticidePage} />
+      <Route path="/admin/pesticide/create" component={PesticideCreatePage} />
+      <Route path="/admin/pesticide/:id/edit" component={PesticideCreatePage} />
+      <Route path="/admin/pesticide/:id" component={PesticideDetailPage} />
+
+      <Route path="/admin/fertilizer" component={FertilizerPage} />
+      <Route path="/admin/fertilizer/create" component={FertilizerCreatePage} />
+      <Route path="/admin/fertilizer/:id/edit" component={FertilizerCreatePage} />
+      <Route path="/admin/fertilizer/:id" component={FertilizerDetailPage} />
+
+      <Route path="/admin/equipment" component={EquipmentPage} />
+      <Route path="/admin/equipment/create" component={EquipmentCreatePage} />
+      <Route path="/admin/equipment/:id/edit" component={EquipmentCreatePage} />
+      <Route path="/admin/equipment/:id" component={EquipmentDetailPage} />
+
+      {/* Admin Master Data Supply Routes - Livestock */}
+      <Route path="/admin/ah-material" component={AhMaterialPage} />
+      <Route path="/admin/ah-material/create" component={AhMaterialCreatePage} />
+      <Route path="/admin/ah-material/:id/edit" component={AhMaterialCreatePage} />
+      <Route path="/admin/ah-material/:id" component={AhMaterialDetailPage} />
+
+      <Route path="/admin/ah-pesticide" component={AhPesticidePage} />
+      <Route path="/admin/ah-pesticide/create" component={AhPesticideCreatePage} />
+      <Route path="/admin/ah-pesticide/:id/edit" component={AhPesticideCreatePage} />
+      <Route path="/admin/ah-pesticide/:id" component={AhPesticideDetailPage} />
+
+      <Route path="/admin/ah-equipment" component={AhEquipmentPage} />
+      <Route path="/admin/ah-equipment/create" component={AhEquipmentCreatePage} />
+      <Route path="/admin/ah-equipment/:id/edit" component={AhEquipmentCreatePage} />
+      <Route path="/admin/ah-equipment/:id" component={AhEquipmentDetailPage} />
+
+      {/* Admin Master Data Supply Routes - Aquaculture */}
+      <Route path="/admin/aq-material" component={AqMaterialPage} />
+      <Route path="/admin/aq-material/create" component={AqMaterialCreatePage} />
+      <Route path="/admin/aq-material/:id/edit" component={AqMaterialCreatePage} />
+      <Route path="/admin/aq-material/:id" component={AqMaterialDetailPage} />
+
+      <Route path="/admin/aq-pesticide" component={AqPesticidePage} />
+      <Route path="/admin/aq-pesticide/create" component={AqPesticideCreatePage} />
+      <Route path="/admin/aq-pesticide/:id/edit" component={AqPesticideCreatePage} />
+      <Route path="/admin/aq-pesticide/:id" component={AqPesticideDetailPage} />
+
+      <Route path="/admin/aq-equipment" component={AqEquipmentPage} />
+      <Route path="/admin/aq-equipment/create" component={AqEquipmentCreatePage} />
+      <Route path="/admin/aq-equipment/:id/edit" component={AqEquipmentCreatePage} />
+      <Route path="/admin/aq-equipment/:id" component={AqEquipmentDetailPage} />
 
       {/* Animal Husbandry Material Routes */}
       <Route

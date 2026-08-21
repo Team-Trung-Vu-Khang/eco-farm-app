@@ -25,11 +25,12 @@ const materialSchema = z.object({
 });
 
 export function useAhMaterialCreatePage() {
-  const [, setLocation] = useLocation();
-  const [match, params] = useRoute(
-    "/animal-husbandry-material/material/:id/edit",
-  );
-  const isEdit = match && !!params?.id;
+  const [location, setLocation] = useLocation();
+  const [matchFarm, paramsFarm] = useRoute("/animal-husbandry-material/material/:id/edit");
+  const [matchAdmin, paramsAdmin] = useRoute("/admin/ah-material/:id/edit");
+  const isEdit = (matchFarm || matchAdmin) && !!(paramsFarm?.id || paramsAdmin?.id);
+  const params = paramsFarm || paramsAdmin;
+  const scope = matchAdmin || location.startsWith("/admin") ? "admin" : "farm";
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { uploadImage } = useImageUploadWithCache();
@@ -69,7 +70,7 @@ export function useAhMaterialCreatePage() {
 
         if (isEdit && params?.id) {
           return farmSupplyApi
-            .getById("material", Number(params.id), "OWNER")
+            .getById("material", Number(params.id), "OWNER", scope)
             .then((item) => {
               const mapped = mapResponseToMaterial(item);
               setIsDetailMode(mapped.formType === "advanced");
@@ -184,20 +185,20 @@ export function useAhMaterialCreatePage() {
       };
 
       if (isEdit && params?.id) {
-        await farmSupplyApi.update("material", Number(params.id), payload);
+        await farmSupplyApi.update("material", Number(params.id), payload, scope);
         toast({
           title: "Thành công",
           description: "Đã cập nhật thông tin vật tư thành công",
         });
       } else {
-        await farmSupplyApi.create("material", payload);
+        await farmSupplyApi.create("material", payload, scope);
         toast({
           title: "Thành công",
           description: "Đã thêm mới vật tư thành công",
         });
       }
-      queryClient.invalidateQueries({ queryKey: ["farm-supplies"] });
-      setLocation("/animal-husbandry-material/material");
+      queryClient.invalidateQueries({ queryKey: [scope === "admin" ? "admin-supplies" : "farm-supplies"] });
+      setLocation(scope === "admin" ? "/admin/ah-material" : "/animal-husbandry-material/material");
     } catch (err: any) {
       if (err.response?.status === 409) {
         toast({
@@ -273,7 +274,7 @@ export function useAhMaterialCreatePage() {
     submitting,
     isDetailMode,
     setIsDetailMode,
-    goBack: () => setLocation("/animal-husbandry-material/material"),
+    goBack: () => setLocation(scope === "admin" ? "/admin/ah-material" : "/animal-husbandry-material/material"),
     handleComplete: () => setConfirmOpen(true),
     handleConfirmSubmit,
   };

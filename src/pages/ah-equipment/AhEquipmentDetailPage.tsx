@@ -9,7 +9,10 @@ import { EquipmentDetailSidebar } from "../equipment/components/detail/Equipment
 import { InfoTab } from "../equipment/components/detail/EquipmentDetailTabs";
 
 const AhEquipmentDetailPage = () => {
-  const [, params] = useRoute("/animal-husbandry-material/equipment/:id");
+  const [matchFarm, paramsFarm] = useRoute("/animal-husbandry-material/equipment/:id");
+  const [matchAdmin, paramsAdmin] = useRoute("/admin/ah-equipment/:id");
+  const params = paramsFarm || paramsAdmin;
+  const matchAdminActive = !!matchAdmin;
   const [, setLocation] = useLocation();
   const id = params?.id ? Number(params.id) : 0;
   const { item, loading } = useFarmSupplyDetailHook("equipment", id);
@@ -34,9 +37,7 @@ const AhEquipmentDetailPage = () => {
             Không tìm thấy thông tin thiết bị.
           </p>
           <Button
-            onClick={() =>
-              setLocation("/animal-husbandry-material/equipment")
-            }
+            onClick={() => setLocation(matchAdminActive ? "/admin/ah-equipment" : "/animal-husbandry-material/equipment")}
           >
             Quay lại danh sách
           </Button>
@@ -50,10 +51,14 @@ const AhEquipmentDetailPage = () => {
       title="Chi tiết thiết bị chăn nuôi"
       description={`Thông tin và lịch sử bảo dưỡng của ${item.name}`}
       actions={
-        item.source === "OWNER" && (
+        (item.source === "OWNER" || matchAdminActive) && (
           <Button
             onClick={() =>
-              setLocation(`/animal-husbandry-material/equipment/${id}/edit`)
+              setLocation(
+                matchAdminActive
+                  ? `/admin/ah-equipment/${id}/edit`
+                  : `/animal-husbandry-material/equipment/${id}/edit`
+              )
             }
           >
             <Edit className="w-4 h-4 mr-2" />
@@ -66,7 +71,7 @@ const AhEquipmentDetailPage = () => {
         <Button
           variant="ghost"
           size="sm"
-          onClick={() => setLocation("/animal-husbandry-material/equipment")}
+          onClick={() => setLocation(matchAdminActive ? "/admin/ah-equipment" : "/animal-husbandry-material/equipment")}
           className="gap-2 pl-0 text-muted-foreground hover:text-primary"
         >
           <ChevronLeft className="w-4 h-4" />

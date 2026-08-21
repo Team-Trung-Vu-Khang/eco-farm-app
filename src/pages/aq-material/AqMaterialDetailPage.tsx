@@ -1,4 +1,5 @@
 import PageWrapper from "@/components/PageWrapper";
+import { useFarmSupplyDetailHook } from "@/features/farm-supply/hooks/useFarmSupplyDetailHook";
 import {
   Badge,
   Button,
@@ -8,23 +9,24 @@ import {
   CardTitle,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import {
+  Building2,
   CalendarDays,
-  CheckCircle2,
   ChevronLeft,
   Edit,
   Image as ImageIcon,
   Info,
-  Package,
   Tags,
-  Building2,
 } from "lucide-react";
 import { useLocation, useRoute } from "wouter";
-import useMaterialStore from "../../stores/useMaterialStore";
 import { getMaterialGroupLabel } from "../material/data/constants";
-import { useFarmSupplyDetailHook } from "@/features/farm-supply/hooks/useFarmSupplyDetailHook";
 
 const AqMaterialDetailPage = () => {
-  const [, params] = useRoute("/aquaculture-material/material/:id");
+  const [matchFarm, paramsFarm] = useRoute(
+    "/aquaculture-material/material/:id",
+  );
+  const [matchAdmin, paramsAdmin] = useRoute("/admin/aq-material/:id");
+  const params = paramsFarm || paramsAdmin;
+  const matchAdminActive = !!matchAdmin;
   const [, setLocation] = useLocation();
   const id = params?.id ? Number(params.id) : 0;
   const { item, loading } = useFarmSupplyDetailHook("material", id);
@@ -48,7 +50,15 @@ const AqMaterialDetailPage = () => {
           <p className="text-muted-foreground mb-4">
             Không tìm thấy thông tin vật tư.
           </p>
-          <Button onClick={() => setLocation("/aquaculture-material/material")}>
+          <Button
+            onClick={() =>
+              setLocation(
+                matchAdminActive
+                  ? "/admin/aq-material"
+                  : "/aquaculture-material/material",
+              )
+            }
+          >
             Quay lại danh sách
           </Button>
         </div>
@@ -61,10 +71,14 @@ const AqMaterialDetailPage = () => {
       title="Chi tiết vật tư thủy sản"
       description={`Thông tin chi tiết cho ${item.name}`}
       actions={
-        item.source === "OWNER" && (
+        (item.source === "OWNER" || matchAdminActive) && (
           <Button
             onClick={() =>
-              setLocation(`/aquaculture-material/material/${id}/edit`)
+              setLocation(
+                matchAdminActive
+                  ? `/admin/aq-material/${id}/edit`
+                  : `/aquaculture-material/material/${id}/edit`,
+              )
             }
           >
             <Edit className="w-4 h-4 mr-2" />
@@ -77,7 +91,13 @@ const AqMaterialDetailPage = () => {
         <Button
           variant="ghost"
           size="sm"
-          onClick={() => setLocation("/aquaculture-material/material")}
+          onClick={() =>
+            setLocation(
+              matchAdminActive
+                ? "/admin/aq-material"
+                : "/aquaculture-material/material",
+            )
+          }
           className="gap-2 pl-0 text-muted-foreground hover:text-primary"
         >
           <ChevronLeft className="w-4 h-4" />
@@ -177,30 +197,30 @@ const AqMaterialDetailPage = () => {
               </CardHeader>
               <CardContent className="pt-6 space-y-4 text-sm">
                 {item.manufacturerOrganization && (
-                    <div>
-                      <span className="text-muted-foreground block text-xs mb-1.5">
-                        Nhà sản xuất / Xuất xứ:
-                      </span>
-                      <div className="flex flex-wrap gap-1.5">
-                        <Badge variant="outline" className="bg-slate-50">
-                          {item.manufacturerOrganization.name}
-                        </Badge>
-                      </div>
+                  <div>
+                    <span className="text-muted-foreground block text-xs mb-1.5">
+                      Nhà sản xuất / Xuất xứ:
+                    </span>
+                    <div className="flex flex-wrap gap-1.5">
+                      <Badge variant="outline" className="bg-slate-50">
+                        {item.manufacturerOrganization.name}
+                      </Badge>
                     </div>
-                  )}
+                  </div>
+                )}
 
                 {item.importerOrganization && (
-                    <div className="border-t pt-4">
-                      <span className="text-muted-foreground block text-xs mb-1.5">
-                        Nhà nhập khẩu / Đăng ký:
-                      </span>
-                      <div className="flex flex-wrap gap-1.5">
-                        <Badge variant="outline" className="bg-slate-50">
-                          {item.importerOrganization.name}
-                        </Badge>
-                      </div>
+                  <div className="border-t pt-4">
+                    <span className="text-muted-foreground block text-xs mb-1.5">
+                      Nhà nhập khẩu / Đăng ký:
+                    </span>
+                    <div className="flex flex-wrap gap-1.5">
+                      <Badge variant="outline" className="bg-slate-50">
+                        {item.importerOrganization.name}
+                      </Badge>
                     </div>
-                  )}
+                  </div>
+                )}
 
                 {item.distributorOrganization && (
                   <div className="border-t pt-4">

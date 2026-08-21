@@ -40,18 +40,20 @@ export default function AhMaterialPage() {
       description="Quản lý danh mục vật tư, dụng cụ chăn nuôi"
       actions={
         <div className="flex items-center gap-3">
-          <label className="flex items-center gap-2 text-sm text-muted-foreground cursor-pointer select-none">
-            <input
-              type="checkbox"
-              checked={onlyOwner}
-              onChange={(e) => {
-                setOnlyOwner(e.target.checked);
-                setCurrentIndex(1);
-              }}
-              className="rounded border-slate-300 text-primary focus:ring-primary h-4 w-4"
-            />
-            Chỉ xem vật tư nội bộ
-          </label>
+          {!window.location.pathname.startsWith("/admin") && (
+            <label className="flex items-center gap-2 text-sm text-muted-foreground cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={onlyOwner}
+                onChange={(e) => {
+                  setOnlyOwner(e.target.checked);
+                  setCurrentIndex(1);
+                }}
+                className="rounded border-slate-300 text-primary focus:ring-primary h-4 w-4"
+              />
+              Chỉ xem vật tư nội bộ
+            </label>
+          )}
           <Button onClick={handleAdd}>
             <Plus className="w-4 h-4 mr-2" />
             Thêm vật tư

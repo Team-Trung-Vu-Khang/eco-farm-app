@@ -14,7 +14,20 @@ import axios from "axios";
 export function getSupplyBasePath(
   type: SupplyType,
   domainCode: DomainCode,
+  scope: "admin" | "farm" = "farm",
 ): string {
+  if (scope === "admin") {
+    const typeSuffix =
+      type === "medicine"
+        ? "/pesticide"
+        : type === "fertilizer"
+          ? "/fertilizer"
+          : type === "material"
+            ? "/material"
+            : "/equipment";
+    return `/admin${typeSuffix}`;
+  }
+
   const domainPrefix =
     domainCode === "CROP"
       ? "/cultivation-material"
@@ -39,8 +52,10 @@ export function useFarmSupplyListHook(
   domainCode: DomainCode,
 ) {
   const { toast } = useToast();
-  const [, setLocation] = useLocation();
+  const [location, setLocation] = useLocation();
   const queryClient = useQueryClient();
+
+  const scope = location.startsWith("/admin") ? "admin" : "farm";
 
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState<MasterDataStatus>("active");
@@ -56,11 +71,11 @@ export function useFarmSupplyListHook(
   const [deleteImpactItem, setDeleteImpactItem] =
     useState<SupplyItemResponse | null>(null);
 
-  const basePath = getSupplyBasePath(type, domainCode);
+  const basePath = getSupplyBasePath(type, domainCode, scope);
 
   const query = useQuery({
     queryKey: [
-      "farm-supplies",
+      scope === "admin" ? "admin-supplies" : "farm-supplies",
       "list",
       type,
       {
@@ -69,27 +84,31 @@ export function useFarmSupplyListHook(
         status,
         page: currentIndex - 1,
         size: pageSize,
-        onlyOwner,
+        ...(scope === "farm" && { onlyOwner }),
       },
     ],
     queryFn: () =>
-      farmSupplyApi.list(type, {
-        domainCode,
-        keyword: search.trim() || undefined,
-        status: status || undefined,
-        page: currentIndex - 1,
-        size: pageSize,
-        onlyOwner,
-      }),
+      farmSupplyApi.list(
+        type,
+        {
+          domainCode,
+          keyword: search.trim() || undefined,
+          status: status || undefined,
+          page: currentIndex - 1,
+          size: pageSize,
+          ...(scope === "farm" && { onlyOwner }),
+        },
+        scope,
+      ),
     staleTime: 5 * 60 * 1000,
     refetchOnWindowFocus: false,
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id: number) => farmSupplyApi.delete(type, id),
+    mutationFn: (id: number) => farmSupplyApi.delete(type, id, scope),
     onSuccess: () => {
       void queryClient.invalidateQueries({
-        queryKey: ["farm-supplies", "list"],
+        queryKey: [scope === "admin" ? "admin-supplies" : "farm-supplies"],
       });
     },
   });
@@ -99,7 +118,7 @@ export function useFarmSupplyListHook(
   };
 
   const handleEdit = (item: SupplyItemResponse) => {
-    if (item.source !== "OWNER") {
+    if (scope === "farm" && item.source !== "OWNER") {
       toast({
         title: "Thông báo",
         description: "Không thể chỉnh sửa vật tư hệ thống.",
@@ -115,7 +134,7 @@ export function useFarmSupplyListHook(
    * The dialog will check for blockers before allowing deletion.
    */
   const handleDelete = (item: SupplyItemResponse) => {
-    if (item.source !== "OWNER") {
+    if (scope === "farm" && item.source !== "OWNER") {
       toast({
         title: "Thông báo",
         description: "Không thể xóa vật tư hệ thống.",
@@ -128,7 +147,8 @@ export function useFarmSupplyListHook(
   };
 
   const handleViewDetail = (item: SupplyItemResponse) => {
-    setLocation(`${basePath}/${item.id}?source=${item.source}`);
+    const queryParam = scope === "admin" ? "" : `?source=${item.source}`;
+    setLocation(`${basePath}/${item.id}${queryParam}`);
   };
 
   /**
@@ -183,6 +203,7 @@ export function useFarmSupplyListHook(
     setPageSize,
     onlyOwner,
     setOnlyOwner,
+    scope, // Expose scope for custom components/headers if needed
 
     deleteOpen,
     setDeleteOpen,
@@ -202,7 +223,8 @@ export function useFarmSupplyListHook(
       // Find row in cache to determine source
       const row = query.data?.content?.find((x) => x.id === id);
       const src = row?.source ?? "OWNER";
-      setLocation(`${basePath}/${id}?source=${src}`);
+      const queryParam = scope === "admin" ? "" : `?source=${src}`;
+      setLocation(`${basePath}/${id}${queryParam}`);
     },
   };
 }

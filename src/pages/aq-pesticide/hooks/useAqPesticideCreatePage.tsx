@@ -25,9 +25,12 @@ import { useImageUploadWithCache } from "@/features/storage/hooks/useImageUpload
 
 export function useAqPesticideCreatePage() {
   const queryClient = useQueryClient();
-  const [, setLocation] = useLocation();
-  const [match, params] = useRoute("/aquaculture-material/pesticide/:id/edit");
-  const isEdit = match && !!params?.id;
+  const [location, setLocation] = useLocation();
+  const [matchFarm, paramsFarm] = useRoute("/aquaculture-material/pesticide/:id/edit");
+  const [matchAdmin, paramsAdmin] = useRoute("/admin/aq-pesticide/:id/edit");
+  const isEdit = (matchFarm || matchAdmin) && !!(paramsFarm?.id || paramsAdmin?.id);
+  const params = paramsFarm || paramsAdmin;
+  const scope = matchAdmin || location.startsWith("/admin") ? "admin" : "farm";
   const { toast } = useToast();
   const { uploadImage } = useImageUploadWithCache();
 
@@ -71,7 +74,7 @@ export function useAqPesticideCreatePage() {
 
         if (isEdit && params?.id) {
           return farmSupplyApi
-            .getById("medicine", Number(params.id), "OWNER")
+            .getById("medicine", Number(params.id), "OWNER", scope)
             .then((item) => {
               const mapped = mapResponseToPesticide(item, certs);
               setFormData(createPesticideFormDataFromItem(mapped));
@@ -236,20 +239,20 @@ export function useAqPesticideCreatePage() {
       };
 
       if (isEdit && params?.id) {
-        await farmSupplyApi.update("medicine", Number(params.id), payload);
+        await farmSupplyApi.update("medicine", Number(params.id), payload, scope);
         toast({
           title: "Thành công",
           description: "Đã cập nhật thông tin thành công",
         });
       } else {
-        await farmSupplyApi.create("medicine", payload);
+        await farmSupplyApi.create("medicine", payload, scope);
         toast({
           title: "Thành công",
           description: "Đã thêm mới thuốc thủy sản",
         });
       }
-      queryClient.invalidateQueries({ queryKey: ["farm-supplies"] });
-      setLocation("/aquaculture-material/pesticide");
+      queryClient.invalidateQueries({ queryKey: [scope === "admin" ? "admin-supplies" : "farm-supplies"] });
+      setLocation(scope === "admin" ? "/admin/aq-pesticide" : "/aquaculture-material/pesticide");
     } catch (err: any) {
       if (err.response?.status === 409) {
         toast({
@@ -350,7 +353,7 @@ export function useAqPesticideCreatePage() {
     steps,
     loading,
     submitting,
-    goBack: () => setLocation("/aquaculture-material/pesticide"),
+    goBack: () => setLocation(scope === "admin" ? "/admin/aq-pesticide" : "/aquaculture-material/pesticide"),
     handleComplete: () => setConfirmOpen(true),
     handleConfirmSubmit,
   };

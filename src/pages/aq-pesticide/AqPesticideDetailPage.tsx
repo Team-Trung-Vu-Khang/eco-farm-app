@@ -1,4 +1,5 @@
 import PageWrapper from "@/components/PageWrapper";
+import { useFarmSupplyDetailHook } from "@/features/farm-supply/hooks/useFarmSupplyDetailHook";
 import {
   Badge,
   Button,
@@ -13,7 +14,6 @@ import {
   BookOpen,
   Building2,
   CalendarDays,
-  CheckCircle2,
   ChevronLeft,
   DollarSign,
   Edit,
@@ -28,9 +28,7 @@ import {
   Waves,
 } from "lucide-react";
 import { useLocation, useRoute } from "wouter";
-import usePesticideStore from "../../stores/usePesticideStore";
 import { toxicityLevels } from "../pesticide/data/constants";
-import { useFarmSupplyDetailHook } from "@/features/farm-supply/hooks/useFarmSupplyDetailHook";
 
 const toxicityColorMap: Record<string, string> = {
   Ia: "bg-red-100 text-red-700 border-red-300",
@@ -75,7 +73,12 @@ function InfoRow({
 }
 
 const AqPesticideDetailPage = () => {
-  const [, params] = useRoute("/aquaculture-material/pesticide/:id");
+  const [matchFarm, paramsFarm] = useRoute(
+    "/aquaculture-material/pesticide/:id",
+  );
+  const [matchAdmin, paramsAdmin] = useRoute("/admin/aq-pesticide/:id");
+  const params = paramsFarm || paramsAdmin;
+  const matchAdminActive = !!matchAdmin;
   const [, setLocation] = useLocation();
   const id = params?.id ? Number(params.id) : 0;
   const { item, loading } = useFarmSupplyDetailHook("medicine", id);
@@ -100,7 +103,13 @@ const AqPesticideDetailPage = () => {
             Không tìm thấy thông tin thuốc.
           </p>
           <Button
-            onClick={() => setLocation("/aquaculture-material/pesticide")}
+            onClick={() =>
+              setLocation(
+                matchAdminActive
+                  ? "/admin/aq-pesticide"
+                  : "/aquaculture-material/pesticide",
+              )
+            }
           >
             Quay lại danh sách
           </Button>
@@ -138,10 +147,14 @@ const AqPesticideDetailPage = () => {
       title="Chi tiết thuốc thủy sản"
       description={`Thông tin chi tiết cho sản phẩm ${item.name}`}
       actions={
-        item.source === "OWNER" && (
+        (item.source === "OWNER" || matchAdminActive) && (
           <Button
             onClick={() =>
-              setLocation(`/aquaculture-material/pesticide/${id}/edit`)
+              setLocation(
+                matchAdminActive
+                  ? `/admin/aq-pesticide/${id}/edit`
+                  : `/aquaculture-material/pesticide/${id}/edit`,
+              )
             }
           >
             <Edit className="w-4 h-4 mr-2" />
@@ -154,7 +167,13 @@ const AqPesticideDetailPage = () => {
         <Button
           variant="ghost"
           size="sm"
-          onClick={() => setLocation("/aquaculture-material/pesticide")}
+          onClick={() =>
+            setLocation(
+              matchAdminActive
+                ? "/admin/aq-pesticide"
+                : "/aquaculture-material/pesticide",
+            )
+          }
           className="gap-2 pl-0 text-muted-foreground hover:text-primary"
         >
           <ChevronLeft className="w-4 h-4" />
@@ -424,7 +443,10 @@ const AqPesticideDetailPage = () => {
                 label="Nhà nhập khẩu / Đăng ký"
                 value={item.importerOrganization?.name}
               />
-              <InfoRow label="Nhà phân phối" value={item.distributorOrganization?.name} />
+              <InfoRow
+                label="Nhà phân phối"
+                value={item.distributorOrganization?.name}
+              />
               {item.referencePrice && (
                 <div>
                   <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1 flex items-center gap-1">

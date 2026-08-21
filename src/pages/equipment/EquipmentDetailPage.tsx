@@ -9,7 +9,10 @@ import { EquipmentDetailSidebar } from "./components/detail/EquipmentDetailSideb
 import { InfoTab } from "./components/detail/EquipmentDetailTabs";
 
 const EquipmentDetailPage = () => {
-  const [, params] = useRoute("/cultivation-material/equipment/:id");
+  const [matchFarm, paramsFarm] = useRoute("/cultivation-material/equipment/:id");
+  const [matchAdmin, paramsAdmin] = useRoute("/admin/equipment/:id");
+  const params = paramsFarm || paramsAdmin;
+  const matchAdminActive = !!matchAdmin;
   const [, setLocation] = useLocation();
   const id = params?.id ? Number(params.id) : 0;
   const { item, loading } = useFarmSupplyDetailHook("equipment", id);
@@ -34,7 +37,7 @@ const EquipmentDetailPage = () => {
             Không tìm thấy thông tin thiết bị.
           </p>
           <Button
-            onClick={() => setLocation("/cultivation-material/equipment")}
+            onClick={() => setLocation(matchAdminActive ? "/admin/equipment" : "/cultivation-material/equipment")}
           >
             Quay lại danh sách
           </Button>
@@ -48,10 +51,14 @@ const EquipmentDetailPage = () => {
       title="Chi tiết thiết bị"
       description={`Thông tin và lịch sử bảo dưỡng của ${item.name}`}
       actions={
-        item.source === "OWNER" && (
+        (item.source === "OWNER" || matchAdminActive) && (
           <Button
             onClick={() =>
-              setLocation(`/cultivation-material/equipment/${id}/edit`)
+              setLocation(
+                matchAdminActive
+                  ? `/admin/equipment/${id}/edit`
+                  : `/cultivation-material/equipment/${id}/edit`
+              )
             }
           >
             <Edit className="w-4 h-4 mr-2" />
@@ -64,7 +71,7 @@ const EquipmentDetailPage = () => {
         <Button
           variant="ghost"
           size="sm"
-          onClick={() => setLocation("/cultivation-material/equipment")}
+          onClick={() => setLocation(matchAdminActive ? "/admin/equipment" : "/cultivation-material/equipment")}
           className="gap-2 pl-0 text-muted-foreground hover:text-primary"
         >
           <ChevronLeft className="w-4 h-4" />

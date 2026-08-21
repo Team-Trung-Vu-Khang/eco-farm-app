@@ -25,11 +25,12 @@ import { useImageUploadWithCache } from "@/features/storage/hooks/useImageUpload
 
 export function useAhPesticideCreatePage() {
   const queryClient = useQueryClient();
-  const [, setLocation] = useLocation();
-  const [match, params] = useRoute(
-    "/animal-husbandry-material/pesticide/:id/edit",
-  );
-  const isEdit = match && !!params?.id;
+  const [location, setLocation] = useLocation();
+  const [matchFarm, paramsFarm] = useRoute("/animal-husbandry-material/pesticide/:id/edit");
+  const [matchAdmin, paramsAdmin] = useRoute("/admin/ah-pesticide/:id/edit");
+  const isEdit = (matchFarm || matchAdmin) && !!(paramsFarm?.id || paramsAdmin?.id);
+  const params = paramsFarm || paramsAdmin;
+  const scope = matchAdmin || location.startsWith("/admin") ? "admin" : "farm";
   const { toast } = useToast();
   const { uploadImage } = useImageUploadWithCache();
 
@@ -73,7 +74,7 @@ export function useAhPesticideCreatePage() {
 
         if (isEdit && params?.id) {
           return farmSupplyApi
-            .getById("medicine", Number(params.id), "OWNER")
+            .getById("medicine", Number(params.id), "OWNER", scope)
             .then((item) => {
               const mapped = mapResponseToPesticide(item, certs);
               setFormData(createPesticideFormDataFromItem(mapped));
@@ -238,17 +239,17 @@ export function useAhPesticideCreatePage() {
       };
 
       if (isEdit && params?.id) {
-        await farmSupplyApi.update("medicine", Number(params.id), payload);
+        await farmSupplyApi.update("medicine", Number(params.id), payload, scope);
         toast({
           title: "Thành công",
           description: "Đã cập nhật thông tin thành công",
         });
       } else {
-        await farmSupplyApi.create("medicine", payload);
+        await farmSupplyApi.create("medicine", payload, scope);
         toast({ title: "Thành công", description: "Đã thêm mới thuốc thú y" });
       }
-      queryClient.invalidateQueries({ queryKey: ["farm-supplies"] });
-      setLocation("/animal-husbandry-material/pesticide");
+      queryClient.invalidateQueries({ queryKey: [scope === "admin" ? "admin-supplies" : "farm-supplies"] });
+      setLocation(scope === "admin" ? "/admin/ah-pesticide" : "/animal-husbandry-material/pesticide");
     } catch (err: any) {
       if (err.response?.status === 409) {
         toast({
@@ -347,7 +348,7 @@ export function useAhPesticideCreatePage() {
     steps,
     loading,
     submitting,
-    goBack: () => setLocation("/animal-husbandry-material/pesticide"),
+    goBack: () => setLocation(scope === "admin" ? "/admin/ah-pesticide" : "/animal-husbandry-material/pesticide"),
     handleComplete: () => setConfirmOpen(true),
     handleConfirmSubmit,
   };
