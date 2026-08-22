@@ -10,11 +10,11 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@Team-Trung-Vu-Khang/eco-shared-ui": "0.0.7-beta.4",
     "@hookform/resolvers": "^5.4.0",
     "@originjs/vite-plugin-federation": "^1.4.1",
     "@tailwindcss/vite": "^4.1.18",
     "@tanstack/react-query": "^5.101.1",
-    "@Team-Trung-Vu-Khang/eco-shared-ui": "0.0.7-beta.3",
     "@turf/turf": "^7.3.4",
     "@yudiel/react-qr-scanner": "^2.5.1",
     "axios": "^1.18.1",

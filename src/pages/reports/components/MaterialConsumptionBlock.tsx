@@ -255,7 +255,54 @@ export function MaterialConsumptionBlock() {
     return new Intl.NumberFormat("en-US").format(val);
   };
 
-  // Helper to render consumption card with INVERSE COLOR logic
+  // Detailed 3-tier mapping: Sub-category -> Array of specific items with ratios
+  const subCategoryItemsMap: Record<string, { name: string; unit: string; ratio: number; trend: number; isIncrease: boolean }[]> = {
+    "Thuốc trừ sâu sinh học": [
+      { name: "Nấm xanh Metarhizium", unit: "kg", ratio: 0.45, trend: 8, isIncrease: true },
+      { name: "Vi khuẩn Bacillus thuringiensis", unit: "kg", ratio: 0.55, trend: 5, isIncrease: false },
+    ],
+    "Thuốc diệt nấm bệnh": [
+      { name: "Nấm đối kháng Trichoderma", unit: "kg", ratio: 0.6, trend: 10, isIncrease: true },
+      { name: "Chế phẩm Đồng Bordeaux", unit: "kg", ratio: 0.4, trend: 3, isIncrease: true },
+    ],
+    "Thuốc trừ cỏ sinh học": [
+      { name: "Axit acetic nồng độ cao", unit: "kg", ratio: 1.0, trend: 12, isIncrease: true },
+    ],
+    "Phân bón hữu cơ vi sinh": [
+      { name: "Phân trùn quế cao cấp", unit: "kg", ratio: 0.57, trend: 15, isIncrease: true },
+      { name: "Phân chuồng hoai mục tinh chế", unit: "kg", ratio: 0.43, trend: 2, isIncrease: false },
+    ],
+    "Phân NPK cao cấp": [
+      { name: "NPK 16-16-8 Đầu Trâu", unit: "kg", ratio: 0.62, trend: 5, isIncrease: true },
+      { name: "NPK 15-15-15 nhập khẩu", unit: "kg", ratio: 0.38, trend: 8, isIncrease: false },
+    ],
+    "Phân Lân & Kali": [
+      { name: "Lân nung chảy Văn Điển", unit: "kg", ratio: 0.64, trend: 2, isIncrease: true },
+      { name: "Kali clorua đỏ", unit: "kg", ratio: 0.36, trend: 4, isIncrease: true },
+    ],
+    "Máy cày & Máy phay đất": [
+      { name: "Máy cày Kubota L5018", unit: "ngày", ratio: 0.53, trend: 10, isIncrease: true },
+      { name: "Máy phay đất Yanmar", unit: "ngày", ratio: 0.47, trend: 5, isIncrease: true },
+    ],
+    "Hệ thống tưới tự động": [
+      { name: "Hệ thống tưới nhỏ giọt Israel", unit: "ngày", ratio: 0.58, trend: 2, isIncrease: true },
+      { name: "Hệ thống tưới phun sương", unit: "ngày", ratio: 0.42, trend: 1, isIncrease: true },
+    ],
+    "Máy phun thuốc tự hành": [
+      { name: "Máy phun Drone DJI T40", unit: "ngày", ratio: 1.0, trend: 15, isIncrease: true },
+    ],
+    "Màng phủ nông nghiệp": [
+      { name: "Màng phủ PE đen khổ 1.2m", unit: "cuộn", ratio: 1.0, trend: 3, isIncrease: false },
+    ],
+    "Lưới chắn côn trùng": [
+      { name: "Lưới chắn 50 mesh trắng", unit: "tấm", ratio: 1.0, trend: 8, isIncrease: true },
+    ],
+    "Dây cột giàn leo": [
+      { name: "Dây se nông nghiệp tự phân hủy", unit: "cuộn", ratio: 1.0, trend: 5, isIncrease: true },
+    ],
+  };
+
+  // Helper to render consumption card with nested itemized DataTable
   const renderDetailCard = (
     title: string,
     icon: React.ReactNode,
@@ -265,34 +312,36 @@ export function MaterialConsumptionBlock() {
       isIncrease: boolean;
       groups: { name: string; amount: number }[];
     },
-    unit: string,
+    unit: string
   ) => {
-    // INVERSE COLORS: increase is bad (Red), decrease is good (Green)
     const isBad = data.isIncrease;
-    const trendColor = isBad
-      ? "text-rose-600 bg-rose-50"
-      : "text-emerald-600 bg-emerald-50";
+    const trendColor = isBad ? "text-rose-600 bg-rose-50" : "text-emerald-600 bg-emerald-50";
 
     return (
-      <Card className="border border-slate-100 shadow-xs bg-white flex flex-col justify-between">
-        <CardHeader className="pb-2 p-4 flex flex-row items-center justify-between space-y-0">
-          <CardTitle className="text-sm font-bold text-slate-505 uppercase tracking-wider">
-            {title}
-          </CardTitle>
-          <div className="text-slate-400">{icon}</div>
-        </CardHeader>
+      <Card className="border border-slate-100 shadow-xs bg-white rounded-xl">
+        {/* Category Header */}
+        <CardHeader className="pb-3 border-b border-slate-50 p-5 flex flex-row items-center justify-between space-y-0 bg-slate-50/30 rounded-t-xl">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-slate-100 text-slate-600 rounded-xl">
+              {icon}
+            </div>
+            <div>
+              <CardTitle className="text-sm font-bold text-slate-800 uppercase tracking-wider">
+                {title}
+              </CardTitle>
+              <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mt-0.5">
+                Tổng tiêu thụ thực tế
+              </p>
+            </div>
+          </div>
 
-        <CardContent className="p-4 pt-0 space-y-4">
-          {/* Số liệu chính & trend */}
-          <div className="flex items-baseline justify-between">
-            <span className="text-xl font-display font-extrabold text-slate-800 font-mono">
+          <div className="flex items-baseline gap-3">
+            <span className="text-2xl font-display font-extrabold text-slate-800 font-mono">
               {formatNumber(data.total)}{" "}
-              <span className="text-sm text-slate-400 font-sans font-medium">
+              <span className="text-xs text-slate-400 font-sans font-medium">
                 {unit}
               </span>
             </span>
-
-            {/* Trend indicator */}
             <span
               className={`flex items-center gap-0.5 px-1.5 py-0.5 rounded text-xs font-bold ${trendColor}`}
             >
@@ -304,34 +353,71 @@ export function MaterialConsumptionBlock() {
               <span>{Math.abs(data.trend)}%</span>
             </span>
           </div>
+        </CardHeader>
 
-          {/* Danh sách phân nhóm nhỏ */}
-          <div className="space-y-2.5 border-t border-slate-50 pt-3">
-            {data.groups.map((group, index) => {
-              const percentage =
-                data.total > 0
-                  ? Math.round((group.amount / data.total) * 100)
-                  : 0;
-              return (
-                <div key={index} className="space-y-1">
-                  <div className="flex items-center justify-between text-xs font-bold text-slate-500">
-                    <span className="truncate">{group.name}</span>
-                    <span className="font-mono text-slate-650 shrink-0">
-                      {formatNumber(group.amount)} {unit} ({percentage}%)
-                    </span>
-                  </div>
-                  <div className="h-1.5 w-full bg-slate-50 rounded-full overflow-hidden">
-                    <div
-                      style={{ width: `${percentage}%` }}
-                      className={`${
-                        percentage > 80 ? "bg-rose-500" : "bg-emerald-500"
-                      } h-full rounded-full`}
-                    />
-                  </div>
+        <CardContent className="p-5 space-y-6">
+          {/* Loop over sub-categories */}
+          {data.groups.map((group, groupIdx) => {
+            const items = subCategoryItemsMap[group.name] || [];
+            
+            return (
+              <div key={groupIdx} className="space-y-2">
+                {/* Sub-category Header */}
+                <div className="flex items-center justify-between bg-slate-50/80 px-3 py-2 rounded-lg border border-slate-100">
+                  <span className="text-xs font-bold text-slate-700">
+                    {group.name}
+                  </span>
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                    Tổng: {formatNumber(group.amount)} {unit}
+                  </span>
                 </div>
-              );
-            })}
-          </div>
+
+                {/* Itemized Table */}
+                <div className="overflow-x-auto border border-slate-100 rounded-lg">
+                  <table className="w-full text-left border-collapse text-xs">
+                    <thead>
+                      <tr className="bg-slate-50/50 border-b border-slate-100 text-slate-500 font-bold">
+                        <th className="p-2.5 font-semibold text-slate-500">Tên vật tư</th>
+                        <th className="p-2.5 font-semibold text-slate-500 w-20 text-center">Đơn vị</th>
+                        <th className="p-2.5 font-semibold text-slate-500 w-28 text-right">Số lượng</th>
+                        <th className="p-2.5 font-semibold text-slate-500 w-28 text-center">Biến động</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-50 font-medium">
+                      {items.map((item, itemIdx) => {
+                        const itemAmount = Math.max(1, Math.round(group.amount * item.ratio));
+                        const itemTrendColor = item.isIncrease
+                          ? "text-rose-600 bg-rose-50/50"
+                          : "text-emerald-600 bg-emerald-50/50";
+                        
+                        return (
+                          <tr key={itemIdx} className="hover:bg-slate-50/30 transition-colors">
+                            <td className="p-2.5 text-slate-700 font-bold">{item.name}</td>
+                            <td className="p-2.5 text-slate-400 text-center uppercase font-bold text-[10px]">
+                              {item.unit}
+                            </td>
+                            <td className="p-2.5 text-slate-800 text-right font-bold font-mono">
+                              {formatNumber(itemAmount)}
+                            </td>
+                            <td className="p-2.5 text-center">
+                              <span className={`inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-bold ${itemTrendColor}`}>
+                                {item.isIncrease ? (
+                                  <TrendingUp className="w-2.5 h-2.5" />
+                                ) : (
+                                  <TrendingDown className="w-2.5 h-2.5" />
+                                )}
+                                <span>{item.trend}%</span>
+                              </span>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            );
+          })}
         </CardContent>
       </Card>
     );
@@ -535,30 +621,30 @@ export function MaterialConsumptionBlock() {
             </span>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="space-y-6">
             {renderDetailCard(
               "Thuốc BVTV canh tác",
-              <ShieldAlert className="w-4 h-4 text-rose-500" />,
+              <ShieldAlert className="w-5 h-5 text-rose-500" />,
               cons.pesticide,
-              "kg",
+              "kg"
             )}
             {renderDetailCard(
               "Phân bón chất lượng cao",
-              <Leaf className="w-4 h-4 text-emerald-500" />,
+              <Leaf className="w-5 h-5 text-emerald-500" />,
               cons.fertilizer,
-              "kg",
+              "kg"
             )}
             {renderDetailCard(
               "Máy móc & thiết bị",
-              <Wrench className="w-4 h-4 text-amber-500" />,
+              <Wrench className="w-5 h-5 text-amber-500" />,
               cons.equipment,
-              "ngày",
+              "ngày"
             )}
             {renderDetailCard(
               "Vật tư canh tác khác",
-              <Layers className="w-4 h-4 text-sky-500" />,
+              <Layers className="w-5 h-5 text-sky-500" />,
               cons.other,
-              "cuộn/tấm",
+              "cuộn/tấm"
             )}
           </div>
         </div>

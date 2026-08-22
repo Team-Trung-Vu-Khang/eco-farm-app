@@ -5,7 +5,7 @@ import { ReportHeaderActions } from "./components/ReportHeaderActions";
 import { Skeleton } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 
 // Reuse existing blocks for Crops
-import { FarmingScaleBlock } from "./components/FarmingScaleBlock";
+import { OverviewMasterDashboard } from "./components/overview-master-dashboard/OverviewMasterDashboard";
 import { FarmingHistoryBlock } from "./components/FarmingHistoryBlock";
 import { MaterialConsumptionBlock } from "./components/MaterialConsumptionBlock";
 
@@ -175,7 +175,7 @@ export const ReportPageContainer: React.FC = () => {
     if (domain === "crops") {
       switch (module) {
         case "overview":
-          return <FarmingScaleBlock />;
+          return <OverviewMasterDashboard domainType="crops" />;
         case "plan-work":
           return <FarmingHistoryBlock />;
         case "materials":
@@ -185,14 +185,14 @@ export const ReportPageContainer: React.FC = () => {
         case "inventory":
           return <InventoryReport domainType="crops" />;
         default:
-          return <FarmingScaleBlock />;
+          return <OverviewMasterDashboard domainType="crops" />;
       }
     }
 
     // Otherwise render domain-customized generic report modules
     switch (module) {
       case "overview":
-        return <OverviewReport domainType={domain} />;
+        return <OverviewMasterDashboard domainType={domain as any} />;
       case "plan-work":
         return <PlanWorkReport domainType={domain} />;
       case "harvest":
@@ -202,7 +202,7 @@ export const ReportPageContainer: React.FC = () => {
       case "inventory":
         return <InventoryReport domainType={domain} />;
       default:
-        return <OverviewReport domainType={domain} />;
+        return <OverviewMasterDashboard domainType={domain as any} />;
     }
   };
 

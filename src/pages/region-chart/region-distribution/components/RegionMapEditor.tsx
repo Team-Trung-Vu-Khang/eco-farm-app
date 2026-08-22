@@ -67,6 +67,13 @@ const FitBoundsOnce = ({
   const hasFitRef = useRef(false);
 
   useEffect(() => {
+    const timer = setTimeout(() => {
+      map.invalidateSize();
+    }, 200);
+    return () => clearTimeout(timer);
+  }, [map]);
+
+  useEffect(() => {
     if (points.length > 0 && !hasFitRef.current) {
       const bounds = L.latLngBounds(points);
       if (bounds.isValid()) {

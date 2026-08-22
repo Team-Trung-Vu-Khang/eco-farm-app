@@ -4,6 +4,7 @@ import { Route, Switch, useLocation, useParams } from "wouter";
 import { useFarmPlanById } from "@/features/farm-workflow/hooks";
 import { ReportProvider } from "./pages/reports/context/ReportContext";
 import { ReportPageContainer } from "./pages/reports/ReportPageContainer";
+import { AdminReportPage } from "./pages/reports/AdminReportPage";
 
 const DashboardPage = lazy(() => import("./pages/dashboard/Dashboard"));
 const TerrainPage = lazy(() => import("./pages/terrain/TerrainPage"));
@@ -1946,7 +1947,8 @@ function Router() {
           path="/material-consumption-report"
           component={ReportsRedirect}
         />
-        <Route path="/admin-farmer-report" component={ReportsRedirect} />
+        <Route path="/admin-farmer-report" component={AdminReportPage} />
+        <Route path="/admin-report" component={AdminReportPage} />
         <Route path="/reports" component={ReportsRedirect} />
         <Route
           path="/reports/:domain/:module"
