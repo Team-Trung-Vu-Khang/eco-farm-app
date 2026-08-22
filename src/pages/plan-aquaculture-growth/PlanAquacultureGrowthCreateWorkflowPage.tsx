@@ -1,4 +1,5 @@
 import PageWrapper from "@/components/PageWrapper";
+import { AppLoadingState } from "@/components/AppLoadingState";
 import useRegionStore from "@/stores/useRegionStore";
 import {
   AlertDialog,
@@ -16,7 +17,6 @@ import {
   ArrowLeft,
   ClipboardList,
   Layers,
-  Loader2,
   PencilLine,
   Plus,
   Save,
@@ -552,32 +552,14 @@ export default function PlanAquacultureGrowthCreateWorkflowPage() {
     useFarmWorkflowById(routeWorkflowId ?? "", {
       enabled:
         !!routeWorkflowId &&
-        routeWorkflowId !== activeWorkflowId &&
         isRoutePersistedId,
     });
   const { items: workflowPlans, loading: isLoadingWorkflowPlans } =
     useFarmWorkflowPlans(routeWorkflowId ?? "", {
       enabled:
         !!routeWorkflowId &&
-        routeWorkflowId !== activeWorkflowId &&
         isRoutePersistedId,
     });
-
-  // True from the moment a persisted workflow's URL is opened until its
-  // detail + plans have loaded (and, if it had no plans yet, until the
-  // seeded first draft plan finishes creating) — covers both "loading an
-  // existing workflow" and "creating its first plan" under one gate.
-  const isLoadingRouteWorkflow =
-    !!routeWorkflowId &&
-    isRoutePersistedId &&
-    routeWorkflowId !== activeWorkflowId &&
-    (isLoadingWorkflowDetail || isLoadingWorkflowPlans || createPlan.isPending);
-
-  // Once the canvas is already showing, a user-triggered "create plan" (the
-  // "+" footer action) reuses the same `createPlan` mutation — distinguish
-  // it from the initial-load case above so the canvas overlay only shows
-  // for this one, not on top of the full-page loading state.
-  const isCreatingPlan = createPlan.isPending && !isLoadingRouteWorkflow;
 
   useEffect(() => {
     const workflowId = params.workflowId ?? null;
@@ -623,7 +605,6 @@ export default function PlanAquacultureGrowthCreateWorkflowPage() {
     // `workflowPlans` would look like "no plans" and seed a spurious draft.
     if (isLoadingWorkflowPlans) return;
     const workflowId = String(workflowDetail.id);
-    if (workflowId === activeWorkflowId) return;
 
     const applyWorkflow = (planNodePlans: Plan[]) => {
       // Upsert by id into the local plan store so the existing plan-node UI
@@ -699,7 +680,7 @@ export default function PlanAquacultureGrowthCreateWorkflowPage() {
     // stable across renders and the seedingWorkflowIdRef guard above already
     // prevents duplicate submissions.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [workflowDetail, isLoadingWorkflowPlans, workflowPlans, activeWorkflowId, loadWorkflow, toast]);
+  }, [workflowDetail, isLoadingWorkflowPlans, workflowPlans, loadWorkflow, toast]);
 
   const [confirmAction, setConfirmAction] = useState<ConfirmActionState | null>(
     null,
@@ -1016,6 +997,15 @@ export default function PlanAquacultureGrowthCreateWorkflowPage() {
     if (otherChanges.length) onNodesChange(otherChanges);
   };
 
+  // Keep this guard after every hook in the component. Returning before the
+  // hooks below would change hook order when the API finishes loading.
+  if (
+    isRoutePersistedId &&
+    (isLoadingWorkflowDetail || isLoadingWorkflowPlans || !workflowDetail)
+  ) {
+    return <AppLoadingState />;
+  }
+
   return (
     <PageWrapper
       title="Sơ đồ quy trình nuôi trồng thủy sản"
@@ -1042,16 +1032,7 @@ export default function PlanAquacultureGrowthCreateWorkflowPage() {
       }
     >
       <div className="space-y-5">
-        {isLoadingRouteWorkflow ? (
-          <div className="flex flex-col items-center justify-center gap-3 rounded-3xl border border-slate-200 bg-white p-24 text-center shadow-sm">
-            <Loader2 className="h-8 w-8 animate-spin text-emerald-600" />
-            <p className="text-sm font-medium text-slate-600">
-              {isLoadingWorkflowDetail || isLoadingWorkflowPlans
-                ? "Đang tải sơ đồ quy trình..."
-                : "Đang khởi tạo kế hoạch đầu tiên..."}
-            </p>
-          </div>
-        ) : infoNodes.length === 0 ? (
+        {infoNodes.length === 0 ? (
           <div className="rounded-3xl border border-dashed border-slate-300 bg-white p-10 text-center shadow-sm">
             <Workflow className="mx-auto h-10 w-10 text-slate-400" />
             <p className="mt-4 text-lg font-semibold text-slate-900">
@@ -1115,16 +1096,6 @@ export default function PlanAquacultureGrowthCreateWorkflowPage() {
                   className="!rounded-xl !border !border-slate-200 !bg-white/95 !shadow-lg"
                 />
               </ReactFlow>
-              {isCreatingPlan && (
-                <div className="absolute inset-0 z-10 flex items-center justify-center gap-2 rounded-3xl bg-white/70 backdrop-blur-[1px]">
-                  <div className="flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 shadow-lg">
-                    <Loader2 className="h-4 w-4 animate-spin text-emerald-600" />
-                    <span className="text-sm font-medium text-slate-700">
-                      Đang tạo kế hoạch...
-                    </span>
-                  </div>
-                </div>
-              )}
             </div>
           </div>
         )}

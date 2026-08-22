@@ -1,7 +1,6 @@
 import { lazy, useEffect } from "react";
 import { Route, Switch, useLocation, useParams } from "wouter";
 
-import { useAnimalGrowthWorkflowDraftStore } from "./pages/plan-animal-growth/hooks/useAnimalGrowthWorkflowDraftStore";
 import { useFarmPlanById } from "@/features/farm-workflow/hooks";
 
 const DashboardPage = lazy(() => import("./pages/dashboard/Dashboard"));
@@ -828,17 +827,15 @@ const PlanAnimalGrowthCreateWorkflowRoute = () => (
 );
 const PlanAnimalGrowthWorkflowPlanEditRoute = () => {
   const [, setLocation] = useLocation();
-  const activeWorkflowId = useAnimalGrowthWorkflowDraftStore(
-    (state) => state.activeWorkflowId,
-  );
+  const params = useParams<{ id: string }>();
+  const { data: planDetail } = useFarmPlanById(params.id ?? "", {
+    enabled: Boolean(params.id),
+  });
   const backToWorkflow = () => {
-    if (window.history.length > 1) {
-      window.history.back();
-      return;
-    }
+    const workflowId = planDetail?.workflow?.id;
     setLocation(
-      activeWorkflowId
-        ? `/plan-animal-growth/create/workflow/${activeWorkflowId}`
+      workflowId
+        ? `/plan-animal-growth/create/workflow/${workflowId}`
         : "/plan-animal-growth/create/workflow",
     );
   };
@@ -885,8 +882,18 @@ const PlanAquacultureGrowthCreateWorkflowRoute = () => (
 );
 const PlanAquacultureGrowthWorkflowPlanEditRoute = () => {
   const [, setLocation] = useLocation();
-  const backToWorkflow = () =>
-    setLocation("/plan-aquaculture-growth/create/workflow");
+  const params = useParams<{ id: string }>();
+  const { data: planDetail } = useFarmPlanById(params.id ?? "", {
+    enabled: Boolean(params.id),
+  });
+  const backToWorkflow = () => {
+    const workflowId = planDetail?.workflow?.id;
+    setLocation(
+      workflowId
+        ? `/plan-aquaculture-growth/create/workflow/${workflowId}`
+        : "/plan-aquaculture-growth/create/workflow",
+    );
+  };
   return (
     <PlanAquacultureGrowthEditPage
       basePath="/plan-aquaculture-growth/create/workflow"
