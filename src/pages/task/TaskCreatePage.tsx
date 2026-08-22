@@ -886,11 +886,7 @@ export default function TaskCreatePage() {
             ? (formData.tasks[0].repeatDates ?? [])
             : [];
 
-      const origin = isSimpleMode
-        ? "AD_HOC"
-        : isPlannedMode
-          ? "PLANNED"
-          : "AD_HOC";
+      const origin = isPlannedMode ? "PLANNED" : "AD_HOC";
 
       return {
         origin,
@@ -902,10 +898,10 @@ export default function TaskCreatePage() {
         scopeType,
         scopeId,
         sourceWorkItemId,
-        taskCategoryId:
-          origin === "PLANNED"
-            ? null
-            : ((stageTask as TaskAllocation).taskCategoryId ??
+          taskCategoryId:
+            origin === "PLANNED"
+              ? null
+              : (stageTask?.taskCategoryId ??
                 planTask?.taskCategoryId ??
                 null),
         name:
@@ -2120,8 +2116,18 @@ export default function TaskCreatePage() {
                     availableTasks={selectedPlanTaskAllocations.filter(
                       (t: any) => t.stageId === stageName,
                     )}
-                    availableMaterials={apiSupplyMaterials}
-                    availableTaskCategories={taskCategoriesQuery.items}
+                    availableMaterials={
+                      formData.mode === "plan"
+                        ? selectedPlanMaterialAllocations.filter(
+                            (material) => material.stageId === stageName,
+                          )
+                        : apiSupplyMaterials
+                    }
+                    availableMaterialsOnly={formData.mode === "plan"}
+                    availableTasksOnly={formData.mode === "plan"}
+                    availableTaskCategories={
+                      formData.mode === "plan" ? [] : taskCategoriesQuery.items
+                    }
                   />
                 ))
               ) : formData.objectiveType === "thu-hoach" ? (
@@ -2149,8 +2155,16 @@ export default function TaskCreatePage() {
                     ""
                   }
                   availableTasks={selectedPlanTaskAllocations}
-                  availableMaterials={apiSupplyMaterials}
-                  availableTaskCategories={taskCategoriesQuery.items}
+                  availableMaterials={
+                    formData.mode === "plan"
+                      ? selectedPlanMaterialAllocations
+                      : apiSupplyMaterials
+                  }
+                  availableMaterialsOnly={formData.mode === "plan"}
+                  availableTasksOnly={formData.mode === "plan"}
+                  availableTaskCategories={
+                    formData.mode === "plan" ? [] : taskCategoriesQuery.items
+                  }
                 />
               ) : (
                 <div className="p-10 text-center border-2 border-dashed border-slate-200 rounded-3xl bg-slate-50">
@@ -2181,8 +2195,16 @@ export default function TaskCreatePage() {
                     ? undefined
                     : selectedPlanTaskAllocations
                 }
-                availableMaterials={apiSupplyMaterials}
-                availableTaskCategories={taskCategoriesQuery.items}
+                availableMaterials={
+                  formData.mode === "plan"
+                    ? selectedPlanMaterialAllocations
+                    : apiSupplyMaterials
+                }
+                availableMaterialsOnly={formData.mode === "plan"}
+                availableTasksOnly={formData.mode === "plan"}
+                availableTaskCategories={
+                  formData.mode === "plan" ? [] : taskCategoriesQuery.items
+                }
                 regions={filteredRegionsForPhatSinh}
                 personnel={personnel}
                 masterSelections={selections}
@@ -2711,6 +2733,7 @@ export default function TaskCreatePage() {
             formData={formData}
             setFormData={setFormData}
             workflows={workflowOptions}
+            plans={planOptions}
             handleComplete={handleComplete}
             goBack={() => setLocation("/task")}
             completeLabel="Hoàn tất & Khởi tạo"

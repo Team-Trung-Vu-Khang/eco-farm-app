@@ -12,6 +12,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
+  Switch,
   Textarea,
   cn,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
@@ -63,6 +64,14 @@ interface SimpleTaskFormProps {
   formData: TaskCreateFormData;
   setFormData: Dispatch<SetStateAction<TaskCreateFormData>>;
   workflows?: Array<{ id: number; code?: string; name: string }>;
+  plans?: Array<{
+    id: number;
+    code?: string;
+    name: string;
+    workflowId?: string;
+    purpose?: string;
+    selectedStages?: string[];
+  }>;
   handleComplete: () => void;
   goBack: () => void;
   completeLabel?: string;
@@ -72,6 +81,7 @@ export default function SimpleTaskForm({
   formData,
   setFormData,
   workflows = [],
+  plans = [],
   handleComplete,
   goBack,
   completeLabel = "Hoàn tất & Khởi tạo",
@@ -79,6 +89,16 @@ export default function SimpleTaskForm({
   const mainSubtask = formData.tasks[0];
   const isRepeating = Boolean(mainSubtask?.isRepeating);
   const repeatDates = mainSubtask?.repeatDates || [];
+
+  const keepDatesInRange = (
+    dates: string[],
+    startDate: string,
+    endDate: string,
+  ) =>
+    dates.filter(
+      (date) =>
+        (!startDate || date >= startDate) && (!endDate || date <= endDate),
+    );
 
   const updateSubtask = (
     patch: Partial<{
@@ -111,6 +131,9 @@ export default function SimpleTaskForm({
 
   const isValid =
     Boolean(formData.name) &&
+    Boolean(formData.objectiveType) &&
+    Boolean(formData.regimenId) &&
+    (formData.mode === "phat-sinh" || Boolean(formData.planId)) &&
     Boolean(formData.startDate) &&
     Boolean(formData.endDate) &&
     (!isRepeating || repeatDates.length > 0);
@@ -143,6 +166,82 @@ export default function SimpleTaskForm({
       </div>
 
       <div className="space-y-2">
+        <Label required>Loại công việc</Label>
+        <div className="flex items-center justify-between gap-4 rounded-2xl border-2 border-slate-100 bg-white p-4">
+          <div className="flex items-center gap-3">
+            <div
+              className={cn(
+                "flex h-10 w-10 shrink-0 items-center justify-center rounded-xl transition-colors",
+                formData.mode === "plan"
+                  ? "bg-blue-500 text-white"
+                  : "bg-slate-50 text-slate-400",
+              )}
+            >
+              <ClipboardList className="h-5 w-5" />
+            </div>
+            <div>
+              <p
+                className={cn(
+                  "text-xs font-black uppercase tracking-tight",
+                  formData.mode === "plan" ? "text-blue-700" : "text-slate-400",
+                )}
+              >
+                Hạng mục dự kiến
+              </p>
+              <p className="text-[10px] font-medium text-slate-400">
+                Từ một kế hoạch có sẵn
+              </p>
+            </div>
+          </div>
+
+          <Switch
+            checked={formData.mode === "phat-sinh"}
+            className="data-[state=checked]:bg-amber-500 data-[state=unchecked]:bg-blue-500"
+            onCheckedChange={(checked) =>
+              setFormData((prev) => ({
+                ...prev,
+                mode: checked ? "phat-sinh" : "plan",
+                objectiveType: checked ? "phat-sinh" : "theo-ke-hoach",
+                regimenId: "",
+                planId: "",
+                planName: "",
+                selectedStages: [],
+                selectedPlotIds: [],
+              }))
+            }
+          />
+
+          <div className="flex items-center gap-3">
+            <div>
+              <p
+                className={cn(
+                  "text-right text-xs font-black uppercase tracking-tight",
+                  formData.mode === "phat-sinh"
+                    ? "text-amber-700"
+                    : "text-slate-400",
+                )}
+              >
+                Phát sinh
+              </p>
+              <p className="text-right text-[10px] font-medium text-slate-400">
+                Ngoài kế hoạch
+              </p>
+            </div>
+            <div
+              className={cn(
+                "flex h-10 w-10 shrink-0 items-center justify-center rounded-xl transition-colors",
+                formData.mode === "phat-sinh"
+                  ? "bg-amber-500 text-white"
+                  : "bg-slate-50 text-slate-400",
+              )}
+            >
+              <Info className="h-5 w-5" />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="space-y-2">
         <Label required>Quy trình</Label>
         <Select
           value={formData.regimenId}
@@ -163,6 +262,46 @@ export default function SimpleTaskForm({
             ))}
           </SelectContent>
         </Select>
+      </div>
+
+      <div className="space-y-2">
+        <Label required={formData.mode === "plan"}>
+          Kế hoạch triển khai
+          <span className="ml-2 text-[10px] font-medium text-slate-400">
+            {formData.mode === "plan" ? "Bắt buộc với hạng mục dự kiến" : "Không bắt buộc"}
+          </span>
+        </Label>
+        <Select
+          value={formData.planId}
+          disabled={!formData.regimenId || plans.length === 0}
+          onValueChange={(value) => {
+            const selectedPlan = plans.find(
+              (plan) => String(plan.id) === value,
+            );
+            setFormData((prev) => ({
+              ...prev,
+              planId: value,
+              planName: selectedPlan?.name || "",
+              selectedStages: selectedPlan?.selectedStages || [],
+            }));
+          }}
+        >
+          <SelectTrigger>
+            <SelectValue placeholder="Chọn kế hoạch triển khai..." />
+          </SelectTrigger>
+          <SelectContent>
+            {plans.map((plan) => (
+              <SelectItem key={plan.id} value={String(plan.id)}>
+                {plan.name} {plan.code ? `(${plan.code})` : ""}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        {!formData.regimenId && (
+          <p className="text-[11px] font-medium text-slate-400">
+            Chọn quy trình trước để tải kế hoạch.
+          </p>
+        )}
       </div>
 
       <div className="space-y-2">
@@ -214,11 +353,27 @@ export default function SimpleTaskForm({
                 className="pl-10 h-10 text-sm bg-slate-50 border-slate-200"
                 value={formData.startDate}
                 onChange={(e) =>
-                  setFormData((prev) => ({
-                    ...prev,
-                    startDate: e.target.value,
-                  }))
+                  setFormData((prev) => {
+                    const startDate = e.target.value;
+                    return {
+                      ...prev,
+                      startDate,
+                      tasks: prev.tasks.map((task, index) =>
+                        index === 0
+                          ? {
+                              ...task,
+                              repeatDates: keepDatesInRange(
+                                task.repeatDates || [],
+                                startDate,
+                                prev.endDate,
+                              ),
+                            }
+                          : task,
+                      ),
+                    };
+                  })
                 }
+                max={formData.endDate || undefined}
               />
             </div>
           </div>
@@ -234,11 +389,27 @@ export default function SimpleTaskForm({
                 className="pl-10 h-10 text-sm bg-slate-50 border-slate-200"
                 value={formData.endDate}
                 onChange={(e) =>
-                  setFormData((prev) => ({
-                    ...prev,
-                    endDate: e.target.value,
-                  }))
+                  setFormData((prev) => {
+                    const endDate = e.target.value;
+                    return {
+                      ...prev,
+                      endDate,
+                      tasks: prev.tasks.map((task, index) =>
+                        index === 0
+                          ? {
+                              ...task,
+                              repeatDates: keepDatesInRange(
+                                task.repeatDates || [],
+                                prev.startDate,
+                                endDate,
+                              ),
+                            }
+                          : task,
+                      ),
+                    };
+                  })
                 }
+                min={formData.startDate || undefined}
               />
             </div>
           </div>
@@ -288,8 +459,12 @@ export default function SimpleTaskForm({
                   repeatDates: (dates || []).map(formatLocalISODate),
                 })
               }
-              disabled={{
-                before: new Date(new Date().setHours(0, 0, 0, 0)),
+              disabled={(date) => {
+                const localDate = formatLocalISODate(date);
+                return Boolean(
+                  (formData.startDate && localDate < formData.startDate) ||
+                    (formData.endDate && localDate > formData.endDate),
+                );
               }}
               className="mx-auto w-1/2 bg-white"
               style={{ "--cell-size": "3.25rem" } as CSSProperties}
@@ -329,8 +504,9 @@ export default function SimpleTaskForm({
         <CardContent className="p-4 flex items-start gap-2">
           <Info className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
           <p className="text-xs text-amber-800">
-            Chế độ đơn giản tạo công việc phát sinh, không gắn kế hoạch, vật tư
-            hay phạm vi canh tác cụ thể. Chuyển sang chế độ chi tiết để bổ sung.
+            Chế độ đơn giản hỗ trợ chọn loại công việc, quy trình và kế hoạch
+            triển khai. Chuyển sang chế độ chi tiết để bổ sung vật tư, nhân sự
+            và phạm vi canh tác cụ thể.
           </p>
         </CardContent>
       </Card>

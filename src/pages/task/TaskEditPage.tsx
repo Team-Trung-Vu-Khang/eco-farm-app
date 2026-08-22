@@ -6,7 +6,6 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
-  Checkbox,
   Dialog,
   DialogContent,
   DialogFooter,
@@ -315,6 +314,7 @@ export default function TaskEditPage() {
         team:
           item.teams?.map((team) => team.name).filter(Boolean).join(", ") ||
           "",
+        taxCode: (item as any).taxCode || item.code || "",
       }));
     }
 
@@ -396,14 +396,23 @@ export default function TaskEditPage() {
               plan.name?.normalize?.() === task?.plan?.normalize?.(),
           );
 
+    const sourceWorkItemId =
+      taskResponse?.sourceWorkItem?.id ??
+      (taskResponse as any)?.sourceWorkItemId ??
+      (localTask as any)?.mainTaskId ??
+      (taskResponse as any)?.mainTaskId;
+    const plannedStageName = planMatch?.taskAllocations?.find(
+      (item: any) => String(item.id) === String(sourceWorkItemId),
+    )?.stageId;
+
     const stageSource = isPlannedTask
-      ? task?.stage || ""
+      ? plannedStageName || task?.stage || ""
       : "Công việc phát sinh";
     const selectedStages =
       stageSource && stageSource !== "N/A"
         ? stageSource
             .split("; ")
-            .map((stage) => stage.normalize())
+            .map((stage: any) => stage.normalize())
             .filter(Boolean)
         : [];
     const scopeSelections = planDetail?.scopes?.length
@@ -446,10 +455,10 @@ export default function TaskEditPage() {
 
     const plannedWorkItem = isPlannedTask
       ? planMatch?.taskAllocations?.find(
-          (item) => String(item.id) === String(mainTaskIds[0]),
+          (item: any) => String(item.id) === String(mainTaskIds[0]),
         ) ||
         planMatch?.taskAllocations?.find(
-          (item) => item.stageId === selectedStages[0],
+          (item: any) => item.stageId === selectedStages[0],
         )
       : undefined;
 
@@ -457,20 +466,27 @@ export default function TaskEditPage() {
       (material) => ({
         ...material,
         stageId: isPlannedTask
-          ? material.stageId?.normalize?.() || material.stageId
+          ? plannedStageName || material.stageId?.normalize?.() || material.stageId
           : "Công việc phát sinh",
       }),
     ) as MaterialAllocation[];
     const hydratedTasks = pickArray(localTask?.tasks, apiTask?.tasks).map((item) => ({
       ...item,
       name: item.name || plannedWorkItem?.name || apiTask?.name || "",
+      sourceWorkItemId:
+        item.sourceWorkItemId ??
+        (plannedWorkItem ? Number(plannedWorkItem.id) : undefined),
       taskCategoryId:
         item.taskCategoryId ?? plannedWorkItem?.taskCategoryId,
       taskCategoryName:
         item.taskCategoryName ?? plannedWorkItem?.taskCategoryName,
       stageId:
         isPlannedTask
-          ? item.stageId?.normalize?.() || apiTask?.stage || item.stageId || ""
+          ? item.stageId?.normalize?.() ||
+            plannedWorkItem?.stageId ||
+            apiTask?.stage ||
+            item.stageId ||
+            ""
           : "Công việc phát sinh",
       startDate: item.startDate || apiTask?.startDate,
       endDate: item.endDate || apiTask?.endDate,
@@ -497,10 +513,14 @@ export default function TaskEditPage() {
                 // screen renders them under this dedicated stage instead of
                 // the scope label returned by the API.
                 stageId: isPlannedTask
-                  ? buildTaskDraftFromTask(
+                  ? plannedWorkItem?.stageId ||
+                    buildTaskDraftFromTask(
                       apiTask ?? farmTaskToLegacyTask(taskResponse),
                     ).stageId
                   : "Công việc phát sinh",
+                sourceWorkItemId: plannedWorkItem
+                  ? Number(plannedWorkItem.id)
+                  : undefined,
                 name: plannedWorkItem?.name || apiTask?.name || localTask?.name || "",
                 taskCategoryId:
                   plannedWorkItem?.taskCategoryId ??
@@ -1103,12 +1123,13 @@ export default function TaskEditPage() {
           const planMaterials = selectedPlan?.materialAllocations || [];
           const planMaterial =
             planMaterials.find(
-              (candidate) =>
+              (candidate: any) =>
                 candidate.materialName === material.materialName &&
                 candidate.stageId === material.stageId,
             ) ||
             planMaterials.find(
-              (candidate) => candidate.materialName === material.materialName,
+              (candidate: any) =>
+                candidate.materialName === material.materialName,
             );
           const catalogMaterial = apiSupplyMaterials.find(
             (candidate) =>
@@ -2189,8 +2210,18 @@ export default function TaskEditPage() {
                     availableTasks={selectedPlan?.taskAllocations?.filter(
                       (t: any) => t.stageId === stageName,
                     )}
-                    availableMaterials={apiSupplyMaterials}
-                    availableTaskCategories={taskCategoriesQuery.items}
+                    availableMaterials={
+                      formData.mode === "plan"
+                        ? formData.materials.filter(
+                            (material) => material.stageId === stageName,
+                          )
+                        : apiSupplyMaterials
+                    }
+                    availableMaterialsOnly={formData.mode === "plan"}
+                    availableTasksOnly={formData.mode === "plan"}
+                    availableTaskCategories={
+                      formData.mode === "plan" ? [] : taskCategoriesQuery.items
+                    }
                   />
                 ))
               ) : formData.objectiveType === "thu-hoach" ? (
@@ -2219,8 +2250,16 @@ export default function TaskEditPage() {
                     ""
                   }
                   availableTasks={selectedPlan?.taskAllocations}
-                  availableMaterials={apiSupplyMaterials}
-                  availableTaskCategories={taskCategoriesQuery.items}
+                  availableMaterials={
+                    formData.mode === "plan"
+                      ? formData.materials
+                      : apiSupplyMaterials
+                  }
+                  availableMaterialsOnly={formData.mode === "plan"}
+                  availableTasksOnly={formData.mode === "plan"}
+                  availableTaskCategories={
+                    formData.mode === "plan" ? [] : taskCategoriesQuery.items
+                  }
                 />
               ) : (
                 <div className="p-10 text-center border-2 border-dashed border-slate-200 rounded-3xl bg-slate-50">
@@ -2256,8 +2295,16 @@ export default function TaskEditPage() {
                     ? undefined
                     : selectedPlan?.taskAllocations
                 }
-                availableMaterials={apiSupplyMaterials}
-                availableTaskCategories={taskCategoriesQuery.items}
+                availableMaterials={
+                  formData.mode === "plan"
+                    ? formData.materials
+                    : apiSupplyMaterials
+                }
+                availableMaterialsOnly={formData.mode === "plan"}
+                availableTasksOnly={formData.mode === "plan"}
+                availableTaskCategories={
+                  formData.mode === "plan" ? [] : taskCategoriesQuery.items
+                }
               />
             ) : null}
           </div>
@@ -2534,10 +2581,10 @@ export default function TaskEditPage() {
                       </div>
 
                       {/* Scope MapPin */}
-                      {(formData.mode === "plan"
+                      {((formData.mode === "plan"
                         ? selections
                         : task.geographicalSelections
-                      )?.length > 0 && (
+                      )?.length ?? 0) > 0 && (
                           <div className="flex items-start gap-2.5 pt-3 border-t border-slate-50">
                             <MapPin className="w-3.5 h-3.5 text-slate-400 mt-1" />
                             <div className="flex-1">
@@ -2789,6 +2836,7 @@ export default function TaskEditPage() {
             formData={formData}
             setFormData={setFormData}
             workflows={workflowsQuery.items}
+            plans={planOptionsForSelect}
             handleComplete={handleComplete}
             goBack={() => setLocation("/task")}
             completeLabel="Hoàn tất & Cập nhật"

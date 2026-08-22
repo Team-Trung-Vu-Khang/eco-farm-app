@@ -57,8 +57,10 @@ export const TaskStageAllocation = memo(
     onUpdateTask,
     masterSelections = [],
     availableTasks,
+    availableTasksOnly = false,
     availableTaskCategories = [],
     availableMaterials,
+    availableMaterialsOnly = false,
     showTaskPicker = true,
     personnel = [],
     onUpdateMaterial,
@@ -78,12 +80,14 @@ export const TaskStageAllocation = memo(
     masterSelections?: GeographicalSelection[];
     enterpriseId?: string;
     availableTasks?: TaskAllocation[];
+    availableTasksOnly?: boolean;
     availableTaskCategories?: Array<{
       id: number;
       name: string;
       code?: string;
     }>;
     availableMaterials?: MaterialAllocation[];
+    availableMaterialsOnly?: boolean;
     showTaskPicker?: boolean;
   }) => {
     // When the user clicks "Thêm" for the stage, we add a blank task
@@ -150,8 +154,10 @@ export const TaskStageAllocation = memo(
                   personnel={personnel}
                   stageName={stageName}
                   availableTasks={availableTasks}
+                  availableTasksOnly={availableTasksOnly}
                   availableTaskCategories={availableTaskCategories}
                   availableMaterials={availableMaterials}
+                  availableMaterialsOnly={availableMaterialsOnly}
                   showTaskPicker={showTaskPicker}
                   onUpdateMaterial={onUpdateMaterial}
                 />
@@ -174,8 +180,10 @@ const TaskBlock = ({
   personnel,
   stageName,
   availableTasks,
+  availableTasksOnly = false,
   availableTaskCategories = [],
   availableMaterials,
+  availableMaterialsOnly = false,
   showTaskPicker = true,
   onUpdateMaterial,
 }: any) => {
@@ -227,8 +235,8 @@ const TaskBlock = ({
   };
 
   const groupedMaterials =
-    (availableMaterials || []).length > 0
-      ? availableMaterials.reduce((acc: any, m: any) => {
+    availableMaterialsOnly || (availableMaterials || []).length > 0
+      ? (availableMaterials || []).reduce((acc: any, m: any) => {
           if (!acc[m.materialCategory]) acc[m.materialCategory] = [];
           if (
             !acc[m.materialCategory].find((i: any) => i.name === m.materialName)
@@ -290,10 +298,15 @@ const TaskBlock = ({
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
 
     const performUpdate = () => {
+      const repeatDates = (task.repeatDates || []).filter(
+        (date: string) =>
+          (!newStart || date >= newStart) && (!newEnd || date <= newEnd),
+      );
       onUpdateTask?.(task.id, {
         startDate: newStart,
         endDate: newEnd,
         duration: `${diffDays} ngày`,
+        repeatDates,
       });
     };
 
@@ -374,7 +387,12 @@ const TaskBlock = ({
             {showTaskPicker ? (
               <Combobox
                 options={
-                  availableTasks && availableTasks.length > 0
+                  availableTasksOnly
+                    ? (availableTasks || []).map((t: any) => ({
+                        value: t.name,
+                        label: t.name,
+                      }))
+                    : availableTasks && availableTasks.length > 0
                     ? availableTasks.map((t: any) => ({
                         value: t.name,
                         label: t.name,
@@ -581,11 +599,21 @@ const TaskBlock = ({
                   selected={(task.repeatDates || []).map(parseLocalISODate)}
                   onSelect={(dates) =>
                     onUpdateTask?.(task.id, {
-                      repeatDates: (dates || []).map(formatLocalISODate),
+                      repeatDates: (dates || [])
+                        .map(formatLocalISODate)
+                        .filter(
+                          (date) =>
+                            (!task.startDate || date >= task.startDate) &&
+                            (!task.endDate || date <= task.endDate),
+                        ),
                     })
                   }
-                  disabled={{
-                    before: new Date(new Date().setHours(0, 0, 0, 0)),
+                  disabled={(date) => {
+                    const localDate = formatLocalISODate(date);
+                    return (
+                      (task.startDate && localDate < task.startDate) ||
+                      (task.endDate && localDate > task.endDate)
+                    );
                   }}
                   className="mx-auto w-full bg-white"
                   style={{ "--cell-size": "3.25rem" } as CSSProperties}

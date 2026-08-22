@@ -270,6 +270,9 @@ export function mapPlanResponseToPlan(plan: FarmPlanResponse): Plan {
       supplyItemId: line.supplyItem?.id,
       unitBaseId:
         line.unitBase?.id ?? line.packagingVariant?.unitBase?.id,
+      unitOptions: [line.unitBase ?? line.packagingVariant?.unitBase]
+        .filter(Boolean)
+        .map((unit) => ({ id: unit.id, name: unit.name })),
     })),
   );
   const taskAllocations = stages.flatMap((stage) =>
