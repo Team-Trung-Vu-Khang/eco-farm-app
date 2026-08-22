@@ -1,15 +1,9 @@
 import { useEffect } from "react";
-import { useForm } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import {
   FormDialog,
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
   Input,
   Select,
   SelectContent,
@@ -86,98 +80,93 @@ export function TaskCategoryFormDialog({
       onSubmit={form.handleSubmit(handleSubmit)}
       loading={isSubmitting}
     >
-      <Form {...form}>
-        <div className="space-y-4 pt-2">
-          <FormField
+      <div className="space-y-4 pt-2">
+        <Controller
+          control={form.control}
+          name="name"
+          render={({ field, fieldState }) => (
+            <div className="space-y-2">
+              <label className="text-sm font-medium">
+                Tên công việc <span className="text-destructive">*</span>
+              </label>
+              <Input placeholder="VD: Làm đất" data-testid="input-name" {...field} />
+              {fieldState.error && (
+                <p className="text-sm text-destructive">{fieldState.error.message}</p>
+              )}
+            </div>
+          )}
+        />
+
+        <Controller
+          control={form.control}
+          name="domain"
+          render={({ field, fieldState }) => (
+            <div className="space-y-2">
+              <label className="text-sm font-medium">
+                Nhóm công việc <span className="text-destructive">*</span>
+              </label>
+              <Select value={field.value} onValueChange={field.onChange}>
+                <SelectTrigger data-testid="select-domain">
+                  <SelectValue placeholder="Chọn nhóm công việc" />
+                </SelectTrigger>
+                <SelectContent>
+                  {taskCategoryDomainOptions.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {taskCategoryDomainLabel[option.value]}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {fieldState.error && (
+                <p className="text-sm text-destructive">{fieldState.error.message}</p>
+              )}
+            </div>
+          )}
+        />
+
+        <Controller
+          control={form.control}
+          name="description"
+          render={({ field, fieldState }) => (
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Mô tả</label>
+              <Textarea
+                placeholder="Mô tả chi tiết về công việc"
+                rows={3}
+                data-testid="input-description"
+                {...field}
+              />
+              {fieldState.error && (
+                <p className="text-sm text-destructive">{fieldState.error.message}</p>
+              )}
+            </div>
+          )}
+        />
+
+        {isEdit && (
+          <Controller
             control={form.control}
-            name="name"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>
-                  Tên công việc
-                  <span className="text-destructive ml-1">*</span>
-                </FormLabel>
-                <FormControl>
-                  <Input
-                    placeholder="VD: Làm đất"
-                    data-testid="input-name"
-                    {...field}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="domain"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>
-                  Nhóm công việc
-                  <span className="text-destructive ml-1">*</span>
-                </FormLabel>
+            name="status"
+            render={({ field, fieldState }) => (
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Trạng thái</label>
                 <Select value={field.value} onValueChange={field.onChange}>
-                  <FormControl>
-                    <SelectTrigger data-testid="select-domain">
-                      <SelectValue placeholder="Chọn nhóm công việc" />
-                    </SelectTrigger>
-                  </FormControl>
+                  <SelectTrigger data-testid="select-status">
+                    <SelectValue placeholder="Chọn trạng thái" />
+                  </SelectTrigger>
                   <SelectContent>
-                    {taskCategoryDomainOptions.map((option) => (
-                      <SelectItem key={option.value} value={option.value}>
-                        {taskCategoryDomainLabel[option.value]}
-                      </SelectItem>
-                    ))}
+                    <SelectItem value="active">Hoạt động</SelectItem>
+                    <SelectItem value="inactive">Không hoạt động</SelectItem>
                   </SelectContent>
                 </Select>
-                <FormMessage />
-              </FormItem>
+                {fieldState.error && (
+                  <p className="text-sm text-destructive">{fieldState.error.message}</p>
+                )}
+              </div>
             )}
           />
-          <FormField
-            control={form.control}
-            name="description"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Mô tả</FormLabel>
-                <FormControl>
-                  <Textarea
-                    placeholder="Mô tả chi tiết về công việc"
-                    rows={3}
-                    data-testid="input-description"
-                    {...field}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          {isEdit ? (
-            <FormField
-              control={form.control}
-              name="status"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Trạng thái</FormLabel>
-                  <Select value={field.value} onValueChange={field.onChange}>
-                    <FormControl>
-                      <SelectTrigger data-testid="select-status">
-                        <SelectValue placeholder="Chọn trạng thái" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="active">Hoạt động</SelectItem>
-                      <SelectItem value="inactive">Không hoạt động</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          ) : null}
-        </div>
-      </Form>
+        )}
+      </div>
     </FormDialog>
   );
 }
