@@ -423,6 +423,9 @@ export default function TaskCreatePage() {
   const selectedPlanTaskAllocations = selectedPlan?.taskAllocations || [];
   const selectedPlanMaterialAllocations =
     selectedPlan?.materialAllocations || [];
+  // AD_HOC can optionally use a selected plan as its resource template.
+  const usePlanResources =
+    formData.mode === "plan" || Boolean(formData.planId);
   const resolvedSelectedStages =
     formData.selectedStages.length > 0
       ? formData.selectedStages
@@ -1035,7 +1038,7 @@ export default function TaskCreatePage() {
                     <Switch
                       checked={formData.mode === "phat-sinh"}
                       className="data-[state=checked]:bg-amber-500 data-[state=unchecked]:bg-blue-500"
-                      onCheckedChange={(checked) => {
+                        onCheckedChange={(checked) => {
                         setFormData({
                           ...formData,
                           mode: checked ? "phat-sinh" : "plan",
@@ -1051,6 +1054,10 @@ export default function TaskCreatePage() {
                           mainTaskIds: [],
                           selectedStages: [],
                           selectedPlotIds: [],
+                          // A planned work item must not leak into an AD_HOC
+                          // task. AD_HOC resources are selected independently.
+                          tasks: checked ? [] : formData.tasks,
+                          materials: checked ? [] : formData.materials,
                         });
                         setSelections([]);
                         setPlanSearchTerm("");
@@ -1459,11 +1466,8 @@ export default function TaskCreatePage() {
                             planName: p?.name || "",
                             selectedStages: p?.selectedStages || [],
                             selectedPlotIds: [],
-                            materials:
-                              planMaterials.length > 0
-                                ? planMaterials
-                                : prev.materials,
-                            tasks: planTasks.length > 0 ? planTasks : prev.tasks,
+                            materials: planMaterials,
+                            tasks: planTasks,
                             assignedTo: planPersonnel
                               .filter((person: any) => person.role === "EXECUTOR")
                               .map((person: any) => person.fullName)
@@ -2117,16 +2121,16 @@ export default function TaskCreatePage() {
                       (t: any) => t.stageId === stageName,
                     )}
                     availableMaterials={
-                      formData.mode === "plan"
+                      usePlanResources
                         ? selectedPlanMaterialAllocations.filter(
                             (material) => material.stageId === stageName,
                           )
                         : apiSupplyMaterials
                     }
-                    availableMaterialsOnly={formData.mode === "plan"}
-                    availableTasksOnly={formData.mode === "plan"}
+                    availableMaterialsOnly={usePlanResources}
+                    availableTasksOnly={usePlanResources}
                     availableTaskCategories={
-                      formData.mode === "plan" ? [] : taskCategoriesQuery.items
+                      usePlanResources ? [] : taskCategoriesQuery.items
                     }
                   />
                 ))
@@ -2156,14 +2160,14 @@ export default function TaskCreatePage() {
                   }
                   availableTasks={selectedPlanTaskAllocations}
                   availableMaterials={
-                    formData.mode === "plan"
+                    usePlanResources
                       ? selectedPlanMaterialAllocations
                       : apiSupplyMaterials
                   }
-                  availableMaterialsOnly={formData.mode === "plan"}
-                  availableTasksOnly={formData.mode === "plan"}
+                  availableMaterialsOnly={usePlanResources}
+                  availableTasksOnly={usePlanResources}
                   availableTaskCategories={
-                    formData.mode === "plan" ? [] : taskCategoriesQuery.items
+                    usePlanResources ? [] : taskCategoriesQuery.items
                   }
                 />
               ) : (
@@ -2191,19 +2195,17 @@ export default function TaskCreatePage() {
                 onRemoveTask={handleRemoveTask}
                 onUpdateTask={handleUpdateTask}
                 availableTasks={
-                  formData.mode === "phat-sinh"
-                    ? undefined
-                    : selectedPlanTaskAllocations
+                  usePlanResources ? selectedPlanTaskAllocations : undefined
                 }
                 availableMaterials={
-                  formData.mode === "plan"
+                  usePlanResources
                     ? selectedPlanMaterialAllocations
                     : apiSupplyMaterials
                 }
-                availableMaterialsOnly={formData.mode === "plan"}
-                availableTasksOnly={formData.mode === "plan"}
+                availableMaterialsOnly={usePlanResources}
+                availableTasksOnly={usePlanResources}
                 availableTaskCategories={
-                  formData.mode === "plan" ? [] : taskCategoriesQuery.items
+                  usePlanResources ? [] : taskCategoriesQuery.items
                 }
                 regions={filteredRegionsForPhatSinh}
                 personnel={personnel}
