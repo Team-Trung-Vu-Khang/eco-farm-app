@@ -12,11 +12,11 @@ import { Plus } from "lucide-react";
 import { useState } from "react";
 import { useDialogBugWorkaround } from "../../shared/hooks/useDialogBugWorkaround";
 import { TaskCategoryFormDialog } from "./components/TaskCategoryFormDialog";
+import { taskCategoryColumns } from "./data/columns";
 import {
   taskCategoryDomainLabel,
   taskCategoryDomainOptions,
 } from "./data/constants";
-import { taskCategoryColumns } from "./data/columns";
 import { useTaskCategoryPage } from "./hooks/useTaskCategoryPage";
 import type { TaskCategoryDomain } from "./types/types";
 
@@ -38,15 +38,14 @@ export default function TaskCategoryPage() {
     isPending,
   } = useTaskCategoryPage();
 
-  const [activeDomain, setActiveDomain] =
-    useState<TaskCategoryDomain>("crop");
+  const [activeDomain, setActiveDomain] = useState<TaskCategoryDomain>("crop");
 
   useDialogBugWorkaround([formOpen, deleteOpen]);
 
   return (
     <PageWrapper
-      title="Quản lý công việc"
-      description="Quản lý các loại công việc trong hệ thống"
+      title="Danh mục công việc"
+      description="Thông tin công việc gọi ý từ hệ thống"
       actions={
         <Button
           onClick={() => handleAdd(activeDomain)}
