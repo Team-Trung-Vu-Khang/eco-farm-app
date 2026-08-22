@@ -18,9 +18,15 @@ export interface MaterialAllocation extends StoreMaterialAllocation {
   // FarmTaskRequest.supplyLines' shape so it can be submitted directly.
   supplyItemId?: number;
   unitBaseId?: number;
+  unitOptions?: Array<{ id: number; name: string }>;
+  availableQuantity?: number;
 }
 
 export interface TaskAllocation extends StoreTaskAllocation {
+  /** Work-item id from the selected plan, used by the farm task API. */
+  sourceWorkItemId?: number;
+  taskCategoryId?: number;
+  taskCategoryName?: string;
   geographicalSelections?: GeographicalSelection[];
   startDate?: string;
   endDate?: string;

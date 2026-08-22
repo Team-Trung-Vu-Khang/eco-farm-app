@@ -67,6 +67,7 @@ import {
   useFarmPersonnel,
   type FarmPersonnelResponse,
 } from "../../features/master-data";
+import { useTaskCategorySearch } from "../../features/task-category/hooks/useTaskCategory";
 import { useSelectedWorkspaceId } from "../../features/workspace";
 import usePersonnelStore from "../../stores/usePersonnelStore";
 import useRegionStore from "../../stores/useRegionStore";
@@ -203,6 +204,9 @@ export default function TaskCreatePage() {
   const [, setLocation] = useLocation();
   const search = useSearch();
   const createTaskMutation = useCreateFarmTask();
+  const taskCategoriesQuery = useTaskCategorySearch({
+    params: { domainCode: "CROP" },
+  });
   const localPersonnel = usePersonnelStore((state) => state.personnel);
   const workspaceId = useSelectedWorkspaceId();
   const numericWorkspaceId =
@@ -728,7 +732,10 @@ export default function TaskCreatePage() {
   };
 
   const handleComplete = () => {
-    const isPlannedMode = !isSimpleMode && formData.mode === "plan";
+    // The work type is the source of truth for the API origin. The simple /
+    // detailed toggle only controls how much allocation detail is shown; it
+    // must not turn a selected plan into an AD_HOC task.
+    const isPlannedMode = formData.mode === "plan";
     if (!isPlannedMode && !formData.regimenId) {
       toast({
         title: "Thiếu quy trình",
@@ -777,7 +784,10 @@ export default function TaskCreatePage() {
         ) ||
         selectedPlanTaskAllocations[index];
       const sourceWorkItemId = isPlannedMode
-        ? toFiniteNumber(planTask?.id)
+        ? toFiniteNumber(
+            (stageTask as TaskAllocation & { sourceWorkItemId?: number })
+              ?.sourceWorkItemId ?? planTask?.id,
+          )
         : null;
 
       // "Chọn nhân sự" per task block encodes assigned names into
@@ -817,21 +827,29 @@ export default function TaskCreatePage() {
             (material) => material.stageId === stageName,
           );
       const supplyLines = stageMaterials
+        .map((material) => {
+          const planMaterial = selectedPlanMaterialAllocations.find(
+            (candidate: any) =>
+              candidate.materialName === material.materialName &&
+              candidate.stageId === material.stageId,
+          );
+          const supplyItemId = material.supplyItemId ?? planMaterial?.supplyItemId;
+          const unitBaseId = material.unitBaseId ?? planMaterial?.unitBaseId;
+          return typeof supplyItemId === "number" && typeof unitBaseId === "number"
+            ? {
+                supplyItemId,
+                unitBaseId,
+                quantity: Number(material.quantity) || 0,
+              }
+            : null;
+        })
         .filter(
-          (
-            material,
-          ): material is typeof material & {
+          (line): line is {
             supplyItemId: number;
             unitBaseId: number;
-          } =>
-            typeof material.supplyItemId === "number" &&
-            typeof material.unitBaseId === "number",
-        )
-        .map((material) => ({
-          supplyItemId: material.supplyItemId,
-          unitBaseId: material.unitBaseId,
-          quantity: Number(material.quantity) || 0,
-        }));
+            quantity: number;
+          } => line !== null,
+        );
 
       const repeatSource =
         stageTask?.isRepeating && (stageTask.repeatDates?.length || 0) > 0
@@ -849,7 +867,8 @@ export default function TaskCreatePage() {
 
       return {
         origin,
-        planId: isPlannedMode ? toFiniteNumber(formData.planId) : null,
+        // A reference plan can also be attached to an AD_HOC task.
+        planId: toFiniteNumber(formData.planId),
         workflowId: isPlannedMode
           ? undefined
           : toFiniteNumber(formData.regimenId),
@@ -857,7 +876,11 @@ export default function TaskCreatePage() {
         scopeId,
         sourceWorkItemId,
         taskCategoryId:
-          origin === "PLANNED" ? null : (planTask?.taskCategoryId ?? null),
+          origin === "PLANNED"
+            ? null
+            : ((stageTask as TaskAllocation).taskCategoryId ??
+                planTask?.taskCategoryId ??
+                null),
         name:
           isSimpleMode || !stageName
             ? formData.name
@@ -1391,13 +1414,51 @@ export default function TaskCreatePage() {
                           const p = planOptions.find(
                             (p) => String(p.id) === val,
                           );
-                          setFormData({
-                            ...formData,
+                          const plan = p as any;
+                          const planMaterials = (plan?.materialAllocations || []).map(
+                            (material: any) => ({
+                              ...material,
+                              id: Date.now() + Math.random(),
+                              stageId: "Công việc phát sinh",
+                            }),
+                          );
+                          const planTasks = (plan?.taskAllocations || []).map(
+                            (task: any) => ({
+                              ...task,
+                              id: Date.now() + Math.random(),
+                              stageId: "Công việc phát sinh",
+                            }),
+                          );
+                          const planPersonnel = plan?.personnel || [];
+                          setFormData((prev) => ({
+                            ...prev,
                             planId: val,
                             planName: p?.name || "",
                             selectedStages: p?.selectedStages || [],
                             selectedPlotIds: [],
-                          });
+                            materials:
+                              planMaterials.length > 0
+                                ? planMaterials
+                                : prev.materials,
+                            tasks: planTasks.length > 0 ? planTasks : prev.tasks,
+                            assignedTo: planPersonnel
+                              .filter((person: any) => person.role === "EXECUTOR")
+                              .map((person: any) => person.fullName)
+                              .filter(Boolean),
+                            supervisors: planPersonnel
+                              .filter((person: any) => person.role === "MANAGER")
+                              .map((person: any) => person.fullName)
+                              .filter(Boolean),
+                            qualityInspectors: planPersonnel
+                              .filter(
+                                (person: any) =>
+                                  person.role === "QUALITY_INSPECTOR",
+                              )
+                              .map((person: any) => person.fullName)
+                              .filter(Boolean),
+                            startDate: plan.startDate || prev.startDate,
+                            endDate: plan.endDate || prev.endDate,
+                          }));
                           setSelections(p?.scopes || []);
                           setPlanSearchTerm("");
                         }}
@@ -2035,6 +2096,7 @@ export default function TaskCreatePage() {
                     availableMaterials={selectedPlanMaterialAllocations.filter(
                       (m: any) => m.stageId === stageName,
                     )}
+                    availableTaskCategories={taskCategoriesQuery.items}
                   />
                 ))
               ) : formData.objectiveType === "thu-hoach" ? (
@@ -2063,6 +2125,7 @@ export default function TaskCreatePage() {
                   }
                   availableTasks={selectedPlanTaskAllocations}
                   availableMaterials={selectedPlanMaterialAllocations}
+                  availableTaskCategories={taskCategoriesQuery.items}
                 />
               ) : (
                 <div className="p-10 text-center border-2 border-dashed border-slate-200 rounded-3xl bg-slate-50">
@@ -2088,6 +2151,9 @@ export default function TaskCreatePage() {
                 onAddTask={handleAddTask}
                 onRemoveTask={handleRemoveTask}
                 onUpdateTask={handleUpdateTask}
+                availableTasks={selectedPlanTaskAllocations}
+                availableMaterials={selectedPlanMaterialAllocations}
+                availableTaskCategories={taskCategoriesQuery.items}
                 regions={filteredRegionsForPhatSinh}
                 personnel={personnel}
                 masterSelections={selections}

@@ -60,12 +60,14 @@ import {
   useFarmPersonnel,
   type FarmPersonnelResponse,
 } from "@/features/master-data";
+import { useTaskCategorySearch } from "@/features/task-category/hooks/useTaskCategory";
 import { useSelectedWorkspaceId } from "@/features/workspace";
 import {
   useFarmPlanById,
   useFarmPlans,
   useFarmWorkflows,
 } from "@/features/farm-workflow/hooks";
+import { useCropSupplyCatalog } from "../plan-growth/hooks/useCropSupplyCatalog";
 import useAmendmentPlanStore from "../../stores/useAmendmentPlanStore";
 import usePersonnelStore from "../../stores/usePersonnelStore";
 import usePlanStore, { type Plan } from "../../stores/usePlanStore";
@@ -244,6 +246,38 @@ export default function TaskEditPage() {
       });
     },
   });
+  const taskCategoriesQuery = useTaskCategorySearch({
+    params: { domainCode: "CROP" },
+  });
+  const supplyCatalog = useCropSupplyCatalog();
+  const apiSupplyMaterials = useMemo<MaterialAllocation[]>(
+    () => {
+      return Object.values(supplyCatalog.optionsByType).flatMap((options) =>
+        options.map(({ item }) => ({
+          ...(() => {
+            const firstPackaging = item.packagingVariants?.[0];
+            return {
+              unit: firstPackaging?.unitBase?.name || "",
+              unitBaseId: firstPackaging?.unitBase?.id,
+            };
+          })(),
+          id: item.id,
+          stageId: "Công việc phát sinh",
+          materialCategory: item.supplyType,
+          materialType: item.supplyType,
+          materialName: item.name,
+          quantity: String((item as any).quantity ?? 0),
+          availableQuantity: Number((item as any).quantity ?? 0),
+          supplyItemId: item.id,
+          unitOptions: (item.packagingVariants || []).map((variant) => ({
+            id: variant.unitBase.id,
+            name: variant.unitBase.name,
+          })),
+        })),
+      );
+    },
+    [supplyCatalog.optionsByType],
+  );
   const plans = usePlanStore((state) => state.plans);
   const amendmentPlans = useAmendmentPlanStore((state) => state.plans);
   const workflowsQuery = useFarmWorkflows({
@@ -321,6 +355,17 @@ export default function TaskEditPage() {
     },
     enabled: !!formData.regimenId,
   });
+
+  const planScopes = useMemo(() => {
+    const selectedPlanResponse = workflowPlansQuery.items.find(
+      (plan) => String(plan.id) === String(formData.planId),
+    );
+    return planDetailQuery.data?.scopes || selectedPlanResponse?.scopes || [];
+  }, [
+    formData.planId,
+    planDetailQuery.data?.scopes,
+    workflowPlansQuery.items,
+  ]);
 
   const [newMaterial, setNewMaterial] = useState({
     type: "fertilizer" as "fertilizer" | "pesticide" | "tool" | "other",
@@ -435,6 +480,16 @@ export default function TaskEditPage() {
                 ...buildTaskDraftFromTask(
                   apiTask ?? farmTaskToLegacyTask(taskResponse),
                 ),
+                // AD_HOC tasks do not have a workflow stage. The resources
+                // screen renders them under this dedicated stage instead of
+                // the scope label returned by the API.
+                stageId: isPlannedTask
+                  ? buildTaskDraftFromTask(
+                      apiTask ?? farmTaskToLegacyTask(taskResponse),
+                    ).stageId
+                  : "Công việc phát sinh",
+                taskCategoryId: taskResponse.taskCategory?.id,
+                taskCategoryName: taskResponse.taskCategory?.name,
                 geographicalSelections: taskSelections,
                 isRepeating,
                 repeatDates,
@@ -483,7 +538,13 @@ export default function TaskEditPage() {
       materials: hydratedMaterials,
       tasks: seededTask,
     });
-  }, [taskResponse, localTask, planDetailQuery.data, plans, amendmentPlans]);
+  }, [
+    taskResponse,
+    localTask,
+    planDetailQuery.data,
+    plans,
+    amendmentPlans,
+  ]);
 
   const activePlans = useMemo(() => {
     const basePlans = plans.filter((p) => {
@@ -555,7 +616,7 @@ export default function TaskEditPage() {
   const { regions, getRegionById } = useRegionStore();
 
   const planScopedRegions = useMemo(() => {
-    const apiScopes = planDetailQuery.data?.scopes || [];
+    const apiScopes = planScopes;
     if (apiScopes.length > 0) {
       const groupedRegions = new Map<string, any>();
 
@@ -666,7 +727,7 @@ export default function TaskEditPage() {
         return subAreas.length > 0 ? { ...region, subAreas } : null;
       })
       .filter(Boolean) as any[];
-  }, [planDetailQuery.data, regions, selectedPlan, selectedEnterpriseId]);
+  }, [planScopes, regions, selectedPlan, selectedEnterpriseId]);
 
   const filteredRegionsForPhatSinh = useMemo(() => {
     if (formData.objectiveType !== "phat-sinh" || selections.length === 0) {
@@ -915,6 +976,20 @@ export default function TaskEditPage() {
   const handleComplete = async () => {
     if (!task || !taskResponse) return;
 
+    const taskExecutorNames = formData.tasks.flatMap((item) => {
+      const labor = item.labor || "";
+      return labor.includes(":")
+        ? labor
+            .split(":")[1]
+            .split(",")
+            .map((name) => name.trim())
+            .filter(Boolean)
+        : [];
+    });
+    const executorNames = Array.from(
+      new Set([...formData.assignedTo, ...taskExecutorNames]),
+    );
+
     const personnelRequests = [
       ...formData.supervisors
         .map((name) => personnel.find((item) => item.fullName === name)?.id)
@@ -930,7 +1005,7 @@ export default function TaskEditPage() {
           personnelId,
           role: "QUALITY_INSPECTOR" as const,
         })),
-      ...formData.assignedTo
+      ...executorNames
         .map((name) => personnel.find((item) => item.fullName === name)?.id)
         .filter((id): id is number => typeof id === "number")
         .map((personnelId) => ({
@@ -982,15 +1057,20 @@ export default function TaskEditPage() {
       origin: isPlanned ? "PLANNED" : "AD_HOC",
       ...(isPlanned
         ? {
-            planId: toFiniteNumber(formData.planId),
             sourceWorkItemId: toFiniteNumber(
               formData.mainTaskId || formData.mainTaskIds[0],
             ),
           }
         : {
             workflowId: toFiniteNumber(formData.regimenId),
-            taskCategoryId: taskResponse.taskCategory?.id ?? null,
+            taskCategoryId:
+              (formData.tasks[0] as TaskAllocation)?.taskCategoryId ??
+              taskResponse.taskCategory?.id ??
+              (selectedPlan?.taskAllocations[0] as any)?.taskCategoryId ??
+              null,
           }),
+      // `planId` is also used for an AD_HOC task's reference plan.
+      planId: toFiniteNumber(formData.planId),
       scopeType: selectedScope.scopeType,
       scopeId: selectedScope.scopeId,
       name: formData.name,
@@ -1001,19 +1081,47 @@ export default function TaskEditPage() {
       endDate: formData.endDate,
       recurrence,
       supplyLines: formData.materials
+        .map((material) => {
+          const planMaterials = selectedPlan?.materialAllocations || [];
+          const planMaterial =
+            planMaterials.find(
+              (candidate) =>
+                candidate.materialName === material.materialName &&
+                candidate.stageId === material.stageId,
+            ) ||
+            planMaterials.find(
+              (candidate) => candidate.materialName === material.materialName,
+            );
+          const catalogMaterial = apiSupplyMaterials.find(
+            (candidate) =>
+              candidate.materialName === material.materialName ||
+              candidate.supplyItemId === material.supplyItemId,
+          );
+          const supplyItemId = toFiniteNumber(
+            material.supplyItemId ??
+              planMaterial?.supplyItemId ??
+              catalogMaterial?.supplyItemId,
+          );
+          const unitBaseId = toFiniteNumber(
+            material.unitBaseId ??
+              planMaterial?.unitBaseId ??
+              catalogMaterial?.unitBaseId,
+          );
+          return supplyItemId !== null && unitBaseId !== null
+            ? {
+                supplyItemId,
+                unitBaseId,
+                quantity: Number(material.quantity) || 0,
+              }
+            : null;
+        })
         .filter(
-          (material): material is typeof material & {
+          (line): line is {
             supplyItemId: number;
             unitBaseId: number;
-          } =>
-            typeof material.supplyItemId === "number" &&
-            typeof material.unitBaseId === "number",
-        )
-        .map((material) => ({
-          supplyItemId: material.supplyItemId,
-          unitBaseId: material.unitBaseId,
-          quantity: Number(material.quantity) || 0,
-        })),
+            quantity: number;
+          } => line !== null,
+        ),
       status: taskResponse.status,
     };
 
@@ -1214,7 +1322,7 @@ export default function TaskEditPage() {
                                 />
                               </div>
                             </div>
-                            <div className="max-h-64 overflow-y-auto p-1">
+                            <>
                               {filteredPlans.map((p) => (
                                 <SelectItem key={p.id} value={String(p.id)}>
                                   {p.name} ({p.code})
@@ -1225,7 +1333,7 @@ export default function TaskEditPage() {
                                   Không tìm thấy kế hoạch phù hợp
                                 </div>
                               )}
-                            </div>
+                            </>
                           </SelectContent>
                         </Select>
                         {formData.planId && (
@@ -1402,12 +1510,50 @@ export default function TaskEditPage() {
                           const p = planOptionsForSelect.find(
                             (p) => String(p.id) === val,
                           );
-                          setFormData({
-                            ...formData,
+                          const plan = p as any;
+                          const planMaterials = (plan?.materialAllocations || []).map(
+                            (material: any) => ({
+                              ...material,
+                              id: Date.now() + Math.random(),
+                              stageId: "Công việc phát sinh",
+                            }),
+                          );
+                          const planTasks = (plan?.taskAllocations || []).map(
+                            (task: any) => ({
+                              ...task,
+                              id: Date.now() + Math.random(),
+                              stageId: "Công việc phát sinh",
+                            }),
+                          );
+                          const planPersonnel = plan?.personnel || [];
+                          setFormData((prev) => ({
+                            ...prev,
                             planId: val,
                             planName: p?.name || "",
                             selectedPlotIds: [],
-                          });
+                            materials:
+                              planMaterials.length > 0
+                                ? planMaterials
+                                : prev.materials,
+                            tasks: planTasks.length > 0 ? planTasks : prev.tasks,
+                            assignedTo: planPersonnel
+                              .filter((person: any) => person.role === "EXECUTOR")
+                              .map((person: any) => person.fullName)
+                              .filter(Boolean),
+                            supervisors: planPersonnel
+                              .filter((person: any) => person.role === "MANAGER")
+                              .map((person: any) => person.fullName)
+                              .filter(Boolean),
+                            qualityInspectors: planPersonnel
+                              .filter(
+                                (person: any) =>
+                                  person.role === "QUALITY_INSPECTOR",
+                              )
+                              .map((person: any) => person.fullName)
+                              .filter(Boolean),
+                            startDate: plan.startDate || prev.startDate,
+                            endDate: plan.endDate || prev.endDate,
+                          }));
                           setSelections([]);
                           setPlanSearchTerm("");
                         }}
@@ -1436,7 +1582,7 @@ export default function TaskEditPage() {
                               />
                             </div>
                           </div>
-                          <div className="max-h-64 overflow-y-auto p-1">
+                          <>
                             {planOptionsForSelect.map((p) => (
                               <SelectItem key={p.id} value={String(p.id)}>
                                 {p.name} ({p.code})
@@ -1447,7 +1593,7 @@ export default function TaskEditPage() {
                                 Không tìm thấy kế hoạch phù hợp
                               </div>
                             )}
-                          </div>
+                          </>
                         </SelectContent>
                       </Select>
 
@@ -2013,7 +2159,7 @@ export default function TaskEditPage() {
                     onAddTask={handleAddTask}
                     onRemoveTask={handleRemoveTask}
                     onUpdateTask={handleUpdateTask}
-                    showTaskPicker={false}
+                    showTaskPicker
                     regions={regions}
                     personnel={personnel}
                     masterSelections={selections}
@@ -2025,9 +2171,8 @@ export default function TaskEditPage() {
                     availableTasks={selectedPlan?.taskAllocations?.filter(
                       (t: any) => t.stageId === stageName,
                     )}
-                    availableMaterials={selectedPlan?.materialAllocations?.filter(
-                      (m: any) => m.stageId === stageName,
-                    )}
+                    availableMaterials={apiSupplyMaterials}
+                    availableTaskCategories={taskCategoriesQuery.items}
                   />
                 ))
               ) : formData.objectiveType === "thu-hoach" ? (
@@ -2046,7 +2191,7 @@ export default function TaskEditPage() {
                   onAddTask={handleAddTask}
                   onRemoveTask={handleRemoveTask}
                   onUpdateTask={handleUpdateTask}
-                  showTaskPicker={false}
+                  showTaskPicker
                   regions={regions}
                   personnel={personnel}
                   masterSelections={selections}
@@ -2056,7 +2201,8 @@ export default function TaskEditPage() {
                     ""
                   }
                   availableTasks={selectedPlan?.taskAllocations}
-                  availableMaterials={selectedPlan?.materialAllocations}
+                  availableMaterials={apiSupplyMaterials}
+                  availableTaskCategories={taskCategoriesQuery.items}
                 />
               ) : (
                 <div className="p-10 text-center border-2 border-dashed border-slate-200 rounded-3xl bg-slate-50">
@@ -2082,10 +2228,18 @@ export default function TaskEditPage() {
                 onAddTask={handleAddTask}
                 onRemoveTask={handleRemoveTask}
                 onUpdateTask={handleUpdateTask}
+                showTaskPicker
                 regions={filteredRegionsForPhatSinh}
                 personnel={personnel}
                 masterSelections={selections}
                 enterpriseId={selectedEnterpriseId}
+                availableTasks={
+                  formData.mode === "phat-sinh"
+                    ? undefined
+                    : selectedPlan?.taskAllocations
+                }
+                availableMaterials={apiSupplyMaterials}
+                availableTaskCategories={taskCategoriesQuery.items}
               />
             ) : null}
           </div>

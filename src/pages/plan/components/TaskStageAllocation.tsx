@@ -57,6 +57,7 @@ export const TaskStageAllocation = memo(
     onUpdateTask,
     masterSelections = [],
     availableTasks,
+    availableTaskCategories = [],
     availableMaterials,
     showTaskPicker = true,
     personnel = [],
@@ -77,6 +78,11 @@ export const TaskStageAllocation = memo(
     masterSelections?: GeographicalSelection[];
     enterpriseId?: string;
     availableTasks?: TaskAllocation[];
+    availableTaskCategories?: Array<{
+      id: number;
+      name: string;
+      code?: string;
+    }>;
     availableMaterials?: MaterialAllocation[];
     showTaskPicker?: boolean;
   }) => {
@@ -144,6 +150,7 @@ export const TaskStageAllocation = memo(
                   personnel={personnel}
                   stageName={stageName}
                   availableTasks={availableTasks}
+                  availableTaskCategories={availableTaskCategories}
                   availableMaterials={availableMaterials}
                   showTaskPicker={showTaskPicker}
                   onUpdateMaterial={onUpdateMaterial}
@@ -167,6 +174,7 @@ const TaskBlock = ({
   personnel,
   stageName,
   availableTasks,
+  availableTaskCategories = [],
   availableMaterials,
   showTaskPicker = true,
   onUpdateMaterial,
@@ -208,6 +216,15 @@ const TaskBlock = ({
   } | null>(null);
 
   const [materialSearch, setMaterialSearch] = useState("");
+  const [materialCategoryFilter, setMaterialCategoryFilter] = useState("all");
+
+  const materialCategoryLabels: Record<string, string> = {
+    all: "Tất cả loại",
+    medicine: "Thuốc BVTV",
+    fertilizer: "Phân bón",
+    material: "Vật tư khác",
+    equipment: "Thiết bị",
+  };
 
   const groupedMaterials =
     (availableMaterials || []).length > 0
@@ -223,6 +240,8 @@ const TaskBlock = ({
               category: m.materialCategory,
               supplyItemId: m.supplyItemId,
               unitBaseId: m.unitBaseId,
+              unitOptions: m.unitOptions,
+              availableQuantity: m.availableQuantity,
             });
           }
           return acc;
@@ -236,8 +255,12 @@ const TaskBlock = ({
           return acc;
         }, {});
 
-  const filteredGroupedMaterials = Object.entries(groupedMaterials).reduce(
-    (acc: any, [cat, items]: [string, any]) => {
+  const filteredGroupedMaterials = Object.entries(groupedMaterials)
+    .filter(
+      ([category]) =>
+        materialCategoryFilter === "all" || category === materialCategoryFilter,
+    )
+    .reduce((acc: any, [cat, items]: [string, any]) => {
       const filteredItems = items.filter((item: any) =>
         item.name.toLowerCase().includes(materialSearch.toLowerCase()),
       );
@@ -245,9 +268,7 @@ const TaskBlock = ({
         acc[cat] = filteredItems;
       }
       return acc;
-    },
-    {},
-  );
+    }, {});
 
   const syncDates = (newStart: string, newEnd: string) => {
     if (!newStart || !newEnd) {
@@ -353,20 +374,34 @@ const TaskBlock = ({
             {showTaskPicker ? (
               <Combobox
                 options={
-                  availableTasks
+                  availableTasks && availableTasks.length > 0
                     ? availableTasks.map((t: any) => ({
                         value: t.name,
                         label: t.name,
                       }))
-                    : (TASK_OPTIONS as any[])
+                    : availableTaskCategories.length > 0
+                      ? availableTaskCategories.map((category: any) => ({
+                          value: category.name,
+                          label: category.code
+                            ? `${category.code} - ${category.name}`
+                            : category.name,
+                        }))
+                      : (TASK_OPTIONS as any[])
                 }
-                value={task.name}
+                value={task.taskCategoryName || task.name}
                 onChange={(val) => {
                   const selectedTask = availableTasks?.find(
                     (t: any) => t.name === val,
                   );
+                  const selectedCategory = availableTaskCategories.find(
+                    (category: any) => category.name === val,
+                  );
                   onUpdateTask?.(task.id, {
                     name: val,
+                    taskCategoryName: selectedCategory?.name || val,
+                    sourceWorkItemId: selectedTask?.id,
+                    taskCategoryId:
+                      selectedTask?.taskCategoryId ?? selectedCategory?.id,
                     liter: selectedTask?.liter,
                     labor: selectedTask?.labor || "",
                     geographicalSelections:
@@ -577,7 +612,7 @@ const TaskBlock = ({
 
         {/* Right Side: Material Info */}
         <div className="p-0 flex flex-col bg-slate-50/50">
-          <div className="p-4 border-b border-slate-200 mt-1">
+          <div className="p-4 border-b border-slate-200 mt-1 space-y-2">
             <div className="relative pr-5">
               <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 z-10" />
               <Input
@@ -587,6 +622,24 @@ const TaskBlock = ({
                 onChange={(e) => setMaterialSearch(e.target.value)}
               />
             </div>
+            <Select
+              value={materialCategoryFilter}
+              onValueChange={setMaterialCategoryFilter}
+            >
+              <SelectTrigger className="h-9 bg-white text-sm">
+                <SelectValue placeholder="Lọc theo loại vật tư" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">
+                  {materialCategoryLabels.all}
+                </SelectItem>
+                {Object.keys(groupedMaterials).map((category) => (
+                  <SelectItem key={category} value={category}>
+                    {materialCategoryLabels[category] || category}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           <div className="border-b border-slate-200 bg-white/80 px-5 py-4">
@@ -687,6 +740,8 @@ const TaskBlock = ({
                                       unit: item.unit,
                                       supplyItemId: item.supplyItemId,
                                       unitBaseId: item.unitBaseId,
+                                      unitOptions: item.unitOptions,
+                                      availableQuantity: item.availableQuantity,
                                     });
                                   } else if (allocation) {
                                     onRemoveMaterial(allocation.id);
@@ -698,20 +753,74 @@ const TaskBlock = ({
                                 <p className="text-sm font-bold text-slate-700 truncate">
                                   {item.name}
                                 </p>
-                                {item.maxQty && (
+                                {isSelected && (
+                                  <p className="text-[10px] text-amber-600">
+                                    Còn lại:{" "}
+                                    {Math.max(
+                                      (item.availableQuantity ?? 0) -
+                                        (Number(allocation.quantity) || 0),
+                                      0,
+                                    )}{" "}
+                                    {item.unit}
+                                  </p>
+                                )}
+                                {!isSelected && item.maxQty && (
                                   <p className="text-[10px] text-slate-400">
                                     Định mức: {item.maxQty} {item.unit}
                                   </p>
                                 )}
+                                {isSelected &&
+                                  (item.unitOptions?.length ?? 0) === 0 && (
+                                    <p className="text-[10px] font-medium text-red-500">
+                                      Chưa setup đơn vị
+                                    </p>
+                                  )}
                               </div>
 
-                              <div className="flex items-center gap-2 w-32 shrink-0">
+                              <div className="flex items-center gap-2 w-40 shrink-0">
+                                {isSelected && item.unitOptions?.length > 0 && (
+                                  <Select
+                                    value={String(
+                                      allocation.unitBaseId ??
+                                        item.unitOptions[0].id,
+                                    )}
+                                    onValueChange={(value) => {
+                                      const selectedUnit =
+                                        item.unitOptions.find(
+                                          (unitOption: any) =>
+                                            String(unitOption.id) === value,
+                                        );
+                                      if (selectedUnit && onUpdateMaterial) {
+                                        onUpdateMaterial(allocation.id, {
+                                          unit: selectedUnit.name,
+                                          unitBaseId: selectedUnit.id,
+                                        });
+                                      }
+                                    }}
+                                  >
+                                    <SelectTrigger className="h-8 min-w-20 bg-white text-[10px]">
+                                      <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      {item.unitOptions.map(
+                                        (unitOption: any) => (
+                                          <SelectItem
+                                            key={unitOption.id}
+                                            value={String(unitOption.id)}
+                                          >
+                                            {unitOption.name}
+                                          </SelectItem>
+                                        ),
+                                      )}
+                                    </SelectContent>
+                                  </Select>
+                                )}
                                 <Input
                                   type="number"
                                   placeholder="SL"
                                   min={0}
                                   className={cn(
-                                    "h-8 text-right font-bold bg-white",
+                                    "h-8 w-20 min-w-0 text-right font-bold bg-white",
                                     "text-emerald-600 border-slate-200",
                                   )}
                                   value={isSelected ? allocation.quantity : ""}
@@ -726,9 +835,6 @@ const TaskBlock = ({
                                     }
                                   }}
                                 />
-                                <span className="text-[10px] font-bold text-slate-400 w-8">
-                                  {item.unit}
-                                </span>
                               </div>
                             </div>
                           );
