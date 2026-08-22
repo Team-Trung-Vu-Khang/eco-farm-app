@@ -1,8 +1,9 @@
 import { Badge, type Column } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import type { TaskCategory } from "../types/types";
+import type { TaskCategoryRecord } from "@/features/task-category";
+import dayjs from "dayjs";
 import { Hash } from "lucide-react";
 
-export const taskCategoryColumns: Column<TaskCategory>[] = [
+export const taskCategoryColumns: Column<TaskCategoryRecord>[] = [
   {
     key: "code",
     label: "Mã",
@@ -16,15 +17,26 @@ export const taskCategoryColumns: Column<TaskCategory>[] = [
     },
   },
   { key: "name", label: "Tên công việc" },
-  { key: "description", label: "Mô tả" },
+  { key: "example", label: "Ví dụ" },
   {
     key: "status",
     label: "Trạng thái",
     render: (value) => (
       <Badge variant={value === "active" ? "default" : "secondary"}>
-        {value === "active" ? "Hoạt động" : "Không hoạt động"}
+        {value === "active"
+          ? "Hoạt động"
+          : value === "archived"
+            ? "Đã lưu trữ"
+            : "Không hoạt động"}
       </Badge>
     ),
   },
-  { key: "createdAt", label: "Ngày tạo" },
+  {
+    key: "createdAt",
+    label: "Ngày tạo",
+    render: (value) =>
+      value && dayjs(String(value)).isValid()
+        ? dayjs(String(value)).format("DD/MM/YYYY HH:mm")
+        : "---",
+  },
 ];

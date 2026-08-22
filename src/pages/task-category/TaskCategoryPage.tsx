@@ -9,7 +9,6 @@ import {
   TabsTrigger,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { Plus } from "lucide-react";
-import { useState } from "react";
 import { useDialogBugWorkaround } from "../../shared/hooks/useDialogBugWorkaround";
 import { TaskCategoryFormDialog } from "./components/TaskCategoryFormDialog";
 import { taskCategoryColumns } from "./data/columns";
@@ -36,9 +35,18 @@ export default function TaskCategoryPage() {
     handleConfirmDelete,
     loading,
     isPending,
+    response,
+    stages,
+    activeDomain,
+    setActiveDomain,
+    handleSearch,
+    handleFilterChange,
+    pageSize,
+    setPageSize,
+    currentIndex,
+    setCurrentIndex,
+    error,
   } = useTaskCategoryPage();
-
-  const [activeDomain, setActiveDomain] = useState<TaskCategoryDomain>("crop");
 
   useDialogBugWorkaround([formOpen, deleteOpen]);
 
@@ -75,18 +83,47 @@ export default function TaskCategoryPage() {
             value={option.value}
             className="space-y-3"
           >
-            <DataTable
-              loading={loading}
-              columns={taskCategoryColumns}
-              data={taskCategories.filter(
-                (category) => category.domain === option.value,
-              )}
-              onEdit={handleEdit}
-              onDelete={handleDelete}
-              searchPlaceholder={`Tìm kiếm công việc ${taskCategoryDomainLabel[
-                option.value
-              ].toLowerCase()}...`}
-            />
+            {error ? (
+              <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+                {error}
+              </div>
+            ) : (
+              <DataTable
+                loading={loading}
+                columns={taskCategoryColumns}
+                data={taskCategories}
+                searchable
+                searchPlaceholder={`Tìm kiếm công việc ${taskCategoryDomainLabel[option.value].toLowerCase()}...`}
+                onSearch={handleSearch}
+                onFilterChange={handleFilterChange}
+                filters={[
+                  {
+                    key: "stage",
+                    label: "Giai đoạn",
+                    options: [
+                      ...stages.map((item) => ({ value: item, label: item })),
+                    ],
+                  },
+                  {
+                    key: "status",
+                    label: "Trạng thái",
+                    options: [
+                      { value: "active", label: "Hoạt động" },
+                      { value: "inactive", label: "Không hoạt động" },
+                      { value: "archived", label: "Đã lưu trữ" },
+                    ],
+                  },
+                ]}
+                pageSize={pageSize}
+                currentIndex={currentIndex}
+                totalElements={response?.totalElements}
+                totalPages={response?.totalPages}
+                onPageSize={setPageSize}
+                onIndexChange={setCurrentIndex}
+                onEdit={handleEdit}
+                onDelete={handleDelete}
+              />
+            )}
           </TabsContent>
         ))}
       </Tabs>
