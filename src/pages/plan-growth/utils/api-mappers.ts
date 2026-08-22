@@ -277,6 +277,7 @@ export function mapPlanResponseToPlan(plan: FarmPlanResponse): Plan {
       id: item.id,
       stageId: stage.name,
       name: item.name,
+      taskCategoryName: item.taskCategory?.name,
       description: item.description || "",
       labor: item.headcount ? `${item.headcount} người` : "",
       duration:

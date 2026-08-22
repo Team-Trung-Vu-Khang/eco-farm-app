@@ -83,6 +83,7 @@ import type {
   TaskAllocation,
 } from "../plan/types";
 import { getRepeatDatesText } from "../plan/utils/task";
+import { useCropSupplyCatalog } from "../plan-growth/hooks/useCropSupplyCatalog";
 import SimpleTaskForm from "./components/SimpleTaskForm";
 
 type TaskObjectiveType =
@@ -207,6 +208,32 @@ export default function TaskCreatePage() {
   const taskCategoriesQuery = useTaskCategorySearch({
     params: { domainCode: "CROP" },
   });
+  const supplyCatalog = useCropSupplyCatalog();
+  const apiSupplyMaterials = useMemo<MaterialAllocation[]>(
+    () =>
+      Object.values(supplyCatalog.optionsByType).flatMap((options) =>
+        options.map(({ item }) => {
+          const firstPackaging = item.packagingVariants?.[0];
+          return {
+            id: item.id,
+            stageId: "Công việc phát sinh",
+            materialCategory: item.supplyType,
+            materialType: item.supplyType,
+            materialName: item.name,
+            quantity: String((item as any).quantity ?? 0),
+            availableQuantity: Number((item as any).quantity ?? 0),
+            unit: firstPackaging?.unitBase?.name || "",
+            supplyItemId: item.id,
+            unitBaseId: firstPackaging?.unitBase?.id,
+            unitOptions: (item.packagingVariants || []).map((variant) => ({
+              id: variant.unitBase.id,
+              name: variant.unitBase.name,
+            })),
+          };
+        }),
+      ),
+    [supplyCatalog.optionsByType],
+  );
   const localPersonnel = usePersonnelStore((state) => state.personnel);
   const workspaceId = useSelectedWorkspaceId();
   const numericWorkspaceId =
@@ -2093,9 +2120,7 @@ export default function TaskCreatePage() {
                     availableTasks={selectedPlanTaskAllocations.filter(
                       (t: any) => t.stageId === stageName,
                     )}
-                    availableMaterials={selectedPlanMaterialAllocations.filter(
-                      (m: any) => m.stageId === stageName,
-                    )}
+                    availableMaterials={apiSupplyMaterials}
                     availableTaskCategories={taskCategoriesQuery.items}
                   />
                 ))
@@ -2124,7 +2149,7 @@ export default function TaskCreatePage() {
                     ""
                   }
                   availableTasks={selectedPlanTaskAllocations}
-                  availableMaterials={selectedPlanMaterialAllocations}
+                  availableMaterials={apiSupplyMaterials}
                   availableTaskCategories={taskCategoriesQuery.items}
                 />
               ) : (
@@ -2151,8 +2176,12 @@ export default function TaskCreatePage() {
                 onAddTask={handleAddTask}
                 onRemoveTask={handleRemoveTask}
                 onUpdateTask={handleUpdateTask}
-                availableTasks={selectedPlanTaskAllocations}
-                availableMaterials={selectedPlanMaterialAllocations}
+                availableTasks={
+                  formData.mode === "phat-sinh"
+                    ? undefined
+                    : selectedPlanTaskAllocations
+                }
+                availableMaterials={apiSupplyMaterials}
                 availableTaskCategories={taskCategoriesQuery.items}
                 regions={filteredRegionsForPhatSinh}
                 personnel={personnel}

@@ -444,6 +444,15 @@ export default function TaskEditPage() {
             ]
         : [];
 
+    const plannedWorkItem = isPlannedTask
+      ? planMatch?.taskAllocations?.find(
+          (item) => String(item.id) === String(mainTaskIds[0]),
+        ) ||
+        planMatch?.taskAllocations?.find(
+          (item) => item.stageId === selectedStages[0],
+        )
+      : undefined;
+
     const hydratedMaterials = pickArray(localTask?.materials, apiTask?.materials).map(
       (material) => ({
         ...material,
@@ -454,7 +463,11 @@ export default function TaskEditPage() {
     ) as MaterialAllocation[];
     const hydratedTasks = pickArray(localTask?.tasks, apiTask?.tasks).map((item) => ({
       ...item,
-      name: item.name || apiTask?.name || "",
+      name: item.name || plannedWorkItem?.name || apiTask?.name || "",
+      taskCategoryId:
+        item.taskCategoryId ?? plannedWorkItem?.taskCategoryId,
+      taskCategoryName:
+        item.taskCategoryName ?? plannedWorkItem?.taskCategoryName,
       stageId:
         isPlannedTask
           ? item.stageId?.normalize?.() || apiTask?.stage || item.stageId || ""
@@ -488,8 +501,13 @@ export default function TaskEditPage() {
                       apiTask ?? farmTaskToLegacyTask(taskResponse),
                     ).stageId
                   : "Công việc phát sinh",
-                taskCategoryId: taskResponse.taskCategory?.id,
-                taskCategoryName: taskResponse.taskCategory?.name,
+                name: plannedWorkItem?.name || apiTask?.name || localTask?.name || "",
+                taskCategoryId:
+                  plannedWorkItem?.taskCategoryId ??
+                  taskResponse.taskCategory?.id,
+                taskCategoryName:
+                  plannedWorkItem?.taskCategoryName ??
+                  taskResponse.taskCategory?.name,
                 geographicalSelections: taskSelections,
                 isRepeating,
                 repeatDates,
