@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { useSelectedWorkspaceId } from "@/features/workspace";
 import { farmTaskApi } from "../api/farm-task.api";
 import type {
@@ -47,6 +47,10 @@ export function useFarmTasks({
       workspaceId !== undefined &&
       workspaceId !== "",
     staleTime: 5 * 60 * 1000,
+    // Keep the current table visible while a new keyword/filter request is
+    // loading. Without this, `items` briefly becomes [] and TaskPage replaces
+    // the whole screen with the initial loading state.
+    placeholderData: keepPreviousData,
     refetchOnWindowFocus: false,
   });
 

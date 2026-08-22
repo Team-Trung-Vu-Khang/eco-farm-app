@@ -2,6 +2,7 @@ import { lazy, useEffect } from "react";
 import { Route, Switch, useLocation, useParams } from "wouter";
 
 import { useAnimalGrowthWorkflowDraftStore } from "./pages/plan-animal-growth/hooks/useAnimalGrowthWorkflowDraftStore";
+import { useFarmPlanById } from "@/features/farm-workflow/hooks";
 
 const DashboardPage = lazy(() => import("./pages/dashboard/Dashboard"));
 const TerrainPage = lazy(() => import("./pages/terrain/TerrainPage"));
@@ -788,7 +789,18 @@ const PlanGrowthCreateWorkflowRoute = () => <PlanGrowthCreateWorkflowPage />;
 const PlanGrowthWorkflowPlansRoute = () => <PlanGrowthWorkflowPlansPage />;
 const PlanGrowthWorkflowPlanEditRoute = () => {
   const [, setLocation] = useLocation();
-  const backToWorkflow = () => setLocation("/plan-growth/create/workflow");
+  const params = useParams<{ id: string }>();
+  const { data: planDetail } = useFarmPlanById(params.id ?? "", {
+    enabled: Boolean(params.id),
+  });
+  const backToWorkflow = () => {
+    const workflowId = planDetail?.workflow?.id;
+    setLocation(
+      workflowId
+        ? `/plan-growth/create/workflow/${workflowId}`
+        : "/plan-growth/create/workflow",
+    );
+  };
   return (
     <PlanGrowthEditPage
       basePath="/plan-growth/create/workflow"

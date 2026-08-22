@@ -1,4 +1,5 @@
 import PageWrapper from "@/components/PageWrapper";
+import { AppLoadingState } from "@/components/AppLoadingState";
 import useRegionStore from "@/stores/useRegionStore";
 import {
   AlertDialog,
@@ -542,17 +543,18 @@ export default function PlanGrowthCreateWorkflowPage() {
   const isRoutePersistedId = routeWorkflowId
     ? isPersistedWorkflowId(routeWorkflowId)
     : false;
-  const { data: workflowDetail } = useFarmWorkflowById(routeWorkflowId ?? "", {
+  const {
+    data: workflowDetail,
+    isLoading: isLoadingWorkflowDetail,
+  } = useFarmWorkflowById(routeWorkflowId ?? "", {
     enabled:
       !!routeWorkflowId &&
-      routeWorkflowId !== activeWorkflowId &&
       isRoutePersistedId,
   });
   const { items: workflowPlans, loading: isLoadingWorkflowPlans } =
     useFarmWorkflowPlans(routeWorkflowId ?? "", {
       enabled:
         !!routeWorkflowId &&
-        routeWorkflowId !== activeWorkflowId &&
         isRoutePersistedId,
     });
 
@@ -600,8 +602,6 @@ export default function PlanGrowthCreateWorkflowPage() {
     // `workflowPlans` would look like "no plans" and seed a spurious draft.
     if (isLoadingWorkflowPlans) return;
     const workflowId = String(workflowDetail.id);
-    if (workflowId === activeWorkflowId) return;
-
     const applyWorkflow = (planNodePlans: Plan[]) => {
       // Upsert by id into the local plan store so the existing plan-node UI
       // (edit / allocate work, both keyed by plan id) keeps working off it.
@@ -676,7 +676,7 @@ export default function PlanGrowthCreateWorkflowPage() {
     // stable across renders and the seedingWorkflowIdRef guard above already
     // prevents duplicate submissions.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [workflowDetail, isLoadingWorkflowPlans, workflowPlans, activeWorkflowId, loadWorkflow, toast]);
+  }, [workflowDetail, isLoadingWorkflowPlans, workflowPlans, loadWorkflow, toast]);
 
   const [confirmAction, setConfirmAction] = useState<ConfirmActionState | null>(
     null,
@@ -991,6 +991,15 @@ export default function PlanGrowthCreateWorkflowPage() {
 
     if (otherChanges.length) onNodesChange(otherChanges);
   };
+
+  // Keep this guard after every hook in the component. Returning before the
+  // hooks below would change hook order when the API finishes loading.
+  if (
+    isRoutePersistedId &&
+    (isLoadingWorkflowDetail || isLoadingWorkflowPlans || !workflowDetail)
+  ) {
+    return <AppLoadingState />;
+  }
 
   return (
     <PageWrapper
