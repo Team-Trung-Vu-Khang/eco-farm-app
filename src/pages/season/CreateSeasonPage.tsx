@@ -115,7 +115,8 @@ export default function CreateSeasonPage() {
   const totalDays = useMemo(
     () =>
       watchedStages.reduce(
-        (sum: number, stage: any) => sum + parseDurationToDays(String(stage.duration)),
+        (sum: number, stage: any) =>
+          sum + parseDurationToDays(String(stage.duration)),
         0,
       ),
     [watchedStages],
@@ -264,17 +265,19 @@ export default function CreateSeasonPage() {
 
   const domainTitles = {
     CROP: {
-      title: "Thêm mới mùa vụ",
-      description: "Thiết lập kế hoạch mùa vụ và quy trình trồng trọt",
+      title: "Khởi tạo chu kỳ sinh trưởng",
+      description:
+        "Thiết lập thông tin quá trình sinh trưởng qua các giai đoạn canh tác",
     },
     LIVESTOCK: {
-      title: "Thêm mới vụ nuôi",
-      description: "Thiết lập kế hoạch vụ nuôi và quy trình chăn nuôi",
+      title: "Khởi tạo chu kỳ sinh trưởng",
+      description:
+        "Thiết lập thông tin quá trình sinh trưởng qua các giai đoạn chăn nuôi",
     },
     AQUACULTURE: {
-      title: "Thêm mới vụ nuôi thủy sản",
+      title: "Khởi tạo chu kỳ sinh trưởng",
       description:
-        "Thiết lập kế hoạch vụ nuôi và quy trình nuôi trồng thủy sản",
+        "Thiết lập thông tin quá trình sinh trưởng qua các giai đoạn nuôi trồng thủy sản",
     },
   };
 

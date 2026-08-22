@@ -2,6 +2,8 @@ import { lazy, useEffect } from "react";
 import { Route, Switch, useLocation, useParams } from "wouter";
 
 import { useFarmPlanById } from "@/features/farm-workflow/hooks";
+import { ReportProvider } from "./pages/reports/context/ReportContext";
+import { ReportPageContainer } from "./pages/reports/ReportPageContainer";
 
 const DashboardPage = lazy(() => import("./pages/dashboard/Dashboard"));
 const TerrainPage = lazy(() => import("./pages/terrain/TerrainPage"));
@@ -945,979 +947,1044 @@ function RootRedirect() {
   return null;
 }
 
+function ReportsRedirect() {
+  const [, setLocation] = useLocation();
+
+  useEffect(() => {
+    setLocation("/reports/crops/overview", { replace: true });
+  }, [setLocation]);
+
+  return null;
+}
+
 function Router() {
   return (
-    <Switch>
-      <Route path="/" component={RootRedirect} />
-      <Route path="/dashboard" component={DashboardPage} />
-      <Route path="/terrain" component={TerrainPage} />
-      <Route path="/land-specs" component={LandSpecsPage} />
-      <Route path="/task-category" component={TaskCategoryPage} />
-      <Route path="/province" component={ProvincePage} />
-      <Route path="/land" component={LandPage} />
-      <Route path="/farming-method" component={FarmingMethodPage} />
-      <Route path="/farming-method-crop" component={FarmingMethodCropPage} />
-      <Route path="/certificate" component={CertificatePage} />
-      <Route path="/enterprise-type" component={EnterpriseTypePage} />
-      <Route path="/enterprise-form" component={EnterpriseFormPage} />
-      <Route
-        path="/enterprise-certificate"
-        component={EnterpriseCertificatePage}
-      />
-      <Route
-        path="/enterprise-certificate/create"
-        component={EnterpriseCertificateFormPage}
-      />
-      <Route
-        path="/enterprise-certificate/:id/edit"
-        component={EnterpriseCertificateFormPage}
-      />
-      <Route path="/enterprise" component={EnterprisePage} />
-      <Route path="/enterprise/create" component={EnterpriseCreatePage} />
-      <Route path="/enterprise/:id" component={EnterpriseDetailPage} />
-      <Route path="/enterprise/:id/edit" component={EnterpriseEditPage} />
-      <Route path="/branch" component={BranchPage} />
-      <Route path="/branch/create" component={BranchFormPage} />
-      <Route path="/branch/:id/edit" component={BranchFormPage} />
-      <Route path="/branch/:id/detail" component={BranchDetailPage} />
-      <Route path="/bank" component={BankPage} />
-      <Route path="/bank-directory" component={BankDirectoryPage} />
-      <Route path="/bank/create" component={BankCreatePage} />
-      <Route path="/bank/:id/edit" component={BankEditPage} />
-      <Route path="/contact" component={ContactPage} />
-      <Route path="/contact/create" component={ContactCreatePage} />
-      <Route path="/contact/:id/edit" component={ContactEditPage} />
-      <Route path="/department" component={DepartmentPage} />
-      <Route path="/owner-department" component={OwnerDepartmentPage} />
-      <Route path="/group-position" component={GroupPositionPage} />
-      <Route path="/position" component={PositionPage} />
-      <Route path="/owner-position" component={OwnerPositionPage} />
-      <Route path="/position/:id/detail" component={PositionDetailPage} />
-      <Route
-        path="/owner-position/:id/detail"
-        component={OwnerPositionDetailPage}
-      />
-      <Route path="/personnel" component={PersonnelPage} />
-      <Route path="/personnel/create" component={PersonnelCreatePage} />
-      <Route path="/personnel/:id/edit" component={PersonnelEditPage} />
-      <Route path="/team" component={TeamPage} />
-      <Route path="/team/create" component={TeamCreatePage} />
-      <Route path="/team/:id/edit" component={TeamEditPage} />
-      <Route path="/team/:id" component={TeamDetailPage} />
-      {/* Old routes kept for safety, though removed from sidebar */}
-      <Route path="/geo-zone" component={GeoZonePage} />
-      {/* Region Chart Routes */}
-      <Route path="/region-distribution" component={RegionDistributionPage} />
-      <Route path="/region-distribution/create" component={RegionCreatePage} />
-      <Route
-        path="/region-distribution/detail/:id"
-        component={RegionDetailPage}
-      />
-      <Route
-        path="/region-distribution/edit/:id"
-        component={RegionCreatePage}
-      />
-      <Route path="/area-distribution" component={AreaDistributionPage} />
-      <Route path="/area-distribution/detail/:id" component={AreaDetailPage} />
-      <Route path="/area-distribution/create" component={AreaCreatePage} />
-      <Route path="/area-distribution/edit/:id" component={AreaCreatePage} />
-      <Route path="/plot-distribution" component={PlotDistributionPage} />
-      <Route path="/plot-distribution/create" component={PlotCreatePage} />
-      <Route path="/plot-distribution/edit/:id" component={PlotCreatePage} />
-      <Route path="/plot-distribution/detail/:id" component={PlotDetailPage} />
-      {/* Legacy aliases */}
-      <Route
-        path="/region-chart/plot-distribution"
-        component={PlotDistributionPage}
-      />
-      <Route
-        path="/region-chart/plot-distribution/create"
-        component={PlotCreatePage}
-      />
-      <Route
-        path="/region-chart/plot-distribution/edit/:id"
-        component={PlotCreatePage}
-      />
-      <Route
-        path="/region-chart/plot-distribution/detail/:id"
-        component={PlotDetailPage}
-      />
-      <Route path="/map-view" component={MapViewPage} />
-      <Route path="/legal-identification" component={LegalIdentificationPage} />
-      <Route
-        path="/legal-identification/create"
-        component={LegalIdentificationCreateEditPage}
-      />
-      <Route
-        path="/legal-identification/:id/edit"
-        component={LegalIdentificationCreateEditPage}
-      />
-      <Route
-        path="/legal-identification/:id"
-        component={LegalIdentificationDetailPage}
-      />
-      <Route
-        path="/cultivation-region-identification/crop"
-        component={RegionBasicDistributionPage}
-      />
-      <Route
-        path="/cultivation-region-identification/crop/create"
-        component={RegionBasicDistributionCreateEditPage}
-      />
-      <Route
-        path="/cultivation-region-identification/crop/edit/:id"
-        component={RegionBasicDistributionCreateEditPage}
-      />
-      <Route
-        path="/cultivation-region-identification/crop/detail/:id"
-        component={RegionBasicDistributionDetailPage}
-      />
-      {/* Livestock (Animal) Basic Identification Routes */}
-      <Route
-        path="/cultivation-region-identification/animal"
-        component={RegionBasicDistributionLivestockPage}
-      />
-      <Route
-        path="/cultivation-region-identification/animal/create"
-        component={RegionBasicDistributionLivestockCreateEditPage}
-      />
-      <Route
-        path="/cultivation-region-identification/animal/edit/:id"
-        component={RegionBasicDistributionLivestockCreateEditPage}
-      />
-      <Route
-        path="/cultivation-region-identification/animal/detail/:id"
-        component={RegionBasicDistributionLivestockDetailPage}
-      />
-      {/* Aquaculture Basic Identification Routes */}
-      <Route
-        path="/cultivation-region-identification/aquaculture"
-        component={RegionBasicDistributionAquaculturePage}
-      />
-      <Route
-        path="/cultivation-region-identification/aquaculture/create"
-        component={RegionBasicDistributionAquacultureCreateEditPage}
-      />
-      <Route
-        path="/cultivation-region-identification/aquaculture/edit/:id"
-        component={RegionBasicDistributionAquacultureCreateEditPage}
-      />
-      <Route
-        path="/cultivation-region-identification/aquaculture/detail/:id"
-        component={RegionBasicDistributionAquacultureDetailPage}
-      />
-      <Route path="/soil-amendment-map" component={SoilAmendmentMapPage} />
-      <Route
-        path="/soil-amendment-treatment"
-        component={SoilAmendmentTreatmentPage}
-      />
-      <Route path="/amendment-cycle" component={AmendmentCyclePage} />
-      <Route path="/amendment-method" component={AmendmentMethodPage} />
-      <Route path="/amendment-plan" component={AmendmentPlanPage} />
-      <Route
-        path="/amendment-plan/create"
-        component={AmendmentPlanCreatePage}
-      />
-      <Route
-        path="/amendment-plan/:id/edit"
-        component={AmendmentPlanCreatePage}
-      />
-      <Route path="/amendment-task" component={AmendmentTaskPage} />
-      {/* Cultivation Zone Sub-Routes */}
-      <Route path="/cultivation-region" component={CultivationRegionPage} />
-      <Route
-        path="/cultivation-region/create"
-        component={CultivationRegionCreatePage}
-      />
-      <Route
-        path="/cultivation-region/:id"
-        component={CultivationRegionDetailPage}
-      />
-      <Route
-        path="/cultivation-region/:id/workflow"
-        component={CultivationRegionWorkflowPage}
-      />
-      <Route
-        path="/cultivation-region/:id/edit"
-        component={CultivationRegionCreatePage}
-      />
+    <ReportProvider>
+      <Switch>
+        <Route path="/" component={RootRedirect} />
+        <Route path="/dashboard" component={DashboardPage} />
+        <Route path="/terrain" component={TerrainPage} />
+        <Route path="/land-specs" component={LandSpecsPage} />
+        <Route path="/task-category" component={TaskCategoryPage} />
+        <Route path="/province" component={ProvincePage} />
+        <Route path="/land" component={LandPage} />
+        <Route path="/farming-method" component={FarmingMethodPage} />
+        <Route path="/farming-method-crop" component={FarmingMethodCropPage} />
+        <Route path="/certificate" component={CertificatePage} />
+        <Route path="/enterprise-type" component={EnterpriseTypePage} />
+        <Route path="/enterprise-form" component={EnterpriseFormPage} />
+        <Route
+          path="/enterprise-certificate"
+          component={EnterpriseCertificatePage}
+        />
+        <Route
+          path="/enterprise-certificate/create"
+          component={EnterpriseCertificateFormPage}
+        />
+        <Route
+          path="/enterprise-certificate/:id/edit"
+          component={EnterpriseCertificateFormPage}
+        />
+        <Route path="/enterprise" component={EnterprisePage} />
+        <Route path="/enterprise/create" component={EnterpriseCreatePage} />
+        <Route path="/enterprise/:id" component={EnterpriseDetailPage} />
+        <Route path="/enterprise/:id/edit" component={EnterpriseEditPage} />
+        <Route path="/branch" component={BranchPage} />
+        <Route path="/branch/create" component={BranchFormPage} />
+        <Route path="/branch/:id/edit" component={BranchFormPage} />
+        <Route path="/branch/:id/detail" component={BranchDetailPage} />
+        <Route path="/bank" component={BankPage} />
+        <Route path="/bank-directory" component={BankDirectoryPage} />
+        <Route path="/bank/create" component={BankCreatePage} />
+        <Route path="/bank/:id/edit" component={BankEditPage} />
+        <Route path="/contact" component={ContactPage} />
+        <Route path="/contact/create" component={ContactCreatePage} />
+        <Route path="/contact/:id/edit" component={ContactEditPage} />
+        <Route path="/department" component={DepartmentPage} />
+        <Route path="/owner-department" component={OwnerDepartmentPage} />
+        <Route path="/group-position" component={GroupPositionPage} />
+        <Route path="/position" component={PositionPage} />
+        <Route path="/owner-position" component={OwnerPositionPage} />
+        <Route path="/position/:id/detail" component={PositionDetailPage} />
+        <Route
+          path="/owner-position/:id/detail"
+          component={OwnerPositionDetailPage}
+        />
+        <Route path="/personnel" component={PersonnelPage} />
+        <Route path="/personnel/create" component={PersonnelCreatePage} />
+        <Route path="/personnel/:id/edit" component={PersonnelEditPage} />
+        <Route path="/team" component={TeamPage} />
+        <Route path="/team/create" component={TeamCreatePage} />
+        <Route path="/team/:id/edit" component={TeamEditPage} />
+        <Route path="/team/:id" component={TeamDetailPage} />
+        {/* Old routes kept for safety, though removed from sidebar */}
+        <Route path="/geo-zone" component={GeoZonePage} />
+        {/* Region Chart Routes */}
+        <Route path="/region-distribution" component={RegionDistributionPage} />
+        <Route
+          path="/region-distribution/create"
+          component={RegionCreatePage}
+        />
+        <Route
+          path="/region-distribution/detail/:id"
+          component={RegionDetailPage}
+        />
+        <Route
+          path="/region-distribution/edit/:id"
+          component={RegionCreatePage}
+        />
+        <Route path="/area-distribution" component={AreaDistributionPage} />
+        <Route
+          path="/area-distribution/detail/:id"
+          component={AreaDetailPage}
+        />
+        <Route path="/area-distribution/create" component={AreaCreatePage} />
+        <Route path="/area-distribution/edit/:id" component={AreaCreatePage} />
+        <Route path="/plot-distribution" component={PlotDistributionPage} />
+        <Route path="/plot-distribution/create" component={PlotCreatePage} />
+        <Route path="/plot-distribution/edit/:id" component={PlotCreatePage} />
+        <Route
+          path="/plot-distribution/detail/:id"
+          component={PlotDetailPage}
+        />
+        {/* Legacy aliases */}
+        <Route
+          path="/region-chart/plot-distribution"
+          component={PlotDistributionPage}
+        />
+        <Route
+          path="/region-chart/plot-distribution/create"
+          component={PlotCreatePage}
+        />
+        <Route
+          path="/region-chart/plot-distribution/edit/:id"
+          component={PlotCreatePage}
+        />
+        <Route
+          path="/region-chart/plot-distribution/detail/:id"
+          component={PlotDetailPage}
+        />
+        <Route path="/map-view" component={MapViewPage} />
+        <Route
+          path="/legal-identification"
+          component={LegalIdentificationPage}
+        />
+        <Route
+          path="/legal-identification/create"
+          component={LegalIdentificationCreateEditPage}
+        />
+        <Route
+          path="/legal-identification/:id/edit"
+          component={LegalIdentificationCreateEditPage}
+        />
+        <Route
+          path="/legal-identification/:id"
+          component={LegalIdentificationDetailPage}
+        />
+        <Route
+          path="/cultivation-region-identification/crop"
+          component={RegionBasicDistributionPage}
+        />
+        <Route
+          path="/cultivation-region-identification/crop/create"
+          component={RegionBasicDistributionCreateEditPage}
+        />
+        <Route
+          path="/cultivation-region-identification/crop/edit/:id"
+          component={RegionBasicDistributionCreateEditPage}
+        />
+        <Route
+          path="/cultivation-region-identification/crop/detail/:id"
+          component={RegionBasicDistributionDetailPage}
+        />
+        {/* Livestock (Animal) Basic Identification Routes */}
+        <Route
+          path="/cultivation-region-identification/animal"
+          component={RegionBasicDistributionLivestockPage}
+        />
+        <Route
+          path="/cultivation-region-identification/animal/create"
+          component={RegionBasicDistributionLivestockCreateEditPage}
+        />
+        <Route
+          path="/cultivation-region-identification/animal/edit/:id"
+          component={RegionBasicDistributionLivestockCreateEditPage}
+        />
+        <Route
+          path="/cultivation-region-identification/animal/detail/:id"
+          component={RegionBasicDistributionLivestockDetailPage}
+        />
+        {/* Aquaculture Basic Identification Routes */}
+        <Route
+          path="/cultivation-region-identification/aquaculture"
+          component={RegionBasicDistributionAquaculturePage}
+        />
+        <Route
+          path="/cultivation-region-identification/aquaculture/create"
+          component={RegionBasicDistributionAquacultureCreateEditPage}
+        />
+        <Route
+          path="/cultivation-region-identification/aquaculture/edit/:id"
+          component={RegionBasicDistributionAquacultureCreateEditPage}
+        />
+        <Route
+          path="/cultivation-region-identification/aquaculture/detail/:id"
+          component={RegionBasicDistributionAquacultureDetailPage}
+        />
+        <Route path="/soil-amendment-map" component={SoilAmendmentMapPage} />
+        <Route
+          path="/soil-amendment-treatment"
+          component={SoilAmendmentTreatmentPage}
+        />
+        <Route path="/amendment-cycle" component={AmendmentCyclePage} />
+        <Route path="/amendment-method" component={AmendmentMethodPage} />
+        <Route path="/amendment-plan" component={AmendmentPlanPage} />
+        <Route
+          path="/amendment-plan/create"
+          component={AmendmentPlanCreatePage}
+        />
+        <Route
+          path="/amendment-plan/:id/edit"
+          component={AmendmentPlanCreatePage}
+        />
+        <Route path="/amendment-task" component={AmendmentTaskPage} />
+        {/* Cultivation Zone Sub-Routes */}
+        <Route path="/cultivation-region" component={CultivationRegionPage} />
+        <Route
+          path="/cultivation-region/create"
+          component={CultivationRegionCreatePage}
+        />
+        <Route
+          path="/cultivation-region/:id"
+          component={CultivationRegionDetailPage}
+        />
+        <Route
+          path="/cultivation-region/:id/workflow"
+          component={CultivationRegionWorkflowPage}
+        />
+        <Route
+          path="/cultivation-region/:id/edit"
+          component={CultivationRegionCreatePage}
+        />
 
-      {/* Animal Husbandry Zone Sub-Routes */}
-      <Route
-        path="/animal-husbandry-region"
-        component={AnimalHusbandryRegionPage}
-      />
-      <Route
-        path="/animal-husbandry-region/create"
-        component={AnimalHusbandryRegionCreatePage}
-      />
-      <Route
-        path="/animal-husbandry-region/search"
-        component={AnimalHusbandrySearchZonePage}
-      />
-      <Route
-        path="/animal-husbandry-region/:id"
-        component={AnimalHusbandryRegionDetailPage}
-      />
-      <Route
-        path="/animal-husbandry-region/:id/workflow"
-        component={AnimalHusbandryRegionWorkflowPage}
-      />
-      <Route
-        path="/animal-husbandry-region/:id/edit"
-        component={AnimalHusbandryRegionCreatePage}
-      />
+        {/* Animal Husbandry Zone Sub-Routes */}
+        <Route
+          path="/animal-husbandry-region"
+          component={AnimalHusbandryRegionPage}
+        />
+        <Route
+          path="/animal-husbandry-region/create"
+          component={AnimalHusbandryRegionCreatePage}
+        />
+        <Route
+          path="/animal-husbandry-region/search"
+          component={AnimalHusbandrySearchZonePage}
+        />
+        <Route
+          path="/animal-husbandry-region/:id"
+          component={AnimalHusbandryRegionDetailPage}
+        />
+        <Route
+          path="/animal-husbandry-region/:id/workflow"
+          component={AnimalHusbandryRegionWorkflowPage}
+        />
+        <Route
+          path="/animal-husbandry-region/:id/edit"
+          component={AnimalHusbandryRegionCreatePage}
+        />
 
-      <Route
-        path="/animal-identification"
-        component={AnimalIdentificationListPage}
-      />
-      <Route
-        path="/animal-identification/create"
-        component={AnimalIdentificationCreatePage}
-      />
-      <Route
-        path="/animal-identification/search"
-        component={AnimalIdentificationSearchFarmPage}
-      />
-      <Route
-        path="/animal-identification/search-farm"
-        component={AnimalHusbandrySearchZonePage}
-      />
-      <Route
-        path="/animal-identification/:id"
-        component={AnimalIdentificationDetailPage}
-      />
-      <Route
-        path="/animal-identification/:id/edit"
-        component={AnimalIdentificationEditPage}
-      />
-      <Route
-        path="/animal-distribution-detail"
-        component={AnimalDistributionListPage}
-      />
-      <Route
-        path="/animal-distribution-detail/create"
-        component={AnimalDistributionCreatePage}
-      />
-      <Route
-        path="/animal-distribution-detail/:id"
-        component={AnimalDistributionDetailPage}
-      />
-      <Route
-        path="/animal-distribution-detail/:id/edit"
-        component={AnimalDistributionCreatePage}
-      />
+        <Route
+          path="/animal-identification"
+          component={AnimalIdentificationListPage}
+        />
+        <Route
+          path="/animal-identification/create"
+          component={AnimalIdentificationCreatePage}
+        />
+        <Route
+          path="/animal-identification/search"
+          component={AnimalIdentificationSearchFarmPage}
+        />
+        <Route
+          path="/animal-identification/search-farm"
+          component={AnimalHusbandrySearchZonePage}
+        />
+        <Route
+          path="/animal-identification/:id"
+          component={AnimalIdentificationDetailPage}
+        />
+        <Route
+          path="/animal-identification/:id/edit"
+          component={AnimalIdentificationEditPage}
+        />
+        <Route
+          path="/animal-distribution-detail"
+          component={AnimalDistributionListPage}
+        />
+        <Route
+          path="/animal-distribution-detail/create"
+          component={AnimalDistributionCreatePage}
+        />
+        <Route
+          path="/animal-distribution-detail/:id"
+          component={AnimalDistributionDetailPage}
+        />
+        <Route
+          path="/animal-distribution-detail/:id/edit"
+          component={AnimalDistributionCreatePage}
+        />
 
-      <Route path="/animal-growth-cycle" component={AnimalGrowthCyclePage} />
-      <Route
-        path="/animal-growth-cycle/create"
-        component={CreateAnimalGrowthCyclePage}
-      />
-      <Route
-        path="/animal-growth-cycle/:id"
-        component={AnimalGrowthCycleDetailRoute}
-      />
-      <Route
-        path="/animal-growth-cycle/:id/edit"
-        component={UpdateAnimalGrowthCyclePage}
-      />
-      <Route
-        path="/animal-growth-cycle/:id/workflow"
-        component={AnimalGrowthCycleWorkflowPage}
-      />
+        <Route path="/animal-growth-cycle" component={AnimalGrowthCyclePage} />
+        <Route
+          path="/animal-growth-cycle/create"
+          component={CreateAnimalGrowthCyclePage}
+        />
+        <Route
+          path="/animal-growth-cycle/:id"
+          component={AnimalGrowthCycleDetailRoute}
+        />
+        <Route
+          path="/animal-growth-cycle/:id/edit"
+          component={UpdateAnimalGrowthCyclePage}
+        />
+        <Route
+          path="/animal-growth-cycle/:id/workflow"
+          component={AnimalGrowthCycleWorkflowPage}
+        />
 
-      <Route path="/aquaculture-region" component={AquacultureRegionPage} />
-      <Route
-        path="/aquaculture-region/create"
-        component={AquacultureRegionCreatePage}
-      />
-      <Route
-        path="/aquaculture-region/:id"
-        component={AquacultureRegionDetailPage}
-      />
-      <Route
-        path="/aquaculture-region/:id/workflow"
-        component={AquacultureRegionWorkflowRoute}
-      />
-      <Route
-        path="/aquaculture-region/:id/edit"
-        component={AquacultureRegionCreatePage}
-      />
-      <Route
-        path="/distribution-detail"
-        component={PlantDistributionListPage}
-      />
-      <Route
-        path="/distribution-detail/create"
-        component={PlantDistributionCreatePage}
-      />
-      <Route
-        path="/distribution-detail/:id"
-        component={DistributionDetailPage}
-      />
-      <Route
-        path="/distribution-detail/:id/edit"
-        component={PlantDistributionCreatePage}
-      />
-      <Route
-        path="/aquaculture-distribution-detail"
-        component={AquacultureDistributionListPage}
-      />
-      <Route
-        path="/aquaculture-distribution-detail/create"
-        component={AquacultureDistributionCreatePage}
-      />
-      <Route
-        path="/aquaculture-distribution-detail/:id"
-        component={AquacultureDistributionDetailPage}
-      />
-      {/* Cultivation Area Routes */}
-      <Route path="/cultivation-area" component={CultivationAreaPage} />
-      <Route
-        path="/cultivation-area/create"
-        component={CultivationAreaCreatePage}
-      />
-      <Route
-        path="/cultivation-area/:id/edit"
-        component={CultivationAreaCreatePage}
-      />
-      <Route
-        path="/cultivation-area/:id"
-        component={CultivationAreaDetailPage}
-      />
-      {/* Cultivation Plot Routes */}
-      <Route path="/cultivation-plot" component={CultivationPlotPage} />
-      <Route
-        path="/cultivation-plot/create"
-        component={CultivationPlotCreatePage}
-      />
-      <Route
-        path="/cultivation-plot/:id/edit"
-        component={CultivationPlotCreatePage}
-      />
-      <Route
-        path="/cultivation-plot/:id"
-        component={CultivationPlotDetailPage}
-      />
-      <Route path="/treatment" component={TreatmentPage} />
-      <Route path="/search-crop" component={SearchCropPage} />
-      <Route path="/search-zone" component={SearchZonePage} />
-      <Route
-        path="/aquaculture-search-farm"
-        component={AquacultureSearchFarmPage}
-      />
-      <Route path="/search-unit" component={SearchUnitPage} />
-      <Route path="/lookup-material" component={MaterialLookupPage} />
-      <Route
-        path="/plant-identification"
-        component={PlantIdentificationListPage}
-      />
-      <Route
-        path="/plant-identification/create"
-        component={PlantIdentificationCreatePage}
-      />
-      <Route
-        path="/plant-identification/:id"
-        component={PlantIdentificationDetailPage}
-      />
-      <Route
-        path="/plant-identification/:id/edit"
-        component={PlantIdentificationEditPage}
-      />
-      <Route
-        path="/aquaculture-identification"
-        component={AquacultureIdentificationListPage}
-      />
-      <Route
-        path="/aquaculture-identification/create"
-        component={AquacultureIdentificationCreatePage}
-      />
-      <Route
-        path="/aquaculture-identification/search"
-        component={AquacultureIdentificationSearchPage}
-      />
-      <Route
-        path="/aquaculture-identification/:id"
-        component={AquacultureIdentificationDetailPage}
-      />
-      <Route
-        path="/aquaculture-identification/:id/edit"
-        component={AquacultureIdentificationEditPage}
-      />
-      <Route path="/crop" component={CropPage} />
-      <Route path="/crop/create" component={CropCreatePage} />
-      <Route path="/crop/:id" component={CropDetailPage} />
-      <Route path="/crop-foundation" component={CropFoundationPage} />
-      <Route
-        path="/crop-foundation/create"
-        component={CropFoundationCreatePage}
-      />
-      <Route
-        path="/crop-foundation/:id/edit"
-        component={CropFoundationEditPage}
-      />
-      <Route path="/crop-foundation/:id" component={CropFoundationDetailPage} />
-      <Route path="/document-category" component={DocumentCategoryListPage} />
-      <Route
-        path="/document-category/create"
-        component={DocumentCategoryCreatePage}
-      />
-      <Route
-        path="/document-category/:id/edit"
-        component={DocumentCategoryEditPage}
-      />
-      <Route
-        path="/document-category/:id"
-        component={DocumentCategoryDetailPage}
-      />
-      <Route path="/group-crop" component={GroupCropPage} />
-      <Route path="/docs" component={DocsPage} />
-      <Route path="/docs/create" component={CreateDocsPage} />
-      <Route path="/docs/update/:id" component={UpdateDocsPage} />
-      <Route path="/docs/:id" component={DocsDetailPage} />
-      <Route path="/variety" component={VarietyPage} />
-      <Route path="/variety/create" component={CreateVarietyPage} />
-      <Route path="/variety-foundation" component={VarietyFoundationPage} />
-      <Route
-        path="/variety-foundation/create"
-        component={CreateVarietyFoundationPage}
-      />
-      <Route
-        path="/variety-foundation/:id/edit"
-        component={VarietyFoundationEditPage}
-      />
-      {/* <Route path="/variety/:id">
+        <Route path="/aquaculture-region" component={AquacultureRegionPage} />
+        <Route
+          path="/aquaculture-region/create"
+          component={AquacultureRegionCreatePage}
+        />
+        <Route
+          path="/aquaculture-region/:id"
+          component={AquacultureRegionDetailPage}
+        />
+        <Route
+          path="/aquaculture-region/:id/workflow"
+          component={AquacultureRegionWorkflowRoute}
+        />
+        <Route
+          path="/aquaculture-region/:id/edit"
+          component={AquacultureRegionCreatePage}
+        />
+        <Route
+          path="/distribution-detail"
+          component={PlantDistributionListPage}
+        />
+        <Route
+          path="/distribution-detail/create"
+          component={PlantDistributionCreatePage}
+        />
+        <Route
+          path="/distribution-detail/:id"
+          component={DistributionDetailPage}
+        />
+        <Route
+          path="/distribution-detail/:id/edit"
+          component={PlantDistributionCreatePage}
+        />
+        <Route
+          path="/aquaculture-distribution-detail"
+          component={AquacultureDistributionListPage}
+        />
+        <Route
+          path="/aquaculture-distribution-detail/create"
+          component={AquacultureDistributionCreatePage}
+        />
+        <Route
+          path="/aquaculture-distribution-detail/:id"
+          component={AquacultureDistributionDetailPage}
+        />
+        {/* Cultivation Area Routes */}
+        <Route path="/cultivation-area" component={CultivationAreaPage} />
+        <Route
+          path="/cultivation-area/create"
+          component={CultivationAreaCreatePage}
+        />
+        <Route
+          path="/cultivation-area/:id/edit"
+          component={CultivationAreaCreatePage}
+        />
+        <Route
+          path="/cultivation-area/:id"
+          component={CultivationAreaDetailPage}
+        />
+        {/* Cultivation Plot Routes */}
+        <Route path="/cultivation-plot" component={CultivationPlotPage} />
+        <Route
+          path="/cultivation-plot/create"
+          component={CultivationPlotCreatePage}
+        />
+        <Route
+          path="/cultivation-plot/:id/edit"
+          component={CultivationPlotCreatePage}
+        />
+        <Route
+          path="/cultivation-plot/:id"
+          component={CultivationPlotDetailPage}
+        />
+        <Route path="/treatment" component={TreatmentPage} />
+        <Route path="/search-crop" component={SearchCropPage} />
+        <Route path="/search-zone" component={SearchZonePage} />
+        <Route
+          path="/aquaculture-search-farm"
+          component={AquacultureSearchFarmPage}
+        />
+        <Route path="/search-unit" component={SearchUnitPage} />
+        <Route path="/lookup-material" component={MaterialLookupPage} />
+        <Route
+          path="/plant-identification"
+          component={PlantIdentificationListPage}
+        />
+        <Route
+          path="/plant-identification/create"
+          component={PlantIdentificationCreatePage}
+        />
+        <Route
+          path="/plant-identification/:id"
+          component={PlantIdentificationDetailPage}
+        />
+        <Route
+          path="/plant-identification/:id/edit"
+          component={PlantIdentificationEditPage}
+        />
+        <Route
+          path="/aquaculture-identification"
+          component={AquacultureIdentificationListPage}
+        />
+        <Route
+          path="/aquaculture-identification/create"
+          component={AquacultureIdentificationCreatePage}
+        />
+        <Route
+          path="/aquaculture-identification/search"
+          component={AquacultureIdentificationSearchPage}
+        />
+        <Route
+          path="/aquaculture-identification/:id"
+          component={AquacultureIdentificationDetailPage}
+        />
+        <Route
+          path="/aquaculture-identification/:id/edit"
+          component={AquacultureIdentificationEditPage}
+        />
+        <Route path="/crop" component={CropPage} />
+        <Route path="/crop/create" component={CropCreatePage} />
+        <Route path="/crop/:id" component={CropDetailPage} />
+        <Route path="/crop-foundation" component={CropFoundationPage} />
+        <Route
+          path="/crop-foundation/create"
+          component={CropFoundationCreatePage}
+        />
+        <Route
+          path="/crop-foundation/:id/edit"
+          component={CropFoundationEditPage}
+        />
+        <Route
+          path="/crop-foundation/:id"
+          component={CropFoundationDetailPage}
+        />
+        <Route path="/document-category" component={DocumentCategoryListPage} />
+        <Route
+          path="/document-category/create"
+          component={DocumentCategoryCreatePage}
+        />
+        <Route
+          path="/document-category/:id/edit"
+          component={DocumentCategoryEditPage}
+        />
+        <Route
+          path="/document-category/:id"
+          component={DocumentCategoryDetailPage}
+        />
+        <Route path="/group-crop" component={GroupCropPage} />
+        <Route path="/docs" component={DocsPage} />
+        <Route path="/docs/create" component={CreateDocsPage} />
+        <Route path="/docs/update/:id" component={UpdateDocsPage} />
+        <Route path="/docs/:id" component={DocsDetailPage} />
+        <Route path="/variety" component={VarietyPage} />
+        <Route path="/variety/create" component={CreateVarietyPage} />
+        <Route path="/variety-foundation" component={VarietyFoundationPage} />
+        <Route
+          path="/variety-foundation/create"
+          component={CreateVarietyFoundationPage}
+        />
+        <Route
+          path="/variety-foundation/:id/edit"
+          component={VarietyFoundationEditPage}
+        />
+        {/* <Route path="/variety/:id">
         {(params) => <VarietyDetailPage id={params.id} />}
       </Route> */}
-      <Route path="/variety/:id/edit" component={VarietyEditPage} />
-      <Route path="/seed" component={SeedPage} />
-      <Route path="/seed/create" component={CreateSeedPage} />
-      <Route path="/seed/:id/edit" component={UpdateSeedPage} />
-      <Route path="/seed/:id" component={SeedDetailPage} />
-      <Route path="/growth-cycle" component={GrowthCyclePage} />
-      <Route
-        path="/aquaculture-growth-cycle"
-        component={AquacultureGrowthCyclePage}
-      />
-      <Route
-        path="/aquaculture-growth-cycle/create"
-        component={CreateAquacultureGrowthCyclePage}
-      />
-      <Route
-        path="/aquaculture-growth-cycle/:id/edit"
-        component={AquacultureGrowthCycleEditPage}
-      />
-      <Route path="/growth-cycle/create" component={CreateGrowthCyclePage} />
-      <Route
-        path="/growth-cycle/:id/workflow"
-        component={GrowthCycleWorkflowPage}
-      />
-      <Route path="/growth-cycle/:id/edit" component={UpdateGrowthCyclePage} />
-      <Route path="/season" component={SeasonPage} />
-      <Route path="/season/create" component={CreateSeasonPage} />
-      <Route path="/season/:id/edit" component={UpdateSeasonPage} />
-      <Route path="/season/:id" component={SeasonDetailPage} />
-      <Route path="/cultivation-material/pesticide" component={PesticidePage} />
-      <Route path="/pesticide-group" component={PesticideGroupPage} />
-      <Route
-        path="/livestock-medicine-group"
-        component={LivestockMedicineGroupPage}
-      />
-      <Route
-        path="/aquaculture-medicine-group"
-        component={AquacultureMedicineGroupPage}
-      />
-      <Route
-        path="/cultivation-material/pesticide/create"
-        component={PesticideCreatePage}
-      />
-      <Route
-        path="/cultivation-material/pesticide/:id/edit"
-        component={PesticideCreatePage}
-      />
-      <Route
-        path="/cultivation-material/pesticide/:id"
-        component={PesticideDetailPage}
-      />
-      <Route
-        path="/cultivation-material/fertilizer"
-        component={FertilizerPage}
-      />
-      <Route path="/fertilizer-group" component={FertilizerGroupPage} />
-      <Route
-        path="/cultivation-material/fertilizer/create"
-        component={FertilizerCreatePage}
-      />
-      <Route
-        path="/cultivation-material/fertilizer/:id/edit"
-        component={FertilizerCreatePage}
-      />
-      <Route
-        path="/cultivation-material/fertilizer/:id"
-        component={FertilizerDetailPage}
-      />
-      <Route path="/cultivation-material/material" component={MaterialPage} />
-      <Route path="/material-group" component={MaterialGroupPage} />
-      <Route
-        path="/cultivation-material/material/create"
-        component={MaterialCreatePage}
-      />
-      <Route
-        path="/cultivation-material/material/:id/edit"
-        component={MaterialCreatePage}
-      />
-      <Route
-        path="/cultivation-material/material/:id"
-        component={MaterialDetailPage}
-      />
+        <Route path="/variety/:id/edit" component={VarietyEditPage} />
+        <Route path="/seed" component={SeedPage} />
+        <Route path="/seed/create" component={CreateSeedPage} />
+        <Route path="/seed/:id/edit" component={UpdateSeedPage} />
+        <Route path="/seed/:id" component={SeedDetailPage} />
+        <Route path="/growth-cycle" component={GrowthCyclePage} />
+        <Route
+          path="/aquaculture-growth-cycle"
+          component={AquacultureGrowthCyclePage}
+        />
+        <Route
+          path="/aquaculture-growth-cycle/create"
+          component={CreateAquacultureGrowthCyclePage}
+        />
+        <Route
+          path="/aquaculture-growth-cycle/:id/edit"
+          component={AquacultureGrowthCycleEditPage}
+        />
+        <Route path="/growth-cycle/create" component={CreateGrowthCyclePage} />
+        <Route
+          path="/growth-cycle/:id/workflow"
+          component={GrowthCycleWorkflowPage}
+        />
+        <Route
+          path="/growth-cycle/:id/edit"
+          component={UpdateGrowthCyclePage}
+        />
+        <Route path="/season" component={SeasonPage} />
+        <Route path="/season/create" component={CreateSeasonPage} />
+        <Route path="/season/:id/edit" component={UpdateSeasonPage} />
+        <Route path="/season/:id" component={SeasonDetailPage} />
+        <Route
+          path="/cultivation-material/pesticide"
+          component={PesticidePage}
+        />
+        <Route path="/pesticide-group" component={PesticideGroupPage} />
+        <Route
+          path="/livestock-medicine-group"
+          component={LivestockMedicineGroupPage}
+        />
+        <Route
+          path="/aquaculture-medicine-group"
+          component={AquacultureMedicineGroupPage}
+        />
+        <Route
+          path="/cultivation-material/pesticide/create"
+          component={PesticideCreatePage}
+        />
+        <Route
+          path="/cultivation-material/pesticide/:id/edit"
+          component={PesticideCreatePage}
+        />
+        <Route
+          path="/cultivation-material/pesticide/:id"
+          component={PesticideDetailPage}
+        />
+        <Route
+          path="/cultivation-material/fertilizer"
+          component={FertilizerPage}
+        />
+        <Route path="/fertilizer-group" component={FertilizerGroupPage} />
+        <Route
+          path="/cultivation-material/fertilizer/create"
+          component={FertilizerCreatePage}
+        />
+        <Route
+          path="/cultivation-material/fertilizer/:id/edit"
+          component={FertilizerCreatePage}
+        />
+        <Route
+          path="/cultivation-material/fertilizer/:id"
+          component={FertilizerDetailPage}
+        />
+        <Route path="/cultivation-material/material" component={MaterialPage} />
+        <Route path="/material-group" component={MaterialGroupPage} />
+        <Route
+          path="/cultivation-material/material/create"
+          component={MaterialCreatePage}
+        />
+        <Route
+          path="/cultivation-material/material/:id/edit"
+          component={MaterialCreatePage}
+        />
+        <Route
+          path="/cultivation-material/material/:id"
+          component={MaterialDetailPage}
+        />
 
-      <Route path="/cultivation-material/equipment" component={EquipmentPage} />
-      <Route path="/vehicle-group" component={EquipmentGroupPage} />
-      <Route
-        path="/cultivation-material/equipment/create"
-        component={EquipmentCreatePage}
-      />
-      <Route
-        path="/cultivation-material/equipment/:id/edit"
-        component={EquipmentCreatePage}
-      />
-      <Route
-        path="/cultivation-material/equipment/:id"
-        component={EquipmentDetailPage}
-      />
+        <Route
+          path="/cultivation-material/equipment"
+          component={EquipmentPage}
+        />
+        <Route path="/vehicle-group" component={EquipmentGroupPage} />
+        <Route
+          path="/cultivation-material/equipment/create"
+          component={EquipmentCreatePage}
+        />
+        <Route
+          path="/cultivation-material/equipment/:id/edit"
+          component={EquipmentCreatePage}
+        />
+        <Route
+          path="/cultivation-material/equipment/:id"
+          component={EquipmentDetailPage}
+        />
 
-      {/* Admin Master Data Supply Routes */}
-      <Route path="/admin/material" component={MaterialPage} />
-      <Route path="/admin/material/create" component={MaterialCreatePage} />
-      <Route path="/admin/material/:id/edit" component={MaterialCreatePage} />
-      <Route path="/admin/material/:id" component={MaterialDetailPage} />
+        {/* Admin Master Data Supply Routes */}
+        <Route path="/admin/material" component={MaterialPage} />
+        <Route path="/admin/material/create" component={MaterialCreatePage} />
+        <Route path="/admin/material/:id/edit" component={MaterialCreatePage} />
+        <Route path="/admin/material/:id" component={MaterialDetailPage} />
 
-      <Route path="/admin/pesticide" component={PesticidePage} />
-      <Route path="/admin/pesticide/create" component={PesticideCreatePage} />
-      <Route path="/admin/pesticide/:id/edit" component={PesticideCreatePage} />
-      <Route path="/admin/pesticide/:id" component={PesticideDetailPage} />
+        <Route path="/admin/pesticide" component={PesticidePage} />
+        <Route path="/admin/pesticide/create" component={PesticideCreatePage} />
+        <Route
+          path="/admin/pesticide/:id/edit"
+          component={PesticideCreatePage}
+        />
+        <Route path="/admin/pesticide/:id" component={PesticideDetailPage} />
 
-      <Route path="/admin/fertilizer" component={FertilizerPage} />
-      <Route path="/admin/fertilizer/create" component={FertilizerCreatePage} />
-      <Route
-        path="/admin/fertilizer/:id/edit"
-        component={FertilizerCreatePage}
-      />
-      <Route path="/admin/fertilizer/:id" component={FertilizerDetailPage} />
+        <Route path="/admin/fertilizer" component={FertilizerPage} />
+        <Route
+          path="/admin/fertilizer/create"
+          component={FertilizerCreatePage}
+        />
+        <Route
+          path="/admin/fertilizer/:id/edit"
+          component={FertilizerCreatePage}
+        />
+        <Route path="/admin/fertilizer/:id" component={FertilizerDetailPage} />
 
-      <Route path="/admin/equipment" component={EquipmentPage} />
-      <Route path="/admin/equipment/create" component={EquipmentCreatePage} />
-      <Route path="/admin/equipment/:id/edit" component={EquipmentCreatePage} />
-      <Route path="/admin/equipment/:id" component={EquipmentDetailPage} />
+        <Route path="/admin/equipment" component={EquipmentPage} />
+        <Route path="/admin/equipment/create" component={EquipmentCreatePage} />
+        <Route
+          path="/admin/equipment/:id/edit"
+          component={EquipmentCreatePage}
+        />
+        <Route path="/admin/equipment/:id" component={EquipmentDetailPage} />
 
-      {/* Admin Master Data Supply Routes - Livestock */}
-      <Route path="/admin/ah-material" component={AhMaterialPage} />
-      <Route
-        path="/admin/ah-material/create"
-        component={AhMaterialCreatePage}
-      />
-      <Route
-        path="/admin/ah-material/:id/edit"
-        component={AhMaterialCreatePage}
-      />
-      <Route path="/admin/ah-material/:id" component={AhMaterialDetailPage} />
+        {/* Admin Master Data Supply Routes - Livestock */}
+        <Route path="/admin/ah-material" component={AhMaterialPage} />
+        <Route
+          path="/admin/ah-material/create"
+          component={AhMaterialCreatePage}
+        />
+        <Route
+          path="/admin/ah-material/:id/edit"
+          component={AhMaterialCreatePage}
+        />
+        <Route path="/admin/ah-material/:id" component={AhMaterialDetailPage} />
 
-      <Route path="/admin/ah-pesticide" component={AhPesticidePage} />
-      <Route
-        path="/admin/ah-pesticide/create"
-        component={AhPesticideCreatePage}
-      />
-      <Route
-        path="/admin/ah-pesticide/:id/edit"
-        component={AhPesticideCreatePage}
-      />
-      <Route path="/admin/ah-pesticide/:id" component={AhPesticideDetailPage} />
+        <Route path="/admin/ah-pesticide" component={AhPesticidePage} />
+        <Route
+          path="/admin/ah-pesticide/create"
+          component={AhPesticideCreatePage}
+        />
+        <Route
+          path="/admin/ah-pesticide/:id/edit"
+          component={AhPesticideCreatePage}
+        />
+        <Route
+          path="/admin/ah-pesticide/:id"
+          component={AhPesticideDetailPage}
+        />
 
-      <Route path="/admin/ah-equipment" component={AhEquipmentPage} />
-      <Route
-        path="/admin/ah-equipment/create"
-        component={AhEquipmentCreatePage}
-      />
-      <Route
-        path="/admin/ah-equipment/:id/edit"
-        component={AhEquipmentCreatePage}
-      />
-      <Route path="/admin/ah-equipment/:id" component={AhEquipmentDetailPage} />
+        <Route path="/admin/ah-equipment" component={AhEquipmentPage} />
+        <Route
+          path="/admin/ah-equipment/create"
+          component={AhEquipmentCreatePage}
+        />
+        <Route
+          path="/admin/ah-equipment/:id/edit"
+          component={AhEquipmentCreatePage}
+        />
+        <Route
+          path="/admin/ah-equipment/:id"
+          component={AhEquipmentDetailPage}
+        />
 
-      {/* Admin Master Data Supply Routes - Aquaculture */}
-      <Route path="/admin/aq-material" component={AqMaterialPage} />
-      <Route
-        path="/admin/aq-material/create"
-        component={AqMaterialCreatePage}
-      />
-      <Route
-        path="/admin/aq-material/:id/edit"
-        component={AqMaterialCreatePage}
-      />
-      <Route path="/admin/aq-material/:id" component={AqMaterialDetailPage} />
+        {/* Admin Master Data Supply Routes - Aquaculture */}
+        <Route path="/admin/aq-material" component={AqMaterialPage} />
+        <Route
+          path="/admin/aq-material/create"
+          component={AqMaterialCreatePage}
+        />
+        <Route
+          path="/admin/aq-material/:id/edit"
+          component={AqMaterialCreatePage}
+        />
+        <Route path="/admin/aq-material/:id" component={AqMaterialDetailPage} />
 
-      <Route path="/admin/aq-pesticide" component={AqPesticidePage} />
-      <Route
-        path="/admin/aq-pesticide/create"
-        component={AqPesticideCreatePage}
-      />
-      <Route
-        path="/admin/aq-pesticide/:id/edit"
-        component={AqPesticideCreatePage}
-      />
-      <Route path="/admin/aq-pesticide/:id" component={AqPesticideDetailPage} />
+        <Route path="/admin/aq-pesticide" component={AqPesticidePage} />
+        <Route
+          path="/admin/aq-pesticide/create"
+          component={AqPesticideCreatePage}
+        />
+        <Route
+          path="/admin/aq-pesticide/:id/edit"
+          component={AqPesticideCreatePage}
+        />
+        <Route
+          path="/admin/aq-pesticide/:id"
+          component={AqPesticideDetailPage}
+        />
 
-      <Route path="/admin/aq-equipment" component={AqEquipmentPage} />
-      <Route
-        path="/admin/aq-equipment/create"
-        component={AqEquipmentCreatePage}
-      />
-      <Route
-        path="/admin/aq-equipment/:id/edit"
-        component={AqEquipmentCreatePage}
-      />
-      <Route path="/admin/aq-equipment/:id" component={AqEquipmentDetailPage} />
+        <Route path="/admin/aq-equipment" component={AqEquipmentPage} />
+        <Route
+          path="/admin/aq-equipment/create"
+          component={AqEquipmentCreatePage}
+        />
+        <Route
+          path="/admin/aq-equipment/:id/edit"
+          component={AqEquipmentCreatePage}
+        />
+        <Route
+          path="/admin/aq-equipment/:id"
+          component={AqEquipmentDetailPage}
+        />
 
-      {/* Animal Husbandry Material Routes */}
-      <Route
-        path="/animal-husbandry-material/pesticide"
-        component={AhPesticidePage}
-      />
-      <Route
-        path="/animal-husbandry-material/pesticide/create"
-        component={AhPesticideCreatePage}
-      />
-      <Route
-        path="/animal-husbandry-material/pesticide/:id/edit"
-        component={AhPesticideCreatePage}
-      />
-      <Route
-        path="/animal-husbandry-material/pesticide/:id"
-        component={AhPesticideDetailPage}
-      />
-      <Route
-        path="/animal-husbandry-material/material"
-        component={AhMaterialPage}
-      />
-      <Route
-        path="/animal-husbandry-material/material/create"
-        component={AhMaterialCreatePage}
-      />
-      <Route
-        path="/animal-husbandry-material/material/:id/edit"
-        component={AhMaterialCreatePage}
-      />
-      <Route
-        path="/animal-husbandry-material/material/:id"
-        component={AhMaterialDetailPage}
-      />
-      <Route
-        path="/animal-husbandry-material/equipment"
-        component={AhEquipmentPage}
-      />
-      <Route
-        path="/animal-husbandry-material/equipment/create"
-        component={AhEquipmentCreatePage}
-      />
-      <Route
-        path="/animal-husbandry-material/equipment/:id/edit"
-        component={AhEquipmentCreatePage}
-      />
-      <Route
-        path="/animal-husbandry-material/equipment/:id"
-        component={AhEquipmentDetailPage}
-      />
+        {/* Animal Husbandry Material Routes */}
+        <Route
+          path="/animal-husbandry-material/pesticide"
+          component={AhPesticidePage}
+        />
+        <Route
+          path="/animal-husbandry-material/pesticide/create"
+          component={AhPesticideCreatePage}
+        />
+        <Route
+          path="/animal-husbandry-material/pesticide/:id/edit"
+          component={AhPesticideCreatePage}
+        />
+        <Route
+          path="/animal-husbandry-material/pesticide/:id"
+          component={AhPesticideDetailPage}
+        />
+        <Route
+          path="/animal-husbandry-material/material"
+          component={AhMaterialPage}
+        />
+        <Route
+          path="/animal-husbandry-material/material/create"
+          component={AhMaterialCreatePage}
+        />
+        <Route
+          path="/animal-husbandry-material/material/:id/edit"
+          component={AhMaterialCreatePage}
+        />
+        <Route
+          path="/animal-husbandry-material/material/:id"
+          component={AhMaterialDetailPage}
+        />
+        <Route
+          path="/animal-husbandry-material/equipment"
+          component={AhEquipmentPage}
+        />
+        <Route
+          path="/animal-husbandry-material/equipment/create"
+          component={AhEquipmentCreatePage}
+        />
+        <Route
+          path="/animal-husbandry-material/equipment/:id/edit"
+          component={AhEquipmentCreatePage}
+        />
+        <Route
+          path="/animal-husbandry-material/equipment/:id"
+          component={AhEquipmentDetailPage}
+        />
 
-      {/* Aquaculture Material Routes */}
-      <Route
-        path="/aquaculture-material/pesticide"
-        component={AqPesticidePage}
-      />
-      <Route
-        path="/aquaculture-material/pesticide/create"
-        component={AqPesticideCreatePage}
-      />
-      <Route
-        path="/aquaculture-material/pesticide/:id/edit"
-        component={AqPesticideCreatePage}
-      />
-      <Route
-        path="/aquaculture-material/pesticide/:id"
-        component={AqPesticideDetailPage}
-      />
-      <Route path="/aquaculture-material/material" component={AqMaterialPage} />
-      <Route
-        path="/aquaculture-material/material/create"
-        component={AqMaterialCreatePage}
-      />
-      <Route
-        path="/aquaculture-material/material/:id/edit"
-        component={AqMaterialCreatePage}
-      />
-      <Route
-        path="/aquaculture-material/material/:id"
-        component={AqMaterialDetailPage}
-      />
-      <Route
-        path="/aquaculture-material/equipment"
-        component={AqEquipmentPage}
-      />
-      <Route
-        path="/aquaculture-material/equipment/create"
-        component={AqEquipmentCreatePage}
-      />
-      <Route
-        path="/aquaculture-material/equipment/:id/edit"
-        component={AqEquipmentCreatePage}
-      />
-      <Route
-        path="/aquaculture-material/equipment/:id"
-        component={AqEquipmentDetailPage}
-      />
+        {/* Aquaculture Material Routes */}
+        <Route
+          path="/aquaculture-material/pesticide"
+          component={AqPesticidePage}
+        />
+        <Route
+          path="/aquaculture-material/pesticide/create"
+          component={AqPesticideCreatePage}
+        />
+        <Route
+          path="/aquaculture-material/pesticide/:id/edit"
+          component={AqPesticideCreatePage}
+        />
+        <Route
+          path="/aquaculture-material/pesticide/:id"
+          component={AqPesticideDetailPage}
+        />
+        <Route
+          path="/aquaculture-material/material"
+          component={AqMaterialPage}
+        />
+        <Route
+          path="/aquaculture-material/material/create"
+          component={AqMaterialCreatePage}
+        />
+        <Route
+          path="/aquaculture-material/material/:id/edit"
+          component={AqMaterialCreatePage}
+        />
+        <Route
+          path="/aquaculture-material/material/:id"
+          component={AqMaterialDetailPage}
+        />
+        <Route
+          path="/aquaculture-material/equipment"
+          component={AqEquipmentPage}
+        />
+        <Route
+          path="/aquaculture-material/equipment/create"
+          component={AqEquipmentCreatePage}
+        />
+        <Route
+          path="/aquaculture-material/equipment/:id/edit"
+          component={AqEquipmentCreatePage}
+        />
+        <Route
+          path="/aquaculture-material/equipment/:id"
+          component={AqEquipmentDetailPage}
+        />
 
-      {/* Warehouse Routes */}
-      <Route path="/inventory-area" component={InventoryAreaPage} />
-      <Route
-        path="/inventory-area/create"
-        component={InventoryAreaCreatePage}
-      />
-      <Route
-        path="/inventory-area/:id/edit"
-        component={InventoryAreaCreatePage}
-      />
-      <Route
-        path="/crop-material-inventory"
-        component={CropMaterialInventoryPage}
-      />
-      <Route
-        path="/livestock-material-inventory"
-        component={LivestockMaterialInventoryPage}
-      />
-      <Route
-        path="/aquaculture-material-inventory"
-        component={AquacultureMaterialInventoryPage}
-      />
-      <Route path="/inventory-lookup" component={InventoryLookupPage} />
-      <Route path="/inventory-in" component={InventoryInPage} />
-      <Route path="/inventory-out" component={InventoryOutPage} />
+        {/* Warehouse Routes */}
+        <Route path="/inventory-area" component={InventoryAreaPage} />
+        <Route
+          path="/inventory-area/create"
+          component={InventoryAreaCreatePage}
+        />
+        <Route
+          path="/inventory-area/:id/edit"
+          component={InventoryAreaCreatePage}
+        />
+        <Route
+          path="/crop-material-inventory"
+          component={CropMaterialInventoryPage}
+        />
+        <Route
+          path="/livestock-material-inventory"
+          component={LivestockMaterialInventoryPage}
+        />
+        <Route
+          path="/aquaculture-material-inventory"
+          component={AquacultureMaterialInventoryPage}
+        />
+        <Route path="/inventory-lookup" component={InventoryLookupPage} />
+        <Route path="/inventory-in" component={InventoryInPage} />
+        <Route path="/inventory-out" component={InventoryOutPage} />
 
-      <Route path="/contract" component={ContractPage} />
-      <Route path="/document-version" component={DocumentVersionPage} />
-      <Route path="/role-responsibility" component={RoleResponsibilityPage} />
-      <Route
-        path="/role-responsibility/create"
-        component={RoleResponsibilityFormPage}
-      />
-      <Route
-        path="/role-responsibility/:id/edit"
-        component={RoleResponsibilityFormPage}
-      />
-      <Route
-        path="/role-responsibility/:id"
-        component={RoleResponsibilityDetailPage}
-      />
-      <Route path="/contract/create" component={ContractCreatePage} />
-      <Route path="/contract/:id/edit" component={ContractEditPage} />
-      <Route path="/contract/:id" component={ContractDetailPage} />
-      <Route path="/supply-conversion-rules" component={UnitPage} />
-      <Route
-        path="/supply-conversion-rules/create"
-        component={UnitCreatePage}
-      />
-      <Route
-        path="/supply-conversion-rules/:id/edit"
-        component={UnitCreatePage}
-      />
-      <Route path="/plan-type" component={PlanTypePage} />
-      <Route path="/plan" component={PlanPage} />
-      <Route path="/plan/create" component={PlanCreatePage} />
-      <Route path="/plan/:id/workflow" component={PlanWorkflowPage} />
-      <Route path="/plan/:id/edit" component={PlanEditPage} />
-      <Route path="/plan/:id" component={PlanDetailPage} />
-      <Route path="/plan-growth" component={PlanGrowthRoute} />
-      <Route
-        path="/plan-growth/create/workflow/plan/:id/edit"
-        component={PlanGrowthWorkflowPlanEditRoute}
-      />
-      <Route
-        path="/plan-growth/create/workflow/stage/:nodeId/edit"
-        component={PlanGrowthWorkflowStageEditRoute}
-      />
-      <Route
-        path="/plan-growth/create/workflow/detail/:nodeId/edit"
-        component={PlanGrowthWorkflowDetailEditRoute}
-      />
-      <Route
-        path="/plan-growth/create/workflow/info/create"
-        component={PlanGrowthWorkflowInfoFormRoute}
-      />
-      <Route
-        path="/plan-growth/create/workflow/info/:nodeId/edit"
-        component={PlanGrowthWorkflowInfoFormRoute}
-      />
-      <Route
-        path="/plan-growth/create/workflow"
-        component={PlanGrowthCreateWorkflowRoute}
-      />
-      <Route
-        path="/plan-growth/create/workflow/:workflowId"
-        component={PlanGrowthCreateWorkflowRoute}
-      />
-      <Route path="/plan-growth/create" component={PlanGrowthCreateRoute} />
-      <Route
-        path="/plan-growth/workflow/:workflowId"
-        component={PlanGrowthWorkflowPlansRoute}
-      />
-      <Route
-        path="/plan-growth/:id/workflow"
-        component={PlanGrowthWorkflowRoute}
-      />
-      <Route path="/plan-growth/:id/edit" component={PlanGrowthEditRoute} />
-      <Route path="/plan-growth/:id" component={PlanGrowthDetailRoute} />
-      <Route path="/plan-animal-growth" component={PlanAnimalGrowthRoute} />
-      <Route
-        path="/plan-animal-growth/create/workflow/plan/:id/edit"
-        component={PlanAnimalGrowthWorkflowPlanEditRoute}
-      />
-      <Route
-        path="/plan-animal-growth/create/workflow/stage/:nodeId/edit"
-        component={PlanAnimalGrowthWorkflowStageEditRoute}
-      />
-      <Route
-        path="/plan-animal-growth/create/workflow/detail/:nodeId/edit"
-        component={PlanAnimalGrowthWorkflowDetailEditRoute}
-      />
-      <Route
-        path="/plan-animal-growth/create/workflow/info/create"
-        component={PlanAnimalGrowthWorkflowInfoFormRoute}
-      />
-      <Route
-        path="/plan-animal-growth/create/workflow/info/:nodeId/edit"
-        component={PlanAnimalGrowthWorkflowInfoFormRoute}
-      />
-      <Route
-        path="/plan-animal-growth/create/workflow"
-        component={PlanAnimalGrowthCreateWorkflowRoute}
-      />
-      <Route
-        path="/plan-animal-growth/create/workflow/:workflowId"
-        component={PlanAnimalGrowthCreateWorkflowRoute}
-      />
-      <Route
-        path="/plan-animal-growth/create"
-        component={PlanAnimalGrowthCreateRoute}
-      />
-      <Route
-        path="/plan-animal-growth/workflow/:workflowId"
-        component={PlanAnimalGrowthWorkflowPlansRoute}
-      />
-      <Route
-        path="/plan-animal-growth/:id/workflow"
-        component={PlanAnimalGrowthWorkflowRoute}
-      />
-      <Route
-        path="/plan-animal-growth/:id/edit"
-        component={PlanAnimalGrowthEditRoute}
-      />
-      <Route
-        path="/plan-animal-growth/:id"
-        component={PlanAnimalGrowthDetailRoute}
-      />
-      <Route
-        path="/plan-aquaculture-growth"
-        component={PlanAquacultureGrowthRoute}
-      />
-      <Route
-        path="/plan-aquaculture-growth/create/workflow/plan/:id/edit"
-        component={PlanAquacultureGrowthWorkflowPlanEditRoute}
-      />
-      <Route
-        path="/plan-aquaculture-growth/create/workflow/stage/:nodeId/edit"
-        component={PlanAquacultureGrowthWorkflowStageEditRoute}
-      />
-      <Route
-        path="/plan-aquaculture-growth/create/workflow/detail/:nodeId/edit"
-        component={PlanAquacultureGrowthWorkflowDetailEditRoute}
-      />
-      <Route
-        path="/plan-aquaculture-growth/create/workflow/info/create"
-        component={PlanAquacultureGrowthWorkflowInfoFormRoute}
-      />
-      <Route
-        path="/plan-aquaculture-growth/create/workflow/info/:nodeId/edit"
-        component={PlanAquacultureGrowthWorkflowInfoFormRoute}
-      />
-      <Route
-        path="/plan-aquaculture-growth/create/workflow"
-        component={PlanAquacultureGrowthCreateWorkflowRoute}
-      />
-      <Route
-        path="/plan-aquaculture-growth/create/workflow/:workflowId"
-        component={PlanAquacultureGrowthCreateWorkflowRoute}
-      />
-      <Route
-        path="/plan-aquaculture-growth/create"
-        component={PlanAquacultureGrowthCreateRoute}
-      />
-      <Route
-        path="/plan-aquaculture-growth/workflow/:workflowId"
-        component={PlanAquacultureGrowthWorkflowPlansRoute}
-      />
-      <Route
-        path="/plan-aquaculture-growth/:id/workflow"
-        component={PlanAquacultureGrowthWorkflowRoute}
-      />
-      <Route
-        path="/plan-aquaculture-growth/:id/edit"
-        component={PlanAquacultureGrowthEditRoute}
-      />
-      <Route
-        path="/plan-aquaculture-growth/:id"
-        component={PlanAquacultureGrowthDetailRoute}
-      />
-      <Route
-        path="/production-cultivation-report"
-        component={ProductionCultivationReportPage}
-      />
-      <Route path="/treatment-report" component={TreatmentReportPage} />
-      <Route
-        path="/material-consumption-report"
-        component={InternalReportPage}
-      />
-      <Route path="/admin-farmer-report" component={FarmerReportPage} />
-      <Route path="/task" component={TaskPage} />
-      <Route path="/task/create" component={TaskCreatePage} />
-      <Route path="/task/:id/edit" component={TaskEditPage} />
-      {/* Keep after /task/create so ":id" does not swallow the literal route. */}
-      <Route path="/task/:id" component={TaskDetailPage} />
-      <Route path="/workspace" component={WorkspacePage} />
-      <Route path="/settings" component={SettingsPage} />
-      <Route path="/treatment" component={TreatmentPage} />
-      <Route path="/treatment/create" component={CreateTreatmentPage} />
-      <Route path="/treatment/:id/edit" component={CreateTreatmentPage} />
+        <Route path="/contract" component={ContractPage} />
+        <Route path="/document-version" component={DocumentVersionPage} />
+        <Route path="/role-responsibility" component={RoleResponsibilityPage} />
+        <Route
+          path="/role-responsibility/create"
+          component={RoleResponsibilityFormPage}
+        />
+        <Route
+          path="/role-responsibility/:id/edit"
+          component={RoleResponsibilityFormPage}
+        />
+        <Route
+          path="/role-responsibility/:id"
+          component={RoleResponsibilityDetailPage}
+        />
+        <Route path="/contract/create" component={ContractCreatePage} />
+        <Route path="/contract/:id/edit" component={ContractEditPage} />
+        <Route path="/contract/:id" component={ContractDetailPage} />
+        <Route path="/supply-conversion-rules" component={UnitPage} />
+        <Route
+          path="/supply-conversion-rules/create"
+          component={UnitCreatePage}
+        />
+        <Route
+          path="/supply-conversion-rules/:id/edit"
+          component={UnitCreatePage}
+        />
+        <Route path="/plan-type" component={PlanTypePage} />
+        <Route path="/plan" component={PlanPage} />
+        <Route path="/plan/create" component={PlanCreatePage} />
+        <Route path="/plan/:id/workflow" component={PlanWorkflowPage} />
+        <Route path="/plan/:id/edit" component={PlanEditPage} />
+        <Route path="/plan/:id" component={PlanDetailPage} />
+        <Route path="/plan-growth" component={PlanGrowthRoute} />
+        <Route
+          path="/plan-growth/create/workflow/plan/:id/edit"
+          component={PlanGrowthWorkflowPlanEditRoute}
+        />
+        <Route
+          path="/plan-growth/create/workflow/stage/:nodeId/edit"
+          component={PlanGrowthWorkflowStageEditRoute}
+        />
+        <Route
+          path="/plan-growth/create/workflow/detail/:nodeId/edit"
+          component={PlanGrowthWorkflowDetailEditRoute}
+        />
+        <Route
+          path="/plan-growth/create/workflow/info/create"
+          component={PlanGrowthWorkflowInfoFormRoute}
+        />
+        <Route
+          path="/plan-growth/create/workflow/info/:nodeId/edit"
+          component={PlanGrowthWorkflowInfoFormRoute}
+        />
+        <Route
+          path="/plan-growth/create/workflow"
+          component={PlanGrowthCreateWorkflowRoute}
+        />
+        <Route
+          path="/plan-growth/create/workflow/:workflowId"
+          component={PlanGrowthCreateWorkflowRoute}
+        />
+        <Route path="/plan-growth/create" component={PlanGrowthCreateRoute} />
+        <Route
+          path="/plan-growth/workflow/:workflowId"
+          component={PlanGrowthWorkflowPlansRoute}
+        />
+        <Route
+          path="/plan-growth/:id/workflow"
+          component={PlanGrowthWorkflowRoute}
+        />
+        <Route path="/plan-growth/:id/edit" component={PlanGrowthEditRoute} />
+        <Route path="/plan-growth/:id" component={PlanGrowthDetailRoute} />
+        <Route path="/plan-animal-growth" component={PlanAnimalGrowthRoute} />
+        <Route
+          path="/plan-animal-growth/create/workflow/plan/:id/edit"
+          component={PlanAnimalGrowthWorkflowPlanEditRoute}
+        />
+        <Route
+          path="/plan-animal-growth/create/workflow/stage/:nodeId/edit"
+          component={PlanAnimalGrowthWorkflowStageEditRoute}
+        />
+        <Route
+          path="/plan-animal-growth/create/workflow/detail/:nodeId/edit"
+          component={PlanAnimalGrowthWorkflowDetailEditRoute}
+        />
+        <Route
+          path="/plan-animal-growth/create/workflow/info/create"
+          component={PlanAnimalGrowthWorkflowInfoFormRoute}
+        />
+        <Route
+          path="/plan-animal-growth/create/workflow/info/:nodeId/edit"
+          component={PlanAnimalGrowthWorkflowInfoFormRoute}
+        />
+        <Route
+          path="/plan-animal-growth/create/workflow"
+          component={PlanAnimalGrowthCreateWorkflowRoute}
+        />
+        <Route
+          path="/plan-animal-growth/create/workflow/:workflowId"
+          component={PlanAnimalGrowthCreateWorkflowRoute}
+        />
+        <Route
+          path="/plan-animal-growth/create"
+          component={PlanAnimalGrowthCreateRoute}
+        />
+        <Route
+          path="/plan-animal-growth/workflow/:workflowId"
+          component={PlanAnimalGrowthWorkflowPlansRoute}
+        />
+        <Route
+          path="/plan-animal-growth/:id/workflow"
+          component={PlanAnimalGrowthWorkflowRoute}
+        />
+        <Route
+          path="/plan-animal-growth/:id/edit"
+          component={PlanAnimalGrowthEditRoute}
+        />
+        <Route
+          path="/plan-animal-growth/:id"
+          component={PlanAnimalGrowthDetailRoute}
+        />
+        <Route
+          path="/plan-aquaculture-growth"
+          component={PlanAquacultureGrowthRoute}
+        />
+        <Route
+          path="/plan-aquaculture-growth/create/workflow/plan/:id/edit"
+          component={PlanAquacultureGrowthWorkflowPlanEditRoute}
+        />
+        <Route
+          path="/plan-aquaculture-growth/create/workflow/stage/:nodeId/edit"
+          component={PlanAquacultureGrowthWorkflowStageEditRoute}
+        />
+        <Route
+          path="/plan-aquaculture-growth/create/workflow/detail/:nodeId/edit"
+          component={PlanAquacultureGrowthWorkflowDetailEditRoute}
+        />
+        <Route
+          path="/plan-aquaculture-growth/create/workflow/info/create"
+          component={PlanAquacultureGrowthWorkflowInfoFormRoute}
+        />
+        <Route
+          path="/plan-aquaculture-growth/create/workflow/info/:nodeId/edit"
+          component={PlanAquacultureGrowthWorkflowInfoFormRoute}
+        />
+        <Route
+          path="/plan-aquaculture-growth/create/workflow"
+          component={PlanAquacultureGrowthCreateWorkflowRoute}
+        />
+        <Route
+          path="/plan-aquaculture-growth/create/workflow/:workflowId"
+          component={PlanAquacultureGrowthCreateWorkflowRoute}
+        />
+        <Route
+          path="/plan-aquaculture-growth/create"
+          component={PlanAquacultureGrowthCreateRoute}
+        />
+        <Route
+          path="/plan-aquaculture-growth/workflow/:workflowId"
+          component={PlanAquacultureGrowthWorkflowPlansRoute}
+        />
+        <Route
+          path="/plan-aquaculture-growth/:id/workflow"
+          component={PlanAquacultureGrowthWorkflowRoute}
+        />
+        <Route
+          path="/plan-aquaculture-growth/:id/edit"
+          component={PlanAquacultureGrowthEditRoute}
+        />
+        <Route
+          path="/plan-aquaculture-growth/:id"
+          component={PlanAquacultureGrowthDetailRoute}
+        />
+        <Route
+          path="/production-cultivation-report"
+          component={ProductionCultivationReportPage}
+        />
+        <Route path="/treatment-report" component={TreatmentReportPage} />
+        <Route
+          path="/material-consumption-report"
+          component={ReportsRedirect}
+        />
+        <Route path="/admin-farmer-report" component={ReportsRedirect} />
+        <Route path="/reports" component={ReportsRedirect} />
+        <Route
+          path="/reports/:domain/:module"
+          component={ReportPageContainer}
+        />
+        <Route path="/task" component={TaskPage} />
+        <Route path="/task/create" component={TaskCreatePage} />
+        <Route path="/task/:id/edit" component={TaskEditPage} />
+        {/* Keep after /task/create so ":id" does not swallow the literal route. */}
+        <Route path="/task/:id" component={TaskDetailPage} />
+        <Route path="/workspace" component={WorkspacePage} />
+        <Route path="/settings" component={SettingsPage} />
+        <Route path="/treatment" component={TreatmentPage} />
+        <Route path="/treatment/create" component={CreateTreatmentPage} />
+        <Route path="/treatment/:id/edit" component={CreateTreatmentPage} />
 
-      <Route path="/farmer" component={FarmerPage} />
-      <Route path="/farmer/create" component={FarmerCreatePage} />
-      <Route path="/farmer/:id/edit" component={FarmerEditPage} />
-      <Route path="/farmer/:id" component={FarmerDetailPage} />
+        <Route path="/farmer" component={FarmerPage} />
+        <Route path="/farmer/create" component={FarmerCreatePage} />
+        <Route path="/farmer/:id/edit" component={FarmerEditPage} />
+        <Route path="/farmer/:id" component={FarmerDetailPage} />
 
-      <Route path="/cooperative" component={CooperativePage} />
-      <Route path="/cooperative/create" component={CooperativeCreatePage} />
-      <Route path="/cooperative/:id/edit" component={CooperativeEditPage} />
-      <Route path="/cooperative/:id" component={CooperativeDetailPage} />
+        <Route path="/cooperative" component={CooperativePage} />
+        <Route path="/cooperative/create" component={CooperativeCreatePage} />
+        <Route path="/cooperative/:id/edit" component={CooperativeEditPage} />
+        <Route path="/cooperative/:id" component={CooperativeDetailPage} />
 
-      {/* IoT Device Management Routes */}
-      <Route path="/iot-device" component={IoTDevicePage} />
-      <Route path="/iot-device-group" component={IoTDeviceGroupPage} />
-      <Route path="/irrigation-systems" component={IrrigationSystemPage} />
-      <Route path="/iot-device/create" component={IoTDeviceCreatePage} />
-      <Route path="/iot-device/:id/edit" component={IoTDeviceCreatePage} />
-      <Route path="/iot-device/:id" component={IoTDeviceDetailPage} />
-      <Route path="/map-iot-device" component={IoTMapViewPage} />
+        {/* IoT Device Management Routes */}
+        <Route path="/iot-device" component={IoTDevicePage} />
+        <Route path="/iot-device-group" component={IoTDeviceGroupPage} />
+        <Route path="/irrigation-systems" component={IrrigationSystemPage} />
+        <Route path="/iot-device/create" component={IoTDeviceCreatePage} />
+        <Route path="/iot-device/:id/edit" component={IoTDeviceCreatePage} />
+        <Route path="/iot-device/:id" component={IoTDeviceDetailPage} />
+        <Route path="/map-iot-device" component={IoTMapViewPage} />
 
-      <Route component={NotFoundPage} />
-    </Switch>
+        <Route component={NotFoundPage} />
+      </Switch>
+    </ReportProvider>
   );
 }
 

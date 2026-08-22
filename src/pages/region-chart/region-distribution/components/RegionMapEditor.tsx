@@ -105,12 +105,12 @@ const MapLayout = ({
 }: MapLayoutProps) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   return (
-    <div className="flex flex-col md:flex-row flex-1 gap-4 overflow-y-auto md:overflow-hidden p-4 h-full w-full">
-      <div className="relative z-0 h-96 md:h-full w-full md:flex-1 shrink-0 md:shrink overflow-hidden rounded-lg border">
+    <div className="flex flex-col md:flex-row flex-1 min-h-0 gap-4 p-4 w-full">
+      <div className="relative z-0 w-full flex-1 min-h-96 md:min-h-0 overflow-hidden rounded-lg border">
         <MapContainer
           center={[center.lat, center.lng]}
           zoom={14}
-          className="h-full w-full"
+          className="z-0 h-full w-full"
         >
           <FitBoundsOnce points={regionPoints} fitTrigger={mapFitTrigger} />
           <TileLayer
@@ -148,7 +148,7 @@ const MapLayout = ({
         </MapContainer>
       </div>
 
-      <div className="flex h-[450px] md:h-full w-full md:w-75 shrink-0 flex-col overflow-hidden rounded-lg border bg-slate-50">
+      <div className="flex h-[450px] md:h-full md:w-75 shrink-0 flex-col overflow-hidden rounded-lg border bg-slate-50">
         <div className="flex flex-col border-b bg-white p-3 gap-2.5">
           <div>
             <h4 className="text-sm font-semibold">Danh sách toạ độ</h4>

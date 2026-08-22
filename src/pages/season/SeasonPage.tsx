@@ -99,7 +99,7 @@ export default function SeasonPage() {
             </TabsTrigger>
             <TabsTrigger value="AQUACULTURE" className="gap-2">
               <Fish className="h-4 w-4" />
-              Thủy sản
+              Vụ thả nuôi
             </TabsTrigger>
           </TabsList>
 

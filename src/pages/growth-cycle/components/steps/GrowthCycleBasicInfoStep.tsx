@@ -217,7 +217,7 @@ export function GrowthCycleBasicInfoStep({
   const primaryOptions = crops.map((c) => ({
     id: String(c.id),
     name: c.name,
-    group: c.scientificName || ("Nhóm " + (c.subjectGroupId || "")),
+    group: c.scientificName || "Nhóm " + (c.subjectGroupId || ""),
     image: c.imageUrl ?? "",
     description: c.scientificName || "",
   }));
@@ -271,7 +271,7 @@ export function GrowthCycleBasicInfoStep({
         : "Bấm vào đây để chọn giống trong cùng dialog."
       : "Phạm vi đang là theo loại cây nên không cần chọn giống riêng.";
 
-  const scopeCropTitle = "Theo loại cây trồng";
+  const scopeCropTitle = "Theo cây trồng";
   const scopeCropDescription =
     "Áp dụng cho tất cả các giống thuộc loại cây trồng này.";
   const scopeVarietyDescription = "Chọn loại và giống trong cùng một dialog.";
