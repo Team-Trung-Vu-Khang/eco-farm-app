@@ -53,6 +53,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useLocation, useParams } from "wouter";
 
 import { AppLoadingState } from "@/components/AppLoadingState";
+import type { DomainCode } from "@/features/farm-supply/types";
 import { useFarmTaskById, useUpdateFarmTask } from "@/features/farm-task";
 import type { FarmTaskRequest } from "@/features/farm-task";
 import {
@@ -245,10 +246,11 @@ export default function TaskEditPage() {
       });
     },
   });
+  const taskDomainCode: DomainCode = taskResponse?.domainCode || "CROP";
   const taskCategoriesQuery = useTaskCategorySearch({
-    params: { domainCode: "CROP" },
+    params: { domainCode: taskDomainCode },
   });
-  const supplyCatalog = useCropSupplyCatalog();
+  const supplyCatalog = useCropSupplyCatalog(taskDomainCode);
   const apiSupplyMaterials = useMemo<MaterialAllocation[]>(
     () => {
       return Object.values(supplyCatalog.optionsByType).flatMap((options) =>

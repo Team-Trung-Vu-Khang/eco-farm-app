@@ -108,6 +108,25 @@ export function TaskPlanContextCard({
 }: TaskPlanContextCardProps) {
   const purpose = PURPOSE_META[plan.purpose] ?? PURPOSE_META.incurred;
   const status = STATUS_META[plan.status] ?? STATUS_META.draft;
+  const scopeItems = (plan.selectionSummary || []).flatMap(
+    (group) => group.items,
+  );
+  const plotCount = scopeItems.filter((item) => item.type === "plot").length;
+  const areaCount = scopeItems.filter((item) => item.type === "area").length;
+  const regionCount = scopeItems.filter(
+    (item) => item.type === "region",
+  ).length;
+  const scopeValue = scopeItems.length
+    ? [
+        regionCount ? `${regionCount} vùng` : "",
+        areaCount ? `${areaCount} khu` : "",
+        plotCount ? `${plotCount} lô` : "",
+      ]
+        .filter(Boolean)
+        .join(" • ")
+    : `${plan.selectedPlotIds?.length || 0} lô${
+        plan.area ? ` • ${plan.area} ha` : ""
+      }`;
 
   return (
     <Card className="border-l-4 border-l-primary shadow-sm mb-4">
@@ -159,9 +178,7 @@ export function TaskPlanContextCard({
           <InfoItem
             icon={MapPin}
             label="Phạm vi canh tác & sản xuất"
-            value={`${plan.selectedPlotIds?.length || 0} lô${
-              plan.area ? ` • ${plan.area} ha` : ""
-            }`}
+            value={scopeValue}
           />
           <InfoItem
             icon={Layers}

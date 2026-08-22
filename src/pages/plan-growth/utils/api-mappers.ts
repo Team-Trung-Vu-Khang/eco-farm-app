@@ -296,6 +296,7 @@ export function mapPlanResponseToPlan(plan: FarmPlanResponse): Plan {
 
   return {
     id: plan.id,
+    domainCode: plan.domainCode,
     code: plan.code,
     name: plan.name,
     description: plan.description || "",

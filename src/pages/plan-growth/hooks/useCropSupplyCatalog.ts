@@ -1,5 +1,6 @@
 import { farmSupplyApi } from "@/features/farm-supply";
 import type {
+  DomainCode,
   SupplyItemResponse,
   SupplyType,
 } from "@/features/farm-supply/types";
@@ -48,13 +49,13 @@ function getDefaultUnit(item: SupplyItemResponse, type: CropSupplyType) {
   return DEFAULT_UNITS[type][0] || "cái";
 }
 
-export function useCropSupplyCatalog(): CropSupplyCatalog {
+export function useCropSupplyCatalog(domainCode: DomainCode = "CROP"): CropSupplyCatalog {
   const queries = useQueries({
     queries: CROP_SUPPLY_TYPE_OPTIONS.map((typeOption) => ({
-      queryKey: ["plan-growth", "crop-supply-catalog", typeOption.value],
+      queryKey: ["plan-growth", "supply-catalog", domainCode, typeOption.value],
       queryFn: () =>
         farmSupplyApi.list(typeOption.value, {
-          domainCode: "CROP",
+          domainCode,
           status: "active",
           page: 0,
           size: 100,

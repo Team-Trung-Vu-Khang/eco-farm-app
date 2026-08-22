@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { devtools, persist } from "zustand/middleware";
 import { initialPlans } from "./planWorkflowSeed";
+import type { DomainCode } from "@/features/farm-supply/types";
 
 // Interface cho vật tư chi tiết
 export interface MaterialAllocation {
@@ -33,6 +34,7 @@ export interface TaskAllocation {
 
 export interface Plan {
   id: number;
+  domainCode?: DomainCode;
   code: string;
   name: string;
   description: string;
