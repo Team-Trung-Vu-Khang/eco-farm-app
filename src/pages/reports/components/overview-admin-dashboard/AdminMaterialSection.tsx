@@ -12,6 +12,7 @@ import {
   Leaf,
   TrendingUp,
   TrendingDown,
+  Info,
 } from "lucide-react";
 import { type CorporateEntity } from "./EntitySidebar";
 import {
@@ -207,9 +208,18 @@ export const AdminMaterialSection: React.FC<AdminMaterialSectionProps> = ({
                           ? "text-rose-600 bg-rose-50/50 border border-rose-100/50"
                           : "text-emerald-600 bg-emerald-50/50 border border-emerald-100/50";
                         return (
-                          <span className={`px-1 py-0.5 rounded text-[8px] font-bold font-sans ${subTrendColor}`}>
-                            {trendData.isIncrease ? "+" : "-"}{trendData.trend}%
-                          </span>
+                          <div className="relative group flex items-center">
+                            <span
+                              className={`px-1 py-0.5 rounded text-[8px] font-bold font-sans cursor-help ${subTrendColor}`}
+                            >
+                              {trendData.isIncrease ? "+" : "-"}
+                              {trendData.trend}%
+                            </span>
+                            <div className="absolute bottom-full right-0 mb-1.5 hidden group-hover:block bg-slate-850 text-white text-[9px] px-2 py-1 rounded shadow-lg whitespace-nowrap z-50 font-sans font-semibold">
+                              {trendData.isIncrease ? "Tăng" : "Giảm"}{" "}
+                              {trendData.trend}% so với cùng kỳ gần nhất
+                            </div>
+                          </div>
                         );
                       })()}
                     </div>
@@ -233,14 +243,24 @@ export const AdminMaterialSection: React.FC<AdminMaterialSectionProps> = ({
 
   return (
     <div className="space-y-4">
-      <div>
-        <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider">
-          Giám sát tiêu thụ vật tư nông nghiệp
-        </h4>
-        <p className="text-[11px] text-slate-400 font-medium mt-0.5">
-          Khối lượng phân bón, thuốc bảo vệ thực vật & khấu hao máy móc thiết bị
-          theo đơn vị
-        </p>
+      {/* Header with Title and Legend alert */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-slate-50/50 p-4 rounded-xl border border-slate-100/80">
+        <div>
+          <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+            Giám sát tiêu thụ vật tư nông nghiệp
+          </h4>
+          <p className="text-[11px] text-slate-400 font-medium mt-0.5">
+            Khối lượng phân bón, thuốc bảo vệ thực vật & khấu hao máy móc thiết bị theo đơn vị
+          </p>
+        </div>
+
+        {/* Legend Box with Border */}
+        <div className="flex items-start gap-2 bg-emerald-50/30 border border-emerald-100/60 rounded-lg px-3 py-2 text-[10px] text-emerald-800 font-medium md:max-w-md">
+          <Info className="w-3.5 h-3.5 text-emerald-600 shrink-0 mt-0.5" />
+          <span>
+            Chỉ số <strong>% trong ngoặc đơn ( )</strong> thể hiện tỷ trọng (tỷ lệ phần trăm) tiêu thụ của từng phân nhóm so với tổng sản lượng của nhóm chính.
+          </span>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
