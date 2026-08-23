@@ -35,6 +35,7 @@ export function useCooperative() {
       keyword: search.trim() || undefined,
       status: status === "all" ? undefined : status,
       businessLine: businessLine === "all" ? undefined : businessLine,
+      onlyOwner: true,
       page: Math.max(currentIndex - 1, 0),
       size: pageSize,
     },
