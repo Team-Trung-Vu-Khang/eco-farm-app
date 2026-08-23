@@ -28,6 +28,21 @@ const formatNumber = (val: number) => {
   return new Intl.NumberFormat("en-US").format(val);
 };
 
+const subGroupTrends: Record<string, { trend: number; isIncrease: boolean }> = {
+  "Thuốc trừ sâu sinh học": { trend: 8, isIncrease: true },
+  "Thuốc diệt nấm bệnh": { trend: 5, isIncrease: false },
+  "Thuốc trừ cỏ sinh học": { trend: 12, isIncrease: true },
+  "Phân bón hữu cơ vi sinh": { trend: 15, isIncrease: true },
+  "Phân NPK cao cấp": { trend: 4, isIncrease: false },
+  "Phân Lân & Kali": { trend: 6, isIncrease: true },
+  "Máy cày & Máy phay đất": { trend: 10, isIncrease: true },
+  "Hệ thống tưới tự động": { trend: 3, isIncrease: true },
+  "Máy phun thuốc tự hành": { trend: 15, isIncrease: true },
+  "Màng phủ nông nghiệp": { trend: 2, isIncrease: false },
+  "Lưới chắn côn trùng": { trend: 8, isIncrease: true },
+  "Dây cột giàn leo": { trend: 5, isIncrease: true },
+};
+
 export const AdminMaterialSection: React.FC<AdminMaterialSectionProps> = ({
   selectedEntity,
 }) => {
@@ -181,9 +196,23 @@ export const AdminMaterialSection: React.FC<AdminMaterialSectionProps> = ({
                 <div key={index} className="space-y-1">
                   <div className="flex items-center justify-between text-[11px] font-bold text-slate-500">
                     <span className="truncate">{group.name}</span>
-                    <span className="font-mono text-slate-650 shrink-0">
-                      {formatNumber(group.amount)} {unit} ({percentage}%)
-                    </span>
+                    <div className="flex items-center gap-1.5 font-mono text-slate-650 shrink-0">
+                      <span>
+                        {formatNumber(group.amount)} {unit} ({percentage}%)
+                      </span>
+                      {(() => {
+                        const trendData = subGroupTrends[group.name];
+                        if (!trendData) return null;
+                        const subTrendColor = trendData.isIncrease
+                          ? "text-rose-600 bg-rose-50/50 border border-rose-100/50"
+                          : "text-emerald-600 bg-emerald-50/50 border border-emerald-100/50";
+                        return (
+                          <span className={`px-1 py-0.5 rounded text-[8px] font-bold font-sans ${subTrendColor}`}>
+                            {trendData.isIncrease ? "+" : "-"}{trendData.trend}%
+                          </span>
+                        );
+                      })()}
+                    </div>
                   </div>
                   <div className="h-1.5 w-full bg-slate-50 rounded-full overflow-hidden">
                     <div

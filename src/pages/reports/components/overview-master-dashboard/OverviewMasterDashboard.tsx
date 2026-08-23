@@ -1,5 +1,8 @@
 import React, { useState, useMemo } from "react";
-import { type TreeNode, mockGeneralStats } from "../../constants/mockReportData";
+import {
+  type TreeNode,
+  mockGeneralStats,
+} from "../../constants/mockReportData";
 import { Card, CardContent } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { Map, Grid, Sprout, Beef, Fish } from "lucide-react";
 import { GeographicalSidebar } from "./GeographicalSidebar";
@@ -12,10 +15,12 @@ interface OverviewMasterDashboardProps {
   domainType: "crops" | "livestock" | "aqua";
 }
 
-export const OverviewMasterDashboard: React.FC<OverviewMasterDashboardProps> = ({
-  domainType,
-}) => {
-  const [selectedLocation, setSelectedLocation] = useState<TreeNode | null>(null);
+export const OverviewMasterDashboard: React.FC<
+  OverviewMasterDashboardProps
+> = ({ domainType }) => {
+  const [selectedLocation, setSelectedLocation] = useState<TreeNode | null>(
+    null,
+  );
 
   const cardLabels = useMemo(() => {
     switch (domainType) {
@@ -110,7 +115,7 @@ export const OverviewMasterDashboard: React.FC<OverviewMasterDashboardProps> = (
       {/* 2. 2-column layout (Sidebar & Content) */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         {/* Geographical Sidebar (Left Column) */}
-        <div className="lg:col-span-3 h-auto lg:h-[750px] shrink-0">
+        <div className="lg:col-span-3 lg:sticky lg:top-6 shrink-0">
           <GeographicalSidebar
             selectedLocation={selectedLocation}
             onSelectLocation={setSelectedLocation}
@@ -118,9 +123,12 @@ export const OverviewMasterDashboard: React.FC<OverviewMasterDashboardProps> = (
         </div>
 
         {/* Main Dashboard Content (Right Column) */}
-        <div className="lg:col-span-9 space-y-6 overflow-y-auto max-h-none lg:max-h-[750px] pr-1 scrollbar-thin">
+        <div className="lg:col-span-9 space-y-6">
           {/* Section 1: Crops/Livestock/Aqua list with internal BarCharts */}
-          <HealthSection selectedLocation={selectedLocation} domainType={domainType} />
+          <HealthSection
+            selectedLocation={selectedLocation}
+            domainType={domainType}
+          />
 
           {/* Section 2: Material Consumption Grid 2x2 */}
           <MaterialSection selectedLocation={selectedLocation} />

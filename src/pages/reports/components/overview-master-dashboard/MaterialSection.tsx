@@ -1,7 +1,23 @@
 import React, { useMemo } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { ShieldAlert, Wrench, Layers, Leaf, TrendingUp, TrendingDown } from "lucide-react";
-import { mockTreeViewData, type TreeNode, type ConsumptionDetail } from "../../constants/mockReportData";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import {
+  ShieldAlert,
+  Wrench,
+  Layers,
+  Leaf,
+  TrendingUp,
+  TrendingDown,
+} from "lucide-react";
+import {
+  mockTreeViewData,
+  type TreeNode,
+  type ConsumptionDetail,
+} from "../../constants/mockReportData";
 
 interface MaterialSectionProps {
   selectedLocation: TreeNode | null;
@@ -11,11 +27,28 @@ const formatNumber = (val: number) => {
   return new Intl.NumberFormat("en-US").format(val);
 };
 
-export const MaterialSection: React.FC<MaterialSectionProps> = ({ selectedLocation }) => {
+const subGroupTrends: Record<string, { trend: number; isIncrease: boolean }> = {
+  "Thuốc trừ sâu sinh học": { trend: 8, isIncrease: true },
+  "Thuốc diệt nấm bệnh": { trend: 5, isIncrease: false },
+  "Thuốc trừ cỏ sinh học": { trend: 12, isIncrease: true },
+  "Phân bón hữu cơ vi sinh": { trend: 15, isIncrease: true },
+  "Phân NPK cao cấp": { trend: 4, isIncrease: false },
+  "Phân Lân & Kali": { trend: 6, isIncrease: true },
+  "Máy cày & Máy phay đất": { trend: 10, isIncrease: true },
+  "Hệ thống tưới tự động": { trend: 3, isIncrease: true },
+  "Máy phun thuốc tự hành": { trend: 15, isIncrease: true },
+  "Màng phủ nông nghiệp": { trend: 2, isIncrease: false },
+  "Lưới chắn côn trùng": { trend: 8, isIncrease: true },
+  "Dây cột giàn leo": { trend: 5, isIncrease: true },
+};
+
+export const MaterialSection: React.FC<MaterialSectionProps> = ({
+  selectedLocation,
+}) => {
   // Helper to sum up two group lists
   const sumGroups = (
     g1: { name: string; amount: number }[],
-    g2: { name: string; amount: number }[]
+    g2: { name: string; amount: number }[],
   ) => {
     return g1.map((item, idx) => ({
       name: item.name,
@@ -71,10 +104,12 @@ export const MaterialSection: React.FC<MaterialSectionProps> = ({ selectedLocati
       isIncrease: boolean;
       groups: { name: string; amount: number }[];
     },
-    unit: string
+    unit: string,
   ) => {
     const isBad = data.isIncrease;
-    const trendColor = isBad ? "text-rose-600 bg-rose-50" : "text-emerald-600 bg-emerald-50";
+    const trendColor = isBad
+      ? "text-rose-600 bg-rose-50"
+      : "text-emerald-600 bg-emerald-50";
 
     return (
       <Card className="border border-slate-100 shadow-xs bg-white flex flex-col justify-between rounded-xl">
@@ -117,14 +152,33 @@ export const MaterialSection: React.FC<MaterialSectionProps> = ({ selectedLocati
           <div className="space-y-2.5 border-t border-slate-50 pt-3">
             {data.groups.map((group, index) => {
               const percentage =
-                data.total > 0 ? Math.round((group.amount / data.total) * 100) : 0;
+                data.total > 0
+                  ? Math.round((group.amount / data.total) * 100)
+                  : 0;
               return (
                 <div key={index} className="space-y-1">
                   <div className="flex items-center justify-between text-[11px] font-bold text-slate-500">
                     <span className="truncate">{group.name}</span>
-                    <span className="font-mono text-slate-650 shrink-0">
-                      {formatNumber(group.amount)} {unit} ({percentage}%)
-                    </span>
+                    <div className="flex items-center gap-1.5 font-mono text-slate-650 shrink-0">
+                      <span>
+                        {formatNumber(group.amount)} {unit} ({percentage}%)
+                      </span>
+                      {(() => {
+                        const trendData = subGroupTrends[group.name];
+                        if (!trendData) return null;
+                        const subTrendColor = trendData.isIncrease
+                          ? "text-rose-600 bg-rose-50/50 border border-rose-100/50"
+                          : "text-emerald-600 bg-emerald-50/50 border border-emerald-100/50";
+                        return (
+                          <span
+                            className={`px-1 py-0.5 rounded text-[8px] font-bold font-sans ${subTrendColor}`}
+                          >
+                            {trendData.isIncrease ? "+" : "-"}
+                            {trendData.trend}%
+                          </span>
+                        );
+                      })()}
+                    </div>
                   </div>
                   <div className="h-1.5 w-full bg-slate-50 rounded-full overflow-hidden">
                     <div
@@ -159,25 +213,25 @@ export const MaterialSection: React.FC<MaterialSectionProps> = ({ selectedLocati
           "Thuốc BVTV canh tác",
           <ShieldAlert className="w-4 h-4 text-rose-500" />,
           consumption.pesticide,
-          "kg"
+          "kg",
         )}
         {renderDetailCard(
           "Phân bón chất lượng cao",
           <Leaf className="w-4 h-4 text-emerald-500" />,
           consumption.fertilizer,
-          "kg"
+          "kg",
         )}
         {renderDetailCard(
           "Máy móc & thiết bị",
           <Wrench className="w-4 h-4 text-amber-500" />,
           consumption.equipment,
-          "ngày"
+          "ngày",
         )}
         {renderDetailCard(
           "Vật tư canh tác khác",
           <Layers className="w-4 h-4 text-sky-500" />,
           consumption.other,
-          "cuộn/tấm"
+          "cuộn/tấm",
         )}
       </div>
     </div>

@@ -111,7 +111,7 @@ export const OverviewAdminDashboard: React.FC = () => {
       {/* 2. 2-column layout (Sidebar & Content) */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         {/* Entity Sidebar (Left Column) */}
-        <div className="lg:col-span-3 h-auto lg:h-[750px] shrink-0">
+        <div className="lg:col-span-3 lg:sticky lg:top-6 shrink-0">
           <EntitySidebar
             selectedEntity={selectedEntity}
             onSelectEntity={setSelectedEntity}
@@ -119,7 +119,7 @@ export const OverviewAdminDashboard: React.FC = () => {
         </div>
 
         {/* Main Dashboard Content (Right Column) */}
-        <div className="lg:col-span-9 space-y-6 overflow-y-auto max-h-none lg:max-h-[750px] pr-1 scrollbar-thin">
+        <div className="lg:col-span-9 space-y-6">
           <AdminHealthSection selectedEntity={selectedEntity} />
           <AdminMaterialSection selectedEntity={selectedEntity} />
           <AdminOperationsSection selectedEntity={selectedEntity} />
