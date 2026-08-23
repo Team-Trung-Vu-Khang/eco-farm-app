@@ -25,12 +25,34 @@ export function GrowthCycleConfirmStep({
   const { watch } = useFormContext<GrowthCycleFormValues>();
   const formData = watch();
 
-  const cropName =
-    crops.find((crop) => String(crop.id) === formData.cropId)?.name ||
-    formData.cropId;
-  const varietyName =
-    varieties.find((variety) => String(variety.id) === formData.variety)
-      ?.name || formData.variety;
+  // Group "ids" are already the dummy group's display name — see
+  // `getDummyCropGroupName`.
+  const groupNames = formData.groupIds || [];
+  const cropNames = (formData.cropIds || []).map(
+    (id) => crops.find((crop) => String(crop.id) === id)?.name || id,
+  );
+  const varietyNames = (formData.varietyIds || []).map(
+    (id) => varieties.find((variety) => String(variety.id) === id)?.name || id,
+  );
+
+  const scopeLabel =
+    formData.scope === "group"
+      ? "Theo nhóm cây trồng"
+      : formData.scope === "crop"
+        ? "Theo cây trồng"
+        : "Theo giống cây trồng";
+  const scopeSelectionLabel =
+    formData.scope === "group"
+      ? "Nhóm cây trồng"
+      : formData.scope === "crop"
+        ? "Cây trồng"
+        : "Giống cây trồng";
+  const scopeSelectionNames =
+    formData.scope === "group"
+      ? groupNames
+      : formData.scope === "crop"
+        ? cropNames
+        : varietyNames;
 
   return (
     <div className="max-w-4xl mx-auto space-y-6 py-4">
@@ -56,29 +78,28 @@ export function GrowthCycleConfirmStep({
           </div>
           <div className="flex justify-between items-center py-2 border-b border-muted">
             <span className="text-sm text-muted-foreground">Phạm vi:</span>
-            <Badge
-              variant={formData.scope === "crop" ? "default" : "secondary"}
-            >
-              {formData.scope === "crop" ? "Theo loại cây" : "Theo giống"}
-            </Badge>
+            <Badge variant="default">{scopeLabel}</Badge>
           </div>
-          <div className="flex justify-between items-center py-2 border-b border-muted">
-            <span className="text-sm text-muted-foreground">
-              Loại cây trồng:
+          <div className="flex justify-between items-start py-2 border-b border-muted col-span-full">
+            <span className="text-sm text-muted-foreground shrink-0">
+              {scopeSelectionLabel}:
             </span>
-            <span className="font-bold">{cropName}</span>
-          </div>
-          {formData.scope === "variety" && (
-            <div className="flex justify-between items-center py-2 border-b border-muted">
-              <span className="text-sm text-muted-foreground">
-                Giống cây trồng:
-              </span>
-              <div className="flex items-center gap-2">
-                <TreeDeciduous className="w-4 h-4 text-green-600" />
-                <span className="font-bold">{varietyName}</span>
-              </div>
+            <div className="flex flex-wrap justify-end gap-1.5">
+              {scopeSelectionNames.length > 0 ? (
+                scopeSelectionNames.map((name, idx) => (
+                  <Badge
+                    key={`${name}-${idx}`}
+                    variant="outline"
+                    className="font-bold"
+                  >
+                    {name}
+                  </Badge>
+                ))
+              ) : (
+                <span className="font-bold">-</span>
+              )}
             </div>
-          )}
+          </div>
           <div className="flex justify-between items-center py-2 border-b border-muted">
             <span className="text-sm text-muted-foreground">
               Tổng thời gian:

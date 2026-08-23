@@ -31,6 +31,7 @@ import {
   growthCycleFormSchema,
   type GrowthCycleFormValues,
 } from "./schemas/growthCycleSchema";
+import { getDummyCropGroupName } from "./utils/dummyCropGroups";
 import { formatDaysToDuration, parseDurationToDays } from "./utils/duration";
 
 export default function UpdateGrowthCyclePage() {
@@ -63,8 +64,8 @@ export default function UpdateGrowthCyclePage() {
 
   const { watch, reset } = form;
   const watchedScope = watch("scope");
-  const watchedCropId = watch("cropId");
-  const watchedVariety = watch("variety");
+  const watchedCropIds = watch("cropIds") || [];
+  const watchedVarietyIds = watch("varietyIds") || [];
   const watchedStages = watch("stages") || [];
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -85,8 +86,9 @@ export default function UpdateGrowthCyclePage() {
         name: currentCycle.name ?? "",
         cycleType: String(metadata.cycleType || "plant") as "plant" | "animal",
         scope: varietyIdVal ? "variety" : "crop",
-        cropId: cropIdVal ? String(cropIdVal) : "",
-        variety: varietyIdVal ? String(varietyIdVal) : "",
+        groupIds: [],
+        cropIds: cropIdVal ? [String(cropIdVal)] : [],
+        varietyIds: varietyIdVal ? [String(varietyIdVal)] : [],
         totalDays: totalDaysVal,
         stages: (currentCycle.stages || []).map((s: any) => {
           let usePdf = false;
@@ -129,8 +131,11 @@ export default function UpdateGrowthCyclePage() {
   );
 
   const varietyName =
-    cropVarieties.find((variety) => String(variety.id) === watchedVariety)
-      ?.name || watchedVariety;
+    cropVarieties.find((variety) => String(variety.id) === watchedVarietyIds[0])
+      ?.name || watchedVarietyIds[0];
+  const cropName =
+    crops.find((crop) => String(crop.id) === watchedCropIds[0])?.name ||
+    watchedCropIds[0];
 
   const handleComplete = async (values: GrowthCycleFormValues) => {
     if (!numericId) return;
@@ -192,11 +197,30 @@ export default function UpdateGrowthCyclePage() {
 
       const metadataJson = { cycleType: values.cycleType };
 
-      const cropIdVal = Number(values.cropId);
-      const varietyIdVal =
-        values.scope === "variety" && values.variety
-          ? Number(values.variety)
-          : undefined;
+      // UI-only multi-select for now — the backend still only accepts a
+      // single production subject/variant per template, so only the first
+      // pick of whichever scope is active gets sent. For "group" (a
+      // client-side-only grouping, not a real production subject) we fall
+      // back to the first crop belonging to that group.
+      let cropIdVal: number;
+      let varietyIdVal: number | undefined;
+
+      if (values.scope === "variety" && values.varietyIds[0]) {
+        const variety = cropVarieties.find(
+          (v) => String(v.id) === values.varietyIds[0],
+        );
+        cropIdVal = Number(variety?.subject?.id ?? crops[0]?.id ?? 0);
+        varietyIdVal = Number(values.varietyIds[0]);
+      } else if (values.scope === "group" && values.groupIds[0]) {
+        const matchingCrop = crops.find(
+          (c) => getDummyCropGroupName(c.id) === values.groupIds[0],
+        );
+        cropIdVal = Number(matchingCrop?.id ?? crops[0]?.id ?? 0);
+        varietyIdVal = undefined;
+      } else {
+        cropIdVal = Number(values.cropIds[0] ?? crops[0]?.id ?? 0);
+        varietyIdVal = undefined;
+      }
 
       await updateTemplate.mutateAsync({
         id: numericId,
@@ -245,7 +269,7 @@ export default function UpdateGrowthCyclePage() {
   return (
     <PageWrapper
       title="Cập nhật chu kỳ sinh trưởng"
-      description={`Chỉnh sửa thông tin cho ${varietyName || watchedCropId}`}
+      description={`Chỉnh sửa thông tin cho ${varietyName || cropName}`}
       actions={[
         <Button
           variant="outline"
@@ -289,13 +313,17 @@ export default function UpdateGrowthCyclePage() {
                   <div className="flex justify-between gap-4">
                     <span className="text-muted-foreground">Chu kỳ:</span>
                     <span className="font-medium">
-                      {varietyName || watchedCropId}
+                      {varietyName || cropName}
                     </span>
                   </div>
                   <div className="flex justify-between gap-4">
                     <span className="text-muted-foreground">Phạm vi:</span>
                     <span className="font-medium">
-                      {watchedScope === "crop" ? "Theo loại cây" : "Theo giống"}
+                      {watchedScope === "group"
+                        ? "Theo nhóm cây trồng"
+                        : watchedScope === "crop"
+                          ? "Theo cây trồng"
+                          : "Theo giống cây trồng"}
                     </span>
                   </div>
                   <div className="flex justify-between gap-4">
