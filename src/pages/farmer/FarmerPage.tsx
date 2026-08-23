@@ -6,9 +6,12 @@ import {
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { Plus } from "lucide-react";
 import { Link } from "wouter";
+import { useState } from "react";
+import { OrganizationSourceTabs } from "@/components/OrganizationSourceTabs";
 import { useFarmerPage } from "./hooks/useFarmerPage";
 
 export default function FarmerPage() {
+  const [sourceTab, setSourceTab] = useState<"personal" | "system">("personal");
   const {
     farmerData,
     columns,
@@ -35,14 +38,14 @@ export default function FarmerPage() {
     <PageWrapper
       title="Quản lý nông hộ"
       description="Quản lý thông tin các nông hộ trong hệ thống"
-      actions={
+      actions={sourceTab === "personal" ? (
         <Link href="/farmer/create">
           <Button data-testid="add-farmer">
             <Plus className="w-4 h-4 mr-2" />
             Thêm mới
           </Button>
         </Link>
-      }
+      ) : undefined}
     >
       {error ? (
         <div className="mb-4 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
@@ -50,7 +53,12 @@ export default function FarmerPage() {
         </div>
       ) : null}
 
-      <DataTable
+      <OrganizationSourceTabs
+        type="farm"
+        personalColumns={columns}
+        onTabChange={setSourceTab}
+        searchPlaceholder="Tìm kiếm nông hộ hệ thống..."
+        personal={<DataTable
         columns={columns}
         data={farmerData}
         searchable
@@ -69,6 +77,7 @@ export default function FarmerPage() {
         onPageSize={setPageSize}
         onIndexChange={setCurrentIndex}
         selectable={false}
+        />}
       />
 
       <DeleteDialog
