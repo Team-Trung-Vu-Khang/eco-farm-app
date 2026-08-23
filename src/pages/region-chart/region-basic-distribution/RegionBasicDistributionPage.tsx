@@ -1,3 +1,4 @@
+import React from "react";
 import PageWrapper from "@/components/PageWrapper";
 import {
   Button,
@@ -29,7 +30,7 @@ const RegionBasicDistributionPage = () => {
 
   return (
     <PageWrapper
-      title="Phân bố vùng cơ bản"
+      title="Phân bộ vùng cơ bản"
       description="Quản lý danh sách vùng trồng với thông tin cơ bản"
       actions={
         <Button onClick={handleAdd}>

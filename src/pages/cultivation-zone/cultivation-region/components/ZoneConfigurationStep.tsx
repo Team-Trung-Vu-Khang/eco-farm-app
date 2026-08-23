@@ -37,12 +37,13 @@ import {
 import { useRearingMethods } from "@/features/master-data/hooks/useRearingMethods";
 import { useDebounce } from "@/shared/hooks/useDebounce";
 import type { CultivationZoneFormValues } from "../data/cultivation-zone-form.schema";
+import type { FarmSeedResponse } from "@/features/farm/types/farm.type";
 
 interface VariantSelectorDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   subjectName: string;
-  variants: Array<{ id: number; code?: string; name?: string }>;
+  variants: FarmSeedResponse[]; // Đổi kiểu sang FarmSeedResponse
   selectedVariantIds: number[];
   onConfirm: (selectedIds: number[]) => void;
 }
@@ -66,7 +67,8 @@ export const VariantSelectorDialog = ({
     return variants.filter(
       (v) =>
         v.name?.toLowerCase().includes(keyword) ||
-        v.code?.toLowerCase().includes(keyword),
+        v.code?.toLowerCase().includes(keyword) ||
+        v.subjectVariant?.name?.toLowerCase().includes(keyword),
     );
   }, [variants, debouncedSearch]);
 
@@ -90,11 +92,11 @@ export const VariantSelectorDialog = ({
         <DialogHeader className="p-6 bg-slate-50 border-b shrink-0">
           <DialogTitle className="flex items-center gap-2 text-slate-800">
             <Sprout className="w-5 h-5 text-green-600" />
-            <span>Chọn giống cho {subjectName}</span>
+            <span>Chọn hạt giống cho {subjectName}</span>
           </DialogTitle>
           <p className="text-xs text-muted-foreground mt-1">
-            Chọn các giống cây trồng phù hợp để đưa vào phương án sản xuất của
-            vùng canh tác này.
+            Chọn các hạt giống phù hợp thuộc giống cây trồng này để đưa vào
+            phương án sản xuất.
           </p>
         </DialogHeader>
 
@@ -102,7 +104,7 @@ export const VariantSelectorDialog = ({
           <div className="relative">
             <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground z-10" />
             <Input
-              placeholder="Tìm kiếm giống..."
+              placeholder="Tìm kiếm giống/hạt giống..."
               className="pl-10 bg-slate-50 border-slate-200 focus:bg-white transition-all rounded-lg"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
@@ -137,8 +139,9 @@ export const VariantSelectorDialog = ({
                     >
                       {variant.name}
                     </div>
-                    <div className="text-xs text-muted-foreground mt-0.5">
-                      Mã: {variant.code || "---"}
+                    <div className="text-xs text-muted-foreground mt-0.5 truncate">
+                      Giống: {variant.subjectVariant?.name || "---"} • Supplier:{" "}
+                      {variant.supplier?.name || "---"}
                     </div>
                   </div>
                   <div
@@ -158,7 +161,7 @@ export const VariantSelectorDialog = ({
             })}
             {filteredVariants.length === 0 && (
               <div className="text-center py-10 text-muted-foreground text-sm italic">
-                Không tìm thấy giống phù hợp
+                Không tìm thấy hạt giống phù hợp
               </div>
             )}
           </div>
@@ -188,7 +191,15 @@ export const VariantSelectorDialog = ({
   );
 };
 
-export const ZoneConfigurationStep = () => {
+interface ZoneConfigurationStepProps {
+  allSeeds?: FarmSeedResponse[];
+  bypassSeedSelection?: boolean;
+}
+
+export const ZoneConfigurationStep: React.FC<ZoneConfigurationStepProps> = ({
+  allSeeds = [],
+  bypassSeedSelection = false,
+}) => {
   const {
     control,
     watch,
@@ -248,17 +259,32 @@ export const ZoneConfigurationStep = () => {
     );
   }, [subjects, debouncedVarietySearch]);
 
+  const variants = useMemo(() => {
+    const variantIds = activeSubject?.variants?.map((v) => v.id) || [];
+    return allSeeds.filter(
+      (seed) =>
+        seed.subjectVariant && variantIds.includes(seed.subjectVariant.id),
+    );
+  }, [activeSubject, allSeeds]);
+
   const handleConfirmVariants = (selectedIds: number[]) => {
     if (!activeSubject) return;
-    const currentSubjectVariantIds =
-      activeSubject.variants?.map((v) => v.id) ?? [];
 
-    // Filter out variants of the CURRENT subject, then add back the newly selected ones
-    const otherSubjectVariantIds = selectedSeedIds.filter(
-      (id) => !currentSubjectVariantIds.includes(id),
+    // Lấy danh sách ID của các Hạt giống thuộc về subject hiện tại
+    const variantIds = activeSubject.variants?.map((v) => v.id) || [];
+    const currentSubjectSeedIds = allSeeds
+      .filter(
+        (seed) =>
+          seed.subjectVariant && variantIds.includes(seed.subjectVariant.id),
+      )
+      .map((seed) => seed.id);
+
+    // Lọc bỏ hạt giống thuộc subject hiện tại khỏi selectedSeedIds
+    const otherSubjectSeedIds = selectedSeedIds.filter(
+      (id) => !currentSubjectSeedIds.includes(id),
     );
 
-    const nextIds = [...otherSubjectVariantIds, ...selectedIds];
+    const nextIds = [...otherSubjectSeedIds, ...selectedIds];
 
     setValue("seedIds", nextIds, {
       shouldValidate: true,
@@ -268,7 +294,14 @@ export const ZoneConfigurationStep = () => {
 
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+      <div
+        className={cn(
+          "grid gap-6",
+          bypassSeedSelection
+            ? "grid-cols-1"
+            : "grid-cols-1 xl:grid-cols-2",
+        )}
+      >
         {/* ── Farming Method & Irrigation System ── */}
         <Card className="border-none shadow-md bg-white">
           <CardHeader className="pb-3 border-b bg-linear-to-r from-green-50/50 to-white">
@@ -373,118 +406,122 @@ export const ZoneConfigurationStep = () => {
         </Card>
 
         {/* ── Subject Selection ── */}
-        <Card className="border-none shadow-md bg-white flex flex-col">
-          <CardHeader className="pb-3 border-b bg-linear-to-r from-green-50/50 to-white">
-            <CardTitle className="flex items-center gap-2 text-base">
-              <div className="w-8 h-8 rounded-lg bg-green-100 flex items-center justify-center">
-                <Leaf className="w-4 h-4 text-green-600" />
-              </div>
-              <span>Giống / Hạt giống</span>
-              {selectedSeedIds.length > 0 && (
-                <Badge variant="secondary" className="ml-auto text-xs">
-                  {selectedSeedIds.length} đã chọn
-                </Badge>
-              )}
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="pt-6 flex-1 flex flex-col min-h-0">
-            {!selectedFarmingMethodId || selectedFarmingMethodId <= 0 ? (
-              <div className="flex-1 flex flex-col items-center justify-center border-2 border-dashed rounded-xl bg-slate-50 text-slate-400 gap-3 py-12">
-                <Sprout className="w-10 h-10 opacity-50" />
-                <span className="text-sm text-center px-4">
-                  Vui lòng chọn phương pháp canh tác trước
-                </span>
-              </div>
-            ) : (
-              <>
-                <div className="mb-4 relative">
-                  <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground z-10" />
-                  <Input
-                    value={varietySearch}
-                    placeholder="Tìm kiếm cây trồng..."
-                    onChange={(e) => setVarietySearch(e.target.value)}
-                    className="pl-10 bg-slate-50/50 border-slate-200 focus:bg-white transition-all rounded-lg"
-                  />
+        {!bypassSeedSelection && (
+          <Card className="border-none shadow-md bg-white flex flex-col">
+            <CardHeader className="pb-3 border-b bg-linear-to-r from-green-50/50 to-white">
+              <CardTitle className="flex items-center gap-2 text-base">
+                <div className="w-8 h-8 rounded-lg bg-green-100 flex items-center justify-center">
+                  <Leaf className="w-4 h-4 text-green-600" />
                 </div>
-                <ScrollArea className="flex-1 h-80">
-                  {fmcLoading ? (
-                    <div className="flex items-center justify-center text-muted-foreground text-sm py-10">
-                      Đang tải...
-                    </div>
-                  ) : filteredSubjects.length > 0 ? (
-                    <div className="w-full space-y-2">
-                      {filteredSubjects.map((subject) => {
-                        const subjectSelectedVariants =
-                          subject.variants?.filter((v) =>
-                            selectedSeedIds.includes(v.id),
-                          ) ?? [];
-                        const hasSelected = subjectSelectedVariants.length > 0;
+                <span>Giống / Hạt giống</span>
+                {selectedSeedIds.length > 0 && (
+                  <Badge variant="secondary" className="ml-auto text-xs">
+                    {selectedSeedIds.length} đã chọn
+                  </Badge>
+                )}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pt-6 flex-1 flex flex-col min-h-0">
+              {!selectedFarmingMethodId || selectedFarmingMethodId <= 0 ? (
+                <div className="flex-1 flex flex-col items-center justify-center border-2 border-dashed rounded-xl bg-slate-50 text-slate-400 gap-3 py-12">
+                  <Sprout className="w-10 h-10 opacity-50" />
+                  <span className="text-sm text-center px-4">
+                    Vui lòng chọn phương pháp canh tác trước
+                  </span>
+                </div>
+              ) : (
+                <>
+                  <div className="mb-4 relative">
+                    <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground z-10" />
+                    <Input
+                      value={varietySearch}
+                      placeholder="Tìm kiếm cây trồng..."
+                      onChange={(e) => setVarietySearch(e.target.value)}
+                      className="pl-10 bg-slate-50/50 border-slate-200 focus:bg-white transition-all rounded-lg"
+                    />
+                  </div>
+                  <ScrollArea className="flex-1 h-80">
+                    {fmcLoading ? (
+                      <div className="flex items-center justify-center text-muted-foreground text-sm py-10">
+                        Đang tải...
+                      </div>
+                    ) : filteredSubjects.length > 0 ? (
+                      <div className="w-full space-y-2">
+                        {filteredSubjects.map((subject) => {
+                          // Lọc các hạt giống đã chọn thuộc subject hiện tại
+                          const subjectSelectedSeeds = allSeeds.filter(
+                            (seed) =>
+                              selectedSeedIds.includes(seed.id) &&
+                              seed.productionSubject?.id === subject.subjectId,
+                          );
+                          const hasSelected = subjectSelectedSeeds.length > 0;
 
-                        return (
-                          <div
-                            key={subject.subjectId}
-                            onClick={() => setActiveSubject(subject)}
-                            className={`flex flex-col p-4 rounded-xl border cursor-pointer transition-all ${
-                              hasSelected
-                                ? "bg-green-50/30 border-green-300 shadow-sm"
-                                : "bg-white border-slate-200 hover:border-green-200 hover:shadow-sm"
-                            }`}
-                          >
-                            <div className="flex items-center gap-3">
-                              <div className="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center shrink-0 border border-slate-200 overflow-hidden">
-                                <Leaf className="w-4 h-4 text-slate-400" />
-                              </div>
-                              <div className="flex flex-col flex-1 min-w-0">
-                                <div className="text-sm font-semibold truncate text-slate-700">
-                                  {subject.subjectName}
+                          return (
+                            <div
+                              key={subject.subjectId}
+                              onClick={() => setActiveSubject(subject)}
+                              className={`flex flex-col p-4 rounded-xl border cursor-pointer transition-all ${
+                                hasSelected
+                                  ? "bg-green-50/30 border-green-300 shadow-sm"
+                                  : "bg-white border-slate-200 hover:border-green-200 hover:shadow-sm"
+                              }`}
+                            >
+                              <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center shrink-0 border border-slate-200 overflow-hidden">
+                                  <Leaf className="w-4 h-4 text-slate-400" />
                                 </div>
-                                <div className="text-xs text-muted-foreground mt-0.5">
-                                  Mã: {subject.subjectCode || "---"}{" "}
-                                  {subject.subjectGroupName &&
-                                    `• Nhóm: ${subject.subjectGroupName}`}
+                                <div className="flex flex-col flex-1 min-w-0">
+                                  <div className="text-sm font-semibold truncate text-slate-700">
+                                    {subject.subjectName}
+                                  </div>
+                                  <div className="text-xs text-muted-foreground mt-0.5">
+                                    Mã: {subject.subjectCode || "---"}{" "}
+                                    {subject.subjectGroupName &&
+                                      `• Nhóm: ${subject.subjectGroupName}`}
+                                  </div>
+                                </div>
+                                <div className="shrink-0 flex items-center gap-2">
+                                  {hasSelected && (
+                                    <Badge
+                                      variant="secondary"
+                                      className="bg-green-100 text-green-800 border-none font-semibold text-xs animate-in scale-in duration-200"
+                                    >
+                                      {subjectSelectedSeeds.length} hạt giống
+                                    </Badge>
+                                  )}
+                                  <ChevronRight className="w-4 h-4 text-slate-400" />
                                 </div>
                               </div>
-                              <div className="shrink-0 flex items-center gap-2">
-                                {hasSelected && (
-                                  <Badge
-                                    variant="secondary"
-                                    className="bg-green-100 text-green-800 border-none font-semibold text-xs animate-in scale-in duration-200"
-                                  >
-                                    {subjectSelectedVariants.length} giống cây
-                                  </Badge>
-                                )}
-                                <ChevronRight className="w-4 h-4 text-slate-400" />
-                              </div>
+
+                              {hasSelected && (
+                                <div className="mt-3 pt-3 border-t border-slate-100 flex flex-wrap gap-2">
+                                  {subjectSelectedSeeds.map((seed) => (
+                                    <Badge
+                                      key={seed.id}
+                                      variant="outline"
+                                      className="bg-white border-slate-200 text-slate-600 text-[11px] py-1 px-2.5 rounded-md flex items-center gap-1.5 shadow-xs"
+                                    >
+                                      <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+                                      <span>{seed.name}</span>
+                                    </Badge>
+                                  ))}
+                                </div>
+                              )}
                             </div>
-
-                            {hasSelected && (
-                              <div className="mt-3 pt-3 border-t border-slate-100 flex flex-wrap gap-2">
-                                {subjectSelectedVariants.map((variant) => (
-                                  <Badge
-                                    key={variant.id}
-                                    variant="outline"
-                                    className="bg-white border-slate-200 text-slate-600 text-[11px] py-1 px-2.5 rounded-md flex items-center gap-1.5 shadow-xs"
-                                  >
-                                    <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
-                                    <span>{variant.name}</span>
-                                  </Badge>
-                                ))}
-                              </div>
-                            )}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  ) : (
-                    <div className="flex items-center justify-center text-muted-foreground text-sm italic py-10">
-                      Không có cây trồng phù hợp
-                    </div>
-                  )}
-                </ScrollArea>
-              </>
-            )}
-          </CardContent>
-        </Card>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      <div className="flex items-center justify-center text-muted-foreground text-sm italic py-10">
+                        Không có cây trồng phù hợp
+                      </div>
+                    )}
+                  </ScrollArea>
+                </>
+              )}
+            </CardContent>
+          </Card>
+        )}
       </div>
 
       {activeSubject && (
@@ -495,9 +532,16 @@ export const ZoneConfigurationStep = () => {
             if (!open) setActiveSubject(null);
           }}
           subjectName={activeSubject.subjectName || ""}
-          variants={activeSubject.variants || []}
+          variants={variants}
           selectedVariantIds={selectedSeedIds.filter((id) =>
-            activeSubject.variants?.some((v) => v.id === id),
+            allSeeds.some(
+              (seed) =>
+                seed.id === id &&
+                seed.subjectVariant &&
+                activeSubject.variants?.some(
+                  (v) => v.id === seed.subjectVariant?.id,
+                ),
+            ),
           )}
           onConfirm={handleConfirmVariants}
         />

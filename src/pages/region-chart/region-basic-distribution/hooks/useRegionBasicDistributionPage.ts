@@ -26,6 +26,8 @@ export function useRegionBasicDistributionPage() {
     items: apiZones,
     response,
     isLoading,
+    isError,
+    refetch,
   } = useCultivationZones({
     params: {
       keyword: debouncedSearch.trim() || undefined,
@@ -120,6 +122,8 @@ export function useRegionBasicDistributionPage() {
   return {
     regions,
     isLoading,
+    isError,
+    refetch,
     columns,
     response,
     handleSearch,

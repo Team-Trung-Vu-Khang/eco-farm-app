@@ -424,7 +424,7 @@ export const OverviewAdminDashboard: React.FC = () => {
               <thead>
                 <tr className="bg-slate-50 border-b border-slate-100">
                   <th className="py-3 px-5 text-xs font-bold text-slate-500 uppercase tracking-wider font-display">
-                    Đơn vị thành viên
+                    Nông hộ/HTX/Công ty
                   </th>
                   <th className="py-3 px-5 text-xs font-bold text-slate-500 uppercase tracking-wider font-display">
                     Ngày hoạt động
@@ -434,9 +434,6 @@ export const OverviewAdminDashboard: React.FC = () => {
                   </th>
                   <th className="py-3 px-5 text-xs font-bold text-slate-500 uppercase tracking-wider font-display">
                     Trạng thái
-                  </th>
-                  <th className="py-3 px-5 text-xs font-bold text-slate-500 uppercase tracking-wider font-display">
-                    Bằng chứng hình ảnh
                   </th>
                   <th className="py-3 px-5 text-xs font-bold text-slate-500 uppercase tracking-wider font-display text-right">
                     Hành động
@@ -488,20 +485,6 @@ export const OverviewAdminDashboard: React.FC = () => {
                           <Badge className="bg-slate-100 text-slate-500 hover:bg-slate-100 border-transparent font-medium text-[11px] px-2.5 py-0.5 shadow-none rounded-full">
                             Tạm ngưng
                           </Badge>
-                        )}
-                      </td>
-
-                      <td className="py-4 px-5">
-                        {unit.hasEvidence ? (
-                          <div className="flex items-center gap-1.5 text-emerald-600 font-semibold text-xs">
-                            <CheckCircle className="w-4.5 h-4.5" />
-                            <span>Có hình ảnh</span>
-                          </div>
-                        ) : (
-                          <div className="flex items-center gap-1.5 text-slate-400 text-xs font-medium">
-                            <XCircle className="w-4.5 h-4.5 opacity-60" />
-                            <span>Không có</span>
-                          </div>
                         )}
                       </td>
 

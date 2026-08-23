@@ -571,9 +571,7 @@ const GroupCropPage = lazy(() => import("./pages/group-crop/GroupCropPage"));
 const GroupLivestockPage = lazy(
   () => import("./pages/group-livestock/GroupLivestockPage"),
 );
-const GroupAquaPage = lazy(
-  () => import("./pages/group-aqua/GroupAquaPage"),
-);
+const GroupAquaPage = lazy(() => import("./pages/group-aqua/GroupAquaPage"));
 const DocsPage = lazy(() => import("./pages/docs/DocsPage"));
 const CreateDocsPage = lazy(() => import("./pages/docs/CreateDocsPage"));
 const UpdateDocsPage = lazy(() => import("./pages/docs/UpdateDocsPage"));

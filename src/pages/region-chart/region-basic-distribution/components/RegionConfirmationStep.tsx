@@ -1,7 +1,6 @@
 import { useFormContext } from "react-hook-form";
 import { useCatalog } from "@/features/foundation/hooks/useCatalog";
 import { useProductionMethods } from "@/features/foundation/hooks/useProductionSubjects";
-import { useProductionSubjects } from "@/features/foundation/hooks/useProductionSubjects";
 import { useAddressOptions } from "@/features/master-data/hooks/useAddressOptions";
 import { useRearingMethods } from "@/features/master-data/hooks/useRearingMethods";
 import { useIrrigationSystems } from "@/features/master-data/hooks/useIrrigationSystems";
@@ -9,18 +8,21 @@ import { useMemo } from "react";
 import { CheckCircle2, Droplets, Leaf, ScrollText, Sprout } from "lucide-react";
 import { Badge, Card } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import type { RegionBasicFormValues } from "../data/region-basic-form.schema";
-import { useMethodApplications } from "@/features/foundation";
+// import { useMethodApplications } from "@/features/foundation";
+import type { FarmSeedResponse } from "@/features/farm/types/farm.type";
 
 interface RegionConfirmationStepProps {
   domainCode: "CROP" | "LIVESTOCK" | "AQUACULTURE";
   title?: string;
   description?: string;
+  allSeeds?: FarmSeedResponse[];
 }
 
 export const RegionConfirmationStep = ({
   domainCode,
   title = "Xác nhận thông tin",
   description,
+  allSeeds = [],
 }: RegionConfirmationStepProps) => {
   const { watch } = useFormContext<RegionBasicFormValues>();
   const formValues = watch();
@@ -51,22 +53,22 @@ export const RegionConfirmationStep = ({
   });
 
   // Subjects (Crops / Livestock / Aquaculture)
-  const { items: subjects } = useProductionSubjects({
-    params: { domainCode, size: 100 },
-  });
+  // const { items: subjects } = useProductionSubjects({
+  //   params: { domainCode, size: 100 },
+  // });
 
   // Method applications to extract seed/variant names
   const selectedFarmingMethodId = Number(formValues.farmingMethodId);
-  const { items: methodApplications } = useMethodApplications({
-    params: { domainCode, size: 100 },
-    enabled: !!selectedFarmingMethodId && selectedFarmingMethodId > 0,
-  });
+  // const { items: methodApplications } = useMethodApplications({
+  //   params: { domainCode, size: 100 },
+  //   enabled: !!selectedFarmingMethodId && selectedFarmingMethodId > 0,
+  // });
 
-  const activeMethodApp = useMemo(() => {
-    return methodApplications.find(
-      (item) => item.productionMethod?.id === selectedFarmingMethodId,
-    );
-  }, [methodApplications, selectedFarmingMethodId]);
+  // const activeMethodApp = useMemo(() => {
+  //   return methodApplications.find(
+  //     (item) => item.productionMethod?.id === selectedFarmingMethodId,
+  //   );
+  // }, [methodApplications, selectedFarmingMethodId]);
 
   // Selected details
   const landTypeName =
@@ -79,34 +81,31 @@ export const RegionConfirmationStep = ({
     provinces.find((p) => p.id === formValues.provinceId)?.name || "";
   const wardName = wards.find((w) => w.id === formValues.wardId)?.name || "";
 
-  const selectedSubjects = useMemo(() => {
-    const ids = formValues.cropIds ?? [];
-    return subjects.filter((s) => ids.includes(String(s.id)));
-  }, [subjects, formValues.cropIds]);
+  // const selectedSubjects = useMemo(() => {
+  //   const ids = formValues.cropIds ?? [];
+  //   return subjects.filter((s) => ids.includes(String(s.id)));
+  // }, [subjects, formValues.cropIds]);
 
   const selectedVariants = useMemo(() => {
-    if (!activeMethodApp) return [];
     const list: Array<{ id: number; name: string; subjectName: string }> = [];
-    activeMethodApp.subjects?.forEach((subj) => {
-      subj.variants?.forEach((v) => {
-        if ((formValues.seedIds ?? []).map(Number).includes(Number(v.id))) {
-          list.push({
-            id: v.id,
-            name: v.name || "",
-            subjectName: subj.subjectName || "",
-          });
-        }
-      });
+    allSeeds.forEach((seed) => {
+      if ((formValues.seedIds ?? []).map(Number).includes(Number(seed.id))) {
+        list.push({
+          id: seed.id,
+          name: seed.name || "",
+          subjectName: seed.productionSubject?.name || "",
+        });
+      }
     });
     return list;
-  }, [activeMethodApp, formValues.seedIds]);
+  }, [allSeeds, formValues.seedIds]);
 
   // Labels customized based on domainCode
   const domainLabels = useMemo(() => {
     switch (domainCode) {
       case "LIVESTOCK":
         return {
-          subjectTitle: "Vật nuôi chính",
+          // subjectTitle: "Vật nuôi chính",
           farmingMethod: "Phương pháp chăn nuôi",
           irrigation: "Hệ thống chuồng trại/cấp nước",
           irrigationName:
@@ -118,7 +117,7 @@ export const RegionConfirmationStep = ({
         };
       case "AQUACULTURE":
         return {
-          subjectTitle: "Đối tượng nuôi trồng",
+          // subjectTitle: "Đối tượng nuôi trồng",
           farmingMethod: "Phương pháp nuôi trồng",
           irrigation: "Phương pháp nuôi trồng chi tiết",
           irrigationName:
@@ -131,7 +130,7 @@ export const RegionConfirmationStep = ({
       case "CROP":
       default:
         return {
-          subjectTitle: "Cây trồng chính",
+          // subjectTitle: "Cây trồng chính",
           farmingMethod: "Phương pháp canh tác",
           irrigation: "Phương pháp tưới tiêu",
           irrigationName:
@@ -205,7 +204,7 @@ export const RegionConfirmationStep = ({
                     </td>
                   </tr>
                 )}
-                <tr className="border-b border-slate-100">
+                {/* <tr className="border-b border-slate-100">
                   <td className="py-2.5 px-4 text-muted-foreground">
                     {domainLabels.subjectTitle}
                   </td>
@@ -222,7 +221,7 @@ export const RegionConfirmationStep = ({
                       ))}
                     </div>
                   </td>
-                </tr>
+                </tr> */}
                 <tr className="border-b border-slate-100">
                   <td className="py-2.5 px-4 text-muted-foreground">
                     Địa chỉ / Vị trí

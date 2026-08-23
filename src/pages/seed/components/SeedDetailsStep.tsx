@@ -37,7 +37,8 @@ export function SeedDetailsStep({
   showYieldField = true,
   showSupplierMeta = false,
 }: SeedDetailsStepProps) {
-  const { control, setValue, getValues } = useFormContext<CreateSeedFormValues>();
+  const { control, setValue, getValues } =
+    useFormContext<CreateSeedFormValues>();
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -56,11 +57,12 @@ export function SeedDetailsStep({
     return () => clearTimeout(timer);
   }, [localSearchQuery]);
 
-  const { items: organizations, loading: isLoadingSuppliers } = useOrganizations(
-    { keyword: searchQuery },
-    parsedWorkspaceId ?? "missing",
-    { enabled: parsedWorkspaceId !== undefined },
-  );
+  const { items: organizations, loading: isLoadingSuppliers } =
+    useOrganizations(
+      { keyword: searchQuery, onlyOwner: true },
+      parsedWorkspaceId ?? "missing",
+      { enabled: parsedWorkspaceId !== undefined },
+    );
 
   const mappedSuppliers = useMemo(() => {
     return organizations.map((org) => ({
@@ -73,7 +75,10 @@ export function SeedDetailsStep({
   }, [organizations]);
 
   const watchedIllustration = useWatch({ control, name: "illustration" });
-  const watchedBaseIllustration = useWatch({ control, name: "baseIllustrationUrl" });
+  const watchedBaseIllustration = useWatch({
+    control,
+    name: "baseIllustrationUrl",
+  });
 
   const illustrationPreview = useMemo(() => {
     if (watchedIllustration) {

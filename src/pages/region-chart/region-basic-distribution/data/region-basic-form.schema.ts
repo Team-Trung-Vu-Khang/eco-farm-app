@@ -28,9 +28,7 @@ export const regionBasicFormSchema = z.object({
   farmingMethodId: z
     .number({ message: "Vui lòng chọn phương pháp" })
     .int()
-    .min(1, "Vui lòng chọn phương pháp")
-    .optional()
-    .or(z.literal(0)),
+    .min(1, "Vui lòng chọn phương pháp"),
   rearingMethodId: z.number().int().optional(),
   irrigationSystemId: z.number().int().optional(),
   seedIds: z.array(z.number().int()).optional(),
