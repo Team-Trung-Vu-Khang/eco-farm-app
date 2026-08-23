@@ -17,6 +17,7 @@ import { useEffect, useRef, useState } from "react";
 import { CLASSIFICATION_OPTIONS } from "../../data/constants";
 import type { CooperativeFormData } from "../../types/types";
 import AddressSearchInput from "@/components/AddressSearchInput";
+import { getDefaultOrganizationImage } from "../../../enterprise/data/default-organization-images";
 
 interface BasicInfoStepProps {
   formData: CooperativeFormData;
@@ -167,10 +168,10 @@ export function BasicInfoStep({
             onDragLeave={(e) => handleDrag("logo", e)}
             onDrop={handleLogoDrop}
           >
-            {formData.image ? (
+            {formData.image || getDefaultOrganizationImage("cooperative") ? (
               <>
                 <img
-                  src={formData.image}
+                  src={formData.image || getDefaultOrganizationImage("cooperative")}
                   alt="Preview"
                   className="w-full h-full object-cover"
                 />
@@ -212,30 +213,6 @@ export function BasicInfoStep({
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="space-y-2">
-          <Label htmlFor="code">Mã hợp tác xã *</Label>
-          <Input
-            id="code"
-            value={formData.code}
-            onChange={(e) => setFormData({ ...formData, code: e.target.value })}
-            placeholder="VD: DN001, DN002..."
-            data-testid="input-code"
-          />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="taxCode">Mã số thuế</Label>
-          <Input
-            id="taxCode"
-            value={formData.taxCode}
-            onChange={(e) =>
-              setFormData({ ...formData, taxCode: e.target.value })
-            }
-            placeholder="Nhập mã số thuế"
-          />
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div className="space-y-2">
           <Label htmlFor="name">Tên hợp tác xã *</Label>
           <Input
             id="name"
@@ -246,7 +223,7 @@ export function BasicInfoStep({
           />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="brandName">Tên thương hiệu</Label>
+          <Label htmlFor="brandName">Tên gợi nhớ</Label>
           <Input
             id="brandName"
             value={formData.brandName}
@@ -260,6 +237,17 @@ export function BasicInfoStep({
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="space-y-2">
+          <Label htmlFor="taxCode">Mã số thuế</Label>
+          <Input
+            id="taxCode"
+            value={formData.taxCode}
+            onChange={(e) =>
+              setFormData({ ...formData, taxCode: e.target.value })
+            }
+            placeholder="Nhập mã số thuế"
+          />
+        </div>
+        <div className="space-y-2">
           <Label htmlFor="classification">Phân loại</Label>
           <MultiSelect
             options={CLASSIFICATION_OPTIONS}
@@ -268,6 +256,21 @@ export function BasicInfoStep({
             onChange={(v) => setFormData({ ...formData, classification: v })}
           />
         </div>
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="taxAuthority">Cơ quan thuế</Label>
+        <Input
+          id="taxAuthority"
+          value={formData.taxAuthority}
+          onChange={(e) =>
+            setFormData({ ...formData, taxAuthority: e.target.value })
+          }
+          placeholder="Cục thuế / Chi cục thuế..."
+        />
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label htmlFor="taxAddress">Địa chỉ thuế</Label>
           <Input
@@ -277,20 +280,6 @@ export function BasicInfoStep({
               setFormData({ ...formData, taxAddress: e.target.value })
             }
             placeholder="Địa chỉ đăng ký thuế"
-          />
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label htmlFor="taxAuthority">Cơ quan thuế</Label>
-          <Input
-            id="taxAuthority"
-            value={formData.taxAuthority}
-            onChange={(e) =>
-              setFormData({ ...formData, taxAuthority: e.target.value })
-            }
-            placeholder="Cục thuế / Chi cục thuế..."
           />
         </div>
         <div className="space-y-2">

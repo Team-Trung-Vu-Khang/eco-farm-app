@@ -52,7 +52,7 @@ export const enterpriseFormSchema = z.object({
     z.number(),
     z.string().min(1, "Vui lòng chọn loại hình tổ chức."),
   ]),
-  code: z.string().trim().min(1, "Vui lòng nhập mã doanh nghiệp."),
+  code: z.string().trim().optional().default(""),
   name: z.string().trim().min(1, "Vui lòng nhập tên doanh nghiệp."),
   brandName: nullableText.default(""),
   taxCode: nullableText.default(""),

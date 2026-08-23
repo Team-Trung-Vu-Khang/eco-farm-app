@@ -17,6 +17,7 @@ import { vietQrBankData } from "@/constants/banks";
 import { parseVietQR } from "@/utils/commons";
 import type { OrganizationCreateRequest } from "@/features/organization";
 import { mapClassificationToBusinessLines } from "../utils/cooperative.mapper";
+import { getDefaultOrganizationImage } from "../../enterprise/data/default-organization-images";
 
 type BankMasterDataRecord = {
   id: number | string;
@@ -747,7 +748,6 @@ export function useCooperativeForm(initialData?: Partial<CooperativeFormData>) {
       }));
 
     const payload: OrganizationCreateRequest = {
-      code: formData.code,
       name: formData.name,
       brandName: formData.brandName,
       type: "cooperative" as const,
@@ -770,7 +770,7 @@ export function useCooperativeForm(initialData?: Partial<CooperativeFormData>) {
       latitude: formData.latitude,
       longitude: formData.longitude,
       description: formData.description,
-      imageUrl: formData.image,
+      imageUrl: formData.image || getDefaultOrganizationImage("cooperative"),
       contacts: formData.contacts.map((contact, index) => ({
         contactId: contact.id,
         name: contact.name,

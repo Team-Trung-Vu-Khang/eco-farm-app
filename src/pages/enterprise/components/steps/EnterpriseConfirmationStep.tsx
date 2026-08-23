@@ -33,6 +33,7 @@ import {
 import { useState } from "react";
 import { useEnterpriseFormContext } from "../../context/EnterpriseFormContext";
 import type { BankAccount, Branch, Contact } from "../../data/constants";
+import { getDefaultOrganizationImage } from "../../data/default-organization-images";
 import type { EnterpriseDocument } from "../../types";
 
 const classificationOptions = [
@@ -45,6 +46,8 @@ const classificationOptions = [
 
 export function EnterpriseConfirmationStep() {
   const { formData } = useEnterpriseFormContext();
+  const displayImage =
+    formData.image?.trim() || getDefaultOrganizationImage(formData.type);
   const [confirmBankSearchQuery, setConfirmBankSearchQuery] = useState("");
   const defaultContact = formData.contacts[0];
   const organizationTypesQuery = useMasterData("organization-types", {
@@ -77,9 +80,9 @@ export function EnterpriseConfirmationStep() {
         <div className="lg:col-span-1 space-y-6">
           <Card className="overflow-hidden border-primary/20 shadow-lg">
             <div className="h-32 bg-muted relative">
-              {formData.image && (
+              {displayImage && (
                 <img
-                  src={formData.image}
+                  src={displayImage}
                   alt="Banner"
                   className="w-full h-full object-cover opacity-40 blur-[2px]"
                 />
@@ -88,9 +91,9 @@ export function EnterpriseConfirmationStep() {
             </div>
             <CardHeader className="text-center pb-4">
               <div className="mx-auto w-24 h-24 -mt-16 rounded-full border-4 border-background bg-white shadow-xl flex items-center justify-center mb-4 overflow-hidden relative z-10 transition-transform hover:scale-105">
-                {formData.image ? (
+                {displayImage ? (
                   <img
-                    src={formData.image}
+                    src={displayImage}
                     alt="Logo"
                     className="w-full h-full object-cover"
                   />
@@ -99,7 +102,7 @@ export function EnterpriseConfirmationStep() {
                 )}
               </div>
               <CardTitle className="text-xl font-bold">
-                {formData.brandName || "Tên thương hiệu"}
+                {formData.brandName || "Tên gợi nhớ"}
               </CardTitle>
               <CardDescription className="text-sm font-medium">
                 {formData.name || "Tên doanh nghiệp"}
@@ -119,19 +122,6 @@ export function EnterpriseConfirmationStep() {
             </CardHeader>
             <CardContent className="space-y-6 pt-6 border-t bg-muted/5">
               <div className="space-y-4 text-sm">
-                <div className="flex items-center gap-4">
-                  <div className="w-8 h-8 rounded-lg bg-background flex items-center justify-center shadow-sm border">
-                    <CreditCard className="w-4 h-4 text-primary" />
-                  </div>
-                  <div>
-                    <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider">
-                      Mã doanh nghiệp
-                    </p>
-                    <p className="font-bold text-base">
-                      {formData.code || "N/A"}
-                    </p>
-                  </div>
-                </div>
                 <div className="flex items-center gap-4">
                   <div className="w-8 h-8 rounded-lg bg-background flex items-center justify-center shadow-sm border">
                     <User className="w-4 h-4 text-primary" />

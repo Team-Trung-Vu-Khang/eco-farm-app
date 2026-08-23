@@ -63,7 +63,7 @@ export default function FarmerEditPage() {
     {
       id: "basic",
       title: "Thông tin cơ bản",
-      description: "Tên, thương hiệu, mã, thuế",
+      description: "Tên, tên gợi nhớ và thông tin thuế",
       content: (
         <FarmerBasicInfoStep
           formData={formData}

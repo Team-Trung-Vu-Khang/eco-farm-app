@@ -65,7 +65,7 @@ export default function FarmerCreatePage() {
     {
       id: "basic",
       title: "Thông tin cơ bản",
-      description: "Tên, thương hiệu, mã, thuế",
+      description: "Tên, tên gợi nhớ và thông tin thuế",
       content: (
         <FarmerBasicInfoStep
           formData={formData}
@@ -77,7 +77,7 @@ export default function FarmerCreatePage() {
           processLogoImage={processLogoImage}
         />
       ),
-      isValid: formData.name.length > 0 && formData.code.length > 0,
+      isValid: formData.name.length > 0,
     },
     {
       id: "contacts",

@@ -16,6 +16,7 @@ import { ImagePlus, MapPin, Upload } from "lucide-react";
 import { useRef } from "react";
 import AddressSearchInput from "@/components/AddressSearchInput";
 import type { FarmerFormData } from "../types";
+import { getDefaultOrganizationImage } from "../../enterprise/data/default-organization-images";
 
 interface SimpleFarmerFormProps {
   formData: FarmerFormData;
@@ -40,12 +41,10 @@ export default function SimpleFarmerForm({
   const { provinces, wards, isLoadingProvinces, isLoadingWards } =
     useAddressOptions(formData.province);
   const isValid = Boolean(
-    formData.code.trim() &&
-      formData.name.trim() &&
+    formData.name.trim() &&
       formData.province?.trim() &&
       formData.ward?.trim() &&
-      formData.address.trim() &&
-      formData.phone.trim(),
+      formData.address.trim(),
   );
 
   return (
@@ -62,8 +61,8 @@ export default function SimpleFarmerForm({
         <CardContent className="space-y-6 p-6">
           <div className="flex flex-col gap-4 rounded-2xl border border-dashed border-slate-200 bg-slate-50/60 p-4 sm:flex-row sm:items-center">
             <div className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-2xl border bg-white">
-              {formData.image ? (
-                <img src={formData.image} alt="Hình ảnh nông hộ" className="h-full w-full object-contain" />
+              {formData.image || getDefaultOrganizationImage("farm") ? (
+                <img src={formData.image || getDefaultOrganizationImage("farm")} alt="Hình ảnh nông hộ" className="h-full w-full object-contain" />
               ) : (
                 <ImagePlus className="h-7 w-7 text-slate-300" />
               )}
@@ -73,10 +72,9 @@ export default function SimpleFarmerForm({
             <Button type="button" variant="outline" onClick={() => fileInputRef.current?.click()} className="gap-2"><Upload className="h-4 w-4" />Tải hình ảnh</Button>
           </div>
           <div className="grid gap-4 sm:grid-cols-2">
-            <div className="space-y-2"><Label required>Mã nông hộ</Label><Input value={formData.code} onChange={(e) => onChange("code", e.target.value)} placeholder="VD: NH001" /></div>
             <div className="space-y-2"><Label required>Tên nông hộ</Label><Input value={formData.name} onChange={(e) => onChange("name", e.target.value)} placeholder="Nhập tên nông hộ" /></div>
-            <div className="space-y-2"><Label>Mã số thuế</Label><Input value={formData.taxCode} onChange={(e) => onChange("taxCode", e.target.value)} placeholder="Nhập mã số thuế" /></div>
-            <div className="space-y-2"><Label required>Số điện thoại</Label><Input value={formData.phone} onChange={(e) => onChange("phone", e.target.value)} placeholder="Nhập số điện thoại" /></div>
+            <div className="space-y-2"><Label>Tên gợi nhớ</Label><Input value={formData.brandName} onChange={(e) => onChange("brandName", e.target.value)} placeholder="VD: Tên thường gọi của nông hộ" /></div>
+            <div className="space-y-2 sm:col-span-2"><Label>Mã số thuế</Label><Input value={formData.taxCode} onChange={(e) => onChange("taxCode", e.target.value)} placeholder="Nhập mã số thuế" /></div>
           </div>
           <div className="space-y-4 border-t border-slate-100 pt-5">
             <div className="flex items-center gap-2 text-sm font-bold text-slate-800"><MapPin className="h-4 w-4 text-emerald-600" />Địa chỉ nông hộ</div>
