@@ -27,18 +27,20 @@ const GrowthCycleSelector = ({
   onConfirm,
   existingSelections,
   disabled = false,
-  // When set, the picker is locked to this one growth cycle — the cycle-
-  // level row is hidden and only its stages can be picked (multi-select).
-  // Used when a plan inherits its growth cycle from the parent workflow and
-  // only needs to narrow down which stage(s) apply.
-  lockedCycleId,
+  // When set, the picker is locked to these growth cycles — the cycle-
+  // level row is hidden and only their stages can be picked (multi-select,
+  // across as many of the locked cycles as needed). Used when a plan
+  // inherits its growth cycle(s) from the parent workflow and only needs to
+  // narrow down which stage(s) apply.
+  lockedCycleIds,
 }: {
   growthCycles: GrowthCycle[];
   onConfirm: (selections: GrowthCycleSelection[]) => void;
   existingSelections: GrowthCycleSelection[];
   disabled?: boolean;
-  lockedCycleId?: string;
+  lockedCycleIds?: string[];
 }) => {
+  const isLocked = Boolean(lockedCycleIds?.length);
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [expandedCycles, setExpandedCycles] = useState<string[]>([]);
@@ -49,17 +51,17 @@ const GrowthCycleSelector = ({
   useEffect(() => {
     if (isOpen) {
       setTempSelections(existingSelections);
-      if (lockedCycleId) setExpandedCycles([lockedCycleId]);
+      if (lockedCycleIds) setExpandedCycles(lockedCycleIds);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, existingSelections]);
 
   const visibleCycles = useMemo(
     () =>
-      lockedCycleId
-        ? growthCycles.filter((cycle) => cycle.id === lockedCycleId)
+      lockedCycleIds
+        ? growthCycles.filter((cycle) => lockedCycleIds.includes(cycle.id))
         : growthCycles,
-    [growthCycles, lockedCycleId],
+    [growthCycles, lockedCycleIds],
   );
 
   const filteredCycles = useMemo(() => {
@@ -86,11 +88,12 @@ const GrowthCycleSelector = ({
       (s) => s.type === type && s.cycleId === cycleId && s.stageId === stageId,
     );
 
-  // Only one growth cycle may be selected as a whole — picking one always
-  // replaces the prior selection. Stages, however, can be multi-selected as
-  // long as they all belong to the same cycle — picking a stage from a
-  // different cycle (or while a whole cycle is selected) resets the list to
-  // just that stage.
+  // Both whole cycles and individual stages can be multi-selected freely —
+  // picking one toggles it on/off without clearing anything else. Picking a
+  // whole cycle drops any stage-level picks already made for that same
+  // cycle (redundant once the whole cycle is selected); picking a stage
+  // drops a whole-cycle pick for that cycle (it's no longer "all stages",
+  // just this one).
   const handleSelect = (
     type: "cycle" | "stage",
     cycleId: string,
@@ -100,17 +103,21 @@ const GrowthCycleSelector = ({
       const isCurrentlySelected = tempSelections.some(
         (s) => s.type === "cycle" && s.cycleId === cycleId,
       );
-      setTempSelections(
-        isCurrentlySelected
-          ? []
+      setTempSelections((prev) => {
+        const withoutThisCycle = prev.filter(
+          (s) => !(s.cycleId === cycleId && (s.type === "cycle" || s.type === "stage")),
+        );
+        return isCurrentlySelected
+          ? withoutThisCycle
           : [
+              ...withoutThisCycle,
               {
                 id: Math.random().toString(36).slice(2, 11),
                 type: "cycle",
                 cycleId,
               },
-            ],
-      );
+            ];
+      });
       return;
     }
 
@@ -128,7 +135,7 @@ const GrowthCycleSelector = ({
     }
 
     setTempSelections((prev) => [
-      ...prev.filter((s) => s.type === "stage" && s.cycleId === cycleId),
+      ...prev.filter((s) => !(s.type === "cycle" && s.cycleId === cycleId)),
       {
         id: Math.random().toString(36).slice(2, 11),
         type: "stage",
@@ -144,32 +151,46 @@ const GrowthCycleSelector = ({
   };
 
   const selectedLabel = useMemo(() => {
-    const first = existingSelections[0];
-    if (!first) return null;
-    const cycle = growthCycles.find((c) => c.id === first.cycleId);
-    if (!cycle) return null;
-    if (first.type === "cycle") return lockedCycleId ? "Toàn bộ chu kỳ" : cycle.name;
+    if (existingSelections.length === 0) return null;
 
-    const stageNames = existingSelections
-      .map((s) => cycle.stages.find((st) => st.id === s.stageId)?.name)
-      .filter((name): name is string => Boolean(name));
-    if (stageNames.length === 0) return lockedCycleId ? null : cycle.name;
-    if (lockedCycleId) {
+    // Locked (stage-only) mode can span several known cycles — keep the
+    // short "just the stages" summary, without a cycle-name prefix.
+    if (isLocked) {
+      const stageNames = existingSelections
+        .map((s) => {
+          const cycle = growthCycles.find((c) => c.id === s.cycleId);
+          return cycle?.stages.find((st) => st.id === s.stageId)?.name;
+        })
+        .filter((name): name is string => Boolean(name));
+      if (stageNames.length === 0) return null;
       return stageNames.length === 1
         ? stageNames[0]
         : `Đã chọn ${stageNames.length} giai đoạn`;
     }
+
+    const cycleIds = Array.from(new Set(existingSelections.map((s) => s.cycleId)));
+    if (cycleIds.length > 1) return `Đã chọn ${cycleIds.length} chu kỳ`;
+
+    const cycle = growthCycles.find((c) => c.id === cycleIds[0]);
+    if (!cycle) return null;
+    const first = existingSelections[0];
+    if (first.type === "cycle") return cycle.name;
+
+    const stageNames = existingSelections
+      .map((s) => cycle.stages.find((st) => st.id === s.stageId)?.name)
+      .filter((name): name is string => Boolean(name));
+    if (stageNames.length === 0) return cycle.name;
     if (stageNames.length === 1) return `${cycle.name} › ${stageNames[0]}`;
     return `${cycle.name} › ${stageNames.length} giai đoạn`;
-  }, [existingSelections, growthCycles, lockedCycleId]);
+  }, [existingSelections, growthCycles, isLocked]);
 
   return (
     <>
       <Button
         onClick={() => setIsOpen(true)}
         disabled={disabled}
-        className="w-full cursor-pointer border-2 border-dashed border-primary/20 bg-primary/5 hover:bg-primary/10 hover:border-primary/40 text-primary font-bold gap-2 transition-all rounded-lg shadow-sm hover:shadow-md"
         variant="outline"
+        className="w-full cursor-pointer border-2 border-dashed border-primary/20 bg-primary/5 hover:bg-primary/10 hover:border-primary/40 text-primary font-bold gap-2 transition-all rounded-lg shadow-sm hover:shadow-md"
       >
         {selectedLabel ? (
           <>
@@ -179,7 +200,7 @@ const GrowthCycleSelector = ({
         ) : (
           <>
             <Plus className="w-5 h-5" />
-            {lockedCycleId ? "Chọn giai đoạn sinh trưởng" : "Chọn chu kỳ sinh trưởng"}
+            {isLocked ? "Chọn giai đoạn sinh trưởng" : "Chọn chu kỳ sinh trưởng"}
           </>
         )}
       </Button>
@@ -194,18 +215,16 @@ const GrowthCycleSelector = ({
           <DialogHeader className="p-6 bg-slate-50 border-b shrink-0">
             <DialogTitle className="flex items-center gap-2">
               <Sprout className="w-5 h-5 text-primary" />
-              {lockedCycleId
-                ? "Chọn giai đoạn sinh trưởng"
-                : "Chọn chu kỳ sinh trưởng"}
+              {isLocked ? "Chọn giai đoạn sinh trưởng" : "Chọn chu kỳ sinh trưởng"}
             </DialogTitle>
             <p className="text-xs text-muted-foreground mt-1">
-              {lockedCycleId
-                ? "Chọn 1 hoặc nhiều giai đoạn áp dụng cho kế hoạch này"
-                : "Chọn 1 Chu kỳ sinh trưởng, hoặc nhiều Giai đoạn trong cùng 1 chu kỳ"}
+              {isLocked
+                ? "Chọn 1 hoặc nhiều giai đoạn, từ 1 hoặc nhiều chu kỳ, áp dụng cho kế hoạch này"
+                : "Chọn 1 hoặc nhiều Chu kỳ sinh trưởng, hoặc từng Giai đoạn cụ thể"}
             </p>
           </DialogHeader>
 
-          {!lockedCycleId && (
+          {!isLocked && (
             <div className="px-6 pb-5 border-b shrink-0 bg-white">
               <div className="relative">
                 <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground z-10" />
@@ -224,7 +243,7 @@ const GrowthCycleSelector = ({
               {filteredCycles.map((cycle) => (
                 <div key={cycle.id} className="space-y-2">
                   {/* Cycle level */}
-                  {lockedCycleId ? (
+                  {isLocked ? (
                     <div className="flex items-center gap-3 p-3 rounded-xl bg-slate-50 border border-slate-100">
                       <div className="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
                         <Sprout className="w-4 h-4" />
@@ -294,10 +313,10 @@ const GrowthCycleSelector = ({
                   )}
 
                   {/* Stages level */}
-                  {(lockedCycleId || expandedCycles.includes(cycle.id)) && (
+                  {(isLocked || expandedCycles.includes(cycle.id)) && (
                     <div
                       className={
-                        lockedCycleId
+                        isLocked
                           ? "space-y-2"
                           : "ml-6 pl-4 border-l-2 border-slate-100 space-y-2 py-1"
                       }

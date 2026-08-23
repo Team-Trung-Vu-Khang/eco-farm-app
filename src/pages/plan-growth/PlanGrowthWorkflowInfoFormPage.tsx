@@ -157,21 +157,33 @@ export default function PlanGrowthWorkflowInfoFormPage() {
   );
 
   const growthCycleSummary = useMemo(() => {
-    const first = growthCycleSelections[0];
-    if (!first) return null;
-    const cycle = growthCycles.find((c) => c.id === first.cycleId);
-    if (!cycle) return null;
+    const cycleIds = Array.from(
+      new Set(growthCycleSelections.map((s) => s.cycleId)),
+    );
 
-    if (first.type === "cycle") {
-      return { cycleName: cycle.name, items: ["Toàn bộ chu kỳ"] };
-    }
+    return cycleIds
+      .map((cycleId) => {
+        const cycle = growthCycles.find((c) => c.id === cycleId);
+        if (!cycle) return null;
+        const selectionsForCycle = growthCycleSelections.filter(
+          (s) => s.cycleId === cycleId,
+        );
 
-    const stageNames = growthCycleSelections
-      .map((s) => cycle.stages.find((st) => st.id === s.stageId)?.name)
-      .filter((name): name is string => Boolean(name));
-    if (stageNames.length === 0) return null;
+        if (selectionsForCycle.some((s) => s.type === "cycle")) {
+          return { cycleName: cycle.name, items: ["Toàn bộ chu kỳ"] };
+        }
 
-    return { cycleName: cycle.name, items: stageNames };
+        const stageNames = selectionsForCycle
+          .map((s) => cycle.stages.find((st) => st.id === s.stageId)?.name)
+          .filter((name): name is string => Boolean(name));
+        if (stageNames.length === 0) return null;
+
+        return { cycleName: cycle.name, items: stageNames };
+      })
+      .filter(
+        (group): group is { cycleName: string; items: string[] } =>
+          group !== null,
+      );
   }, [growthCycleSelections, growthCycles]);
 
   // `useForm`/`useState` above only see `editingRecord` at first render —
@@ -529,28 +541,32 @@ export default function PlanGrowthWorkflowInfoFormPage() {
                     onConfirm={setGrowthCycleSelections}
                   />
 
-                  {growthCycleSummary && (
+                  {growthCycleSummary.length > 0 && (
                     <div className="mt-4 p-4 rounded-xl bg-white/50 border border-emerald-100/50 space-y-3">
                       <div className="text-[10px] font-bold text-emerald-800/60 uppercase tracking-widest flex items-center gap-2">
                         <Sprout className="w-3 h-3" />
                         Chu kỳ sinh trưởng đã chọn
                       </div>
-                      <div className="space-y-2">
-                        <div className="flex items-center gap-1.5 text-[11px] font-bold text-slate-700">
-                          <div className="w-1 h-1 rounded-full bg-emerald-500" />
-                          {growthCycleSummary.cycleName}
-                        </div>
-                        <div className="flex flex-wrap gap-1.5 pl-2.5">
-                          {growthCycleSummary.items.map((label, idx) => (
-                            <Badge
-                              key={idx}
-                              variant="outline"
-                              className="text-[10px] py-0 px-2 h-5 font-medium border-emerald-100 shadow-sm bg-emerald-100 text-emerald-800"
-                            >
-                              {label}
-                            </Badge>
-                          ))}
-                        </div>
+                      <div className="space-y-3">
+                        {growthCycleSummary.map((group) => (
+                          <div key={group.cycleName} className="space-y-2">
+                            <div className="flex items-center gap-1.5 text-[11px] font-bold text-slate-700">
+                              <div className="w-1 h-1 rounded-full bg-emerald-500" />
+                              {group.cycleName}
+                            </div>
+                            <div className="flex flex-wrap gap-1.5 pl-2.5">
+                              {group.items.map((label, idx) => (
+                                <Badge
+                                  key={idx}
+                                  variant="outline"
+                                  className="text-[10px] py-0 px-2 h-5 font-medium border-emerald-100 shadow-sm bg-emerald-100 text-emerald-800"
+                                >
+                                  {label}
+                                </Badge>
+                              ))}
+                            </div>
+                          </div>
+                        ))}
                       </div>
                     </div>
                   )}

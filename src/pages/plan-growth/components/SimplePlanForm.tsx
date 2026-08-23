@@ -307,20 +307,36 @@ export default function SimplePlanForm({
 }: SimplePlanFormProps) {
   const [newStage, setNewStage] = useState("");
 
-  const inheritedCycleId =
-    workflowInfo?.growthCycleSelections?.[0]?.cycleId ?? growthCycles[0]?.id;
-  const inheritedCycle = growthCycles.find((c) => c.id === inheritedCycleId);
-  const growthCycleSummaryItems = useMemo(
+  const inheritedCycleIds = useMemo(
     () =>
-      inheritedCycle
-        ? formData.growthCycleSelections
-            .map(
-              (s) =>
-                inheritedCycle.stages.find((st) => st.id === s.stageId)?.name,
-            )
-            .filter((name): name is string => Boolean(name))
-        : [],
-    [inheritedCycle, formData.growthCycleSelections],
+      workflowInfo?.growthCycleSelections?.length
+        ? Array.from(
+            new Set(workflowInfo.growthCycleSelections.map((s) => s.cycleId)),
+          )
+        : growthCycles.slice(0, 2).map((c) => c.id),
+    [workflowInfo, growthCycles],
+  );
+  const inheritedCycles = useMemo(
+    () => growthCycles.filter((c) => inheritedCycleIds.includes(c.id)),
+    [growthCycles, inheritedCycleIds],
+  );
+  const growthCycleSummary = useMemo(
+    () =>
+      inheritedCycles
+        .map((cycle) => {
+          const stageNames = formData.growthCycleSelections
+            .filter((s) => s.cycleId === cycle.id)
+            .map((s) => cycle.stages.find((st) => st.id === s.stageId)?.name)
+            .filter((name): name is string => Boolean(name));
+          return stageNames.length > 0
+            ? { cycleName: cycle.name, items: stageNames }
+            : null;
+        })
+        .filter(
+          (group): group is { cycleName: string; items: string[] } =>
+            group !== null,
+        ),
+    [inheritedCycles, formData.growthCycleSelections],
   );
   const isTreatmentOrAmendment = formData.purpose === "treatment" || formData.purpose === "amendment";
 
@@ -533,50 +549,60 @@ export default function SimplePlanForm({
           <div className="flex items-center justify-between">
             <Label>Chu kỳ sinh trưởng</Label>
             <span className="text-[10px] text-emerald-700 bg-emerald-100 px-2 py-1 rounded-full font-semibold">
-              {inheritedCycle
-                ? `Kế thừa từ quy trình "${inheritedCycle.name}"`
-                : "Chưa thiết lập ở quy trình"}
+              {inheritedCycles.length === 0
+                ? "Chưa thiết lập ở quy trình"
+                : inheritedCycles.length === 1
+                  ? `Kế thừa từ quy trình "${inheritedCycles[0].name}"`
+                  : `Kế thừa ${inheritedCycles.length} chu kỳ từ quy trình`}
             </span>
           </div>
-          <div className="p-4 rounded-2xl border border-emerald-100 bg-emerald-50/20 shadow-sm space-y-3">
-            {inheritedCycle ? (
-              <GrowthCycleSelector
-                growthCycles={growthCycles}
-                lockedCycleId={inheritedCycle.id}
-                existingSelections={formData.growthCycleSelections}
-                onConfirm={(nextSelections) =>
-                  setFormData((prev) => ({
-                    ...prev,
-                    growthCycleSelections: nextSelections,
-                  }))
-                }
-              />
-            ) : (
-              <p className="text-xs text-emerald-800/60 italic text-center py-2">
-                Quy trình chưa thiết lập chu kỳ sinh trưởng
-              </p>
-            )}
+          {inheritedCycles.length > 0 ? (
+            <GrowthCycleSelector
+              growthCycles={growthCycles}
+              lockedCycleIds={inheritedCycleIds}
+              existingSelections={formData.growthCycleSelections}
+              onConfirm={(nextSelections) =>
+                setFormData((prev) => ({
+                  ...prev,
+                  growthCycleSelections: nextSelections,
+                }))
+              }
+            />
+          ) : (
+            <p className="text-xs text-emerald-800/60 italic text-center py-2">
+              Quy trình chưa thiết lập chu kỳ sinh trưởng
+            </p>
+          )}
 
-            {growthCycleSummaryItems.length > 0 && (
-              <div className="p-4 rounded-xl bg-white/50 border border-emerald-100/50 space-y-3">
-                <div className="text-[10px] font-bold text-emerald-800/60 uppercase tracking-widest flex items-center gap-2">
-                  <Sprout className="w-3 h-3" />
-                  Giai đoạn đã chọn
-                </div>
-                <div className="flex flex-wrap gap-1.5">
-                  {growthCycleSummaryItems.map((label, idx) => (
-                    <Badge
-                      key={idx}
-                      variant="outline"
-                      className="text-[10px] py-0 px-2 h-5 font-medium border-emerald-100 shadow-sm bg-emerald-100 text-emerald-800"
-                    >
-                      {label}
-                    </Badge>
-                  ))}
-                </div>
+          {growthCycleSummary.length > 0 && (
+            <div className="p-4 rounded-xl bg-white/50 border border-emerald-100/50 space-y-3">
+              <div className="text-[10px] font-bold text-emerald-800/60 uppercase tracking-widest flex items-center gap-2">
+                <Sprout className="w-3 h-3" />
+                Giai đoạn đã chọn
               </div>
-            )}
-          </div>
+              <div className="space-y-3">
+                {growthCycleSummary.map((group) => (
+                  <div key={group.cycleName} className="space-y-2">
+                    <div className="flex items-center gap-1.5 text-[11px] font-bold text-slate-700">
+                      <div className="w-1 h-1 rounded-full bg-emerald-500" />
+                      {group.cycleName}
+                    </div>
+                    <div className="flex flex-wrap gap-1.5 pl-2.5">
+                      {group.items.map((label, idx) => (
+                        <Badge
+                          key={idx}
+                          variant="outline"
+                          className="text-[10px] py-0 px-2 h-5 font-medium border-emerald-100 shadow-sm bg-emerald-100 text-emerald-800"
+                        >
+                          {label}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       )}
 
