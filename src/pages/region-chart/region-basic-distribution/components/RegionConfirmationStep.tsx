@@ -6,13 +6,7 @@ import { useAddressOptions } from "@/features/master-data/hooks/useAddressOption
 import { useRearingMethods } from "@/features/master-data/hooks/useRearingMethods";
 import { useIrrigationSystems } from "@/features/master-data/hooks/useIrrigationSystems";
 import { useMemo } from "react";
-import {
-  CheckCircle2,
-  Droplets,
-  Leaf,
-  ScrollText,
-  Sprout,
-} from "lucide-react";
+import { CheckCircle2, Droplets, Leaf, ScrollText, Sprout } from "lucide-react";
 import { Badge, Card } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import type { RegionBasicFormValues } from "../data/region-basic-form.schema";
 import { useMethodApplications } from "@/features/foundation";
@@ -75,9 +69,14 @@ export const RegionConfirmationStep = ({
   }, [methodApplications, selectedFarmingMethodId]);
 
   // Selected details
-  const landTypeName = lands.find((l) => String(l.id || l.code) === formValues.landType)?.name || formValues.landType;
-  const terrainName = terrains.find((t) => String(t.id || t.code) === formValues.terrain)?.name || formValues.terrain;
-  const provinceName = provinces.find((p) => p.id === formValues.provinceId)?.name || "";
+  const landTypeName =
+    lands.find((l) => String(l.id || l.code) === formValues.landType)?.name ||
+    formValues.landType;
+  const terrainName =
+    terrains.find((t) => String(t.id || t.code) === formValues.terrain)?.name ||
+    formValues.terrain;
+  const provinceName =
+    provinces.find((p) => p.id === formValues.provinceId)?.name || "";
   const wardName = wards.find((w) => w.id === formValues.wardId)?.name || "";
 
   const selectedSubjects = useMemo(() => {
@@ -110,7 +109,10 @@ export const RegionConfirmationStep = ({
           subjectTitle: "Vật nuôi chính",
           farmingMethod: "Phương pháp chăn nuôi",
           irrigation: "Hệ thống chuồng trại/cấp nước",
-          irrigationName: irrigationSystems.find((i) => i.id === Number(formValues.irrigationSystemId))?.name || "",
+          irrigationName:
+            irrigationSystems.find(
+              (i) => i.id === Number(formValues.irrigationSystemId),
+            )?.name || "",
           seedTitle: "Danh sách con giống áp dụng",
           seedLabel: "Con giống:",
         };
@@ -119,7 +121,10 @@ export const RegionConfirmationStep = ({
           subjectTitle: "Đối tượng nuôi trồng",
           farmingMethod: "Phương pháp nuôi trồng",
           irrigation: "Phương pháp nuôi trồng chi tiết",
-          irrigationName: rearingMethods.find((r) => r.id === Number(formValues.rearingMethodId))?.name || "",
+          irrigationName:
+            rearingMethods.find(
+              (r) => r.id === Number(formValues.rearingMethodId),
+            )?.name || "",
           seedTitle: "Danh sách giống thủy sản áp dụng",
           seedLabel: "Giống thủy sản:",
         };
@@ -129,12 +134,21 @@ export const RegionConfirmationStep = ({
           subjectTitle: "Cây trồng chính",
           farmingMethod: "Phương pháp canh tác",
           irrigation: "Phương pháp tưới tiêu",
-          irrigationName: rearingMethods.find((r) => r.id === Number(formValues.rearingMethodId))?.name || "",
+          irrigationName:
+            rearingMethods.find(
+              (r) => r.id === Number(formValues.rearingMethodId),
+            )?.name || "",
           seedTitle: "Danh sách giống cây trồng áp dụng",
           seedLabel: "Hạt giống:",
         };
     }
-  }, [domainCode, formValues.rearingMethodId, formValues.irrigationSystemId, rearingMethods, irrigationSystems]);
+  }, [
+    domainCode,
+    formValues.rearingMethodId,
+    formValues.irrigationSystemId,
+    rearingMethods,
+    irrigationSystems,
+  ]);
 
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-500 max-w-4xl mx-auto">
@@ -156,33 +170,53 @@ export const RegionConfirmationStep = ({
         <Card className="border-slate-200 shadow-xs overflow-hidden bg-white">
           <div className="bg-slate-50 border-b px-4 py-3 flex items-center gap-2">
             <ScrollText className="w-4 h-4 text-slate-500" />
-            <h4 className="font-semibold text-slate-800 text-sm">Thông tin vùng địa lý</h4>
+            <h4 className="font-semibold text-slate-800 text-sm">
+              Thông tin vùng địa lý
+            </h4>
           </div>
           <div className="p-0">
             <table className="w-full text-xs">
               <tbody>
                 <tr className="border-b border-slate-100">
-                  <td className="py-2.5 px-4 text-muted-foreground w-1/3">Tên vùng</td>
-                  <td className="py-2.5 px-4 font-semibold text-slate-900">{formValues.name}</td>
+                  <td className="py-2.5 px-4 text-muted-foreground w-1/3">
+                    Tên vùng
+                  </td>
+                  <td className="py-2.5 px-4 font-semibold text-slate-900">
+                    {formValues.name}
+                  </td>
                 </tr>
                 {formValues.code && (
                   <tr className="border-b border-slate-100">
-                    <td className="py-2.5 px-4 text-muted-foreground">Mã vùng</td>
-                    <td className="py-2.5 px-4 font-semibold text-slate-900">{formValues.code}</td>
+                    <td className="py-2.5 px-4 text-muted-foreground">
+                      Mã vùng
+                    </td>
+                    <td className="py-2.5 px-4 font-semibold text-slate-900">
+                      {formValues.code}
+                    </td>
                   </tr>
                 )}
                 {formValues.area !== undefined && (
                   <tr className="border-b border-slate-100">
-                    <td className="py-2.5 px-4 text-muted-foreground">Diện tích (ha)</td>
-                    <td className="py-2.5 px-4 font-semibold text-slate-900">{formValues.area}</td>
+                    <td className="py-2.5 px-4 text-muted-foreground">
+                      Diện tích (ha)
+                    </td>
+                    <td className="py-2.5 px-4 font-semibold text-slate-900">
+                      {formValues.area}
+                    </td>
                   </tr>
                 )}
                 <tr className="border-b border-slate-100">
-                  <td className="py-2.5 px-4 text-muted-foreground">{domainLabels.subjectTitle}</td>
+                  <td className="py-2.5 px-4 text-muted-foreground">
+                    {domainLabels.subjectTitle}
+                  </td>
                   <td className="py-2.5 px-4">
                     <div className="flex flex-wrap gap-1.5">
                       {selectedSubjects.map((s) => (
-                        <Badge key={s.id} variant="secondary" className="bg-green-50 text-green-700 border-green-100 text-[11px]">
+                        <Badge
+                          key={s.id}
+                          variant="secondary"
+                          className="bg-green-50 text-green-700 border-green-100 text-[11px]"
+                        >
                           {s.name}
                         </Badge>
                       ))}
@@ -190,29 +224,40 @@ export const RegionConfirmationStep = ({
                   </td>
                 </tr>
                 <tr className="border-b border-slate-100">
-                  <td className="py-2.5 px-4 text-muted-foreground">Địa chỉ / Vị trí</td>
+                  <td className="py-2.5 px-4 text-muted-foreground">
+                    Địa chỉ / Vị trí
+                  </td>
                   <td className="py-2.5 px-4 text-slate-700 font-medium">
-                    {[formValues.address, wardName, provinceName].filter(Boolean).join(", ") ||
+                    {[formValues.address, wardName, provinceName]
+                      .filter(Boolean)
+                      .join(", ") ||
                       formValues.metadataJson?.address ||
                       "---"}
                   </td>
                 </tr>
                 {(landTypeName || terrainName) && (
                   <tr className="border-b border-slate-100">
-                    <td className="py-2.5 px-4 text-muted-foreground">Đặc tính tự nhiên</td>
+                    <td className="py-2.5 px-4 text-muted-foreground">
+                      Đặc tính tự nhiên
+                    </td>
                     <td className="py-2.5 px-4 text-slate-700 font-medium">
                       {[
                         landTypeName && `Loại đất: ${landTypeName}`,
-                        terrainName && `Địa hình: ${terrainName}`
-                      ].filter(Boolean).join(" • ") || "---"}
+                        terrainName && `Địa hình: ${terrainName}`,
+                      ]
+                        .filter(Boolean)
+                        .join(" • ") || "---"}
                     </td>
                   </tr>
                 )}
                 {formValues.centerPoint?.lat && formValues.centerPoint?.lng && (
                   <tr className="border-b border-slate-100">
-                    <td className="py-2.5 px-4 text-muted-foreground">Tọa độ tâm (GPS)</td>
+                    <td className="py-2.5 px-4 text-muted-foreground">
+                      Tọa độ tâm (GPS)
+                    </td>
                     <td className="py-2.5 px-4 font-mono text-slate-600">
-                      {formValues.centerPoint.lat.toFixed(6)}, {formValues.centerPoint.lng.toFixed(6)}
+                      {formValues.centerPoint.lat.toFixed(6)},{" "}
+                      {formValues.centerPoint.lng.toFixed(6)}
                     </td>
                   </tr>
                 )}
@@ -225,7 +270,9 @@ export const RegionConfirmationStep = ({
         <Card className="border-slate-200 shadow-xs overflow-hidden bg-white">
           <div className="bg-slate-50 border-b px-4 py-3 flex items-center gap-2">
             <Sprout className="w-4 h-4 text-slate-500" />
-            <h4 className="font-semibold text-slate-800 text-sm">Cấu hình canh tác vùng</h4>
+            <h4 className="font-semibold text-slate-800 text-sm">
+              Cấu hình canh tác vùng
+            </h4>
           </div>
           <div className="p-5 space-y-5">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -238,8 +285,12 @@ export const RegionConfirmationStep = ({
                     {domainLabels.farmingMethod}
                   </div>
                   <div className="font-bold text-xs text-slate-900">
-                    {farmingMethods.find((m) => m.id === selectedFarmingMethodId)?.name || (
-                      <span className="text-red-500 italic font-medium">Chưa chọn</span>
+                    {farmingMethods.find(
+                      (m) => m.id === selectedFarmingMethodId,
+                    )?.name || (
+                      <span className="text-red-500 italic font-medium">
+                        Chưa chọn
+                      </span>
                     )}
                   </div>
                 </div>
@@ -255,7 +306,9 @@ export const RegionConfirmationStep = ({
                   </div>
                   <div className="font-bold text-xs text-slate-900">
                     {domainLabels.irrigationName || (
-                      <span className="text-muted-foreground italic font-medium">Chưa cấu hình</span>
+                      <span className="text-muted-foreground italic font-medium">
+                        Chưa cấu hình
+                      </span>
                     )}
                   </div>
                 </div>
@@ -280,7 +333,10 @@ export const RegionConfirmationStep = ({
                           {variant.name}
                         </span>
                       </div>
-                      <Badge variant="outline" className="text-[10px] text-slate-500 bg-slate-50 border-slate-200">
+                      <Badge
+                        variant="outline"
+                        className="text-[10px] text-slate-500 bg-slate-50 border-slate-200"
+                      >
                         {variant.subjectName}
                       </Badge>
                     </div>
@@ -298,7 +354,8 @@ export const RegionConfirmationStep = ({
 
       {formValues.note && (
         <div className="bg-yellow-50/50 border border-yellow-200/60 p-3.5 rounded-lg text-xs text-slate-700">
-          <span className="font-bold text-yellow-800 mr-1.5">Ghi chú:</span> {formValues.note}
+          <span className="font-bold text-yellow-800 mr-1.5">Ghi chú:</span>{" "}
+          {formValues.note}
         </div>
       )}
     </div>

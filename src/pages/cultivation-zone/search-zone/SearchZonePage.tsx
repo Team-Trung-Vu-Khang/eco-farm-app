@@ -1447,14 +1447,14 @@ const SearchZonePage = () => {
                                         {getUnitSoilType()}
                                       </span>
                                     </div>
-                                    <div className="flex justify-between items-center text-xs py-2">
+                                    {/* <div className="flex justify-between items-center text-xs py-2">
                                       <span className="text-slate-500">
                                         Cây trồng chính
                                       </span>
                                       <span className="font-bold text-slate-800">
                                         {getUnitMainCrop()}
                                       </span>
-                                    </div>
+                                    </div> */}
                                     <div className="flex justify-between items-start text-xs py-2">
                                       <span className="text-slate-500 flex-3">
                                         Tọa độ
@@ -1916,14 +1916,14 @@ const SearchZonePage = () => {
                                     {getUnitSoilType()}
                                   </span>
                                 </div>
-                                <div className="flex justify-between items-center text-xs">
+                                {/* <div className="flex justify-between items-center text-xs">
                                   <span className="text-slate-500 font-medium">
                                     Cây trồng chính
                                   </span>
                                   <span className="text-slate-800 font-bold">
                                     {getUnitMainCrop()}
                                   </span>
-                                </div>
+                                </div> */}
                               </div>
                             </div>
                           </div>

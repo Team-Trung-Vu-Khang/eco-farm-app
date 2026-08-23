@@ -83,22 +83,47 @@ export const RegionInfoStep = ({
         <CardTitle>Thông tin cơ bản</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        <FormField
-          control={control}
-          name="name"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>
-                Tên vùng <span className="text-red-500">*</span>
-              </FormLabel>
-              <FormControl>
-                <Input {...field} placeholder="Tên vùng trồng" />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+          <FormField
+            control={control}
+            name="name"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>
+                  Tên vùng <span className="text-red-500">*</span>
+                </FormLabel>
+                <FormControl>
+                  <Input {...field} placeholder="Tên vùng trồng" />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
 
+          <FormField
+            control={control}
+            name="area"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Diện tích (ha)</FormLabel>
+                <FormControl>
+                  <Input
+                    type="number"
+                    className="border-slate-300 focus:border-primary focus:ring-primary/20"
+                    clearable={false}
+                    value={field.value ?? ""}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      field.onChange(val === "" ? undefined : parseFloat(val));
+                    }}
+                    placeholder="Nhập diện tích"
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
           {showEnterprise && (
             <FormField
@@ -150,7 +175,7 @@ export const RegionInfoStep = ({
             />
           )}
 
-          <FormField
+          {/* <FormField
             control={control}
             name="cropIds"
             render={({ field }) => (
@@ -172,31 +197,7 @@ export const RegionInfoStep = ({
                 <FormMessage />
               </FormItem>
             )}
-          />
-
-          <FormField
-            control={control}
-            name="area"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Diện tích (ha)</FormLabel>
-                <FormControl>
-                  <Input
-                    type="number"
-                    className="border-slate-300 focus:border-primary focus:ring-primary/20"
-                    clearable={false}
-                    value={field.value ?? ""}
-                    onChange={(e) => {
-                      const val = e.target.value;
-                      field.onChange(val === "" ? undefined : parseFloat(val));
-                    }}
-                    placeholder="Nhập diện tích"
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+          /> */}
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

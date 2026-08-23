@@ -42,11 +42,11 @@ export const workspaceColumns: Column<WorkspaceRecord>[] = [
         ? item.businessLines.map((line) => line.name || line.code).join(", ")
         : "-",
   },
-  {
-    key: "mainCrop",
-    label: "Cây trồng chính",
-    render: (_, item) => item.mainCrop?.name || "-",
-  },
+  // {
+  //   key: "mainCrop",
+  //   label: "Cây trồng chính",
+  //   render: (_, item) => item.mainCrop?.name || "-",
+  // },
   {
     key: "totalAcreage",
     label: "Diện tích",

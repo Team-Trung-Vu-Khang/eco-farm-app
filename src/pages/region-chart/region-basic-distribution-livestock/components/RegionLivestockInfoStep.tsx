@@ -13,7 +13,6 @@ import {
   FormLabel,
   FormMessage,
   Input,
-  MultiSelect,
   Select,
   SelectContent,
   SelectItem,
@@ -58,7 +57,7 @@ export const RegionLivestockInfoStep = ({
         <CardTitle>Thông tin cơ bản</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        <FormField
+        {/* <FormField
           control={control}
           name="name"
           render={({ field }) => (
@@ -72,10 +71,25 @@ export const RegionLivestockInfoStep = ({
               <FormMessage />
             </FormItem>
           )}
-        />
+        /> */}
 
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
           <FormField
+            control={control}
+            name="name"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>
+                  Tên vùng chăn nuôi <span className="text-red-500">*</span>
+                </FormLabel>
+                <FormControl>
+                  <Input {...field} placeholder="Tên vùng chăn nuôi" />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          {/* <FormField
             control={control}
             name="cropIds"
             render={({ field }) => (
@@ -96,7 +110,7 @@ export const RegionLivestockInfoStep = ({
                 <FormMessage />
               </FormItem>
             )}
-          />
+          /> */}
 
           <FormField
             control={control}

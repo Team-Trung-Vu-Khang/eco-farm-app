@@ -113,7 +113,7 @@ export const RegionReviewStep = ({
               </p>
             </div>
 
-            <div className="space-y-0.5">
+            {/* <div className="space-y-0.5">
               <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
                 Cây trồng chính
               </p>
@@ -122,7 +122,7 @@ export const RegionReviewStep = ({
                   <span className="italic text-slate-300">Chưa chọn</span>
                 )}
               </p>
-            </div>
+            </div> */}
 
             <div className="space-y-0.5">
               <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">

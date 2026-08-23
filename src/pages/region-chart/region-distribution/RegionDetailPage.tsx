@@ -160,7 +160,7 @@ const RegionDetailPage = () => {
                 <span className="text-muted-foreground">Diện tích</span>
                 <span className="col-span-2 font-medium">{region.area} ha</span>
               </div>
-              <div className="grid grid-cols-3 gap-2 py-1 border-b">
+              {/* <div className="grid grid-cols-3 gap-2 py-1 border-b">
                 <span className="text-muted-foreground">Cây trồng chính</span>
                 <span className="col-span-2 font-medium">
                   {mainCropsText || (
@@ -169,7 +169,7 @@ const RegionDetailPage = () => {
                     </span>
                   )}
                 </span>
-              </div>
+              </div> */}
               <div className="grid grid-cols-3 gap-2 py-1 border-b">
                 <span className="text-muted-foreground">Loại đất</span>
                 <span className="col-span-2">{landTypeName}</span>

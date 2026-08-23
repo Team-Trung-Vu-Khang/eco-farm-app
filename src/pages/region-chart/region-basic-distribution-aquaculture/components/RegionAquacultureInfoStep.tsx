@@ -58,7 +58,7 @@ export const RegionAquacultureInfoStep = ({
         <CardTitle>Thông tin cơ bản</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        <FormField
+        {/* <FormField
           control={control}
           name="name"
           render={({ field }) => (
@@ -72,10 +72,10 @@ export const RegionAquacultureInfoStep = ({
               <FormMessage />
             </FormItem>
           )}
-        />
+        /> */}
 
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-          <FormField
+          {/* <FormField
             control={control}
             name="cropIds"
             render={({ field }) => (
@@ -92,6 +92,25 @@ export const RegionAquacultureInfoStep = ({
                     placeholder="Chọn đối tượng..."
                     searchPlaceholder="Tìm kiếm đối tượng..."
                     emptyText="Không tìm thấy đối tượng"
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          /> */}
+
+          <FormField
+            control={control}
+            name="name"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>
+                  Tên vùng nuôi trồng <span className="text-red-500">*</span>
+                </FormLabel>
+                <FormControl>
+                  <Input
+                    {...field}
+                    placeholder="Tên vùng nuôi trồng thuỷ sản"
                   />
                 </FormControl>
                 <FormMessage />

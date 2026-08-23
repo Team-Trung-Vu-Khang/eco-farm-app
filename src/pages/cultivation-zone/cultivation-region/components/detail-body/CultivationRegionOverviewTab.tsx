@@ -56,7 +56,9 @@ export const CultivationRegionOverviewTab = ({
               </Badge>
             </div>
             <div>
-              <div className="text-sm text-muted-foreground">Tổng diện tích</div>
+              <div className="text-sm text-muted-foreground">
+                Tổng diện tích
+              </div>
               <div className="font-medium mt-1 text-lg text-blue-600">
                 {details.totalArea} ha
               </div>
@@ -67,20 +69,23 @@ export const CultivationRegionOverviewTab = ({
                 {(details.totalArea * 0.9).toFixed(1)} ha
               </div>
             </div>
-            <div>
+            {/* <div>
               <div className="text-sm text-muted-foreground">Cây trồng chính</div>
               <div className="font-medium mt-1 text-slate-900">
                 {primaryCrops || "Chưa xác định"}
               </div>
-            </div>
+            </div> */}
             <div>
               <div className="text-sm text-muted-foreground">Loại đất</div>
-              <div className="font-medium mt-1 text-slate-900">Đất đỏ Bazan</div>
+              <div className="font-medium mt-1 text-slate-900">
+                Đất đỏ Bazan
+              </div>
             </div>
             <div>
               <div className="text-sm text-muted-foreground">Hệ thống tưới</div>
               <div className="font-medium mt-1 text-slate-900">
-                {details.technicalConfig.irrigationMethod?.name || "Chưa thiết lập"}
+                {details.technicalConfig.irrigationMethod?.name ||
+                  "Chưa thiết lập"}
               </div>
             </div>
             <div>
@@ -98,7 +103,9 @@ export const CultivationRegionOverviewTab = ({
             <div>
               <div className="text-sm text-muted-foreground">Trạng thái</div>
               <div className="mt-1">
-                <Badge variant={area.status === "active" ? "default" : "secondary"}>
+                <Badge
+                  variant={area.status === "active" ? "default" : "secondary"}
+                >
                   {area.status === "active" ? "Đang hoạt động" : "Tạm ngưng"}
                 </Badge>
               </div>
@@ -188,7 +195,9 @@ export const CultivationRegionOverviewTab = ({
 
                                   <div className="ml-4.5 border-l-2 border-slate-100 pl-6 space-y-4">
                                     {areaGroup.entities
-                                      .filter((entity) => entity.typeCode === "plot")
+                                      .filter(
+                                        (entity) => entity.typeCode === "plot",
+                                      )
                                       .map((plot) => (
                                         <div
                                           key={plot.id}

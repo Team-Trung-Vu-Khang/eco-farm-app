@@ -4,9 +4,7 @@ export const regionBasicFormSchema = z.object({
   id: z.number().optional(),
   code: z.string().optional(),
   name: z.string().min(1, "Vui lòng nhập tên vùng"),
-  cropIds: z
-    .array(z.string())
-    .min(1, "Vui lòng chọn ít nhất 1 đối tượng chính"),
+  cropIds: z.array(z.string()),
   area: z.coerce.number().optional(),
   provinceId: z.string().optional(),
   wardId: z.string().optional(),
@@ -27,7 +25,12 @@ export const regionBasicFormSchema = z.object({
     .optional(),
   isDetailed: z.boolean().optional(),
   status: z.enum(["active", "inactive", "archived"]),
-  farmingMethodId: z.number({ message: "Vui lòng chọn phương pháp" }).int().min(1, "Vui lòng chọn phương pháp").optional().or(z.literal(0)),
+  farmingMethodId: z
+    .number({ message: "Vui lòng chọn phương pháp" })
+    .int()
+    .min(1, "Vui lòng chọn phương pháp")
+    .optional()
+    .or(z.literal(0)),
   rearingMethodId: z.number().int().optional(),
   irrigationSystemId: z.number().int().optional(),
   seedIds: z.array(z.number().int()).optional(),
