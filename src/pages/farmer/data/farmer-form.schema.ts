@@ -71,7 +71,7 @@ export const farmerFormSchema = z.object({
   type: z.enum(["enterprise", "farm", "cooperative"]).default("farm"),
   code: z.preprocess(
     (value) => (value === null ? "" : value),
-    z.string().trim().min(1, "Vui lòng nhập mã nông hộ."),
+    z.string().trim().optional().default(""),
   ),
   name: z.preprocess(
     (value) => (value === null ? "" : value),
@@ -88,10 +88,7 @@ export const farmerFormSchema = z.object({
   foundedDate: emptyText(),
   representative: emptyText(),
   website: emptyText(),
-  phone: z.preprocess(
-    (value) => (value === null ? "" : value),
-    z.string().trim().min(1, "Vui lòng nhập số điện thoại."),
-  ),
+  phone: emptyText(),
   email: emptyText(),
   province: z.preprocess(
     (value) => (value === null ? "" : value),

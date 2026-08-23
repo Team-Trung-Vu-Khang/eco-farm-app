@@ -1,4 +1,4 @@
-import {
+import { 
   Badge,
   Card,
   CardContent,
@@ -9,7 +9,6 @@ import {
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import {
   Calendar,
-  CreditCard,
   Globe,
   Mail,
   MapPin,
@@ -18,6 +17,7 @@ import {
 } from "lucide-react";
 import { useLocation } from "wouter";
 import type { CooperativeRow } from "../utils/cooperative.mapper";
+import { getDefaultOrganizationImage } from "../../enterprise/data/default-organization-images";
 
 interface CooperativeDetailSidebarProps {
   data: CooperativeRow;
@@ -33,7 +33,7 @@ export function CooperativeDetailSidebar({
       <Card className="overflow-hidden relative shadow-md">
         <div className="h-32 bg-gray-100 flex items-center justify-center relative">
           <img
-            src="https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=800&q=80"
+            src={data.image || getDefaultOrganizationImage("cooperative")}
             alt="Cover"
             className="w-full h-full object-cover"
           />
@@ -47,9 +47,9 @@ export function CooperativeDetailSidebar({
         </div>
         <CardHeader className="text-center pb-2">
           <div className="mx-auto w-20 h-20 -mt-12 rounded-full border-4 border-background bg-white shadow-sm flex items-center justify-center mb-2 overflow-hidden relative">
-            {data.image ? (
+            {data.image || getDefaultOrganizationImage("cooperative") ? (
               <img
-                src={data.image}
+                src={data.image || getDefaultOrganizationImage("cooperative")}
                 alt="Logo"
                 className="w-full h-full object-cover"
               />
@@ -101,10 +101,6 @@ export function CooperativeDetailSidebar({
         </CardHeader>
         <CardContent className="space-y-4 pt-4">
           <div className="space-y-3 text-sm">
-            <div className="flex items-center gap-3">
-              <CreditCard className="w-4 h-4 text-muted-foreground" />
-              <span className="font-medium">{data.code}</span>
-            </div>
             <div className="flex items-center gap-3">
               <User className="w-4 h-4 text-muted-foreground" />
               <span>

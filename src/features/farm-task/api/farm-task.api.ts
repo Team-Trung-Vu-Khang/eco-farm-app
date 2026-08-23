@@ -1,8 +1,10 @@
 import { apiClient } from "@/shared/lib/axios";
 import type {
   FarmTaskBulkCreateRequest,
-  FarmTaskOccurrenceRequest,
-  FarmTaskOccurrenceResponse,
+  FarmTaskCalendarDayQueryParams,
+  FarmTaskCalendarDayResponse,
+  FarmTaskCalendarQueryParams,
+  FarmTaskCalendarResponse,
   FarmTaskPageResponse,
   FarmTaskQueryParams,
   FarmTaskRequest,
@@ -32,6 +34,18 @@ export const farmTaskApi = {
       .then((response) => response.data);
   },
 
+  calendar(params: FarmTaskCalendarQueryParams) {
+    return apiClient
+      .get<FarmTaskCalendarResponse>(`${FARM_TASK_PATH}/calendar`, { params })
+      .then((response) => response.data);
+  },
+
+  calendarDay(date: string, params?: FarmTaskCalendarDayQueryParams) {
+    return apiClient
+      .get<FarmTaskCalendarDayResponse>(`${FARM_TASK_PATH}/calendar/${date}`, { params })
+      .then((response) => response.data);
+  },
+
   create(payload: FarmTaskRequest) {
     return apiClient
       .post<FarmTaskResponse>(FARM_TASK_PATH, payload)
@@ -54,16 +68,4 @@ export const farmTaskApi = {
     return apiClient.delete(`${FARM_TASK_PATH}/${id}`).then(() => undefined);
   },
 
-  upsertOccurrence(
-    id: number | string,
-    date: string,
-    payload: FarmTaskOccurrenceRequest,
-  ) {
-    return apiClient
-      .put<FarmTaskOccurrenceResponse>(
-        `${FARM_TASK_PATH}/${id}/occurrences/${date}`,
-        payload,
-      )
-      .then((response) => response.data);
-  },
 };

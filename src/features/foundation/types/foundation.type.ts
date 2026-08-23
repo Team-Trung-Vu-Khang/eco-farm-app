@@ -317,6 +317,22 @@ export interface ProductionSubjectQueryParams extends BaseQueryParams {
   domainCode: "CROP" | "LIVESTOCK" | "AQUACULTURE";
 }
 
+export interface ProductionSubjectGroupResponse {
+  id: number;
+  domainCode: "CROP" | "LIVESTOCK" | "AQUACULTURE";
+  code: string;
+  name: string;
+  description?: string;
+  biological?: string;
+  displayOrder?: number;
+  status: FoundationStatus;
+  metadataJson?: Record<string, unknown>;
+}
+
+export interface ProductionSubjectGroupQueryParams extends BaseQueryParams {
+  domainCode: "CROP" | "LIVESTOCK" | "AQUACULTURE";
+}
+
 export interface ProductionSubjectResponse {
   id: number;
   domainCode: "CROP" | "LIVESTOCK" | "AQUACULTURE";
@@ -421,5 +437,4 @@ export interface MethodApplicationQueryParams extends BaseQueryParams {
   keyword?: string;
   status?: string;
 }
-
 

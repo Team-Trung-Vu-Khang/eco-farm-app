@@ -6,9 +6,12 @@ import {
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { Plus } from "lucide-react";
 import { Link } from "wouter";
+import { useState } from "react";
+import { OrganizationSourceTabs } from "@/components/OrganizationSourceTabs";
 import { useEnterprisePage } from "./hooks/useEnterprisePage";
 
 export default function EnterprisePage() {
+  const [sourceTab, setSourceTab] = useState<"personal" | "system">("personal");
   const {
     filterEnterprises,
     columns,
@@ -34,14 +37,14 @@ export default function EnterprisePage() {
     <PageWrapper
       title="Quản lý doanh nghiệp"
       description="Quản lý thông tin các doanh nghiệp trong hệ thống"
-      actions={
+      actions={sourceTab === "personal" ? (
         <Link href="/enterprise/create">
           <Button data-testid="add-enterprise">
             <Plus className="w-4 h-4 mr-2" />
             Thêm mới
           </Button>
         </Link>
-      }
+      ) : undefined}
     >
       {error ? (
         <div className="mb-4 rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
@@ -49,7 +52,12 @@ export default function EnterprisePage() {
         </div>
       ) : null}
 
-      <DataTable
+      <OrganizationSourceTabs
+        type="enterprise"
+        personalColumns={columns}
+        onTabChange={setSourceTab}
+        searchPlaceholder="Tìm kiếm doanh nghiệp hệ thống..."
+        personal={<DataTable
         columns={columns}
         data={filterEnterprises}
         searchable
@@ -68,6 +76,7 @@ export default function EnterprisePage() {
         onIndexChange={setCurrentIndex}
         onPageSize={setPageSize}
         onFilterChange={handleFilterChange}
+        />}
       />
 
       <DeleteDialog

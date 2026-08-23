@@ -9,6 +9,7 @@ import type {
 
 const ORGANIZATION_PATH = "/api/farm/organizations" as const;
 const ORGANIZATION_SEARCH_PATH = `${ORGANIZATION_PATH}/search` as const;
+const SYSTEM_ORGANIZATION_PATH = "/api/admin/master-data/organizations" as const;
 
 const withWorkspaceHeader = (workspaceId: number | string) => ({
   headers: {
@@ -25,6 +26,15 @@ const assertWorkspaceId = (workspaceId: number | string | undefined) => {
 };
 
 export const organizationApi = {
+  async listSystem(
+    params: OrganizationQueryParams = {},
+  ): Promise<OrganizationPageResponse<OrganizationRecord>> {
+    const response = await apiClient.get<OrganizationPageResponse<OrganizationRecord>>(
+      SYSTEM_ORGANIZATION_PATH,
+      { params },
+    );
+    return response.data;
+  },
   async list(
     params: OrganizationQueryParams = {},
     workspaceId: number | string,

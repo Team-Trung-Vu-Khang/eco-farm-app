@@ -29,6 +29,15 @@ import {
   type EnterpriseFormValues,
 } from "../data/enterprise-form.schema";
 import type { EnterpriseFormData } from "../types";
+import { getDefaultOrganizationImage } from "../data/default-organization-images";
+
+const BUSINESS_LINE_CODE_TO_CLASSIFICATION: Record<string, string> = {
+  SX: "production",
+  CB: "processing",
+  TM: "trading",
+  DV: "service",
+  KHAC: "other",
+};
 
 export function useEnterpriseEditForm() {
   const [, params] = useRoute("/enterprise/:id/edit");
@@ -140,8 +149,10 @@ export function useEnterpriseEditForm() {
       taxAuthority: enterpriseData.taxAuthority || "",
       issueDate: enterpriseData.issueDate || "",
       classification:
-        enterpriseData.businessLines?.map((line) => line.code || line.name) ??
-        [],
+        enterpriseData.businessLines?.map((line) => {
+          const code = String(line.code || "").toUpperCase();
+          return BUSINESS_LINE_CODE_TO_CLASSIFICATION[code] || line.name || code;
+        }) ?? [],
       foundedDate: enterpriseData.foundedDate || "",
       representative: enterpriseData.representative || "",
       website: enterpriseData.website || "",
@@ -753,7 +764,6 @@ export function useEnterpriseEditForm() {
       const payload = {
         type: values.type,
         organizationTypeId: values.organizationTypeId,
-        code: values.code.trim(),
         name: values.name.trim(),
         brandName: values.brandName.trim(),
         taxCode: values.taxCode.trim(),
@@ -769,7 +779,8 @@ export function useEnterpriseEditForm() {
         address: values.address.trim(),
         latitude: values.latitude ?? 0,
         longitude: values.longitude ?? 0,
-        imageUrl: values.image.trim(),
+        imageUrl:
+          values.image.trim() || getDefaultOrganizationImage(values.type),
         description: values.description.trim(),
         status:
           enterpriseQuery.item?.status === "active" ||
@@ -871,11 +882,10 @@ export function useEnterpriseEditForm() {
       {
         id: "basic",
         title: "Thông tin cơ bản",
-        description: "Tên, thương hiệu, mã, thuế",
+        description: "Tên, tên gợi nhớ và thông tin thuế",
         content: <EnterpriseBasicInfoStep />,
         isValid:
           formData.name.length > 0 &&
-          formData.code.length > 0 &&
           formData.organizationTypeId !== "",
       },
       {
@@ -939,7 +949,6 @@ export function useEnterpriseEditForm() {
   }, [
     formData.bankAccounts.length,
     formData.branches.length,
-    formData.code,
     formData.contacts.length,
     formData.name,
     formData.organizationTypeId,

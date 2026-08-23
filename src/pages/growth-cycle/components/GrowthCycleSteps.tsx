@@ -1,6 +1,7 @@
 import { StepperForm, type Step } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { useMemo } from "react";
 import { useFormContext } from "react-hook-form";
+import { useCatalog } from "@/features/foundation";
 import type { z } from "zod";
 import { GrowthCycleBasicInfoStep } from "./steps/GrowthCycleBasicInfoStep";
 import { GrowthCycleConfirmStep } from "./steps/GrowthCycleConfirmStep";
@@ -30,6 +31,9 @@ export function GrowthCycleSteps({
 }: GrowthCycleStepsProps) {
   const { watch, handleSubmit } = useFormContext<GrowthCycleFormValues>();
   const values = watch();
+  const { items: cropGroups } = useCatalog("crop-groups", {
+    params: { page: 0, size: 100, status: "active" },
+  });
 
   const validationResult = useMemo(
     () => schema.safeParse(values),
@@ -70,6 +74,7 @@ export function GrowthCycleSteps({
           <GrowthCycleBasicInfoStep
             varieties={varieties}
             crops={crops}
+            cropGroups={cropGroups}
           />
         ),
         isValid: isStep1Valid,
@@ -85,11 +90,17 @@ export function GrowthCycleSteps({
         id: "confirm",
         title: "Bước 3",
         description: "Xác nhận",
-        content: <GrowthCycleConfirmStep varieties={varieties} crops={crops} />,
+        content: (
+          <GrowthCycleConfirmStep
+            varieties={varieties}
+            crops={crops}
+            cropGroups={cropGroups}
+          />
+        ),
         isValid: true,
       },
     ],
-    [isStep1Valid, isStep2Valid, varieties, crops],
+    [isStep1Valid, isStep2Valid, varieties, crops, cropGroups],
   );
 
   return (

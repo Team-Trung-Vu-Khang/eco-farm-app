@@ -19,6 +19,7 @@ import type { FarmerFormInput } from "../../data/farmer-form.schema";
 import type { FarmerFormData } from "../../types";
 import { farmerClassificationOptions } from "../../types";
 import AddressSearchInput from "@/components/AddressSearchInput";
+import { getDefaultOrganizationImage } from "../../../enterprise/data/default-organization-images";
 
 const asInputValue = (value: unknown) =>
   typeof value === "string" || typeof value === "number" ? String(value) : "";
@@ -173,10 +174,10 @@ export const FarmerBasicInfoStep = ({
             onDragLeave={(e) => handleDrag("logo", e)}
             onDrop={handleLogoDrop}
           >
-            {formData.image ? (
+            {formData.image || getDefaultOrganizationImage("farm") ? (
               <>
                 <img
-                  src={formData.image}
+                  src={formData.image || getDefaultOrganizationImage("farm")}
                   alt="Preview"
                   className="w-full h-full object-cover"
                 />
@@ -218,30 +219,6 @@ export const FarmerBasicInfoStep = ({
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="space-y-2">
-          <Label htmlFor="code" required>
-            Mã nông hộ
-          </Label>
-          <Controller
-            control={control}
-            name="code"
-            render={({ field }) => (
-              <Input
-                id="code"
-                value={asInputValue(field.value)}
-                onChange={field.onChange}
-                onBlur={field.onBlur}
-                ref={field.ref}
-                name={field.name}
-                aria-invalid={!!errors.code}
-                placeholder="VD: DN001, DN002..."
-              />
-            )}
-          />
-          {errors.code?.message ? (
-            <p className="text-xs text-red-600">{errors.code.message}</p>
-          ) : null}
-        </div>
-        <div className="space-y-2">
           <Label htmlFor="name" required>
             Tên nông hộ
           </Label>
@@ -266,7 +243,7 @@ export const FarmerBasicInfoStep = ({
           ) : null}
         </div>
         <div className="space-y-2">
-          <Label htmlFor="brandName">Tên thương hiệu</Label>
+          <Label htmlFor="brandName">Tên gợi nhớ</Label>
           <Controller
             control={control}
             name="brandName"
@@ -283,7 +260,7 @@ export const FarmerBasicInfoStep = ({
             )}
           />
         </div>
-        <div className="space-y-2">
+        <div className="space-y-2 sm:col-span-2">
           <Label htmlFor="taxCode">Mã số thuế</Label>
           <Controller
             control={control}

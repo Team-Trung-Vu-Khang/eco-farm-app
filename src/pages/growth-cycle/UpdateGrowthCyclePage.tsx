@@ -1,4 +1,5 @@
 import PageWrapper from "@/components/PageWrapper";
+import { useCatalog } from "@/features/foundation";
 import { safeConvertLexicalToHtml } from "@/utils/commons";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
@@ -31,7 +32,6 @@ import {
   growthCycleFormSchema,
   type GrowthCycleFormValues,
 } from "./schemas/growthCycleSchema";
-import { getDummyCropGroupName } from "./utils/dummyCropGroups";
 import { formatDaysToDuration, parseDurationToDays } from "./utils/duration";
 
 export default function UpdateGrowthCyclePage() {
@@ -55,6 +55,9 @@ export default function UpdateGrowthCyclePage() {
   const { items: cropVarieties } = useProductionSubjectVariants({
     params: { domainCode: "CROP", size: 100 },
   });
+  const { items: cropGroups } = useCatalog("crop-groups", {
+    params: { page: 0, size: 100, status: "active" },
+  });
   const { uploadFile } = useFileUpload();
 
   const form = useForm<GrowthCycleFormValues>({
@@ -64,6 +67,8 @@ export default function UpdateGrowthCyclePage() {
 
   const { watch, reset } = form;
   const watchedScope = watch("scope");
+  const watchedName = watch("name");
+  const watchedGroupIds = watch("groupIds") || [];
   const watchedCropIds = watch("cropIds") || [];
   const watchedVarietyIds = watch("varietyIds") || [];
   const watchedStages = watch("stages") || [];
@@ -74,8 +79,23 @@ export default function UpdateGrowthCyclePage() {
   useEffect(() => {
     if (currentCycle && !isLoaded) {
       const metadata: Record<string, unknown> = currentCycle.metadataJson || {};
-      const cropIdVal = currentCycle.productionSubject?.id;
-      const varietyIdVal = currentCycle.productionSubjectVariant?.id;
+      const cropIds = (currentCycle.productionSubjects || [])
+        .map((item: { id?: number }) => item.id)
+        .filter((id: number | undefined): id is number => id != null);
+      const varietyIds = (currentCycle.productionSubjectVariants || [])
+        .map((item: { id?: number }) => item.id)
+        .filter((id: number | undefined): id is number => id != null);
+      const groupIds = (currentCycle.productionSubjectGroups || [])
+        .map((item: { id?: number }) => item.id)
+        .filter((id: number | undefined): id is number => id != null);
+      // Keep the legacy fallback so an already cached old response can still
+      // be opened while the new Season response is rolling out.
+      const legacyCropId = currentCycle.productionSubject?.id;
+      const legacyVarietyId = currentCycle.productionSubjectVariant?.id;
+      if (cropIds.length === 0 && legacyCropId) cropIds.push(legacyCropId);
+      if (varietyIds.length === 0 && legacyVarietyId) {
+        varietyIds.push(legacyVarietyId);
+      }
       const totalDaysVal =
         currentCycle.stages?.reduce(
           (sum: number, s: any) => sum + (s.durationDays || 0),
@@ -85,10 +105,15 @@ export default function UpdateGrowthCyclePage() {
       reset({
         name: currentCycle.name ?? "",
         cycleType: String(metadata.cycleType || "plant") as "plant" | "animal",
-        scope: varietyIdVal ? "variety" : "crop",
-        groupIds: [],
-        cropIds: cropIdVal ? [String(cropIdVal)] : [],
-        varietyIds: varietyIdVal ? [String(varietyIdVal)] : [],
+        scope:
+          currentCycle.scopeType === "SUBJECT_GROUP"
+            ? "group"
+            : varietyIds.length > 0
+              ? "variety"
+              : "crop",
+        groupIds: groupIds.map(String),
+        cropIds: cropIds.map(String),
+        varietyIds: varietyIds.map(String),
         totalDays: totalDaysVal,
         stages: (currentCycle.stages || []).map((s: any) => {
           let usePdf = false;
@@ -130,12 +155,9 @@ export default function UpdateGrowthCyclePage() {
     [watchedStages],
   );
 
-  const varietyName =
-    cropVarieties.find((variety) => String(variety.id) === watchedVarietyIds[0])
-      ?.name || watchedVarietyIds[0];
-  const cropName =
-    crops.find((crop) => String(crop.id) === watchedCropIds[0])?.name ||
-    watchedCropIds[0];
+  const groupNames = watchedGroupIds.map(
+    (id) => cropGroups.find((group) => String(group.id) === id)?.name || id,
+  );
 
   const handleComplete = async (values: GrowthCycleFormValues) => {
     if (!numericId) return;
@@ -202,25 +224,27 @@ export default function UpdateGrowthCyclePage() {
       // pick of whichever scope is active gets sent. For "group" (a
       // client-side-only grouping, not a real production subject) we fall
       // back to the first crop belonging to that group.
-      let cropIdVal: number;
-      let varietyIdVal: number | undefined;
-
-      if (values.scope === "variety" && values.varietyIds[0]) {
-        const variety = cropVarieties.find(
-          (v) => String(v.id) === values.varietyIds[0],
-        );
-        cropIdVal = Number(variety?.subject?.id ?? crops[0]?.id ?? 0);
-        varietyIdVal = Number(values.varietyIds[0]);
-      } else if (values.scope === "group" && values.groupIds[0]) {
-        const matchingCrop = crops.find(
-          (c) => getDummyCropGroupName(c.id) === values.groupIds[0],
-        );
-        cropIdVal = Number(matchingCrop?.id ?? crops[0]?.id ?? 0);
-        varietyIdVal = undefined;
-      } else {
-        cropIdVal = Number(values.cropIds[0] ?? crops[0]?.id ?? 0);
-        varietyIdVal = undefined;
-      }
+      const scopePayload =
+        values.scope === "group"
+          ? {
+              scopeType: "SUBJECT_GROUP" as const,
+              productionSubjectGroupIds: values.groupIds.map(Number),
+              productionSubjectIds: [],
+              productionSubjectVariantIds: [],
+            }
+          : values.scope === "variety"
+            ? {
+                scopeType: "SUBJECT_VARIANT" as const,
+                productionSubjectGroupIds: [],
+                productionSubjectIds: [],
+                productionSubjectVariantIds: values.varietyIds.map(Number),
+              }
+            : {
+                scopeType: "SUBJECT" as const,
+                productionSubjectGroupIds: [],
+                productionSubjectIds: values.cropIds.map(Number),
+                productionSubjectVariantIds: [],
+              };
 
       await updateTemplate.mutateAsync({
         id: numericId,
@@ -228,8 +252,7 @@ export default function UpdateGrowthCyclePage() {
           domainCode: "CROP",
           code: currentCycle?.code || undefined,
           name: values.name.trim(),
-          productionSubjectId: cropIdVal,
-          productionSubjectVariantId: varietyIdVal ?? null,
+          ...scopePayload,
           description: currentCycle?.description || "Chu kỳ sinh trưởng",
           stages: preparedStages,
           displayOrder: currentCycle?.displayOrder || 1,
@@ -269,7 +292,7 @@ export default function UpdateGrowthCyclePage() {
   return (
     <PageWrapper
       title="Cập nhật chu kỳ sinh trưởng"
-      description={`Chỉnh sửa thông tin cho ${varietyName || cropName}`}
+      description={`Chỉnh sửa thông tin cho ${watchedName || "chu kỳ này"}`}
       actions={[
         <Button
           variant="outline"
@@ -311,9 +334,35 @@ export default function UpdateGrowthCyclePage() {
                 <p>Bạn có chắc chắn muốn lưu thay đổi cho chu kỳ này?</p>
                 <div className="rounded-lg bg-slate-50 p-4 space-y-2 text-sm">
                   <div className="flex justify-between gap-4">
-                    <span className="text-muted-foreground">Chu kỳ:</span>
+                    <span className="text-muted-foreground">Tên chu kỳ:</span>
                     <span className="font-medium">
-                      {varietyName || cropName}
+                      {watchedName || "-"}
+                    </span>
+                  </div>
+                  <div className="flex justify-between gap-4">
+                    <span className="text-muted-foreground">
+                      {watchedScope === "group"
+                        ? "Nhóm cây trồng:"
+                        : watchedScope === "crop"
+                          ? "Cây trồng:"
+                          : "Giống cây trồng:"}
+                    </span>
+                    <span className="font-medium">
+                      {(watchedScope === "group"
+                        ? groupNames
+                        : watchedScope === "crop"
+                          ? watchedCropIds.map(
+                              (id) =>
+                                crops.find((crop) => String(crop.id) === id)
+                                  ?.name || id,
+                            )
+                          : watchedVarietyIds.map(
+                              (id) =>
+                                cropVarieties.find(
+                                  (variety) => String(variety.id) === id,
+                                )?.name || id,
+                            )
+                      ).join(", ") || "-"}
                     </span>
                   </div>
                   <div className="flex justify-between gap-4">
@@ -328,13 +377,17 @@ export default function UpdateGrowthCyclePage() {
                   </div>
                   <div className="flex justify-between gap-4">
                     <span className="text-muted-foreground">Số giai đoạn:</span>
-                    <span className="font-medium">{watchedStages.length}</span>
+                    <span className="font-medium">
+                      {watchedStages.length} giai đoạn
+                    </span>
                   </div>
                   <div className="flex justify-between gap-4">
                     <span className="text-muted-foreground">
                       Tổng thời gian:
                     </span>
-                    <span className="font-medium">{totalDays} ngày</span>
+                    <span className="font-medium">
+                      {formatDaysToDuration(totalDays) || "0 ngày"}
+                    </span>
                   </div>
                 </div>
               </div>

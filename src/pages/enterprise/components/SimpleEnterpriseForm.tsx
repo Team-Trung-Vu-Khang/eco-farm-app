@@ -17,6 +17,7 @@ import { Building2, ImagePlus, MapPin, Upload } from "lucide-react";
 import { useRef } from "react";
 import { useGeoProvinces, useGeoWards, useMasterData } from "@/features/master-data";
 import { useEnterpriseFormContext } from "../context/EnterpriseFormContext";
+import { getDefaultOrganizationImage } from "../data/default-organization-images";
 
 interface SimpleEnterpriseFormProps {
   onComplete: () => void;
@@ -33,6 +34,8 @@ export default function SimpleEnterpriseForm({
     handleImageUpload,
     isSubmitting,
   } = useEnterpriseFormContext();
+  const displayImage =
+    formData.image || getDefaultOrganizationImage(formData.type);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const organizationTypesQuery = useMasterData("organization-types", {
     params: { status: "active", page: 0, size: 100 },
@@ -50,9 +53,7 @@ export default function SimpleEnterpriseForm({
   });
 
   const isValid = Boolean(
-    formData.image.trim() &&
-      formData.code.trim() &&
-      formData.name.trim() &&
+    formData.name.trim() &&
       formData.taxCode.trim() &&
       formData.organizationTypeId !== "" &&
       formData.province.trim() &&
@@ -88,9 +89,9 @@ export default function SimpleEnterpriseForm({
 
           <div className="flex flex-col gap-4 rounded-2xl border border-dashed border-slate-200 bg-slate-50/60 p-4 sm:flex-row sm:items-center">
             <div className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-slate-200 bg-white">
-              {formData.image ? (
+              {displayImage ? (
                 <img
-                  src={formData.image}
+                  src={displayImage}
                   alt="Logo doanh nghiệp"
                   className="h-full w-full object-contain"
                 />
@@ -99,7 +100,7 @@ export default function SimpleEnterpriseForm({
               )}
             </div>
             <div className="flex-1">
-              <Label required>Logo</Label>
+              <Label>Logo</Label>
               <p className="mt-1 text-xs text-slate-500">
                 JPG hoặc PNG, tối đa 5MB.
               </p>
@@ -124,16 +125,6 @@ export default function SimpleEnterpriseForm({
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
-              <Label required>Mã doanh nghiệp</Label>
-              <Input
-                value={formData.code}
-                onChange={(event) =>
-                  setFormData((prev) => ({ ...prev, code: event.target.value }))
-                }
-                placeholder="VD: DN001"
-              />
-            </div>
-            <div className="space-y-2">
               <Label required>Tên doanh nghiệp</Label>
               <Input
                 value={formData.name}
@@ -141,6 +132,19 @@ export default function SimpleEnterpriseForm({
                   setFormData((prev) => ({ ...prev, name: event.target.value }))
                 }
                 placeholder="VD: Công ty TNHH ABC"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Tên gợi nhớ</Label>
+              <Input
+                value={formData.brandName}
+                onChange={(event) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    brandName: event.target.value,
+                  }))
+                }
+                placeholder="VD: Tên thường gọi của đơn vị"
               />
             </div>
             <div className="space-y-2">

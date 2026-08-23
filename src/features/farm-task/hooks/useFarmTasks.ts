@@ -3,6 +3,10 @@ import { useSelectedWorkspaceId } from "@/features/workspace";
 import { farmTaskApi } from "../api/farm-task.api";
 import type {
   FarmTaskPageResponse,
+  FarmTaskCalendarDayQueryParams,
+  FarmTaskCalendarDayResponse,
+  FarmTaskCalendarQueryParams,
+  FarmTaskCalendarResponse,
   FarmTaskQueryParams,
   FarmTaskResponse,
   FarmTaskStatsQueryParams,
@@ -19,6 +23,15 @@ export const farmTaskKeys = {
     workspaceId: number | string | null | undefined,
     params?: FarmTaskStatsQueryParams,
   ) => [...farmTaskKeys.all(), "stats", workspaceId ?? "missing", params ?? {}] as const,
+  calendar: (
+    workspaceId: number | string | null | undefined,
+    params: FarmTaskCalendarQueryParams,
+  ) => [...farmTaskKeys.all(), "calendar", workspaceId ?? "missing", params] as const,
+  calendarDay: (
+    workspaceId: number | string | null | undefined,
+    date: string,
+    params?: FarmTaskCalendarDayQueryParams,
+  ) => [...farmTaskKeys.all(), "calendar-day", workspaceId ?? "missing", date, params ?? {}] as const,
 };
 
 interface UseFarmTasksOptions {
@@ -51,6 +64,43 @@ export function useFarmTasks({
     // loading. Without this, `items` briefly becomes [] and TaskPage replaces
     // the whole screen with the initial loading state.
     placeholderData: keepPreviousData,
+    refetchOnWindowFocus: false,
+  });
+
+  return {
+    ...queryResult,
+    items: queryResult.data?.content ?? [],
+    response: queryResult.data ?? null,
+    loading: queryResult.isLoading,
+    error: queryResult.error?.message ?? null,
+  };
+}
+
+export function useFarmTaskCalendar(
+  params: FarmTaskCalendarQueryParams,
+  { enabled = true }: { enabled?: boolean } = {},
+) {
+  const workspaceId = useSelectedWorkspaceId();
+  const queryResult = useQuery<FarmTaskCalendarResponse, Error>({
+    queryKey: farmTaskKeys.calendar(workspaceId, params),
+    queryFn: () => farmTaskApi.calendar(params),
+    enabled: enabled && workspaceId !== null && workspaceId !== undefined && workspaceId !== "",
+    refetchOnWindowFocus: false,
+  });
+
+  return { ...queryResult, loading: queryResult.isLoading, error: queryResult.error?.message ?? null };
+}
+
+export function useFarmTaskCalendarDay(
+  date: string,
+  params?: FarmTaskCalendarDayQueryParams,
+  { enabled = true }: { enabled?: boolean } = {},
+) {
+  const workspaceId = useSelectedWorkspaceId();
+  const queryResult = useQuery<FarmTaskCalendarDayResponse, Error>({
+    queryKey: farmTaskKeys.calendarDay(workspaceId, date, params),
+    queryFn: () => farmTaskApi.calendarDay(date, params),
+    enabled: enabled && !!date && workspaceId !== null && workspaceId !== undefined && workspaceId !== "",
     refetchOnWindowFocus: false,
   });
 

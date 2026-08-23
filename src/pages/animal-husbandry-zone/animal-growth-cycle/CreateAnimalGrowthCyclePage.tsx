@@ -16,13 +16,16 @@ import {
 import { ArrowLeft, Loader2 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
+import { useQuery } from "@tanstack/react-query";
+import { productionSubjectGroupApi } from "../../../features/foundation/api/foundation.api";
+import type { PageResponse, ProductionSubjectGroupResponse } from "../../../features/foundation/types/foundation.type";
 import { AnimalGrowthCycleSteps } from "./components/AnimalGrowthCycleSteps";
 import { useCreateAnimalGrowthCycleForm } from "./hooks/useCreateAnimalGrowthCycleForm";
 import {
   animalGrowthCycleFormSchema,
   type AnimalGrowthCycleFormValues,
 } from "./schemas/animalGrowthCycleSchema";
-import { parseDurationToDays } from "./utils/duration";
+import { formatDaysToDuration, parseDurationToDays } from "./utils/duration";
 
 export default function CreateAnimalGrowthCyclePage() {
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -31,8 +34,9 @@ export default function CreateAnimalGrowthCyclePage() {
     mode: "onChange",
     defaultValues: {
       name: "",
-      cropId: "",
-      variety: "",
+      groupIds: [],
+      cropIds: [],
+      varietyIds: [],
       totalDays: 0,
       scope: "crop",
       cycleType: "animal",
@@ -50,8 +54,9 @@ export default function CreateAnimalGrowthCyclePage() {
 
   const { watch } = form;
   const watchedScope = watch("scope");
-  const watchedCropId = watch("cropId");
-  const watchedVariety = watch("variety");
+  const watchedGroupIds = watch("groupIds") || [];
+  const watchedCropIds = watch("cropIds") || [];
+  const watchedVarietyIds = watch("varietyIds") || [];
   const watchedStages = watch("stages") || [];
 
   const totalDays = useMemo(
@@ -62,9 +67,16 @@ export default function CreateAnimalGrowthCyclePage() {
       ),
     [watchedStages],
   );
+  const confirmationTotalDays = form
+    .getValues("stages")
+    .reduce(
+      (sum, stage) => sum + parseDurationToDays(String(stage.duration)),
+      0,
+    );
 
   const { varieties, crops, handleComplete, setLocation, isSubmitting } =
     useCreateAnimalGrowthCycleForm();
+  const { data: groupResponse } = useQuery<PageResponse<ProductionSubjectGroupResponse>>({ queryKey: ["animal-growth-cycle-groups", "LIVESTOCK"], queryFn: () => productionSubjectGroupApi.list({ domainCode: "LIVESTOCK", page: 0, size: 100, status: "active" }), staleTime: 300_000 });
 
   return (
     <PageWrapper
@@ -111,14 +123,17 @@ export default function CreateAnimalGrowthCyclePage() {
                   <div className="flex justify-between gap-4">
                     <span className="text-muted-foreground">Phạm vi:</span>
                     <span className="font-medium">
-                      {watchedScope === "crop" ? "Theo vật nuôi" : "Theo giống"}
+                      {watchedScope === "group" ? "Theo nhóm vật nuôi" : watchedScope === "crop" ? "Theo vật nuôi" : "Theo giống vật nuôi"}
                     </span>
                   </div>
+                  {watchedScope === "group" && <div className="flex justify-between gap-4">
+                    <span className="text-muted-foreground">Nhóm vật nuôi:</span>
+                    <span className="font-medium">{watchedGroupIds.map((id) => groupResponse?.content.find((group) => String(group.id) === id)?.name || id).join(", ") || "-"}</span>
+                  </div>}
                   <div className="flex justify-between gap-4">
                     <span className="text-muted-foreground">Vật nuôi:</span>
                     <span className="font-medium">
-                      {crops.find((c) => String(c.id) === watchedCropId)
-                        ?.name || watchedCropId}
+                      {watchedScope === "group" ? "-" : crops.filter((c) => watchedCropIds.includes(String(c.id))).map((c) => c.name).join(", ") || "-"}
                     </span>
                   </div>
                   {watchedScope === "variety" && (
@@ -126,11 +141,7 @@ export default function CreateAnimalGrowthCyclePage() {
                       <span className="text-muted-foreground">
                         Giống vật nuôi:
                       </span>
-                      <span className="font-medium">
-                        {varieties.find(
-                          (variety) => String(variety.id) === watchedVariety,
-                        )?.name || watchedVariety}
-                      </span>
+                      <span className="font-medium">{varieties.filter((variety) => watchedVarietyIds.includes(String(variety.id))).map((variety) => variety.name).join(", ") || "-"}</span>
                     </div>
                   )}
                   <div className="flex justify-between gap-4">
@@ -141,7 +152,7 @@ export default function CreateAnimalGrowthCyclePage() {
                     <span className="text-muted-foreground">
                       Tổng thời gian:
                     </span>
-                    <span className="font-medium">{totalDays}</span>
+                    <span className="font-medium">{formatDaysToDuration(confirmationTotalDays) || "0 ngày"}</span>
                   </div>
                 </div>
               </div>

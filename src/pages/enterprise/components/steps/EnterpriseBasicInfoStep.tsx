@@ -21,6 +21,7 @@ import { useEffect, useRef, useState } from "react";
 import { Controller } from "react-hook-form";
 import { useEnterpriseFormContext } from "../../context/EnterpriseFormContext";
 import AddressSearchInput from "@/components/AddressSearchInput";
+import { getDefaultOrganizationImage } from "../../data/default-organization-images";
 
 const classificationOptions = [
   { value: "production", label: "Sản xuất" },
@@ -66,6 +67,8 @@ function EnterpriseBasicInfoStepContent({
     handleLogoDrop,
     handleImageUpload,
   } = useEnterpriseFormContext();
+  const displayImage =
+    formData.image || getDefaultOrganizationImage(formData.type);
   const [addressQuery, setAddressQuery] = useState(formData.address || "");
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [suggestions, setSuggestions] = useState<
@@ -201,10 +204,10 @@ function EnterpriseBasicInfoStepContent({
             onDragLeave={(e) => handleDrag("logo", e)}
             onDrop={handleLogoDrop}
           >
-            {formData.image ? (
+            {displayImage ? (
               <>
                 <img
-                  src={formData.image}
+                  src={displayImage}
                   alt="Preview"
                   className="w-full h-full object-cover"
                 />
@@ -245,36 +248,7 @@ function EnterpriseBasicInfoStepContent({
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label htmlFor="code" required>
-            Mã doanh nghiệp
-          </Label>
-          <Controller
-            control={control}
-            name="code"
-            render={({ field, fieldState }) => (
-              <>
-                <Input
-                  id="code"
-                  value={field.value}
-                  onChange={(e) => field.onChange(e.target.value)}
-                  onBlur={field.onBlur}
-                  ref={field.ref}
-                  name={field.name}
-                  placeholder="VD: DN001, DN002..."
-                  data-testid="input-code"
-                  aria-invalid={!!fieldState.error}
-                />
-                {fieldState.error ? (
-                  <p className="text-xs text-red-600">
-                    {fieldState.error.message}
-                  </p>
-                ) : null}
-              </>
-            )}
-          />
-        </div>
-        <div className="space-y-2">
+        <div className="space-y-2 sm:col-span-2">
           <Label htmlFor="name" required>
             Tên doanh nghiệp
           </Label>
@@ -307,7 +281,7 @@ function EnterpriseBasicInfoStepContent({
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="space-y-2">
-          <Label htmlFor="brandName">Tên thương hiệu</Label>
+          <Label htmlFor="brandName">Tên gợi nhớ</Label>
           <Controller
             control={control}
             name="brandName"
@@ -438,7 +412,7 @@ function EnterpriseBasicInfoStepContent({
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div className="space-y-2">
+        <div className="space-y-2 sm:col-span-2">
           <Label htmlFor="classification">Phân loại</Label>
           <Controller
             control={control}

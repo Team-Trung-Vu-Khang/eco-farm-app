@@ -35,9 +35,10 @@ export const animalGrowthCycleFormSchema = z
   .object({
     name: z.string().trim().min(1, { message: "Vui lòng nhập tên chu kỳ sinh trưởng." }),
     cycleType: z.enum(["animal", "animal"]),
-    scope: z.enum(["crop", "variety"]),
-    cropId: z.string().min(1, { message: "Vui lòng chọn loại" }),
-    variety: z.string().optional(),
+    scope: z.enum(["group", "crop", "variety"]),
+    groupIds: z.array(z.string()),
+    cropIds: z.array(z.string()),
+    varietyIds: z.array(z.string()),
     totalDays: z.number().optional(),
     stages: z
       .array(growthStageSchema)
@@ -45,14 +46,18 @@ export const animalGrowthCycleFormSchema = z
   })
   .refine(
     (data) => {
-      if (data.scope === "variety") {
-        return !!data.variety;
+    if (data.scope === "group") {
+      return data.groupIds.length > 0;
+    }
+    if (data.scope === "crop") return data.cropIds.length > 0;
+    if (data.scope === "variety") {
+      return data.varietyIds.length > 0;
       }
       return true;
     },
     {
-      message: "Vui lòng chọn giống",
-      path: ["variety"],
+      message: "Vui lòng chọn phạm vi áp dụng",
+      path: ["scope"],
     },
   );
 

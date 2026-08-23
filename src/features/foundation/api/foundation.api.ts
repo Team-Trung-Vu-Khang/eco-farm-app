@@ -23,6 +23,8 @@ import type {
   LifecycleTemplate,
   LifecycleTemplateQueryParams,
   ProductionSubjectQueryParams,
+  ProductionSubjectGroupQueryParams,
+  ProductionSubjectGroupResponse,
   ProductionSubjectResponse,
   ProductionSubjectVariantQueryParams,
   ProductionSubjectVariantResponse,
@@ -281,6 +283,16 @@ export const productionSubjectApi = {
       .then((r) => r.data),
 };
 
+export const productionSubjectGroupApi = {
+  list: (params: ProductionSubjectGroupQueryParams) =>
+    apiClient
+      .get<PageResponse<ProductionSubjectGroupResponse>>(
+        "/api/foundation/production/subject-groups",
+        { params },
+      )
+      .then((r) => r.data),
+};
+
 export const productionSubjectVariantApi = {
   list: (params?: ProductionSubjectVariantQueryParams) =>
     apiClient
@@ -369,5 +381,4 @@ export const methodApplicationApi = {
   delete: (id: number) =>
     apiClient.delete(`${FOUNDATION_BASE_PATH}/production/method-applications/${id}`),
 };
-
 

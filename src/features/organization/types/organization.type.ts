@@ -6,7 +6,7 @@ export type OrganizationStatus =
 
 export interface OrganizationTypeRecord {
   id: number | string;
-  code: string;
+  code?: string;
   name: string;
   type: string;
 }

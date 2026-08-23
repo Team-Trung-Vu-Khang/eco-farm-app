@@ -15,52 +15,19 @@ import {
   PencilLine,
   Sprout,
   Trash2,
-  Workflow,
 } from "lucide-react";
-import { CROP_OPTIONS } from "@/constants/crops";
-import useVarietyStore from "@/stores/useVarietyStore";
 import type { AnimalGrowthCycle } from "../types/types";
-
-function resolveCropLabel(cropId: string, cropName?: string) {
-  return (
-    CROP_OPTIONS.find((item) => item.id === cropId || item.name === cropId)?.name ||
-    cropName ||
-    cropId ||
-    "Chưa xác định"
-  );
-}
-
-function resolveApplyForLabel(row: AnimalGrowthCycle) {
-  const cropLabel = resolveCropLabel(row.cropId, row.cropName);
-
-  if (row.scope === "crop") {
-    return cropLabel;
-  }
-
-  const varietyStore = useVarietyStore.getState();
-  const variety =
-    (row.variety && varietyStore.getVarietyById(row.variety)) || undefined;
-
-  return (
-    variety?.varietyName ||
-    row.variety ||
-    cropLabel ||
-    "Chưa xác định"
-  );
-}
 
 export interface AnimalGrowthCycleColumnActions {
   onView: (item: AnimalGrowthCycle) => void;
   onEdit: (item: AnimalGrowthCycle) => void;
   onDelete: (item: AnimalGrowthCycle) => void;
-  onWorkflow: (item: AnimalGrowthCycle) => void;
 }
 
 export function createAnimalGrowthCycleColumns({
   onView,
   onEdit,
   onDelete,
-  onWorkflow,
 }: AnimalGrowthCycleColumnActions): Column<AnimalGrowthCycle>[] {
   return [
     {
@@ -108,22 +75,9 @@ export function createAnimalGrowthCycleColumns({
           variant={value === "crop" ? "default" : "secondary"}
           className="text-[10px] font-bold uppercase"
         >
-          {value === "crop" ? "Theo loại" : "Theo giống"}
+          {value === "group" ? "Theo nhóm vật nuôi" : value === "crop" ? "Theo vật nuôi" : "Theo giống vật nuôi"}
         </Badge>
       ),
-    },
-    {
-      key: "applyFor",
-      label: "Áp dụng cho",
-      render: (_, row: AnimalGrowthCycle) => {
-        const label = resolveApplyForLabel(row);
-
-        return (
-          <div className="flex w-fit items-center gap-2 rounded-md border border-green-200 bg-green-100 px-2 py-1 font-mono text-xs font-bold text-green-700">
-            {label}
-          </div>
-        );
-      },
     },
     {
       key: "totalDays",
@@ -216,10 +170,6 @@ export function createAnimalGrowthCycleColumns({
             <DropdownMenuItem onClick={() => onView(item)}>
               <Eye className="mr-2 h-4 w-4" />
               Xem chi tiết
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => onWorkflow(item)}>
-              <Workflow className="mr-2 h-4 w-4" />
-              Mở workflow
             </DropdownMenuItem>
             {!item.isFoundation && (
               <>

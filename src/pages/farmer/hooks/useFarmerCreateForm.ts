@@ -23,6 +23,7 @@ import {
 import { useSelectedWorkspaceId } from "@/features/workspace";
 import { useUploadStorageFile } from "@/features/storage/hooks/useUploadStorageFile";
 import { parseVietQR } from "@/utils/commons";
+import { getDefaultOrganizationImage } from "../../enterprise/data/default-organization-images";
 import {
   defaultFarmerFormValues,
   farmerFormSchema,
@@ -140,7 +141,11 @@ const getFirstValidationMessage = (
 
 const mapOrganizationToFarmerFormData = (
   data: OrganizationRecord,
-): FarmerFormData => ({
+): FarmerFormData => {
+  const primaryContact =
+    data.contacts?.find((contact) => contact.isPrimary) ?? data.contacts?.[0];
+
+  return {
   type: (data.type as FarmerFormData["type"]) || "farm",
   code: data.code || "",
   name: data.name || "",
@@ -163,8 +168,8 @@ const mapOrganizationToFarmerFormData = (
   foundedDate: data.foundedDate || "",
   representative: data.representative || "",
   website: data.website || "",
-  phone: "",
-  email: "",
+  phone: primaryContact?.phone || "",
+  email: primaryContact?.email || "",
   province: data.province || "",
   district: data.district || "",
   ward: data.ward || "",
@@ -216,7 +221,8 @@ const mapOrganizationToFarmerFormData = (
       sizeBytes: doc.sizeBytes,
       content: doc.content,
     })) ?? [],
-});
+  };
+};
 
 const mapClassificationToBusinessLines = (
   classifications: string[],
@@ -855,11 +861,27 @@ export function useFarmerCreateForm() {
       values.classification,
       businessLineRecords,
     );
+    const contacts = [...values.contacts];
+    if (values.phone.trim() || values.email.trim()) {
+      if (contacts[0]) {
+        contacts[0] = {
+          ...contacts[0],
+          phone: values.phone.trim(),
+          email: values.email.trim(),
+        };
+      } else {
+        contacts.push({
+          id: "",
+          name: values.representative?.trim() || values.name.trim(),
+          phone: values.phone.trim(),
+          email: values.email.trim(),
+        });
+      }
+    }
 
     const payload: OrganizationCreateRequest = {
       type: values.type,
       organizationTypeId,
-      code: values.code.trim(),
       name: values.name.trim(),
       brandName: values.brandName?.trim(),
       taxCode: values.taxCode.trim(),
@@ -874,10 +896,10 @@ export function useFarmerCreateForm() {
       address: values.address.trim(),
       latitude: values.latitude,
       longitude: values.longitude,
-      imageUrl: values.image || "",
+      imageUrl: values.image || getDefaultOrganizationImage("farm"),
       description: values.description || "",
       status: "active",
-      contacts: values.contacts.map((contact, index) => ({
+      contacts: contacts.map((contact, index) => ({
         contactId: contact.id,
         name: contact.name,
         position: "",

@@ -87,7 +87,10 @@ export function useTaskPage() {
           : mapPriorityFilterToApi(priorityFilter),
       origin: originFilter === "all" ? undefined : originFilter,
       page: currentIndex - 1,
-      size: viewMode === "calendar" ? 500 : pageSize,
+      // Farm API accepts a maximum page size of 100. Calendar mode used to
+      // request 500 and caused a 400 response; the calendar API can be wired
+      // separately when the view needs an unbounded date range.
+      size: viewMode === "calendar" ? 100 : Math.min(Math.max(pageSize, 1), 100),
     }),
     [
       currentIndex,

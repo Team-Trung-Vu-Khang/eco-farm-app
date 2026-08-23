@@ -113,13 +113,26 @@ export function useGrowthCyclePage() {
       const cropNameVal = item.productionSubject?.name;
       const varietyIdVal = item.productionSubjectVariant?.id;
       const varietyNameVal = item.productionSubjectVariant?.name;
+      const scope =
+        item.scopeType === "SUBJECT_GROUP"
+          ? "group"
+          : item.scopeType === "SUBJECT_VARIANT" || varietyIdVal
+            ? "variety"
+            : "crop";
+      const scopeNames =
+        scope === "group"
+          ? (item.productionSubjectGroups || []).map((subject: any) => subject.name).filter(Boolean)
+          : scope === "variety"
+            ? (item.productionSubjectVariants || [item.productionSubjectVariant]).filter(Boolean).map((subject: any) => subject.name).filter(Boolean)
+            : (item.productionSubjects || [item.productionSubject]).filter(Boolean).map((subject: any) => subject.name).filter(Boolean);
       const expectedDaysVal = item.stages?.reduce((sum: number, s: any) => sum + (s.durationDays || 0), 0) ?? 0;
 
       return {
         id: (isFoundation ? "foundation-" : "user-") + item.id,
         name: item.name,
         cycleType: item.metadataJson?.cycleType || "plant",
-        scope: varietyIdVal ? "variety" : "crop",
+        scope,
+        scopeNames,
         cropId: cropIdVal ? String(cropIdVal) : "",
         cropName: cropNameVal || "",
         variety: varietyNameVal || "",
@@ -161,10 +174,6 @@ export function useGrowthCyclePage() {
 
   const handleEdit = (item: GrowthCycle) => {
     setLocation(`/growth-cycle/${item.id}/edit`);
-  };
-
-  const handleWorkflow = (item: GrowthCycle) => {
-    setLocation(`/growth-cycle/${item.id}/workflow`);
   };
 
   const handleDelete = (item: GrowthCycle) => {
@@ -218,7 +227,6 @@ export function useGrowthCyclePage() {
     deleteOpen,
     setDeleteOpen,
     handleEdit,
-    handleWorkflow,
     handleDelete,
     handleConfirmDelete,
     filters,

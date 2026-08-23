@@ -24,7 +24,6 @@ const AnimalGrowthCyclePage = () => {
     deleteOpen,
     setDeleteOpen,
     handleEdit,
-    handleWorkflow,
     handleDelete,
     handleConfirmDelete,
     loading,
@@ -46,9 +45,8 @@ const AnimalGrowthCyclePage = () => {
         onView: handleView,
         onEdit: handleEdit,
         onDelete: handleDelete,
-        onWorkflow: handleWorkflow,
       }),
-    [handleDelete, handleEdit, handleView, handleWorkflow],
+    [handleDelete, handleEdit, handleView],
   );
 
   const animalCycles = useMemo(

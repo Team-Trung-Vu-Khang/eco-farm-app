@@ -7,8 +7,11 @@ import {
   TreeDeciduous,
 } from "lucide-react";
 import { useFormContext } from "react-hook-form";
+import { useMemo } from "react";
 import type { GrowthCycleFormValues } from "../../schemas/growthCycleSchema";
+import { formatDaysToDuration, parseDurationToDays } from "../../utils/duration";
 import type {
+  CatalogRecordResponse,
   FoundationCropResponse,
   FoundationCropVarietyResponse,
 } from "../../../../features/foundation/types/foundation.type";
@@ -16,18 +19,20 @@ import type {
 interface GrowthCycleConfirmStepProps {
   varieties: FoundationCropVarietyResponse[];
   crops: FoundationCropResponse[];
+  cropGroups: CatalogRecordResponse[];
 }
 
 export function GrowthCycleConfirmStep({
   varieties,
   crops,
+  cropGroups,
 }: GrowthCycleConfirmStepProps) {
   const { watch } = useFormContext<GrowthCycleFormValues>();
   const formData = watch();
 
-  // Group "ids" are already the dummy group's display name — see
-  // `getDummyCropGroupName`.
-  const groupNames = formData.groupIds || [];
+  const groupNames = (formData.groupIds || []).map(
+    (id) => cropGroups.find((group) => String(group.id) === id)?.name || id,
+  );
   const cropNames = (formData.cropIds || []).map(
     (id) => crops.find((crop) => String(crop.id) === id)?.name || id,
   );
@@ -53,6 +58,14 @@ export function GrowthCycleConfirmStep({
       : formData.scope === "crop"
         ? cropNames
         : varietyNames;
+  const totalDays = useMemo(
+    () =>
+      formData.stages.reduce(
+        (sum, stage) => sum + parseDurationToDays(String(stage.duration)),
+        0,
+      ),
+    [formData.stages],
+  );
 
   return (
     <div className="max-w-4xl mx-auto space-y-6 py-4">
@@ -105,7 +118,7 @@ export function GrowthCycleConfirmStep({
               Tổng thời gian:
             </span>
             <Badge className="bg-blue-50 text-blue-700 border-blue-100 font-bold">
-              {formData.totalDays}
+              {formatDaysToDuration(totalDays) || "0 ngày"}
             </Badge>
           </div>
           <div className="flex justify-between items-center py-2 border-b border-muted">

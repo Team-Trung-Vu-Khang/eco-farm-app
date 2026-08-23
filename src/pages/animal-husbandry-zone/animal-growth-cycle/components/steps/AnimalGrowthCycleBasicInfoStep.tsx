@@ -1,416 +1,48 @@
-import {
-  FormControl,
-  FormField,
-  FormItem,
-  FormMessage,
-  Input,
-  Label,
-  RadioGroup,
-  RadioGroupItem,
-} from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { ChevronDown, Fish, PawPrint } from "lucide-react";
-import { useState, useMemo, type ReactNode } from "react";
+import { Badge, Button, FormControl, FormField, FormItem, FormMessage, Input, Label, RadioGroup, RadioGroupItem } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import { Fish, PawPrint, Plus, X } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { useMemo, useState, type ReactNode } from "react";
 import { useFormContext } from "react-hook-form";
-import type {
-  ProductionSubjectResponse,
-  ProductionSubjectVariantResponse,
-} from "../../../../../features/foundation/types/foundation.type";
+import type { ProductionSubjectResponse, ProductionSubjectVariantResponse } from "../../../../../features/foundation/types/foundation.type";
 import type { AnimalGrowthCycleFormValues } from "../../schemas/animalGrowthCycleSchema";
-import {
-  AnimalGrowthCycleHierarchyDialog,
-  type AnimalGrowthCycleHierarchyChildOption,
-} from "../AnimalGrowthCycleHierarchyDialog";
+import { productionSubjectGroupApi } from "../../../../../features/foundation/api/foundation.api";
+import type { PageResponse, ProductionSubjectGroupResponse } from "../../../../../features/foundation/types/foundation.type";
+import { GrowthCycleMultiSelectDialog, type GrowthCycleMultiSelectOption } from "../../../../growth-cycle/components/GrowthCycleMultiSelectDialog";
 
-interface AnimalGrowthCycleBasicInfoStepProps {
-  varieties: ProductionSubjectVariantResponse[];
-  crops: ProductionSubjectResponse[];
+interface Props { varieties: ProductionSubjectVariantResponse[]; crops: ProductionSubjectResponse[]; }
+
+function ScopeOption({ checked, icon, inputId, title, value, description, onClick }: { checked: boolean; icon: ReactNode; inputId: string; title: string; value: string; description: string; onClick: () => void }) {
+  return <div className={`relative flex flex-row items-center gap-4 rounded-2xl border-2 p-4 transition-all ${checked ? "border-primary bg-primary/5 shadow-md" : "border-muted hover:border-primary/50 hover:bg-muted/50"}`} onClick={onClick}>
+    <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-full ${checked ? "bg-primary text-primary-foreground shadow-sm" : "bg-muted text-muted-foreground"}`}>{icon}</div>
+    <div className="flex-1 space-y-1"><div className="flex items-center space-x-2"><RadioGroupItem value={value} id={inputId} /><Label htmlFor={inputId} className="cursor-pointer text-base font-bold">{title}</Label></div><p className="text-xs leading-snug text-muted-foreground">{description}</p></div>
+  </div>;
 }
 
-function ScopeOption({
-  checked,
-  icon,
-  inputId,
-  title,
-  value,
-  description,
-  onClick,
-}: {
-  checked: boolean;
-  icon: ReactNode;
-  inputId: string;
-  title: string;
-  value: string;
-  description: string;
-  onClick: () => void;
-}) {
-  return (
-    <div
-      className={`relative flex flex-row items-center gap-4 rounded-2xl border-2 p-4 transition-all ${
-        checked
-          ? "border-primary bg-primary/5 shadow-md"
-          : "border-muted hover:border-primary/50 hover:bg-muted/50"
-      }`}
-      onClick={onClick}
-    >
-      <div
-        className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-full transition-colors ${
-          checked
-            ? "bg-primary text-primary-foreground shadow-sm"
-            : "bg-muted text-muted-foreground"
-        }`}
-      >
-        {icon}
-      </div>
-      <div className="flex-1 space-y-1">
-        <div className="flex items-center space-x-2">
-          <RadioGroupItem value={value} id={inputId} />
-          <Label
-            htmlFor={inputId}
-            className="cursor-pointer text-base font-bold"
-          >
-            {title}
-          </Label>
-        </div>
-        <p className="text-xs leading-snug text-muted-foreground">
-          {description}
-        </p>
-      </div>
-    </div>
-  );
-}
-
-function SelectionCard({
-  title,
-  subtitle,
-  image,
-  fallbackIcon,
-  group,
-  detail,
-  placeholder,
-  showSecondary,
-  secondaryTitle,
-  secondarySubtitle,
-  secondaryPlaceholder,
-  secondaryDetail,
-  secondaryGroup,
-  secondaryDisabled,
-  onPrimaryClick,
-  onSecondaryClick,
-}: {
-  title: string;
-  subtitle?: string;
-  image?: string;
-  fallbackIcon: ReactNode;
-  group?: string;
-  detail?: string;
-  placeholder: string;
-  showSecondary: boolean;
-  secondaryTitle: string;
-  secondarySubtitle?: string;
-  secondaryPlaceholder: string;
-  secondaryDetail?: string;
-  secondaryGroup?: string;
-  secondaryDisabled: boolean;
-  onPrimaryClick: () => void;
-  onSecondaryClick: () => void;
-}) {
-  return (
-    <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-all hover:border-primary/30 hover:shadow-md">
-      <button
-        type="button"
-        onClick={onPrimaryClick}
-        className="flex min-h-[112px] w-full items-center justify-between gap-4 px-4 py-4 text-left transition-colors hover:bg-slate-50/70"
-      >
-        <div className="flex min-w-0 items-center gap-4">
-          <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-slate-100 bg-slate-50 shadow-sm">
-            {image ? (
-              <img
-                src={image}
-                alt={title}
-                className="h-full w-full object-cover"
-              />
-            ) : (
-              <span className="text-muted-foreground">{fallbackIcon}</span>
-            )}
-          </div>
-          <div className="min-w-0 space-y-1">
-            <p className="truncate text-base font-semibold text-slate-900">
-              {title}
-            </p>
-            <p className="truncate text-sm text-muted-foreground">
-              {subtitle || placeholder}
-            </p>
-            {detail && (
-              <p className="line-clamp-2 text-xs leading-snug text-slate-500">
-                {detail}
-              </p>
-            )}
-          </div>
-        </div>
-        <div className="flex shrink-0 flex-col items-end gap-2">
-          {group && (
-            <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-emerald-700">
-              {group}
-            </span>
-          )}
-          <ChevronDown className="h-4 w-4 text-muted-foreground" />
-        </div>
-      </button>
-
-      {showSecondary ? (
-        <div className="border-t border-slate-100 bg-slate-50/60 px-4 py-3">
-          <button
-            type="button"
-            onClick={onSecondaryClick}
-            disabled={secondaryDisabled}
-            className={`flex w-full items-center justify-between gap-3 rounded-xl border px-3 py-3 text-left transition-all ${
-              secondaryDisabled
-                ? "cursor-not-allowed border-dashed border-slate-200 bg-white/70 opacity-70"
-                : "border-slate-200 bg-white hover:border-primary/40 hover:shadow-sm"
-            }`}
-          >
-            <div className="min-w-0 space-y-1">
-              <p className="text-sm font-semibold text-slate-900">
-                {secondaryTitle}
-              </p>
-              <p className="text-xs text-muted-foreground">
-                {secondarySubtitle || secondaryPlaceholder}
-              </p>
-              {secondaryDetail && (
-                <p className="line-clamp-1 text-[11px] text-slate-500">
-                  {secondaryDetail}
-                </p>
-              )}
-            </div>
-            <div className="flex shrink-0 items-center gap-2">
-              {secondaryGroup && (
-                <span className="rounded-full bg-slate-100 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-slate-600">
-                  {secondaryGroup}
-                </span>
-              )}
-              <ChevronDown className="h-4 w-4 text-muted-foreground" />
-            </div>
-          </button>
-        </div>
-      ) : null}
-    </div>
-  );
-}
-
-export function AnimalGrowthCycleBasicInfoStep({
-  varieties,
-  crops,
-}: AnimalGrowthCycleBasicInfoStepProps) {
-  const { watch, setValue, control } =
-    useFormContext<AnimalGrowthCycleFormValues>();
+export function AnimalGrowthCycleBasicInfoStep({ varieties, crops }: Props) {
+  const { watch, setValue, control } = useFormContext<AnimalGrowthCycleFormValues>();
+  const scope = watch("scope");
+  const cropIds = watch("cropIds") || [];
+  const varietyIds = watch("varietyIds") || [];
+  const groupIds = watch("groupIds") || [];
   const [dialogOpen, setDialogOpen] = useState(false);
 
-  const watchedScope = watch("scope");
-  const watchedCropId = watch("cropId");
-  const watchedVariety = watch("variety");
+  const cropOptions: GrowthCycleMultiSelectOption[] = useMemo(() => crops.map((crop) => ({ id: String(crop.id), name: crop.name, group: crop.family || crop.scientificName || "Vật nuôi", image: crop.imageUrl || "", description: crop.origin || `Mã vật nuôi: ${crop.code}`, code: crop.code })), [crops]);
+  const varietyOptions: GrowthCycleMultiSelectOption[] = useMemo(() => varieties.map((variety) => ({ id: String(variety.id), name: variety.name, group: variety.origin || "Giống vật nuôi", image: variety.imageUrl || "", description: variety.description || `Mã giống: ${variety.code}`, code: variety.code })), [varieties]);
+  const { data: groupResponse } = useQuery<PageResponse<ProductionSubjectGroupResponse>>({ queryKey: ["animal-growth-cycle-groups", "LIVESTOCK"], queryFn: () => productionSubjectGroupApi.list({ domainCode: "LIVESTOCK", page: 0, size: 100, status: "active" }), staleTime: 300_000 });
+  const groupOptions: GrowthCycleMultiSelectOption[] = useMemo(() => (groupResponse?.content || []).map((group) => ({ id: String(group.id), name: group.name, group: group.biological || "Nhóm vật nuôi", image: "", description: group.description || `Mã nhóm: ${group.code}`, code: group.code })), [groupResponse?.content]);
+  const activeOptions = scope === "group" ? groupOptions : scope === "variety" ? varietyOptions : cropOptions;
+  const activeIds = scope === "group" ? groupIds : scope === "variety" ? varietyIds : cropIds;
 
-  const filteredVarieties = useMemo(
-    () => varieties.filter((v) => String(v.subject?.id) === watchedCropId),
-    [watchedCropId, varieties],
-  );
-
-  const primaryOptions = crops.map((c) => ({
-    id: String(c.id),
-    name: c.name,
-    group: c.scientificName || "Nhóm " + (c.subjectGroupId || ""),
-    image: c.imageUrl ?? "",
-    description: c.scientificName || "",
-  }));
-
-  const childOptions: AnimalGrowthCycleHierarchyChildOption[] =
-    varieties.map((variety) => {
-      return {
-        id: String(variety.id),
-        primaryId: String(variety.subject?.id),
-        name: variety.name,
-        group: variety.origin || "",
-        image: variety.imageUrl || "",
-        description: variety.description || "",
-        code: variety.code,
-      };
-    });
-
-  const selectedPrimary = primaryOptions.find(
-    (item) => item.id === watchedCropId,
-  );
-  const selectedChild = childOptions.find((item) => item.id === watchedVariety);
-
-  const selectionTitle = selectedPrimary
-    ? selectedPrimary.name
-    : "Chọn vật nuôi";
-
-  const selectionSubtitle = selectedPrimary
-    ? selectedPrimary.group
-    : "Mở dialog để chọn vật nuôi";
-
-  const selectionDetail = selectedPrimary?.description;
-
-  const varietyTitle = selectedChild
-    ? selectedChild.name
-    : "Chọn giống vật nuôi";
-
-  const varietySubtitle = !selectedPrimary
-    ? "Chọn vật nuôi trước"
-    : selectedChild
-      ? selectedChild.group
-      : "Mở dialog để chọn giống vật nuôi";
-
-  const varietyDetail = !selectedPrimary
-    ? "Vùng chọn này sẽ bật sau khi chọn vật nuôi."
-    : watchedScope === "variety"
-      ? selectedChild
-        ? selectedChild.description || ""
-        : "Bấm vào đây để chọn giống trong cùng dialog."
-      : "Phạm vi đang là theo vật nuôi nên không cần chọn giống riêng.";
-
-  const scopeCropTitle = "Theo vật nuôi";
-  const scopeCropDescription =
-    "Áp dụng cho tất cả các giống thuộc vật nuôi này.";
-  const scopeVarietyDescription =
-    "Chọn vật nuôi và giống vật nuôi trong cùng một dialog.";
-
-  const scopeCropIcon = <PawPrint className="w-6 h-6" />;
-  const scopeVarietyIcon = <Fish className="w-6 h-6" />;
-  const primaryFallbackIcon = <PawPrint className="h-5 w-5" />;
-
-  return (
-    <div className="mx-auto max-w-4xl space-y-8 py-4">
-      <div className="space-y-6">
-        <FormField
-          control={control as any}
-          name="name"
-          render={({ field }) => (
-            <FormItem className="space-y-2">
-              <Label className="text-sm font-semibold" required>
-                Tên chu kỳ sinh trưởng
-              </Label>
-              <FormControl>
-                <Input
-                  {...field}
-                  placeholder="VD: Chu kỳ sinh trưởng vật nuôi, Chu kỳ chăn nuôi Heo thịt..."
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <div className="space-y-3">
-          <Label className="text-base font-semibold">Phạm vi áp dụng</Label>
-          <FormField
-            control={control as any}
-            name="scope"
-            render={({ field }) => (
-              <FormItem>
-                <FormControl>
-                  <RadioGroup
-                    value={field.value}
-                    onValueChange={(value) => {
-                      field.onChange(value);
-                      setValue("variety", "");
-                    }}
-                    className="grid grid-cols-1 gap-4 md:grid-cols-2"
-                  >
-                    <ScopeOption
-                      checked={field.value === "crop"}
-                      icon={scopeCropIcon}
-                      inputId="scope-crop"
-                      title={scopeCropTitle}
-                      value="crop"
-                      description={scopeCropDescription}
-                      onClick={() => {
-                        field.onChange("crop");
-                        setValue("variety", "");
-                      }}
-                    />
-                    <ScopeOption
-                      checked={field.value === "variety"}
-                      icon={scopeVarietyIcon}
-                      inputId="scope-variety"
-                      title="Theo giống cụ thể"
-                      value="variety"
-                      description={scopeVarietyDescription}
-                      onClick={() => {
-                        field.onChange("variety");
-                        setValue("variety", "");
-                      }}
-                    />
-                  </RadioGroup>
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
-
-        <div className="space-y-2">
-          <Label className="text-sm font-semibold">Vật nuôi</Label>
-          <FormField
-            control={control as any}
-            name="cropId"
-            render={() => (
-              <FormItem>
-                <FormControl>
-                  <SelectionCard
-                    title={selectionTitle}
-                    subtitle={selectionSubtitle}
-                    image={selectedPrimary?.image}
-                    fallbackIcon={primaryFallbackIcon}
-                    group={selectedPrimary?.group}
-                    detail={selectionDetail}
-                    placeholder="Chọn vật nuôi trong dialog"
-                    showSecondary={watchedScope === "variety"}
-                    secondaryTitle={varietyTitle}
-                    secondarySubtitle={varietySubtitle}
-                    secondaryPlaceholder="Chọn giống vật nuôi trong dialog"
-                    secondaryDetail={varietyDetail}
-                    secondaryGroup={
-                      watchedScope === "variety" && selectedChild?.group
-                        ? selectedChild.group
-                        : undefined
-                    }
-                    secondaryDisabled={!selectedPrimary}
-                    onPrimaryClick={() => setDialogOpen(true)}
-                    onSecondaryClick={() => {
-                      if (!selectedPrimary) return;
-                      setDialogOpen(true);
-                    }}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
-      </div>
-
-      <AnimalGrowthCycleHierarchyDialog
-        open={dialogOpen}
-        onOpenChange={setDialogOpen}
-        title="Chọn vật nuôi và giống"
-        description="Chọn vật nuôi ở trên, sau đó chọn giống ở bên dưới nếu cần."
-        searchPlaceholder="Tìm vật nuôi hoặc giống..."
-        selectedPrimaryId={watchedCropId}
-        selectedChildId={watchedVariety || ""}
-        primaryOptions={primaryOptions}
-        childOptions={childOptions}
-        primaryLabel="Vật nuôi"
-        childLabel="Giống vật nuôi"
-        showChildSection={watchedScope === "variety"}
-        onConfirm={({ primary, child }) => {
-          setValue("cropId", primary.id, { shouldValidate: true });
-          if (watchedScope === "variety") {
-            setValue("variety", child?.id || "", { shouldValidate: true });
-          } else {
-            setValue("variety", "", { shouldValidate: true });
-          }
-        }}
-      />
+  return <div className="mx-auto max-w-4xl space-y-8 py-4">
+    <div className="space-y-6">
+      <FormField control={control} name="name" render={({ field }) => <FormItem className="space-y-2"><Label className="text-sm font-semibold" required>Tên chu kỳ sinh trưởng</Label><FormControl><Input {...field} placeholder="VD: Chu kỳ chăn nuôi Heo thịt..." /></FormControl><FormMessage /></FormItem>} />
+      <div className="space-y-3"><Label className="text-base font-semibold">Phạm vi áp dụng</Label><FormField control={control} name="scope" render={({ field }) => <FormItem><FormControl><RadioGroup value={field.value} onValueChange={(value) => { field.onChange(value); setValue("groupIds", [], { shouldValidate: true }); setValue("cropIds", [], { shouldValidate: true }); setValue("varietyIds", [], { shouldValidate: true }); }} className="grid grid-cols-1 gap-4 md:grid-cols-3">
+        <ScopeOption checked={field.value === "group"} icon={<PawPrint className="h-6 w-6" />} inputId="scope-group" title="Theo nhóm vật nuôi" value="group" description="Áp dụng cho tất cả vật nuôi thuộc nhóm được chọn." onClick={() => field.onChange("group")} />
+        <ScopeOption checked={field.value === "crop"} icon={<PawPrint className="h-6 w-6" />} inputId="scope-crop" title="Theo vật nuôi" value="crop" description="Áp dụng cho tất cả các giống thuộc vật nuôi được chọn." onClick={() => field.onChange("crop")} />
+        <ScopeOption checked={field.value === "variety"} icon={<Fish className="h-6 w-6" />} inputId="scope-variety" title="Theo giống vật nuôi" value="variety" description="Áp dụng cho các giống vật nuôi cụ thể được chọn." onClick={() => field.onChange("variety")} />
+      </RadioGroup></FormControl><FormMessage /></FormItem>} /></div>
+      <FormField control={control} name={scope === "group" ? "groupIds" : scope === "variety" ? "varietyIds" : "cropIds"} render={() => <FormItem><FormControl><div className="space-y-2"><div className="flex items-center justify-between"><Label className="text-sm font-semibold">{scope === "group" ? "Nhóm vật nuôi" : scope === "variety" ? "Giống vật nuôi" : "Vật nuôi"}</Label><Badge variant="outline" className="border-amber-200 bg-amber-50 text-[10px] font-bold text-amber-700">{activeIds.length} đã chọn</Badge></div><Button type="button" onClick={() => setDialogOpen(true)} variant="outline" className="w-full cursor-pointer gap-2 rounded-lg border-2 border-dashed border-primary/20 bg-primary/5 font-bold text-primary hover:border-primary/40 hover:bg-primary/10"><Plus className="h-5 w-5" />{activeIds.length ? "Chỉnh sửa lựa chọn" : scope === "group" ? "Chọn nhóm vật nuôi" : scope === "variety" ? "Chọn giống vật nuôi" : "Chọn vật nuôi"}</Button>{activeIds.length > 0 && <div className="space-y-2">{activeOptions.filter((option) => activeIds.includes(option.id)).map((option) => <div key={option.id} className="flex items-center gap-3 rounded-2xl border border-slate-100 bg-white p-3 shadow-sm"><div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-slate-100 bg-slate-50">{option.image ? <img src={option.image} alt={option.name} className="h-full w-full object-cover" /> : <span className="text-sm font-black text-muted-foreground">{option.name.charAt(0).toUpperCase()}</span>}</div><div className="min-w-0 flex-1"><p className="truncate text-sm font-bold text-slate-900">{option.name}</p><p className="truncate text-xs text-muted-foreground">{option.description || option.group || `Mã: ${option.code || option.id}`}</p></div><button type="button" onClick={() => setValue(scope === "group" ? "groupIds" : scope === "variety" ? "varietyIds" : "cropIds", activeIds.filter((id) => id !== option.id), { shouldValidate: true })} className="flex h-7 w-7 items-center justify-center rounded-md text-slate-400 hover:bg-red-50 hover:text-red-600"><X className="h-4 w-4" /></button></div>)}</div>}</div></FormControl><FormMessage /></FormItem>} />
     </div>
-  );
+    <GrowthCycleMultiSelectDialog open={dialogOpen} onOpenChange={setDialogOpen} title={scope === "group" ? "Chọn nhóm vật nuôi" : scope === "variety" ? "Chọn giống vật nuôi" : "Chọn vật nuôi"} description={scope === "group" ? "Chọn một hoặc nhiều nhóm vật nuôi áp dụng." : scope === "variety" ? "Chọn một hoặc nhiều giống vật nuôi áp dụng." : "Chọn một hoặc nhiều vật nuôi áp dụng."} searchPlaceholder={scope === "group" ? "Tìm nhóm vật nuôi..." : scope === "variety" ? "Tìm giống vật nuôi..." : "Tìm vật nuôi..."} selectedIds={activeIds} resource={scope === "group" ? "group" : scope === "variety" ? "variety" : "crop"} subjectIds={cropIds} optionsLabel={scope === "group" ? "Nhóm vật nuôi" : scope === "variety" ? "Giống vật nuôi" : "Vật nuôi"} domainCode="LIVESTOCK" onConfirm={(ids) => setValue(scope === "group" ? "groupIds" : scope === "variety" ? "varietyIds" : "cropIds", ids, { shouldValidate: true })} />
+  </div>;
 }

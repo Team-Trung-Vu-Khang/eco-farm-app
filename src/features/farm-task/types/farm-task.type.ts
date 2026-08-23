@@ -97,6 +97,7 @@ export interface FarmTaskResponse {
   code: string;
   name: string;
   origin: FarmTaskOrigin;
+  parent: FarmTaskParentRef | null;
   domainCode: DomainCode;
   workflow: FarmWorkflowSummaryRef;
   plan: FarmTaskPlanRef | null;
@@ -111,6 +112,8 @@ export interface FarmTaskResponse {
   personnel: FarmTaskPersonnelResponse[];
   startDate: string;
   endDate: string;
+  durationDays: number;
+  spawnedChildCount: number | null;
   recurrence: FarmTaskRecurrenceResponse;
   supplyLines: FarmTaskSupplyLineResponse[];
   status: FarmTaskStatus;
@@ -119,24 +122,10 @@ export interface FarmTaskResponse {
   updatedAt?: string;
 }
 
-export interface FarmTaskOccurrenceRequest {
-  status: FarmTaskStatus;
-  completedPersonnelId?: number | null;
-}
-
-export interface FarmTaskCompletedByRef {
+export interface FarmTaskParentRef {
   id: number;
-  fullName?: string;
-}
-
-export interface FarmTaskOccurrenceResponse {
-  id: number;
-  taskId: number;
-  occurrenceDate: string;
-  status: FarmTaskStatus;
-  completedBy: FarmTaskCompletedByRef | null;
-  createdAt?: string;
-  updatedAt?: string;
+  code?: string;
+  name?: string;
 }
 
 export interface FarmTaskQueryParams {
@@ -147,6 +136,9 @@ export interface FarmTaskQueryParams {
   priority?: FarmTaskPriority;
   assignedPersonnelId?: number | string;
   keyword?: string;
+  fromDate?: string;
+  toDate?: string;
+  parentTaskId?: number | string;
   page?: number;
   size?: number;
 }
@@ -158,6 +150,8 @@ export interface FarmTaskStatsQueryParams {
   priority?: FarmTaskPriority;
   assignedPersonnelId?: number | string;
   keyword?: string;
+  fromDate?: string;
+  toDate?: string;
 }
 
 export interface FarmTaskStatsResponse {
@@ -169,3 +163,34 @@ export interface FarmTaskStatsResponse {
 }
 
 export type FarmTaskPageResponse = PageResponse<FarmTaskResponse>;
+
+export interface FarmTaskCalendarPreview {
+  taskId: number;
+  code: string;
+  name: string;
+  priority: FarmTaskPriority;
+  status: FarmTaskStatus;
+}
+
+export interface FarmTaskCalendarEntry {
+  total: number;
+  preview: FarmTaskCalendarPreview[];
+}
+
+export interface FarmTaskCalendarQueryParams
+  extends Omit<FarmTaskQueryParams, "page" | "size"> {
+  fromDate: string;
+  toDate: string;
+  previewLimit?: number;
+}
+
+export interface FarmTaskCalendarDayQueryParams
+  extends Omit<FarmTaskQueryParams, "fromDate" | "toDate"> {
+  page?: number;
+  size?: number;
+}
+
+export interface FarmTaskCalendarDayItem extends FarmTaskCalendarPreview {}
+
+export type FarmTaskCalendarResponse = Record<string, FarmTaskCalendarEntry>;
+export type FarmTaskCalendarDayResponse = PageResponse<FarmTaskCalendarDayItem>;

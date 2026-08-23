@@ -30,6 +30,7 @@ import {
   farmerClassificationOptions,
   type FarmerFormData,
 } from "../../types";
+import { getDefaultOrganizationImage } from "../../../enterprise/data/default-organization-images";
 
 interface FarmerConfirmationStepProps {
   formData: FarmerFormData;
@@ -42,6 +43,7 @@ export const FarmerConfirmationStep = ({
   bankSearchQuery,
   setBankSearchQuery,
 }: FarmerConfirmationStepProps) => {
+  const displayImage = formData.image || getDefaultOrganizationImage("farm");
   return (
     <div className="space-y-10 max-w-6xl mx-auto pt-4">
       <div className="text-center mb-10">
@@ -61,9 +63,9 @@ export const FarmerConfirmationStep = ({
         <div className="lg:col-span-1 space-y-6">
           <Card className="overflow-hidden border-primary/20 shadow-lg">
             <div className="h-32 bg-muted relative">
-              {formData.image && (
+              {displayImage && (
                 <img
-                  src={formData.image}
+                  src={displayImage}
                   alt="Banner"
                   className="w-full h-full object-cover opacity-40 blur-[2px]"
                 />
@@ -72,9 +74,9 @@ export const FarmerConfirmationStep = ({
             </div>
             <CardHeader className="text-center pb-4">
               <div className="mx-auto w-24 h-24 -mt-16 rounded-full border-4 border-background bg-white shadow-xl flex items-center justify-center mb-4 overflow-hidden relative z-10 transition-transform hover:scale-105">
-                {formData.image ? (
+                {displayImage ? (
                   <img
-                    src={formData.image}
+                    src={displayImage}
                     alt="Logo"
                     className="w-full h-full object-cover"
                   />
@@ -83,7 +85,7 @@ export const FarmerConfirmationStep = ({
                 )}
               </div>
               <CardTitle className="text-xl font-bold">
-                {formData.brandName || "Tên thương hiệu"}
+                {formData.brandName || "Tên gợi nhớ"}
               </CardTitle>
               <CardDescription className="text-sm font-medium">
                 {formData.name || "Tên nông hộ"}
@@ -103,17 +105,6 @@ export const FarmerConfirmationStep = ({
             </CardHeader>
             <CardContent className="space-y-6 pt-6 border-t bg-muted/5">
               <div className="space-y-4 text-sm">
-                <div className="flex items-center gap-4">
-                  <CreditCard className="w-4 h-4 text-primary" />
-                  <div>
-                    <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider">
-                      Mã nông hộ
-                    </p>
-                    <p className="font-bold text-base">
-                      {formData.code || "N/A"}
-                    </p>
-                  </div>
-                </div>
                 <div className="flex items-center gap-4">
                   <User className="w-4 h-4 text-primary" />
                   <div>
@@ -221,17 +212,23 @@ export const FarmerConfirmationStep = ({
                               <div className="font-bold text-base">
                                 {contact.name}
                               </div>
-                              <div className="text-sm font-medium text-muted-foreground flex items-center gap-2 mt-0.5">
-                                <Phone className="w-3 h-3 text-primary shrink-0" /> {contact.phone}
+                              <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm font-medium text-muted-foreground mt-0.5">
+                                {contact.phone && (
+                                  <span className="inline-flex items-center gap-1.5">
+                                    <Phone className="w-3 h-3 text-primary shrink-0" />
+                                    {contact.phone}
+                                  </span>
+                                )}
+                                {contact.phone && contact.email && <span className="text-border">-</span>}
+                                {contact.email && (
+                                  <span className="inline-flex items-center gap-1.5 truncate" title={contact.email}>
+                                    <Mail className="w-3 h-3 text-primary shrink-0" />
+                                    {contact.email}
+                                  </span>
+                                )}
                               </div>
                             </div>
                           </div>
-                          {contact.email && (
-                            <div className="text-sm font-medium text-muted-foreground flex items-center justify-center sm:justify-start gap-2 bg-background/50 px-3 py-1.5 rounded-lg border w-full sm:w-auto truncate" title={contact.email}>
-                              <Mail className="w-3 h-3 text-primary shrink-0" />{" "}
-                              {contact.email}
-                            </div>
-                          )}
                         </div>
                       ))}
                     </CardContent>

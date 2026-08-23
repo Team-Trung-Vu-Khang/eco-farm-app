@@ -64,17 +64,23 @@ export function useCreateAnimalGrowthCycleForm() {
 
       const metadataJson = { cycleType: values.cycleType };
 
-      const cropIdVal = Number(values.cropId);
-      const varietyIdVal =
-        values.scope === "variety" && values.variety
-          ? Number(values.variety)
-          : undefined;
+      const cropIds = values.cropIds.map(Number);
+      const varietyIds = values.varietyIds.map(Number);
+      const scopeType = values.scope === "group"
+        ? "SUBJECT_GROUP"
+        : values.scope === "variety"
+          ? "SUBJECT_VARIANT"
+          : "SUBJECT";
 
       await createTemplate.mutateAsync({
         domainCode: "LIVESTOCK",
         name: values.name.trim(),
-        productionSubjectId: cropIdVal,
-        productionSubjectVariantId: varietyIdVal ?? null,
+        scopeType,
+        productionSubjectGroupIds: values.scope === "group" ? values.groupIds.map(Number) : [],
+        productionSubjectIds: values.scope === "crop" ? cropIds : [],
+        productionSubjectVariantIds: values.scope === "variety" ? varietyIds : [],
+        productionSubjectId: values.scope === "group" ? null : cropIds[0] ?? null,
+        productionSubjectVariantId: values.scope === "variety" ? varietyIds[0] ?? null : null,
         description: "Chu kỳ sinh trưởng",
         stages: preparedStages,
         displayOrder: 1,

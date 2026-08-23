@@ -88,7 +88,7 @@ export default function CooperativeCreatePage() {
           handleLogoDrop={handleLogoDrop}
         />
       ),
-      isValid: formData.name.length > 0 && formData.code.length > 0,
+      isValid: formData.name.length > 0,
     },
     {
       id: "contact",

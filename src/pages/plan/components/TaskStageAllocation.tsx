@@ -41,6 +41,7 @@ import type {
 import {
   formatLocalISODate,
   getRepeatDatesText,
+  isRepeatDateAllowed,
   parseLocalISODate,
 } from "../utils/task";
 
@@ -300,7 +301,7 @@ const TaskBlock = ({
     const performUpdate = () => {
       const repeatDates = (task.repeatDates || []).filter(
         (date: string) =>
-          (!newStart || date >= newStart) && (!newEnd || date <= newEnd),
+          !newStart || date >= newStart,
       );
       onUpdateTask?.(task.id, {
         startDate: newStart,
@@ -579,7 +580,7 @@ const TaskBlock = ({
               <div className="space-y-3 p-3 bg-blue-50/50 rounded-xl border border-blue-100 animate-in fade-in slide-in-from-top-2">
                 <div className="flex items-center justify-between">
                   <p className="text-xs font-bold text-slate-700">
-                    Chọn các ngày lặp lại
+                    Chọn ngày bắt đầu các lần lặp tiếp theo
                   </p>
                   <Button
                     type="button"
@@ -593,6 +594,9 @@ const TaskBlock = ({
                     Xóa
                   </Button>
                 </div>
+                <p className="text-[11px] text-slate-500">
+                  Mỗi ngày đã chọn sẽ tạo một task con khi task hiện tại hoàn tất.
+                </p>
                 <Calendar
                   mode="multiple"
                   locale={vi}
@@ -602,17 +606,28 @@ const TaskBlock = ({
                       repeatDates: (dates || [])
                         .map(formatLocalISODate)
                         .filter(
-                          (date) =>
-                            (!task.startDate || date >= task.startDate) &&
-                            (!task.endDate || date <= task.endDate),
+                          (date, _, all) =>
+                            isRepeatDateAllowed(
+                              date,
+                              task.startDate || "",
+                              task.endDate || "",
+                              all.filter((other) => other !== date),
+                            ),
                         ),
                     })
                   }
                   disabled={(date) => {
                     const localDate = formatLocalISODate(date);
                     return (
-                      (task.startDate && localDate < task.startDate) ||
-                      (task.endDate && localDate > task.endDate)
+                      localDate <= (task.endDate || "") ||
+                      ((task.repeatDates || []).includes(localDate)
+                        ? false
+                        : !isRepeatDateAllowed(
+                            localDate,
+                            task.startDate || "",
+                            task.endDate || "",
+                            task.repeatDates || [],
+                          ))
                     );
                   }}
                   className="mx-auto w-full bg-white"

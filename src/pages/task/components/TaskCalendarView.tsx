@@ -1,5 +1,10 @@
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { Button } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import {
+  Button,
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import type { Task } from "../../../stores/useTaskStore";
 import { TASK_WEEK_DAYS } from "../data/constants";
 
@@ -120,8 +125,8 @@ export function TaskCalendarView({
                   {date.getDate()}
                 </div>
 
-                <div className="space-y-1.5 overflow-hidden">
-                  {getTasksForDay(date).map((task) => (
+                <div className="space-y-1.5 overflow-visible">
+                  {getTasksForDay(date).slice(0, 3).map((task) => (
                     <div
                       key={task.id}
                       onClick={(event) => {
@@ -156,6 +161,37 @@ export function TaskCalendarView({
                       </button>
                     </div>
                   ))}
+                  {getTasksForDay(date).length > 3 && (
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <button
+                          type="button"
+                          className="w-full rounded border border-dashed border-primary/30 bg-primary/5 px-1.5 py-1 text-left text-xs font-semibold text-primary hover:bg-primary/10"
+                          onClick={(event) => event.stopPropagation()}
+                        >
+                          +{getTasksForDay(date).length - 3} công việc khác
+                        </button>
+                      </TooltipTrigger>
+                      <TooltipContent
+                        side="right"
+                        align="start"
+                        className="max-w-72 space-y-1 border border-slate-200 bg-white p-2 text-slate-700 shadow-xl"
+                      >
+                        {getTasksForDay(date)
+                          .slice(3)
+                          .map((task) => (
+                            <button
+                              type="button"
+                              key={task.id}
+                              className="block w-full truncate rounded px-2 py-1 text-left text-xs text-slate-700 hover:bg-slate-100"
+                              onClick={() => onView(task)}
+                            >
+                              {task.name}
+                            </button>
+                          ))}
+                      </TooltipContent>
+                    </Tooltip>
+                  )}
                 </div>
               </>
             )}

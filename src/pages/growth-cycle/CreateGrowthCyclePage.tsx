@@ -1,4 +1,5 @@
 import PageWrapper from "@/components/PageWrapper";
+import { useCatalog } from "@/features/foundation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   AlertDialog,
@@ -22,7 +23,7 @@ import {
   growthCycleFormSchema,
   type GrowthCycleFormValues,
 } from "./schemas/growthCycleSchema";
-import { parseDurationToDays } from "./utils/duration";
+import { formatDaysToDuration, parseDurationToDays } from "./utils/duration";
 
 export default function CreateGrowthCyclePage() {
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -55,6 +56,9 @@ export default function CreateGrowthCyclePage() {
   const watchedCropIds = watch("cropIds") || [];
   const watchedVarietyIds = watch("varietyIds") || [];
   const watchedStages = watch("stages") || [];
+  const { items: cropGroups } = useCatalog("crop-groups", {
+    params: { page: 0, size: 100, status: "active" },
+  });
 
   const totalDays = useMemo(
     () =>
@@ -63,6 +67,9 @@ export default function CreateGrowthCyclePage() {
         0,
       ),
     [watchedStages],
+  );
+  const selectedGroupNames = watchedGroupIds.map(
+    (id) => cropGroups.find((group) => String(group.id) === id)?.name || id,
   );
 
   const { varieties, crops, handleComplete, setLocation, isSubmitting } =
@@ -127,7 +134,7 @@ export default function CreateGrowthCyclePage() {
                         Nhóm đã chọn:
                       </span>
                       <span className="font-medium">
-                        {watchedGroupIds.length} nhóm
+                        {selectedGroupNames.join(", ") || "-"}
                       </span>
                     </div>
                   )}
@@ -163,13 +170,17 @@ export default function CreateGrowthCyclePage() {
                   )}
                   <div className="flex justify-between gap-4">
                     <span className="text-muted-foreground">Số giai đoạn:</span>
-                    <span className="font-medium">{watchedStages.length}</span>
+                    <span className="font-medium">
+                      {watchedStages.length} giai đoạn
+                    </span>
                   </div>
                   <div className="flex justify-between gap-4">
                     <span className="text-muted-foreground">
                       Tổng thời gian:
                     </span>
-                    <span className="font-medium">{totalDays}</span>
+                    <span className="font-medium">
+                      {formatDaysToDuration(totalDays) || "0 ngày"}
+                    </span>
                   </div>
                 </div>
               </div>

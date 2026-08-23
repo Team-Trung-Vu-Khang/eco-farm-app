@@ -11,7 +11,8 @@ export interface GrowthCycle {
   id: string;
   name: string;
   cycleType?: "plant";
-  scope: "crop" | "variety";
+  scope: "group" | "crop" | "variety";
+  scopeNames?: string[];
   cropId: string;
   cropName: string;
   variety?: string; // Optional if scope is 'crop'

@@ -2,10 +2,13 @@ import PageWrapper from "@/components/PageWrapper";
 import { Button, DeleteDialog } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { Plus } from "lucide-react";
 import { Link, useLocation } from "wouter";
+import { useState } from "react";
 import { CooperativeTable } from "./components/CooperativeTable";
 import { useCooperative } from "./hooks/useCooperative";
+import { OrganizationSourceTabs } from "@/components/OrganizationSourceTabs";
 
 export default function CooperativePage() {
+  const [sourceTab, setSourceTab] = useState<"personal" | "system">("personal");
   const [, setLocation] = useLocation();
   const {
     data,
@@ -40,7 +43,7 @@ export default function CooperativePage() {
     <PageWrapper
       title="Quản lý hợp tác xã"
       description="Quản lý thông tin các hợp tác xã trong hệ thống"
-      actions={headerActions}
+      actions={sourceTab === "personal" ? headerActions : undefined}
     >
       {error ? (
         <div className="mb-4 rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
@@ -48,7 +51,12 @@ export default function CooperativePage() {
         </div>
       ) : null}
 
-      <CooperativeTable
+      <OrganizationSourceTabs
+        type="cooperative"
+        personalColumns={columns}
+        onTabChange={setSourceTab}
+        searchPlaceholder="Tìm kiếm hợp tác xã hệ thống..."
+        personal={<CooperativeTable
         columns={columns}
         data={data}
         filters={filters}
@@ -65,6 +73,7 @@ export default function CooperativePage() {
         onView={(item) => setLocation(`/cooperative/${item.id}`)}
         onEdit={(item) => setLocation(`/cooperative/${item.id}/edit`)}
         onDelete={handleDelete}
+        />}
       />
 
       <DeleteDialog

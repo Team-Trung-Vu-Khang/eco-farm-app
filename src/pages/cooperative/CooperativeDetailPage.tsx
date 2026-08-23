@@ -6,7 +6,7 @@ import {
   TabsList,
   TabsTrigger,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { ChevronLeft } from "lucide-react";
+import { ChevronLeft, Pencil } from "lucide-react";
 import { useLocation } from "wouter";
 import { CooperativeDetailSidebar } from "./components/CooperativeDetailSidebar";
 import { BankAccountsTab } from "./components/tabs/BankAccountsTab";
@@ -80,10 +80,16 @@ export default function CooperativeDetailPage() {
       title={data.name}
       description="Chi tiết thông tin hợp tác xã"
       actions={
-        <Button variant="outline" onClick={() => setLocation("/cooperative")}>
-          <ChevronLeft className="w-4 h-4 mr-2" />
-          Quay lại
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" onClick={() => setLocation(`/cooperative/${data.id}/edit`)}>
+            <Pencil className="w-4 h-4 mr-2" />
+            Chỉnh sửa
+          </Button>
+          <Button variant="outline" onClick={() => setLocation("/cooperative")}>
+            <ChevronLeft className="w-4 h-4 mr-2" />
+            Quay lại
+          </Button>
+        </div>
       }
     >
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

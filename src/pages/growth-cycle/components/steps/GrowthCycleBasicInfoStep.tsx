@@ -16,12 +16,9 @@ import { useFormContext } from "react-hook-form";
 import type {
   ProductionSubjectResponse,
   ProductionSubjectVariantResponse,
+  CatalogRecordResponse,
 } from "../../../../features/foundation/types/foundation.type";
 import type { GrowthCycleFormValues } from "../../schemas/growthCycleSchema";
-import {
-  DUMMY_CROP_GROUP_NAMES,
-  getDummyCropGroupName,
-} from "../../utils/dummyCropGroups";
 import {
   GrowthCycleMultiSelectDialog,
   type GrowthCycleMultiSelectOption,
@@ -30,6 +27,7 @@ import {
 interface GrowthCycleBasicInfoStepProps {
   varieties: ProductionSubjectVariantResponse[];
   crops: ProductionSubjectResponse[];
+  cropGroups: CatalogRecordResponse[];
 }
 
 function ScopeOption({
@@ -168,6 +166,7 @@ function MultiSelectCard({
 export function GrowthCycleBasicInfoStep({
   varieties,
   crops,
+  cropGroups,
 }: GrowthCycleBasicInfoStepProps) {
   const { watch, setValue, control } = useFormContext<GrowthCycleFormValues>();
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -178,21 +177,14 @@ export function GrowthCycleBasicInfoStep({
   const watchedVarietyIds = watch("varietyIds") || [];
 
   const groupOptions: GrowthCycleMultiSelectOption[] = useMemo(() => {
-    const buckets = new Map<string, number>();
-    crops.forEach((c) => {
-      const groupName = getDummyCropGroupName(c.id);
-      buckets.set(groupName, (buckets.get(groupName) || 0) + 1);
-    });
-    return DUMMY_CROP_GROUP_NAMES.filter((name) => buckets.has(name)).map(
-      (name) => ({
-        id: name,
-        name,
+    return cropGroups.map((group) => ({
+        id: String(group.id),
+        name: group.name,
         group: "",
-        image: "",
-        description: `${buckets.get(name)} loại cây trồng thuộc nhóm này`,
-      }),
-    );
-  }, [crops]);
+        image: group.imageUrl ?? "",
+        description: group.description || "",
+      }));
+  }, [cropGroups]);
 
   const cropOptions: GrowthCycleMultiSelectOption[] = useMemo(
     () =>
@@ -227,6 +219,7 @@ export function GrowthCycleBasicInfoStep({
 
   const scopeConfig = {
     group: {
+      resource: "group" as const,
       label: "Nhóm cây trồng",
       emptyText: "Chọn nhóm cây trồng",
       options: groupOptions,
@@ -237,6 +230,7 @@ export function GrowthCycleBasicInfoStep({
       searchPlaceholder: "Tìm nhóm cây trồng...",
     },
     crop: {
+      resource: "crop" as const,
       label: "Cây trồng",
       emptyText: "Chọn cây trồng",
       options: cropOptions,
@@ -247,6 +241,7 @@ export function GrowthCycleBasicInfoStep({
       searchPlaceholder: "Tìm cây trồng...",
     },
     variety: {
+      resource: "variety" as const,
       label: "Giống cây trồng",
       emptyText: "Chọn giống cây trồng",
       options: varietyOptions,
@@ -370,7 +365,8 @@ export function GrowthCycleBasicInfoStep({
         description={active.dialogDescription}
         searchPlaceholder={active.searchPlaceholder}
         selectedIds={active.selectedIds}
-        options={active.options}
+        resource={active.resource}
+        subjectIds={watchedCropIds}
         optionsLabel={active.label}
         onConfirm={(ids) =>
           setValue(active.field, ids, { shouldValidate: true })
