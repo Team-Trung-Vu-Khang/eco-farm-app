@@ -531,6 +531,7 @@ export default function AnimalGrowthCycleWorkflowPage() {
   const fallbackRegionLabel =
     cycle?.productionSubjectVariant?.name ||
     cycle?.productionSubject?.name ||
+    (cycle?.productionSubjectVariantIds || cycle?.productionSubjectIds || []).join(", ") ||
     "Vùng chăn nuôi";
 
   const openNodeDialog = (mode: NodeDialogMode, context: NodeDialogContext) => {

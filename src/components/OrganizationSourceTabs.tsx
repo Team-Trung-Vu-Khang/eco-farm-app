@@ -17,6 +17,7 @@ interface OrganizationSourceTabsProps {
   personalColumns: Column<any>[];
   searchPlaceholder: string;
   onTabChange?: (tab: "personal" | "system") => void;
+  onSystemView?: (item: any) => void;
 }
 
 export function OrganizationSourceTabs({
@@ -25,6 +26,7 @@ export function OrganizationSourceTabs({
   personalColumns,
   searchPlaceholder,
   onTabChange,
+  onSystemView,
 }: OrganizationSourceTabsProps) {
   const [search, setSearch] = useState("");
   const [pageSize, setPageSize] = useState(10);
@@ -60,6 +62,11 @@ export function OrganizationSourceTabs({
       contacts,
     };
   });
+  // Master-data records only provide the identity/basic presentation fields.
+  // Hide personal-directory columns whose values are not part of this API.
+  const systemColumns = personalColumns.filter((column) =>
+    ["code", "image", "name"].includes(String(column.key)),
+  );
 
   return (
     <Tabs
@@ -78,7 +85,7 @@ export function OrganizationSourceTabs({
       <TabsContent value="personal">{personal}</TabsContent>
       <TabsContent value="system">
         <DataTable
-          columns={personalColumns}
+          columns={systemColumns}
           data={systemRows}
           searchable
           searchPlaceholder={searchPlaceholder}
@@ -97,6 +104,7 @@ export function OrganizationSourceTabs({
             setCurrentIndex(1);
           }}
           selectable={false}
+          onView={onSystemView}
         />
       </TabsContent>
     </Tabs>

@@ -88,6 +88,9 @@ export default function UpdateGrowthCyclePage() {
       const groupIds = (currentCycle.productionSubjectGroups || [])
         .map((item: { id?: number }) => item.id)
         .filter((id: number | undefined): id is number => id != null);
+      groupIds.push(...(currentCycle.productionSubjectGroupIds || []));
+      cropIds.push(...(currentCycle.productionSubjectIds || []));
+      varietyIds.push(...(currentCycle.productionSubjectVariantIds || []));
       // Keep the legacy fallback so an already cached old response can still
       // be opened while the new Season response is rolling out.
       const legacyCropId = currentCycle.productionSubject?.id;

@@ -112,14 +112,16 @@ export function useAnimalGrowthCyclePage() {
       const varietyItems = item.productionSubjectVariants || [];
       const varietyIdVal = item.productionSubjectVariant?.id || varietyItems[0]?.id;
       const varietyNameVal = item.productionSubjectVariant?.name || varietyItems[0]?.name;
-      const groupIds = (item.productionSubjectGroups || []).map((group: any) => group.id).filter((id: any) => id != null);
+      const groupIds = (item.productionSubjectGroups || []).map((group: any) => group.id).filter((id: any) => id != null).concat(item.productionSubjectGroupIds || []);
+      const subjectIds = (item.productionSubjectIds || []).map((id: any) => Number(id));
+      const subjectVariantIds = (item.productionSubjectVariantIds || []).map((id: any) => Number(id));
       const expectedDaysVal = item.stages?.reduce((sum: number, s: any) => sum + (s.durationDays || 0), 0) ?? 0;
 
       return {
         id: (isFoundation ? "foundation-" : "user-") + item.id,
         name: item.name,
         cycleType: item.metadataJson?.cycleType || "animal",
-        scope: groupIds.length > 0 ? "group" : varietyIdVal || varietyItems.length > 0 ? "variety" : "crop",
+        scope: groupIds.length > 0 ? "group" : varietyIdVal || varietyItems.length > 0 || subjectVariantIds.length > 0 ? "variety" : "crop",
         cropId: cropIdVal ? String(cropIdVal) : "",
         cropName: cropNameVal || "",
         variety: varietyNameVal || "",

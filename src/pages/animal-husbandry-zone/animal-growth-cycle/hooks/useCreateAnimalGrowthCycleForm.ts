@@ -79,8 +79,6 @@ export function useCreateAnimalGrowthCycleForm() {
         productionSubjectGroupIds: values.scope === "group" ? values.groupIds.map(Number) : [],
         productionSubjectIds: values.scope === "crop" ? cropIds : [],
         productionSubjectVariantIds: values.scope === "variety" ? varietyIds : [],
-        productionSubjectId: values.scope === "group" ? null : cropIds[0] ?? null,
-        productionSubjectVariantId: values.scope === "variety" ? varietyIds[0] ?? null : null,
         description: "Chu kỳ sinh trưởng",
         stages: preparedStages,
         displayOrder: 1,

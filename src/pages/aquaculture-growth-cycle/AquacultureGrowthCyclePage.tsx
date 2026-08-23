@@ -13,6 +13,7 @@ import { useMemo } from "react";
 import { Link, useLocation } from "wouter";
 import { createAquacultureGrowthCycleColumns } from "./data/columns";
 import { useAquacultureGrowthCyclePage } from "./hooks/useAquacultureGrowthCyclePage";
+import { formatDaysToDuration } from "../growth-cycle/utils/duration";
 
 const AquacultureGrowthCyclePage = () => {
   const {
@@ -128,20 +129,14 @@ const AquacultureGrowthCyclePage = () => {
                     <h3 className="text-2xl font-bold text-slate-900">
                       {selectedItem.name}
                     </h3>
-                    <p className="text-sm text-slate-600">
-                      {selectedItem.cropName ||
-                        selectedItem.cropId ||
-                        "Chưa xác định"}
-                    </p>
+                    {selectedItem.scope === "crop" && (selectedItem.cropName || selectedItem.cropId) && (
+                      <p className="text-sm text-slate-600">
+                        {selectedItem.cropName || selectedItem.cropId}
+                      </p>
+                    )}
                   </div>
-                  <Badge
-                    variant={
-                      selectedItem.scope === "crop" ? "default" : "secondary"
-                    }
-                  >
-                    {selectedItem.scope === "crop"
-                      ? "Theo loài nuôi"
-                      : "Theo giống"}
+                  <Badge variant="default">
+                    {selectedItem.scope === "group" ? "Theo nhóm loài nuôi" : selectedItem.scope === "crop" ? "Theo loài nuôi" : "Theo giống / dòng"}
                   </Badge>
                 </div>
               </div>
@@ -159,11 +154,13 @@ const AquacultureGrowthCyclePage = () => {
                       </span>
                     </div>
                     <div className="flex items-center justify-between gap-3">
-                      <span className="text-muted-foreground">Loài nuôi</span>
+                      <span className="text-muted-foreground">Phạm vi</span>
                       <span className="font-medium">
-                        {selectedItem.cropName || selectedItem.cropId || "-"}
+                        {selectedItem.scope === "group" ? "Theo nhóm loài nuôi" : selectedItem.scope === "crop" ? "Theo loài nuôi" : "Theo giống / dòng"}
                       </span>
                     </div>
+                    {selectedItem.scope === "group" && selectedItem.groupName && <div className="flex items-center justify-between gap-3"><span className="text-muted-foreground">Nhóm loài nuôi</span><span className="font-medium">{selectedItem.groupName}</span></div>}
+                    {selectedItem.scope === "crop" && (selectedItem.cropName || selectedItem.cropId) && <div className="flex items-center justify-between gap-3"><span className="text-muted-foreground">Loài nuôi</span><span className="font-medium">{selectedItem.cropName || selectedItem.cropId}</span></div>}
                     {selectedItem.variety && (
                       <div className="flex items-center justify-between gap-3">
                         <span className="text-muted-foreground">
@@ -187,7 +184,7 @@ const AquacultureGrowthCyclePage = () => {
                         Tổng thời gian
                       </span>
                       <span className="font-medium">
-                        {selectedItem.totalDays || 0} ngày
+                        {formatDaysToDuration(selectedItem.totalDays || 0) || "0 ngày"}
                       </span>
                     </div>
                   </div>

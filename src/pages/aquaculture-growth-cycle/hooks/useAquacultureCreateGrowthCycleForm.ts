@@ -67,17 +67,18 @@ export function useAquacultureCreateGrowthCycleForm() {
 
       const metadataJson = { cycleType: values.cycleType };
 
-      const cropIdVal = Number(values.cropId);
-      const varietyIdVal =
-        values.scope === "variety" && values.variety
-          ? Number(values.variety)
-          : undefined;
+      const groupIds = values.groupIds.map(Number).filter(Number.isFinite);
+      const cropIds = values.cropIds.map(Number).filter(Number.isFinite);
+      const varietyIds = values.varietyIds.map(Number).filter(Number.isFinite);
+      const scopeType = values.scope === "group" ? "SUBJECT_GROUP" : values.scope === "variety" ? "SUBJECT_VARIANT" : "SUBJECT";
 
       await createTemplate.mutateAsync({
         domainCode: "AQUACULTURE",
         name: values.name.trim(),
-        productionSubjectId: cropIdVal,
-        productionSubjectVariantId: varietyIdVal ?? null,
+        scopeType,
+        productionSubjectGroupIds: values.scope === "group" ? groupIds : [],
+        productionSubjectIds: values.scope === "crop" ? cropIds : [],
+        productionSubjectVariantIds: values.scope === "variety" ? varietyIds : [],
         description: "Chu kỳ nuôi thủy sản",
         stages: preparedStages,
         displayOrder: 1,

@@ -6,7 +6,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { ArrowLeft, Calendar, Edit, FileText, Fish, Layers, Leaf, Sprout } from "lucide-react";
+import { ArrowLeft, Calendar, Edit, FileText, Fish, Layers, PawPrint, Sprout } from "lucide-react";
 import { formatDaysToDuration } from "./utils/duration";
 import { Link, useParams } from "wouter";
 import {
@@ -65,14 +65,23 @@ export default function AnimalGrowthCycleDetailPage({
 
   const cropIdVal = cycle.productionSubject?.id;
   const varietyIdVal = cycle.productionSubjectVariant?.id;
+  const cropIds = cycle.productionSubjectIds || [];
+  const varietyIds = cycle.productionSubjectVariantIds || [];
+  const groupItems = cycle.productionSubjectGroups || [];
+  const cropItems = cycle.productionSubjects || [];
+  const varietyItems = cycle.productionSubjectVariants || [];
+  const isGroupScope = cycle.scopeType === "SUBJECT_GROUP" || groupItems.length > 0 || (cycle.productionSubjectGroupIds || []).length > 0;
+  const isVarietyScope = cycle.scopeType === "SUBJECT_VARIANT" || varietyItems.length > 0 || varietyIds.length > 0;
   const expectedDaysVal =
     cycle.stages?.reduce(
       (sum: number, s: any) => sum + (s.durationDays || 0),
       0,
     ) ?? 0;
 
-  const cropName = cycle.productionSubject?.name || String(cropIdVal || "");
-  const varietyName = cycle.productionSubjectVariant?.name || "";
+  const parentAnimalNames = varietyItems.map((item: any) => item.subject?.name).filter(Boolean).filter((name: string, index: number, all: string[]) => all.indexOf(name) === index).join(", ");
+  const cropName = cropItems.map((item: any) => item.name).filter(Boolean).join(", ") || parentAnimalNames || cycle.productionSubject?.name || cropIds.join(", ") || String(cropIdVal || "");
+  const varietyName = varietyItems.map((item: any) => item.name).filter(Boolean).join(", ") || cycle.productionSubjectVariant?.name || varietyIds.join(", ");
+  const groupName = groupItems.map((item: any) => item.name).filter(Boolean).join(", ") || (cycle.productionSubjectGroupIds || []).join(", ") || "";
 
   return (
     <div className="space-y-6">
@@ -118,30 +127,30 @@ export default function AnimalGrowthCycleDetailPage({
           <CardContent className="space-y-4">
             <div className="flex items-center justify-between">
               <span className="text-sm text-muted-foreground">Phạm vi</span>
-              <Badge variant={varietyIdVal ? "secondary" : "default"}>
-                {!varietyIdVal ? "Theo loại" : "Theo giống"}
+              <Badge variant={isVarietyScope ? "secondary" : "default"}>
+                {isGroupScope ? "Theo nhóm vật nuôi" : isVarietyScope ? "Theo giống vật nuôi" : "Theo vật nuôi"}
               </Badge>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-sm text-muted-foreground">
-                {isAnimal ? "Loại vật nuôi" : "Đối tượng nuôi"}
+                {isGroupScope ? "Nhóm vật nuôi" : isAnimal ? "Vật nuôi" : "Đối tượng nuôi"}
               </span>
               <span className="font-medium flex items-center gap-2">
                 {isAnimal ? (
-                  <Leaf className="w-4 h-4 text-green-600" />
+                  <PawPrint className="w-4 h-4 text-green-600" />
                 ) : (
                   <Fish className="w-4 h-4 text-blue-600" />
                 )}
-                {cropName}
+                {isGroupScope ? groupName : cropName}
               </span>
             </div>
-            {varietyIdVal && (
+            {isVarietyScope && (
               <div className="flex items-center justify-between">
                 <span className="text-sm text-muted-foreground">
                   {isAnimal ? "Giống vật nuôi" : "Giống / dòng"}
                 </span>
                 <span className="font-medium flex items-center gap-2">
-                  <Sprout className="w-4 h-4 text-primary" />
+                  <PawPrint className="w-4 h-4 text-primary" />
                   {varietyName}
                 </span>
               </div>
@@ -150,7 +159,7 @@ export default function AnimalGrowthCycleDetailPage({
               <span className="text-sm text-muted-foreground">
                 Tổng thời gian
               </span>
-              <Badge variant="secondary">{expectedDaysVal} ngày</Badge>
+              <Badge variant="secondary">{formatDaysToDuration(expectedDaysVal) || "0 ngày"}</Badge>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-sm text-muted-foreground">
