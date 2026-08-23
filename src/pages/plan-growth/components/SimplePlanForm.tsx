@@ -29,14 +29,21 @@ import {
   Wrench,
   X,
 } from "lucide-react";
-import { useState, type Dispatch, type SetStateAction } from "react";
+import { useMemo, useState, type Dispatch, type SetStateAction } from "react";
+import type { GrowthCycle } from "../../growth-cycle/types/types";
 import GeographicalSelector from "./GeographicalSelector";
+import GrowthCycleSelector from "./GrowthCycleSelector";
 import {
   PersonnelMultiSelectCard,
   type PersonnelOption,
 } from "./PersonnelMultiSelectCard";
 import { RegimenSelector } from "./RegimenSelector";
-import type { GeographicalSelection, MaterialAllocation, PlanFormData } from "../types";
+import type {
+  GeographicalSelection,
+  GrowthCycleSelection,
+  MaterialAllocation,
+  PlanFormData,
+} from "../types";
 import type {
   CropSupplyCatalog,
   CropSupplyType,
@@ -80,7 +87,11 @@ interface SimplePlanFormProps {
   selectionSummary: ScopeSelectionSummaryGroup[];
   handleGeographicalConfirm: (selections: GeographicalSelection[]) => void;
   isWorkflowContext?: boolean;
-  workflowInfo?: { name?: string } | null;
+  workflowInfo?: {
+    name?: string;
+    growthCycleSelections?: GrowthCycleSelection[];
+  } | null;
+  growthCycles: GrowthCycle[];
   personnel: PersonnelOption[];
   supplyCatalog: CropSupplyCatalog;
 }
@@ -290,10 +301,27 @@ export default function SimplePlanForm({
   handleGeographicalConfirm,
   isWorkflowContext,
   workflowInfo,
+  growthCycles,
   personnel,
   supplyCatalog,
 }: SimplePlanFormProps) {
   const [newStage, setNewStage] = useState("");
+
+  const inheritedCycleId =
+    workflowInfo?.growthCycleSelections?.[0]?.cycleId ?? growthCycles[0]?.id;
+  const inheritedCycle = growthCycles.find((c) => c.id === inheritedCycleId);
+  const growthCycleSummaryItems = useMemo(
+    () =>
+      inheritedCycle
+        ? formData.growthCycleSelections
+            .map(
+              (s) =>
+                inheritedCycle.stages.find((st) => st.id === s.stageId)?.name,
+            )
+            .filter((name): name is string => Boolean(name))
+        : [],
+    [inheritedCycle, formData.growthCycleSelections],
+  );
   const isTreatmentOrAmendment = formData.purpose === "treatment" || formData.purpose === "amendment";
 
   const addStage = () => {
@@ -499,6 +527,58 @@ export default function SimplePlanForm({
           )}
         </div>
       </div>
+
+      {isWorkflowContext && (
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <Label>Chu kỳ sinh trưởng</Label>
+            <span className="text-[10px] text-emerald-700 bg-emerald-100 px-2 py-1 rounded-full font-semibold">
+              {inheritedCycle
+                ? `Kế thừa từ quy trình "${inheritedCycle.name}"`
+                : "Chưa thiết lập ở quy trình"}
+            </span>
+          </div>
+          <div className="p-4 rounded-2xl border border-emerald-100 bg-emerald-50/20 shadow-sm space-y-3">
+            {inheritedCycle ? (
+              <GrowthCycleSelector
+                growthCycles={growthCycles}
+                lockedCycleId={inheritedCycle.id}
+                existingSelections={formData.growthCycleSelections}
+                onConfirm={(nextSelections) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    growthCycleSelections: nextSelections,
+                  }))
+                }
+              />
+            ) : (
+              <p className="text-xs text-emerald-800/60 italic text-center py-2">
+                Quy trình chưa thiết lập chu kỳ sinh trưởng
+              </p>
+            )}
+
+            {growthCycleSummaryItems.length > 0 && (
+              <div className="p-4 rounded-xl bg-white/50 border border-emerald-100/50 space-y-3">
+                <div className="text-[10px] font-bold text-emerald-800/60 uppercase tracking-widest flex items-center gap-2">
+                  <Sprout className="w-3 h-3" />
+                  Giai đoạn đã chọn
+                </div>
+                <div className="flex flex-wrap gap-1.5">
+                  {growthCycleSummaryItems.map((label, idx) => (
+                    <Badge
+                      key={idx}
+                      variant="outline"
+                      className="text-[10px] py-0 px-2 h-5 font-medium border-emerald-100 shadow-sm bg-emerald-100 text-emerald-800"
+                    >
+                      {label}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       <div className="space-y-3">
         <Label>Nhân sự phụ trách</Label>

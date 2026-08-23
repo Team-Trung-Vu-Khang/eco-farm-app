@@ -44,6 +44,7 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import GeographicalSelector from "./components/GeographicalSelector";
+import GrowthCycleSelector from "./components/GrowthCycleSelector";
 import { PersonnelMultiSelectCard } from "./components/PersonnelMultiSelectCard";
 import { RegimenSelector } from "./components/RegimenSelector";
 import SimplePlanForm from "./components/SimplePlanForm";
@@ -93,6 +94,21 @@ export default function PlanGrowthEditPage({
     completeLabel,
   } = usePlanForm("edit", basePath, { onSaved, onCancel });
   const supplyCatalog = useCropSupplyCatalog();
+
+  // No backend/config yet ties a plan's inherited growth cycle to its
+  // workflow — `workflowInfo` only carries one when the workflow-info form
+  // was set up earlier in the same session. Fall back to the first
+  // available growth cycle so the inheritance UI has something to show.
+  const inheritedCycleId =
+    workflowInfo?.growthCycleSelections?.[0]?.cycleId ?? growthCycles[0]?.id;
+  const inheritedCycle = growthCycles.find((c) => c.id === inheritedCycleId);
+  const growthCycleSummaryItems = inheritedCycle
+    ? formData.growthCycleSelections
+        .map(
+          (s) => inheritedCycle.stages.find((st) => st.id === s.stageId)?.name,
+        )
+        .filter((name): name is string => Boolean(name))
+    : [];
 
   const [newManualStage, setNewManualStage] = useState("");
   const [isSimpleMode, setIsSimpleMode] = useState(true);
@@ -431,6 +447,52 @@ export default function PlanGrowthEditPage({
                       </p>
                     )}
                   </div>
+
+                  {isWorkflowContext && (
+                    <div className="space-y-2">
+                      <label className="text-xs text-muted-foreground font-black uppercase tracking-widest">
+                        Chu kỳ sinh trưởng
+                      </label>
+
+                      {inheritedCycle ? (
+                        <GrowthCycleSelector
+                          growthCycles={growthCycles}
+                          lockedCycleId={inheritedCycle.id}
+                          existingSelections={formData.growthCycleSelections}
+                          onConfirm={(nextSelections) =>
+                            setFormData((prev) => ({
+                              ...prev,
+                              growthCycleSelections: nextSelections,
+                            }))
+                          }
+                        />
+                      ) : (
+                        <p className="text-xs text-emerald-800/60 italic text-center py-2">
+                          Quy trình chưa thiết lập chu kỳ sinh trưởng
+                        </p>
+                      )}
+
+                      {growthCycleSummaryItems.length > 0 && (
+                        <div className="mt-4 p-4 rounded-xl bg-white/50 border border-emerald-100/50 space-y-3">
+                          <div className="text-[10px] font-bold text-emerald-800/60 uppercase tracking-widest flex items-center gap-2">
+                            <Sprout className="w-3 h-3" />
+                            Giai đoạn đã chọn
+                          </div>
+                          <div className="flex flex-wrap gap-1.5">
+                            {growthCycleSummaryItems.map((label, idx) => (
+                              <Badge
+                                key={idx}
+                                variant="outline"
+                                className="text-[10px] py-0 px-2 h-5 font-medium border-emerald-100 shadow-sm bg-emerald-100 text-emerald-800"
+                              >
+                                {label}
+                              </Badge>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -1821,6 +1883,7 @@ export default function PlanGrowthEditPage({
             handleGeographicalConfirm={handleGeographicalConfirm}
             isWorkflowContext={isWorkflowContext}
             workflowInfo={workflowInfo}
+            growthCycles={growthCycles}
             personnel={personnel}
             supplyCatalog={supplyCatalog}
           />
