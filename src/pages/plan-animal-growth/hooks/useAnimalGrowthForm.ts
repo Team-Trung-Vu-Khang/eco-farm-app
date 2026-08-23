@@ -1,12 +1,12 @@
 import {
+  farmGrowthCycleSeasonApi,
+  systemGrowthCycleSeasonApi,
+} from "@/features/farm";
+import {
   useFarmPlanById,
   useFarmPlanMutations,
   useFarmWorkflowById,
 } from "@/features/farm-workflow/hooks";
-import {
-  farmGrowthCycleSeasonApi,
-  systemGrowthCycleSeasonApi,
-} from "@/features/farm";
 import type { FarmPlanPersonnelRequest } from "@/features/farm-workflow/types/farm-workflow.type";
 import type { FarmPersonnelResponse } from "@/features/master-data";
 import { useFarmPersonnel } from "@/features/master-data";
@@ -16,9 +16,9 @@ import useAnimalGrowthPlanStore from "@/stores/useAnimalGrowthPlanStore";
 import useGrowthCycleStore from "@/stores/useGrowthCycleStore";
 import useRegionStore from "@/stores/useRegionStore";
 import useSeasonStore from "@/stores/useSeasonStore";
+import { useQueries } from "@tanstack/react-query";
 import { useToast } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useQueries } from "@tanstack/react-query";
 import { useLocation, useParams } from "wouter";
 import { useAmendmentRegimenStore } from "../../../stores/useAmendmentRegimenStore";
 import { useTreatmentStore } from "../../../stores/useTreatmentStore";
@@ -35,6 +35,7 @@ import {
   mapPlanResponseToPlan,
   upsertFallbackPlan,
 } from "../utils/api-mappers";
+import { mapSeasonsToGrowthCycles } from "../utils/season-mappers";
 import {
   calculateSelectedArea,
   deriveSelectionState,
@@ -42,7 +43,6 @@ import {
   summarizeSelections,
   summarizeTaskSelections,
 } from "../utils/location";
-import { mapSeasonsToGrowthCycles } from "../utils/season-mappers";
 import { mapPurpose } from "./useAnimalGrowthPage";
 import { useAnimalGrowthWorkflowDraftStore } from "./useAnimalGrowthWorkflowDraftStore";
 
@@ -265,15 +265,12 @@ export function useAnimalGrowthForm(
   const planDetailQuery = useFarmPlanById(planId, {
     enabled: mode === "edit" && !!planId,
   });
-  const workflowDetailQuery = useFarmWorkflowById(
-    draftWorkflowInfo?.id || "",
-    {
-      enabled:
-        isWorkflowContext &&
-        !!draftWorkflowInfo?.id &&
-        /^\d+$/.test(draftWorkflowInfo.id),
-    },
-  );
+  const workflowDetailQuery = useFarmWorkflowById(draftWorkflowInfo?.id || "", {
+    enabled:
+      isWorkflowContext &&
+      !!draftWorkflowInfo?.id &&
+      /^\d+$/.test(draftWorkflowInfo.id),
+  });
   const workflowInfo = useMemo(() => {
     if (!draftWorkflowInfo) return undefined;
     const workflow = workflowDetailQuery.data;
