@@ -82,7 +82,7 @@ import type {
   MaterialAllocation,
   TaskAllocation,
 } from "../plan/types";
-import { getRepeatDatesText } from "../plan/utils/task";
+import { getRepeatDatesText, isRepeatDateAllowed } from "../plan/utils/task";
 import { useCropSupplyCatalog } from "../plan-growth/hooks/useCropSupplyCatalog";
 import SimpleTaskForm from "./components/SimpleTaskForm";
 
@@ -309,6 +309,26 @@ export default function TaskCreatePage() {
   }, [presetPlanId, presetPlanQuery.data]);
 
   const [isSimpleMode, setIsSimpleMode] = useState(true);
+
+  useEffect(() => {
+    const seenSources = new Set<number>();
+    const seenNames = new Set<string>();
+    const uniqueTasks = formData.tasks.filter((task) => {
+      const sourceId = task.sourceWorkItemId;
+      const nameKey = `${task.stageId || ""}:${task.name?.trim().toLowerCase() || ""}`;
+      if (sourceId != null) {
+        if (seenSources.has(sourceId)) return false;
+        seenSources.add(sourceId);
+      }
+      if (task.name?.trim() && seenNames.has(nameKey)) return false;
+      if (task.name?.trim()) seenNames.add(nameKey);
+      return true;
+    });
+
+    if (uniqueTasks.length !== formData.tasks.length) {
+      setFormData((prev) => ({ ...prev, tasks: uniqueTasks }));
+    }
+  }, [formData.tasks]);
   const [isSupervisorDialogOpen, setIsSupervisorDialogOpen] = useState(false);
   const [searchSupervisor, setSearchSupervisor] = useState("");
   const [isInspectorDialogOpen, setIsInspectorDialogOpen] = useState(false);
@@ -716,10 +736,33 @@ export default function TaskCreatePage() {
 
     setFormData((prev) => ({
       ...prev,
-      tasks: [
-        ...prev.tasks,
-        { id: Date.now(), ...item, geographicalSelections: geoMapping },
-      ],
+      tasks: (() => {
+        const duplicateIndex = prev.tasks.findIndex((task) => {
+          const sameStage = task.stageId === item.stageId;
+          const sameSource =
+            item.sourceWorkItemId != null &&
+            task.sourceWorkItemId === item.sourceWorkItemId;
+          const sameName =
+            Boolean(item.name?.trim()) && task.name?.trim() === item.name.trim();
+          return sameStage && (sameSource || sameName);
+        });
+
+        if (duplicateIndex < 0) {
+          return [
+            ...prev.tasks,
+            { id: Date.now(), ...item, geographicalSelections: geoMapping },
+          ];
+        }
+
+        // A planned work item may already be preloaded when the user picks it
+        // again from the combobox. Update the existing block instead of
+        // creating a second FarmTask request for the same work item.
+        return prev.tasks.map((task, index) =>
+          index === duplicateIndex
+            ? { ...task, ...item, geographicalSelections: geoMapping }
+            : task,
+        );
+      })(),
     }));
   };
 
@@ -727,12 +770,19 @@ export default function TaskCreatePage() {
     id: number,
     updatedTask: Partial<TaskAllocation>,
   ) => {
-    setFormData((prev) => ({
-      ...prev,
-      tasks: prev.tasks.map((t) =>
-        t.id === id ? { ...t, ...updatedTask } : t,
-      ),
-    }));
+    setFormData((prev) => {
+      const updatedTasks = prev.tasks.map((task) =>
+        task.id === id ? { ...task, ...updatedTask } : task,
+      );
+      const updatedTaskValue = updatedTasks.find((task) => task.id === id);
+
+      return {
+        ...prev,
+        startDate: updatedTaskValue?.startDate || prev.startDate,
+        endDate: updatedTaskValue?.endDate || prev.endDate,
+        tasks: updatedTasks,
+      };
+    });
   };
 
   const handleRemoveTask = (taskId: number) => {
@@ -778,6 +828,34 @@ export default function TaskCreatePage() {
       isSimpleMode || resolvedSelectedStages.length === 0
         ? [""]
         : resolvedSelectedStages;
+
+    const invalidRepeatDate = formData.tasks
+      .filter((task) => task.isRepeating && (task.repeatDates?.length || 0) > 0)
+      .flatMap((task) => {
+        const dates = task.repeatDates || [];
+        const startDate = task.startDate || formData.startDate;
+        const endDate = task.endDate || formData.endDate;
+        return dates.filter(
+          (date, index) =>
+            !isRepeatDateAllowed(
+              date,
+              startDate,
+              endDate,
+              dates.filter((_, otherIndex) => otherIndex !== index),
+            ),
+        );
+      })[0];
+
+    if (invalidRepeatDate) {
+      toast({
+        title: "Ngày lặp không hợp lệ",
+        description:
+          `${invalidRepeatDate} phải nằm sau khoảng thời gian chính và ` +
+          "các lần lặp không được chồng lấn theo thời lượng công việc.",
+        variant: "destructive",
+      });
+      return;
+    }
 
     const requests: FarmTaskRequest[] = stageNames.map((stageName, index) => {
       const stageTask =

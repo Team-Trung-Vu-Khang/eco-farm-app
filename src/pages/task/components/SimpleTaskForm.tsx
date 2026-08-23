@@ -29,6 +29,7 @@ import type { CSSProperties, Dispatch, SetStateAction } from "react";
 import {
   formatLocalISODate,
   getRepeatDatesText,
+  isRepeatDateAllowed,
   parseLocalISODate,
 } from "../../plan/utils/task";
 import type { TaskCreateFormData } from "../TaskCreatePage";
@@ -90,15 +91,11 @@ export default function SimpleTaskForm({
   const isRepeating = Boolean(mainSubtask?.isRepeating);
   const repeatDates = mainSubtask?.repeatDates || [];
 
-  const keepDatesInRange = (
-    dates: string[],
-    startDate: string,
-    endDate: string,
-  ) =>
-    dates.filter(
-      (date) =>
-        (!startDate || date >= startDate) && (!endDate || date <= endDate),
-    );
+  // Repeat dates are the start dates of future child tasks. They can be
+  // after the current task's end date; only dates before the current start
+  // date are invalid.
+  const keepRepeatDatesFromStart = (dates: string[], startDate: string) =>
+    dates.filter((date) => !startDate || date >= startDate);
 
   const updateSubtask = (
     patch: Partial<{
@@ -358,14 +355,14 @@ export default function SimpleTaskForm({
                     return {
                       ...prev,
                       startDate,
+                      endDate: prev.endDate,
                       tasks: prev.tasks.map((task, index) =>
                         index === 0
                           ? {
                               ...task,
-                              repeatDates: keepDatesInRange(
+                              repeatDates: keepRepeatDatesFromStart(
                                 task.repeatDates || [],
                                 startDate,
-                                prev.endDate,
                               ),
                             }
                           : task,
@@ -394,14 +391,14 @@ export default function SimpleTaskForm({
                     return {
                       ...prev,
                       endDate,
+                      startDate: prev.startDate,
                       tasks: prev.tasks.map((task, index) =>
                         index === 0
                           ? {
                               ...task,
-                              repeatDates: keepDatesInRange(
+                              repeatDates: keepRepeatDatesFromStart(
                                 task.repeatDates || [],
                                 prev.startDate,
-                                endDate,
                               ),
                             }
                           : task,
@@ -436,7 +433,7 @@ export default function SimpleTaskForm({
           <div className="space-y-3 p-3 bg-white rounded-xl border border-blue-100">
             <div className="flex w-full items-center justify-between">
               <p className="text-xs font-bold text-slate-700">
-                Chọn các ngày lặp lại
+                Chọn ngày bắt đầu các lần lặp tiếp theo
               </p>
               <Button
                 type="button"
@@ -450,20 +447,37 @@ export default function SimpleTaskForm({
                 Xóa
               </Button>
             </div>
+            <p className="text-[11px] text-slate-500">
+              Mỗi ngày đã chọn sẽ tạo một task con khi task hiện tại hoàn tất.
+            </p>
             <Calendar
               mode="multiple"
               locale={vi}
               selected={repeatDates.map(parseLocalISODate)}
               onSelect={(dates) =>
                 updateSubtask({
-                  repeatDates: (dates || []).map(formatLocalISODate),
+                  repeatDates: (dates || []).map(formatLocalISODate).filter((date, _, all) =>
+                    isRepeatDateAllowed(
+                      date,
+                      formData.startDate,
+                      formData.endDate,
+                      all.filter((other) => other !== date),
+                    ),
+                  ),
                 })
               }
               disabled={(date) => {
                 const localDate = formatLocalISODate(date);
-                return Boolean(
-                  (formData.startDate && localDate < formData.startDate) ||
-                    (formData.endDate && localDate > formData.endDate),
+                return (
+                  localDate <= formData.endDate ||
+                  (repeatDates.includes(localDate)
+                    ? false
+                    : !isRepeatDateAllowed(
+                        localDate,
+                        formData.startDate,
+                        formData.endDate,
+                        repeatDates,
+                      ))
                 );
               }}
               className="mx-auto w-1/2 bg-white"

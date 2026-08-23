@@ -3,8 +3,6 @@ import { farmTaskApi } from "../api/farm-task.api";
 import { farmTaskKeys } from "./useFarmTasks";
 import type {
   FarmTaskBulkCreateRequest,
-  FarmTaskOccurrenceRequest,
-  FarmTaskOccurrenceResponse,
   FarmTaskRequest,
   FarmTaskResponse,
 } from "../types/farm-task.type";
@@ -143,52 +141,5 @@ export function useDeleteFarmTask({
   return {
     ...mutation,
     deleteFarmTask: mutation.mutateAsync,
-  };
-}
-
-interface UseUpsertFarmTaskOccurrenceOptions {
-  onSuccess?: (
-    data: FarmTaskOccurrenceResponse,
-    variables: {
-      id: number | string;
-      date: string;
-      payload: FarmTaskOccurrenceRequest;
-    },
-  ) => void;
-  onError?: (error: Error) => void;
-  invalidateList?: boolean;
-  invalidateDetail?: boolean;
-  invalidateStats?: boolean;
-}
-
-export function useUpsertFarmTaskOccurrence({
-  onSuccess,
-  onError,
-  invalidateList = true,
-  invalidateDetail = true,
-  invalidateStats = true,
-}: UseUpsertFarmTaskOccurrenceOptions = {}) {
-  const queryClient = useQueryClient();
-
-  const mutation = useMutation<
-    FarmTaskOccurrenceResponse,
-    Error,
-    { id: number | string; date: string; payload: FarmTaskOccurrenceRequest }
-  >({
-    mutationFn: ({ id, date, payload }) =>
-      farmTaskApi.upsertOccurrence(id, date, payload),
-    onSuccess: async (data, variables) => {
-      if (invalidateList || invalidateDetail || invalidateStats) {
-        await queryClient.invalidateQueries({ queryKey: farmTaskKeys.all() });
-      }
-
-      onSuccess?.(data, variables);
-    },
-    onError,
-  });
-
-  return {
-    ...mutation,
-    upsertFarmTaskOccurrence: mutation.mutateAsync,
   };
 }

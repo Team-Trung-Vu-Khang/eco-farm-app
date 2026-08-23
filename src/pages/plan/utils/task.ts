@@ -53,3 +53,30 @@ export function parseLocalISODate(iso: string): Date {
   const [year, month, day] = iso.split("-").map(Number);
   return new Date(year, (month || 1) - 1, day || 1);
 }
+
+export function getInclusiveDurationDays(startDate: string, endDate: string) {
+  if (!startDate || !endDate) return 1;
+  const start = parseLocalISODate(startDate).getTime();
+  const end = parseLocalISODate(endDate).getTime();
+  return Math.max(1, Math.floor((end - start) / 86400000) + 1);
+}
+
+/** A repeat start must be after the main range and separated from other starts
+ * by at least the task duration so generated child tasks do not overlap. */
+export function isRepeatDateAllowed(
+  candidate: string,
+  startDate: string,
+  endDate: string,
+  otherRepeatDates: string[],
+) {
+  if (!candidate || (startDate && candidate <= endDate)) return false;
+  const durationDays = getInclusiveDurationDays(startDate, endDate);
+  const candidateTime = parseLocalISODate(candidate).getTime();
+
+  return otherRepeatDates.every((date) => {
+    const distance = Math.abs(
+      Math.floor((candidateTime - parseLocalISODate(date).getTime()) / 86400000),
+    );
+    return distance >= durationDays;
+  });
+}
