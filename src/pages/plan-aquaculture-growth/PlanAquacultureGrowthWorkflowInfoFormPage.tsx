@@ -29,6 +29,7 @@ import {
 } from "@/features/farm-workflow/hooks";
 import type { FarmWorkflowScopeRequest } from "@/features/farm-workflow/types/farm-workflow.type";
 import GeographicalSelector from "./components/GeographicalSelector";
+import WorkflowSeasonSelector from "@/components/WorkflowSeasonSelector";
 import {
   createEmptyPlanDraft,
   createNodeId,
@@ -145,6 +146,8 @@ export default function PlanAquacultureGrowthWorkflowInfoFormPage() {
   const [plannedDurationDays, setPlannedDurationDays] = useState(
     editingRecord?.plannedDurationDays ?? "",
   );
+  const [seasonIds, setSeasonIds] = useState<number[]>(editingRecord?.seasonIds ?? []);
+  const [seasonNames, setSeasonNames] = useState<string[]>(editingRecord?.seasonNames ?? []);
 
   const selectionSummary = useMemo(
     () => summarizeSelections(selections, regions || []),
@@ -164,6 +167,8 @@ export default function PlanAquacultureGrowthWorkflowInfoFormPage() {
     setPlannedDurationYears(record.plannedDurationYears);
     setPlannedDurationMonths(record.plannedDurationMonths);
     setPlannedDurationDays(record.plannedDurationDays);
+    setSeasonIds(record.seasonIds ?? []);
+    setSeasonNames(record.seasonNames ?? []);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [workflowDetail]);
 
@@ -207,6 +212,7 @@ export default function PlanAquacultureGrowthWorkflowInfoFormPage() {
         plannedDurationDays,
       ),
       scopes: toWorkflowScopes(selections),
+      seasonIds,
       status: "ACTIVE" as const,
     };
 
@@ -221,6 +227,8 @@ export default function PlanAquacultureGrowthWorkflowInfoFormPage() {
               plannedDurationYears,
               plannedDurationMonths,
               plannedDurationDays,
+              seasonIds,
+              seasonNames,
             }
           : {
               id: "",
@@ -230,6 +238,8 @@ export default function PlanAquacultureGrowthWorkflowInfoFormPage() {
               plannedDurationYears,
               plannedDurationMonths,
               plannedDurationDays,
+              seasonIds,
+              seasonNames,
               isActive: true,
               position: editingRecord?.position ?? getNextInfoNodePosition(infoNodes),
             };
@@ -340,6 +350,15 @@ export default function PlanAquacultureGrowthWorkflowInfoFormPage() {
                     <FormMessage />
                   </FormItem>
                 )}
+              />
+
+              <WorkflowSeasonSelector
+                domainCode={WORKFLOW_DOMAIN_CODE}
+                value={seasonIds}
+                onChange={(ids, seasons) => {
+                  setSeasonIds(ids);
+                  setSeasonNames(seasons.map((season) => season.name || season.code || `#${season.id}`));
+                }}
               />
 
               <div className="space-y-2">

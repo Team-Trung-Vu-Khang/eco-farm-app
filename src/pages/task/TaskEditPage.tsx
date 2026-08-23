@@ -50,7 +50,7 @@ import {
   X,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import { useLocation, useParams } from "wouter";
+import { useLocation, useParams, useSearch } from "wouter";
 
 import { AppLoadingState } from "@/components/AppLoadingState";
 import type { DomainCode } from "@/features/farm-supply/types";
@@ -225,18 +225,34 @@ function mapSelectionsToScope(
 export default function TaskEditPage() {
   const { toast } = useToast();
   const [, setLocation] = useLocation();
+  const search = useSearch();
   const params = useParams<{ id: string }>();
   const { item: taskResponse, loading: taskLoading } = useFarmTaskById(
     params.id ?? null,
     { enabled: !!params.id },
   );
+  const taskListPath = useMemo(() => {
+    const queryPlanId = new URLSearchParams(search).get("planId");
+    const task = taskResponse as
+      | (typeof taskResponse & {
+          planId?: string | number | null;
+          plan?: { id?: string | number | null; planId?: string | number | null } | null;
+        })
+      | null;
+    const planId =
+      queryPlanId || task?.planId || task?.plan?.id || task?.plan?.planId;
+
+    return planId
+      ? `/task?planId=${encodeURIComponent(String(planId))}`
+      : "/task";
+  }, [search, taskResponse]);
   const updateTaskMutation = useUpdateFarmTask({
     onSuccess: () => {
       toast({
         title: "Cập nhật thành công",
         description: "Đã lưu thay đổi công việc",
       });
-      setLocation("/task");
+      setLocation(taskListPath);
     },
     onError: (error) => {
       toast({
@@ -891,7 +907,7 @@ export default function TaskEditPage() {
         title="Chỉnh sửa công việc"
         description="Không tìm thấy công việc cần chỉnh sửa"
         actions={
-          <Button variant="ghost" onClick={() => setLocation("/task")}>
+          <Button variant="ghost" onClick={() => setLocation(taskListPath)}>
             <ChevronLeft className="w-4 h-4 mr-2" />
             Quay lại danh sách
           </Button>
@@ -2840,14 +2856,14 @@ export default function TaskEditPage() {
             workflows={workflowsQuery.items}
             plans={planOptionsForSelect}
             handleComplete={handleComplete}
-            goBack={() => setLocation("/task")}
+            goBack={() => setLocation(taskListPath)}
             completeLabel="Hoàn tất & Cập nhật"
           />
         ) : (
           <StepperForm
             steps={steps}
             onComplete={handleComplete}
-            onCancel={() => setLocation("/task")}
+            onCancel={() => setLocation(taskListPath)}
             completeLabel="Hoàn tất & Cập nhật"
           />
         )}

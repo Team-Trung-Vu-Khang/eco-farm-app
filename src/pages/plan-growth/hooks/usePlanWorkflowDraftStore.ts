@@ -34,6 +34,8 @@ export type DiagramInfoRecord = {
   name: string;
   description: string;
   selections: GeographicalSelection[];
+  seasonIds?: number[];
+  seasonNames?: string[];
   // Human-readable region/area/plot labels straight from the source (e.g.
   // API scope names) — set when the region tree used for on-screen lookup
   // (mock `useRegionStore`) can't resolve the selections' ids, such as for

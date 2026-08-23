@@ -388,7 +388,7 @@ function buildPlanNode(
       wide: true,
       targetTopHandleId: `plan-${plan.id}-target-top`,
       sourceBottomHandleId: `plan-${plan.id}-source-bottom`,
-      tags: (plan.selectedStages || []).slice(0, 3),
+      tags: (plan.seasonStageNames || []).slice(0, 3),
       summaries: [
         { label: "Nhân lực", value: countWorkers(plan.taskAllocations) },
         { label: "Thuốc thủy sản", value: `${materialGroups.pesticide}` },

@@ -1,5 +1,13 @@
 import PageWrapper from "@/components/PageWrapper";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
   Badge,
   Button,
   Card,
@@ -50,6 +58,7 @@ import SimplePlanForm from "./components/SimplePlanForm";
 import { StageAllocation } from "./components/StageAllocation";
 import { useCropSupplyCatalog } from "./hooks/useCropSupplyCatalog";
 import { usePlanForm } from "./hooks/usePlanForm";
+import type { GrowthCycleSelection } from "./types";
 
 interface PlanGrowthEditPageProps {
   basePath?: string;
@@ -92,16 +101,11 @@ export default function PlanGrowthEditPage({
   } = usePlanForm("edit", basePath, { onSaved, onCancel });
   const supplyCatalog = useCropSupplyCatalog();
 
-  // No backend/config yet ties a plan's inherited growth cycle(s) to its
-  // workflow — `workflowInfo` only carries them when the workflow-info form
-  // was set up earlier in the same session. Fall back to the first two
-  // available growth cycles so the multi-cycle inheritance UI has something
-  // to show.
-  const inheritedCycleIds = workflowInfo?.growthCycleSelections?.length
-    ? Array.from(
-        new Set(workflowInfo.growthCycleSelections.map((s) => s.cycleId)),
-      )
-    : growthCycles.slice(0, 2).map((c) => c.id);
+  const inheritedCycleIds = workflowInfo?.seasonIds?.length
+    ? workflowInfo.seasonIds.map(String)
+    : workflowInfo?.growthCycleSelections?.length
+      ? Array.from(new Set(workflowInfo.growthCycleSelections.map((s) => s.cycleId)))
+      : [];
   const inheritedCycles = growthCycles.filter((c) =>
     inheritedCycleIds.includes(c.id),
   );
@@ -125,6 +129,8 @@ export default function PlanGrowthEditPage({
     Set<string>
   >(new Set());
   const [isSimpleMode, setIsSimpleMode] = useState(true);
+  const [pendingGrowthCycleSelections, setPendingGrowthCycleSelections] =
+    useState<GrowthCycleSelection[] | null>(null);
   const purpose = formData.purpose as string;
   const isTreatmentOrAmendment =
     purpose === "treatment" || purpose === "amendment";
@@ -134,6 +140,37 @@ export default function PlanGrowthEditPage({
   // Only cultivation automatically turns picked growth-cycle stages into
   // planned work items. Treatment/amendment stages remain optional checkboxes.
   const derivesStagesFromGrowthCycle = isCultivation;
+
+  const handleGrowthCycleSelection = (
+    nextSelections: GrowthCycleSelection[],
+  ) => {
+    const selectionKey = (items: GrowthCycleSelection[]) =>
+      items
+        .map((item) => `${item.type}:${item.cycleId}:${item.stageId || ""}`)
+        .sort()
+        .join("|");
+
+    if (
+      selectionKey(formData.growthCycleSelections) ===
+      selectionKey(nextSelections)
+    ) {
+      return;
+    }
+
+    setPendingGrowthCycleSelections(nextSelections);
+  };
+
+  const applyGrowthCycleSelection = () => {
+    if (!pendingGrowthCycleSelections) return;
+    setFormData((prev) => ({
+      ...prev,
+      growthCycleSelections: pendingGrowthCycleSelections,
+      selectedStages: [],
+      materialAllocations: [],
+      taskAllocations: [],
+    }));
+    setPendingGrowthCycleSelections(null);
+  };
 
   // Keep `selectedStages` synced to the picked growth-cycle stage(s) (as
   // `${cycleId}:${stageName}` entries, the same key shape the
@@ -146,6 +183,17 @@ export default function PlanGrowthEditPage({
 
   useEffect(() => {
     if (!derivesStagesFromGrowthCycle) return;
+
+    // On edit, the API's `stages` list is authoritative. Only generate
+    // stage rows from the selected Season when the plan has no stages yet;
+    // otherwise this effect must not append/replace API rows and create
+    // duplicate items with the same name.
+    if (
+      formData.selectedStages.length > 0 &&
+      !formData.selectedStages.some(isGrowthCycleStageKey)
+    ) {
+      return;
+    }
 
     const derivedKeys = Array.from(
       new Set(
@@ -227,9 +275,7 @@ export default function PlanGrowthEditPage({
     });
   }, [formData.regimenId, isTreatmentOrAmendment, regimens, setFormData]);
 
-  const manualSelectedStages = formData.selectedStages.filter(
-    (stage) => !stage.includes(":"),
-  );
+  const manualSelectedStages = formData.selectedStages;
   const availableGrowthCycleStagesMap = new Map<
     string,
     { key: string; name: string; cycleName: string }
@@ -248,15 +294,6 @@ export default function PlanGrowthEditPage({
   const availableGrowthCycleStages = Array.from(
     availableGrowthCycleStagesMap.values(),
   );
-
-  const selectedRegimen = regimens.find(
-    (item) => item.id === formData.regimenId,
-  );
-  const regimenStageTitles: string[] = selectedRegimen?.steps?.length
-    ? selectedRegimen.steps.map((step: { title: string }) => step.title)
-    : selectedRegimen
-      ? [selectedRegimen.name]
-      : [];
 
   const purposeOptions = [
     {
@@ -597,12 +634,7 @@ export default function PlanGrowthEditPage({
                           growthCycles={growthCycles}
                           lockedCycleIds={inheritedCycleIds}
                           existingSelections={formData.growthCycleSelections}
-                          onConfirm={(nextSelections) =>
-                            setFormData((prev) => ({
-                              ...prev,
-                              growthCycleSelections: nextSelections,
-                            }))
-                          }
+                          onConfirm={handleGrowthCycleSelection}
                         />
                       ) : (
                         <p className="text-xs text-emerald-800/60 italic text-center py-2">
@@ -885,74 +917,8 @@ export default function PlanGrowthEditPage({
                       }));
                     }}
                   />
-                  {regimenStageTitles.length > 0 && (
-                    <div className="grid gap-2 sm:grid-cols-2">
-                      {regimenStageTitles.map((title, index) => (
-                        <div
-                          key={`${formData.regimenId}:${title}`}
-                          className="flex items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 px-3 py-3 text-sm font-semibold text-slate-700"
-                        >
-                          <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-white text-xs text-slate-500">
-                            {index + 1}
-                          </span>
-                          <span className="line-clamp-2">{title}</span>
-                        </div>
-                      ))}
-                    </div>
-                  )}
                 </div>
               )}
-
-              {isTreatmentOrAmendment &&
-                availableGrowthCycleStages.length > 0 && (
-                  <div className="space-y-3 border-t border-dashed border-slate-200 pt-5">
-                    <div>
-                      <Label className="text-xs font-bold text-slate-700">
-                        Giai đoạn áp dụng (tuỳ chọn)
-                      </Label>
-                      <p className="mt-1 text-[11px] text-slate-500">
-                        Tick chọn các giai đoạn cần áp dụng thêm.
-                      </p>
-                    </div>
-                    <div className="grid gap-2 sm:grid-cols-2">
-                      {availableGrowthCycleStages.map((stage) => {
-                        const checked = formData.selectedStages.includes(
-                          stage.key,
-                        );
-                        return (
-                          <label
-                            key={stage.key}
-                            className={cn(
-                              "flex cursor-pointer items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 px-3 py-3 text-sm font-semibold text-slate-700 transition-colors hover:border-slate-300",
-                            )}
-                          >
-                            <Checkbox
-                              checked={checked}
-                              onCheckedChange={(value) =>
-                                setFormData((prev) => ({
-                                  ...prev,
-                                  selectedStages: value
-                                    ? [...prev.selectedStages, stage.key]
-                                    : prev.selectedStages.filter(
-                                        (item) => item !== stage.key,
-                                      ),
-                                }))
-                              }
-                            />
-                            <span>
-                              <span className="block font-semibold">
-                                {stage.name}
-                              </span>
-                              <span className="block text-[11px] text-slate-400">
-                                {stage.cycleName}
-                              </span>
-                            </span>
-                          </label>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
 
               {isTreatmentOrAmendment && (
                 <div className="space-y-4 border-t border-dashed border-slate-200 pt-4">
@@ -975,7 +941,7 @@ export default function PlanGrowthEditPage({
                         setNewManualStage("");
                       }}
                       placeholder="Thêm hạng mục mới..."
-                      className="h-11 rounded-xl border-slate-200"
+                      className="h-9 rounded-lg border-slate-200"
                     />
                     <Button
                       type="button"
@@ -989,7 +955,7 @@ export default function PlanGrowthEditPage({
                         }));
                         setNewManualStage("");
                       }}
-                      className="h-11 rounded-xl px-5 text-xs font-bold"
+                      className="h-9 rounded-lg px-4 text-xs font-bold"
                     >
                       Thêm
                     </Button>
@@ -1001,16 +967,20 @@ export default function PlanGrowthEditPage({
                       </p>
                     )}
                   {manualSelectedStages.length > 0 && (
-                    <div className="grid gap-2 sm:grid-cols-2">
-                      {manualSelectedStages.map((stage, index) => (
-                        <div
-                          key={stage}
-                          className="flex items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 px-3 py-3 text-sm font-semibold text-slate-700"
-                        >
-                          <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-white text-xs text-slate-500">
-                            {index + 1}
-                          </span>
-                          <span className="flex-1">{stage}</span>
+                    <div className="flex flex-col gap-2">
+                      {manualSelectedStages.map((stage, index) => {
+                        const displayName = stage.includes(":")
+                          ? stage.slice(stage.indexOf(":") + 1)
+                          : stage;
+                        return (
+                          <div
+                            key={stage}
+                            className="flex items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 px-3 py-3 text-sm font-semibold text-slate-700"
+                          >
+                            <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-white text-xs text-slate-500">
+                              {index + 1}
+                            </span>
+                            <span className="flex-1">{displayName}</span>
                           <Button
                             type="button"
                             variant="ghost"
@@ -1026,9 +996,10 @@ export default function PlanGrowthEditPage({
                             className="h-7 w-7 shrink-0 text-slate-400 hover:bg-red-50 hover:text-red-600"
                           >
                             <X className="h-3.5 w-3.5" />
-                          </Button>
-                        </div>
-                      ))}
+                            </Button>
+                          </div>
+                        );
+                      })}
                     </div>
                   )}
                 </div>
@@ -1056,7 +1027,7 @@ export default function PlanGrowthEditPage({
                           }
                         }
                       }}
-                      className="h-11 rounded-xl border-slate-200"
+                      className="h-9 rounded-lg border-slate-200"
                     />
                     <Button
                       type="button"
@@ -1070,13 +1041,13 @@ export default function PlanGrowthEditPage({
                           setNewManualStage("");
                         }
                       }}
-                      className="h-11 rounded-xl px-5 text-xs font-bold"
+                      className="h-9 rounded-lg px-4 text-xs font-bold"
                     >
                       Thêm
                     </Button>
                   </div>
                   {formData.selectedStages.length > 0 && (
-                    <div className="grid gap-2 sm:grid-cols-2">
+                    <div className="flex flex-col gap-2">
                       {formData.selectedStages.map((stageKey, index) => {
                         const stage = availableGrowthCycleStages.find(
                           (item) => item.key === stageKey,
@@ -1145,7 +1116,7 @@ export default function PlanGrowthEditPage({
                         setNewManualStage("");
                       }}
                       placeholder="Thêm hạng mục mới..."
-                      className="h-11 rounded-xl border-slate-200"
+                      className="h-9 rounded-lg border-slate-200"
                     />
                     <Button
                       type="button"
@@ -1159,7 +1130,7 @@ export default function PlanGrowthEditPage({
                         }));
                         setNewManualStage("");
                       }}
-                      className="h-11 rounded-xl px-5 text-xs font-bold"
+                      className="h-9 rounded-lg px-4 text-xs font-bold"
                     >
                       Thêm
                     </Button>
@@ -1171,7 +1142,7 @@ export default function PlanGrowthEditPage({
                       </p>
                     )}
                   {formData.selectedStages.length > 0 && (
-                    <div className="grid gap-2 sm:grid-cols-2">
+                    <div className="flex flex-col gap-2">
                       {formData.selectedStages.map((stage, index) => (
                         <div
                           key={stage}
@@ -1225,7 +1196,7 @@ export default function PlanGrowthEditPage({
                         }));
                         setNewManualStage("");
                       }}
-                      className="h-11 rounded-xl border-slate-200"
+                      className="h-9 rounded-lg border-slate-200"
                     />
                     <Button
                       type="button"
@@ -1239,13 +1210,13 @@ export default function PlanGrowthEditPage({
                         }));
                         setNewManualStage("");
                       }}
-                      className="h-11 rounded-xl px-5 text-xs font-bold"
+                      className="h-9 rounded-lg px-4 text-xs font-bold"
                     >
                       Thêm
                     </Button>
                   </div>
                   {formData.selectedStages.length > 0 && (
-                    <div className="grid gap-2 sm:grid-cols-2">
+                    <div className="flex flex-col gap-2">
                       {formData.selectedStages.map((stage, index) => (
                         <div
                           key={stage}
@@ -2024,7 +1995,8 @@ export default function PlanGrowthEditPage({
   if (!plan) return null;
 
   return (
-    <PageWrapper
+    <>
+      <PageWrapper
       title={pageTitle}
       description={pageDescription}
       actions={
@@ -2081,6 +2053,29 @@ export default function PlanGrowthEditPage({
           />
         )}
       </div>
-    </PageWrapper>
+      </PageWrapper>
+      <AlertDialog
+        open={pendingGrowthCycleSelections !== null}
+        onOpenChange={(open) => {
+          if (!open) setPendingGrowthCycleSelections(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Thay đổi giai đoạn sinh trưởng?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Khi đổi lựa chọn, danh sách hạng mục, vật tư và công việc đã phân
+              bổ hiện tại sẽ được xoá để đồng bộ với giai đoạn mới.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Hủy</AlertDialogCancel>
+            <AlertDialogAction onClick={applyGrowthCycleSelection}>
+              Xác nhận thay đổi
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }

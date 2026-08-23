@@ -51,6 +51,7 @@ export interface GrowthCycleSelection {
   type: "cycle" | "stage";
   cycleId: string;
   stageId?: string;
+  stageName?: string;
 }
 
 export interface Plan {
@@ -90,6 +91,10 @@ export interface Plan {
   // inherited from the parent workflow — local-only, not persisted by the
   // backend plan API yet.
   growthCycleSelections?: GrowthCycleSelection[];
+  /** Season-stage IDs returned by the plan API, kept for edit hydration. */
+  seasonStageIds?: number[];
+  /** Names of only the API stages linked to a Season, for workflow display. */
+  seasonStageNames?: string[];
   regimenId?: string;
   selectedStages: string[];
   materialAllocations: MaterialAllocation[];
@@ -122,6 +127,8 @@ export interface Workflow {
   name: string;
   description: string;
   selections: GeographicalSelection[];
+  seasonIds?: number[];
+  seasonNames?: string[];
   isActive: boolean;
   createdAt: string;
   nodes?: unknown[];

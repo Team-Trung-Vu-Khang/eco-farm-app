@@ -93,6 +93,7 @@ function toFarmWorkflowRequest(workflow: Workflow): FarmWorkflowRequest {
             : "REGION",
       scopeId: Number(selection.plotId || selection.areaId || selection.regionId),
     })),
+    seasonIds: workflow.seasonIds,
     status: workflow.isActive ? "ACTIVE" : "INACTIVE",
   };
 }
@@ -102,11 +103,12 @@ interface UsePlanPageOptions {
   // fetched for pages that actually list/derive plan rows (workflow detail,
   // unassigned-plans view).
   includePlans?: boolean;
+  domainCode?: "CROP" | "LIVESTOCK" | "AQUACULTURE";
 }
 
 export function usePlanPage(
   basePath = "/plan-growth",
-  { includePlans = true }: UsePlanPageOptions = {},
+  { includePlans = true, domainCode = WORKFLOW_DOMAIN_CODE }: UsePlanPageOptions = {},
 ) {
   const { toast } = useToast();
   const [, setLocation] = useLocation();
@@ -119,7 +121,7 @@ export function usePlanPage(
   const planQuery = useFarmPlans({ enabled: includePlans });
   const workflowQuery = useFarmWorkflows({
     params: {
-      domainCode: WORKFLOW_DOMAIN_CODE,
+      domainCode,
       keyword: search.trim() || undefined,
       status: status || undefined,
       page: currentIndex - 1,
@@ -127,7 +129,7 @@ export function usePlanPage(
     },
   });
   const statsQuery = useFarmWorkflowStats({
-    params: { domainCode: WORKFLOW_DOMAIN_CODE },
+    params: { domainCode },
   });
   const { deletePlan, createPlan } = useFarmPlanMutations();
   const { createWorkflow, deleteWorkflow } = useFarmWorkflowMutations();

@@ -33,12 +33,20 @@ const GrowthCycleSelector = ({
   // inherits its growth cycle(s) from the parent workflow and only needs to
   // narrow down which stage(s) apply.
   lockedCycleIds,
+  onSearchChange,
+  isLoading = false,
+  hasMore = false,
+  onLoadMore,
 }: {
   growthCycles: GrowthCycle[];
   onConfirm: (selections: GrowthCycleSelection[]) => void;
   existingSelections: GrowthCycleSelection[];
   disabled?: boolean;
   lockedCycleIds?: string[];
+  onSearchChange?: (value: string) => void;
+  isLoading?: boolean;
+  hasMore?: boolean;
+  onLoadMore?: () => void;
 }) => {
   const isLocked = Boolean(lockedCycleIds?.length);
   const [isOpen, setIsOpen] = useState(false);
@@ -65,14 +73,8 @@ const GrowthCycleSelector = ({
     [growthCycles, lockedCycleIds],
   );
 
-  const filteredCycles = useMemo(() => {
-    const term = searchTerm.toLowerCase();
-    return visibleCycles.filter(
-      (cycle) =>
-        cycle.name.toLowerCase().includes(term) ||
-        cycle.cropName?.toLowerCase().includes(term),
-    );
-  }, [visibleCycles, searchTerm]);
+  // The API owns search and pagination; do not filter the returned page locally.
+  const filteredCycles = visibleCycles;
 
   const toggleExpanded = (id: string) => {
     setExpandedCycles((prev) =>
@@ -125,6 +127,8 @@ const GrowthCycleSelector = ({
     const isCurrentlySelected = tempSelections.some(
       (s) => s.type === "stage" && s.cycleId === cycleId && s.stageId === stageId,
     );
+    const cycle = growthCycles.find((item) => item.id === cycleId);
+    const stage = cycle?.stages.find((item) => item.id === stageId);
 
     if (isCurrentlySelected) {
       setTempSelections((prev) =>
@@ -142,6 +146,7 @@ const GrowthCycleSelector = ({
         type: "stage",
         cycleId,
         stageId,
+        stageName: stage?.name,
       },
     ]);
   };
@@ -154,19 +159,14 @@ const GrowthCycleSelector = ({
   const selectedLabel = useMemo(() => {
     if (existingSelections.length === 0) return null;
 
-    // Locked (stage-only) mode can span several known cycles — keep the
-    // short "just the stages" summary, without a cycle-name prefix.
+    // In locked mode the user is selecting stages, not cycles. The owning
+    // cycle names are shown in the selected-stage summary below the field;
+    // the field itself must count stages.
     if (isLocked) {
-      const stageNames = existingSelections
-        .map((s) => {
-          const cycle = growthCycles.find((c) => c.id === s.cycleId);
-          return cycle?.stages.find((st) => st.id === s.stageId)?.name;
-        })
-        .filter((name): name is string => Boolean(name));
-      if (stageNames.length === 0) return null;
-      return stageNames.length === 1
-        ? stageNames[0]
-        : `Đã chọn ${stageNames.length} giai đoạn`;
+      const stageCount = existingSelections.filter(
+        (selection) => selection.type === "stage" && selection.stageId,
+      ).length;
+      return stageCount > 0 ? `Đã chọn ${stageCount} giai đoạn` : null;
     }
 
     const cycleIds = Array.from(new Set(existingSelections.map((s) => s.cycleId)));
@@ -209,7 +209,10 @@ const GrowthCycleSelector = ({
         open={isOpen}
         onOpenChange={(open) => {
           setIsOpen(open);
-          if (!open) setSearchTerm("");
+          if (!open) {
+            setSearchTerm("");
+            onSearchChange?.("");
+          }
         }}
       >
         <DialogContent className="max-w-xl p-0 overflow-hidden rounded-2xl border-none shadow-2xl flex flex-col max-h-[90vh]">
@@ -233,15 +236,38 @@ const GrowthCycleSelector = ({
                   placeholder="Tìm kiếm chu kỳ sinh trưởng..."
                   className="pl-10 bg-slate-50 border-slate-200 focus:bg-white transition-all rounded-xl"
                   value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
+                  onChange={(e) => {
+                    setSearchTerm(e.target.value);
+                    onSearchChange?.(e.target.value);
+                  }}
                 />
               </div>
             </div>
           )}
 
-          <ScrollArea className="flex-1 overflow-y-auto">
+          <ScrollArea
+            className="flex-1 overflow-y-auto"
+            onScroll={(event) => {
+              const target = event.currentTarget;
+              if (
+                onLoadMore &&
+                hasMore &&
+                target.scrollTop + target.clientHeight >= target.scrollHeight - 80
+              ) {
+                onLoadMore();
+              }
+            }}
+          >
             <div className="p-6 space-y-4">
-              {filteredCycles.map((cycle) => (
+              {isLoading && filteredCycles.length === 0 ? (
+                <div className="py-8 text-center text-sm text-muted-foreground">Đang tải...</div>
+              ) : filteredCycles.length === 0 ? (
+                <div className="py-8 text-center text-sm text-muted-foreground">
+                  {isLocked
+                    ? "Không tìm thấy giai đoạn sinh trưởng"
+                    : "Không tìm thấy chu kỳ sinh trưởng"}
+                </div>
+              ) : filteredCycles.map((cycle) => (
                 <div key={cycle.id} className="space-y-2">
                   {/* Cycle level */}
                   {isLocked ? (
@@ -350,7 +376,7 @@ const GrowthCycleSelector = ({
 
                   {/* Stages level — only shown in locked (stage-only) mode */}
                   {isLocked && (
-                    <div className="space-y-2">
+                    <div className="ml-4 space-y-2 border-l-2 border-slate-100 pl-4">
                       {cycle.stages?.map((stage) => (
                         <div
                           key={stage.id}
@@ -406,17 +432,10 @@ const GrowthCycleSelector = ({
                   )}
                 </div>
               ))}
-
-              {filteredCycles.length === 0 && (
-                <div className="text-center py-12">
-                  <div className="bg-slate-50 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 border border-slate-100">
-                    <Search className="w-6 h-6 text-slate-300" />
-                  </div>
-                  <div className="text-slate-500 font-medium text-sm">
-                    Không tìm thấy dữ liệu phù hợp
-                  </div>
-                </div>
+              {isLoading && filteredCycles.length > 0 && (
+                <div className="py-3 text-center text-xs text-muted-foreground">Đang tải thêm...</div>
               )}
+
             </div>
           </ScrollArea>
 

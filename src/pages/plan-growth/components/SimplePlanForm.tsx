@@ -131,6 +131,7 @@ interface SimplePlanFormProps {
   isWorkflowContext?: boolean;
   workflowInfo?: {
     name?: string;
+    seasonIds?: number[];
     growthCycleSelections?: GrowthCycleSelection[];
   } | null;
   growthCycles: GrowthCycle[];
@@ -364,12 +365,12 @@ export default function SimplePlanForm({
 
   const inheritedCycleIds = useMemo(
     () =>
-      workflowInfo?.growthCycleSelections?.length
-        ? Array.from(
-            new Set(workflowInfo.growthCycleSelections.map((s) => s.cycleId)),
-          )
-        : growthCycles.slice(0, 2).map((c) => c.id),
-    [workflowInfo, growthCycles],
+      workflowInfo?.seasonIds?.length
+        ? workflowInfo.seasonIds.map(String)
+        : workflowInfo?.growthCycleSelections?.length
+          ? Array.from(new Set(workflowInfo.growthCycleSelections.map((s) => s.cycleId)))
+          : [],
+    [workflowInfo],
   );
   const inheritedCycles = useMemo(
     () => growthCycles.filter((c) => inheritedCycleIds.includes(c.id)),
@@ -411,6 +412,16 @@ export default function SimplePlanForm({
 
   useEffect(() => {
     if (!derivesStagesFromGrowthCycle) return;
+
+    // Trust stages already returned by the plan API. Auto-fill from the
+    // selected growth cycle only for a plan that currently has no stages;
+    // otherwise the same API stages can be duplicated by this effect.
+    if (
+      formData.selectedStages.length > 0 &&
+      !formData.selectedStages.some(isGrowthCycleStageKey)
+    ) {
+      return;
+    }
 
     const derivedKeys = Array.from(
       new Set(
@@ -490,12 +501,7 @@ export default function SimplePlanForm({
   };
 
   const manualStages = formData.selectedStages.filter((s) => !s.includes(":"));
-  const displayedItemStages = isCultivation
-    ? formData.selectedStages
-    : manualStages;
-  const regimenStages = formData.selectedStages.filter((s) =>
-    s.startsWith(`${formData.regimenId}:`),
-  );
+  const displayedItemStages = formData.selectedStages;
   const growthCycleDerivedStages = formData.selectedStages.filter(
     isGrowthCycleStageKey,
   );
@@ -761,10 +767,24 @@ export default function SimplePlanForm({
               lockedCycleIds={inheritedCycleIds}
               existingSelections={formData.growthCycleSelections}
               onConfirm={(nextSelections) =>
-                setFormData((prev) => ({
-                  ...prev,
-                  growthCycleSelections: nextSelections,
-                }))
+                setFormData((prev) => {
+                  const currentKey = prev.growthCycleSelections
+                    .map((item) => `${item.type}:${item.cycleId}:${item.stageId || ""}`)
+                    .sort()
+                    .join("|");
+                  const nextKey = nextSelections
+                    .map((item) => `${item.type}:${item.cycleId}:${item.stageId || ""}`)
+                    .sort()
+                    .join("|");
+                  if (currentKey === nextKey) return prev;
+                  return {
+                    ...prev,
+                    growthCycleSelections: nextSelections,
+                    selectedStages: [],
+                    materialAllocations: [],
+                    taskAllocations: [],
+                  };
+                })
               }
             />
           ) : (
@@ -911,67 +931,11 @@ export default function SimplePlanForm({
                   }));
                 }}
               />
-              {formData.regimenId && regimenStages.length > 0 && (
-                <div className="flex flex-col gap-2 p-4 bg-white rounded-2xl border border-slate-100 shadow-sm">
-                  {regimenStages.map((stage, index) => (
-                    <div
-                      key={stage}
-                      className="flex items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 px-3 py-3 text-sm font-semibold text-slate-700"
-                    >
-                      <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-white text-xs text-slate-500">
-                        {index + 1}
-                      </span>
-                      {stage.split(":").slice(1).join(":")}
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
-
-          {isTreatmentOrAmendment && availableGrowthCycleStages.length > 0 && (
-            <div className="space-y-3 pt-4">
-              <div>
-                <Label className="text-xs font-bold text-slate-700">
-                  Giai đoạn áp dụng (tuỳ chọn)
-                </Label>
-                <p className="mt-1 text-[11px] text-slate-500">
-                  Tick chọn các giai đoạn cần áp dụng thêm.
-                </p>
-              </div>
-              <div className="grid gap-2 sm:grid-cols-2">
-                {availableGrowthCycleStages.map((stage) => (
-                  <label
-                    key={stage.key}
-                    className="flex cursor-pointer items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 px-3 py-3 text-sm font-semibold text-slate-700"
-                  >
-                    <Checkbox
-                      checked={formData.selectedStages.includes(stage.key)}
-                      onCheckedChange={(value) =>
-                        setFormData((prev) => ({
-                          ...prev,
-                          selectedStages: value
-                            ? [...prev.selectedStages, stage.key]
-                            : prev.selectedStages.filter(
-                                (item) => item !== stage.key,
-                              ),
-                        }))
-                      }
-                    />
-                    <span>
-                      <span className="block">{stage.name}</span>
-                      <span className="block text-[11px] font-normal text-slate-400">
-                        {stage.cycleName}
-                      </span>
-                    </span>
-                  </label>
-                ))}
-              </div>
             </div>
           )}
 
           {!isCultivation && growthCycleDerivedStages.length > 0 && (
-            <div className="grid gap-2 sm:grid-cols-2">
+            <div className="flex flex-col gap-2">
               {growthCycleDerivedStages.map((stage, index) => (
                 <div
                   key={stage}
@@ -1034,13 +998,13 @@ export default function SimplePlanForm({
               <Button
                 type="button"
                 onClick={addStage}
-                className="h-11 rounded-xl px-5 text-xs font-bold"
+                className="h-9 rounded-lg px-4 text-xs font-bold"
               >
                 Thêm
               </Button>
             </div>
             {displayedItemStages.length > 0 && (
-              <div className="grid gap-2 sm:grid-cols-2">
+              <div className="flex flex-col gap-2">
                 {displayedItemStages.map((stage, index) => (
                   <div
                     key={stage}

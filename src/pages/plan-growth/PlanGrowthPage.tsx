@@ -25,10 +25,20 @@ import { usePlanWorkflowDraftStore } from "./hooks/usePlanWorkflowDraftStore";
 
 interface PlanGrowthPageProps {
   basePath?: string;
+  domainCode?: "CROP" | "LIVESTOCK" | "AQUACULTURE";
+  title?: string;
+  description?: string;
+  searchPlaceholder?: string;
+  resetDraft?: () => void;
 }
 
 export default function PlanGrowthPage({
   basePath = "/plan-growth",
+  domainCode = "CROP",
+  title = "Quản lý canh tác",
+  description = "Lập và quản lý kế hoạch theo mùa vụ",
+  searchPlaceholder = "Tìm kiếm sơ đồ quy trình...",
+  resetDraft,
 }: PlanGrowthPageProps) {
   const [, setLocation] = useLocation();
   const {
@@ -45,8 +55,8 @@ export default function PlanGrowthPage({
     totalElements,
     totalPages,
     loading,
-  } = usePlanPage(basePath, { includePlans: false });
-  const resetWorkflowDraft = usePlanWorkflowDraftStore(
+  } = usePlanPage(basePath, { includePlans: false, domainCode });
+  const cropResetWorkflowDraft = usePlanWorkflowDraftStore(
     (state) => state.resetDraft,
   );
   const [workflowToClone, setWorkflowToClone] = useState<WorkflowRow | null>(
@@ -59,7 +69,7 @@ export default function PlanGrowthPage({
   const handleCreatePlan = () => {
     // Start a clean canvas — otherwise a workflow opened earlier via
     // "Mở workflow" would still be sitting in the draft store.
-    resetWorkflowDraft();
+    (resetDraft ?? cropResetWorkflowDraft)();
     setLocation(`${basePath}/create/workflow`);
   };
 
@@ -106,8 +116,8 @@ export default function PlanGrowthPage({
 
   return (
     <PageWrapper
-      title="Quản lý canh tác"
-      description="Lập và quản lý kế hoạch theo mùa vụ"
+      title={title}
+      description={description}
       actions={
         <Button data-testid="add-plan" onClick={handleCreatePlan}>
           <Plus className="w-4 h-4 mr-2" />
@@ -133,7 +143,7 @@ export default function PlanGrowthPage({
             setSearch(value);
             setCurrentIndex(1);
           }}
-          searchPlaceholder="Tìm kiếm sơ đồ quy trình..."
+          searchPlaceholder={searchPlaceholder}
           pageSize={pageSize}
           currentIndex={currentIndex}
           totalElements={totalElements}

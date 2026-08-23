@@ -82,6 +82,8 @@ export function mapWorkflowResponseToWorkflow(
     name: workflow.name,
     description: workflow.description || "",
     selections: [],
+    seasonIds: (workflow.seasons || []).map((season) => season.id),
+    seasonNames: (workflow.seasons || []).map((season) => season.name || season.code || `#${season.id}`),
     isActive: workflow.status === "active",
     createdAt: workflow.createdAt || new Date().toISOString(),
     planCount: workflow.planCount ?? 0,
@@ -173,6 +175,8 @@ export function mapWorkflowResponseToInfoRecord(
     description: workflow.description || "",
     selections: mapWorkflowScopesToSelections(workflow.scopes),
     regionLabels: mapWorkflowScopesToRegionLabels(workflow.scopes),
+    seasonIds: (workflow.seasons || []).map((season) => season.id),
+    seasonNames: (workflow.seasons || []).map((season) => season.name || season.code || `#${season.id}`),
     ...mapDurationDaysToParts(workflow.durationDays),
     isActive: workflow.status === "active",
     position,
@@ -258,6 +262,12 @@ export function mapPlanResponseToPlan(plan: FarmPlanResponse): Plan {
 
   const stages = plan.stages || [];
   const selectedStages = stages.map((stage) => stage.name);
+  const seasonStageIds = stages
+    .map((stage) => stage.seasonStage?.id)
+    .filter((id): id is number => typeof id === "number");
+  const seasonStageNames = stages
+    .filter((stage) => stage.seasonStage?.id != null)
+    .map((stage) => stage.name);
   const materialAllocations = stages.flatMap((stage) =>
     (stage.supplyLines || []).map((line) => ({
       id: line.id,
@@ -310,6 +320,8 @@ export function mapPlanResponseToPlan(plan: FarmPlanResponse): Plan {
     growthCycleId: "",
     regimenId: undefined,
     selectedStages,
+    seasonStageIds,
+    seasonStageNames,
     materialAllocations,
     taskAllocations,
     status: planStatusMap[plan.status] ?? "draft",
@@ -337,7 +349,7 @@ export function buildFarmPlanStagesRequest(
   const stageKeys =
     formData.purpose === "harvest" ? ["Xuất bán"] : formData.selectedStages;
 
-  return stageKeys.map((stageKey) => {
+  return stageKeys.map((stageKey, index) => {
     const stageName = stageKey.includes(":")
       ? stageKey.split(":")[1]
       : stageKey;
@@ -368,6 +380,9 @@ export function buildFarmPlanStagesRequest(
 
     return {
       name: stageName,
+      ...(formData.seasonStageIds?.[index]
+        ? { seasonStageId: formData.seasonStageIds[index] }
+        : {}),
       supplyLines,
       workItems,
     } satisfies FarmPlanStageRequest;

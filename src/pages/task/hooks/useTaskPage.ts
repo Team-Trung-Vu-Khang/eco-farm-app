@@ -175,7 +175,16 @@ export function useTaskPage() {
   };
 
   const handleEdit = (task: Task) => {
-    setLocation(`/task/${task.id}/edit`);
+    const taskPlanId =
+      (task as Task & { planId?: string | number; plan?: { id?: string | number } })
+        .planId ??
+      (task as Task & { plan?: { id?: string | number } }).plan?.id ??
+      planId;
+    setLocation(
+      taskPlanId
+        ? `/task/${task.id}/edit?planId=${encodeURIComponent(String(taskPlanId))}`
+        : `/task/${task.id}/edit`,
+    );
   };
 
   const handleView = (task: Task) => {

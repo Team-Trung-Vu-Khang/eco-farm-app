@@ -46,6 +46,14 @@ export interface GeographicalSelection {
   plotId?: string;
 }
 
+export interface GrowthCycleSelection {
+  id: string;
+  type: "cycle" | "stage";
+  cycleId: string;
+  stageId?: string;
+  stageName?: string;
+}
+
 export interface Plan {
   id: number;
   code: string;
@@ -79,8 +87,11 @@ export interface Plan {
   area?: string;
   expectedYield?: string;
   growthCycleId: string;
+  growthCycleSelections?: GrowthCycleSelection[];
   regimenId?: string;
   selectedStages: string[];
+  seasonStageIds?: number[];
+  seasonStageNames?: string[];
   materialAllocations: MaterialAllocation[];
   taskAllocations: TaskAllocation[];
   status: "draft" | "active" | "completed" | "cancelled";
@@ -111,6 +122,8 @@ export interface Workflow {
   name: string;
   description: string;
   selections: GeographicalSelection[];
+  seasonIds?: number[];
+  seasonNames?: string[];
   isActive: boolean;
   createdAt: string;
   nodes?: unknown[];
@@ -145,8 +158,10 @@ export interface PlanFormData {
   variety: string;
   purpose: Plan["purpose"];
   growthCycleId: string;
+  growthCycleSelections: GrowthCycleSelection[];
   regimenId: string;
   selectedStages: string[];
+  seasonStageIds?: number[];
   status: Plan["status"];
   materialAllocations: MaterialAllocation[];
   taskAllocations: TaskAllocation[];

@@ -9,7 +9,6 @@ import {
   Checkbox,
   Input,
   Label,
-  ScrollArea,
   Select,
   SelectContent,
   SelectItem,
@@ -33,7 +32,6 @@ import {
   Calendar,
   CheckCircle2,
   Clock,
-  Info,
   Layers,
   Leaf,
   MapPin,
@@ -43,21 +41,21 @@ import {
   Wrench,
   X,
 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import GeographicalSelector from "./components/GeographicalSelector";
+import GrowthCycleSelector from "../plan-growth/components/GrowthCycleSelector";
 import { PersonnelMultiSelectCard } from "./components/PersonnelMultiSelectCard";
 import { RegimenSelector } from "./components/RegimenSelector";
 import SimplePlanForm from "./components/SimplePlanForm";
 import { StageAllocation } from "./components/StageAllocation";
-import { useAnimalGrowthForm } from "./hooks/useAnimalGrowthForm";
 import { useAnimalSupplyCatalog } from "./hooks/useAnimalSupplyCatalog";
+import { useAnimalGrowthForm } from "./hooks/useAnimalGrowthForm";
 
 interface PlanAnimalGrowthEditPageProps {
   basePath?: string;
   onSaved?: (planId: number) => void;
   onCancel?: () => void;
 }
-
 export default function PlanAnimalGrowthEditPage({
   basePath = "/plan-animal-growth",
   onSaved,
@@ -68,7 +66,6 @@ export default function PlanAnimalGrowthEditPage({
     formData,
     setFormData,
     selections,
-    setSelections,
     selectedEnterpriseId,
     seasons,
     personnel,
@@ -78,7 +75,6 @@ export default function PlanAnimalGrowthEditPage({
     isWorkflowContext,
     workflowInfo,
     selectionSummary,
-    calculateArea,
     summarizeTaskSelections: getTaskSelectionSummary,
     handleSeasonChange,
     handleDurationPartChange,
@@ -95,15 +91,177 @@ export default function PlanAnimalGrowthEditPage({
   } = useAnimalGrowthForm("edit", basePath, { onSaved, onCancel });
   const supplyCatalog = useAnimalSupplyCatalog();
 
+  const inheritedCycleIds = workflowInfo?.seasonIds?.length
+    ? workflowInfo.seasonIds.map(String)
+    : workflowInfo?.growthCycleSelections?.length
+      ? Array.from(new Set(workflowInfo.growthCycleSelections.map((s) => s.cycleId)))
+      : [];
+  const inheritedCycles = growthCycles.filter((c) =>
+    inheritedCycleIds.includes(c.id),
+  );
+  const growthCycleSummary = inheritedCycles
+    .map((cycle) => {
+      const stageNames = formData.growthCycleSelections
+        .filter((s) => s.cycleId === cycle.id)
+        .map((s) => cycle.stages.find((st) => st.id === s.stageId)?.name)
+        .filter((name): name is string => Boolean(name));
+      return stageNames.length > 0
+        ? { cycleName: cycle.name, items: stageNames }
+        : null;
+    })
+    .filter(
+      (group): group is { cycleName: string; items: string[] } =>
+        group !== null,
+    );
+
   const [newManualStage, setNewManualStage] = useState("");
+  const [removedGrowthCycleStages, setRemovedGrowthCycleStages] = useState<
+    Set<string>
+  >(new Set());
   const [isSimpleMode, setIsSimpleMode] = useState(true);
-  const [applyRegimen, setApplyRegimen] = useState(() => !!formData.regimenId);
   const purpose = formData.purpose as string;
-  const isCultivationLike =
-    purpose === "cultivation" || purpose === "facility-upgrade";
   const isTreatmentOrAmendment =
     purpose === "treatment" || purpose === "amendment";
   const isHarvest = purpose === "harvest";
+  const isCultivation = purpose === "cultivation";
+  const isFacilityUpgrade = purpose === "facility-upgrade";
+  // Only cultivation automatically turns picked growth-cycle stages into
+  // planned work items. Treatment/amendment stages remain optional checkboxes.
+  const derivesStagesFromGrowthCycle = isCultivation;
+
+  // Keep `selectedStages` synced to the picked growth-cycle stage(s) (as
+  // `${cycleId}:${stageName}` entries, the same key shape the
+  // "resources"/"confirmation" steps below already expect in order to look
+  // up and badge the owning cycle — mirroring how regimen steps are
+  // prefixed with the regimen id) so users don't have to re-type stage
+  // names by hand. Manually added items and regimen steps are left untouched.
+  const isGrowthCycleStageKey = (key: string) =>
+    growthCycles.some((c) => key.startsWith(`${c.id}:`));
+
+  useEffect(() => {
+    if (!derivesStagesFromGrowthCycle) return;
+
+    // On edit, the API's `stages` list is authoritative. Only generate
+    // stage rows from the selected Season when the plan has no stages yet;
+    // otherwise this effect must not append/replace API rows and create
+    // duplicate items with the same name.
+    if (
+      formData.selectedStages.length > 0 &&
+      !formData.selectedStages.some(isGrowthCycleStageKey)
+    ) {
+      return;
+    }
+
+    const derivedKeys = Array.from(
+      new Set(
+        formData.growthCycleSelections
+          .map((s) => {
+            const cycle = growthCycles.find((c) => c.id === s.cycleId);
+            const stageIndex =
+              cycle?.stages.findIndex((st) => st.id === s.stageId) ?? -1;
+            return stageIndex >= 0
+              ? {
+                  key: `${cycle!.id}:${cycle!.stages[stageIndex].name}`,
+                  order: stageIndex,
+                }
+              : null;
+          })
+          .filter((e): e is { key: string; order: number } => Boolean(e))
+          .sort((a, b) => a.order - b.order)
+          .map((e) => e.key)
+          .filter((key) => !removedGrowthCycleStages.has(key)),
+      ),
+    );
+
+    setFormData((prev) => {
+      const existingGcKeys = prev.selectedStages.filter(isGrowthCycleStageKey);
+      const unchanged =
+        existingGcKeys.length === derivedKeys.length &&
+        existingGcKeys.every((key, idx) => key === derivedKeys[idx]);
+      if (unchanged) return prev;
+
+      const removedKeys = existingGcKeys.filter(
+        (k) => !derivedKeys.includes(k),
+      );
+      return {
+        ...prev,
+        selectedStages: [
+          ...derivedKeys,
+          ...prev.selectedStages.filter((s) => !isGrowthCycleStageKey(s)),
+        ],
+        materialAllocations: prev.materialAllocations.filter(
+          (m) => !removedKeys.includes(m.stageId),
+        ),
+      };
+    });
+    // `formData.purpose` must stay a dependency even though
+    // `derivesStagesFromGrowthCycle` already derives from it — switching
+    // between two purposes that are both `true` for it (e.g. treatment ->
+    // amendment) doesn't change that boolean, so without `purpose` here the
+    // effect wouldn't re-run to restore `selectedStages` after the
+    // purpose-switch handler resets it to `[]`.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    derivesStagesFromGrowthCycle,
+    formData.purpose,
+    formData.growthCycleSelections,
+    growthCycles,
+    removedGrowthCycleStages,
+  ]);
+
+  // Regimen items are always included automatically. Growth-cycle stages for
+  // treatment/amendment are intentionally handled by checkboxes in the UI.
+  useEffect(() => {
+    if (!isTreatmentOrAmendment || !formData.regimenId) return;
+    const regimen = regimens.find((item) => item.id === formData.regimenId);
+    if (!regimen) return;
+    const regimenKeys = regimen.steps?.length
+      ? regimen.steps.map(
+          (step: { title: string }) => `${regimen.id}:${step.title}`,
+        )
+      : [`${regimen.id}:${regimen.name}`];
+    setFormData((prev) => {
+      const withoutRegimenItems = prev.selectedStages.filter(
+        (stage) => !stage.startsWith(`${prev.regimenId}:`),
+      );
+      const nextStages = [...withoutRegimenItems, ...regimenKeys];
+      return nextStages.length === prev.selectedStages.length &&
+        nextStages.every((stage, index) => stage === prev.selectedStages[index])
+        ? prev
+        : { ...prev, selectedStages: nextStages };
+    });
+  }, [formData.regimenId, isTreatmentOrAmendment, regimens, setFormData]);
+
+  const manualSelectedStages = formData.selectedStages.filter(
+    (stage) => !stage.includes(":"),
+  );
+  const availableGrowthCycleStagesMap = new Map<
+    string,
+    { key: string; name: string; cycleName: string }
+  >();
+  formData.growthCycleSelections.forEach((selection) => {
+    const cycle = growthCycles.find((item) => item.id === selection.cycleId);
+    const stage = cycle?.stages.find((item) => item.id === selection.stageId);
+    if (!cycle || !stage) return;
+    const key = `${cycle.id}:${stage.name}`;
+    availableGrowthCycleStagesMap.set(key, {
+      key,
+      name: stage.name,
+      cycleName: cycle.name,
+    });
+  });
+  const availableGrowthCycleStages = Array.from(
+    availableGrowthCycleStagesMap.values(),
+  );
+
+  const selectedRegimen = regimens.find(
+    (item) => item.id === formData.regimenId,
+  );
+  const regimenStageTitles: string[] = selectedRegimen?.steps?.length
+    ? selectedRegimen.steps.map((step: { title: string }) => step.title)
+    : selectedRegimen
+      ? [selectedRegimen.name]
+      : [];
 
   const purposeOptions = [
     {
@@ -222,8 +380,8 @@ export default function PlanAnimalGrowthEditPage({
             <div>
               <h3 className="font-semibold">Chỉnh sửa kế hoạch</h3>
               <p className="text-sm text-blue-700">
-                Chọn lứa nuôi, nhập thời gian dự kiến và đặt tên cho kế hoạch
-                của bạn.
+                Chọn lứa nuôi, nhập thời gian dự kiến và đặt tên cho kế hoạch của
+                bạn.
               </p>
             </div>
           </div>
@@ -432,6 +590,62 @@ export default function PlanAnimalGrowthEditPage({
                       </p>
                     )}
                   </div>
+
+                  {isWorkflowContext && (
+                    <div className="space-y-2">
+                      <label className="text-xs text-muted-foreground font-black uppercase tracking-widest">
+                        Chu kỳ sinh trưởng
+                      </label>
+
+                      {inheritedCycles.length > 0 ? (
+                        <GrowthCycleSelector
+                          growthCycles={growthCycles}
+                          lockedCycleIds={inheritedCycleIds}
+                          existingSelections={formData.growthCycleSelections}
+                          onConfirm={(nextSelections) =>
+                            setFormData((prev) => ({
+                              ...prev,
+                              growthCycleSelections: nextSelections,
+                            }))
+                          }
+                        />
+                      ) : (
+                        <p className="text-xs text-emerald-800/60 italic text-center py-2">
+                          Quy trình chưa thiết lập chu kỳ sinh trưởng
+                        </p>
+                      )}
+
+                      {growthCycleSummary.length > 0 && (
+                        <div className="mt-4 p-4 rounded-xl bg-white/50 border border-emerald-100/50 space-y-3">
+                          <div className="text-[10px] font-bold text-emerald-800/60 uppercase tracking-widest flex items-center gap-2">
+                            <Sprout className="w-3 h-3" />
+                            Giai đoạn đã chọn
+                          </div>
+                          <div className="space-y-3">
+                            {growthCycleSummary.map((group) => (
+                              <div key={group.cycleName} className="space-y-2">
+                                <div className="flex items-center gap-1.5 text-[11px] font-bold text-slate-700">
+                                  <div className="w-1 h-1 rounded-full bg-emerald-500" />
+                                  {group.cycleName}
+                                </div>
+                                <div className="flex flex-wrap gap-1.5 pl-2.5">
+                                  {group.items.map((label, idx) => (
+                                    <Badge
+                                      key={idx}
+                                      variant="outline"
+                                      className="text-[10px] py-0 px-2 h-5 font-medium border-emerald-100 shadow-sm bg-emerald-100 text-emerald-800"
+                                    >
+                                      {label}
+                                    </Badge>
+                                  ))}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -602,192 +816,241 @@ export default function PlanAnimalGrowthEditPage({
     {
       id: "process",
       title: "Quy trình & Giai đoạn",
-      description: "Lộ trình chăn nuôi",
+      description: "Chọn hạng mục triển khai",
       content: (
         <div className="max-w-2xl mx-auto space-y-6">
           <div className="space-y-6">
-            {isTreatmentOrAmendment && (
-              <div className="space-y-4 animation-slide-up bg-slate-50/30 p-6 rounded-3xl border border-slate-100 shadow-sm">
-                <div className="flex items-center justify-between rounded-xl border border-slate-100 bg-white p-3">
-                  <div>
-                    <p className="text-xs font-bold text-slate-700">
-                      Áp dụng phác đồ có sẵn
-                    </p>
-                    <p className="text-[10px] text-slate-400">
-                      Tắt để tự nhập các hạng mục công việc thay vì dùng phác
-                      đồ.
-                    </p>
+            <div className="space-y-5 animation-slide-up rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <h3 className="text-base font-bold text-slate-900">
+                    Danh sách hạng mục
+                  </h3>
+                  <p className="mt-1 text-xs text-slate-500">
+                    {isCultivation
+                      ? "Các hạng mục được điền sẵn từ quy trình. Bạn có thể chọn, xoá hoặc thêm hạng mục mới."
+                      : "Hạng mục phác đồ được điền sẵn. Giai đoạn áp dụng là lựa chọn bổ sung cho kế hoạch này."}
+                  </p>
+                </div>
+                <Badge
+                  variant="outline"
+                  className="shrink-0 bg-slate-50 text-slate-600"
+                >
+                  {formData.selectedStages.length} mục đã chọn
+                </Badge>
+              </div>
+
+              {isTreatmentOrAmendment && (
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-xs font-bold text-slate-700">
+                      {purpose === "treatment"
+                        ? "Phác đồ điều trị"
+                        : "Phác đồ cải tạo chuồng trại"}
+                    </Label>
+                    {formData.regimenId && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() =>
+                          setFormData((prev) => ({
+                            ...prev,
+                            regimenId: "",
+                            selectedStages: prev.selectedStages.filter(
+                              (stage) =>
+                                !stage.startsWith(`${prev.regimenId}:`),
+                            ),
+                          }))
+                        }
+                        className="h-7 px-2 text-[10px] font-bold text-red-500 hover:bg-red-50"
+                      >
+                        Xoá phác đồ
+                      </Button>
+                    )}
                   </div>
-                  <Switch
-                    checked={applyRegimen}
-                    onCheckedChange={(checked) => {
-                      setApplyRegimen(checked);
+                  <RegimenSelector
+                    regimens={regimens}
+                    selectedRegimenId={formData.regimenId}
+                    type={formData.purpose as "treatment" | "amendment"}
+                    onSelect={(regimen) => {
+                      const regimenStages = regimen.steps?.length
+                        ? regimen.steps.map(
+                            (step) => `${regimen.id}:${step.title}`,
+                          )
+                        : [`${regimen.id}:${regimen.name}`];
                       setFormData((prev) => ({
                         ...prev,
-                        regimenId: checked ? prev.regimenId : "",
-                        selectedStages: checked
-                          ? prev.selectedStages.filter((stage) =>
-                              stage.includes(":"),
-                            )
-                          : prev.selectedStages.filter(
-                              (stage) => !stage.includes(":"),
-                            ),
+                        regimenId: regimen.id,
+                        selectedStages: [
+                          ...prev.selectedStages.filter(
+                            (stage) => !stage.startsWith(`${prev.regimenId}:`),
+                          ),
+                          ...regimenStages,
+                        ],
                       }));
                     }}
                   />
-                </div>
-
-                {applyRegimen ? (
-                  <>
-                    <div className="flex items-center justify-between">
-                      <Label className="text-base uppercase tracking-wider text-slate-500 font-bold text-[10px]">
-                        {purpose === "treatment"
-                          ? "Phác đồ điều trị"
-                          : "Phác đồ cải tạo chuồng trại"}
-                      </Label>
-                      {formData.regimenId && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() =>
-                            setFormData((prev) => ({
-                              ...prev,
-                              regimenId: "",
-                              selectedStages: prev.selectedStages.filter(
-                                (stage) =>
-                                  !stage.startsWith(`${prev.regimenId}:`),
-                              ),
-                            }))
-                          }
-                          className="h-7 text-[10px] font-bold text-red-500 hover:text-red-600 hover:bg-red-50 rounded-lg px-2"
+                  {regimenStageTitles.length > 0 && (
+                    <div className="grid gap-2 sm:grid-cols-2">
+                      {regimenStageTitles.map((title, index) => (
+                        <div
+                          key={`${formData.regimenId}:${title}`}
+                          className="flex items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 px-3 py-3 text-sm font-semibold text-slate-700"
                         >
-                          XÓA PHÁC ĐỒ
-                        </Button>
-                      )}
+                          <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-white text-xs text-slate-500">
+                            {index + 1}
+                          </span>
+                          <span className="line-clamp-2">{title}</span>
+                        </div>
+                      ))}
                     </div>
-                    <RegimenSelector
-                      regimens={regimens}
-                      selectedRegimenId={formData.regimenId}
-                      type={formData.purpose as "treatment" | "amendment"}
-                      onSelect={(regimen) => {
-                        const regimenStages =
-                          regimen.steps && regimen.steps.length > 0
-                            ? regimen.steps.map(
-                                (step) => `${regimen.id}:${step.title}`,
-                              )
-                            : [`${regimen.id}:${regimen.name}`];
+                  )}
+                </div>
+              )}
+
+              {isTreatmentOrAmendment &&
+                availableGrowthCycleStages.length > 0 && (
+                  <div className="space-y-3 border-t border-dashed border-slate-200 pt-5">
+                    <div>
+                      <Label className="text-xs font-bold text-slate-700">
+                        Giai đoạn áp dụng (tuỳ chọn)
+                      </Label>
+                      <p className="mt-1 text-[11px] text-slate-500">
+                        Tick chọn các giai đoạn cần áp dụng thêm.
+                      </p>
+                    </div>
+                    <div className="grid gap-2 sm:grid-cols-2">
+                      {availableGrowthCycleStages.map((stage) => {
+                        const checked = formData.selectedStages.includes(
+                          stage.key,
+                        );
+                        return (
+                          <label
+                            key={stage.key}
+                            className={cn(
+                              "flex cursor-pointer items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 px-3 py-3 text-sm font-semibold text-slate-700 transition-colors hover:border-slate-300",
+                            )}
+                          >
+                            <Checkbox
+                              checked={checked}
+                              onCheckedChange={(value) =>
+                                setFormData((prev) => ({
+                                  ...prev,
+                                  selectedStages: value
+                                    ? [...prev.selectedStages, stage.key]
+                                    : prev.selectedStages.filter(
+                                        (item) => item !== stage.key,
+                                      ),
+                                }))
+                              }
+                            />
+                            <span>
+                              <span className="block font-semibold">
+                                {stage.name}
+                              </span>
+                              <span className="block text-[11px] text-slate-400">
+                                {stage.cycleName}
+                              </span>
+                            </span>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+              {isTreatmentOrAmendment && (
+                <div className="space-y-4 border-t border-dashed border-slate-200 pt-4">
+                  <div className="flex gap-2">
+                    <Input
+                      value={newManualStage}
+                      onChange={(event) =>
+                        setNewManualStage(event.target.value)
+                      }
+                      onKeyDown={(event) => {
+                        if (event.key !== "Enter") return;
+                        event.preventDefault();
+                        const name = newManualStage.trim();
+                        if (!name || formData.selectedStages.includes(name))
+                          return;
                         setFormData((prev) => ({
                           ...prev,
-                          regimenId: regimen.id,
-                          selectedStages: [
-                            ...prev.selectedStages.filter(
-                              (stage) => !stage.includes(":"),
-                            ),
-                            ...regimenStages,
-                          ],
+                          selectedStages: [...prev.selectedStages, name],
                         }));
+                        setNewManualStage("");
                       }}
+                      placeholder="Thêm hạng mục mới..."
+                      className="h-11 rounded-xl border-slate-200"
                     />
-
-                    {formData.regimenId &&
-                      (() => {
-                        const selectedRegimen = regimens.find(
-                          (item) => item.id === formData.regimenId,
-                        );
-                        const stageTitles: string[] =
-                          selectedRegimen?.steps &&
-                          selectedRegimen.steps.length > 0
-                            ? selectedRegimen.steps.map(
-                                (step: { title: string }) => step.title,
-                              )
-                            : selectedRegimen
-                              ? [selectedRegimen.name]
-                              : [];
-                        if (!stageTitles.length) return null;
-
-                        return (
-                          <div className="space-y-2 pt-4 border-t border-dashed border-slate-200">
-                            <Label className="text-[10px] uppercase font-black text-slate-400">
-                              Hạng mục công việc của phác đồ
-                            </Label>
-                            <div className="flex flex-col gap-2 p-4 bg-white rounded-2xl border border-slate-100 shadow-sm">
-                              {stageTitles.map((title) => {
-                                const stageKey = `${formData.regimenId}:${title}`;
-                                const checked =
-                                  formData.selectedStages.includes(stageKey);
-
-                                return (
-                                  <label
-                                    key={stageKey}
-                                    className={cn(
-                                      "flex w-full cursor-pointer items-center gap-2.5 rounded-xl border px-3 py-2.5 text-xs font-bold transition-colors",
-                                      checked
-                                        ? "border-slate-200 bg-slate-50 text-slate-700"
-                                        : "border-slate-100 bg-white text-slate-400",
-                                    )}
-                                  >
-                                    <Checkbox
-                                      checked={checked}
-                                      onCheckedChange={(value) =>
-                                        setFormData((prev) => ({
-                                          ...prev,
-                                          selectedStages: value
-                                            ? [...prev.selectedStages, stageKey]
-                                            : prev.selectedStages.filter(
-                                                (s) => s !== stageKey,
-                                              ),
-                                        }))
-                                      }
-                                    />
-                                    {title}
-                                  </label>
-                                );
-                              })}
-                            </div>
-                          </div>
-                        );
-                      })()}
-                  </>
-                ) : (
-                  <div className="space-y-4 pt-4 border-t border-dashed border-slate-200">
-                    <div className="flex items-center justify-between">
-                      <Label className="text-[10px] uppercase font-black text-slate-400">
-                        Hạng mục công việc dự kiến
-                      </Label>
-                      <Badge
-                        variant="outline"
-                        className="bg-amber-50 text-amber-700 border-amber-200 text-[10px] font-bold"
-                      >
-                        {formData.selectedStages.length} mục
-                      </Badge>
-                    </div>
-
-                    <div className="flex gap-2">
-                      <Input
-                        placeholder="Nhập tên hạng mục (VD: Bón vôi, Làm chuồng trại...)"
-                        value={newManualStage}
-                        onChange={(e) => setNewManualStage(e.target.value)}
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter") {
-                            e.preventDefault();
-                            const name = newManualStage.trim();
-                            if (
-                              name &&
-                              !formData.selectedStages.includes(name)
-                            ) {
+                    <Button
+                      type="button"
+                      onClick={() => {
+                        const name = newManualStage.trim();
+                        if (!name || formData.selectedStages.includes(name))
+                          return;
+                        setFormData((prev) => ({
+                          ...prev,
+                          selectedStages: [...prev.selectedStages, name],
+                        }));
+                        setNewManualStage("");
+                      }}
+                      className="h-11 rounded-xl px-5 text-xs font-bold"
+                    >
+                      Thêm
+                    </Button>
+                  </div>
+                  {newManualStage.trim() &&
+                    formData.selectedStages.includes(newManualStage.trim()) && (
+                      <p className="text-xs text-amber-600">
+                        Hạng mục này đã có trong danh sách.
+                      </p>
+                    )}
+                  {manualSelectedStages.length > 0 && (
+                    <div className="grid gap-2 sm:grid-cols-2">
+                      {manualSelectedStages.map((stage, index) => (
+                        <div
+                          key={stage}
+                          className="flex items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 px-3 py-3 text-sm font-semibold text-slate-700"
+                        >
+                          <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-white text-xs text-slate-500">
+                            {index + 1}
+                          </span>
+                          <span className="flex-1">{stage}</span>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            onClick={() =>
                               setFormData((prev) => ({
                                 ...prev,
-                                selectedStages: [...prev.selectedStages, name],
-                              }));
-                              setNewManualStage("");
+                                selectedStages: prev.selectedStages.filter(
+                                  (item) => item !== stage,
+                                ),
+                              }))
                             }
-                          }
-                        }}
-                        className="bg-white border-slate-200 h-11 text-sm rounded-xl"
-                      />
-                      <Button
-                        type="button"
-                        onClick={() => {
+                            className="h-7 w-7 shrink-0 text-slate-400 hover:bg-red-50 hover:text-red-600"
+                          >
+                            <X className="h-3.5 w-3.5" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {isCultivation && (
+                <div className="space-y-4">
+                  <div className="flex gap-2 border-t border-dashed border-slate-200 pt-4">
+                    <Input
+                      placeholder="Thêm hạng mục mới..."
+                      value={newManualStage}
+                      onChange={(event) =>
+                        setNewManualStage(event.target.value)
+                      }
+                      onKeyDown={(event) => {
+                        if (event.key === "Enter") {
+                          event.preventDefault();
                           const name = newManualStage.trim();
                           if (name && !formData.selectedStages.includes(name)) {
                             setFormData((prev) => ({
@@ -796,242 +1059,230 @@ export default function PlanAnimalGrowthEditPage({
                             }));
                             setNewManualStage("");
                           }
-                        }}
-                        className="px-6 h-11 rounded-xl font-bold uppercase text-xs"
-                      >
-                        THÊM
-                      </Button>
-                    </div>
-
-                    {formData.selectedStages.length > 0 && (
-                      <div className="flex flex-col gap-2 p-4 bg-white rounded-2xl border border-slate-100 shadow-sm">
-                        {formData.selectedStages.map((stage, idx) => (
+                        }
+                      }}
+                      className="h-11 rounded-xl border-slate-200"
+                    />
+                    <Button
+                      type="button"
+                      onClick={() => {
+                        const name = newManualStage.trim();
+                        if (name && !formData.selectedStages.includes(name)) {
+                          setFormData((prev) => ({
+                            ...prev,
+                            selectedStages: [...prev.selectedStages, name],
+                          }));
+                          setNewManualStage("");
+                        }
+                      }}
+                      className="h-11 rounded-xl px-5 text-xs font-bold"
+                    >
+                      Thêm
+                    </Button>
+                  </div>
+                  {formData.selectedStages.length > 0 && (
+                    <div className="grid gap-2 sm:grid-cols-2">
+                      {formData.selectedStages.map((stageKey, index) => {
+                        const stage = availableGrowthCycleStages.find(
+                          (item) => item.key === stageKey,
+                        );
+                        const name = stage?.name || stageKey;
+                        return (
                           <div
-                            key={stage}
-                            className="flex w-full items-center gap-2.5 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-xs font-bold text-slate-700 transition-colors"
+                            key={stageKey}
+                            className="flex items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 px-3 py-3 text-sm font-semibold text-slate-700"
                           >
-                            <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-white text-[11px] font-bold text-slate-700 shadow-sm">
-                              {idx + 1}
+                            <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-white text-xs text-slate-500">
+                              {index + 1}
                             </span>
-                            <span className="flex-1">{stage}</span>
+                            <span className="flex-1">{name}</span>
                             <Button
+                              type="button"
                               variant="ghost"
                               size="icon"
-                              onClick={() =>
+                              onClick={() => {
+                                if (isGrowthCycleStageKey(stageKey)) {
+                                  setRemovedGrowthCycleStages((prev) =>
+                                    new Set(prev).add(stageKey),
+                                  );
+                                }
                                 setFormData((prev) => ({
                                   ...prev,
                                   selectedStages: prev.selectedStages.filter(
-                                    (s) => s !== stage,
+                                    (item) => item !== stageKey,
                                   ),
-                                }))
-                              }
-                              className="h-6 w-6 rounded-md hover:bg-red-100 hover:text-red-600 shrink-0"
+                                  materialAllocations:
+                                    prev.materialAllocations.filter(
+                                      (item) => item.stageId !== stageKey,
+                                    ),
+                                }));
+                              }}
+                              className="h-7 w-7 shrink-0 text-slate-400 hover:bg-red-50 hover:text-red-600"
                             >
-                              <X className="w-3 h-3" />
+                              <X className="h-3.5 w-3.5" />
                             </Button>
                           </div>
-                        ))}
-                      </div>
-                    )}
-
-                    <div className="flex items-center gap-2 p-3 bg-amber-50/50 rounded-xl border border-amber-100/50">
-                      <Info className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-                      <p className="text-[10px] text-amber-700 font-medium">
-                        Nhập tên các hạng mục công việc bạn muốn triển khai. Bạn
-                        sẽ phân bổ vật tư cho từng hạng mục ở bước tiếp theo.
-                      </p>
+                        );
+                      })}
                     </div>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {isCultivationLike && (
-              <div className="space-y-4 animation-slide-up bg-slate-50/30 p-6 rounded-3xl border border-slate-100 shadow-sm">
-                <div className="flex items-center justify-between">
-                  <Label className="text-base uppercase tracking-wider text-slate-500 font-bold text-[10px]">
-                    Hạng mục công việc dự kiến
-                  </Label>
-                  <Badge
-                    variant="outline"
-                    className="bg-amber-50 text-amber-700 border-amber-200 text-[10px] font-bold"
-                  >
-                    {formData.selectedStages.length} mục
-                  </Badge>
+                  )}
                 </div>
+              )}
 
-                <div className="flex gap-2">
-                  <Input
-                    placeholder="Nhập tên hạng mục (VD: Bón phân, Tưới nước...)"
-                    value={newManualStage}
-                    onChange={(e) => setNewManualStage(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") {
-                        e.preventDefault();
-                        const name = newManualStage.trim();
-                        if (name && !formData.selectedStages.includes(name)) {
-                          setFormData((prev) => ({
-                            ...prev,
-                            selectedStages: [...prev.selectedStages, name],
-                          }));
-                          setNewManualStage("");
-                        }
+              {isFacilityUpgrade && (
+                <div className="space-y-3">
+                  <div className="flex gap-2 border-t border-dashed border-slate-200 pt-4">
+                    <Input
+                      value={newManualStage}
+                      onChange={(event) =>
+                        setNewManualStage(event.target.value)
                       }
-                    }}
-                    className="bg-white border-slate-200 h-11 text-sm rounded-xl"
-                  />
-                  <Button
-                    type="button"
-                    onClick={() => {
-                      const name = newManualStage.trim();
-                      if (name && !formData.selectedStages.includes(name)) {
+                      onKeyDown={(event) => {
+                        if (event.key !== "Enter") return;
+                        event.preventDefault();
+                        const name = newManualStage.trim();
+                        if (!name || formData.selectedStages.includes(name))
+                          return;
                         setFormData((prev) => ({
                           ...prev,
                           selectedStages: [...prev.selectedStages, name],
                         }));
                         setNewManualStage("");
-                      }
-                    }}
-                    className="px-6 h-11 rounded-xl font-bold uppercase text-xs"
-                  >
-                    THÊM
-                  </Button>
-                </div>
-
-                {formData.selectedStages.length > 0 && (
-                  <div className="flex flex-col gap-2 p-4 bg-white rounded-2xl border border-slate-100 shadow-sm">
-                    {formData.selectedStages.map((stage, idx) => (
-                      <div
-                        key={stage}
-                        className="flex w-full items-center gap-2.5 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-xs font-bold text-slate-700 transition-colors"
-                      >
-                        <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-white text-[11px] font-bold text-slate-700 shadow-sm">
-                          {idx + 1}
-                        </span>
-                        <span className="flex-1">{stage}</span>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() =>
-                            setFormData((prev) => ({
-                              ...prev,
-                              selectedStages: prev.selectedStages.filter(
-                                (s) => s !== stage,
-                              ),
-                            }))
-                          }
-                          className="h-6 w-6 rounded-md hover:bg-red-100 hover:text-red-600 shrink-0"
-                        >
-                          <X className="w-3 h-3" />
-                        </Button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-
-                <div className="flex items-center gap-2 p-3 bg-amber-50/50 rounded-xl border border-amber-100/50">
-                  <Info className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-                  <p className="text-[10px] text-amber-700 font-medium">
-                    {purpose === "facility-upgrade"
-                      ? "Nhập tên các hạng mục nâng cấp cơ sở vật chất bạn muốn triển khai."
-                      : "Nhập tên các hạng mục công việc dự kiến. Bạn sẽ phân bổ vật tư cho từng hạng mục ở bước tiếp theo."}
-                  </p>
-                </div>
-              </div>
-            )}
-
-            {isHarvest && (
-              <div className="space-y-4 animation-slide-up bg-slate-50/30 p-6 rounded-3xl border border-slate-100 shadow-sm">
-                <div className="flex items-center justify-between">
-                  <Label className="text-base uppercase tracking-wider text-slate-500 font-bold text-[10px]">
-                    Hạng mục công việc dự kiến
-                  </Label>
-                  <Badge
-                    variant="outline"
-                    className="bg-amber-50 text-amber-700 border-amber-200 text-[10px] font-bold"
-                  >
-                    {formData.selectedStages.length} mục
-                  </Badge>
-                </div>
-
-                <div className="flex gap-2">
-                  <Input
-                    placeholder="Nhập tên hạng mục (VD: Tập kết, Kiểm tra, Bốc dỡ...)"
-                    value={newManualStage}
-                    onChange={(e) => setNewManualStage(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") {
-                        e.preventDefault();
+                      }}
+                      placeholder="Thêm hạng mục mới..."
+                      className="h-11 rounded-xl border-slate-200"
+                    />
+                    <Button
+                      type="button"
+                      onClick={() => {
                         const name = newManualStage.trim();
-                        if (name && !formData.selectedStages.includes(name)) {
-                          setFormData((prev) => ({
-                            ...prev,
-                            selectedStages: [...prev.selectedStages, name],
-                          }));
-                          setNewManualStage("");
-                        }
-                      }
-                    }}
-                    className="bg-white border-slate-200 h-11 text-sm rounded-xl"
-                  />
-                  <Button
-                    type="button"
-                    onClick={() => {
-                      const name = newManualStage.trim();
-                      if (name && !formData.selectedStages.includes(name)) {
+                        if (!name || formData.selectedStages.includes(name))
+                          return;
                         setFormData((prev) => ({
                           ...prev,
                           selectedStages: [...prev.selectedStages, name],
                         }));
                         setNewManualStage("");
-                      }
-                    }}
-                    className="px-6 h-11 rounded-xl font-bold uppercase text-xs"
-                  >
-                    THÊM
-                  </Button>
-                </div>
-
-                {formData.selectedStages.length > 0 && (
-                  <div className="flex flex-col gap-2 p-4 bg-white rounded-2xl border border-slate-100 shadow-sm">
-                    {formData.selectedStages.map((stage, idx) => (
-                      <div
-                        key={stage}
-                        className="flex w-full items-center gap-2.5 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-xs font-bold text-slate-700 transition-colors"
-                      >
-                        <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-white text-[11px] font-bold text-slate-700 shadow-sm">
-                          {idx + 1}
-                        </span>
-                        <span className="flex-1">{stage}</span>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() =>
-                            setFormData((prev) => ({
-                              ...prev,
-                              selectedStages: prev.selectedStages.filter(
-                                (s) => s !== stage,
-                              ),
-                            }))
-                          }
-                          className="h-6 w-6 rounded-md hover:bg-red-100 hover:text-red-600 shrink-0"
-                        >
-                          <X className="w-3 h-3" />
-                        </Button>
-                      </div>
-                    ))}
+                      }}
+                      className="h-11 rounded-xl px-5 text-xs font-bold"
+                    >
+                      Thêm
+                    </Button>
                   </div>
-                )}
-
-                <div className="flex items-center gap-2 p-3 bg-amber-50/50 rounded-xl border border-amber-100/50">
-                  <Info className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-                  <p className="text-[10px] text-amber-700 font-medium">
-                    Nhập các hạng mục công việc dự kiến để phân bổ vật tư và
-                    nhân sự ở bước tiếp theo.
-                  </p>
+                  {newManualStage.trim() &&
+                    formData.selectedStages.includes(newManualStage.trim()) && (
+                      <p className="text-xs text-amber-600">
+                        Hạng mục này đã có trong danh sách.
+                      </p>
+                    )}
+                  {formData.selectedStages.length > 0 && (
+                    <div className="grid gap-2 sm:grid-cols-2">
+                      {formData.selectedStages.map((stage, index) => (
+                        <div
+                          key={stage}
+                          className="flex items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 px-3 py-3 text-sm font-semibold text-slate-700"
+                        >
+                          <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-white text-xs text-slate-500">
+                            {index + 1}
+                          </span>
+                          <span className="flex-1">{stage}</span>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            onClick={() =>
+                              setFormData((prev) => ({
+                                ...prev,
+                                selectedStages: prev.selectedStages.filter(
+                                  (item) => item !== stage,
+                                ),
+                              }))
+                            }
+                            className="h-7 w-7 text-slate-400 hover:bg-red-50 hover:text-red-600"
+                          >
+                            <X className="h-3.5 w-3.5" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
-              </div>
-            )}
+              )}
+
+              {isHarvest && (
+                <div className="space-y-4 border-t border-dashed border-slate-200 pt-4">
+                  <div className="flex gap-2">
+                    <Input
+                      placeholder="Thêm hạng mục mới..."
+                      value={newManualStage}
+                      onChange={(event) =>
+                        setNewManualStage(event.target.value)
+                      }
+                      onKeyDown={(event) => {
+                        if (event.key !== "Enter") return;
+                        event.preventDefault();
+                        const name = newManualStage.trim();
+                        if (!name || formData.selectedStages.includes(name))
+                          return;
+                        setFormData((prev) => ({
+                          ...prev,
+                          selectedStages: [...prev.selectedStages, name],
+                        }));
+                        setNewManualStage("");
+                      }}
+                      className="h-11 rounded-xl border-slate-200"
+                    />
+                    <Button
+                      type="button"
+                      onClick={() => {
+                        const name = newManualStage.trim();
+                        if (!name || formData.selectedStages.includes(name))
+                          return;
+                        setFormData((prev) => ({
+                          ...prev,
+                          selectedStages: [...prev.selectedStages, name],
+                        }));
+                        setNewManualStage("");
+                      }}
+                      className="h-11 rounded-xl px-5 text-xs font-bold"
+                    >
+                      Thêm
+                    </Button>
+                  </div>
+                  {formData.selectedStages.length > 0 && (
+                    <div className="grid gap-2 sm:grid-cols-2">
+                      {formData.selectedStages.map((stage, index) => (
+                        <div
+                          key={stage}
+                          className="flex items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 px-3 py-3 text-sm font-semibold text-slate-700"
+                        >
+                          <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-white text-xs text-slate-500">
+                            {index + 1}
+                          </span>
+                          <span className="flex-1">{stage}</span>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            onClick={() =>
+                              setFormData((prev) => ({
+                                ...prev,
+                                selectedStages: prev.selectedStages.filter(
+                                  (item) => item !== stage,
+                                ),
+                              }))
+                            }
+                            className="h-7 w-7 text-slate-400 hover:bg-red-50 hover:text-red-600"
+                          >
+                            <X className="h-3.5 w-3.5" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
         </div>
       ),
@@ -1090,7 +1341,6 @@ export default function PlanAnimalGrowthEditPage({
                   tasks={formData.taskAllocations.filter(
                     (t) => t.stageId === "Xuất bán",
                   )}
-                  supplyCatalog={supplyCatalog}
                   regions={regions}
                   masterSelections={selections}
                   enterpriseId={selectedEnterpriseId}
@@ -1102,6 +1352,7 @@ export default function PlanAnimalGrowthEditPage({
                     handleAddTask({ ...item, stageId: "Xuất bán" })
                   }
                   onRemoveTask={handleRemoveTask}
+                  supplyCatalog={supplyCatalog}
                 />
               </div>
             ) : (
@@ -1128,7 +1379,6 @@ export default function PlanAnimalGrowthEditPage({
                     tasks={formData.taskAllocations.filter(
                       (t) => t.stageId === stageKey,
                     )}
-                    supplyCatalog={supplyCatalog}
                     regions={regions}
                     masterSelections={selections}
                     enterpriseId={selectedEnterpriseId}
@@ -1140,6 +1390,7 @@ export default function PlanAnimalGrowthEditPage({
                       handleAddTask({ ...item, stageId: stageKey })
                     }
                     onRemoveTask={handleRemoveTask}
+                    supplyCatalog={supplyCatalog}
                   />
                 );
               })
@@ -1215,7 +1466,7 @@ export default function PlanAnimalGrowthEditPage({
                         ? "KẾ HOẠCH ĐIỀU TRỊ"
                         : formData.purpose === "amendment"
                           ? "KẾ HOẠCH CẢI TẠO"
-                          : "KẾ HOẠCH THU HOẠCH"}
+                          : "KẾ HOẠCH XUẤT BÁN"}
                     </Badge>
                   )}
                 </CardTitle>
@@ -1225,7 +1476,7 @@ export default function PlanAnimalGrowthEditPage({
                   {!isWorkflowContext && (
                     <div>
                       <label className="text-xs text-muted-foreground font-semibold uppercase tracking-wider">
-                        Mùa vụ
+                        Lứa nuôi
                       </label>
                       <p className="font-medium mt-1 text-slate-800">
                         {formData.seasonName}
@@ -1245,7 +1496,7 @@ export default function PlanAnimalGrowthEditPage({
                     <div>
                       <label className="text-xs text-muted-foreground font-semibold uppercase tracking-wider">
                         {formData.purpose === "amendment"
-                          ? "Phác đồ cải tạo đất"
+                          ? "Phác đồ cải tạo chuồng trại"
                           : formData.purpose === "harvest"
                             ? "Loại hình"
                             : "Phác đồ điều trị"}
@@ -1261,7 +1512,7 @@ export default function PlanAnimalGrowthEditPage({
                         )}
                       >
                         {formData.purpose === "harvest"
-                          ? "Kế hoạch thu hoạch"
+                          ? "Kế hoạch xuất bán"
                           : regimens.find((r) => r.id === formData.regimenId)
                               ?.name || "---"}
                       </p>
@@ -1306,13 +1557,13 @@ export default function PlanAnimalGrowthEditPage({
               <CardHeader className="pb-3 border-b bg-slate-50/80">
                 <CardTitle className="text-base flex items-center gap-2 text-green-700">
                   <MapPin className="w-5 h-5" />
-                  Thông tin canh tác
+                  Thông tin chăn nuôi
                 </CardTitle>
               </CardHeader>
               <CardContent className="pt-4 space-y-5 px-6">
                 <div className="space-y-4">
                   <label className="text-xs text-muted-foreground font-black uppercase tracking-widest">
-                    Chi tiết phạm vi canh tác
+                    Chi tiết phạm vi chăn nuôi
                   </label>
                   <div className="space-y-3">
                     {selectionSummary.length === 0 && (
@@ -1362,24 +1613,69 @@ export default function PlanAnimalGrowthEditPage({
                     ))}
                   </div>
                 </div>
+                <div className="space-y-4">
+                  <label className="text-xs text-muted-foreground font-black uppercase tracking-widest">
+                    Nhân sự quản lý
+                  </label>
+                  <div className="flex flex-wrap gap-1.5">
+                    {formData.managementPersonnelIds.length === 0 ? (
+                      <span className="text-sm italic text-slate-400">
+                        Chưa chọn nhân sự quản lý
+                      </span>
+                    ) : (
+                      formData.managementPersonnelIds.map((id) => {
+                        const person = personnel.find(
+                          (item) => String(item.id) === String(id),
+                        );
+                        return person ? (
+                          <Badge
+                            key={id}
+                            variant="outline"
+                            className="bg-blue-50 text-blue-700 border-blue-100 text-[10px] font-medium py-0 px-2 h-5"
+                          >
+                            <Users className="w-3 h-3 mr-1" />
+                            {person.fullName}
+                          </Badge>
+                        ) : null;
+                      })
+                    )}
+                  </div>
+                </div>
 
-                <div className="grid grid-cols-2 gap-4 bg-emerald-50/50 p-4 rounded-xl border border-emerald-100">
-                  <div>
-                    <p className="text-[10px] text-emerald-700 font-black uppercase tracking-wider mb-1">
-                      Tổng diện tích
-                    </p>
-                    <p className="text-xl font-black text-emerald-800">
-                      {calculateArea()} ha
-                    </p>
+                <div className="space-y-4">
+                  <label className="text-xs text-muted-foreground font-black uppercase tracking-widest">
+                    Nhân sự kiểm định chất lượng
+                  </label>
+                  <div className="flex flex-wrap gap-1.5">
+                    {formData.qualityInspectorPersonnelIds.length === 0 ? (
+                      <span className="text-sm italic text-slate-400">
+                        Chưa chọn nhân sự kiểm định
+                      </span>
+                    ) : (
+                      formData.qualityInspectorPersonnelIds.map((id) => {
+                        const person = personnel.find(
+                          (item) => String(item.id) === String(id),
+                        );
+                        return person ? (
+                          <Badge
+                            key={id}
+                            variant="outline"
+                            className="bg-violet-50 text-violet-700 border-violet-100 text-[10px] font-medium py-0 px-2 h-5"
+                          >
+                            <Users className="w-3 h-3 mr-1" />
+                            {person.fullName}
+                          </Badge>
+                        ) : null;
+                      })
+                    )}
                   </div>
-                  <div>
-                    <p className="text-[10px] text-emerald-700 font-black uppercase tracking-wider mb-1">
-                      Vật nuôi & Giống
-                    </p>
-                    <p className="text-xl font-black text-emerald-800">
-                      {formData.crop} - {formData.variety}
-                    </p>
-                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  <label className="text-xs text-muted-foreground font-black uppercase tracking-widest">
+                    Ghi chú phạm vi chăn nuôi
+                  </label>
+                  <p>{formData.scopeNote || ""}</p>
                 </div>
               </CardContent>
             </Card>
@@ -1688,7 +1984,7 @@ export default function PlanAnimalGrowthEditPage({
           {/* Dark Summary Footer Card */}
           <Card className="bg-slate-900 text-slate-50 border-none shadow-lg mt-8">
             <CardContent className="p-8">
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-8">
                 <div className="text-center md:text-left">
                   <p className="text-slate-400 text-xs font-bold uppercase tracking-wider mb-2">
                     Tổng giai đoạn
@@ -1720,17 +2016,6 @@ export default function PlanAnimalGrowthEditPage({
                       {formData.taskAllocations.length}
                     </span>
                     <span className="text-slate-500 font-medium">đầu việc</span>
-                  </div>
-                </div>
-                <div className="text-center md:text-left">
-                  <p className="text-slate-400 text-xs font-bold uppercase tracking-wider mb-2">
-                    Diện tích
-                  </p>
-                  <div className="flex items-baseline justify-center md:justify-start gap-1">
-                    <span className="text-4xl font-bold text-emerald-400">
-                      {calculateArea()}
-                    </span>
-                    <span className="text-slate-500 font-medium">ha</span>
                   </div>
                 </div>
               </div>
@@ -1788,6 +2073,7 @@ export default function PlanAnimalGrowthEditPage({
             handleGeographicalConfirm={handleGeographicalConfirm}
             isWorkflowContext={isWorkflowContext}
             workflowInfo={workflowInfo}
+            growthCycles={growthCycles}
             personnel={personnel}
             supplyCatalog={supplyCatalog}
           />

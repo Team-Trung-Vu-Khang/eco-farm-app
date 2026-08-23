@@ -1,7 +1,12 @@
 import PageWrapper from "@/components/PageWrapper";
-import { useCultivationZones } from "@/features/farm";
+import {
+  useCultivationZones,
+  farmGrowthCycleSeasonApi,
+  systemGrowthCycleSeasonApi,
+} from "@/features/farm";
 import useAnimalGrowthPlanStore from "@/stores/useAnimalGrowthPlanStore";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useInfiniteQuery } from "@tanstack/react-query";
 import {
   Badge,
   Button,
@@ -18,7 +23,7 @@ import {
   Textarea,
   useToast,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { ArrowLeft, Calendar, Layers, Save } from "lucide-react";
+import { ArrowLeft, Calendar, Layers, Save, Sprout } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useLocation, useParams } from "wouter";
@@ -29,6 +34,7 @@ import {
 } from "@/features/farm-workflow/hooks";
 import type { FarmWorkflowScopeRequest } from "@/features/farm-workflow/types/farm-workflow.type";
 import GeographicalSelector from "./components/GeographicalSelector";
+import GrowthCycleSelector from "../plan-growth/components/GrowthCycleSelector";
 import {
   createEmptyPlanDraft,
   createNodeId,
@@ -38,7 +44,8 @@ import {
   useAnimalGrowthWorkflowDraftStore,
   type DiagramInfoRecord,
 } from "./hooks/useAnimalGrowthWorkflowDraftStore";
-import type { GeographicalSelection } from "./types";
+import type { GeographicalSelection, GrowthCycleSelection } from "./types";
+import type { GrowthCycle } from "../growth-cycle/types/types";
 import {
   mapCultivationZonesToRegionTree,
   mapWorkflowResponseToInfoRecord,
@@ -70,6 +77,32 @@ function toDurationDays(years: string, months: string, days: string) {
   return Math.max(1, totalDays);
 }
 
+function mapSeasonsToGrowthCycles(seasons: any[]): GrowthCycle[] {
+  return seasons.map((season) => ({
+    id: String(season.id),
+    name: season.name || season.code || `Lứa nuôi #${season.id}`,
+    cycleType: "animal",
+    scope: "livestock",
+    scopeNames: [],
+    cropId: String(season.productionSubject?.id ?? ""),
+    cropName: season.productionSubject?.name || "",
+    totalDays: (season.stages || []).reduce(
+      (total: number, stage: any) => total + (Number(stage.durationDays) || 0),
+      0,
+    ),
+    numStages: (season.stages || []).length,
+    stages: (season.stages || []).map((stage: any, index: number) => ({
+      id: String(stage.id ?? `${season.id}-${index}`),
+      name: stage.name || `Giai đoạn ${index + 1}`,
+      duration: Number(stage.durationDays) || 0,
+      usePdf: false,
+      content: stage.description || "",
+    })),
+    createdAt: 0,
+    updatedAt: 0,
+  }));
+}
+
 // Info nodes created before the API integration carry a local
 // `info-<timestamp>-<rand>` id; only numeric ids are real backend workflow ids.
 function isPersistedWorkflowId(id: string) {
@@ -91,6 +124,53 @@ export default function PlanAnimalGrowthWorkflowInfoFormPage() {
   const { items: cultivationZones } = useCultivationZones({
     params: { domainCode: WORKFLOW_DOMAIN_CODE, page: 0, size: 100 },
   });
+  const [seasonSearch, setSeasonSearch] = useState("");
+  const seasonQueryParams = {
+    domainCode: WORKFLOW_DOMAIN_CODE,
+    keyword: seasonSearch.trim() || undefined,
+    size: 20,
+  };
+  const userSeasonsQuery = useInfiniteQuery({
+    queryKey: ["animal-workflow-seasons", "user", seasonQueryParams],
+    queryFn: ({ pageParam }) =>
+      farmGrowthCycleSeasonApi.list({ ...seasonQueryParams, page: pageParam }),
+    initialPageParam: 0,
+    getNextPageParam: (lastPage: any) =>
+      lastPage.last ? undefined : Number(lastPage.page) + 1,
+  });
+  const systemSeasonsQuery = useInfiniteQuery({
+    queryKey: ["animal-workflow-seasons", "system", seasonQueryParams],
+    queryFn: ({ pageParam }) =>
+      systemGrowthCycleSeasonApi.list({ ...seasonQueryParams, page: pageParam }),
+    initialPageParam: 0,
+    getNextPageParam: (lastPage: any) =>
+      lastPage.last ? undefined : Number(lastPage.page) + 1,
+  });
+  const growthCycles = useMemo(() => {
+    const byId = new Map<number, any>();
+    [
+      ...(systemSeasonsQuery.data?.pages.flatMap((page: any) => page.content || []) || []),
+      ...(userSeasonsQuery.data?.pages.flatMap((page: any) => page.content || []) || []),
+    ].forEach((season) => {
+      if (season?.id != null) byId.set(Number(season.id), season);
+    });
+    return mapSeasonsToGrowthCycles(Array.from(byId.values()));
+  }, [systemSeasonsQuery.data, userSeasonsQuery.data]);
+  const seasonsLoading =
+    userSeasonsQuery.isLoading ||
+    systemSeasonsQuery.isLoading ||
+    userSeasonsQuery.isFetchingNextPage ||
+    systemSeasonsQuery.isFetchingNextPage;
+  const seasonsHaveMore =
+    Boolean(userSeasonsQuery.hasNextPage) || Boolean(systemSeasonsQuery.hasNextPage);
+  const loadMoreSeasons = () => {
+    if (userSeasonsQuery.hasNextPage && !userSeasonsQuery.isFetchingNextPage) {
+      void userSeasonsQuery.fetchNextPage();
+    }
+    if (systemSeasonsQuery.hasNextPage && !systemSeasonsQuery.isFetchingNextPage) {
+      void systemSeasonsQuery.fetchNextPage();
+    }
+  };
   const regions = useMemo(
     () => mapCultivationZonesToRegionTree(cultivationZones),
     [cultivationZones],
@@ -145,6 +225,24 @@ export default function PlanAnimalGrowthWorkflowInfoFormPage() {
   const [plannedDurationDays, setPlannedDurationDays] = useState(
     editingRecord?.plannedDurationDays ?? "",
   );
+  const [seasonIds, setSeasonIds] = useState<number[]>(editingRecord?.seasonIds ?? []);
+  const [seasonNames, setSeasonNames] = useState<string[]>(editingRecord?.seasonNames ?? []);
+  const [growthCycleSelections, setGrowthCycleSelections] = useState<GrowthCycleSelection[]>(
+    (editingRecord?.seasonIds ?? []).map((seasonId) => ({
+      id: `season-${seasonId}`,
+      type: "cycle",
+      cycleId: String(seasonId),
+    })),
+  );
+  const growthCycleSummary = useMemo(() =>
+    growthCycleSelections
+      .map((selection) => {
+        const cycle = growthCycles.find((item) => item.id === selection.cycleId);
+        return cycle ? { cycleName: cycle.name, items: ["Toàn bộ chu kỳ"] } : null;
+      })
+      .filter((item): item is { cycleName: string; items: string[] } => Boolean(item)),
+    [growthCycleSelections, growthCycles],
+  );
 
   const selectionSummary = useMemo(
     () => summarizeSelections(selections, regions || []),
@@ -164,6 +262,15 @@ export default function PlanAnimalGrowthWorkflowInfoFormPage() {
     setPlannedDurationYears(record.plannedDurationYears);
     setPlannedDurationMonths(record.plannedDurationMonths);
     setPlannedDurationDays(record.plannedDurationDays);
+    setSeasonIds(record.seasonIds ?? []);
+    setSeasonNames(record.seasonNames ?? []);
+    setGrowthCycleSelections(
+      (record.seasonIds ?? []).map((seasonId) => ({
+        id: `season-${seasonId}`,
+        type: "cycle",
+        cycleId: String(seasonId),
+      })),
+    );
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [workflowDetail]);
 
@@ -207,6 +314,7 @@ export default function PlanAnimalGrowthWorkflowInfoFormPage() {
         plannedDurationDays,
       ),
       scopes: toWorkflowScopes(selections),
+      seasonIds,
       status: "ACTIVE" as const,
     };
 
@@ -221,6 +329,8 @@ export default function PlanAnimalGrowthWorkflowInfoFormPage() {
               plannedDurationYears,
               plannedDurationMonths,
               plannedDurationDays,
+              seasonIds,
+              seasonNames,
             }
           : {
               id: "",
@@ -230,6 +340,8 @@ export default function PlanAnimalGrowthWorkflowInfoFormPage() {
               plannedDurationYears,
               plannedDurationMonths,
               plannedDurationDays,
+              seasonIds,
+              seasonNames,
               isActive: true,
               position: editingRecord?.position ?? getNextInfoNodePosition(infoNodes),
             };
@@ -320,7 +432,7 @@ export default function PlanAnimalGrowthWorkflowInfoFormPage() {
       <Card className="mx-auto max-w-3xl border-slate-200 shadow-sm">
         <CardContent className="p-6">
           <Form {...form}>
-            <div className="space-y-4">
+            <div className="flex flex-col gap-4">
               <FormField
                 control={form.control}
                 name="name"
@@ -342,7 +454,47 @@ export default function PlanAnimalGrowthWorkflowInfoFormPage() {
                 )}
               />
 
-              <div className="space-y-2">
+              {selections.length > 0 && (
+                <div className="order-5 space-y-2">
+                  <label className="text-xs text-muted-foreground font-black uppercase tracking-widest">
+                    Chu kỳ sinh trưởng
+                  </label>
+                  <GrowthCycleSelector
+                    growthCycles={growthCycles}
+                    existingSelections={growthCycleSelections}
+                    onSearchChange={setSeasonSearch}
+                    isLoading={seasonsLoading}
+                    hasMore={seasonsHaveMore}
+                    onLoadMore={loadMoreSeasons}
+                    onConfirm={(nextSelections) => {
+                      setGrowthCycleSelections(nextSelections);
+                      const ids = Array.from(
+                        new Set(nextSelections.map((selection) => Number(selection.cycleId))),
+                      ).filter((id) => Number.isFinite(id));
+                      setSeasonIds(ids);
+                      setSeasonNames(
+                        ids.map((id) => growthCycles.find((cycle) => cycle.id === String(id))?.name || `#${id}`),
+                      );
+                    }}
+                  />
+                  {growthCycleSummary.length > 0 && (
+                    <div className="mt-4 p-4 rounded-xl bg-white/50 border border-emerald-100/50 space-y-3">
+                      <div className="text-[10px] font-bold text-emerald-800/60 uppercase tracking-widest flex items-center gap-2">
+                        <Sprout className="w-3 h-3" /> Chu kỳ đã chọn
+                      </div>
+                      {growthCycleSummary.map((group) => (
+                        <div key={group.cycleName} className="flex flex-wrap gap-1.5">
+                          <Badge variant="outline" className="text-[10px] border-emerald-100 bg-emerald-100 text-emerald-800">
+                            {group.cycleName}
+                          </Badge>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              <div className="order-2 space-y-2">
                 <label className="text-xs text-muted-foreground font-black uppercase tracking-widest">
                   Thời gian dự kiến
                 </label>
@@ -384,7 +536,8 @@ export default function PlanAnimalGrowthWorkflowInfoFormPage() {
                 </div>
               </div>
 
-              <FormField
+              <div className="order-3">
+                <FormField
                 control={form.control}
                 name="description"
                 render={({ field }) => (
@@ -401,9 +554,10 @@ export default function PlanAnimalGrowthWorkflowInfoFormPage() {
                     <FormMessage />
                   </FormItem>
                 )}
-              />
+                />
+              </div>
 
-              <div className="space-y-2">
+              <div className="order-4 space-y-2">
                 <div className="flex items-center justify-between">
                   <label className="text-xs text-muted-foreground font-black uppercase tracking-widest">
                     Vùng chăn nuôi <span className="text-red-500">*</span>

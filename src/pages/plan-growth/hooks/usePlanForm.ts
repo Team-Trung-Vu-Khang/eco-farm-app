@@ -2,7 +2,12 @@
 import {
   useFarmPlanById,
   useFarmPlanMutations,
+  useFarmWorkflowById,
 } from "@/features/farm-workflow/hooks";
+import {
+  farmGrowthCycleSeasonApi,
+  systemGrowthCycleSeasonApi,
+} from "@/features/farm";
 import type { FarmPlanPersonnelRequest } from "@/features/farm-workflow/types/farm-workflow.type";
 import type { FarmPersonnelResponse } from "@/features/master-data";
 import { useFarmPersonnel } from "@/features/master-data";
@@ -13,6 +18,7 @@ import useRegionStore from "@/stores/useRegionStore";
 import useSeasonStore from "@/stores/useSeasonStore";
 import { useToast } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useQueries } from "@tanstack/react-query";
 import { useLocation, useParams } from "wouter";
 import { useAmendmentRegimenStore } from "../../../stores/useAmendmentRegimenStore";
 import { useTreatmentStore } from "../../../stores/useTreatmentStore";
@@ -27,6 +33,7 @@ import type {
 import {
   buildFarmPlanStagesRequest,
   mapPlanResponseToPlan,
+  mapWorkflowScopesToSelections,
   upsertFallbackPlan,
 } from "../utils/api-mappers";
 import {
@@ -38,6 +45,7 @@ import {
 } from "../utils/location";
 import { mapPurpose } from "./usePlanPage";
 import { usePlanWorkflowDraftStore } from "./usePlanWorkflowDraftStore";
+import { mapSeasonsToGrowthCycles } from "../utils/season-mappers";
 
 function mapFarmPersonnelToOption(
   item: FarmPersonnelResponse,
@@ -234,15 +242,71 @@ export function usePlanForm(
 
   const isWorkflowContext = basePath.startsWith(WORKFLOW_BASE_PATH);
   const infoNodes = usePlanWorkflowDraftStore((state) => state.infoNodes);
-  const workflowInfo = isWorkflowContext
+  const draftWorkflowInfo = isWorkflowContext
     ? (infoNodes.find((node) => node.isActive) ?? infoNodes[0])
     : undefined;
   const planId = params.id || "";
   const planDetailQuery = useFarmPlanById(planId, {
     enabled: mode === "edit" && !!planId,
   });
+  // Depending on the backend version, the plan detail may expose the
+  // workflow relation as `workflow.id`, `workflowId`, or only keep the id in
+  // the embedded workflow object. Accept all forms so a direct edit URL can
+  // still hydrate the workflow's seasons.
+  const workflowIdFromPlan =
+    (planDetailQuery.data as any)?.workflow?.id ??
+    (planDetailQuery.data as any)?.workflowId;
+  const workflowDetailQuery = useFarmWorkflowById(workflowIdFromPlan ?? "", {
+    enabled: isWorkflowContext && mode === "edit" && !!workflowIdFromPlan,
+  });
+  const embeddedWorkflow = (planDetailQuery.data as any)?.workflow;
+  const workflowInfo = workflowDetailQuery.data
+    ? (() => {
+        const workflow = workflowDetailQuery.data as any;
+        const seasonRefs = Array.isArray(workflow.seasons)
+          ? workflow.seasons
+          : Array.isArray(workflow.seasonIds)
+            ? workflow.seasonIds.map((id: number) => ({ id }))
+            : Array.isArray(embeddedWorkflow?.seasons)
+              ? embeddedWorkflow.seasons
+              : [];
+
+        return {
+          ...(draftWorkflowInfo || {}),
+          id: String(workflow.id),
+          name: workflow.name,
+          description: workflow.description || "",
+          selections: mapWorkflowScopesToSelections(workflow.scopes || []),
+          seasonIds: seasonRefs
+            .map((season: { id?: number | string }) => Number(season.id))
+            .filter((id: number) => Number.isFinite(id)),
+          seasonNames: seasonRefs.map(
+            (season: { id?: number | string; name?: string; code?: string }) =>
+              season.name || season.code || `#${season.id}`,
+          ),
+          isActive: workflow.status === "active",
+          position: draftWorkflowInfo?.position || { x: 0, y: 0 },
+        };
+      })()
+    : embeddedWorkflow
+      ? {
+          ...(draftWorkflowInfo || {}),
+          id: String(embeddedWorkflow.id ?? workflowIdFromPlan),
+          name: embeddedWorkflow.name || draftWorkflowInfo?.name || "",
+          description: embeddedWorkflow.description || "",
+          selections: mapWorkflowScopesToSelections(
+            embeddedWorkflow.scopes || [],
+          ),
+          seasonIds: (embeddedWorkflow.seasons || [])
+            .map((season: { id?: number | string }) => Number(season.id))
+            .filter((id: number) => Number.isFinite(id)),
+          isActive: embeddedWorkflow.status === "active",
+          position: draftWorkflowInfo?.position || { x: 0, y: 0 },
+        }
+      : draftWorkflowInfo;
   const hydratedPlanIdRef = useRef<number | null>(null);
   const hydratedWorkflowInfoIdRef = useRef<string | null>(null);
+  const hydratedGrowthCyclePlanIdRef = useRef<number | null>(null);
 
   const { createPlan, updatePlan } = useFarmPlanMutations();
   const seasons = useSeasonStore((state) => state.seasons);
@@ -256,7 +320,42 @@ export function usePlanForm(
     [personnelItems],
   );
   const { regions } = useRegionStore();
-  const { growthCycles } = useGrowthCycleStore();
+  const { growthCycles: localGrowthCycles } = useGrowthCycleStore();
+  const workflowSeasonIds = useMemo(
+    () =>
+      Array.from(
+        new Set(
+          (workflowInfo?.seasonIds ??
+            workflowInfo?.growthCycleSelections?.map((selection) => selection.cycleId) ??
+            [])
+            .map(Number)
+            .filter((id) => Number.isFinite(id)),
+        ),
+      ),
+    [workflowInfo],
+  );
+  const workflowSeasonQueries = useQueries({
+    queries: isWorkflowContext
+      ? workflowSeasonIds.map((seasonId) => ({
+          queryKey: ["workflow-season-detail", seasonId],
+          queryFn: async () => {
+            try {
+              return await farmGrowthCycleSeasonApi.getById(seasonId);
+            } catch {
+              return await systemGrowthCycleSeasonApi.getById(seasonId);
+            }
+          },
+        }))
+      : [],
+  });
+  const growthCycles = useMemo(() => {
+    if (!isWorkflowContext) return localGrowthCycles;
+    return mapSeasonsToGrowthCycles(
+      workflowSeasonQueries
+        .map((query) => query.data)
+        .filter((season): season is any => Boolean(season)),
+    );
+  }, [isWorkflowContext, localGrowthCycles, workflowSeasonQueries]);
   const treatments = useTreatmentStore((state) => state.treatments);
   const amendmentRegimensRaw = useAmendmentRegimenStore(
     (state) => state.regimens,
@@ -406,6 +505,166 @@ export function usePlanForm(
     setSelections(initialSelectionState?.selections || []);
     setSelectedEnterpriseId(initialSelectionState?.enterpriseId || "");
   }, [initialSelectionState, mode, plan, regions.length]);
+
+  // The plan API returns its selected stages as plan-stage rows. Older rows
+  // may not have `seasonStage` populated, so rebuild the UI selections from
+  // the stage names once the workflow's Season details have loaded. Without
+  // this bridge, the edit form has the plan stages in the payload but the
+  // growth-cycle picker still appears empty.
+  useEffect(() => {
+    if (
+      mode !== "edit" ||
+      !isWorkflowContext ||
+      !growthCycles.length ||
+      !plan?.id
+    ) {
+      return;
+    }
+
+    const selectionsFromApiStageIds = (plan?.seasonStageIds || [])
+      .map((seasonStageId) => {
+        const cycle = growthCycles.find((candidate) =>
+          candidate.stages.some((stage) => stage.id === String(seasonStageId)),
+        );
+        const stage = cycle?.stages.find(
+          (item) => item.id === String(seasonStageId),
+        );
+        if (!cycle || !stage) return null;
+        return {
+          id: `api-${cycle.id}-${stage.id}`,
+          type: "stage" as const,
+          cycleId: cycle.id,
+          stageId: stage.id,
+          stageName: stage.name,
+        };
+      })
+      .filter((selection): selection is NonNullable<typeof selection> =>
+        Boolean(selection),
+      );
+
+    // Farm and master-data Seasons can use different stage identifiers for
+    // the same logical stage. If the farm detail request falls back to the
+    // master-data endpoint, resolve any IDs that did not match by the stage
+    // name returned on the saved plan.
+    const selectedByCycleStage = new Set(
+      selectionsFromApiStageIds.map(
+        (selection) => `${selection.cycleId}:${selection.stageId}`,
+      ),
+    );
+    const selectionsFromStageNames = (plan?.seasonStageNames || [])
+      .map((stageName) => {
+        const match = growthCycles
+          .flatMap((cycle) =>
+            cycle.stages
+              .filter(
+                (stage) =>
+                  stage.name === stageName &&
+                  !selectedByCycleStage.has(`${cycle.id}:${stage.id}`),
+              )
+              .map((stage) => ({ cycle, stage })),
+          )
+          .find(({ cycle, stage }) =>
+            !selectedByCycleStage.has(`${cycle.id}:${stage.id}`),
+          );
+        if (!match) return null;
+        selectedByCycleStage.add(`${match.cycle.id}:${match.stage.id}`);
+        return {
+          id: `api-${match.cycle.id}-${match.stage.id}`,
+          type: "stage" as const,
+          cycleId: match.cycle.id,
+          stageId: match.stage.id,
+          stageName: match.stage.name,
+        };
+      })
+      .filter((selection): selection is NonNullable<typeof selection> =>
+        Boolean(selection),
+      );
+    const resolvedApiSelections = [
+      ...selectionsFromApiStageIds,
+      ...selectionsFromStageNames,
+    ];
+
+    // Season details can arrive one by one, especially when the farm detail
+    // request fails and the master-data fallback is used. Do not hydrate
+    // from the first returned Season; wait until every API stage ID is
+    // resolved so stages from different cycles are all restored.
+    const apiStageIds = Array.from(new Set(plan.seasonStageIds || []));
+    if (apiStageIds.length > 0 || (plan.seasonStageNames || []).length > 0) {
+      const expectedSelectionCount = Math.max(
+        apiStageIds.length,
+        plan.seasonStageNames?.length || 0,
+      );
+      if (
+        resolvedApiSelections.length < expectedSelectionCount ||
+        hydratedGrowthCyclePlanIdRef.current === plan.id
+      ) {
+        return;
+      }
+
+      hydratedGrowthCyclePlanIdRef.current = plan.id;
+      setFormData((prev) => ({
+        ...prev,
+        growthCycleSelections: resolvedApiSelections,
+      }));
+      return;
+    }
+
+    // Prefer the API relationship (`seasonStage.id`) because stage names are
+    // commonly reused across different cycles. Name matching is only a
+    // compatibility fallback for older plan rows that have seasonStage=null.
+    const inferredSelections =
+      selectionsFromApiStageIds.length > 0
+        ? selectionsFromApiStageIds
+        : formData.selectedStages
+            .map((stageKey) => {
+              const separatorIndex = stageKey.indexOf(":");
+              const cycleIdFromKey =
+                separatorIndex >= 0
+                  ? stageKey.slice(0, separatorIndex)
+                  : undefined;
+              const stageName =
+                separatorIndex >= 0
+                  ? stageKey.slice(separatorIndex + 1)
+                  : stageKey;
+              const cycle = growthCycles.find(
+                (candidate) =>
+                  (!cycleIdFromKey || candidate.id === cycleIdFromKey) &&
+                  candidate.stages.some((stage) => stage.name === stageName),
+              );
+              const stage = cycle?.stages.find(
+                (item) => item.name === stageName,
+              );
+              if (!cycle || !stage) return null;
+
+              return {
+                id: `api-${cycle.id}-${stage.id}`,
+                type: "stage" as const,
+                cycleId: cycle.id,
+                stageId: stage.id,
+                stageName: stage.name,
+              };
+            })
+            .filter((selection): selection is NonNullable<typeof selection> =>
+              Boolean(selection),
+            );
+
+    if (!inferredSelections.length || formData.growthCycleSelections.length > 0) {
+      return;
+    }
+
+    setFormData((prev) => ({
+      ...prev,
+      growthCycleSelections: inferredSelections,
+    }));
+  }, [
+    formData.growthCycleSelections.length,
+    formData.selectedStages,
+    growthCycles,
+    isWorkflowContext,
+    mode,
+    plan?.seasonStageIds,
+    plan?.id,
+  ]);
 
   // Plans created inside a workflow diagram don't pick their own cultivation
   // scope — they inherit whatever region/zone/plot the diagram's info node
@@ -625,6 +884,10 @@ export function usePlanForm(
             durationDays,
             personnel: buildPersonnelRequest(formData),
             stages,
+            // Preserve metadata owned by the API when editing a plan. The
+            // edit form does not expose this field, so omitting it would
+            // cause a full update to clear the existing JSON metadata.
+            metadataJson: plan?.metadataJson,
             status: "IN_PROGRESS",
           },
         });

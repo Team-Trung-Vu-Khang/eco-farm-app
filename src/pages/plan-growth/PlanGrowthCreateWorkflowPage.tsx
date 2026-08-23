@@ -280,9 +280,8 @@ function getMaterialBreakdown(
 function getStageTags(stageNames: string[]) {
   const names = stageNames.map((name) => name.trim()).filter(Boolean);
 
-  if (!names.length) return ["Chưa có giai đoạn"];
-  if (names.length <= 2) return names;
-  return [names[0], names[1]];
+  if (!names.length) return [];
+  return names;
 }
 
 function getRegionLabelsFromPlan(
@@ -437,7 +436,10 @@ function toDisplayNode(
       wide: true,
       targetTopHandleId: `${id}-target-top`,
       sourceBottomHandleId: `${id}-source-bottom`,
-      tags: getStageTags(plan.selectedStages),
+      // Workflow cards should show only stages linked to a Season. Manual
+      // plan stages are still kept in the plan data and edit form, but do not
+      // belong in the workflow stage badges.
+      tags: getStageTags(plan.seasonStageNames ?? []),
       regionLabels: getRegionLabelsFromPlan(plan, regions),
       summaries: [
         { label: "Nhân lực", value: String(laborCount) },
@@ -877,6 +879,7 @@ export default function PlanGrowthCreateWorkflowPage() {
             scopes: workflowDetail.scopes
               .map(toWorkflowScopeRequest)
               .filter((scope): scope is FarmWorkflowScopeRequest => scope !== null),
+            seasonIds: (workflowDetail.seasons || []).map((season) => season.id),
             status: workflowDetail.status.toUpperCase() as FarmWorkflowRequestStatus,
             metadataJson: {
               ...workflowDetail.metadataJson,
