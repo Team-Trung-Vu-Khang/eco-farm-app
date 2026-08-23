@@ -13,7 +13,7 @@ import {
   Layers,
   MoreHorizontal,
   PencilLine,
-  Sprout,
+  PawPrint,
   Trash2,
 } from "lucide-react";
 import type { AnimalGrowthCycle } from "../types/types";
@@ -62,7 +62,7 @@ export function createAnimalGrowthCycleColumns({
       label: "Chu kỳ",
       render: (value: any) => (
         <div className="flex items-center gap-2">
-          <Sprout className="h-4 w-4 text-primary" />
+          <PawPrint className="h-4 w-4 text-primary" />
           <span className="font-semibold">{value}</span>
         </div>
       ),

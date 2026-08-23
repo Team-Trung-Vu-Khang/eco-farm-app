@@ -108,9 +108,11 @@ export function useAquacultureGrowthCyclePage() {
     return apiSeasons.map((item) => {
       const isFoundation = item.source === "MASTER";
       const cropIdVal = item.productionSubject?.id;
-      const cropNameVal = item.productionSubject?.name;
-      const varietyIdVal = item.productionSubjectVariant?.id;
-      const varietyNameVal = item.productionSubjectVariant?.name;
+      const cropItemsFromResponse = item.productionSubjects || [];
+      const varietyItemsFromResponse = item.productionSubjectVariants || [];
+      const cropNameVal = item.productionSubject?.name || cropItemsFromResponse.map((subject: any) => subject.name).filter(Boolean).join(", ") || varietyItemsFromResponse.map((variant: any) => variant.subject?.name).filter(Boolean).filter((name: string, index: number, all: string[]) => all.indexOf(name) === index).join(", ") || (item.productionSubjectIds || []).join(", ");
+      const varietyIdVal = item.productionSubjectVariant?.id || varietyItemsFromResponse[0]?.id;
+      const varietyNameVal = item.productionSubjectVariant?.name || varietyItemsFromResponse.map((variant: any) => variant.name).filter(Boolean).join(", ") || (item.productionSubjectVariantIds || []).join(", ");
       const groupItems = item.productionSubjectGroups || (item.productionSubjectGroupIds || []).map((id: any) => ({ id }));
       const cropItems = item.productionSubjects || (item.productionSubjectIds || []).map((id: any) => ({ id }));
       const varietyItems = item.productionSubjectVariants || (item.productionSubjectVariantIds || []).map((id: any) => ({ id }));
@@ -124,6 +126,7 @@ export function useAquacultureGrowthCyclePage() {
         cropId: cropIdVal ? String(cropIdVal) : "",
         cropName: cropNameVal || "",
         variety: varietyNameVal || "",
+        groupName: groupItems.map((group: any) => group.name).filter(Boolean).join(", ") || groupItems.map((group: any) => group.id).join(", "),
         groupIds: groupItems.map((group: any) => String(group.id)),
         cropIds: cropItems.map((subject: any) => String(subject.id)),
         varietyIds: varietyItems.map((variety: any) => String(variety.id)),
