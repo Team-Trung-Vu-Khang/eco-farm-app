@@ -223,14 +223,14 @@ export function BasicInfoStep({
           />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="brandName">Tên gợi nhớ</Label>
+          <Label htmlFor="brandName">Tên thương hiệu</Label>
           <Input
             id="brandName"
             value={formData.brandName}
             onChange={(e) =>
               setFormData({ ...formData, brandName: e.target.value })
             }
-            placeholder="VD: EcoFarm..."
+            placeholder="VD: Tên thương hiệu đăng ký"
           />
         </div>
       </div>
@@ -258,16 +258,29 @@ export function BasicInfoStep({
         </div>
       </div>
 
-      <div className="space-y-2">
-        <Label htmlFor="taxAuthority">Cơ quan thuế</Label>
-        <Input
-          id="taxAuthority"
-          value={formData.taxAuthority}
-          onChange={(e) =>
-            setFormData({ ...formData, taxAuthority: e.target.value })
-          }
-          placeholder="Cục thuế / Chi cục thuế..."
-        />
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label htmlFor="aliasName">Tên gợi nhớ</Label>
+          <Input
+            id="aliasName"
+            value={formData.aliasName}
+            onChange={(e) =>
+              setFormData({ ...formData, aliasName: e.target.value })
+            }
+            placeholder="VD: EcoFarm..."
+          />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="taxAuthority">Cơ quan thuế</Label>
+          <Input
+            id="taxAuthority"
+            value={formData.taxAuthority}
+            onChange={(e) =>
+              setFormData({ ...formData, taxAuthority: e.target.value })
+            }
+            placeholder="Cục thuế / Chi cục thuế..."
+          />
+        </div>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

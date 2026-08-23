@@ -43,6 +43,7 @@ export interface FarmerFormData {
   type: "enterprise" | "farm" | "cooperative";
   code: string;
   name: string;
+  aliasName?: string;
   brandName?: string;
   taxCode: string;
   taxAddress?: string;

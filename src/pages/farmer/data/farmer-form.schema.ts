@@ -1,7 +1,5 @@
 import { z } from "zod";
 
-import type { FarmerFormData } from "../types";
-
 const emptyText = () =>
   z.preprocess((value) => (value === null ? "" : value), z.string().trim().default(""));
 
@@ -78,6 +76,7 @@ export const farmerFormSchema = z.object({
     z.string().trim().min(1, "Vui lòng nhập tên nông hộ."),
   ),
   brandName: emptyText(),
+  aliasName: emptyText(),
   taxCode: emptyText(),
   taxAddress: emptyText(),
   taxAuthority: emptyText(),
@@ -110,11 +109,15 @@ export const farmerFormSchema = z.object({
   documents: z.array(documentSchema).default([]),
 });
 
-export const defaultFarmerFormValues: FarmerFormData = {
+export type FarmerFormInput = z.input<typeof farmerFormSchema>;
+export type FarmerFormValues = z.output<typeof farmerFormSchema>;
+
+export const defaultFarmerFormValues: FarmerFormInput = {
   type: "farm",
   code: "",
   name: "",
   brandName: "",
+  aliasName: "",
   taxCode: "",
   taxAddress: "",
   taxAuthority: "",
@@ -138,6 +141,3 @@ export const defaultFarmerFormValues: FarmerFormData = {
   bankAccounts: [],
   documents: [],
 };
-
-export type FarmerFormInput = z.input<typeof farmerFormSchema>;
-export type FarmerFormValues = z.output<typeof farmerFormSchema>;
