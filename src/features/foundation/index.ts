@@ -54,6 +54,10 @@ export {
   productionSubjectVariantKeys,
   productionMethodKeys,
 } from "./hooks/useProductionSubjects";
+export {
+  useProductionSubjectGroups,
+  subjectGroupKeys,
+} from "./hooks/useProductionSubjectGroups";
 
 // ─── Mutation Hooks ───────────────────────────────────────────────────────────
 export { useCatalogMutations } from "./hooks/useCatalogMutations";
@@ -62,6 +66,7 @@ export { useCropVarietyMutations } from "./hooks/useCropVarietyMutations";
 export { useGrowthCycleTemplateMutations, useUserGrowthCycleTemplateMutations } from "./hooks/useGrowthCycleTemplateMutations";
 export { useFarmingMethodCropMutations } from "./hooks/useFarmingMethodCropMutations";
 export { useLifecycleTemplateMutations, useUserLifecycleTemplateMutations } from "./hooks/useLifecycleTemplateMutations";
+export { useProductionSubjectGroupMutations } from "./hooks/useProductionSubjectGroups";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 export * from "@/shared/constants/foundation.constants";

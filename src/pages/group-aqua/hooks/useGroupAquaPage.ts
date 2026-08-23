@@ -8,20 +8,20 @@ import {
   type ProductionSubjectGroupRequest,
 } from "../../../features/foundation";
 
-export interface GroupCropFormData {
+export interface GroupAquaFormData {
   code?: string;
   name: string;
   biological: string;
   description: string;
 }
 
-const emptyFormData: GroupCropFormData = {
+const emptyFormData: GroupAquaFormData = {
   name: "",
   biological: "",
   description: "",
 };
 
-export function useGroupCropPage() {
+export function useGroupAquaPage() {
   const { toast } = useToast();
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounce(search, 500);
@@ -56,7 +56,7 @@ export function useGroupCropPage() {
   // ─── API hooks ─────────────────────────────────────────────────────────────
   const { items, response, loading, error } = useProductionSubjectGroups({
     params: {
-      domainCode: "CROP",
+      domainCode: "AQUACULTURE",
       keyword: debouncedSearch.trim() || undefined,
       status: status === "all" ? undefined : status,
       page: Math.max(currentIndex - 1, 0),
@@ -85,7 +85,7 @@ export function useGroupCropPage() {
   const [deleteItem, setDeleteItem] = useState<ProductionSubjectGroupResponse | null>(
     null,
   );
-  const [formData, setFormData] = useState<GroupCropFormData>(emptyFormData);
+  const [formData, setFormData] = useState<GroupAquaFormData>(emptyFormData);
 
   // ─── Handlers ──────────────────────────────────────────────────────────────
   const handleAdd = () => {
@@ -110,9 +110,9 @@ export function useGroupCropPage() {
     setDeleteOpen(true);
   };
 
-  const handleSubmit = (data: GroupCropFormData) => {
+  const handleSubmit = (data: GroupAquaFormData) => {
     const payload: ProductionSubjectGroupRequest = {
-      domainCode: "CROP",
+      domainCode: "AQUACULTURE",
       name: data.name,
       description: data.description || undefined,
       biological: data.biological || undefined,
@@ -130,7 +130,7 @@ export function useGroupCropPage() {
           onSuccess: () => {
             toast({
               title: "Thành công",
-              description: "Đã cập nhật thông tin nhóm cây trồng",
+              description: "Đã cập nhật thông tin nhóm thủy sản",
             });
             setFormOpen(false);
           },
@@ -148,7 +148,7 @@ export function useGroupCropPage() {
         onSuccess: () => {
           toast({
             title: "Thành công",
-            description: "Đã thêm nhóm cây trồng mới",
+            description: "Đã thêm nhóm thủy sản mới",
           });
           setFormOpen(false);
         },
@@ -167,7 +167,7 @@ export function useGroupCropPage() {
     if (!deleteItem) return;
     deleteSubjectGroup.mutate(deleteItem.id, {
       onSuccess: () => {
-        toast({ title: "Thành công", description: "Đã xóa nhóm cây trồng" });
+        toast({ title: "Thành công", description: "Đã xóa nhóm thủy sản" });
         setDeleteOpen(false);
       },
       onError: (err) => {
@@ -182,7 +182,7 @@ export function useGroupCropPage() {
   };
 
   return {
-    groupCrops: items,
+    groupAquas: items,
     response,
     handleSearch,
     pageSize,
@@ -210,4 +210,3 @@ export function useGroupCropPage() {
       deleteSubjectGroup.isPending,
   };
 }
-

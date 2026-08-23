@@ -25,6 +25,7 @@ import type {
   ProductionSubjectQueryParams,
   ProductionSubjectGroupQueryParams,
   ProductionSubjectGroupResponse,
+  ProductionSubjectGroupRequest,
   ProductionSubjectResponse,
   ProductionSubjectVariantQueryParams,
   ProductionSubjectVariantResponse,
@@ -290,6 +291,27 @@ export const productionSubjectGroupApi = {
         "/api/foundation/production/subject-groups",
         { params },
       )
+      .then((r) => r.data),
+
+  create: (data: ProductionSubjectGroupRequest) =>
+    apiClient
+      .post<ProductionSubjectGroupResponse>(
+        "/api/admin/foundation/production/subject-groups",
+        data,
+      )
+      .then((r) => r.data),
+
+  update: (id: number, data: ProductionSubjectGroupRequest) =>
+    apiClient
+      .put<ProductionSubjectGroupResponse>(
+        `/api/admin/foundation/production/subject-groups/${id}`,
+        data,
+      )
+      .then((r) => r.data),
+
+  delete: (id: number) =>
+    apiClient
+      .delete<void>(`/api/admin/foundation/production/subject-groups/${id}`)
       .then((r) => r.data),
 };
 

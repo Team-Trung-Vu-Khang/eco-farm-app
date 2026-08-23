@@ -329,6 +329,17 @@ export interface ProductionSubjectGroupResponse {
   metadataJson?: Record<string, unknown>;
 }
 
+export interface ProductionSubjectGroupRequest {
+  domainCode: "CROP" | "LIVESTOCK" | "AQUACULTURE";
+  code?: string;
+  name: string;
+  description?: string;
+  biological?: string;
+  displayOrder?: number;
+  status: FoundationStatus;
+}
+
+
 export interface ProductionSubjectGroupQueryParams extends BaseQueryParams {
   domainCode: "CROP" | "LIVESTOCK" | "AQUACULTURE";
 }

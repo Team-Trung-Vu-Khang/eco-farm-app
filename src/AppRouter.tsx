@@ -568,6 +568,12 @@ const ContractEditPage = lazy(
 );
 const TreatmentPage = lazy(() => import("./pages/treatment/TreatmentPage"));
 const GroupCropPage = lazy(() => import("./pages/group-crop/GroupCropPage"));
+const GroupLivestockPage = lazy(
+  () => import("./pages/group-livestock/GroupLivestockPage"),
+);
+const GroupAquaPage = lazy(
+  () => import("./pages/group-aqua/GroupAquaPage"),
+);
 const DocsPage = lazy(() => import("./pages/docs/DocsPage"));
 const CreateDocsPage = lazy(() => import("./pages/docs/CreateDocsPage"));
 const UpdateDocsPage = lazy(() => import("./pages/docs/UpdateDocsPage"));
@@ -1401,6 +1407,8 @@ function Router() {
           component={DocumentCategoryDetailPage}
         />
         <Route path="/group-crop" component={GroupCropPage} />
+        <Route path="/group-livestock" component={GroupLivestockPage} />
+        <Route path="/group-aqua" component={GroupAquaPage} />
         <Route path="/docs" component={DocsPage} />
         <Route path="/docs/create" component={CreateDocsPage} />
         <Route path="/docs/update/:id" component={UpdateDocsPage} />

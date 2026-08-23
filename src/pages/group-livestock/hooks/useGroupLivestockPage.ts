@@ -8,20 +8,20 @@ import {
   type ProductionSubjectGroupRequest,
 } from "../../../features/foundation";
 
-export interface GroupCropFormData {
+export interface GroupLivestockFormData {
   code?: string;
   name: string;
   biological: string;
   description: string;
 }
 
-const emptyFormData: GroupCropFormData = {
+const emptyFormData: GroupLivestockFormData = {
   name: "",
   biological: "",
   description: "",
 };
 
-export function useGroupCropPage() {
+export function useGroupLivestockPage() {
   const { toast } = useToast();
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounce(search, 500);
@@ -56,7 +56,7 @@ export function useGroupCropPage() {
   // ─── API hooks ─────────────────────────────────────────────────────────────
   const { items, response, loading, error } = useProductionSubjectGroups({
     params: {
-      domainCode: "CROP",
+      domainCode: "LIVESTOCK",
       keyword: debouncedSearch.trim() || undefined,
       status: status === "all" ? undefined : status,
       page: Math.max(currentIndex - 1, 0),
@@ -85,7 +85,7 @@ export function useGroupCropPage() {
   const [deleteItem, setDeleteItem] = useState<ProductionSubjectGroupResponse | null>(
     null,
   );
-  const [formData, setFormData] = useState<GroupCropFormData>(emptyFormData);
+  const [formData, setFormData] = useState<GroupLivestockFormData>(emptyFormData);
 
   // ─── Handlers ──────────────────────────────────────────────────────────────
   const handleAdd = () => {
@@ -110,9 +110,9 @@ export function useGroupCropPage() {
     setDeleteOpen(true);
   };
 
-  const handleSubmit = (data: GroupCropFormData) => {
+  const handleSubmit = (data: GroupLivestockFormData) => {
     const payload: ProductionSubjectGroupRequest = {
-      domainCode: "CROP",
+      domainCode: "LIVESTOCK",
       name: data.name,
       description: data.description || undefined,
       biological: data.biological || undefined,
@@ -130,7 +130,7 @@ export function useGroupCropPage() {
           onSuccess: () => {
             toast({
               title: "Thành công",
-              description: "Đã cập nhật thông tin nhóm cây trồng",
+              description: "Đã cập nhật thông tin nhóm vật nuôi",
             });
             setFormOpen(false);
           },
@@ -148,7 +148,7 @@ export function useGroupCropPage() {
         onSuccess: () => {
           toast({
             title: "Thành công",
-            description: "Đã thêm nhóm cây trồng mới",
+            description: "Đã thêm nhóm vật nuôi mới",
           });
           setFormOpen(false);
         },
@@ -167,7 +167,7 @@ export function useGroupCropPage() {
     if (!deleteItem) return;
     deleteSubjectGroup.mutate(deleteItem.id, {
       onSuccess: () => {
-        toast({ title: "Thành công", description: "Đã xóa nhóm cây trồng" });
+        toast({ title: "Thành công", description: "Đã xóa nhóm vật nuôi" });
         setDeleteOpen(false);
       },
       onError: (err) => {
@@ -182,7 +182,7 @@ export function useGroupCropPage() {
   };
 
   return {
-    groupCrops: items,
+    groupLivestocks: items,
     response,
     handleSearch,
     pageSize,
@@ -210,4 +210,3 @@ export function useGroupCropPage() {
       deleteSubjectGroup.isPending,
   };
 }
-

@@ -1,12 +1,12 @@
 import type { Column } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { Badge } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { Hash, Leaf } from "lucide-react";
+import { Hash, PiggyBank } from "lucide-react";
 import type { ProductionSubjectGroupResponse } from "../../../features/foundation";
 
-export const groupCropColumns: Column<ProductionSubjectGroupResponse>[] = [
+export const groupLivestockColumns: Column<ProductionSubjectGroupResponse>[] = [
   {
     key: "code",
-    label: "Mã nhóm cây",
+    label: "Mã nhóm vật nuôi",
     render: (value: string) => (
       <div className="flex items-center gap-1.5 font-mono text-xs font-bold text-muted-foreground bg-muted/50 px-2 py-1 rounded-md border w-fit">
         <Hash className="w-3 h-3 opacity-60" />
@@ -16,10 +16,10 @@ export const groupCropColumns: Column<ProductionSubjectGroupResponse>[] = [
   },
   {
     key: "name",
-    label: "Tên nhóm cây",
+    label: "Tên nhóm vật nuôi",
     render: (value: string) => (
       <div className="flex items-center gap-2">
-        <Leaf className="w-4 h-4 text-green-600" />
+        <PiggyBank className="w-4 h-4 text-green-600" />
         <span className="font-bold text-foreground">{value}</span>
       </div>
     ),
@@ -65,4 +65,3 @@ export const groupCropColumns: Column<ProductionSubjectGroupResponse>[] = [
     ),
   },
 ];
-
