@@ -20,7 +20,6 @@ function buildCreatePayload(
   formData: DepartmentFormValues,
 ): FarmDepartmentRequest {
   return {
-    code: formData.code.trim().toUpperCase(),
     name: formData.name.trim(),
     description: formData.description.trim() || undefined,
     status: "active",
@@ -35,7 +34,6 @@ function buildUpdatePayload(
   currentItem: DepartmentItem,
 ): FarmDepartmentRequest {
   return {
-    code: formData.code.trim().toUpperCase(),
     name: formData.name.trim(),
     description: formData.description.trim() || undefined,
     status: formData.status as FarmMasterDataStatus,
