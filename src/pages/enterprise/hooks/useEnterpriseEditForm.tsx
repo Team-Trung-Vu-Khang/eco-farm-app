@@ -45,6 +45,22 @@ const BUSINESS_LINE_CODE_TO_CLASSIFICATION: Record<string, string> = {
   KHAC: "other",
 };
 
+const CLASSIFICATION_TO_BUSINESS_LINE: Record<string, string> = {
+  production: "SX",
+  processing: "CB",
+  trading: "TM",
+  service: "DV",
+  other: "KHAC",
+};
+
+const CLASSIFICATION_LABELS: Record<string, string> = {
+  production: "Sản xuất",
+  processing: "Chế biến",
+  trading: "Thương mại",
+  service: "Dịch vụ",
+  other: "Khác",
+};
+
 export function useEnterpriseEditForm() {
   const [, params] = useRoute("/enterprise/:id/edit");
   const [, setLocation] = useLocation();
@@ -761,16 +777,21 @@ export function useEnterpriseEditForm() {
 
       const businessLines = values.classification.map(
         (classification: string) => {
+          const mappedCode =
+            CLASSIFICATION_TO_BUSINESS_LINE[classification] || classification;
+          const mappedName =
+            CLASSIFICATION_LABELS[classification] || classification;
           const record = businessLineRecords.find(
             (item) =>
-              item.code === classification || item.name === classification,
+              item.code === mappedCode ||
+              item.name.toLowerCase() === mappedName.toLowerCase(),
           );
 
           return (
             record || {
-              id: classification,
-              code: classification,
-              name: classification,
+              id: mappedCode,
+              code: mappedCode,
+              name: mappedName,
             }
           );
         },

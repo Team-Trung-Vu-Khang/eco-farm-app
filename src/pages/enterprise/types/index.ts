@@ -18,6 +18,7 @@ export interface EnterpriseFormData {
   organizationTypeId: number | string | "";
   code: string;
   name: string;
+  aliasName: string;
   brandName: string;
   taxCode: string;
   taxAddress: string;

@@ -137,11 +137,11 @@ export default function SimpleEnterpriseForm({
             <div className="space-y-2">
               <Label>Tên gợi nhớ</Label>
               <Input
-                value={formData.brandName}
+                value={formData.aliasName}
                 onChange={(event) =>
                   setFormData((prev) => ({
                     ...prev,
-                    brandName: event.target.value,
+                    aliasName: event.target.value,
                   }))
                 }
                 placeholder="VD: Tên thường gọi của đơn vị"

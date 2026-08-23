@@ -248,7 +248,7 @@ function EnterpriseBasicInfoStepContent({
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div className="space-y-2 sm:col-span-2">
+        <div className="space-y-2">
           <Label htmlFor="name" required>
             Tên doanh nghiệp
           </Label>
@@ -277,17 +277,35 @@ function EnterpriseBasicInfoStepContent({
             )}
           />
         </div>
-      </div>
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="space-y-2">
-          <Label htmlFor="brandName">Tên gợi nhớ</Label>
+          <Label htmlFor="brandName">Tên thương hiệu</Label>
           <Controller
             control={control}
             name="brandName"
             render={({ field }) => (
               <Input
                 id="brandName"
+                value={field.value || ""}
+                onChange={(e) => field.onChange(e.target.value)}
+                onBlur={field.onBlur}
+                ref={field.ref}
+                name={field.name}
+                placeholder="VD: Tên thương hiệu đăng ký"
+              />
+            )}
+          />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label htmlFor="aliasName">Tên gợi nhớ</Label>
+          <Controller
+            control={control}
+            name="aliasName"
+            render={({ field }) => (
+              <Input
+                id="aliasName"
                 value={field.value || ""}
                 onChange={(e) => field.onChange(e.target.value)}
                 onBlur={field.onBlur}

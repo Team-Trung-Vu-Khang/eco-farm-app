@@ -102,7 +102,7 @@ export function EnterpriseConfirmationStep() {
                 )}
               </div>
               <CardTitle className="text-xl font-bold">
-                {formData.brandName || "Tên gợi nhớ"}
+                {formData.aliasName || "Tên gợi nhớ"}
               </CardTitle>
               <CardDescription className="text-sm font-medium">
                 {formData.name || "Tên doanh nghiệp"}
@@ -258,6 +258,14 @@ export function EnterpriseConfirmationStep() {
                         </div>
                         <div className="font-bold text-lg text-primary">
                           {formData.taxCode || "-"}
+                        </div>
+                      </div>
+                      <div>
+                        <div className="text-xs text-muted-foreground mb-1 uppercase font-bold tracking-widest">
+                          Tên thương hiệu
+                        </div>
+                        <div className="font-medium text-base leading-relaxed">
+                          {formData.brandName || "-"}
                         </div>
                       </div>
                       <div>
