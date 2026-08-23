@@ -6,10 +6,11 @@ import {
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { Calendar, MapPin, Sprout } from "lucide-react";
 import type { Plan } from "../../../stores/usePlanStore";
+import { CodeBadge } from "@/components/CodeBadge";
 import { getPlanStatusBadge } from "../utils/status";
 
 export const planColumns: Column<Plan>[] = [
-  { key: "code", label: "Mã" },
+  { key: "code", label: "Mã", render: (value) => <CodeBadge value={value} /> },
   { key: "name", label: "Tên kế hoạch" },
   { key: "seasonName", label: "Mùa vụ" },
   {

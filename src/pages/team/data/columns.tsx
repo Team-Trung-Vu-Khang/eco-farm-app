@@ -3,9 +3,10 @@ import type {
   FarmTeamResponse,
 } from "@/features/master-data";
 import { Badge, type Column } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import { CodeBadge } from "@/components/CodeBadge";
 
 export const teamColumns: Column<FarmTeamResponse>[] = [
-  { key: "code", label: "Mã đội" },
+  { key: "code", label: "Mã đội", render: (value) => <CodeBadge value={value} /> },
   { key: "name", label: "Tên đội nhóm" },
   {
     key: "leaderId",

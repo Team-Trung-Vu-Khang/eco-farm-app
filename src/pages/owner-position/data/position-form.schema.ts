@@ -46,7 +46,6 @@ export const positionDocumentSchema = z
   });
 
 export const positionFormSchema = z.object({
-  code: z.string().trim().min(1, "Vui lòng nhập mã chức vụ."),
   name: z.string().trim().min(1, "Vui lòng nhập tên chức vụ."),
   positionGroupId: z.string().trim().min(1, "Vui lòng chọn nhóm chức vụ."),
   description: z.string().trim(),

@@ -1,21 +1,12 @@
 import { Badge, type Column } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import { CodeBadge } from "@/components/CodeBadge";
 import type { Contact, ContactGroup } from "../types/types";
 
 export const groupColumns: Column<ContactGroup>[] = [
   {
     key: "code",
     label: "Mã nhóm",
-    render: (_value, row) =>
-      row.code ? (
-        <Badge
-          variant="outline"
-          className="rounded-full bg-slate-50 px-2.5 py-1 font-mono text-[10px] text-slate-700"
-        >
-          {row.code}
-        </Badge>
-      ) : (
-        <span className="text-muted-foreground text-sm">Chưa có</span>
-      ),
+    render: (_value, row) => <CodeBadge value={row.code} />,
   },
   {
     key: "name",

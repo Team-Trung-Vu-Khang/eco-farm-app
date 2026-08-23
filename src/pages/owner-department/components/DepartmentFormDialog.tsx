@@ -37,7 +37,6 @@ function buildDefaultValues(
   }
 
   return {
-    code: editItem.code ?? "",
     name: editItem.name ?? "",
     description: editItem.description ?? "",
     status: normalizeDepartmentStatus(editItem.status),
@@ -100,36 +99,6 @@ export function DepartmentFormDialog({
       loading={isSubmitting}
     >
       <div className="space-y-4">
-        <div className="space-y-2">
-          <Label htmlFor="code" required>
-            Mã phòng ban
-          </Label>
-          <Controller
-            control={control}
-            name="code"
-            render={({ field }) => (
-              <Input
-                id="code"
-                placeholder="VD: PB-KD"
-                aria-invalid={!!errors.code}
-                value={field.value}
-                onChange={(e) => {
-                  clearErrors("code");
-                  field.onChange(e.target.value.toUpperCase());
-                }}
-                clearable={!editItem}
-                onBlur={field.onBlur}
-                ref={field.ref}
-                name={field.name}
-                disabled={!!editItem}
-              />
-            )}
-          />
-          {errors.code ? (
-            <p className="text-xs text-red-600">{errors.code.message}</p>
-          ) : null}
-        </div>
-
         <div className="space-y-2">
           <Label htmlFor="name" required>
             Tên phòng ban

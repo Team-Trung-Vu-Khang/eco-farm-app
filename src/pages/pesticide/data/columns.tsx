@@ -1,5 +1,6 @@
 import { Badge, type Column } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { toxicityLevels } from "./constants";
+import { CodeBadge } from "@/components/CodeBadge";
 
 const toxicityBadgeColor: Record<string, string> = {
   Ia: "bg-red-100 text-red-700 border-red-300",
@@ -12,8 +13,8 @@ const toxicityBadgeColor: Record<string, string> = {
 export const pesticideColumns = (
   onNavigateDetail: (id: number) => void,
 ): Column<any>[] => [
-  { key: "code", label: "Mã" },
-  { key: "sku", label: "Mã SKU" },
+  { key: "code", label: "Mã", render: (value) => <CodeBadge value={value} /> },
+  { key: "sku", label: "Mã SKU", render: (value) => <CodeBadge value={value} /> },
   {
     key: "name",
     label: "Tên thương mại",

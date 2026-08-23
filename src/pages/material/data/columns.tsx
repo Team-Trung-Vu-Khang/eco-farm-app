@@ -1,11 +1,12 @@
 import { Badge, type Column } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { getMaterialGroupLabel } from "./constants";
+import { CodeBadge } from "@/components/CodeBadge";
 
 export const materialColumns = (
   onNavigateDetail: (id: number) => void,
 ): Column<any>[] => [
-  { key: "code", label: "Mã" },
-  { key: "sku", label: "Mã SKU" },
+  { key: "code", label: "Mã", render: (value) => <CodeBadge value={value} /> },
+  { key: "sku", label: "Mã SKU", render: (value) => <CodeBadge value={value} /> },
   {
     key: "name",
     label: "Tên vật tư",

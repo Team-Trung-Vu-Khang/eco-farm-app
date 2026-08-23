@@ -1,4 +1,5 @@
 import { Badge, type Column } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import { CodeBadge } from "@/components/CodeBadge";
 import type {
   Certificate,
   CertificationOrganization,
@@ -8,14 +9,7 @@ export const organizationColumns: Column<CertificationOrganization>[] = [
   {
     key: "code",
     label: "Mã tổ chức",
-    render: (value) => (
-      <Badge
-        variant="outline"
-        className="rounded-full border-slate-200 bg-slate-50 px-2.5 py-1 font-mono text-xs font-semibold tracking-widest text-slate-700"
-      >
-        {String(value)}
-      </Badge>
-    ),
+    render: (value) => <CodeBadge value={value} />,
   },
   { key: "name", label: "Tên tổ chức" },
   { key: "phone", label: "Điện thoại" },

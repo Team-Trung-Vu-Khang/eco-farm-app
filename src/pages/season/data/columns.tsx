@@ -1,5 +1,6 @@
 import { Badge, type Column } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { Calendar, FileText, Hash, Layers } from "lucide-react";
+import { Calendar, FileText, Layers } from "lucide-react";
+import { CodeBadge } from "@/components/CodeBadge";
 import { Link } from "wouter";
 import { getDomainLabel } from "../utils/utils";
 import type { MasterDataSeasonResponse } from "@/features/master-data/types/master-data.type";
@@ -8,12 +9,7 @@ export const seasonColumns: Column<MasterDataSeasonResponse>[] = [
   {
     key: "code",
     label: "Mã mùa vụ",
-    render: (value) => (
-      <div className="flex w-fit items-center gap-1.5 rounded-md border bg-muted/50 px-2 py-1 font-mono text-xs font-bold text-muted-foreground">
-        <Hash className="h-3 w-3 opacity-60" />
-        {value}
-      </div>
-    ),
+    render: (value) => <CodeBadge value={value} />,
   },
   {
     key: "name",

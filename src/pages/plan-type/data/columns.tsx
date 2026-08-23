@@ -1,13 +1,12 @@
 import { Badge, type Column } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import type { PlanType } from "../types/types";
+import { CodeBadge } from "@/components/CodeBadge";
 
 export const planTypeColumns: Column<PlanType>[] = [
   {
     key: "code",
     label: "Mã loại",
-    render: (value) => (
-      <span className="font-medium font-mono">{String(value ?? "")}</span>
-    ),
+    render: (value) => <CodeBadge value={value} />,
   },
   {
     key: "name",

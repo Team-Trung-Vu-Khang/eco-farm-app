@@ -1,5 +1,6 @@
 import { Badge, type Column } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { AlertCircle, CheckCircle2, Clock } from "lucide-react";
+import { CodeBadge } from "@/components/CodeBadge";
 import type {
   EnterpriseCertificate,
   Standard,
@@ -14,14 +15,7 @@ export const getCertificateColumns = (): Column<EnterpriseCertificate>[] => [
   {
     key: "code",
     label: "Mã chứng nhận",
-    render: (value) => (
-      <Badge
-        variant="outline"
-        className="rounded-full bg-slate-50 px-2.5 py-1 font-mono text-[10px] text-slate-700"
-      >
-        {value as string}
-      </Badge>
-    ),
+    render: (value) => <CodeBadge value={value} />,
   },
   { key: "name", label: "Tên chứng nhận" },
   {

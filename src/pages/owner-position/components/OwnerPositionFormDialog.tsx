@@ -61,7 +61,6 @@ function buildDefaultValues(editItem: PositionFormSource): PositionFormInput {
   }
 
   return {
-    code: editItem.code ?? "",
     name: editItem.name ?? "",
     positionGroupId:
       editItem.positionGroupId != null
@@ -214,64 +213,32 @@ export function OwnerPositionFormDialog({
       loading={isSubmitting}
     >
       <div className="space-y-4 max-h-[70dvh] overflow-y-auto px-1">
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Label htmlFor="code" required>
-              Mã chức vụ
-            </Label>
-            <Controller
-              control={control}
-              name="code"
-              render={({ field }) => (
-                <Input
-                  id="code"
-                  placeholder="VD: POS-GD"
-                  aria-invalid={!!errors.code}
-                  value={field.value}
-                  onChange={(e) => {
-                    clearErrors("code");
-                    field.onChange(e.target.value.toUpperCase());
-                  }}
-                  onBlur={field.onBlur}
-                  ref={field.ref}
-                  name={field.name}
-                  clearable={!editItem}
-                  disabled={!!editItem}
-                />
-              )}
-            />
-            {errors.code ? (
-              <p className="text-xs text-red-600">{errors.code.message}</p>
-            ) : null}
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="name" required>
-              Tên chức vụ
-            </Label>
-            <Controller
-              control={control}
-              name="name"
-              render={({ field }) => (
-                <Input
-                  id="name"
-                  placeholder="VD: Giám Đốc"
-                  aria-invalid={!!errors.name}
-                  value={field.value}
-                  onChange={(e) => {
-                    clearErrors("name");
-                    field.onChange(e.target.value);
-                  }}
-                  onBlur={field.onBlur}
-                  ref={field.ref}
-                  name={field.name}
-                />
-              )}
-            />
-            {errors.name ? (
-              <p className="text-xs text-red-600">{errors.name.message}</p>
-            ) : null}
-          </div>
+        <div className="space-y-2">
+          <Label htmlFor="name" required>
+            Tên chức vụ
+          </Label>
+          <Controller
+            control={control}
+            name="name"
+            render={({ field }) => (
+              <Input
+                id="name"
+                placeholder="VD: Giám Đốc"
+                aria-invalid={!!errors.name}
+                value={field.value}
+                onChange={(e) => {
+                  clearErrors("name");
+                  field.onChange(e.target.value);
+                }}
+                onBlur={field.onBlur}
+                ref={field.ref}
+                name={field.name}
+              />
+            )}
+          />
+          {errors.name ? (
+            <p className="text-xs text-red-600">{errors.name.message}</p>
+          ) : null}
         </div>
 
         <div className="space-y-2">

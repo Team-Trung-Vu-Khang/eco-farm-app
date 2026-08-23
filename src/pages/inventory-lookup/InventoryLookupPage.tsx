@@ -1,4 +1,5 @@
 import PageWrapper from "@/components/PageWrapper";
+import { CodeBadge } from "@/components/CodeBadge";
 import {
   Badge,
   Card,
@@ -171,7 +172,7 @@ export default function InventoryLookupPage() {
   };
 
   const columns = [
-    { key: "code", label: "Mã vật tư" },
+    { key: "code", label: "Mã vật tư", render: (value: unknown) => <CodeBadge value={value} /> },
     { key: "name", label: "Tên vật tư" },
     { key: "group", label: "Nhóm" },
     {

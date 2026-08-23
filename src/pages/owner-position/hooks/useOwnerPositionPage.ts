@@ -1,16 +1,17 @@
+import { useSelectedWorkspaceId } from "@/features/workspace";
+import { useToast } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { useMemo, useState } from "react";
 import { useLocation } from "wouter";
-import { useToast } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import {
-  type FarmPositionRequest,
   type FarmMasterDataStatus,
+  type FarmPositionRequest,
   type PositionResponsibilityDocumentType,
-  useFarmPositions,
   useFarmPositionMutations,
+  useFarmPositions,
   useMasterData,
 } from "../../../features/master-data";
-import { useSelectedWorkspaceId } from "@/features/workspace";
 
+import { AxiosError } from "axios";
 import type { PositionFormData, PositionItem, PositionRecord } from "../types";
 
 const DEFAULT_PAGE_SIZE = 10;
@@ -48,7 +49,6 @@ function buildCreatePayload(formData: PositionFormData): FarmPositionRequest {
     : undefined;
 
   return {
-    code: formData.code.trim().toUpperCase(),
     name: formData.name.trim(),
     description: formData.description.trim() || undefined,
     status: "active",
@@ -75,7 +75,6 @@ function buildUpdatePayload(
     : undefined;
 
   return {
-    code: formData.code.trim().toUpperCase(),
     name: formData.name.trim(),
     description: formData.description.trim() || undefined,
     status: formData.status as FarmMasterDataStatus,
@@ -201,7 +200,9 @@ export function useOwnerPositionPage() {
       setFormOpen(false);
     } catch (error) {
       const message =
-        error instanceof Error ? error.message : "Đã xảy ra lỗi không xác định";
+        error instanceof AxiosError
+          ? error?.response?.data?.message
+          : "Đã xảy ra lỗi không xác định";
 
       toast({
         title: editItem ? "Không thể cập nhật" : "Không thể thêm",

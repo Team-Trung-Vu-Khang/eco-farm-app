@@ -1,4 +1,5 @@
-import { FileText, Hash, Leaf, Sprout } from "lucide-react";
+import { FileText, Leaf, Sprout } from "lucide-react";
+import { CodeBadge } from "@/components/CodeBadge";
 import type { Column } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import type { Variety } from "../types/types";
 
@@ -6,12 +7,7 @@ export const varietyColumns: Column<Variety>[] = [
   {
     key: "varietyCode",
     label: "Mã giống",
-    render: (value: string) => (
-      <div className="flex items-center gap-1.5 font-mono text-xs font-bold text-muted-foreground bg-muted/50 px-2 py-1 rounded-md border w-fit">
-        <Hash className="w-3 h-3 opacity-60" />
-        {value}
-      </div>
-    ),
+    render: (value: string) => <CodeBadge value={value} />,
   },
   {
     key: "illustration",

@@ -1,4 +1,5 @@
 import { Badge, type Column } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import { CodeBadge } from "@/components/CodeBadge";
 import {
   technologyLevelOptions,
   valueChainOptions,
@@ -15,15 +16,11 @@ export const getEquipmentColumns = (
   const onNameClick =
     typeof options === "function" ? options : options?.onNameClick;
   return [
-    { key: "code", label: "Mã" },
+    { key: "code", label: "Mã", render: (value) => <CodeBadge value={value} /> },
     {
       key: "sku",
       label: "Mã SKU",
-      render: (_, row: any) => (
-        <span className="font-mono text-xs bg-slate-50 border px-1.5 py-0.5 rounded font-semibold text-slate-700">
-          {row.sku || row.code}
-        </span>
-      ),
+      render: (_, row: any) => <CodeBadge value={row.sku || row.code} />,
     },
     {
       key: "machineName",

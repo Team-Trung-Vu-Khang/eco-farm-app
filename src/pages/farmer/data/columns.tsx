@@ -1,4 +1,5 @@
 import { Badge, type Column } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import { CodeBadge } from "@/components/CodeBadge";
 import type { Enterprise } from "../../enterprise/data/constants";
 
 const formatContactTooltip = (farmer: Enterprise) => {
@@ -31,14 +32,7 @@ export const farmerColumns: Column<Enterprise>[] = [
   {
     key: "code",
     label: "Mã",
-    render: (value) => (
-      <Badge
-        variant="outline"
-        className="rounded-full bg-slate-50 px-2.5 py-1 font-mono text-[10px] text-slate-700"
-      >
-        {value as string}
-      </Badge>
-    ),
+    render: (value) => <CodeBadge value={value} />,
   },
   {
     key: "image",

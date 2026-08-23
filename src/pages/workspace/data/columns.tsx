@@ -1,5 +1,6 @@
 import { Badge, type Column } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import type { WorkspaceRecord } from "@/features/workspace";
+import { CodeBadge } from "@/components/CodeBadge";
 
 const STATUS_LABELS: Record<string, string> = {
   active: "Hoạt động",
@@ -11,11 +12,7 @@ export const workspaceColumns: Column<WorkspaceRecord>[] = [
   {
     key: "code",
     label: "Mã",
-    render: (value) => (
-      <span className="rounded-md bg-slate-100 px-2 py-1 font-mono text-sm font-semibold tracking-widest text-slate-700">
-        {String(value)}
-      </span>
-    ),
+    render: (value) => <CodeBadge value={value} />,
   },
   {
     key: "name",

@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import PageWrapper from "@/components/PageWrapper";
+import { CodeBadge } from "@/components/CodeBadge";
 import {
   Button,
   Card,
@@ -133,7 +134,7 @@ export default function LivestockMaterialInventoryPage() {
     });
 
   const columns = [
-    { key: "code", label: "Mã vật tư" },
+    { key: "code", label: "Mã vật tư", render: (value: unknown) => <CodeBadge value={value} /> },
     { key: "name", label: "Tên vật tư" },
     { key: "location", label: "Vị trí lưu trữ" },
     { key: "quantity", label: "Số lượng tồn" },
