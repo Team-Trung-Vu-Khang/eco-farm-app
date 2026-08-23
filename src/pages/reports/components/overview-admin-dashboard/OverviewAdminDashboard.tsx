@@ -1,47 +1,40 @@
-import React, { useState, useMemo } from "react";
-import { type CorporateEntity, EntitySidebar } from "./EntitySidebar";
 import {
+  Badge,
   Card,
   CardContent,
-  Badge,
   Input,
   Select,
-  SelectTrigger,
-  SelectValue,
   SelectContent,
   SelectItem,
+  SelectTrigger,
+  SelectValue,
   Tooltip,
-  TooltipTrigger,
   TooltipContent,
-  Separator,
+  TooltipTrigger,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import {
-  Search,
   Calendar,
-  Info,
   CheckCircle,
-  XCircle,
-  Clock,
-  User,
-  Image as ImageIcon,
   ChevronRight,
-  X,
-  FileText,
+  Clock,
   HelpCircle,
-  Map,
-  Grid,
-  Sprout as SproutIcon,
-  Layers,
+  Info,
+  Search,
+  User,
+  X,
+  XCircle,
 } from "lucide-react";
-import { AdminHealthSection } from "./AdminHealthSection";
-import { AdminMaterialSection } from "./AdminMaterialSection";
-import { AdminOperationsSection } from "./AdminOperationsSection";
-import { AdminPersonnelSection } from "./AdminPersonnelSection";
-import { mockGeneralStats } from "../../constants/mockReportData";
+import React, { useMemo, useState } from "react";
 import {
   mockAdminUnits,
   type AdminUnitReport,
 } from "../../constants/mockAdminUnits";
+import { mockGeneralStats } from "../../constants/mockReportData";
+import { AdminHealthSection } from "./AdminHealthSection";
+import { AdminMaterialSection } from "./AdminMaterialSection";
+import { AdminOperationsSection } from "./AdminOperationsSection";
+import { AdminPersonnelSection } from "./AdminPersonnelSection";
+import { EntitySidebar, type CorporateEntity } from "./EntitySidebar";
 
 export const OverviewAdminDashboard: React.FC = () => {
   // ─── States (Phần mới) ─────────────────────────────────────────────────────
