@@ -88,6 +88,7 @@ const toFarmerRow = (
         ? farmer.status
         : "active",
     createdAt: farmer.createdAt,
+    aliasName: farmer.aliasName,
     brandName: farmer.brandName,
     representative: farmer.representative,
     foundedDate: farmer.foundedDate,

@@ -48,6 +48,7 @@ const mapOrganizationToFarmer = (
     email: primaryContact?.email || "",
     status: organization.status === "inactive" ? "inactive" : "active",
     createdAt: organization.createdAt || "",
+    aliasName: organization.aliasName || "",
     brandName: organization.brandName || "",
     representative: organization.representative || "",
     foundedDate: organization.foundedDate || "",

@@ -51,6 +51,7 @@ export interface CooperativeFormData {
   type: "cooperative" | "enterprise" | "farm";
   code: string;
   name: string;
+  aliasName: string;
   brandName: string;
   taxCode: string;
   taxAddress: string;

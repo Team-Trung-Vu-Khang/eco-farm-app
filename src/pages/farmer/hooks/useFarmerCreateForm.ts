@@ -141,14 +141,15 @@ const getFirstValidationMessage = (
 
 const mapOrganizationToFarmerFormData = (
   data: OrganizationRecord,
-): FarmerFormData => {
+): FarmerFormInput => {
   const primaryContact =
     data.contacts?.find((contact) => contact.isPrimary) ?? data.contacts?.[0];
 
   return {
-  type: (data.type as FarmerFormData["type"]) || "farm",
+  type: (data.type as FarmerFormInput["type"]) || "farm",
   code: data.code || "",
   name: data.name || "",
+  aliasName: data.aliasName || "",
   brandName: data.brandName || "",
   taxCode: data.taxCode || "",
   taxAddress: data.taxAddress || "",
@@ -164,7 +165,7 @@ const mapOrganizationToFarmerFormData = (
           line.name ||
           "",
       )
-      .filter(Boolean) ?? [],
+      .filter(Boolean) as FarmerFormInput["classification"] ?? [],
   foundedDate: data.foundedDate || "",
   representative: data.representative || "",
   website: data.website || "",
@@ -856,7 +857,7 @@ export function useFarmerCreateForm() {
       return;
     }
 
-    const values = getValues();
+    const values = getValues() as unknown as FarmerFormValues;
     const businessLines = mapClassificationToBusinessLines(
       values.classification,
       businessLineRecords,
@@ -882,7 +883,9 @@ export function useFarmerCreateForm() {
     const payload: OrganizationCreateRequest = {
       type: values.type,
       organizationTypeId,
+      code: values.code?.trim() || "",
       name: values.name.trim(),
+      aliasName: values.aliasName?.trim(),
       brandName: values.brandName?.trim(),
       taxCode: values.taxCode.trim(),
       taxAuthority: values.taxAuthority?.trim(),

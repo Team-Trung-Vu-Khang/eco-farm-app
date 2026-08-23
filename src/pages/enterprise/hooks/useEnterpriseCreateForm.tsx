@@ -25,6 +25,7 @@ import { EnterpriseDocumentsStep } from "../components/steps/EnterpriseDocuments
 
 import { parseVietQR } from "@/utils/commons";
 import type { BankAccount, Branch, Contact } from "../data/constants";
+import { getDefaultOrganizationImage } from "../data/default-organization-images";
 import {
   defaultEnterpriseFormValues,
   enterpriseFormSchema,
@@ -32,7 +33,6 @@ import {
   type EnterpriseFormValues,
 } from "../data/enterprise-form.schema";
 import type { EnterpriseFormData } from "../types";
-import { getDefaultOrganizationImage } from "../data/default-organization-images";
 
 type BusinessLineRecord = {
   id: number | string;
@@ -397,7 +397,8 @@ export function useEnterpriseCreateForm() {
           ...prev,
           bankId: bankInfo?.id ?? prev.bankId,
           bin: parsed.bin || prev.bin,
-          bankName: parsed.bankName || getBankDisplayName(bankInfo) || prev.bankName,
+          bankName:
+            parsed.bankName || getBankDisplayName(bankInfo) || prev.bankName,
           accountNumber: parsed.accountNumber || prev.accountNumber,
           accountHolder: parsed.accountHolder || prev.accountHolder,
           note: parsed.note || prev.note,
@@ -436,7 +437,8 @@ export function useEnterpriseCreateForm() {
         bankId: bankInfo?.id ?? prev.bankId,
         bin: parsed.bin || prev.bin,
         note: parsed.note || prev.note,
-        bankName: parsed.bankName || getBankDisplayName(bankInfo) || prev.bankName,
+        bankName:
+          parsed.bankName || getBankDisplayName(bankInfo) || prev.bankName,
         accountNumber: parsed.accountNumber || prev.accountNumber,
         accountHolder: parsed.accountHolder || prev.accountHolder,
       }));
@@ -750,7 +752,9 @@ export function useEnterpriseCreateForm() {
       const payload = {
         type: values.type,
         organizationTypeId: values.organizationTypeId,
+        code: values.code?.trim() || "",
         name: values.name.trim(),
+        aliasName: values.aliasName.trim(),
         brandName: values.brandName.trim(),
         taxCode: values.taxCode.trim(),
         taxAuthority: values.taxAuthority.trim(),
@@ -816,7 +820,7 @@ export function useEnterpriseCreateForm() {
             ownerType: values.type,
             bankId: account.bankId
               ? Number(account.bankId)
-              : bankInfo?.id ?? undefined,
+              : (bankInfo?.id ?? undefined),
             bankCode: bankInfo?.code || account.bin || account.bankName,
             bankName: getBankDisplayName(bankInfo) || account.bankName,
             bin: account.bin || bankInfo?.bin || "",
@@ -871,9 +875,7 @@ export function useEnterpriseCreateForm() {
         title: "Thông tin cơ bản",
         description: "Tên, tên gợi nhớ và thông tin thuế",
         content: <EnterpriseBasicInfoStep />,
-        isValid:
-          formData.name.length > 0 &&
-          formData.organizationTypeId !== "",
+        isValid: formData.name.length > 0 && formData.organizationTypeId !== "",
       },
       {
         id: "contacts",

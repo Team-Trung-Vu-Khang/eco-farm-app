@@ -86,7 +86,7 @@ export function ConfirmStep({
                 )}
               </div>
               <CardTitle className="text-xl font-bold">
-                {formData.brandName || "Tên gợi nhớ"}
+                {formData.aliasName || "Tên gợi nhớ"}
               </CardTitle>
               <CardDescription className="text-sm font-medium">
                 {formData.name || "Tên hợp tác xã"}
@@ -235,6 +235,14 @@ export function ConfirmStep({
                       </div>
                     </div>
                     <div className="space-y-6">
+                      <div>
+                        <div className="text-xs text-muted-foreground mb-1 uppercase font-bold tracking-widest">
+                          Tên thương hiệu
+                        </div>
+                        <div className="font-medium text-base leading-relaxed">
+                          {formData.brandName || "-"}
+                        </div>
+                      </div>
                       <div>
                         <div className="text-xs text-muted-foreground mb-1 uppercase font-bold tracking-widest">
                           Mô tả hợp tác xã

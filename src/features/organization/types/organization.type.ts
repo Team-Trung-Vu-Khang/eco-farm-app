@@ -184,6 +184,7 @@ export interface OrganizationRecord {
   organizationType: OrganizationTypeRecord;
   code: string;
   name: string;
+  aliasName?: string;
   brandName: string;
   taxCode: string;
   taxAuthority: string;
@@ -216,6 +217,7 @@ export interface OrganizationCreateRequest {
   organizationTypeId: number | string;
   code: string;
   name: string;
+  aliasName?: string;
   brandName?: string;
   taxCode?: string;
   taxAuthority?: string;

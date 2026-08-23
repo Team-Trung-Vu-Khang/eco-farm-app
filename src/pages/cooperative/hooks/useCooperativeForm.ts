@@ -172,6 +172,7 @@ export function useCooperativeForm(initialData?: Partial<CooperativeFormData>) {
     type: "cooperative",
     code: "",
     name: "",
+    aliasName: "",
     brandName: "",
     taxCode: "",
     taxAddress: "",
@@ -748,7 +749,9 @@ export function useCooperativeForm(initialData?: Partial<CooperativeFormData>) {
       }));
 
     const payload: OrganizationCreateRequest = {
+      code: formData.code?.trim() || "",
       name: formData.name,
+      aliasName: formData.aliasName,
       brandName: formData.brandName,
       type: "cooperative" as const,
       organizationTypeId: cooperativeOrganizationType.id,

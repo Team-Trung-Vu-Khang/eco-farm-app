@@ -1,6 +1,9 @@
 import { z } from "zod";
 
-const nullableText = z.string().nullish().transform((value) => value ?? "");
+const nullableText = z
+  .string()
+  .nullish()
+  .transform((value) => value ?? "");
 
 const enterpriseContactSchema = z.object({
   id: z.union([z.number(), z.string()]).optional(),
@@ -55,6 +58,7 @@ export const enterpriseFormSchema = z.object({
   code: z.string().trim().optional().default(""),
   name: z.string().trim().min(1, "Vui lòng nhập tên doanh nghiệp."),
   brandName: nullableText.default(""),
+  aliasName: nullableText.default(""),
   taxCode: nullableText.default(""),
   taxAddress: nullableText.default(""),
   taxAuthority: nullableText.default(""),

@@ -51,6 +51,7 @@ export interface Enterprise {
   }[];
 
   // Additional fields
+  aliasName?: string;
   brandName?: string;
   representative?: string;
   foundedDate?: string;

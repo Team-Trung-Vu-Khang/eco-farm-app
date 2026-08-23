@@ -85,7 +85,7 @@ export const FarmerConfirmationStep = ({
                 )}
               </div>
               <CardTitle className="text-xl font-bold">
-                {formData.brandName || "Tên gợi nhớ"}
+                {formData.aliasName || "Tên gợi nhớ"}
               </CardTitle>
               <CardDescription className="text-sm font-medium">
                 {formData.name || "Tên nông hộ"}
@@ -185,6 +185,14 @@ export const FarmerConfirmationStep = ({
                       </div>
                       <div className="font-medium text-base leading-relaxed">
                         {formData.taxAuthority || "-"}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-xs text-muted-foreground mb-1 uppercase font-bold tracking-widest">
+                        Tên thương hiệu
+                      </div>
+                      <div className="font-medium text-base leading-relaxed">
+                        {formData.brandName || "-"}
                       </div>
                     </div>
                   </CardContent>
