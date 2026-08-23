@@ -159,33 +159,14 @@ const GrowthCycleSelector = ({
   const selectedLabel = useMemo(() => {
     if (existingSelections.length === 0) return null;
 
-    // Locked mode is still a growth-cycle picker. Keep the owning cycle name
-    // visible so a stage with a generic name (for example "Giai đoạn 1") is
-    // not shown without its context.
+    // In locked mode the user is selecting stages, not cycles. The owning
+    // cycle names are shown in the selected-stage summary below the field;
+    // the field itself must count stages.
     if (isLocked) {
-      const grouped = existingSelections.reduce(
-        (groups, selection) => {
-          const cycle = growthCycles.find((c) => c.id === selection.cycleId);
-          if (!cycle) return groups;
-          const stage = cycle.stages.find((st) => st.id === selection.stageId);
-          const current = groups.get(cycle.id) || {
-            cycle,
-            stages: [],
-          };
-          if (stage) current.stages.push(stage.name);
-          groups.set(cycle.id, current);
-          return groups;
-        },
-        new Map<string, { cycle: GrowthCycle; stages: string[] }>(),
-      );
-      const groups = Array.from(grouped.values());
-      if (groups.length === 0) return null;
-      if (groups.length === 1) {
-        const [{ cycle, stages }] = groups;
-        if (stages.length === 1) return `${cycle.name} › ${stages[0]}`;
-        return `${cycle.name} › ${stages.length} giai đoạn`;
-      }
-      return `Đã chọn ${groups.length} chu kỳ`;
+      const stageCount = existingSelections.filter(
+        (selection) => selection.type === "stage" && selection.stageId,
+      ).length;
+      return stageCount > 0 ? `Đã chọn ${stageCount} giai đoạn` : null;
     }
 
     const cycleIds = Array.from(new Set(existingSelections.map((s) => s.cycleId)));
@@ -281,7 +262,11 @@ const GrowthCycleSelector = ({
               {isLoading && filteredCycles.length === 0 ? (
                 <div className="py-8 text-center text-sm text-muted-foreground">Đang tải...</div>
               ) : filteredCycles.length === 0 ? (
-                <div className="py-8 text-center text-sm text-muted-foreground">Không tìm thấy chu kỳ sinh trưởng</div>
+                <div className="py-8 text-center text-sm text-muted-foreground">
+                  {isLocked
+                    ? "Không tìm thấy giai đoạn sinh trưởng"
+                    : "Không tìm thấy chu kỳ sinh trưởng"}
+                </div>
               ) : filteredCycles.map((cycle) => (
                 <div key={cycle.id} className="space-y-2">
                   {/* Cycle level */}

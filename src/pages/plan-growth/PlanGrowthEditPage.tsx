@@ -233,9 +233,7 @@ export default function PlanGrowthEditPage({
     });
   }, [formData.regimenId, isTreatmentOrAmendment, regimens, setFormData]);
 
-  const manualSelectedStages = formData.selectedStages.filter(
-    (stage) => !stage.includes(":"),
-  );
+  const manualSelectedStages = formData.selectedStages;
   const availableGrowthCycleStagesMap = new Map<
     string,
     { key: string; name: string; cycleName: string }
@@ -254,15 +252,6 @@ export default function PlanGrowthEditPage({
   const availableGrowthCycleStages = Array.from(
     availableGrowthCycleStagesMap.values(),
   );
-
-  const selectedRegimen = regimens.find(
-    (item) => item.id === formData.regimenId,
-  );
-  const regimenStageTitles: string[] = selectedRegimen?.steps?.length
-    ? selectedRegimen.steps.map((step: { title: string }) => step.title)
-    : selectedRegimen
-      ? [selectedRegimen.name]
-      : [];
 
   const purposeOptions = [
     {
@@ -891,74 +880,8 @@ export default function PlanGrowthEditPage({
                       }));
                     }}
                   />
-                  {regimenStageTitles.length > 0 && (
-                    <div className="grid gap-2 sm:grid-cols-2">
-                      {regimenStageTitles.map((title, index) => (
-                        <div
-                          key={`${formData.regimenId}:${title}`}
-                          className="flex items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 px-3 py-3 text-sm font-semibold text-slate-700"
-                        >
-                          <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-white text-xs text-slate-500">
-                            {index + 1}
-                          </span>
-                          <span className="line-clamp-2">{title}</span>
-                        </div>
-                      ))}
-                    </div>
-                  )}
                 </div>
               )}
-
-              {isTreatmentOrAmendment &&
-                availableGrowthCycleStages.length > 0 && (
-                  <div className="space-y-3 border-t border-dashed border-slate-200 pt-5">
-                    <div>
-                      <Label className="text-xs font-bold text-slate-700">
-                        Giai đoạn áp dụng (tuỳ chọn)
-                      </Label>
-                      <p className="mt-1 text-[11px] text-slate-500">
-                        Tick chọn các giai đoạn cần áp dụng thêm.
-                      </p>
-                    </div>
-                    <div className="grid gap-2 sm:grid-cols-2">
-                      {availableGrowthCycleStages.map((stage) => {
-                        const checked = formData.selectedStages.includes(
-                          stage.key,
-                        );
-                        return (
-                          <label
-                            key={stage.key}
-                            className={cn(
-                              "flex cursor-pointer items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 px-3 py-3 text-sm font-semibold text-slate-700 transition-colors hover:border-slate-300",
-                            )}
-                          >
-                            <Checkbox
-                              checked={checked}
-                              onCheckedChange={(value) =>
-                                setFormData((prev) => ({
-                                  ...prev,
-                                  selectedStages: value
-                                    ? [...prev.selectedStages, stage.key]
-                                    : prev.selectedStages.filter(
-                                        (item) => item !== stage.key,
-                                      ),
-                                }))
-                              }
-                            />
-                            <span>
-                              <span className="block font-semibold">
-                                {stage.name}
-                              </span>
-                              <span className="block text-[11px] text-slate-400">
-                                {stage.cycleName}
-                              </span>
-                            </span>
-                          </label>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
 
               {isTreatmentOrAmendment && (
                 <div className="space-y-4 border-t border-dashed border-slate-200 pt-4">
@@ -981,7 +904,7 @@ export default function PlanGrowthEditPage({
                         setNewManualStage("");
                       }}
                       placeholder="Thêm hạng mục mới..."
-                      className="h-11 rounded-xl border-slate-200"
+                      className="h-9 rounded-lg border-slate-200"
                     />
                     <Button
                       type="button"
@@ -995,7 +918,7 @@ export default function PlanGrowthEditPage({
                         }));
                         setNewManualStage("");
                       }}
-                      className="h-11 rounded-xl px-5 text-xs font-bold"
+                      className="h-9 rounded-lg px-4 text-xs font-bold"
                     >
                       Thêm
                     </Button>
@@ -1007,16 +930,20 @@ export default function PlanGrowthEditPage({
                       </p>
                     )}
                   {manualSelectedStages.length > 0 && (
-                    <div className="grid gap-2 sm:grid-cols-2">
-                      {manualSelectedStages.map((stage, index) => (
-                        <div
-                          key={stage}
-                          className="flex items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 px-3 py-3 text-sm font-semibold text-slate-700"
-                        >
-                          <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-white text-xs text-slate-500">
-                            {index + 1}
-                          </span>
-                          <span className="flex-1">{stage}</span>
+                    <div className="flex flex-col gap-2">
+                      {manualSelectedStages.map((stage, index) => {
+                        const displayName = stage.includes(":")
+                          ? stage.slice(stage.indexOf(":") + 1)
+                          : stage;
+                        return (
+                          <div
+                            key={stage}
+                            className="flex items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 px-3 py-3 text-sm font-semibold text-slate-700"
+                          >
+                            <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-white text-xs text-slate-500">
+                              {index + 1}
+                            </span>
+                            <span className="flex-1">{displayName}</span>
                           <Button
                             type="button"
                             variant="ghost"
@@ -1032,9 +959,10 @@ export default function PlanGrowthEditPage({
                             className="h-7 w-7 shrink-0 text-slate-400 hover:bg-red-50 hover:text-red-600"
                           >
                             <X className="h-3.5 w-3.5" />
-                          </Button>
-                        </div>
-                      ))}
+                            </Button>
+                          </div>
+                        );
+                      })}
                     </div>
                   )}
                 </div>
@@ -1062,7 +990,7 @@ export default function PlanGrowthEditPage({
                           }
                         }
                       }}
-                      className="h-11 rounded-xl border-slate-200"
+                      className="h-9 rounded-lg border-slate-200"
                     />
                     <Button
                       type="button"
@@ -1076,13 +1004,13 @@ export default function PlanGrowthEditPage({
                           setNewManualStage("");
                         }
                       }}
-                      className="h-11 rounded-xl px-5 text-xs font-bold"
+                      className="h-9 rounded-lg px-4 text-xs font-bold"
                     >
                       Thêm
                     </Button>
                   </div>
                   {formData.selectedStages.length > 0 && (
-                    <div className="grid gap-2 sm:grid-cols-2">
+                    <div className="flex flex-col gap-2">
                       {formData.selectedStages.map((stageKey, index) => {
                         const stage = availableGrowthCycleStages.find(
                           (item) => item.key === stageKey,
@@ -1151,7 +1079,7 @@ export default function PlanGrowthEditPage({
                         setNewManualStage("");
                       }}
                       placeholder="Thêm hạng mục mới..."
-                      className="h-11 rounded-xl border-slate-200"
+                      className="h-9 rounded-lg border-slate-200"
                     />
                     <Button
                       type="button"
@@ -1165,7 +1093,7 @@ export default function PlanGrowthEditPage({
                         }));
                         setNewManualStage("");
                       }}
-                      className="h-11 rounded-xl px-5 text-xs font-bold"
+                      className="h-9 rounded-lg px-4 text-xs font-bold"
                     >
                       Thêm
                     </Button>
@@ -1177,7 +1105,7 @@ export default function PlanGrowthEditPage({
                       </p>
                     )}
                   {formData.selectedStages.length > 0 && (
-                    <div className="grid gap-2 sm:grid-cols-2">
+                    <div className="flex flex-col gap-2">
                       {formData.selectedStages.map((stage, index) => (
                         <div
                           key={stage}
@@ -1231,7 +1159,7 @@ export default function PlanGrowthEditPage({
                         }));
                         setNewManualStage("");
                       }}
-                      className="h-11 rounded-xl border-slate-200"
+                      className="h-9 rounded-lg border-slate-200"
                     />
                     <Button
                       type="button"
@@ -1245,13 +1173,13 @@ export default function PlanGrowthEditPage({
                         }));
                         setNewManualStage("");
                       }}
-                      className="h-11 rounded-xl px-5 text-xs font-bold"
+                      className="h-9 rounded-lg px-4 text-xs font-bold"
                     >
                       Thêm
                     </Button>
                   </div>
                   {formData.selectedStages.length > 0 && (
-                    <div className="grid gap-2 sm:grid-cols-2">
+                    <div className="flex flex-col gap-2">
                       {formData.selectedStages.map((stage, index) => (
                         <div
                           key={stage}

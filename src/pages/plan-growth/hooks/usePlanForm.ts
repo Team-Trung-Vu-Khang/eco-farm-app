@@ -249,24 +249,61 @@ export function usePlanForm(
   const planDetailQuery = useFarmPlanById(planId, {
     enabled: mode === "edit" && !!planId,
   });
-  const workflowIdFromPlan = (planDetailQuery.data as any)?.workflow?.id;
+  // Depending on the backend version, the plan detail may expose the
+  // workflow relation as `workflow.id`, `workflowId`, or only keep the id in
+  // the embedded workflow object. Accept all forms so a direct edit URL can
+  // still hydrate the workflow's seasons.
+  const workflowIdFromPlan =
+    (planDetailQuery.data as any)?.workflow?.id ??
+    (planDetailQuery.data as any)?.workflowId;
   const workflowDetailQuery = useFarmWorkflowById(workflowIdFromPlan ?? "", {
     enabled: isWorkflowContext && mode === "edit" && !!workflowIdFromPlan,
   });
+  const embeddedWorkflow = (planDetailQuery.data as any)?.workflow;
   const workflowInfo = workflowDetailQuery.data
-    ? {
-        ...(draftWorkflowInfo || {}),
-        id: String(workflowDetailQuery.data.id),
-        name: workflowDetailQuery.data.name,
-        description: workflowDetailQuery.data.description || "",
-        selections: mapWorkflowScopesToSelections(workflowDetailQuery.data.scopes),
-        seasonIds: (workflowDetailQuery.data.seasons || []).map(
-          (season) => season.id,
-        ),
-        isActive: workflowDetailQuery.data.status === "active",
-        position: draftWorkflowInfo?.position || { x: 0, y: 0 },
-      }
-    : draftWorkflowInfo;
+    ? (() => {
+        const workflow = workflowDetailQuery.data as any;
+        const seasonRefs = Array.isArray(workflow.seasons)
+          ? workflow.seasons
+          : Array.isArray(workflow.seasonIds)
+            ? workflow.seasonIds.map((id: number) => ({ id }))
+            : Array.isArray(embeddedWorkflow?.seasons)
+              ? embeddedWorkflow.seasons
+              : [];
+
+        return {
+          ...(draftWorkflowInfo || {}),
+          id: String(workflow.id),
+          name: workflow.name,
+          description: workflow.description || "",
+          selections: mapWorkflowScopesToSelections(workflow.scopes || []),
+          seasonIds: seasonRefs
+            .map((season: { id?: number | string }) => Number(season.id))
+            .filter((id: number) => Number.isFinite(id)),
+          seasonNames: seasonRefs.map(
+            (season: { id?: number | string; name?: string; code?: string }) =>
+              season.name || season.code || `#${season.id}`,
+          ),
+          isActive: workflow.status === "active",
+          position: draftWorkflowInfo?.position || { x: 0, y: 0 },
+        };
+      })()
+    : embeddedWorkflow
+      ? {
+          ...(draftWorkflowInfo || {}),
+          id: String(embeddedWorkflow.id ?? workflowIdFromPlan),
+          name: embeddedWorkflow.name || draftWorkflowInfo?.name || "",
+          description: embeddedWorkflow.description || "",
+          selections: mapWorkflowScopesToSelections(
+            embeddedWorkflow.scopes || [],
+          ),
+          seasonIds: (embeddedWorkflow.seasons || [])
+            .map((season: { id?: number | string }) => Number(season.id))
+            .filter((id: number) => Number.isFinite(id)),
+          isActive: embeddedWorkflow.status === "active",
+          position: draftWorkflowInfo?.position || { x: 0, y: 0 },
+        }
+      : draftWorkflowInfo;
   const hydratedPlanIdRef = useRef<number | null>(null);
   const hydratedWorkflowInfoIdRef = useRef<string | null>(null);
   const hydratedGrowthCyclePlanIdRef = useRef<number | null>(null);
