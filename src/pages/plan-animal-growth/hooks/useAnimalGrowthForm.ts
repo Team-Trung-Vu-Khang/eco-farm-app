@@ -1,7 +1,12 @@
 import {
   useFarmPlanById,
   useFarmPlanMutations,
+  useFarmWorkflowById,
 } from "@/features/farm-workflow/hooks";
+import {
+  farmGrowthCycleSeasonApi,
+  systemGrowthCycleSeasonApi,
+} from "@/features/farm";
 import type { FarmPlanPersonnelRequest } from "@/features/farm-workflow/types/farm-workflow.type";
 import type { FarmPersonnelResponse } from "@/features/master-data";
 import { useFarmPersonnel } from "@/features/master-data";
@@ -13,6 +18,7 @@ import useRegionStore from "@/stores/useRegionStore";
 import useSeasonStore from "@/stores/useSeasonStore";
 import { useToast } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useQueries } from "@tanstack/react-query";
 import { useLocation, useParams } from "wouter";
 import { useAmendmentRegimenStore } from "../../../stores/useAmendmentRegimenStore";
 import { useTreatmentStore } from "../../../stores/useTreatmentStore";
@@ -36,6 +42,7 @@ import {
   summarizeSelections,
   summarizeTaskSelections,
 } from "../utils/location";
+import { mapSeasonsToGrowthCycles } from "../utils/season-mappers";
 import { mapPurpose } from "./useAnimalGrowthPage";
 import { useAnimalGrowthWorkflowDraftStore } from "./useAnimalGrowthWorkflowDraftStore";
 
@@ -219,6 +226,7 @@ function createEmptyFormData(): PlanFormData {
     variety: "",
     purpose: "cultivation",
     growthCycleId: "",
+    growthCycleSelections: [],
     regimenId: "",
     selectedStages: [],
     status: "draft",
@@ -247,7 +255,7 @@ export function useAnimalGrowthForm(
   const infoNodes = useAnimalGrowthWorkflowDraftStore(
     (state) => state.infoNodes,
   );
-  const workflowInfo = isWorkflowContext
+  const draftWorkflowInfo = isWorkflowContext
     ? (infoNodes.find((node) => node.isActive) ?? infoNodes[0])
     : undefined;
   const hydratedPlanIdRef = useRef<number | null>(null);
@@ -257,6 +265,41 @@ export function useAnimalGrowthForm(
   const planDetailQuery = useFarmPlanById(planId, {
     enabled: mode === "edit" && !!planId,
   });
+  const workflowDetailQuery = useFarmWorkflowById(
+    draftWorkflowInfo?.id || "",
+    {
+      enabled:
+        isWorkflowContext &&
+        !!draftWorkflowInfo?.id &&
+        /^\d+$/.test(draftWorkflowInfo.id),
+    },
+  );
+  const workflowInfo = useMemo(() => {
+    if (!draftWorkflowInfo) return undefined;
+    const workflow = workflowDetailQuery.data;
+    if (!workflow) return draftWorkflowInfo;
+
+    const apiSeasonIds = (workflow.seasons || []).map((season) => season.id);
+    const apiSeasonNames = (workflow.seasons || []).map(
+      (season) => season.name || season.code || `#${season.id}`,
+    );
+
+    return {
+      ...draftWorkflowInfo,
+      selections:
+        draftWorkflowInfo.selections.length > 0
+          ? draftWorkflowInfo.selections
+          : [],
+      seasonIds:
+        apiSeasonIds.length > 0
+          ? apiSeasonIds
+          : draftWorkflowInfo.seasonIds || [],
+      seasonNames:
+        apiSeasonNames.length > 0
+          ? apiSeasonNames
+          : draftWorkflowInfo.seasonNames || [],
+    };
+  }, [draftWorkflowInfo, workflowDetailQuery.data]);
   const { createPlan, updatePlan } = useFarmPlanMutations();
   const seasons = useSeasonStore((state) => state.seasons);
   const workspaceId = useSelectedWorkspaceId();
@@ -269,7 +312,40 @@ export function useAnimalGrowthForm(
     [personnelItems],
   );
   const { regions } = useRegionStore();
-  const { growthCycles } = useGrowthCycleStore();
+  const { growthCycles: localGrowthCycles } = useGrowthCycleStore();
+  const workflowSeasonIds = useMemo(
+    () =>
+      Array.from(
+        new Set(
+          (workflowInfo?.seasonIds || [])
+            .map(Number)
+            .filter((id) => Number.isFinite(id)),
+        ),
+      ),
+    [workflowInfo],
+  );
+  const workflowSeasonQueries = useQueries({
+    queries: isWorkflowContext
+      ? workflowSeasonIds.map((seasonId) => ({
+          queryKey: ["animal-workflow-season-detail", seasonId],
+          queryFn: async () => {
+            try {
+              return await farmGrowthCycleSeasonApi.getById(seasonId);
+            } catch {
+              return await systemGrowthCycleSeasonApi.getById(seasonId);
+            }
+          },
+        }))
+      : [],
+  });
+  const growthCycles = useMemo(() => {
+    if (!isWorkflowContext) return localGrowthCycles;
+    return mapSeasonsToGrowthCycles(
+      workflowSeasonQueries
+        .map((query) => query.data)
+        .filter((season): season is any => Boolean(season)),
+    );
+  }, [isWorkflowContext, localGrowthCycles, workflowSeasonQueries]);
   const treatments = useTreatmentStore((state) => state.treatments);
   const amendmentRegimensRaw = useAmendmentRegimenStore(
     (state) => state.regimens,
@@ -370,6 +446,7 @@ export function useAnimalGrowthForm(
           variety: plan.variety || "",
           purpose: plan.purpose || "cultivation",
           growthCycleId: plan.growthCycleId || "",
+          growthCycleSelections: plan.growthCycleSelections || [],
           regimenId: plan.regimenId || "",
           selectedStages: plan.selectedStages || [],
           seasonStageIds: plan.seasonStageIds || [],
@@ -408,6 +485,7 @@ export function useAnimalGrowthForm(
       variety: plan.variety || "",
       purpose: plan.purpose || "cultivation",
       growthCycleId: plan.growthCycleId || "",
+      growthCycleSelections: plan.growthCycleSelections || [],
       regimenId: plan.regimenId || "",
       selectedStages: plan.selectedStages || [],
       seasonStageIds: plan.seasonStageIds || [],

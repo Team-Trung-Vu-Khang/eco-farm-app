@@ -16,6 +16,8 @@ import { mapPlanResponseToPlan } from "./utils/api-mappers";
 
 interface PlanGrowthWorkflowPlansPageProps {
   basePath?: string;
+  domainCode?: "CROP" | "LIVESTOCK" | "AQUACULTURE";
+  planSearchPlaceholder?: string;
 }
 
 // Maps the (lowercase) Plan-domain status used by the filter UI to the
@@ -29,6 +31,8 @@ const PLAN_STATUS_TO_API: Record<string, FarmPlanStatus> = {
 
 export default function PlanGrowthWorkflowPlansPage({
   basePath = "/plan-growth",
+  domainCode = "CROP",
+  planSearchPlaceholder = "Tìm kiếm kế hoạch...",
 }: PlanGrowthWorkflowPlansPageProps) {
   const params = useParams<{ workflowId: string }>();
   const workflowId = params.workflowId || "";
@@ -46,7 +50,7 @@ export default function PlanGrowthWorkflowPlansPage({
     handleConfirmDelete,
     goToView,
     goToEdit,
-  } = usePlanPage(basePath, { includePlans: false });
+  } = usePlanPage(basePath, { includePlans: false, domainCode });
 
   const workflowDetailQuery = useFarmWorkflowById(workflowId, {
     enabled: !isUnassigned && !!workflowId,
@@ -125,7 +129,7 @@ export default function PlanGrowthWorkflowPlansPage({
             setSearch(value);
             setCurrentIndex(1);
           }}
-          searchPlaceholder="Tìm kiếm kế hoạch..."
+          searchPlaceholder={planSearchPlaceholder}
           filters={planGrowthFilters}
           onFilterChange={(key, value) => {
             if (key === "status") {
