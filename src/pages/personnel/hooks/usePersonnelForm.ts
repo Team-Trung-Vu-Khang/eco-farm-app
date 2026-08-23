@@ -1,6 +1,3 @@
-import { useEffect, useRef } from "react";
-import { useLocation } from "wouter";
-import { useToast } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import {
   useFarmDepartmentOptions,
   useFarmPersonnelById,
@@ -8,16 +5,20 @@ import {
   useFarmPositionOptions,
   useMasterData,
 } from "@/features/master-data";
-import { useSelectedWorkspaceId } from "@/features/workspace";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import {
-  personnelFormSchema,
-  type PersonnelFormValues,
-  emptyPersonnelFormValues,
-} from "../data/personnel-form.schema";
 import type { FarmPersonnelRequest } from "@/features/master-data/types/farm-master-data.type";
 import { useFileUpload } from "@/features/storage/hooks/useFileUpload";
+import { useSelectedWorkspaceId } from "@/features/workspace";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useToast } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import { AxiosError } from "axios";
+import { useEffect, useRef } from "react";
+import { useForm } from "react-hook-form";
+import { useLocation } from "wouter";
+import {
+  emptyPersonnelFormValues,
+  personnelFormSchema,
+  type PersonnelFormValues,
+} from "../data/personnel-form.schema";
 
 export function usePersonnelForm(id?: number) {
   const [, setLocation] = useLocation();
@@ -129,7 +130,8 @@ export function usePersonnelForm(id?: number) {
           (personnel.metadataJson?.positionType ||
             personnel.positionType ||
             (personnel.position?.source as any)) as string | undefined,
-          (personnel.position?.id as number | undefined) || personnel.positionId,
+          (personnel.position?.id as number | undefined) ||
+            personnel.positionId,
           personnel.position?.name,
           positionOptions,
         ),
@@ -251,7 +253,10 @@ export function usePersonnelForm(id?: number) {
     } catch (error) {
       toast({
         title: "Không thể lưu",
-        description: error instanceof Error ? error.message : "Đã xảy ra lỗi",
+        description:
+          error instanceof AxiosError
+            ? error?.response?.data.message
+            : "Đã xảy ra lỗi",
         variant: "destructive",
       });
     }
