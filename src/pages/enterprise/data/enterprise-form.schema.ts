@@ -2,11 +2,28 @@ import { z } from "zod";
 
 const nullableText = z.string().nullish().transform((value) => value ?? "");
 
+export const PHONE_REGEX = /^(\+84|0)(3|5|7|8|9)[0-9]{8}$/;
+export const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+const phoneField = z
+  .string()
+  .default("")
+  .refine((value) => !value || PHONE_REGEX.test(value), {
+    message: "Số điện thoại không hợp lệ.",
+  });
+
+const emailField = z
+  .string()
+  .default("")
+  .refine((value) => !value || EMAIL_REGEX.test(value), {
+    message: "Email không hợp lệ.",
+  });
+
 const enterpriseContactSchema = z.object({
   id: z.union([z.number(), z.string()]).optional(),
   name: z.string().default(""),
-  phone: z.string().default(""),
-  email: z.string().default(""),
+  phone: phoneField,
+  email: emailField,
 });
 
 const enterpriseBranchSchema = z.object({
@@ -14,9 +31,9 @@ const enterpriseBranchSchema = z.object({
   contactId: z.union([z.number(), z.string()]).optional(),
   name: z.string().default(""),
   taxCode: z.string().default(""),
-  phone: z.string().default(""),
+  phone: phoneField,
   taxAddress: z.string().default(""),
-  email: z.string().default(""),
+  email: emailField,
   address: z.string().default(""),
   note: z.string().default(""),
 });
@@ -76,6 +93,27 @@ export const enterpriseFormSchema = z.object({
   branches: z.array(enterpriseBranchSchema).default([]),
   bankAccounts: z.array(enterpriseBankAccountSchema).default([]),
   documents: z.array(enterpriseDocumentSchema).default([]),
+});
+
+export const simpleEnterpriseFormSchema = enterpriseFormSchema.pick({
+  image: true,
+  code: true,
+  name: true,
+  taxCode: true,
+  organizationTypeId: true,
+  province: true,
+  ward: true,
+  address: true,
+  description: true,
+}).extend({
+  image: z.string().trim().min(1, "Vui lòng tải logo lên."),
+  code: z.string().trim().min(1, "Vui lòng nhập mã doanh nghiệp."),
+  name: z.string().trim().min(1, "Vui lòng nhập tên doanh nghiệp."),
+  taxCode: z.string().trim().min(1, "Vui lòng nhập mã số thuế."),
+  province: z.string().trim().min(1, "Vui lòng chọn tỉnh/thành phố."),
+  ward: z.string().trim().min(1, "Vui lòng chọn phường/xã."),
+  address: z.string().trim().min(1, "Vui lòng nhập địa chỉ chi tiết."),
+  description: z.string().optional(),
 });
 
 export type EnterpriseFormInput = z.input<typeof enterpriseFormSchema>;

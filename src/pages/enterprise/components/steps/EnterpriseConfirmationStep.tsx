@@ -35,14 +35,6 @@ import { useEnterpriseFormContext } from "../../context/EnterpriseFormContext";
 import type { BankAccount, Branch, Contact } from "../../data/constants";
 import type { EnterpriseDocument } from "../../types";
 
-const classificationOptions = [
-  { value: "production", label: "Sản xuất" },
-  { value: "processing", label: "Chế biến" },
-  { value: "trading", label: "Thương mại" },
-  { value: "service", label: "Dịch vụ" },
-  { value: "other", label: "Khác" },
-];
-
 export function EnterpriseConfirmationStep() {
   const { formData } = useEnterpriseFormContext();
   const [confirmBankSearchQuery, setConfirmBankSearchQuery] = useState("");
@@ -57,6 +49,13 @@ export function EnterpriseConfirmationStep() {
   const organizationType = organizationTypesQuery.items.find(
     (item) => String(item.id) === String(formData.organizationTypeId),
   );
+  const businessLinesQuery = useMasterData("business-lines", {
+    params: {
+      status: "active",
+      page: 0,
+      size: 100,
+    },
+  });
 
   return (
     <div className="space-y-10 max-w-6xl mx-auto">
@@ -111,8 +110,9 @@ export function EnterpriseConfirmationStep() {
                     variant="outline"
                     className="capitalize px-3 py-1 text-xs font-semibold bg-primary/5 text-primary border-primary/20"
                   >
-                    {classificationOptions.find((opt) => opt.value === item)
-                      ?.label ?? item}
+                    {businessLinesQuery.items.find(
+                      (opt) => opt.code === item || opt.name === item,
+                    )?.name ?? item}
                   </Badge>
                 ))}
               </div>

@@ -24,7 +24,9 @@ import { EnterpriseDocumentsStep } from "../components/steps/EnterpriseDocuments
 import type { BankAccount, Branch, Contact } from "../data/constants";
 import {
   defaultEnterpriseFormValues,
+  EMAIL_REGEX,
   enterpriseFormSchema,
+  PHONE_REGEX,
   type EnterpriseFormInput,
   type EnterpriseFormValues,
 } from "../data/enterprise-form.schema";
@@ -590,27 +592,46 @@ export function useEnterpriseEditForm() {
   };
 
   const addBranch = () => {
-    if (newBranch.name.trim()) {
-      setFormData((prev) => ({
-        ...prev,
-        branches: [...(prev.branches ?? []), newBranch],
-      }));
-      setNewBranch({
-        name: "",
-        taxCode: "",
-        phone: "",
-        taxAddress: "",
-        email: "",
-        address: "",
-        note: "",
-      });
-    } else {
+    if (!newBranch.name.trim()) {
       toast({
         title: "Lỗi",
         description: "Tên chi nhánh không được để trống",
         variant: "destructive",
       });
+      return;
     }
+
+    if (newBranch.phone.trim() && !PHONE_REGEX.test(newBranch.phone.trim())) {
+      toast({
+        title: "Lỗi",
+        description: "Số điện thoại chi nhánh không hợp lệ",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (newBranch.email.trim() && !EMAIL_REGEX.test(newBranch.email.trim())) {
+      toast({
+        title: "Lỗi",
+        description: "Email chi nhánh không hợp lệ",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setFormData((prev) => ({
+      ...prev,
+      branches: [...(prev.branches ?? []), newBranch],
+    }));
+    setNewBranch({
+      name: "",
+      taxCode: "",
+      phone: "",
+      taxAddress: "",
+      email: "",
+      address: "",
+      note: "",
+    });
   };
 
   const removeBranch = (index: number) => {
@@ -658,24 +679,43 @@ export function useEnterpriseEditForm() {
   };
 
   const addContact = () => {
-    if (newContact.name.trim() && newContact.phone.trim()) {
-      setFormData((prev) => ({
-        ...prev,
-        contacts: [...(prev.contacts ?? []), newContact],
-      }));
-      setNewContact({
-        id: "",
-        name: "",
-        phone: "",
-        email: "",
-      });
-    } else {
+    if (!newContact.name.trim() || !newContact.phone.trim()) {
       toast({
         title: "Lỗi",
         description: "Vui lòng nhập tên và số điện thoại liên hệ",
         variant: "destructive",
       });
+      return;
     }
+
+    if (!PHONE_REGEX.test(newContact.phone.trim())) {
+      toast({
+        title: "Lỗi",
+        description: "Số điện thoại không hợp lệ",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (newContact.email.trim() && !EMAIL_REGEX.test(newContact.email.trim())) {
+      toast({
+        title: "Lỗi",
+        description: "Email không hợp lệ",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setFormData((prev) => ({
+      ...prev,
+      contacts: [...(prev.contacts ?? []), newContact],
+    }));
+    setNewContact({
+      id: "",
+      name: "",
+      phone: "",
+      email: "",
+    });
   };
 
   const removeContact = (index: number) => {

@@ -21,14 +21,6 @@ import { useEffect, useRef, useState } from "react";
 import { Controller } from "react-hook-form";
 import { useEnterpriseFormContext } from "../../context/EnterpriseFormContext";
 
-const classificationOptions = [
-  { value: "production", label: "Sản xuất" },
-  { value: "processing", label: "Chế biến" },
-  { value: "trading", label: "Thương mại" },
-  { value: "service", label: "Dịch vụ" },
-  { value: "other", label: "Khác" },
-];
-
 export function EnterpriseBasicInfoStep() {
   return <EnterpriseBasicInfoStepContent showContactSelector />;
 }
@@ -49,6 +41,17 @@ function EnterpriseBasicInfoStepContent({
       size: 100,
     },
   });
+  const businessLinesQuery = useMasterData("business-lines", {
+    params: {
+      status: "active",
+      page: 0,
+      size: 100,
+    },
+  });
+  const classificationOptions = businessLinesQuery.items.map((item) => ({
+    value: item.code,
+    label: item.name,
+  }));
   const provincesQuery = useGeoProvinces({
     params: {
       status: "active",
