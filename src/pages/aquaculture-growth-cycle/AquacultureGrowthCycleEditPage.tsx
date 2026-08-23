@@ -66,8 +66,9 @@ export default function AquacultureGrowthCycleEditPage() {
 
   const { watch, reset } = form;
   const watchedScope = watch("scope");
-  const watchedCropId = watch("cropId");
-  const watchedVariety = watch("variety");
+  const watchedCropIds = watch("cropIds") || [];
+  const watchedVarietyIds = watch("varietyIds") || [];
+  const watchedGroupIds = watch("groupIds") || [];
   const watchedStages = watch("stages") || [];
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -76,8 +77,9 @@ export default function AquacultureGrowthCycleEditPage() {
   useEffect(() => {
     if (currentCycle && !isLoaded) {
       const metadata: Record<string, unknown> = currentCycle.metadataJson || {};
-      const cropIdVal = currentCycle.productionSubject?.id;
-      const varietyIdVal = currentCycle.productionSubjectVariant?.id;
+      const cropIds = (currentCycle.productionSubjects || (currentCycle.productionSubject ? [currentCycle.productionSubject] : [])).map((item: any) => String(item.id));
+      const varietyIds = (currentCycle.productionSubjectVariants || (currentCycle.productionSubjectVariant ? [currentCycle.productionSubjectVariant] : [])).map((item: any) => String(item.id));
+      const groupIds = (currentCycle.productionSubjectGroups || []).map((item: any) => String(item.id));
       const totalDaysVal =
         currentCycle.stages?.reduce(
           (sum: number, s: any) => sum + (s.durationDays || 0),
@@ -87,9 +89,10 @@ export default function AquacultureGrowthCycleEditPage() {
       reset({
         name: currentCycle.name ?? "",
         cycleType: String(metadata.cycleType || "plant") as any,
-        scope: varietyIdVal ? "variety" : "crop",
-        cropId: cropIdVal ? String(cropIdVal) : "",
-        variety: varietyIdVal ? String(varietyIdVal) : "",
+        scope: groupIds.length ? "group" : varietyIds.length ? "variety" : "crop",
+        groupIds,
+        cropIds,
+        varietyIds,
         totalDays: totalDaysVal,
         stages: (currentCycle.stages || []).map((s: any) => {
           let usePdf = false;
@@ -131,9 +134,7 @@ export default function AquacultureGrowthCycleEditPage() {
     [watchedStages],
   );
 
-  const varietyName =
-    cropVarieties.find((variety) => String(variety.id) === watchedVariety)
-      ?.name || watchedVariety;
+  const varietyName = cropVarieties.filter((variety) => watchedVarietyIds.includes(String(variety.id))).map((variety) => variety.name).join(", ");
 
   const handleComplete = async (values: AnimalGrowthCycleFormValues) => {
     if (!numericId) return;
@@ -195,11 +196,10 @@ export default function AquacultureGrowthCycleEditPage() {
 
       const metadataJson = { cycleType: values.cycleType };
 
-      const cropIdVal = Number(values.cropId);
-      const varietyIdVal =
-        values.scope === "variety" && values.variety
-          ? Number(values.variety)
-          : undefined;
+      const groupIds = values.groupIds.map(Number).filter(Number.isFinite);
+      const cropIds = values.cropIds.map(Number).filter(Number.isFinite);
+      const varietyIds = values.varietyIds.map(Number).filter(Number.isFinite);
+      const scopeType = values.scope === "group" ? "SUBJECT_GROUP" : values.scope === "variety" ? "SUBJECT_VARIANT" : "SUBJECT";
 
       await updateTemplate.mutateAsync({
         id: numericId,
@@ -207,8 +207,10 @@ export default function AquacultureGrowthCycleEditPage() {
           domainCode: "AQUACULTURE",
           code: currentCycle?.code || undefined,
           name: values.name.trim(),
-          productionSubjectId: cropIdVal,
-          productionSubjectVariantId: varietyIdVal ?? null,
+          scopeType,
+          subjectGroupIds: values.scope === "group" ? groupIds : [],
+          subjectIds: values.scope === "crop" ? cropIds : [],
+          subjectVariantIds: values.scope === "variety" ? varietyIds : [],
           description: currentCycle?.description || "Chu kỳ sinh trưởng",
           stages: preparedStages,
           displayOrder: currentCycle?.displayOrder || 1,
@@ -248,7 +250,7 @@ export default function AquacultureGrowthCycleEditPage() {
   return (
     <PageWrapper
       title="Cập nhật chu kỳ nuôi trồng thủy sản"
-      description={`Chỉnh sửa thông tin cho ${varietyName || watchedCropId}`}
+      description={`Chỉnh sửa thông tin cho ${varietyName || "chu kỳ thủy sản"}`}
       actions={[
         <Button
           variant="outline"
@@ -290,15 +292,13 @@ export default function AquacultureGrowthCycleEditPage() {
                   <div className="flex justify-between gap-4">
                     <span className="text-muted-foreground">Chu kỳ:</span>
                     <span className="font-medium">
-                      {varietyName || watchedCropId}
+                      {varietyName || "-"}
                     </span>
                   </div>
                   <div className="flex justify-between gap-4">
                     <span className="text-muted-foreground">Phạm vi:</span>
                     <span className="font-medium">
-                      {watchedScope === "crop"
-                        ? "Theo loài nuôi"
-                        : "Theo giống"}
+                      {watchedScope === "group" ? "Theo nhóm loài nuôi" : watchedScope === "crop" ? "Theo loài nuôi" : "Theo giống / dòng"}
                     </span>
                   </div>
                   <div className="flex justify-between gap-4">
@@ -309,7 +309,7 @@ export default function AquacultureGrowthCycleEditPage() {
                     <span className="text-muted-foreground">
                       Tổng thời gian:
                     </span>
-                    <span className="font-medium">{totalDays} ngày</span>
+                    <span className="font-medium">{formatDaysToDuration(totalDays) || "0 ngày"}</span>
                   </div>
                 </div>
               </div>

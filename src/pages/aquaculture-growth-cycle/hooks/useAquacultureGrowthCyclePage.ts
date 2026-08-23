@@ -111,16 +111,22 @@ export function useAquacultureGrowthCyclePage() {
       const cropNameVal = item.productionSubject?.name;
       const varietyIdVal = item.productionSubjectVariant?.id;
       const varietyNameVal = item.productionSubjectVariant?.name;
+      const groupItems = item.productionSubjectGroups || [];
+      const cropItems = item.productionSubjects || (item.productionSubject ? [item.productionSubject] : []);
+      const varietyItems = item.productionSubjectVariants || (item.productionSubjectVariant ? [item.productionSubjectVariant] : []);
       const expectedDaysVal = item.stages?.reduce((sum: number, s: any) => sum + (s.durationDays || 0), 0) ?? 0;
 
       return {
         id: (isFoundation ? "foundation-" : "user-") + item.id,
         name: item.name,
         cycleType: item.metadataJson?.cycleType || "aquaculture",
-        scope: varietyIdVal ? "variety" : "crop",
+        scope: groupItems.length ? "group" : varietyItems.length ? "variety" : "crop",
         cropId: cropIdVal ? String(cropIdVal) : "",
         cropName: cropNameVal || "",
         variety: varietyNameVal || "",
+        groupIds: groupItems.map((group: any) => String(group.id)),
+        cropIds: cropItems.map((subject: any) => String(subject.id)),
+        varietyIds: varietyItems.map((variety: any) => String(variety.id)),
         totalDays: expectedDaysVal,
         numStages: item.stages?.length || 0,
         stages:

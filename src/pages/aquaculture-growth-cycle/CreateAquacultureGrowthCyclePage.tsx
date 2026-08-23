@@ -21,6 +21,7 @@ import {
   type AnimalGrowthCycleFormValues,
 } from "../animal-husbandry-zone/animal-growth-cycle/schemas/animalGrowthCycleSchema";
 import { parseDurationToDays } from "../growth-cycle/utils/duration";
+import { formatDaysToDuration } from "../growth-cycle/utils/duration";
 import { AquacultureGrowthCycleSteps } from "./components/AquacultureGrowthCycleSteps";
 import { useAquacultureCreateGrowthCycleForm } from "./hooks/useAquacultureCreateGrowthCycleForm";
 
@@ -31,8 +32,9 @@ export default function CreateAquacultureGrowthCyclePage() {
     mode: "onChange",
     defaultValues: {
       name: "",
-      cropId: "",
-      variety: "",
+      groupIds: [],
+      cropIds: [],
+      varietyIds: [],
       totalDays: 0,
       scope: "crop",
       cycleType: "animal",
@@ -50,8 +52,9 @@ export default function CreateAquacultureGrowthCyclePage() {
 
   const { watch } = form;
   const watchedScope = watch("scope");
-  const watchedCropId = watch("cropId");
-  const watchedVariety = watch("variety");
+  const watchedCropIds = watch("cropIds") || [];
+  const watchedVarietyIds = watch("varietyIds") || [];
+  const watchedGroupIds = watch("groupIds") || [];
   const watchedStages = watch("stages") || [];
 
   const totalDays = useMemo(
@@ -66,12 +69,8 @@ export default function CreateAquacultureGrowthCyclePage() {
   const { crops, varieties, handleComplete, setLocation, isSubmitting } =
     useAquacultureCreateGrowthCycleForm();
 
-  const selectedSpecies = crops.find(
-    (item) => String(item.id) === watchedCropId,
-  );
-  const selectedVariety = varieties.find(
-    (item) => String(item.id) === watchedVariety,
-  );
+  const selectedSpecies = crops.filter((item) => watchedCropIds.includes(String(item.id))).map((item) => item.name).join(", ");
+  const selectedVariety = varieties.filter((item) => watchedVarietyIds.includes(String(item.id))).map((item) => item.name).join(", ");
 
   return (
     <PageWrapper
@@ -118,15 +117,13 @@ export default function CreateAquacultureGrowthCyclePage() {
                   <div className="flex justify-between gap-4">
                     <span className="text-muted-foreground">Phạm vi:</span>
                     <span className="font-medium">
-                      {watchedScope === "crop"
-                        ? "Theo loài nuôi"
-                        : "Theo giống / dòng"}
+                      {watchedScope === "group" ? "Theo nhóm loài nuôi" : watchedScope === "crop" ? "Theo loài nuôi" : "Theo giống / dòng"}
                     </span>
                   </div>
                   <div className="flex justify-between gap-4">
                     <span className="text-muted-foreground">Loài nuôi:</span>
                     <span className="font-medium">
-                      {selectedSpecies?.name || watchedCropId || "-"}
+                      {watchedScope === "group" ? `${watchedGroupIds.length} nhóm loài nuôi` : selectedSpecies || "-"}
                     </span>
                   </div>
                   {watchedScope === "variety" && (
@@ -135,7 +132,7 @@ export default function CreateAquacultureGrowthCyclePage() {
                         Giống / dòng:
                       </span>
                       <span className="font-medium">
-                        {selectedVariety?.name || watchedVariety || "-"}
+                        {selectedVariety || "-"}
                       </span>
                     </div>
                   )}
@@ -147,7 +144,7 @@ export default function CreateAquacultureGrowthCyclePage() {
                     <span className="text-muted-foreground">
                       Tổng thời gian:
                     </span>
-                    <span className="font-medium">{totalDays}</span>
+                    <span className="font-medium">{formatDaysToDuration(totalDays) || "0 ngày"}</span>
                   </div>
                 </div>
               </div>

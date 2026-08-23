@@ -68,22 +68,22 @@ export function useCreateGrowthCycleForm() {
         values.scope === "group"
           ? {
               scopeType: "SUBJECT_GROUP" as const,
-              productionSubjectGroupIds: values.groupIds.map(Number),
-              productionSubjectIds: [],
-              productionSubjectVariantIds: [],
+              subjectGroupIds: values.groupIds.map(Number),
+              subjectIds: [],
+              subjectVariantIds: [],
             }
           : values.scope === "variety"
             ? {
                 scopeType: "SUBJECT_VARIANT" as const,
-                productionSubjectGroupIds: [],
-                productionSubjectIds: [],
-                productionSubjectVariantIds: values.varietyIds.map(Number),
+                subjectGroupIds: [],
+                subjectIds: [],
+                subjectVariantIds: values.varietyIds.map(Number),
               }
             : {
                 scopeType: "SUBJECT" as const,
-                productionSubjectGroupIds: [],
-                productionSubjectIds: values.cropIds.map(Number),
-                productionSubjectVariantIds: [],
+                subjectGroupIds: [],
+                subjectIds: values.cropIds.map(Number),
+                subjectVariantIds: [],
               };
 
       await createTemplate.mutateAsync({

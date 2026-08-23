@@ -18,6 +18,11 @@ interface AnimalGrowthCycleStepsProps {
   onComplete: () => void;
   onCancel: () => void;
   isSubmitting?: boolean;
+  domainCode?: "LIVESTOCK" | "AQUACULTURE";
+  subjectLabel?: string;
+  varietyLabel?: string;
+  groupLabel?: string;
+  cycleLabel?: string;
 }
 
 export function AnimalGrowthCycleSteps({
@@ -27,6 +32,11 @@ export function AnimalGrowthCycleSteps({
   onComplete,
   onCancel,
   isSubmitting = false,
+  domainCode = "LIVESTOCK",
+  subjectLabel = "Vật nuôi",
+  varietyLabel = "Giống vật nuôi",
+  groupLabel = "Nhóm vật nuôi",
+  cycleLabel = "Vụ nuôi",
 }: AnimalGrowthCycleStepsProps) {
   const { watch, handleSubmit } = useFormContext<AnimalGrowthCycleFormValues>();
   const values = watch();
@@ -62,6 +72,10 @@ export function AnimalGrowthCycleSteps({
           <AnimalGrowthCycleBasicInfoStep
             varieties={varieties}
             crops={crops}
+            domainCode={domainCode}
+            subjectLabel={subjectLabel}
+            varietyLabel={varietyLabel}
+            groupLabel={groupLabel}
           />
         ),
         isValid: isStep1Valid,
@@ -78,7 +92,7 @@ export function AnimalGrowthCycleSteps({
         title: "Bước 3",
         description: "Xác nhận",
         content: (
-          <AnimalGrowthCycleConfirmStep varieties={varieties} crops={crops} />
+          <AnimalGrowthCycleConfirmStep varieties={varieties} crops={crops} domainCode={domainCode} subjectLabel={subjectLabel} varietyLabel={varietyLabel} groupLabel={groupLabel} cycleLabel={cycleLabel} />
         ),
         isValid: true,
       },
