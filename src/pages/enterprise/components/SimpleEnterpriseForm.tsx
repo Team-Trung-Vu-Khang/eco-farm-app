@@ -56,8 +56,7 @@ export default function SimpleEnterpriseForm({
       formData.organizationTypeId !== "" &&
       formData.province.trim() &&
       formData.ward.trim() &&
-      formData.address.trim() &&
-      formData.description.trim(),
+      formData.address.trim(),
   );
   const isEditMode = mode === "edit";
 
@@ -236,7 +235,7 @@ export default function SimpleEnterpriseForm({
           </div>
 
           <div className="space-y-2 border-t border-slate-100 pt-5">
-            <Label required>Ghi chú</Label>
+            <Label>Ghi chú</Label>
             <Textarea
               value={formData.description}
               onChange={(event) =>
