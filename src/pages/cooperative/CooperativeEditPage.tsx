@@ -13,10 +13,11 @@ import {
   Card,
   CardContent,
   StepperForm,
+  Switch,
   type Step,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { ChevronLeft } from "lucide-react";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { Link, useLocation, useRoute } from "wouter";
 import { BankInfoStep } from "./components/steps/BankInfoStep";
 import { BasicInfoStep } from "./components/steps/BasicInfoStep";
@@ -26,8 +27,10 @@ import { ContactInfoStep } from "./components/steps/ContactInfoStep";
 import { DocumentsStep } from "./components/steps/DocumentsStep";
 import { useCooperativeForm } from "./hooks/useCooperativeForm";
 import { toCooperativeFormData } from "./utils/cooperative.mapper";
+import SimpleCooperativeForm from "./components/SimpleCooperativeForm";
 
 export default function CooperativeEditPage() {
+  const [isSimpleMode, setIsSimpleMode] = useState(true);
   const [, setLocation] = useLocation();
   const [, params] = useRoute("/cooperative/:id/edit");
   const workspaceId = useSelectedWorkspaceId();
@@ -265,7 +268,7 @@ export default function CooperativeEditPage() {
       title={`Cập nhật Hợp tác xã`}
       description="Cập nhật thông tin chi tiết"
       actions={
-        <Link href="/cooperative">
+        <div className="flex items-center gap-3"><div className="flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-2 shadow-sm"><span className="text-xs font-bold text-slate-700">Thông tin chuyên sâu</span><Switch checked={!isSimpleMode} onCheckedChange={(checked) => setIsSimpleMode(!checked)} /></div><Link href="/cooperative">
           <button
             type="button"
             className="inline-flex h-10 items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium shadow-sm transition-colors hover:bg-accent hover:text-accent-foreground"
@@ -273,10 +276,12 @@ export default function CooperativeEditPage() {
             <ChevronLeft className="mr-2 h-4 w-4" />
             Quay lại
           </button>
-        </Link>
+        </Link></div>
       }
     >
-      <Card>
+      {isSimpleMode ? (
+        <SimpleCooperativeForm formData={formData} setFormData={setFormData} onImageUpload={handleImageUpload} onComplete={handleComplete} isEdit />
+      ) : <Card>
         <CardContent className="p-6">
           <StepperForm
             steps={steps}
@@ -285,7 +290,7 @@ export default function CooperativeEditPage() {
             completeLabel="Cập nhật"
           />
         </CardContent>
-      </Card>
+      </Card>}
       <AlertDialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>

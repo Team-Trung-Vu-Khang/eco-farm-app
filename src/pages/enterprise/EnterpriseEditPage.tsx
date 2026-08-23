@@ -12,13 +12,17 @@ import {
   Card,
   CardContent,
   StepperForm,
+  Switch,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { ArrowLeft } from "lucide-react";
+import { useState } from "react";
+import SimpleEnterpriseForm from "./components/SimpleEnterpriseForm";
 import { EnterpriseFormContext } from "./context/EnterpriseFormContext";
 import { useEnterpriseEditForm } from "./hooks/useEnterpriseEditForm";
 
 export default function EnterpriseEditPage() {
   const formState = useEnterpriseEditForm();
+  const [isSimpleMode, setIsSimpleMode] = useState(true);
   const {
     steps,
     showConfirmDialog,
@@ -42,6 +46,15 @@ export default function EnterpriseEditPage() {
         }`}
         description="Cập nhật thông tin chi tiết"
         actions={[
+          <div className="flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-2 shadow-sm">
+            <span className="text-xs font-bold text-slate-700">
+              Thông tin chuyên sâu
+            </span>
+            <Switch
+              checked={!isSimpleMode}
+              onCheckedChange={(checked) => setIsSimpleMode(!checked)}
+            />
+          </div>,
           <Button
             variant="outline"
             onClick={() => setLocation("/enterprise")}
@@ -52,17 +65,21 @@ export default function EnterpriseEditPage() {
           </Button>,
         ]}
       >
-        <Card>
-          <CardContent className="p-6">
-            <StepperForm
-              steps={steps}
-              onComplete={handleComplete}
-              onCancel={() => setLocation("/enterprise")}
-              completeLabel="Cập nhật"
-              loading={isSubmitting}
-            />
-          </CardContent>
-        </Card>
+        {isSimpleMode ? (
+          <SimpleEnterpriseForm onComplete={handleComplete} mode="edit" />
+        ) : (
+          <Card>
+            <CardContent className="p-6">
+              <StepperForm
+                steps={steps}
+                onComplete={handleComplete}
+                onCancel={() => setLocation("/enterprise")}
+                completeLabel="Cập nhật"
+                loading={isSubmitting}
+              />
+            </CardContent>
+          </Card>
+        )}
         <AlertDialog
           open={showConfirmDialog}
           onOpenChange={(open) => !isSubmitting && setShowConfirmDialog(open)}

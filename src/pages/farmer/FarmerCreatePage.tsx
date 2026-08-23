@@ -12,16 +12,20 @@ import {
   Card,
   CardContent,
   StepperForm,
+  Switch,
   type Step,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { ArrowLeft } from "lucide-react";
+import { useState } from "react";
 import { FarmerBankStep } from "./components/steps/FarmerBankStep";
 import { FarmerBasicInfoStep } from "./components/steps/FarmerBasicInfoStep";
 import { FarmerConfirmationStep } from "./components/steps/FarmerConfirmationStep";
 import { FarmerContactStep } from "./components/steps/FarmerContactStep";
 import { useFarmerCreateForm } from "./hooks/useFarmerCreateForm";
+import SimpleFarmerForm from "./components/SimpleFarmerForm";
 
 export default function FarmerCreatePage() {
+  const [isSimpleMode, setIsSimpleMode] = useState(true);
   const {
     isEdit,
     formData,
@@ -128,10 +132,14 @@ export default function FarmerCreatePage() {
   ];
 
   return (
-    <PageWrapper
+      <PageWrapper
       title={isEdit ? "Chỉnh sửa Nông hộ" : "Tạo mới Nông hộ"}
       description="Điền thông tin theo từng bước để tạo mới nông hộ"
       actions={[
+        <div className="flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-2 shadow-sm">
+          <span className="text-xs font-bold text-slate-700">Thông tin chuyên sâu</span>
+          <Switch checked={!isSimpleMode} onCheckedChange={(checked) => setIsSimpleMode(!checked)} />
+        </div>,
         <Button
           key="back"
           variant="outline"
@@ -143,7 +151,16 @@ export default function FarmerCreatePage() {
         </Button>,
       ]}
     >
-      <Card>
+      {isSimpleMode ? (
+        <SimpleFarmerForm
+          formData={formData}
+          onChange={(field, value) => updateField(field, value as never)}
+          onImageUpload={processLogoImage}
+          onComplete={openConfirmDialog}
+          isEdit={isEdit}
+          isSubmitting={isSubmitting}
+        />
+      ) : <Card>
         <CardContent className="p-6">
           <StepperForm
             steps={steps}
@@ -152,7 +169,7 @@ export default function FarmerCreatePage() {
             onCancel={navigateBack}
           />
         </CardContent>
-      </Card>
+      </Card>}
 
       <AlertDialog
         open={showConfirmDialog}

@@ -86,12 +86,12 @@ export const farmerFormSchema = z.object({
     .array(z.enum(["production", "processing", "trading", "service", "other"]))
     .default([]),
   foundedDate: emptyText(),
-  representative: z.preprocess(
-    (value) => (value === null ? "" : value),
-    z.string().trim().min(1, "Vui lòng nhập người đại diện pháp luật."),
-  ),
+  representative: emptyText(),
   website: emptyText(),
-  phone: emptyText(),
+  phone: z.preprocess(
+    (value) => (value === null ? "" : value),
+    z.string().trim().min(1, "Vui lòng nhập số điện thoại."),
+  ),
   email: emptyText(),
   province: z.preprocess(
     (value) => (value === null ? "" : value),
