@@ -30,12 +30,6 @@ export function GrowthCycleSteps({
 }: GrowthCycleStepsProps) {
   const { watch, handleSubmit } = useFormContext<GrowthCycleFormValues>();
   const values = watch();
-  const watchedCropId = values.cropId;
-
-  const filteredVarieties = useMemo(() => {
-    if (!watchedCropId) return [];
-    return varieties.filter((v) => String(v.subject?.id) === watchedCropId);
-  }, [watchedCropId, varieties]);
 
   const validationResult = useMemo(
     () => schema.safeParse(values),
@@ -44,7 +38,14 @@ export function GrowthCycleSteps({
 
   const isStep1Valid = useMemo(() => {
     if (validationResult.success) return true;
-    const step1Keys = ["cycleType", "scope", "cropId", "variety", "name"];
+    const step1Keys = [
+      "cycleType",
+      "scope",
+      "groupIds",
+      "cropIds",
+      "varietyIds",
+      "name",
+    ];
     const step1Errors = validationResult.error.issues.filter((issue) =>
       step1Keys.includes(String(issue.path[0])),
     );
@@ -88,7 +89,7 @@ export function GrowthCycleSteps({
         isValid: true,
       },
     ],
-    [filteredVarieties, isStep1Valid, isStep2Valid, varieties, crops],
+    [isStep1Valid, isStep2Valid, varieties, crops],
   );
 
   return (

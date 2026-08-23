@@ -42,8 +42,9 @@ import {
   Wrench,
   X,
 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import GeographicalSelector from "./components/GeographicalSelector";
+import GrowthCycleSelector from "./components/GrowthCycleSelector";
 import { PersonnelMultiSelectCard } from "./components/PersonnelMultiSelectCard";
 import { RegimenSelector } from "./components/RegimenSelector";
 import SimplePlanForm from "./components/SimplePlanForm";
@@ -94,6 +95,34 @@ export default function PlanGrowthEditPage({
   } = usePlanForm("edit", basePath, { onSaved, onCancel });
   const supplyCatalog = useCropSupplyCatalog();
 
+  // No backend/config yet ties a plan's inherited growth cycle(s) to its
+  // workflow — `workflowInfo` only carries them when the workflow-info form
+  // was set up earlier in the same session. Fall back to the first two
+  // available growth cycles so the multi-cycle inheritance UI has something
+  // to show.
+  const inheritedCycleIds = workflowInfo?.growthCycleSelections?.length
+    ? Array.from(
+        new Set(workflowInfo.growthCycleSelections.map((s) => s.cycleId)),
+      )
+    : growthCycles.slice(0, 2).map((c) => c.id);
+  const inheritedCycles = growthCycles.filter((c) =>
+    inheritedCycleIds.includes(c.id),
+  );
+  const growthCycleSummary = inheritedCycles
+    .map((cycle) => {
+      const stageNames = formData.growthCycleSelections
+        .filter((s) => s.cycleId === cycle.id)
+        .map((s) => cycle.stages.find((st) => st.id === s.stageId)?.name)
+        .filter((name): name is string => Boolean(name));
+      return stageNames.length > 0
+        ? { cycleName: cycle.name, items: stageNames }
+        : null;
+    })
+    .filter(
+      (group): group is { cycleName: string; items: string[] } =>
+        group !== null,
+    );
+
   const [newManualStage, setNewManualStage] = useState("");
   const [isSimpleMode, setIsSimpleMode] = useState(true);
   const [applyRegimen, setApplyRegimen] = useState(() => !!formData.regimenId);
@@ -103,6 +132,85 @@ export default function PlanGrowthEditPage({
   const isTreatmentOrAmendment =
     purpose === "treatment" || purpose === "amendment";
   const isHarvest = purpose === "harvest";
+  const isCultivation = purpose === "cultivation";
+  // Cultivation and treatment/amendment plans both treat the picked
+  // growth-cycle stage(s) as their planned work items — only
+  // facility-upgrade and harvest stay fully manual.
+  const derivesStagesFromGrowthCycle = isCultivation || isTreatmentOrAmendment;
+
+  // Keep `selectedStages` synced to the picked growth-cycle stage(s) (as
+  // `${cycleId}:${stageName}` entries, the same key shape the
+  // "resources"/"confirmation" steps below already expect in order to look
+  // up and badge the owning cycle — mirroring how regimen steps are
+  // prefixed with the regimen id) so users don't have to re-type stage
+  // names by hand. Manually added items (no prefix) are left untouched, as
+  // are regimen steps for treatment/amendment ("facility-upgrade", which
+  // shares `isCultivationLike` styling with cultivation, is excluded).
+  const isGrowthCycleStageKey = (key: string) =>
+    growthCycles.some((c) => key.startsWith(`${c.id}:`));
+
+  useEffect(() => {
+    if (!derivesStagesFromGrowthCycle) return;
+
+    const derivedKeys = Array.from(
+      new Set(
+        formData.growthCycleSelections
+          .map((s) => {
+            const cycle = growthCycles.find((c) => c.id === s.cycleId);
+            const stageIndex =
+              cycle?.stages.findIndex((st) => st.id === s.stageId) ?? -1;
+            return stageIndex >= 0
+              ? {
+                  key: `${cycle!.id}:${cycle!.stages[stageIndex].name}`,
+                  order: stageIndex,
+                }
+              : null;
+          })
+          .filter((e): e is { key: string; order: number } => Boolean(e))
+          .sort((a, b) => a.order - b.order)
+          .map((e) => e.key),
+      ),
+    );
+
+    setFormData((prev) => {
+      const existingGcKeys = prev.selectedStages.filter(isGrowthCycleStageKey);
+      const unchanged =
+        existingGcKeys.length === derivedKeys.length &&
+        existingGcKeys.every((key, idx) => key === derivedKeys[idx]);
+      if (unchanged) return prev;
+
+      const removedKeys = existingGcKeys.filter((k) => !derivedKeys.includes(k));
+      return {
+        ...prev,
+        selectedStages: [
+          ...derivedKeys,
+          ...prev.selectedStages.filter((s) => !isGrowthCycleStageKey(s)),
+        ],
+        materialAllocations: prev.materialAllocations.filter(
+          (m) => !removedKeys.includes(m.stageId),
+        ),
+      };
+    });
+    // `formData.purpose` must stay a dependency even though
+    // `derivesStagesFromGrowthCycle` already derives from it — switching
+    // between two purposes that are both `true` for it (e.g. treatment ->
+    // amendment) doesn't change that boolean, so without `purpose` here the
+    // effect wouldn't re-run to restore `selectedStages` after the
+    // purpose-switch handler resets it to `[]`.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    derivesStagesFromGrowthCycle,
+    formData.purpose,
+    formData.growthCycleSelections,
+    growthCycles,
+  ]);
+
+  const growthCycleDerivedStages = formData.selectedStages.filter(
+    isGrowthCycleStageKey,
+  );
+  const manualSelectedStages = formData.selectedStages.filter(
+    (s) => !s.includes(":"),
+  );
 
   const purposeOptions = [
     {
@@ -431,6 +539,62 @@ export default function PlanGrowthEditPage({
                       </p>
                     )}
                   </div>
+
+                  {isWorkflowContext && (
+                    <div className="space-y-2">
+                      <label className="text-xs text-muted-foreground font-black uppercase tracking-widest">
+                        Chu kỳ sinh trưởng
+                      </label>
+
+                      {inheritedCycles.length > 0 ? (
+                        <GrowthCycleSelector
+                          growthCycles={growthCycles}
+                          lockedCycleIds={inheritedCycleIds}
+                          existingSelections={formData.growthCycleSelections}
+                          onConfirm={(nextSelections) =>
+                            setFormData((prev) => ({
+                              ...prev,
+                              growthCycleSelections: nextSelections,
+                            }))
+                          }
+                        />
+                      ) : (
+                        <p className="text-xs text-emerald-800/60 italic text-center py-2">
+                          Quy trình chưa thiết lập chu kỳ sinh trưởng
+                        </p>
+                      )}
+
+                      {growthCycleSummary.length > 0 && (
+                        <div className="mt-4 p-4 rounded-xl bg-white/50 border border-emerald-100/50 space-y-3">
+                          <div className="text-[10px] font-bold text-emerald-800/60 uppercase tracking-widest flex items-center gap-2">
+                            <Sprout className="w-3 h-3" />
+                            Giai đoạn đã chọn
+                          </div>
+                          <div className="space-y-3">
+                            {growthCycleSummary.map((group) => (
+                              <div key={group.cycleName} className="space-y-2">
+                                <div className="flex items-center gap-1.5 text-[11px] font-bold text-slate-700">
+                                  <div className="w-1 h-1 rounded-full bg-emerald-500" />
+                                  {group.cycleName}
+                                </div>
+                                <div className="flex flex-wrap gap-1.5 pl-2.5">
+                                  {group.items.map((label, idx) => (
+                                    <Badge
+                                      key={idx}
+                                      variant="outline"
+                                      className="text-[10px] py-0 px-2 h-5 font-medium border-emerald-100 shadow-sm bg-emerald-100 text-emerald-800"
+                                    >
+                                      {label}
+                                    </Badge>
+                                  ))}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -624,12 +788,20 @@ export default function PlanGrowthEditPage({
                       setFormData((prev) => ({
                         ...prev,
                         regimenId: checked ? prev.regimenId : "",
+                        // Turning the regimen off drops only its own steps
+                        // (`${regimenId}:...`) — manual entries and
+                        // growth-cycle-derived stages (also ":"-tagged)
+                        // must stay either way.
                         selectedStages: checked
-                          ? prev.selectedStages.filter((stage) =>
-                              stage.includes(":"),
+                          ? prev.selectedStages.filter(
+                              (stage) =>
+                                stage.includes(":") ||
+                                isGrowthCycleStageKey(stage),
                             )
                           : prev.selectedStages.filter(
-                              (stage) => !stage.includes(":"),
+                              (stage) =>
+                                !stage.includes(":") ||
+                                isGrowthCycleStageKey(stage),
                             ),
                       }));
                     }}
@@ -679,8 +851,12 @@ export default function PlanGrowthEditPage({
                           ...prev,
                           regimenId: regimen.id,
                           selectedStages: [
+                            // Drop only the *previous* regimen's own steps —
+                            // manual entries and growth-cycle-derived stages
+                            // (which also contain a ":") must survive
+                            // picking a new regimen.
                             ...prev.selectedStages.filter(
-                              (stage) => !stage.includes(":"),
+                              (stage) => !stage.startsWith(`${prev.regimenId}:`),
                             ),
                             ...regimenStages,
                           ],
@@ -746,6 +922,88 @@ export default function PlanGrowthEditPage({
                           </div>
                         );
                       })()}
+
+                    <div className="space-y-2 pt-4 border-t border-dashed border-slate-200">
+                      <div className="flex items-center justify-between">
+                        <Label className="text-[10px] uppercase font-black text-slate-400">
+                          Hạng mục dự kiến thêm (tự tạo)
+                        </Label>
+                        <Badge
+                          variant="outline"
+                          className="bg-amber-50 text-amber-700 border-amber-200 text-[10px] font-bold"
+                        >
+                          {manualSelectedStages.length} mục
+                        </Badge>
+                      </div>
+                      <div className="flex gap-2">
+                        <Input
+                          placeholder="Nhập tên hạng mục (VD: Bón vôi, Làm đất...)"
+                          value={newManualStage}
+                          onChange={(e) => setNewManualStage(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                              e.preventDefault();
+                              const name = newManualStage.trim();
+                              if (name && !formData.selectedStages.includes(name)) {
+                                setFormData((prev) => ({
+                                  ...prev,
+                                  selectedStages: [...prev.selectedStages, name],
+                                }));
+                                setNewManualStage("");
+                              }
+                            }
+                          }}
+                          className="bg-white border-slate-200 h-11 text-sm rounded-xl"
+                        />
+                        <Button
+                          type="button"
+                          onClick={() => {
+                            const name = newManualStage.trim();
+                            if (name && !formData.selectedStages.includes(name)) {
+                              setFormData((prev) => ({
+                                ...prev,
+                                selectedStages: [...prev.selectedStages, name],
+                              }));
+                              setNewManualStage("");
+                            }
+                          }}
+                          className="px-6 h-11 rounded-xl font-bold uppercase text-xs"
+                        >
+                          THÊM
+                        </Button>
+                      </div>
+
+                      {manualSelectedStages.length > 0 && (
+                        <div className="flex flex-col gap-2 p-4 bg-white rounded-2xl border border-slate-100 shadow-sm">
+                          {manualSelectedStages.map((stage, idx) => (
+                            <div
+                              key={stage}
+                              className="flex w-full items-center gap-2.5 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-xs font-bold text-slate-700 transition-colors"
+                            >
+                              <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-white text-[11px] font-bold text-slate-700 shadow-sm">
+                                {idx + 1}
+                              </span>
+                              <span className="flex-1">{stage}</span>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() =>
+                                  setFormData((prev) => ({
+                                    ...prev,
+                                    selectedStages: prev.selectedStages.filter(
+                                      (s) => s !== stage,
+                                    ),
+                                  }))
+                                }
+                                className="h-6 w-6 rounded-md hover:bg-red-100 hover:text-red-600 shrink-0"
+                              >
+                                <X className="w-3 h-3" />
+                              </Button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                   </>
                 ) : (
                   <div className="space-y-4 pt-4 border-t border-dashed border-slate-200">
@@ -845,17 +1103,50 @@ export default function PlanGrowthEditPage({
               </div>
             )}
 
+            {derivesStagesFromGrowthCycle && growthCycleDerivedStages.length > 0 && (
+              <div className="space-y-3 animation-slide-up bg-slate-50/30 p-6 rounded-3xl border border-slate-100 shadow-sm">
+                <Label className="text-base uppercase tracking-wider text-slate-500 font-bold text-[10px]">
+                  Hạng mục dự kiến (theo giai đoạn đã chọn)
+                </Label>
+                <div className="flex flex-col gap-2 p-4 bg-white rounded-2xl border border-slate-100 shadow-sm">
+                  {growthCycleDerivedStages.map((stage) => (
+                    <label
+                      key={stage}
+                      className="flex w-full cursor-pointer items-center gap-2.5 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-xs font-bold text-slate-700 transition-colors"
+                    >
+                      <Checkbox
+                        checked
+                        onCheckedChange={(value) => {
+                          if (value) return;
+                          setFormData((prev) => ({
+                            ...prev,
+                            selectedStages: prev.selectedStages.filter((s) => s !== stage),
+                            materialAllocations: prev.materialAllocations.filter(
+                              (m) => m.stageId !== stage,
+                            ),
+                          }));
+                        }}
+                      />
+                      {stage.split(":").slice(1).join(":")}
+                    </label>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {isCultivationLike && (
               <div className="space-y-4 animation-slide-up bg-slate-50/30 p-6 rounded-3xl border border-slate-100 shadow-sm">
                 <div className="flex items-center justify-between">
                   <Label className="text-base uppercase tracking-wider text-slate-500 font-bold text-[10px]">
-                    Hạng mục công việc dự kiến
+                    {isCultivation && growthCycleDerivedStages.length > 0
+                      ? "Hạng mục dự kiến thêm (tự tạo)"
+                      : "Hạng mục công việc dự kiến"}
                   </Label>
                   <Badge
                     variant="outline"
                     className="bg-amber-50 text-amber-700 border-amber-200 text-[10px] font-bold"
                   >
-                    {formData.selectedStages.length} mục
+                    {manualSelectedStages.length} mục
                   </Badge>
                 </div>
 
@@ -897,9 +1188,9 @@ export default function PlanGrowthEditPage({
                   </Button>
                 </div>
 
-                {formData.selectedStages.length > 0 && (
+                {manualSelectedStages.length > 0 && (
                   <div className="flex flex-col gap-2 p-4 bg-white rounded-2xl border border-slate-100 shadow-sm">
-                    {formData.selectedStages.map((stage, idx) => (
+                    {manualSelectedStages.map((stage, idx) => (
                       <div
                         key={stage}
                         className="flex w-full items-center gap-2.5 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-xs font-bold text-slate-700 transition-colors"
@@ -1821,6 +2112,7 @@ export default function PlanGrowthEditPage({
             handleGeographicalConfirm={handleGeographicalConfirm}
             isWorkflowContext={isWorkflowContext}
             workflowInfo={workflowInfo}
+            growthCycles={growthCycles}
             personnel={personnel}
             supplyCatalog={supplyCatalog}
           />

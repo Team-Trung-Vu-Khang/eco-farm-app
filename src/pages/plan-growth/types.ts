@@ -46,6 +46,13 @@ export interface GeographicalSelection {
   plotId?: string;
 }
 
+export interface GrowthCycleSelection {
+  id: string;
+  type: "cycle" | "stage";
+  cycleId: string;
+  stageId?: string;
+}
+
 export interface Plan {
   id: number;
   code: string;
@@ -79,6 +86,10 @@ export interface Plan {
   area?: string;
   expectedYield?: string;
   growthCycleId: string;
+  // Growth cycle stage(s) picked for this plan, within the growth cycle
+  // inherited from the parent workflow — local-only, not persisted by the
+  // backend plan API yet.
+  growthCycleSelections?: GrowthCycleSelection[];
   regimenId?: string;
   selectedStages: string[];
   materialAllocations: MaterialAllocation[];
@@ -145,6 +156,7 @@ export interface PlanFormData {
   variety: string;
   purpose: Plan["purpose"];
   growthCycleId: string;
+  growthCycleSelections: GrowthCycleSelection[];
   regimenId: string;
   selectedStages: string[];
   status: Plan["status"];

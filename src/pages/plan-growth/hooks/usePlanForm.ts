@@ -207,6 +207,7 @@ function createEmptyFormData(): PlanFormData {
     variety: "",
     purpose: "cultivation",
     growthCycleId: "",
+    growthCycleSelections: [],
     regimenId: "",
     selectedStages: [],
     status: "draft",
@@ -356,6 +357,7 @@ export function usePlanForm(
           variety: plan.variety || "",
           purpose: plan.purpose || "cultivation",
           growthCycleId: plan.growthCycleId || "",
+          growthCycleSelections: plan.growthCycleSelections || [],
           regimenId: plan.regimenId || "",
           selectedStages: plan.selectedStages || [],
           materialAllocations:
@@ -393,6 +395,7 @@ export function usePlanForm(
       variety: plan.variety || "",
       purpose: plan.purpose || "cultivation",
       growthCycleId: plan.growthCycleId || "",
+      growthCycleSelections: plan.growthCycleSelections || [],
       regimenId: plan.regimenId || "",
       selectedStages: plan.selectedStages || [],
       materialAllocations:

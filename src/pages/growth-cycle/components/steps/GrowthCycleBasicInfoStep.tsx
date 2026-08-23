@@ -1,4 +1,6 @@
 import {
+  Badge,
+  Button,
   FormControl,
   FormField,
   FormItem,
@@ -8,8 +10,8 @@ import {
   RadioGroup,
   RadioGroupItem,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { ChevronDown, Flower2, TreeDeciduous } from "lucide-react";
-import { useState, useMemo, type ReactNode } from "react";
+import { Flower2, Layers, Plus, TreeDeciduous, X } from "lucide-react";
+import { useMemo, useState, type ReactNode } from "react";
 import { useFormContext } from "react-hook-form";
 import type {
   ProductionSubjectResponse,
@@ -17,10 +19,13 @@ import type {
 } from "../../../../features/foundation/types/foundation.type";
 import type { GrowthCycleFormValues } from "../../schemas/growthCycleSchema";
 import {
-  GrowthCycleHierarchyDialog,
-  type GrowthCycleHierarchyChildOption,
-  type GrowthCycleHierarchyPrimaryOption,
-} from "../GrowthCycleHierarchyDialog";
+  DUMMY_CROP_GROUP_NAMES,
+  getDummyCropGroupName,
+} from "../../utils/dummyCropGroups";
+import {
+  GrowthCycleMultiSelectDialog,
+  type GrowthCycleMultiSelectOption,
+} from "../GrowthCycleMultiSelectDialog";
 
 interface GrowthCycleBasicInfoStepProps {
   varieties: ProductionSubjectVariantResponse[];
@@ -80,120 +85,82 @@ function ScopeOption({
   );
 }
 
-function SelectionCard({
-  title,
-  subtitle,
-  image,
-  fallbackIcon,
-  group,
-  detail,
-  placeholder,
-  showSecondary,
-  secondaryTitle,
-  secondarySubtitle,
-  secondaryPlaceholder,
-  secondaryDetail,
-  secondaryGroup,
-  secondaryDisabled,
-  onPrimaryClick,
-  onSecondaryClick,
+function MultiSelectCard({
+  label,
+  emptyText,
+  selectedOptions,
+  onOpen,
+  onRemove,
 }: {
-  title: string;
-  subtitle?: string;
-  image?: string;
-  fallbackIcon: ReactNode;
-  group?: string;
-  detail?: string;
-  placeholder: string;
-  showSecondary: boolean;
-  secondaryTitle: string;
-  secondarySubtitle?: string;
-  secondaryPlaceholder: string;
-  secondaryDetail?: string;
-  secondaryGroup?: string;
-  secondaryDisabled: boolean;
-  onPrimaryClick: () => void;
-  onSecondaryClick: () => void;
+  label: string;
+  emptyText: string;
+  selectedOptions: GrowthCycleMultiSelectOption[];
+  onOpen: () => void;
+  onRemove: (id: string) => void;
 }) {
   return (
-    <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-all hover:border-primary/30 hover:shadow-md">
-      <button
-        type="button"
-        onClick={onPrimaryClick}
-        className="flex min-h-[112px] w-full items-center justify-between gap-4 px-4 py-4 text-left transition-colors hover:bg-slate-50/70"
-      >
-        <div className="flex min-w-0 items-center gap-4">
-          <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-slate-100 bg-slate-50 shadow-sm">
-            {image ? (
-              <img
-                src={image}
-                alt={title}
-                className="h-full w-full object-cover"
-              />
-            ) : (
-              <span className="text-muted-foreground">{fallbackIcon}</span>
-            )}
-          </div>
-          <div className="min-w-0 space-y-1">
-            <p className="truncate text-base font-semibold text-slate-900">
-              {title}
-            </p>
-            <p className="truncate text-sm text-muted-foreground">
-              {subtitle || placeholder}
-            </p>
-            {detail && (
-              <p className="line-clamp-2 text-xs leading-snug text-slate-500">
-                {detail}
-              </p>
-            )}
-          </div>
-        </div>
-        <div className="flex shrink-0 flex-col items-end gap-2">
-          {group && (
-            <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-emerald-700">
-              {group}
-            </span>
-          )}
-          <ChevronDown className="h-4 w-4 text-muted-foreground" />
-        </div>
-      </button>
+    <div className="space-y-2">
+      <div className="flex items-center justify-between">
+        <Label className="text-sm font-semibold">{label}</Label>
+        <Badge
+          variant="outline"
+          className="bg-amber-50 text-amber-700 border-amber-200 text-[10px] font-bold"
+        >
+          {selectedOptions.length} đã chọn
+        </Badge>
+      </div>
 
-      {showSecondary ? (
-        <div className="border-t border-slate-100 bg-slate-50/60 px-4 py-3">
-          <button
-            type="button"
-            onClick={onSecondaryClick}
-            disabled={secondaryDisabled}
-            className={`flex w-full items-center justify-between gap-3 rounded-xl border px-3 py-3 text-left transition-all ${
-              secondaryDisabled
-                ? "cursor-not-allowed border-dashed border-slate-200 bg-white/70 opacity-70"
-                : "border-slate-200 bg-white hover:border-primary/40 hover:shadow-sm"
-            }`}
-          >
-            <div className="min-w-0 space-y-1">
-              <p className="text-sm font-semibold text-slate-900">
-                {secondaryTitle}
-              </p>
-              <p className="text-xs text-muted-foreground">
-                {secondarySubtitle || secondaryPlaceholder}
-              </p>
-              {secondaryDetail && (
-                <p className="line-clamp-1 text-[11px] text-slate-500">
-                  {secondaryDetail}
+      <Button
+        type="button"
+        onClick={onOpen}
+        variant="outline"
+        className="w-full cursor-pointer border-2 border-dashed border-primary/20 bg-primary/5 hover:bg-primary/10 hover:border-primary/40 text-primary font-bold gap-2 transition-all rounded-lg shadow-sm hover:shadow-md"
+      >
+        <Plus className="h-5 w-5" />
+        {selectedOptions.length > 0 ? "Chỉnh sửa lựa chọn" : emptyText}
+      </Button>
+
+      {selectedOptions.length > 0 && (
+        <div className="space-y-2">
+          {selectedOptions.map((option) => (
+            <div
+              key={option.id}
+              className="flex items-center gap-3 rounded-2xl border border-slate-100 bg-white p-3 shadow-sm"
+            >
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-slate-100 bg-slate-50">
+                {option.image ? (
+                  <img
+                    src={option.image}
+                    alt={option.name}
+                    className="h-full w-full object-cover"
+                  />
+                ) : (
+                  <span className="text-sm font-black text-muted-foreground">
+                    {option.name.charAt(0).toUpperCase()}
+                  </span>
+                )}
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm font-bold text-slate-900">
+                  {option.name}
                 </p>
-              )}
+                {(option.group || option.description) && (
+                  <p className="truncate text-xs text-muted-foreground">
+                    {option.group || option.description}
+                  </p>
+                )}
+              </div>
+              <button
+                type="button"
+                onClick={() => onRemove(option.id)}
+                className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-slate-400 transition-colors hover:bg-red-50 hover:text-red-600"
+              >
+                <X className="h-4 w-4" />
+              </button>
             </div>
-            <div className="flex shrink-0 items-center gap-2">
-              {secondaryGroup && (
-                <span className="rounded-full bg-slate-100 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-slate-600">
-                  {secondaryGroup}
-                </span>
-              )}
-              <ChevronDown className="h-4 w-4 text-muted-foreground" />
-            </div>
-          </button>
+          ))}
         </div>
-      ) : null}
+      )}
     </div>
   );
 }
@@ -206,79 +173,99 @@ export function GrowthCycleBasicInfoStep({
   const [dialogOpen, setDialogOpen] = useState(false);
 
   const watchedScope = watch("scope");
-  const watchedCropId = watch("cropId");
-  const watchedVariety = watch("variety");
+  const watchedGroupIds = watch("groupIds") || [];
+  const watchedCropIds = watch("cropIds") || [];
+  const watchedVarietyIds = watch("varietyIds") || [];
 
-  const filteredVarieties = useMemo(
-    () => varieties.filter((v) => String(v.subject?.id) === watchedCropId),
-    [watchedCropId, varieties],
+  const groupOptions: GrowthCycleMultiSelectOption[] = useMemo(() => {
+    const buckets = new Map<string, number>();
+    crops.forEach((c) => {
+      const groupName = getDummyCropGroupName(c.id);
+      buckets.set(groupName, (buckets.get(groupName) || 0) + 1);
+    });
+    return DUMMY_CROP_GROUP_NAMES.filter((name) => buckets.has(name)).map(
+      (name) => ({
+        id: name,
+        name,
+        group: "",
+        image: "",
+        description: `${buckets.get(name)} loại cây trồng thuộc nhóm này`,
+      }),
+    );
+  }, [crops]);
+
+  const cropOptions: GrowthCycleMultiSelectOption[] = useMemo(
+    () =>
+      crops.map((c) => ({
+        id: String(c.id),
+        name: c.name,
+        group: c.scientificName || "Nhóm " + (c.subjectGroupId || ""),
+        image: c.imageUrl ?? "",
+        description: c.scientificName || "",
+      })),
+    [crops],
   );
 
-  const primaryOptions = crops.map((c) => ({
-    id: String(c.id),
-    name: c.name,
-    group: c.scientificName || "Nhóm " + (c.subjectGroupId || ""),
-    image: c.imageUrl ?? "",
-    description: c.scientificName || "",
-  }));
-
-  const primaryMap = new Map<string, GrowthCycleHierarchyPrimaryOption>(
-    primaryOptions.map((item) => [item.id, item]),
+  const cropNameById = useMemo(
+    () => new Map(cropOptions.map((c) => [c.id, c.name])),
+    [cropOptions],
   );
 
-  const childOptions: GrowthCycleHierarchyChildOption[] = varieties.map(
-    (variety) => {
-      return {
+  const varietyOptions: GrowthCycleMultiSelectOption[] = useMemo(
+    () =>
+      varieties.map((variety) => ({
         id: String(variety.id),
-        primaryId: String(variety.subject?.id),
         name: variety.name,
-        group: variety.origin || "",
+        group:
+          cropNameById.get(String(variety.subject?.id)) || variety.origin || "",
         image: variety.imageUrl || "",
         description: variety.description || "",
         code: variety.code,
-      };
+      })),
+    [varieties, cropNameById],
+  );
+
+  const scopeConfig = {
+    group: {
+      label: "Nhóm cây trồng",
+      emptyText: "Chọn nhóm cây trồng",
+      options: groupOptions,
+      selectedIds: watchedGroupIds,
+      field: "groupIds" as const,
+      dialogTitle: "Chọn nhóm cây trồng",
+      dialogDescription: "Chọn một hoặc nhiều nhóm cây trồng áp dụng.",
+      searchPlaceholder: "Tìm nhóm cây trồng...",
     },
+    crop: {
+      label: "Cây trồng",
+      emptyText: "Chọn cây trồng",
+      options: cropOptions,
+      selectedIds: watchedCropIds,
+      field: "cropIds" as const,
+      dialogTitle: "Chọn cây trồng",
+      dialogDescription: "Chọn một hoặc nhiều cây trồng áp dụng.",
+      searchPlaceholder: "Tìm cây trồng...",
+    },
+    variety: {
+      label: "Giống cây trồng",
+      emptyText: "Chọn giống cây trồng",
+      options: varietyOptions,
+      selectedIds: watchedVarietyIds,
+      field: "varietyIds" as const,
+      dialogTitle: "Chọn giống cây trồng",
+      dialogDescription: "Chọn một hoặc nhiều giống cây trồng áp dụng.",
+      searchPlaceholder: "Tìm giống cây trồng...",
+    },
+  } as const;
+
+  const active = scopeConfig[watchedScope];
+  const selectedOptions = active.options.filter((option) =>
+    active.selectedIds.includes(option.id),
   );
 
-  const selectedPrimary = primaryOptions.find(
-    (item) => item.id === watchedCropId,
-  );
-  const selectedChild = childOptions.find((item) => item.id === watchedVariety);
-
-  const selectionTitle = selectedPrimary
-    ? selectedPrimary.name
-    : "Chọn loại cây";
-
-  const selectionSubtitle = selectedPrimary
-    ? selectedPrimary.group
-    : "Mở dialog để chọn loại cây";
-
-  const selectionDetail = selectedPrimary?.description;
-
-  const varietyTitle = selectedChild ? selectedChild.name : "Chọn giống cây";
-
-  const varietySubtitle = !selectedPrimary
-    ? "Chọn loại cây trước"
-    : selectedChild
-      ? selectedChild.group
-      : "Mở dialog để chọn giống cây";
-
-  const varietyDetail = !selectedPrimary
-    ? "Vùng chọn này sẽ bật sau khi chọn loại cây."
-    : watchedScope === "variety"
-      ? selectedChild
-        ? selectedChild.description || ""
-        : "Bấm vào đây để chọn giống trong cùng dialog."
-      : "Phạm vi đang là theo loại cây nên không cần chọn giống riêng.";
-
-  const scopeCropTitle = "Theo cây trồng";
-  const scopeCropDescription =
-    "Áp dụng cho tất cả các giống thuộc loại cây trồng này.";
-  const scopeVarietyDescription = "Chọn loại và giống trong cùng một dialog.";
-
+  const scopeGroupIcon = <Layers className="w-6 h-6" />;
   const scopeCropIcon = <TreeDeciduous className="w-6 h-6" />;
   const scopeVarietyIcon = <Flower2 className="w-6 h-6" />;
-  const primaryFallbackIcon = <TreeDeciduous className="h-5 w-5" />;
 
   return (
     <div className="mx-auto max-w-4xl space-y-8 py-4">
@@ -312,35 +299,35 @@ export function GrowthCycleBasicInfoStep({
                 <FormControl>
                   <RadioGroup
                     value={field.value}
-                    onValueChange={(value) => {
-                      field.onChange(value);
-                      setValue("variety", "");
-                    }}
-                    className="grid grid-cols-1 gap-4 md:grid-cols-2"
+                    onValueChange={(value) => field.onChange(value)}
+                    className="grid grid-cols-1 gap-4 md:grid-cols-3"
                   >
+                    <ScopeOption
+                      checked={field.value === "group"}
+                      icon={scopeGroupIcon}
+                      inputId="scope-group"
+                      title="Theo nhóm cây trồng"
+                      value="group"
+                      description="Áp dụng cho tất cả cây trồng thuộc (các) nhóm được chọn."
+                      onClick={() => field.onChange("group")}
+                    />
                     <ScopeOption
                       checked={field.value === "crop"}
                       icon={scopeCropIcon}
                       inputId="scope-crop"
-                      title={scopeCropTitle}
+                      title="Theo cây trồng"
                       value="crop"
-                      description={scopeCropDescription}
-                      onClick={() => {
-                        field.onChange("crop");
-                        setValue("variety", "");
-                      }}
+                      description="Áp dụng cho tất cả các giống thuộc (các) cây trồng được chọn."
+                      onClick={() => field.onChange("crop")}
                     />
                     <ScopeOption
                       checked={field.value === "variety"}
                       icon={scopeVarietyIcon}
                       inputId="scope-variety"
-                      title="Theo giống cụ thể"
+                      title="Theo giống cây trồng"
                       value="variety"
-                      description={scopeVarietyDescription}
-                      onClick={() => {
-                        field.onChange("variety");
-                        setValue("variety", "");
-                      }}
+                      description="Áp dụng cho (các) giống cây trồng cụ thể được chọn."
+                      onClick={() => field.onChange("variety")}
                     />
                   </RadioGroup>
                 </FormControl>
@@ -350,68 +337,44 @@ export function GrowthCycleBasicInfoStep({
           />
         </div>
 
-        <div className="space-y-2">
-          <Label className="text-sm font-semibold">Loại cây trồng</Label>
-          <FormField
-            control={control}
-            name="cropId"
-            render={() => (
-              <FormItem>
-                <FormControl>
-                  <SelectionCard
-                    title={selectionTitle}
-                    subtitle={selectionSubtitle}
-                    image={selectedPrimary?.image}
-                    fallbackIcon={primaryFallbackIcon}
-                    group={selectedPrimary?.group}
-                    detail={selectionDetail}
-                    placeholder="Chọn loại cây trong dialog"
-                    showSecondary={watchedScope === "variety"}
-                    secondaryTitle={varietyTitle}
-                    secondarySubtitle={varietySubtitle}
-                    secondaryPlaceholder="Chọn giống cây trong dialog"
-                    secondaryDetail={varietyDetail}
-                    secondaryGroup={
-                      watchedScope === "variety" && selectedChild?.group
-                        ? selectedChild.group
-                        : undefined
-                    }
-                    secondaryDisabled={!selectedPrimary}
-                    onPrimaryClick={() => setDialogOpen(true)}
-                    onSecondaryClick={() => {
-                      if (!selectedPrimary) return;
-                      setDialogOpen(true);
-                    }}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
+        <FormField
+          control={control}
+          name={active.field}
+          render={() => (
+            <FormItem>
+              <FormControl>
+                <MultiSelectCard
+                  label={active.label}
+                  emptyText={active.emptyText}
+                  selectedOptions={selectedOptions}
+                  onOpen={() => setDialogOpen(true)}
+                  onRemove={(id) =>
+                    setValue(
+                      active.field,
+                      active.selectedIds.filter((item) => item !== id),
+                      { shouldValidate: true },
+                    )
+                  }
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
       </div>
 
-      <GrowthCycleHierarchyDialog
+      <GrowthCycleMultiSelectDialog
         open={dialogOpen}
         onOpenChange={setDialogOpen}
-        title="Chọn loại và giống cây"
-        description="Chọn loại cây ở trên, sau đó chọn giống ở bên dưới nếu cần."
-        searchPlaceholder="Tìm loại cây hoặc giống..."
-        selectedPrimaryId={watchedCropId}
-        selectedChildId={watchedVariety || ""}
-        primaryOptions={primaryOptions}
-        childOptions={childOptions}
-        primaryLabel="Loại cây trồng"
-        childLabel="Giống cây trồng"
-        showChildSection={watchedScope === "variety"}
-        onConfirm={({ primary, child }) => {
-          setValue("cropId", primary.id, { shouldValidate: true });
-          if (watchedScope === "variety") {
-            setValue("variety", child?.id || "", { shouldValidate: true });
-          } else {
-            setValue("variety", "", { shouldValidate: true });
-          }
-        }}
+        title={active.dialogTitle}
+        description={active.dialogDescription}
+        searchPlaceholder={active.searchPlaceholder}
+        selectedIds={active.selectedIds}
+        options={active.options}
+        optionsLabel={active.label}
+        onConfirm={(ids) =>
+          setValue(active.field, ids, { shouldValidate: true })
+        }
       />
     </div>
   );

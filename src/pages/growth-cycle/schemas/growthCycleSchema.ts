@@ -38,26 +38,44 @@ export const growthCycleFormSchema = z
       .trim()
       .min(1, { message: "Vui lòng nhập tên chu kỳ sinh trưởng." }),
     cycleType: z.literal("plant"),
-    scope: z.enum(["crop", "variety"]),
-    cropId: z.string().min(1, { message: "Vui lòng chọn loại" }),
-    variety: z.string().optional(),
+    scope: z.enum(["group", "crop", "variety"]),
+    groupIds: z.array(z.string()),
+    cropIds: z.array(z.string()),
+    varietyIds: z.array(z.string()),
     totalDays: z.number().optional(),
     stages: z
       .array(growthStageSchema)
       .min(1, { message: "Cần ít nhất một giai đoạn" }),
   })
-  .refine(
-    (data) => {
-      if (data.scope === "variety") {
-        return !!data.variety;
-      }
-      return true;
-    },
-    {
-      message: "Vui lòng chọn giống",
-      path: ["variety"],
-    },
-  );
+  // `superRefine` (rather than `.refine` on `scope`) so the error lands on
+  // the actual array field (groupIds/cropIds/varietyIds) that the multi-
+  // select UI edits — react-hook-form + zodResolver only re-validates the
+  // field named in `setValue(..., { shouldValidate: true })`, so an error
+  // parked on `scope` never clears when the user picks items and only the
+  // array field gets revalidated.
+  .superRefine((data, ctx) => {
+    if (data.scope === "group" && data.groupIds.length === 0) {
+      ctx.addIssue({
+        code: "custom",
+        message: "Vui lòng chọn ít nhất một nhóm cây trồng",
+        path: ["groupIds"],
+      });
+    }
+    if (data.scope === "crop" && data.cropIds.length === 0) {
+      ctx.addIssue({
+        code: "custom",
+        message: "Vui lòng chọn ít nhất một cây trồng",
+        path: ["cropIds"],
+      });
+    }
+    if (data.scope === "variety" && data.varietyIds.length === 0) {
+      ctx.addIssue({
+        code: "custom",
+        message: "Vui lòng chọn ít nhất một giống cây trồng",
+        path: ["varietyIds"],
+      });
+    }
+  });
 
 export type GrowthCycleFormValues = z.infer<typeof growthCycleFormSchema>;
 export type GrowthStageValues = z.infer<typeof growthStageSchema>;

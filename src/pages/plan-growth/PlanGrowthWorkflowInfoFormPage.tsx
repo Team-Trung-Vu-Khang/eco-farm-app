@@ -1,4 +1,11 @@
 import PageWrapper from "@/components/PageWrapper";
+import { useCultivationZones } from "@/features/farm";
+import {
+  useFarmWorkflowById,
+  useFarmWorkflowMutations,
+} from "@/features/farm-workflow/hooks";
+import type { FarmWorkflowScopeRequest } from "@/features/farm-workflow/types/farm-workflow.type";
+import useGrowthCycleStore from "@/stores/useGrowthCycleStore";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   Badge,
@@ -16,18 +23,13 @@ import {
   Textarea,
   useToast,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { ArrowLeft, Calendar, Layers, Save } from "lucide-react";
+import { ArrowLeft, Calendar, Layers, Save, Sprout } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useLocation, useParams } from "wouter";
 import * as z from "zod";
-import {
-  useFarmWorkflowById,
-  useFarmWorkflowMutations,
-} from "@/features/farm-workflow/hooks";
-import type { FarmWorkflowScopeRequest } from "@/features/farm-workflow/types/farm-workflow.type";
-import { useCultivationZones } from "@/features/farm";
 import GeographicalSelector from "./components/GeographicalSelector";
+import GrowthCycleSelector from "./components/GrowthCycleSelector";
 import {
   createEmptyPlanDraft,
   createNodeId,
@@ -37,8 +39,7 @@ import {
   usePlanWorkflowDraftStore,
   type DiagramInfoRecord,
 } from "./hooks/usePlanWorkflowDraftStore";
-import type { GeographicalSelection } from "./types";
-import type { Plan } from "./types";
+import type { GeographicalSelection, GrowthCycleSelection, Plan } from "./types";
 import {
   getFallbackPlans,
   mapCultivationZonesToRegionTree,
@@ -60,15 +61,15 @@ function toWorkflowScopes(
         : selection.type === "area"
           ? "AREA"
           : "REGION",
-    scopeId: Number(
-      selection.plotId || selection.areaId || selection.regionId,
-    ),
+    scopeId: Number(selection.plotId || selection.areaId || selection.regionId),
   }));
 }
 
 function toDurationDays(years: string, months: string, days: string) {
   const totalDays =
-    (Number(years) || 0) * 365 + (Number(months) || 0) * 30 + (Number(days) || 0);
+    (Number(years) || 0) * 365 +
+    (Number(months) || 0) * 30 +
+    (Number(days) || 0);
   return Math.max(1, totalDays);
 }
 
@@ -142,11 +143,48 @@ export default function PlanGrowthWorkflowInfoFormPage() {
   const [plannedDurationDays, setPlannedDurationDays] = useState(
     editingRecord?.plannedDurationDays ?? "",
   );
+  // Not part of the backend workflow scope response — only the local draft
+  // record (`localRecord`) carries it, so fall back to that rather than
+  // `editingRecord` (which may be the freshly API-mapped record).
+  const [growthCycleSelections, setGrowthCycleSelections] = useState<
+    GrowthCycleSelection[]
+  >(localRecord?.growthCycleSelections ?? []);
+  const growthCycles = useGrowthCycleStore((state) => state.growthCycles);
 
   const selectionSummary = useMemo(
     () => summarizeSelections(selections, regions || []),
     [regions, selections],
   );
+
+  const growthCycleSummary = useMemo(() => {
+    const cycleIds = Array.from(
+      new Set(growthCycleSelections.map((s) => s.cycleId)),
+    );
+
+    return cycleIds
+      .map((cycleId) => {
+        const cycle = growthCycles.find((c) => c.id === cycleId);
+        if (!cycle) return null;
+        const selectionsForCycle = growthCycleSelections.filter(
+          (s) => s.cycleId === cycleId,
+        );
+
+        if (selectionsForCycle.some((s) => s.type === "cycle")) {
+          return { cycleName: cycle.name, items: ["Toàn bộ chu kỳ"] };
+        }
+
+        const stageNames = selectionsForCycle
+          .map((s) => cycle.stages.find((st) => st.id === s.stageId)?.name)
+          .filter((name): name is string => Boolean(name));
+        if (stageNames.length === 0) return null;
+
+        return { cycleName: cycle.name, items: stageNames };
+      })
+      .filter(
+        (group): group is { cycleName: string; items: string[] } =>
+          group !== null,
+      );
+  }, [growthCycleSelections, growthCycles]);
 
   // `useForm`/`useState` above only see `editingRecord` at first render —
   // the API detail resolves later, so re-sync once it lands.
@@ -164,7 +202,11 @@ export default function PlanGrowthWorkflowInfoFormPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [workflowDetail]);
 
-  if (isEdit && !editingRecord && !(isPersistedNodeId && isLoadingWorkflowDetail)) {
+  if (
+    isEdit &&
+    !editingRecord &&
+    !(isPersistedNodeId && isLoadingWorkflowDetail)
+  ) {
     return (
       <PageWrapper title="Không tìm thấy node quy trình" description="">
         <Card>
@@ -218,6 +260,7 @@ export default function PlanGrowthWorkflowInfoFormPage() {
               plannedDurationYears,
               plannedDurationMonths,
               plannedDurationDays,
+              growthCycleSelections,
             }
           : {
               id: "",
@@ -227,8 +270,10 @@ export default function PlanGrowthWorkflowInfoFormPage() {
               plannedDurationYears,
               plannedDurationMonths,
               plannedDurationDays,
+              growthCycleSelections,
               isActive: true,
-              position: editingRecord?.position ?? getNextInfoNodePosition(infoNodes),
+              position:
+                editingRecord?.position ?? getNextInfoNodePosition(infoNodes),
             };
 
       if (editingRecord && isPersistedWorkflowId(editingRecord.id)) {
@@ -359,7 +404,9 @@ export default function PlanGrowthWorkflowInfoFormPage() {
                       placeholder="0"
                       className="w-16 h-9 border-0 bg-transparent px-0 text-center text-base shadow-none focus-visible:ring-0"
                     />
-                    <span className="text-sm text-slate-500 whitespace-nowrap">năm</span>
+                    <span className="text-sm text-slate-500 whitespace-nowrap">
+                      năm
+                    </span>
                   </div>
                   <div className="flex items-center gap-2">
                     <Input
@@ -370,7 +417,9 @@ export default function PlanGrowthWorkflowInfoFormPage() {
                       placeholder="0"
                       className="w-16 h-9 border-0 bg-transparent px-0 text-center text-base shadow-none focus-visible:ring-0"
                     />
-                    <span className="text-sm text-slate-500 whitespace-nowrap">tháng</span>
+                    <span className="text-sm text-slate-500 whitespace-nowrap">
+                      tháng
+                    </span>
                   </div>
                   <div className="flex items-center gap-2">
                     <Input
@@ -381,7 +430,9 @@ export default function PlanGrowthWorkflowInfoFormPage() {
                       placeholder="0"
                       className="w-16 h-9 border-0 bg-transparent px-0 text-center text-base shadow-none focus-visible:ring-0"
                     />
-                    <span className="text-sm text-slate-500 whitespace-nowrap">ngày</span>
+                    <span className="text-sm text-slate-500 whitespace-nowrap">
+                      ngày
+                    </span>
                   </div>
                 </div>
               </div>
@@ -478,6 +529,49 @@ export default function PlanGrowthWorkflowInfoFormPage() {
                   </div>
                 )}
               </div>
+
+              {selections.length > 0 && (
+                <div className="space-y-2">
+                  <label className="text-xs text-muted-foreground font-black uppercase tracking-widest">
+                    Chu kỳ sinh trưởng
+                  </label>
+                  <GrowthCycleSelector
+                    growthCycles={growthCycles}
+                    existingSelections={growthCycleSelections}
+                    onConfirm={setGrowthCycleSelections}
+                  />
+
+                  {growthCycleSummary.length > 0 && (
+                    <div className="mt-4 p-4 rounded-xl bg-white/50 border border-emerald-100/50 space-y-3">
+                      <div className="text-[10px] font-bold text-emerald-800/60 uppercase tracking-widest flex items-center gap-2">
+                        <Sprout className="w-3 h-3" />
+                        Chu kỳ sinh trưởng đã chọn
+                      </div>
+                      <div className="space-y-3">
+                        {growthCycleSummary.map((group) => (
+                          <div key={group.cycleName} className="space-y-2">
+                            <div className="flex items-center gap-1.5 text-[11px] font-bold text-slate-700">
+                              <div className="w-1 h-1 rounded-full bg-emerald-500" />
+                              {group.cycleName}
+                            </div>
+                            <div className="flex flex-wrap gap-1.5 pl-2.5">
+                              {group.items.map((label, idx) => (
+                                <Badge
+                                  key={idx}
+                                  variant="outline"
+                                  className="text-[10px] py-0 px-2 h-5 font-medium border-emerald-100 shadow-sm bg-emerald-100 text-emerald-800"
+                                >
+                                  {label}
+                                </Badge>
+                              ))}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           </Form>
         </CardContent>

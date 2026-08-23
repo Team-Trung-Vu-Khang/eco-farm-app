@@ -31,8 +31,9 @@ export default function CreateGrowthCyclePage() {
     mode: "onChange",
     defaultValues: {
       name: "",
-      cropId: "",
-      variety: "",
+      groupIds: [],
+      cropIds: [],
+      varietyIds: [],
       totalDays: 0,
       scope: "crop",
       cycleType: "plant",
@@ -50,8 +51,9 @@ export default function CreateGrowthCyclePage() {
 
   const { watch } = form;
   const watchedScope = watch("scope");
-  const watchedCropId = watch("cropId");
-  const watchedVariety = watch("variety");
+  const watchedGroupIds = watch("groupIds") || [];
+  const watchedCropIds = watch("cropIds") || [];
+  const watchedVarietyIds = watch("varietyIds") || [];
   const watchedStages = watch("stages") || [];
 
   const totalDays = useMemo(
@@ -112,20 +114,50 @@ export default function CreateGrowthCyclePage() {
                   <div className="flex justify-between gap-4">
                     <span className="text-muted-foreground">Phạm vi:</span>
                     <span className="font-medium">
-                      {watchedScope === "crop" ? "Theo loại cây" : "Theo giống"}
+                      {watchedScope === "group"
+                        ? "Theo nhóm cây trồng"
+                        : watchedScope === "crop"
+                          ? "Theo cây trồng"
+                          : "Theo giống cây trồng"}
                     </span>
                   </div>
-                  <div className="flex justify-between gap-4">
-                    <span className="text-muted-foreground">Loại cây:</span>
-                    <span className="font-medium">{watchedCropId}</span>
-                  </div>
+                  {watchedScope === "group" && (
+                    <div className="flex justify-between gap-4">
+                      <span className="text-muted-foreground">
+                        Nhóm đã chọn:
+                      </span>
+                      <span className="font-medium">
+                        {watchedGroupIds.length} nhóm
+                      </span>
+                    </div>
+                  )}
+                  {watchedScope === "crop" && (
+                    <div className="flex justify-between gap-4">
+                      <span className="text-muted-foreground">
+                        Cây trồng đã chọn:
+                      </span>
+                      <span className="font-medium">
+                        {crops
+                          .filter((crop) =>
+                            watchedCropIds.includes(String(crop.id)),
+                          )
+                          .map((crop) => crop.name)
+                          .join(", ") || "-"}
+                      </span>
+                    </div>
+                  )}
                   {watchedScope === "variety" && (
                     <div className="flex justify-between gap-4">
-                      <span className="text-muted-foreground">Giống cây:</span>
+                      <span className="text-muted-foreground">
+                        Giống đã chọn:
+                      </span>
                       <span className="font-medium">
-                        {varieties.find(
-                          (variety) => String(variety.id) === watchedVariety,
-                        )?.name || watchedVariety}
+                        {varieties
+                          .filter((variety) =>
+                            watchedVarietyIds.includes(String(variety.id)),
+                          )
+                          .map((variety) => variety.name)
+                          .join(", ") || "-"}
                       </span>
                     </div>
                   )}

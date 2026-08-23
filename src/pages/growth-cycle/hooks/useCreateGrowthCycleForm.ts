@@ -9,6 +9,7 @@ import {
 import { useFileUpload } from "../../../features/storage";
 import { safeConvertLexicalToHtml } from "@/utils/commons";
 import { parseDurationToDays } from "../utils/duration";
+import { getDummyCropGroupName } from "../utils/dummyCropGroups";
 import type { GrowthCycleFormValues } from "../schemas/growthCycleSchema";
 
 export function useCreateGrowthCycleForm() {
@@ -64,11 +65,30 @@ export function useCreateGrowthCycleForm() {
 
       const metadataJson = { cycleType: values.cycleType };
 
-      const cropIdVal = Number(values.cropId);
-      const varietyIdVal =
-        values.scope === "variety" && values.variety
-          ? Number(values.variety)
-          : undefined;
+      // UI-only multi-select for now — the backend still only accepts a
+      // single production subject/variant per template, so only the first
+      // pick of whichever scope is active gets sent. For "group" (a
+      // client-side-only grouping, not a real production subject) we fall
+      // back to the first crop belonging to that group.
+      let cropIdVal: number;
+      let varietyIdVal: number | undefined;
+
+      if (values.scope === "variety" && values.varietyIds[0]) {
+        const variety = cropVarieties.find(
+          (v) => String(v.id) === values.varietyIds[0],
+        );
+        cropIdVal = Number(variety?.subject?.id ?? crops[0]?.id ?? 0);
+        varietyIdVal = Number(values.varietyIds[0]);
+      } else if (values.scope === "group" && values.groupIds[0]) {
+        const matchingCrop = crops.find(
+          (c) => getDummyCropGroupName(c.id) === values.groupIds[0],
+        );
+        cropIdVal = Number(matchingCrop?.id ?? crops[0]?.id ?? 0);
+        varietyIdVal = undefined;
+      } else {
+        cropIdVal = Number(values.cropIds[0] ?? crops[0]?.id ?? 0);
+        varietyIdVal = undefined;
+      }
 
       await createTemplate.mutateAsync({
         domainCode: "CROP",

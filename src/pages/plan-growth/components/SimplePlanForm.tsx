@@ -29,33 +29,79 @@ import {
   Wrench,
   X,
 } from "lucide-react";
-import { useState, type Dispatch, type SetStateAction } from "react";
+import {
+  useEffect,
+  useMemo,
+  useState,
+  type Dispatch,
+  type SetStateAction,
+} from "react";
+import type { GrowthCycle } from "../../growth-cycle/types/types";
+import type {
+  CropSupplyCatalog,
+  CropSupplyType,
+} from "../hooks/useCropSupplyCatalog";
+import type {
+  GeographicalSelection,
+  GrowthCycleSelection,
+  MaterialAllocation,
+  PlanFormData,
+} from "../types";
 import GeographicalSelector from "./GeographicalSelector";
+import GrowthCycleSelector from "./GrowthCycleSelector";
 import {
   PersonnelMultiSelectCard,
   type PersonnelOption,
 } from "./PersonnelMultiSelectCard";
 import { RegimenSelector } from "./RegimenSelector";
-import type { GeographicalSelection, MaterialAllocation, PlanFormData } from "../types";
-import type {
-  CropSupplyCatalog,
-  CropSupplyType,
-} from "../hooks/useCropSupplyCatalog";
 
 const PURPOSE_OPTIONS = [
   { id: "cultivation", label: "Canh tác", icon: Layers, color: "blue" },
-  { id: "facility-upgrade", label: "Nâng cấp CSVC", icon: Wrench, color: "slate" },
+  {
+    id: "facility-upgrade",
+    label: "Nâng cấp CSVC",
+    icon: Wrench,
+    color: "slate",
+  },
   { id: "treatment", label: "Điều trị", icon: Bug, color: "red" },
   { id: "amendment", label: "Cải tạo đất", icon: Sprout, color: "green" },
   { id: "harvest", label: "Thu hoạch", icon: Apple, color: "orange" },
 ] as const;
 
-const PURPOSE_COLOR_CLASSES: Record<string, { active: string; text: string; border: string; bg: string }> = {
-  blue: { active: "bg-blue-500", text: "text-blue-700", border: "border-blue-500", bg: "bg-blue-50/50" },
-  slate: { active: "bg-slate-700", text: "text-slate-700", border: "border-slate-500", bg: "bg-slate-50/80" },
-  red: { active: "bg-red-500", text: "text-red-700", border: "border-red-500", bg: "bg-red-50/50" },
-  green: { active: "bg-green-500", text: "text-green-700", border: "border-green-500", bg: "bg-green-50/50" },
-  orange: { active: "bg-orange-500", text: "text-orange-700", border: "border-orange-500", bg: "bg-orange-50/50" },
+const PURPOSE_COLOR_CLASSES: Record<
+  string,
+  { active: string; text: string; border: string; bg: string }
+> = {
+  blue: {
+    active: "bg-blue-500",
+    text: "text-blue-700",
+    border: "border-blue-500",
+    bg: "bg-blue-50/50",
+  },
+  slate: {
+    active: "bg-slate-700",
+    text: "text-slate-700",
+    border: "border-slate-500",
+    bg: "bg-slate-50/80",
+  },
+  red: {
+    active: "bg-red-500",
+    text: "text-red-700",
+    border: "border-red-500",
+    bg: "bg-red-50/50",
+  },
+  green: {
+    active: "bg-green-500",
+    text: "text-green-700",
+    border: "border-green-500",
+    bg: "bg-green-50/50",
+  },
+  orange: {
+    active: "bg-orange-500",
+    text: "text-orange-700",
+    border: "border-orange-500",
+    bg: "bg-orange-50/50",
+  },
 };
 
 interface ScopeSelectionSummaryGroup {
@@ -68,7 +114,10 @@ interface SimplePlanFormProps {
   formData: PlanFormData;
   setFormData: Dispatch<SetStateAction<PlanFormData>>;
   regimens: Parameters<typeof RegimenSelector>[0]["regimens"];
-  handleDurationPartChange: (part: "years" | "months" | "days", value: string) => void;
+  handleDurationPartChange: (
+    part: "years" | "months" | "days",
+    value: string,
+  ) => void;
   handleAddMaterial: (item: Omit<MaterialAllocation, "id">) => void;
   handleRemoveMaterial: (id: number) => void;
   handleComplete: () => void;
@@ -80,7 +129,11 @@ interface SimplePlanFormProps {
   selectionSummary: ScopeSelectionSummaryGroup[];
   handleGeographicalConfirm: (selections: GeographicalSelection[]) => void;
   isWorkflowContext?: boolean;
-  workflowInfo?: { name?: string } | null;
+  workflowInfo?: {
+    name?: string;
+    growthCycleSelections?: GrowthCycleSelection[];
+  } | null;
+  growthCycles: GrowthCycle[];
   personnel: PersonnelOption[];
   supplyCatalog: CropSupplyCatalog;
 }
@@ -98,7 +151,10 @@ function StageMaterialPicker({
   onRemoveMaterial: (id: number) => void;
   supplyCatalog: CropSupplyCatalog;
 }) {
-  const defaultType = supplyCatalog.typeOptions[1]?.value || supplyCatalog.typeOptions[0]?.value || "fertilizer";
+  const defaultType =
+    supplyCatalog.typeOptions[1]?.value ||
+    supplyCatalog.typeOptions[0]?.value ||
+    "fertilizer";
   const [newItem, setNewItem] = useState({
     name: "",
     qty: "",
@@ -112,7 +168,8 @@ function StageMaterialPicker({
   const selectedMaterial = supplyCatalog.optionsByType[newItem.type].find(
     (option) => option.value === newItem.name,
   );
-  const packagingVariantOptions = selectedMaterial?.item.packagingVariants || [];
+  const packagingVariantOptions =
+    selectedMaterial?.item.packagingVariants || [];
   const selectedPackagingVariant = packagingVariantOptions.find(
     (variant) => String(variant.unitBase?.id) === newItem.unitBaseId,
   );
@@ -121,7 +178,11 @@ function StageMaterialPicker({
     maxPackagingQuantity != null && Number(newItem.qty) > maxPackagingQuantity;
 
   const handleAdd = () => {
-    if (!selectedMaterial || !newItem.qty || !selectedPackagingVariant?.unitBase)
+    if (
+      !selectedMaterial ||
+      !newItem.qty ||
+      !selectedPackagingVariant?.unitBase
+    )
       return;
     onAddMaterial({
       stageId: stageKey,
@@ -150,7 +211,9 @@ function StageMaterialPicker({
               key={a.id}
               className="flex items-center justify-between bg-white rounded-lg border border-slate-100 px-3 py-1.5 text-sm"
             >
-              <span className="font-medium text-slate-700">{a.materialName}</span>
+              <span className="font-medium text-slate-700">
+                {a.materialName}
+              </span>
               <div className="flex items-center gap-2">
                 <span className="text-xs font-semibold text-slate-600 bg-slate-50 px-2 py-0.5 rounded border">
                   {a.quantity} {a.unit}
@@ -290,16 +353,125 @@ export default function SimplePlanForm({
   handleGeographicalConfirm,
   isWorkflowContext,
   workflowInfo,
+  growthCycles,
   personnel,
   supplyCatalog,
 }: SimplePlanFormProps) {
   const [newStage, setNewStage] = useState("");
-  const isTreatmentOrAmendment = formData.purpose === "treatment" || formData.purpose === "amendment";
+
+  const inheritedCycleIds = useMemo(
+    () =>
+      workflowInfo?.growthCycleSelections?.length
+        ? Array.from(
+            new Set(workflowInfo.growthCycleSelections.map((s) => s.cycleId)),
+          )
+        : growthCycles.slice(0, 2).map((c) => c.id),
+    [workflowInfo, growthCycles],
+  );
+  const inheritedCycles = useMemo(
+    () => growthCycles.filter((c) => inheritedCycleIds.includes(c.id)),
+    [growthCycles, inheritedCycleIds],
+  );
+  const growthCycleSummary = useMemo(
+    () =>
+      inheritedCycles
+        .map((cycle) => {
+          const stageNames = formData.growthCycleSelections
+            .filter((s) => s.cycleId === cycle.id)
+            .map((s) => cycle.stages.find((st) => st.id === s.stageId)?.name)
+            .filter((name): name is string => Boolean(name));
+          return stageNames.length > 0
+            ? { cycleName: cycle.name, items: stageNames }
+            : null;
+        })
+        .filter(
+          (group): group is { cycleName: string; items: string[] } =>
+            group !== null,
+        ),
+    [inheritedCycles, formData.growthCycleSelections],
+  );
+  const isTreatmentOrAmendment =
+    formData.purpose === "treatment" || formData.purpose === "amendment";
+  const isCultivation = formData.purpose === "cultivation";
+  // Cultivation and treatment/amendment plans both treat the picked
+  // growth-cycle stage(s) as their planned work items — only
+  // facility-upgrade and harvest stay fully manual.
+  const derivesStagesFromGrowthCycle = isCultivation || isTreatmentOrAmendment;
+
+  // Keep `selectedStages` synced to the picked growth-cycle stage(s) (as
+  // `${cycleId}:${stageName}` entries, mirroring how regimen steps are
+  // prefixed with the regimen id) so users don't have to re-type stage
+  // names by hand. Manually added items (no prefix) are left untouched, so
+  // users can still layer extra items on top — as can regimen steps for
+  // treatment/amendment, which use their own `${regimenId}:` prefix.
+  const isGrowthCycleStageKey = (key: string) =>
+    growthCycles.some((c) => key.startsWith(`${c.id}:`));
+
+  useEffect(() => {
+    if (!derivesStagesFromGrowthCycle) return;
+
+    const derivedKeys = Array.from(
+      new Set(
+        formData.growthCycleSelections
+          .map((s) => {
+            const cycle = growthCycles.find((c) => c.id === s.cycleId);
+            const stageIndex =
+              cycle?.stages.findIndex((st) => st.id === s.stageId) ?? -1;
+            return stageIndex >= 0
+              ? {
+                  key: `${cycle!.id}:${cycle!.stages[stageIndex].name}`,
+                  order: stageIndex,
+                }
+              : null;
+          })
+          .filter((e): e is { key: string; order: number } => Boolean(e))
+          .sort((a, b) => a.order - b.order)
+          .map((e) => e.key),
+      ),
+    );
+
+    setFormData((prev) => {
+      const existingGcKeys = prev.selectedStages.filter(isGrowthCycleStageKey);
+      const unchanged =
+        existingGcKeys.length === derivedKeys.length &&
+        existingGcKeys.every((key, idx) => key === derivedKeys[idx]);
+      if (unchanged) return prev;
+
+      const removedKeys = existingGcKeys.filter(
+        (k) => !derivedKeys.includes(k),
+      );
+      return {
+        ...prev,
+        selectedStages: [
+          ...derivedKeys,
+          ...prev.selectedStages.filter((s) => !isGrowthCycleStageKey(s)),
+        ],
+        materialAllocations: prev.materialAllocations.filter(
+          (m) => !removedKeys.includes(m.stageId),
+        ),
+      };
+    });
+    // `formData.purpose` must stay a dependency even though
+    // `derivesStagesFromGrowthCycle` already derives from it — switching
+    // between two purposes that are both `true` for it (e.g. treatment ->
+    // amendment) doesn't change that boolean, so without `purpose` here the
+    // effect wouldn't re-run to restore `selectedStages` after the
+    // purpose-switch handler resets it to `[]`.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    derivesStagesFromGrowthCycle,
+    formData.purpose,
+    formData.growthCycleSelections,
+    growthCycles,
+  ]);
 
   const addStage = () => {
     const name = newStage.trim();
     if (!name || formData.selectedStages.includes(name)) return;
-    setFormData((prev) => ({ ...prev, selectedStages: [...prev.selectedStages, name] }));
+    setFormData((prev) => ({
+      ...prev,
+      selectedStages: [...prev.selectedStages, name],
+    }));
     setNewStage("");
   };
 
@@ -307,15 +479,24 @@ export default function SimplePlanForm({
     setFormData((prev) => ({
       ...prev,
       selectedStages: prev.selectedStages.filter((s) => s !== name),
-      materialAllocations: prev.materialAllocations.filter((m) => m.stageId !== name),
+      materialAllocations: prev.materialAllocations.filter(
+        (m) => m.stageId !== name,
+      ),
     }));
   };
 
   const manualStages = formData.selectedStages.filter((s) => !s.includes(":"));
-  const regimenStages = formData.selectedStages.filter((s) => s.startsWith(`${formData.regimenId}:`));
+  const regimenStages = formData.selectedStages.filter((s) =>
+    s.startsWith(`${formData.regimenId}:`),
+  );
+  const growthCycleDerivedStages = formData.selectedStages.filter(
+    isGrowthCycleStageKey,
+  );
 
   const hasDuration = Boolean(
-    formData.plannedDurationYears || formData.plannedDurationMonths || formData.plannedDurationDays,
+    formData.plannedDurationYears ||
+    formData.plannedDurationMonths ||
+    formData.plannedDurationDays,
   );
   const isValid =
     Boolean(formData.name) &&
@@ -333,8 +514,8 @@ export default function SimplePlanForm({
         <div>
           <h3 className="font-semibold">Chế độ đơn giản</h3>
           <p className="text-sm text-blue-700">
-            Nhập nhanh những thông tin cần thiết nhất. Bạn có thể chuyển sang chế độ chi tiết để bổ sung công việc cụ
-            thể sau.
+            Nhập nhanh những thông tin cần thiết nhất. Bạn có thể chuyển sang
+            chế độ chi tiết để bổ sung công việc cụ thể sau.
           </p>
         </div>
       </div>
@@ -343,7 +524,9 @@ export default function SimplePlanForm({
         <Label required>Tên kế hoạch</Label>
         <Input
           value={formData.name}
-          onChange={(e) => setFormData((prev) => ({ ...prev, name: e.target.value }))}
+          onChange={(e) =>
+            setFormData((prev) => ({ ...prev, name: e.target.value }))
+          }
           placeholder="VD: Bón phân đợt 1"
         />
       </div>
@@ -357,22 +540,30 @@ export default function SimplePlanForm({
               type="number"
               min="0"
               value={formData.plannedDurationYears}
-              onChange={(e) => handleDurationPartChange("years", e.target.value)}
+              onChange={(e) =>
+                handleDurationPartChange("years", e.target.value)
+              }
               placeholder="0"
               className="w-16 h-9 border-0 bg-transparent px-0 text-center text-base shadow-none focus-visible:ring-0"
             />
-            <span className="text-sm text-slate-500 whitespace-nowrap">năm</span>
+            <span className="text-sm text-slate-500 whitespace-nowrap">
+              năm
+            </span>
           </div>
           <div className="flex items-center gap-2">
             <Input
               type="number"
               min="0"
               value={formData.plannedDurationMonths}
-              onChange={(e) => handleDurationPartChange("months", e.target.value)}
+              onChange={(e) =>
+                handleDurationPartChange("months", e.target.value)
+              }
               placeholder="0"
               className="w-16 h-9 border-0 bg-transparent px-0 text-center text-base shadow-none focus-visible:ring-0"
             />
-            <span className="text-sm text-slate-500 whitespace-nowrap">tháng</span>
+            <span className="text-sm text-slate-500 whitespace-nowrap">
+              tháng
+            </span>
           </div>
           <div className="flex items-center gap-2">
             <Input
@@ -383,7 +574,9 @@ export default function SimplePlanForm({
               placeholder="0"
               className="w-16 h-9 border-0 bg-transparent px-0 text-center text-base shadow-none focus-visible:ring-0"
             />
-            <span className="text-sm text-slate-500 whitespace-nowrap">ngày</span>
+            <span className="text-sm text-slate-500 whitespace-nowrap">
+              ngày
+            </span>
           </div>
         </div>
       </div>
@@ -392,7 +585,9 @@ export default function SimplePlanForm({
         <Label>Mục đích kế hoạch</Label>
         <Textarea
           value={formData.description}
-          onChange={(e) => setFormData((prev) => ({ ...prev, description: e.target.value }))}
+          onChange={(e) =>
+            setFormData((prev) => ({ ...prev, description: e.target.value }))
+          }
           placeholder="Mô tả ngắn gọn mục đích của kế hoạch..."
           rows={2}
         />
@@ -405,25 +600,42 @@ export default function SimplePlanForm({
                 key={type.id}
                 type="button"
                 onClick={() =>
-                  setFormData((prev) => ({
-                    ...prev,
-                    purpose: type.id as PlanFormData["purpose"],
-                  }))
+                  setFormData((prev) => {
+                    if (prev.purpose === type.id) return prev;
+                    // Planned work items are purpose-specific (growth-cycle
+                    // stages for cultivation, regimen steps for treatment/
+                    // amendment, free-typed for the rest) — switching
+                    // purpose invalidates whatever was picked before.
+                    return {
+                      ...prev,
+                      purpose: type.id as PlanFormData["purpose"],
+                      selectedStages: [],
+                      regimenId: "",
+                      materialAllocations: [],
+                      taskAllocations: [],
+                    };
+                  })
                 }
                 className={cn(
                   "cursor-pointer p-3 rounded-xl border-2 transition-all flex flex-col items-center text-center gap-1",
-                  isActive ? `${colors.border} ${colors.bg} ${colors.text} shadow-sm` : "border-slate-100 bg-white hover:border-slate-200",
+                  isActive
+                    ? `${colors.border} ${colors.bg} ${colors.text} shadow-sm`
+                    : "border-slate-100 bg-white hover:border-slate-200",
                 )}
               >
                 <div
                   className={cn(
                     "w-8 h-8 rounded-lg flex items-center justify-center",
-                    isActive ? `${colors.active} text-white` : "bg-slate-50 text-slate-400",
+                    isActive
+                      ? `${colors.active} text-white`
+                      : "bg-slate-50 text-slate-400",
                   )}
                 >
                   <type.icon className="w-4 h-4" />
                 </div>
-                <span className="text-[10px] font-black uppercase tracking-tight">{type.label}</span>
+                <span className="text-[10px] font-black uppercase tracking-tight">
+                  {type.label}
+                </span>
               </button>
             );
           })}
@@ -439,7 +651,7 @@ export default function SimplePlanForm({
               : "Chọn 1 khu vực/lô từ sơ đồ ban đầu"}
           </span>
         </div>
-        <div className="p-4 rounded-2xl border border-emerald-100 bg-emerald-50/20 shadow-sm space-y-3">
+        <div className="space-y-3">
           {!isWorkflowContext && (
             <GeographicalSelector
               regions={regions || []}
@@ -477,11 +689,17 @@ export default function SimplePlanForm({
                           )}
                         >
                           <span className="opacity-70 mr-1 uppercase text-[8px] font-black">
-                            {item.type === "region" ? "Vùng" : item.type === "area" ? "Khu" : "Lô"}
+                            {item.type === "region"
+                              ? "Vùng"
+                              : item.type === "area"
+                                ? "Khu"
+                                : "Lô"}
                           </span>
                           {item.name}
                           {item.parentName && (
-                            <span className="ml-1 opacity-50 font-normal italic">({item.parentName})</span>
+                            <span className="ml-1 opacity-50 font-normal italic">
+                              ({item.parentName})
+                            </span>
                           )}
                         </Badge>
                       ))}
@@ -499,6 +717,68 @@ export default function SimplePlanForm({
           )}
         </div>
       </div>
+
+      {isWorkflowContext && (
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <Label>Chu kỳ sinh trưởng</Label>
+            <span className="text-[10px] text-emerald-700 bg-emerald-100 px-2 py-1 rounded-full font-semibold">
+              {inheritedCycles.length === 0
+                ? "Chưa thiết lập ở quy trình"
+                : inheritedCycles.length === 1
+                  ? `Kế thừa từ quy trình "${inheritedCycles[0].name}"`
+                  : `Kế thừa ${inheritedCycles.length} chu kỳ từ quy trình`}
+            </span>
+          </div>
+          {inheritedCycles.length > 0 ? (
+            <GrowthCycleSelector
+              growthCycles={growthCycles}
+              lockedCycleIds={inheritedCycleIds}
+              existingSelections={formData.growthCycleSelections}
+              onConfirm={(nextSelections) =>
+                setFormData((prev) => ({
+                  ...prev,
+                  growthCycleSelections: nextSelections,
+                }))
+              }
+            />
+          ) : (
+            <p className="text-xs text-emerald-800/60 italic text-center py-2">
+              Quy trình chưa thiết lập chu kỳ sinh trưởng
+            </p>
+          )}
+
+          {growthCycleSummary.length > 0 && (
+            <div className="p-4 rounded-xl bg-white/50 border border-emerald-100/50 space-y-3">
+              <div className="text-[10px] font-bold text-emerald-800/60 uppercase tracking-widest flex items-center gap-2">
+                <Sprout className="w-3 h-3" />
+                Giai đoạn đã chọn
+              </div>
+              <div className="space-y-3">
+                {growthCycleSummary.map((group) => (
+                  <div key={group.cycleName} className="space-y-2">
+                    <div className="flex items-center gap-1.5 text-[11px] font-bold text-slate-700">
+                      <div className="w-1 h-1 rounded-full bg-emerald-500" />
+                      {group.cycleName}
+                    </div>
+                    <div className="flex flex-wrap gap-1.5 pl-2.5">
+                      {group.items.map((label, idx) => (
+                        <Badge
+                          key={idx}
+                          variant="outline"
+                          className="text-[10px] py-0 px-2 h-5 font-medium border-emerald-100 shadow-sm bg-emerald-100 text-emerald-800"
+                        >
+                          {label}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       <div className="space-y-3">
         <Label>Nhân sự phụ trách</Label>
@@ -538,7 +818,9 @@ export default function SimplePlanForm({
         <div className="space-y-3">
           <div className="flex items-center justify-between">
             <Label required>
-              {formData.purpose === "treatment" ? "Phác đồ điều trị" : "Phác đồ cải tạo đất"}
+              {formData.purpose === "treatment"
+                ? "Phác đồ điều trị"
+                : "Phác đồ cải tạo đất"}
             </Label>
             {formData.regimenId && (
               <Button
@@ -572,7 +854,12 @@ export default function SimplePlanForm({
                 ...prev,
                 regimenId: regimen.id,
                 selectedStages: [
-                  ...prev.selectedStages.filter((stage) => !stage.includes(":")),
+                  // Drop only the *previous* regimen's own steps — manual
+                  // entries and growth-cycle-derived stages (which also
+                  // contain a ":") must survive picking a new regimen.
+                  ...prev.selectedStages.filter(
+                    (stage) => !stage.startsWith(`${prev.regimenId}:`),
+                  ),
                   ...stages,
                 ],
               }));
@@ -591,7 +878,9 @@ export default function SimplePlanForm({
                       if (value) return;
                       setFormData((prev) => ({
                         ...prev,
-                        selectedStages: prev.selectedStages.filter((s) => s !== stage),
+                        selectedStages: prev.selectedStages.filter(
+                          (s) => s !== stage,
+                        ),
                       }));
                     }}
                   />
@@ -603,12 +892,54 @@ export default function SimplePlanForm({
         </div>
       )}
 
+      {derivesStagesFromGrowthCycle && growthCycleDerivedStages.length > 0 && (
+        <div className="space-y-3">
+          <Label>Hạng mục dự kiến (theo giai đoạn đã chọn)</Label>
+          <div className="flex flex-col gap-2 p-4 bg-white rounded-2xl border border-slate-100 shadow-sm">
+            {growthCycleDerivedStages.map((stage) => (
+              <label
+                key={stage}
+                className="flex w-full cursor-pointer items-center gap-2.5 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-xs font-bold text-slate-700 transition-colors"
+              >
+                <Checkbox
+                  checked
+                  onCheckedChange={(value) => {
+                    if (value) return;
+                    setFormData((prev) => ({
+                      ...prev,
+                      selectedStages: prev.selectedStages.filter(
+                        (s) => s !== stage,
+                      ),
+                      materialAllocations: prev.materialAllocations.filter(
+                        (m) => m.stageId !== stage,
+                      ),
+                    }));
+                  }}
+                />
+                {stage.split(":").slice(1).join(":")}
+              </label>
+            ))}
+          </div>
+        </div>
+      )}
+
       <div className="space-y-3">
         <div className="flex items-center justify-between">
-          <Label required={!isTreatmentOrAmendment}>
-            {isTreatmentOrAmendment ? "Hạng mục dự kiến thêm (tự tạo)" : "Chọn hạng mục (tự tạo)"}
+          <Label
+            required={
+              !isTreatmentOrAmendment &&
+              !(isCultivation && growthCycleDerivedStages.length > 0)
+            }
+          >
+            {isTreatmentOrAmendment ||
+            (isCultivation && growthCycleDerivedStages.length > 0)
+              ? "Hạng mục dự kiến thêm (tự tạo)"
+              : "Chọn hạng mục (tự tạo)"}
           </Label>
-          <Badge variant="outline" className="text-[10px] bg-amber-50 text-amber-700 border-amber-200 font-bold">
+          <Badge
+            variant="outline"
+            className="text-[10px] bg-amber-50 text-amber-700 border-amber-200 font-bold"
+          >
             {manualStages.length} mục
           </Badge>
         </div>
@@ -624,7 +955,11 @@ export default function SimplePlanForm({
               }
             }}
           />
-          <Button type="button" onClick={addStage} className="px-6 font-bold uppercase text-xs">
+          <Button
+            type="button"
+            onClick={addStage}
+            className="px-6 font-bold uppercase text-xs"
+          >
             Thêm
           </Button>
         </div>
@@ -635,7 +970,9 @@ export default function SimplePlanForm({
           <Label>Chọn vật tư / ước lượng theo hạng mục</Label>
           <div className="space-y-2">
             {formData.selectedStages.map((stageKey, idx) => {
-              const stageName = stageKey.includes(":") ? stageKey.split(":").slice(1).join(":") : stageKey;
+              const stageName = stageKey.includes(":")
+                ? stageKey.split(":").slice(1).join(":")
+                : stageKey;
               const materialCount = formData.materialAllocations.filter(
                 (m) => m.stageId === stageKey,
               ).length;
@@ -685,8 +1022,9 @@ export default function SimplePlanForm({
         <CardContent className="p-4 flex items-start gap-2">
           <Info className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
           <p className="text-xs text-amber-800">
-            Chế độ đơn giản không phân bổ công việc chi tiết theo từng giai đoạn. Chuyển sang chế độ chi tiết bất cứ
-            lúc nào để bổ sung công việc cụ thể.
+            Chế độ đơn giản không phân bổ công việc chi tiết theo từng giai
+            đoạn. Chuyển sang chế độ chi tiết bất cứ lúc nào để bổ sung công
+            việc cụ thể.
           </p>
         </CardContent>
       </Card>
@@ -696,7 +1034,12 @@ export default function SimplePlanForm({
           <ArrowLeft className="w-4 h-4 mr-2" />
           Quay lại
         </Button>
-        <Button type="button" disabled={!isValid} onClick={handleComplete} className="font-bold">
+        <Button
+          type="button"
+          disabled={!isValid}
+          onClick={handleComplete}
+          className="font-bold"
+        >
           {completeLabel}
         </Button>
       </div>
