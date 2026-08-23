@@ -10,8 +10,7 @@ export const cultivationZoneKeys = {
   all: () => ["farm", "cultivation-zones"] as const,
   list: (params?: CultivationZoneQueryParams) =>
     ["farm", "cultivation-zones", "list", params ?? {}] as const,
-  detail: (id: number) =>
-    ["farm", "cultivation-zones", "detail", id] as const,
+  detail: (id: number) => ["farm", "cultivation-zones", "detail", id] as const,
 };
 
 interface UseCultivationZonesOptions {

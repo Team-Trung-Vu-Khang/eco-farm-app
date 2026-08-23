@@ -11,6 +11,11 @@ import type {
 
 import type { RegionBasicFormValues } from "../data/region-basic-form.schema";
 
+import { useCultivationZoneById } from "@/features/farm/hooks/useCultivationZones";
+import { useCultivationZoneMutations } from "@/features/farm/hooks/useCultivationZoneMutations";
+import type { FarmCultivationZoneRequest } from "@/features/farm/types/farm.type";
+import { useMemo } from "react";
+
 type RegionCropSource = {
   id?: number;
   cropId?: number;
@@ -24,38 +29,61 @@ export function useRegionBasicCreateForm(
 ) {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
-  const [match, params] = useRoute(
+  const [matchBasic, paramsBasic] = useRoute(
     "/cultivation-region-identification/crop/edit/:id",
   );
-  const isEditMode = match && !!params?.id;
-  const regionId = parseInt(params?.id || "0", 10);
+  const [matchDetailed, paramsDetailed] = useRoute(
+    "/cultivation-region/:id/edit",
+  );
+  const isEditMode =
+    (matchBasic && !!paramsBasic?.id) ||
+    (matchDetailed && !!paramsDetailed?.id);
+  // Both routes now pass Zone ID
+  const zoneId = parseInt(paramsBasic?.id || paramsDetailed?.id || "0", 10);
+
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [hasInitialized, setHasInitialized] = useState(false);
 
+  // 1. Fetch Zone detail by ID
+  const { data: zoneData } = useCultivationZoneById(zoneId, {
+    enabled: isEditMode && zoneId > 0,
+  });
+
+  // 2. Resolve regionId from zone scopes
+  const regionId = useMemo(() => {
+    if (!zoneData) return 0;
+    const regionScope = zoneData.scopes?.find((s) => s.scopeType === "REGION");
+    // @ts-ignore
+    return regionScope?.region?.id || regionScope?.scopeId || 0;
+  }, [zoneData]);
+
+  // 3. Fetch Region detail by resolved regionId
   const { data: regionDataResponse } = useRegionById(regionId, {
     enabled: isEditMode && regionId > 0,
   });
 
   const { createRegion, updateRegion } = useRegionMutations();
+  const { createCultivationZone, updateCultivationZone } =
+    useCultivationZoneMutations();
 
   useEffect(() => {
     if (hasInitialized) return;
 
     if (isEditMode) {
-      if (regionDataResponse) {
+      if (zoneData && (!regionId || regionDataResponse)) {
         const cropSources: RegionCropSource[] =
           (
             regionDataResponse as FarmRegionResponse & {
               productionSubjects?: RegionCropSource[];
             }
-          ).productionSubjects ||
-          regionDataResponse.crops ||
+          )?.productionSubjects ||
+          regionDataResponse?.crops ||
           [];
 
         reset({
-          id: regionDataResponse.id,
-          code: regionDataResponse.code,
-          name: regionDataResponse.name || "",
+          id: regionDataResponse?.id || undefined,
+          code: regionDataResponse?.code,
+          name: regionDataResponse?.name || zoneData.name || "",
           cropIds: cropSources
             .map((c) =>
               (
@@ -68,14 +96,21 @@ export function useRegionBasicCreateForm(
               ).toString(),
             )
             .filter((id) => id !== "0"),
-          area: regionDataResponse.acreage || undefined,
-          provinceId: regionDataResponse.province || "",
-          wardId: regionDataResponse.ward || regionDataResponse.district || "",
-          address: regionDataResponse.address || "",
-          landType: regionDataResponse.soilType?.id?.toString() || "",
-          terrain: regionDataResponse.terrainFeature?.id?.toString() || "",
-          note: regionDataResponse.description || "",
-          centerPoint: regionDataResponse.centerPoint
+          area:
+            regionDataResponse?.acreage ||
+            (zoneData.metadataJson?.area as number) ||
+            undefined,
+          provinceId: regionDataResponse?.province || "",
+          wardId:
+            regionDataResponse?.ward || regionDataResponse?.district || "",
+          address:
+            regionDataResponse?.address ||
+            (zoneData.metadataJson?.address as string) ||
+            "",
+          landType: regionDataResponse?.soilType?.id?.toString() || "",
+          terrain: regionDataResponse?.terrainFeature?.id?.toString() || "",
+          note: regionDataResponse?.description || zoneData.notes || "",
+          centerPoint: regionDataResponse?.centerPoint
             ? {
                 lat: regionDataResponse.centerPoint.latitude || undefined,
                 lng: regionDataResponse.centerPoint.longitude || undefined,
@@ -85,12 +120,20 @@ export function useRegionBasicCreateForm(
                 lng: 106.895,
               },
           metadataJson: {
-            address: (regionDataResponse.metadataJson?.address as string) || "",
+            address:
+              (regionDataResponse?.metadataJson?.address as string) ||
+              (zoneData.metadataJson?.address as string) ||
+              "",
           },
           isDetailed: false,
           status:
-            (regionDataResponse.status as "active" | "inactive" | "archived") ??
-            "active",
+            (regionDataResponse?.status as
+              | "active"
+              | "inactive"
+              | "archived") ?? "active",
+          farmingMethodId: zoneData?.productionMethod?.id || undefined,
+          rearingMethodId: zoneData?.rearingMethod?.id || undefined,
+          seedIds: zoneData?.subjectVariants?.map((s) => s.id) || [],
         });
         setHasInitialized(true);
       }
@@ -115,10 +158,20 @@ export function useRegionBasicCreateForm(
         },
         isDetailed: false,
         status: "active",
+        farmingMethodId: undefined,
+        rearingMethodId: undefined,
+        seedIds: [],
       });
       setHasInitialized(true);
     }
-  }, [hasInitialized, isEditMode, regionDataResponse, reset]);
+  }, [
+    hasInitialized,
+    isEditMode,
+    regionDataResponse,
+    reset,
+    zoneData,
+    regionId,
+  ]);
 
   const handleComplete = async (data: RegionBasicFormValues) => {
     setIsSubmitting(true);
@@ -139,6 +192,13 @@ export function useRegionBasicCreateForm(
           address: data.metadataJson?.address,
           formType: "basic",
         },
+        centerPoint:
+          data.centerPoint?.lat && data.centerPoint?.lng
+            ? {
+                latitude: data.centerPoint.lat,
+                longitude: data.centerPoint.lng,
+              }
+            : undefined,
         crops: data.cropIds?.length
           ? data.cropIds.map((id) => ({
               cropId: parseInt(id, 10),
@@ -148,19 +208,112 @@ export function useRegionBasicCreateForm(
         domainCode: "CROP",
       };
 
-      if (isEditMode && regionId > 0) {
-        await updateRegion.mutateAsync({ id: regionId, data: regionRequest });
+      const regionChanged =
+        !isEditMode ||
+        !regionDataResponse ||
+        regionDataResponse.name !== data.name ||
+        regionDataResponse.code !== data.code ||
+        regionDataResponse.acreage !== data.area ||
+        regionDataResponse.province !== data.provinceId ||
+        regionDataResponse.district !== data.wardId ||
+        regionDataResponse.ward !== data.wardId ||
+        regionDataResponse.address !== data.address ||
+        regionDataResponse.soilType?.id !==
+          (data.landType ? parseInt(data.landType, 10) : undefined) ||
+        regionDataResponse.terrainFeature?.id !==
+          (data.terrain ? parseInt(data.terrain, 10) : undefined) ||
+        regionDataResponse.description !== data.note ||
+        regionDataResponse.status !== data.status ||
+        regionDataResponse.centerPoint?.latitude !== data.centerPoint?.lat ||
+        regionDataResponse.centerPoint?.longitude !== data.centerPoint?.lng ||
+        JSON.stringify(
+          (regionDataResponse.crops || [])
+            .map((c: any) => (c.cropId || c.crop?.id || 0).toString())
+            .sort(),
+        ) !== JSON.stringify([...(data.cropIds || [])].sort());
+
+      const zoneChanged =
+        !zoneData ||
+        zoneData.farmingMethod?.id !== data.farmingMethodId ||
+        zoneData.rearingMethod?.id !== data.rearingMethodId ||
+        JSON.stringify((zoneData.seeds || []).map((s) => s.id).sort()) !==
+          JSON.stringify([...(data.seedIds || [])].map(Number).sort());
+
+      let savedRegionId = regionId;
+
+      if (!isEditMode) {
+        // Create Region
+        const createdRegion = await createRegion.mutateAsync(regionRequest);
+        savedRegionId = createdRegion.id;
+
+        // Create Cultivation Zone
+        const zoneRequest: FarmCultivationZoneRequest = {
+          name: data.name,
+          domainCode: "CROP",
+          farmingMethodId: data.farmingMethodId || 0,
+          rearingMethodId: data.rearingMethodId || undefined,
+          seedIds: data.seedIds || [],
+          status: data.status,
+          scopes: [
+            {
+              scopeType: "REGION",
+              scopeId: savedRegionId,
+            },
+          ],
+          metadataJson: {
+            formType: "basic",
+            address: data.address || data.metadataJson?.address || "",
+            area: data.area || 0,
+          },
+        };
+        await createCultivationZone.mutateAsync(zoneRequest);
+
+        toast({
+          title: "Thành công",
+          description: "Đã tạo mới vùng trồng và cấu hình canh tác thành công",
+        });
+      } else {
+        if (regionChanged && regionId > 0) {
+          await updateRegion.mutateAsync({ id: regionId, data: regionRequest });
+        }
+
+        if (zoneChanged) {
+          const zoneRequest: FarmCultivationZoneRequest = {
+            name: data.name,
+            domainCode: "CROP",
+            farmingMethodId: data.farmingMethodId || 0,
+            rearingMethodId: data.rearingMethodId || undefined,
+            seedIds: data.seedIds || [],
+            status: data.status,
+            scopes: [
+              {
+                scopeType: "REGION",
+                scopeId: regionId || savedRegionId,
+              },
+            ],
+            metadataJson: {
+              formType: "basic",
+              address: data.address || data.metadataJson?.address || "",
+              area: data.area || 0,
+            },
+          };
+
+          if (zoneData) {
+            await updateCultivationZone.mutateAsync({
+              id: zoneData.id,
+              data: zoneRequest,
+            });
+          } else {
+            await createCultivationZone.mutateAsync(zoneRequest);
+          }
+        }
+
         toast({
           title: "Thành công",
           description: "Cập nhật vùng trồng thành công",
         });
-      } else {
-        await createRegion.mutateAsync(regionRequest);
-        toast({
-          title: "Thành công",
-          description: "Đã tạo mới vùng trồng thành công",
-        });
       }
+
       setLocation("/cultivation-region-identification/crop");
     } catch (error) {
       console.error("Error saving basic region:", error);

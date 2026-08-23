@@ -6,12 +6,10 @@ import {
   CardContent,
   StepperForm,
   type Step,
-  Switch,
-  Label,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { ChevronLeft, Loader2 } from "lucide-react";
+import { ChevronLeft } from "lucide-react";
 import { useEffect, useState } from "react";
-import { FormProvider, useForm } from "react-hook-form";
+import { FormProvider, useForm, useWatch } from "react-hook-form";
 import { ZoneConfigurationStep } from "./components/ZoneConfigurationStep";
 import { ZoneGeneralInfoStep } from "./components/ZoneGeneralInfoStep";
 import { ZoneReviewStep } from "./components/ZoneReviewStep";
@@ -23,11 +21,12 @@ import { useAquacultureZoneCreateForm } from "./hooks/useAquacultureZoneCreateFo
 
 // Imports for the Basic Aquaculture Region form
 import { RegionAquacultureInfoStep } from "../region-chart/region-basic-distribution-aquaculture/components/RegionAquacultureInfoStep";
+import { useRegionBasicAquacultureCreateForm } from "../region-chart/region-basic-distribution-aquaculture/hooks/useRegionBasicAquacultureCreateForm";
+import { RegionConfirmationStep } from "../region-chart/region-basic-distribution/components/RegionConfirmationStep";
 import {
   regionBasicFormSchema,
   type RegionBasicFormValues,
 } from "../region-chart/region-basic-distribution/data/region-basic-form.schema";
-import { useRegionBasicAquacultureCreateForm } from "../region-chart/region-basic-distribution-aquaculture/hooks/useRegionBasicAquacultureCreateForm";
 
 const AquacultureRegionCreatePage = () => {
   // ─── Form 1: Detailed Zone Form ─────────────────────────────────────────
@@ -39,7 +38,7 @@ const AquacultureRegionCreatePage = () => {
       code: "",
       selections: [],
       farmingMethodId: 0,
-      rearingMethodId: 0,
+      rearingMethodId: undefined,
       seedIds: [],
       certificateIds: [],
       personnelIds: [],
@@ -86,13 +85,16 @@ const AquacultureRegionCreatePage = () => {
       },
       isDetailed: false,
       status: "active",
+      farmingMethodId: undefined,
+      rearingMethodId: undefined,
+      seedIds: [],
     },
   });
 
   const {
     reset: resetBasic,
     handleSubmit: handleSubmitBasic,
-    formState: formStateBasic,
+    control: controlBasic,
   } = basicForm;
   const {
     isEditMode: isEditModeBasic,
@@ -101,77 +103,113 @@ const AquacultureRegionCreatePage = () => {
     isSubmitting: isSubmittingBasic,
   } = useRegionBasicAquacultureCreateForm(resetBasic);
 
+  // Validation for step 2 — farmingMethodId required
+  const [detailedFarmingMethodId, detailedSeedIds] = useWatch({
+    control: detailedForm.control,
+    name: ["farmingMethodId", "seedIds"],
+  });
+  const [basicFarmingMethodId, basicSeedIds] = useWatch({
+    control: controlBasic,
+    name: ["farmingMethodId", "seedIds"],
+  });
+  const detailedStep2Valid =
+    !!detailedFarmingMethodId &&
+    detailedFarmingMethodId > 0 &&
+    !!detailedSeedIds &&
+    detailedSeedIds.length > 0;
+
+  const basicStep2Valid =
+    !!basicFarmingMethodId &&
+    basicFarmingMethodId > 0 &&
+    !!basicSeedIds &&
+    basicSeedIds.length > 0;
+
   // ─── Mode Switching Logic ────────────────────────────────────────────────
   const [isDetailMode, setIsDetailMode] = useState(true);
 
   useEffect(() => {
-    if (zoneData?.metadataJson?.formType) {
-      setIsDetailMode(zoneData.metadataJson.formType === "advanced");
+    if (zoneData) {
+      const type = zoneData.metadataJson?.formType;
+      if (type === "basic") {
+        setIsDetailMode(false);
+      } else if (type === "advanced") {
+        setIsDetailMode(true);
+      }
     }
   }, [zoneData]);
 
-  // Disable switcher on Edit mode since we can only edit the loaded entity type
-  const isEditMode = isDetailMode ? isEditModeDetailed : isEditModeBasic;
-  const isSubmitting = isDetailMode ? isSubmittingDetailed : isSubmittingBasic;
+  const isEditMode = isEditModeDetailed;
   const handleCancel = isDetailMode ? handleCancelDetailed : handleCancelBasic;
-
-  const selections = watchDetailed("selections") ?? [];
-  const farmingMethodId = watchDetailed("farmingMethodId");
 
   const steps: Step[] = [
     {
       id: "info",
-      title: "Thông tin vùng",
-      description: "Tên, phạm vi và cấu hình cơ bản",
-      isValid:
-        !formStateDetailed.errors.name &&
-        !formStateDetailed.errors.selections &&
-        !!watchDetailed("name") &&
-        selections.length > 0,
+      title: "Thông tin chung",
+      description: "Nhập thông tin cơ bản của vùng nuôi trồng",
       content: <ZoneGeneralInfoStep />,
     },
     {
       id: "config",
       title: "Cấu hình nuôi trồng",
-      description: "Loại hình nuôi, hệ thống nước, loài nuôi",
-      isValid:
-        !formStateDetailed.errors.farmingMethodId &&
-        !formStateDetailed.errors.rearingMethodId &&
-        farmingMethodId > 0,
+      description: "Thiết lập phương pháp & giống thủy sản",
       content: <ZoneConfigurationStep />,
+      isValid: detailedStep2Valid,
     },
     {
       id: "review",
       title: "Xác nhận",
-      description: "Kiểm tra và hoàn tất",
-      isValid: formStateDetailed.isValid,
+      description: "Kiểm tra lại toàn bộ thông tin",
       content: <ZoneReviewStep />,
+      isValid: true,
+    },
+  ];
+
+  const basicSteps: Step[] = [
+    {
+      id: "info",
+      title: "Thông tin chung",
+      description: "Nhập thông tin cơ bản của vùng nuôi trồng",
+      content: <RegionAquacultureInfoStep showCenterPoint={true} />,
+    },
+    {
+      id: "config",
+      title: "Cấu hình nuôi trồng",
+      description: "Thiết lập phương pháp & giống thủy sản",
+      content: <ZoneConfigurationStep />,
+      isValid: basicStep2Valid,
+    },
+    {
+      id: "review",
+      title: "Xác nhận thông tin",
+      description: "Xác nhận lại các thông tin trước khi hoàn thành",
+      content: <RegionConfirmationStep domainCode="AQUACULTURE" />,
+      isValid: true,
     },
   ];
 
   const handleDetailedComplete = async (data: CultivationZoneFormValues) => {
-    await handleCompleteDetailed(data, true);
+    await handleCompleteDetailed(data, isDetailMode);
   };
 
   return (
     <PageWrapper
       title={
-        isDetailMode
-          ? isEditModeDetailed
+        isEditMode
+          ? isDetailMode
             ? "Cập nhật vùng nuôi trồng"
-            : "Thiết lập vùng nuôi trồng"
-          : isEditModeBasic
-            ? "Cập nhật vùng nuôi trồng (Cơ bản)"
-            : "Thêm mới vùng nuôi trồng (Cơ bản)"
+            : "Cập nhật vùng nuôi trồng"
+          : isDetailMode
+            ? "Khởi tạo vùng nuôi trồng"
+            : "Thêm mới vùng nuôi trồng"
       }
       description={
         isDetailMode
-          ? "Quy trình khởi tạo và cấu hình mẫu cho vùng nuôi trồng thủy sản"
-          : "Quản lý vùng nuôi trồng thuỷ sản với giao diện cơ bản"
+          ? "Thiết lập vùng nuôi trồng chuyên sâu"
+          : "Quản lý vùng nuôi trồng thủy sản cơ bản"
       }
       actions={
         <div className="flex items-center gap-4">
-          {!isEditMode && (
+          {/* {!isEditMode && (
             <div className="flex items-center gap-2.5 bg-white/80 backdrop-blur-sm border border-slate-200 rounded-full px-3 py-1.5 shadow-xs">
               <Label
                 htmlFor="zone-detail-mode"
@@ -187,14 +225,15 @@ const AquacultureRegionCreatePage = () => {
                 }}
               />
             </div>
-          )}
+          )} */}
 
           <Button
             variant="outline"
             onClick={handleCancel}
-            disabled={isSubmitting}
+            disabled={isSubmittingDetailed || isSubmittingBasic}
           >
-            <ChevronLeft className="w-4 h-4 mr-2" /> Quay lại
+            <ChevronLeft className="mr-2 h-4 w-4" />
+            Quay lại
           </Button>
         </div>
       }
@@ -205,8 +244,8 @@ const AquacultureRegionCreatePage = () => {
             <h3 className="font-semibold text-sm">Chế độ cơ bản</h3>
             <p className="text-xs text-amber-700 mt-0.5">
               {isEditMode
-                ? "Cập nhật nhanh các thông tin cơ bản của vùng nuôi trồng thủy sản."
-                : "Nhập các thông tin cơ bản để thêm mới vùng nuôi trồng thủy sản."}
+                ? "Cập nhật nhanh các thông tin cơ bản của vùng nuôi trồng."
+                : "Nhập các thông tin cơ bản để thêm mới vùng nuôi trồng."}
             </p>
           </div>
         )}
@@ -230,31 +269,17 @@ const AquacultureRegionCreatePage = () => {
                 </FormProvider>
               ) : (
                 <FormProvider {...basicForm}>
-                  <div className="space-y-6">
-                    <RegionAquacultureInfoStep showCenterPoint={true} />
-                    <div className="flex justify-end gap-3 rounded-lg border bg-white p-4">
-                      <Button
-                        variant="outline"
-                        type="button"
-                        onClick={handleCancelBasic}
-                        disabled={isSubmittingBasic}
-                      >
-                        Hủy
-                      </Button>
-                      <Button
-                        type="button"
-                        onClick={handleSubmitBasic(handleCompleteBasic)}
-                        disabled={isSubmittingBasic || !formStateBasic.isValid}
-                      >
-                        {isSubmittingBasic && (
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        )}
-                        {isEditModeBasic
-                          ? "Lưu thay đổi"
-                          : "Tạo vùng nuôi trồng"}
-                      </Button>
-                    </div>
-                  </div>
+                  <StepperForm
+                    steps={basicSteps}
+                    loading={isSubmittingBasic}
+                    onCancel={handleCancelBasic}
+                    onComplete={handleSubmitBasic(handleCompleteBasic)}
+                    completeLabel={
+                      isEditModeBasic
+                        ? "Lưu thay đổi"
+                        : "Khởi tạo vùng nuôi trồng"
+                    }
+                  />
                 </FormProvider>
               )}
             </div>

@@ -30,11 +30,12 @@ export const cultivationZoneFormSchema = z.object({
     .int()
     .min(1, "Vui lòng chọn phương pháp chăn nuôi"),
 
-  /** Hệ thống cấp nước/chuồng trại — bắt buộc */
-  irrigationSystemId: z
-    .number({ message: "Vui lòng chọn hệ thống cấp nước/chuồng trại" })
+  /** Phương pháp nuôi/chăn nuôi — tuỳ chọn */
+  rearingMethodId: z
+    .number({ message: "Hệ thống cấp nước/chuồng trại" })
     .int()
-    .min(1, "Vui lòng chọn hệ thống cấp nước/chuồng trại"),
+    .optional()
+    .or(z.literal(0)),
 
   /** Giống/hạt giống — tuỳ chọn */
   seedIds: z.array(z.number().int().positive()).optional(),

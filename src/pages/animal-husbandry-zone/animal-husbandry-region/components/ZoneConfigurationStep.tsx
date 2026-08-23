@@ -201,9 +201,11 @@ export const ZoneConfigurationStep = () => {
     params: { domainCode: "LIVESTOCK", size: 100, status: "active" },
   });
 
-  const { items: irrigationSystems, loading: irLoading } = useIrrigationSystems({
-    params: { size: 100 },
-  });
+  const { items: irrigationSystems, loading: irLoading } = useIrrigationSystems(
+    {
+      params: { size: 100 },
+    },
+  );
 
   const selectedFarmingMethodId = watch("farmingMethodId");
   const selectedSeedIds = watch("seedIds") ?? [];
@@ -316,19 +318,22 @@ export const ZoneConfigurationStep = () => {
               )}
             />
 
-            {/* Irrigation System */}
+            {/* Rearing Method */}
             <Controller
               control={control}
-              name="irrigationSystemId"
+              name="rearingMethodId"
               render={({ field }) => (
                 <div className="space-y-2 mt-4">
                   <Label className="text-sm font-medium">
                     Hệ thống cấp nước/chuồng trại{" "}
-                    <span className="text-red-500">*</span>
                   </Label>
                   <Select
                     disabled={irLoading}
-                    value={field.value > 0 ? field.value.toString() : ""}
+                    value={
+                      field?.value && field?.value > 0
+                        ? field.value.toString()
+                        : ""
+                    }
                     onValueChange={(val) => {
                       field.onChange(parseInt(val, 10));
                     }}
@@ -347,9 +352,9 @@ export const ZoneConfigurationStep = () => {
                       ))}
                     </SelectContent>
                   </Select>
-                  {errors.irrigationSystemId && (
+                  {errors.rearingMethodId && (
                     <p className="text-xs font-medium text-red-500 mt-1">
-                      {errors.irrigationSystemId.message}
+                      {errors.rearingMethodId.message}
                     </p>
                   )}
                   <p className="text-xs text-muted-foreground">

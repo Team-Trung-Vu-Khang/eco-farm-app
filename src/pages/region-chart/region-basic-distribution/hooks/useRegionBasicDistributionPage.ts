@@ -3,8 +3,8 @@ import { useLocation } from "wouter";
 import { useDebounce } from "@/shared/hooks/useDebounce";
 import { useToast } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 
-import { useRegions } from "@/features/farm/hooks/useRegions";
-import { useRegionMutations } from "@/features/farm/hooks/useRegionMutations";
+import { useCultivationZones } from "@/features/farm/hooks/useCultivationZones";
+import { useCultivationZoneMutations } from "@/features/farm/hooks/useCultivationZoneMutations";
 import type { Region } from "../../constants";
 import { createRegionDistributionColumns } from "../../data/distributionColumns";
 
@@ -23,10 +23,10 @@ export function useRegionBasicDistributionPage() {
   };
 
   const {
-    items: apiRegions,
+    items: apiZones,
     response,
     isLoading,
-  } = useRegions({
+  } = useCultivationZones({
     params: {
       keyword: debouncedSearch.trim() || undefined,
       page: Math.max(currentIndex - 1, 0),
@@ -34,10 +34,48 @@ export function useRegionBasicDistributionPage() {
       domainCode: "CROP",
     },
   });
-  const { deleteRegion } = useRegionMutations();
+  const { deleteCultivationZone } = useCultivationZoneMutations();
 
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deletingId, setDeletingId] = useState<number | null>(null);
+
+  const regions: Region[] = useMemo(() => {
+    return apiZones.map((zone) => {
+      const regionScope = zone.scopes?.find((s) => s.scopeType === "REGION");
+      const regionId =
+        regionScope?.region?.id || regionScope?.region?.id || zone.id;
+      const metadata = zone.metadataJson || {};
+      const acreage =
+        (regionScope?.region as any)?.acreage ||
+        (regionScope?.region as any)?.area ||
+        (metadata.area as number) ||
+        0;
+      const address =
+        (regionScope?.region as any)?.address ||
+        (metadata.address as string) ||
+        "";
+
+      return {
+        id: zone.id,
+        regionId,
+        code: zone.code || regionScope?.region?.code || "",
+        name: zone.name || regionScope?.region?.name || "",
+        provinceId: "",
+        districtId: "",
+        ward: "",
+        address,
+        enterpriseId: "",
+        area: acreage,
+        landType: "",
+        terrain: "",
+        note: zone.notes || "",
+        status: zone.status ?? "inactive",
+        coordinates: [],
+        subAreas: [],
+        createdAt: zone.createdAt || "",
+      } as any;
+    });
+  }, [apiZones]);
 
   const openDetail = (id: number) => {
     setLocation(`/cultivation-region-identification/crop/detail/${id}`);
@@ -47,45 +85,6 @@ export function useRegionBasicDistributionPage() {
     () => createRegionDistributionColumns(openDetail),
     [],
   );
-
-  const regions: Region[] = useMemo(() => {
-    return apiRegions.map((region) => ({
-      id: region.id,
-      code: region.code || "",
-      name: region.name || "",
-      provinceId: region.province || "",
-      districtId: region.district || "",
-      ward: region.ward || "",
-      address: region.address || "",
-      enterpriseId: (region.metadataJson?.enterpriseId as string) || "",
-      area: region.acreage || 0,
-      landType: region.soilType?.id?.toString() || "",
-      terrain: region.terrainFeature?.id?.toString() || "",
-      note: region.description || "",
-      status: region.status ?? "inactive",
-      coordinates: (region.boundary || []).map((boundary) => ({
-        lat: boundary.latitude || 0,
-        lng: boundary.longitude || 0,
-      })),
-      subAreas: (region.areas || []).map((area) => ({
-        id: area.id?.toString() || "",
-        code: area.code || "",
-        name: area.name || "",
-        regionId: region.id,
-        area: area.acreage || 0,
-        landType: area.soilType?.id?.toString() || "",
-        terrain: area.terrainFeature?.id?.toString() || "",
-        coordinates: (area.boundary || []).map((boundary) => ({
-          lat: boundary.latitude || 0,
-          lng: boundary.longitude || 0,
-        })),
-        plots: [],
-        createdAt: area.createdAt || "",
-        status: area.status ?? "inactive",
-      })),
-      createdAt: region.createdAt || "",
-    }));
-  }, [apiRegions]);
 
   const handleAdd = () => {
     setLocation("/cultivation-region-identification/crop/create");
@@ -104,7 +103,7 @@ export function useRegionBasicDistributionPage() {
     if (!deletingId) return;
 
     try {
-      await deleteRegion.mutateAsync(deletingId);
+      await deleteCultivationZone.mutateAsync(deletingId);
       toast({ title: "Thành công", description: "Đã xóa vùng trồng" });
     } catch (error) {
       toast({

@@ -1,10 +1,12 @@
 import PageWrapper from "@/components/PageWrapper";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Button } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { ChevronLeft, Loader2 } from "lucide-react";
-import { FormProvider, useForm } from "react-hook-form";
+import { Button, StepperForm } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import { ChevronLeft } from "lucide-react";
+import { FormProvider, useForm, useFormState, useWatch } from "react-hook-form";
 
 import { RegionInfoStep } from "../region-distribution/components/RegionInfoStep";
+import { ZoneConfigurationStep } from "../../cultivation-zone/cultivation-region/components/ZoneConfigurationStep";
+import { RegionConfirmationStep } from "./components/RegionConfirmationStep";
 import {
   regionBasicFormSchema,
   type RegionBasicFormValues,
@@ -13,7 +15,7 @@ import { useRegionBasicCreateForm } from "./hooks/useRegionBasicCreateForm";
 
 const RegionBasicDistributionCreateEditPage = () => {
   const form = useForm<RegionBasicFormValues>({
-    resolver: zodResolver(regionBasicFormSchema),
+    resolver: zodResolver(regionBasicFormSchema) as any,
     mode: "onChange",
     defaultValues: {
       code: "",
@@ -35,12 +37,56 @@ const RegionBasicDistributionCreateEditPage = () => {
       },
       isDetailed: false,
       status: "active",
+      farmingMethodId: undefined,
+      rearingMethodId: undefined,
+      seedIds: [],
     },
   });
 
-  const { reset, handleSubmit, formState } = form;
+  const { reset, handleSubmit, control } = form;
   const { isEditMode, handleComplete, handleCancel, isSubmitting } =
     useRegionBasicCreateForm(reset);
+
+  const [name, cropIds, farmingMethodId, seedIds] = useWatch({
+    control,
+    name: ["name", "cropIds", "farmingMethodId", "seedIds"],
+  });
+  const { errors } = useFormState({ control });
+
+  const step1Valid =
+    !!name &&
+    name.trim().length > 0 &&
+    Array.isArray(cropIds) &&
+    cropIds.length > 0 &&
+    !errors.name &&
+    !errors.cropIds;
+
+  const step2Valid =
+    !!farmingMethodId && farmingMethodId > 0 && !!seedIds && seedIds.length > 0;
+
+  const steps = [
+    {
+      id: "step1",
+      title: "Thông tin chung",
+      description: "Nhập thông tin cơ bản của vùng trồng",
+      content: <RegionInfoStep showCenterPoint={true} />,
+      isValid: step1Valid,
+    },
+    {
+      id: "step2",
+      title: "Cấu hình canh tác",
+      description: "Thiết lập phương pháp & giống cây trồng",
+      content: <ZoneConfigurationStep />,
+      isValid: step2Valid,
+    },
+    {
+      id: "step3",
+      title: "Xác nhận thông tin",
+      description: "Xác nhận lại các thông tin trước khi hoàn thành",
+      content: <RegionConfirmationStep domainCode="CROP" />,
+      isValid: true,
+    },
+  ];
 
   return (
     <PageWrapper
@@ -57,31 +103,15 @@ const RegionBasicDistributionCreateEditPage = () => {
         </Button>
       }
     >
-      <div className="mx-auto max-w-4xl pb-10">
+      <div className="mx-auto max-w-5xl pb-10">
         <FormProvider {...form}>
-          <div className="space-y-6">
-            <RegionInfoStep showCenterPoint={true} />
-            <div className="flex justify-end gap-3 rounded-lg border bg-white p-4">
-              <Button
-                variant="outline"
-                type="button"
-                onClick={handleCancel}
-                disabled={isSubmitting}
-              >
-                Hủy
-              </Button>
-              <Button
-                type="button"
-                onClick={handleSubmit(handleComplete)}
-                disabled={isSubmitting || !formState.isValid}
-              >
-                {isSubmitting && (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                )}
-                {isEditMode ? "Lưu thay đổi" : "Tạo vùng trồng"}
-              </Button>
-            </div>
-          </div>
+          <StepperForm
+            steps={steps}
+            loading={isSubmitting}
+            onCancel={handleCancel}
+            onComplete={handleSubmit(handleComplete)}
+            completeLabel={isEditMode ? "Lưu thay đổi" : "Khởi tạo vùng trồng"}
+          />
         </FormProvider>
       </div>
     </PageWrapper>

@@ -132,6 +132,7 @@ export interface FarmRegionRequest {
   soilTypeId?: number;
   terrainFeatureId?: number;
   boundary?: CoordinatePoint[];
+  centerPoint?: CoordinatePoint;
   description?: string;
   status?: FoundationStatus;
   displayOrder?: number;

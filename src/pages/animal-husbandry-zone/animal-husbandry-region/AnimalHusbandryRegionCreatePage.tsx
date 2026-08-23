@@ -11,7 +11,7 @@ import {
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { ChevronLeft, Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
-import { FormProvider, useForm } from "react-hook-form";
+import { FormProvider, useForm, useWatch } from "react-hook-form";
 import { ZoneConfigurationStep } from "./components/ZoneConfigurationStep";
 import { ZoneGeneralInfoStep } from "./components/ZoneGeneralInfoStep";
 import { ZoneReviewStep } from "./components/ZoneReviewStep";
@@ -23,6 +23,7 @@ import { useCultivationZoneCreateForm } from "./hooks/useCultivationZoneCreateFo
 
 // Imports for the Basic Livestock Region form
 import { RegionLivestockInfoStep } from "../../region-chart/region-basic-distribution-livestock/components/RegionLivestockInfoStep";
+import { RegionConfirmationStep } from "../../region-chart/region-basic-distribution/components/RegionConfirmationStep";
 import {
   regionBasicFormSchema,
   type RegionBasicFormValues,
@@ -40,7 +41,7 @@ const CultivationRegionCreatePage = () => {
       code: "",
       selections: [],
       farmingMethodId: 0,
-      irrigationSystemId: 0,
+      rearingMethodId: 0,
       seedIds: [],
       certificateIds: [],
       personnelIds: [],
@@ -87,13 +88,16 @@ const CultivationRegionCreatePage = () => {
       },
       isDetailed: false,
       status: "active",
+      farmingMethodId: undefined,
+      rearingMethodId: undefined,
+      seedIds: [],
     },
   });
 
   const {
     reset: resetBasic,
     handleSubmit: handleSubmitBasic,
-    formState: formStateBasic,
+    control: controlBasic,
   } = basicForm;
   const {
     isEditMode: isEditModeBasic,
@@ -102,79 +106,113 @@ const CultivationRegionCreatePage = () => {
     isSubmitting: isSubmittingBasic,
   } = useRegionBasicLivestockCreateForm(resetBasic);
 
+  // Validation for step 2 — farmingMethodId required
+  const [detailedFarmingMethodId, detailedSeedIds] = useWatch({
+    control: detailedForm.control,
+    name: ["farmingMethodId", "seedIds"],
+  });
+  const [basicFarmingMethodId, basicSeedIds] = useWatch({
+    control: controlBasic,
+    name: ["farmingMethodId", "seedIds"],
+  });
+  const detailedStep2Valid =
+    !!detailedFarmingMethodId &&
+    detailedFarmingMethodId > 0 &&
+    !!detailedSeedIds &&
+    detailedSeedIds.length > 0;
+
+  const basicStep2Valid =
+    !!basicFarmingMethodId &&
+    basicFarmingMethodId > 0 &&
+    !!basicSeedIds &&
+    basicSeedIds.length > 0;
+
   // ─── Mode Switching Logic ────────────────────────────────────────────────
   const [isDetailMode, setIsDetailMode] = useState(true);
 
   useEffect(() => {
-    if (zoneData?.metadataJson?.formType) {
-      setIsDetailMode(zoneData.metadataJson.formType === "advanced");
+    if (zoneData) {
+      const type = zoneData.metadataJson?.formType;
+      if (type === "basic") {
+        setIsDetailMode(false);
+      } else if (type === "advanced") {
+        setIsDetailMode(true);
+      }
     }
   }, [zoneData]);
 
-  // Disable switcher on Edit mode since we can only edit the loaded entity type
-  const isEditMode = isDetailMode ? isEditModeDetailed : isEditModeBasic;
-  const isSubmitting = isDetailMode ? isSubmittingDetailed : isSubmittingBasic;
+  const isEditMode = isEditModeDetailed;
   const handleCancel = isDetailMode ? handleCancelDetailed : handleCancelBasic;
-
-  const selections = watchDetailed("selections") ?? [];
-  const farmingMethodId = watchDetailed("farmingMethodId");
-  const irrigationSystemId = watchDetailed("irrigationSystemId");
 
   const steps: Step[] = [
     {
-      id: "info",
+      id: "general",
       title: "Thông tin chung",
-      description: "Tên, phạm vi địa lý, chứng nhận",
-      isValid:
-        !formStateDetailed.errors.name &&
-        !formStateDetailed.errors.selections &&
-        !!watchDetailed("name") &&
-        selections.length > 0,
+      description: "Nhập thông tin cơ bản của vùng chăn nuôi",
       content: <ZoneGeneralInfoStep />,
     },
     {
-      id: "config",
+      id: "configuration",
       title: "Cấu hình chăn nuôi",
-      description: "Phương pháp, cấp nước, con giống",
-      isValid:
-        !formStateDetailed.errors.farmingMethodId &&
-        !formStateDetailed.errors.irrigationSystemId &&
-        farmingMethodId > 0 &&
-        irrigationSystemId > 0,
+      description: "Thiết lập phương pháp & con giống",
       content: <ZoneConfigurationStep />,
+      isValid: detailedStep2Valid,
     },
     {
       id: "review",
       title: "Xác nhận",
-      description: "Kiểm tra và hoàn tất",
-      isValid: formStateDetailed.isValid,
+      description: "Kiểm tra lại toàn bộ thông tin",
       content: <ZoneReviewStep />,
+      isValid: true,
+    },
+  ];
+
+  const basicSteps: Step[] = [
+    {
+      id: "general",
+      title: "Thông tin chung",
+      description: "Nhập thông tin cơ bản của vùng chăn nuôi",
+      content: <RegionLivestockInfoStep showCenterPoint={true} />,
+    },
+    {
+      id: "configuration",
+      title: "Cấu hình chăn nuôi",
+      description: "Thiết lập phương pháp & con giống",
+      content: <ZoneConfigurationStep />,
+      isValid: basicStep2Valid,
+    },
+    {
+      id: "review",
+      title: "Xác nhận thông tin",
+      description: "Xác nhận lại các thông tin trước khi hoàn thành",
+      content: <RegionConfirmationStep domainCode="LIVESTOCK" />,
+      isValid: true,
     },
   ];
 
   const handleDetailedComplete = async (data: CultivationZoneFormValues) => {
-    await handleCompleteDetailed(data, true);
+    await handleCompleteDetailed(data, isDetailMode);
   };
 
   return (
     <PageWrapper
       title={
-        isDetailMode
-          ? isEditModeDetailed
-            ? "Cập nhật vùng chăn nuôi"
-            : "Thiết lập vùng chăn nuôi"
-          : isEditModeBasic
-            ? "Cập nhật vùng chăn nuôi (Cơ bản)"
-            : "Thêm mới vùng chăn nuôi (Cơ bản)"
+        isEditMode
+          ? isDetailMode
+            ? "Cập nhật vùng canh tác"
+            : "Cập nhật vùng chăn nuôi"
+          : isDetailMode
+            ? "Khởi tạo vùng chăn nuôi"
+            : "Thêm mới vùng chăn nuôi"
       }
       description={
         isDetailMode
-          ? "Quy trình khởi tạo và cấu hình tiêu chuẩn cho đơn vị chăn nuôi"
-          : "Quản lý vùng chăn nuôi với giao diện cơ bản"
+          ? "Thiết lập vùng chăn nuôi chuyên sâu"
+          : "Quản lý vùng chăn nuôi cơ bản"
       }
       actions={
         <div className="flex items-center gap-4">
-          {!isEditMode && (
+          {/* {!isEditMode && (
             <div className="flex items-center gap-2.5 bg-white/80 backdrop-blur-sm border border-slate-200 rounded-full px-3 py-1.5 shadow-xs">
               <Label
                 htmlFor="zone-detail-mode"
@@ -190,14 +228,15 @@ const CultivationRegionCreatePage = () => {
                 }}
               />
             </div>
-          )}
+          )} */}
 
           <Button
             variant="outline"
             onClick={handleCancel}
-            disabled={isSubmitting}
+            disabled={isSubmittingDetailed || isSubmittingBasic}
           >
-            <ChevronLeft className="w-4 h-4 mr-2" /> Quay lại
+            <ChevronLeft className="mr-2 h-4 w-4" />
+            Quay lại
           </Button>
         </div>
       }
@@ -233,31 +272,17 @@ const CultivationRegionCreatePage = () => {
                 </FormProvider>
               ) : (
                 <FormProvider {...basicForm}>
-                  <div className="space-y-6">
-                    <RegionLivestockInfoStep showCenterPoint={true} />
-                    <div className="flex justify-end gap-3 rounded-lg border bg-white p-4">
-                      <Button
-                        variant="outline"
-                        type="button"
-                        onClick={handleCancelBasic}
-                        disabled={isSubmittingBasic}
-                      >
-                        Hủy
-                      </Button>
-                      <Button
-                        type="button"
-                        onClick={handleSubmitBasic(handleCompleteBasic)}
-                        disabled={isSubmittingBasic || !formStateBasic.isValid}
-                      >
-                        {isSubmittingBasic && (
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        )}
-                        {isEditModeBasic
-                          ? "Lưu thay đổi"
-                          : "Tạo vùng chăn nuôi"}
-                      </Button>
-                    </div>
-                  </div>
+                  <StepperForm
+                    steps={basicSteps}
+                    loading={isSubmittingBasic}
+                    onCancel={handleCancelBasic}
+                    onComplete={handleSubmitBasic(handleCompleteBasic)}
+                    completeLabel={
+                      isEditModeBasic
+                        ? "Lưu thay đổi"
+                        : "Khởi tạo vùng chăn nuôi"
+                    }
+                  />
                 </FormProvider>
               )}
             </div>

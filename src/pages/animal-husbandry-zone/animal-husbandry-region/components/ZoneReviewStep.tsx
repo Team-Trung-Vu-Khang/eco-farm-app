@@ -108,7 +108,7 @@ export const ZoneReviewStep = () => {
 
   const commonConfig = {
     farmingMethodId: String(formValues.farmingMethodId),
-    irrigationMethodId: String(formValues.irrigationSystemId),
+    irrigationMethodId: String(formValues.rearingMethodId),
     selectedCrops,
     seedSelections: (() => {
       const selections: Record<string, string[]> = {};

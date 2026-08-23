@@ -72,7 +72,7 @@ export function useCultivationZoneCreateForm(
           };
         }),
         farmingMethodId: zoneData.productionMethod?.id ?? 0,
-        irrigationSystemId: zoneData.irrigationSystem?.id ?? 0,
+        rearingMethodId: zoneData.rearingMethod?.id ?? 0,
         seedIds: (zoneData.seeds ?? zoneData?.subjectVariants ?? []).map(
           (s) => s.id,
         ),
@@ -91,7 +91,7 @@ export function useCultivationZoneCreateForm(
         name: "",
         selections: [],
         farmingMethodId: 0,
-        irrigationSystemId: 0,
+        rearingMethodId: 0,
         seedIds: [],
         certificateIds: [],
         personnelIds: [],
@@ -135,7 +135,7 @@ export function useCultivationZoneCreateForm(
           })
           .filter((s) => !isNaN(s.scopeId)),
         farmingMethodId: Number(data.farmingMethodId),
-        irrigationSystemId: Number(data.irrigationSystemId),
+        rearingMethodId: Number(data.rearingMethodId),
         seedIds: (data.seedIds ?? []).map(Number).filter((id) => !isNaN(id)),
         certificateIds: isEditMode
           ? (data.certificateIds ?? []).map(Number).filter((id) => !isNaN(id))
