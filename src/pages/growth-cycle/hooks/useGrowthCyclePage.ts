@@ -116,7 +116,7 @@ export function useGrowthCyclePage() {
       const scope =
         item.scopeType === "SUBJECT_GROUP"
           ? "group"
-          : item.scopeType === "SUBJECT_VARIANT" || varietyIdVal
+          : item.scopeType === "SUBJECT_VARIANT" || varietyIdVal || (item.productionSubjectVariantIds || []).length
             ? "variety"
             : "crop";
       const scopeNames =

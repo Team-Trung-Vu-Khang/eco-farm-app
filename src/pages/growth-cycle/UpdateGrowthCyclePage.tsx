@@ -88,6 +88,9 @@ export default function UpdateGrowthCyclePage() {
       const groupIds = (currentCycle.productionSubjectGroups || [])
         .map((item: { id?: number }) => item.id)
         .filter((id: number | undefined): id is number => id != null);
+      groupIds.push(...(currentCycle.productionSubjectGroupIds || []));
+      cropIds.push(...(currentCycle.productionSubjectIds || []));
+      varietyIds.push(...(currentCycle.productionSubjectVariantIds || []));
       // Keep the legacy fallback so an already cached old response can still
       // be opened while the new Season response is rolling out.
       const legacyCropId = currentCycle.productionSubject?.id;
@@ -228,22 +231,22 @@ export default function UpdateGrowthCyclePage() {
         values.scope === "group"
           ? {
               scopeType: "SUBJECT_GROUP" as const,
-              subjectGroupIds: values.groupIds.map(Number),
-              subjectIds: [],
-              subjectVariantIds: [],
+              productionSubjectGroupIds: values.groupIds.map(Number),
+              productionSubjectIds: [],
+              productionSubjectVariantIds: [],
             }
           : values.scope === "variety"
             ? {
                 scopeType: "SUBJECT_VARIANT" as const,
-                subjectGroupIds: [],
-                subjectIds: [],
-                subjectVariantIds: values.varietyIds.map(Number),
+                productionSubjectGroupIds: [],
+                productionSubjectIds: [],
+                productionSubjectVariantIds: values.varietyIds.map(Number),
               }
             : {
                 scopeType: "SUBJECT" as const,
-                subjectGroupIds: [],
-                subjectIds: values.cropIds.map(Number),
-                subjectVariantIds: [],
+                productionSubjectGroupIds: [],
+                productionSubjectIds: values.cropIds.map(Number),
+                productionSubjectVariantIds: [],
               };
 
       await updateTemplate.mutateAsync({

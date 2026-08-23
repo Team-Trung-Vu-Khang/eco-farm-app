@@ -111,16 +111,16 @@ export function useAquacultureGrowthCyclePage() {
       const cropNameVal = item.productionSubject?.name;
       const varietyIdVal = item.productionSubjectVariant?.id;
       const varietyNameVal = item.productionSubjectVariant?.name;
-      const groupItems = item.productionSubjectGroups || [];
-      const cropItems = item.productionSubjects || (item.productionSubject ? [item.productionSubject] : []);
-      const varietyItems = item.productionSubjectVariants || (item.productionSubjectVariant ? [item.productionSubjectVariant] : []);
+      const groupItems = item.productionSubjectGroups || (item.productionSubjectGroupIds || []).map((id: any) => ({ id }));
+      const cropItems = item.productionSubjects || (item.productionSubjectIds || []).map((id: any) => ({ id }));
+      const varietyItems = item.productionSubjectVariants || (item.productionSubjectVariantIds || []).map((id: any) => ({ id }));
       const expectedDaysVal = item.stages?.reduce((sum: number, s: any) => sum + (s.durationDays || 0), 0) ?? 0;
 
       return {
         id: (isFoundation ? "foundation-" : "user-") + item.id,
         name: item.name,
         cycleType: item.metadataJson?.cycleType || "aquaculture",
-        scope: groupItems.length ? "group" : varietyItems.length ? "variety" : "crop",
+        scope: item.scopeType === "SUBJECT_GROUP" || groupItems.length ? "group" : item.scopeType === "SUBJECT_VARIANT" || varietyItems.length ? "variety" : "crop",
         cropId: cropIdVal ? String(cropIdVal) : "",
         cropName: cropNameVal || "",
         variety: varietyNameVal || "",

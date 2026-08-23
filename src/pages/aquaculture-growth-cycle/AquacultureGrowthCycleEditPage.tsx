@@ -77,9 +77,9 @@ export default function AquacultureGrowthCycleEditPage() {
   useEffect(() => {
     if (currentCycle && !isLoaded) {
       const metadata: Record<string, unknown> = currentCycle.metadataJson || {};
-      const cropIds = (currentCycle.productionSubjects || (currentCycle.productionSubject ? [currentCycle.productionSubject] : [])).map((item: any) => String(item.id));
-      const varietyIds = (currentCycle.productionSubjectVariants || (currentCycle.productionSubjectVariant ? [currentCycle.productionSubjectVariant] : [])).map((item: any) => String(item.id));
-      const groupIds = (currentCycle.productionSubjectGroups || []).map((item: any) => String(item.id));
+      const cropIds = (currentCycle.productionSubjects || []).map((item: any) => String(item.id)).concat((currentCycle.productionSubjectIds || []).map(String)).filter((id: string, index: number, all: string[]) => id && all.indexOf(id) === index);
+      const varietyIds = (currentCycle.productionSubjectVariants || []).map((item: any) => String(item.id)).concat((currentCycle.productionSubjectVariantIds || []).map(String)).filter((id: string, index: number, all: string[]) => id && all.indexOf(id) === index);
+      const groupIds = (currentCycle.productionSubjectGroups || []).map((item: any) => String(item.id)).concat((currentCycle.productionSubjectGroupIds || []).map(String)).filter((id: string, index: number, all: string[]) => id && all.indexOf(id) === index);
       const totalDaysVal =
         currentCycle.stages?.reduce(
           (sum: number, s: any) => sum + (s.durationDays || 0),
@@ -208,9 +208,9 @@ export default function AquacultureGrowthCycleEditPage() {
           code: currentCycle?.code || undefined,
           name: values.name.trim(),
           scopeType,
-          subjectGroupIds: values.scope === "group" ? groupIds : [],
-          subjectIds: values.scope === "crop" ? cropIds : [],
-          subjectVariantIds: values.scope === "variety" ? varietyIds : [],
+          productionSubjectGroupIds: values.scope === "group" ? groupIds : [],
+          productionSubjectIds: values.scope === "crop" ? cropIds : [],
+          productionSubjectVariantIds: values.scope === "variety" ? varietyIds : [],
           description: currentCycle?.description || "Chu kỳ sinh trưởng",
           stages: preparedStages,
           displayOrder: currentCycle?.displayOrder || 1,

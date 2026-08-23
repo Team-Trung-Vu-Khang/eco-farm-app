@@ -74,14 +74,16 @@ export default function GrowthCycleDetailPage({
 
   const cropIdVal = cycle.productionSubject?.id;
   const varietyIdVal = cycle.productionSubjectVariant?.id;
+  const cropIds = cycle.productionSubjectIds || [];
+  const varietyIds = cycle.productionSubjectVariantIds || [];
   const expectedDaysVal =
     cycle.stages?.reduce(
       (sum: number, s: any) => sum + (s.durationDays || 0),
       0,
     ) ?? 0;
 
-  const cropName = cycle.productionSubject?.name || String(cropIdVal || "");
-  const varietyName = cycle.productionSubjectVariant?.name || "";
+  const cropName = cycle.productionSubject?.name || cropIds.join(", ") || String(cropIdVal || "");
+  const varietyName = cycle.productionSubjectVariant?.name || varietyIds.join(", ");
 
   return (
     <div className="space-y-6">

@@ -74,13 +74,14 @@ export default function UpdateAnimalGrowthCyclePage() {
   useEffect(() => {
     if (currentCycle && !isLoaded) {
       const metadata: Record<string, unknown> = currentCycle.metadataJson || {};
-      const cropIds = (currentCycle.productionSubjects || []).map((item: { id?: number }) => item.id).filter((id: number | undefined): id is number => id != null);
-      const varietyIds = (currentCycle.productionSubjectVariants || []).map((item: { id?: number }) => item.id).filter((id: number | undefined): id is number => id != null);
+      const cropIds = (currentCycle.productionSubjects || []).map((item: { id?: number }) => item.id).filter((id: number | undefined): id is number => id != null).concat(currentCycle.productionSubjectIds || []);
+      const varietyIds = (currentCycle.productionSubjectVariants || []).map((item: { id?: number }) => item.id).filter((id: number | undefined): id is number => id != null).concat(currentCycle.productionSubjectVariantIds || []);
       const cropIdVal = currentCycle.productionSubject?.id;
       const varietyIdVal = currentCycle.productionSubjectVariant?.id;
       if (cropIds.length === 0 && cropIdVal) cropIds.push(cropIdVal);
       if (varietyIds.length === 0 && varietyIdVal) varietyIds.push(varietyIdVal);
-      const groupIdVal = (currentCycle.productionSubjectGroups || [])[0]?.id;
+      const groupIds = (currentCycle.productionSubjectGroups || []).map((item: { id?: number }) => item.id).filter((id: number | undefined): id is number => id != null).concat(currentCycle.productionSubjectGroupIds || []);
+      const groupIdVal = groupIds[0];
       const totalDaysVal =
         currentCycle.stages?.reduce(
           (sum: number, s: any) => sum + (s.durationDays || 0),
@@ -93,7 +94,7 @@ export default function UpdateAnimalGrowthCyclePage() {
           | "animal"
           | "animal",
         scope: groupIdVal ? "group" : varietyIdVal ? "variety" : "crop",
-        groupIds: (currentCycle.productionSubjectGroups || []).map((item: { id?: number }) => item.id).filter((id: number | undefined): id is number => id != null).map(String),
+        groupIds: groupIds.map(String),
         cropIds: cropIds.map(String),
         varietyIds: varietyIds.map(String),
         totalDays: totalDaysVal,
@@ -221,9 +222,9 @@ export default function UpdateAnimalGrowthCyclePage() {
           code: currentCycle?.code || undefined,
           name: values.name.trim(),
           scopeType,
-          subjectGroupIds: values.scope === "group" ? values.groupIds.map(Number) : [],
-          subjectIds: values.scope === "crop" ? cropIds : [],
-          subjectVariantIds: values.scope === "variety" ? varietyIds : [],
+          productionSubjectGroupIds: values.scope === "group" ? values.groupIds.map(Number) : [],
+          productionSubjectIds: values.scope === "crop" ? cropIds : [],
+          productionSubjectVariantIds: values.scope === "variety" ? varietyIds : [],
           description: currentCycle?.description || "Chu kỳ sinh trưởng",
           stages: preparedStages,
           displayOrder: currentCycle?.displayOrder || 1,
