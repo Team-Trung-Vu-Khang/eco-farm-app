@@ -1,5 +1,5 @@
 import { Badge } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { FileText, MapPin, Users, CreditCard, Building2 } from "lucide-react";
+import { Building2, CreditCard, FileText, MapPin, Users } from "lucide-react";
 import type { BranchFormData } from "../../hooks/useBranchForm";
 
 interface ConfirmStepProps {
@@ -16,10 +16,6 @@ export function ConfirmStep({ formData, enterpriseName }: ConfirmStepProps) {
             <FileText className="w-5 h-5 text-primary" /> Thông tin chung
           </h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-4 text-sm">
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Mã chi nhánh:</span>
-              <span className="font-medium">{formData.code}</span>
-            </div>
             <div className="flex justify-between">
               <span className="text-muted-foreground">Tên chi nhánh:</span>
               <span className="font-medium">{formData.name}</span>
@@ -53,19 +49,14 @@ export function ConfirmStep({ formData, enterpriseName }: ConfirmStepProps) {
                 Địa chỉ:
               </span>
               <span className="font-medium text-left sm:text-right">
-                {[
-                  formData.address,
-                  formData.ward,
-                  formData.district,
-                  formData.city,
-                ]
-                  .filter(Boolean)
-                  .join(", ")}
+                {formData.address || ""}
               </span>
             </div>
             <div className="flex flex-col sm:flex-row sm:justify-between gap-1">
               <span className="text-muted-foreground">Website:</span>
-              <span className="font-medium break-all">{formData.website || "-"}</span>
+              <span className="font-medium break-all">
+                {formData.website || "-"}
+              </span>
             </div>
           </div>
         </div>
@@ -83,9 +74,7 @@ export function ConfirmStep({ formData, enterpriseName }: ConfirmStepProps) {
                   className="bg-card p-3 rounded border text-sm"
                 >
                   <div className="font-medium flex justify-between">
-                    <span>
-                      {contact.name || `Liên hệ ${index + 1}`}
-                    </span>
+                    <span>{contact.name || `Liên hệ ${index + 1}`}</span>
                     {contact.isPrimary && (
                       <Badge className="text-[10px] h-5 px-1">Chính</Badge>
                     )}

@@ -2,7 +2,7 @@ export type BranchStatus = "active" | "inactive" | "archived" | (string & {});
 
 export interface BranchOrganizationRecord {
   id: number | string;
-  code: string;
+  code?: string;
   name: string;
 }
 

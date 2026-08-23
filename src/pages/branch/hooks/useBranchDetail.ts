@@ -8,7 +8,10 @@ import {
 } from "@/features/branch";
 import { useSelectedWorkspaceId } from "@/features/workspace";
 
-export type BranchDetailView = BranchRecord & {
+export type BranchDetailView = Omit<
+  BranchRecord,
+  "bankAccounts" | "contacts"
+> & {
   enterpriseName: string;
   phone: string;
   email: string;

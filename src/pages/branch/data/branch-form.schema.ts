@@ -5,16 +5,16 @@ import type {
   BranchContactRequest,
   BranchCreateRequest,
   BranchRecord,
-  BranchStatus,
   BranchUpdateRequest,
 } from "@/features/branch";
-import { buildBranchFullAddress } from "../utils/form";
 
-export const BRANCH_FORM_STATUSES = [
-  "active",
-  "inactive",
-  "archived",
-] as const;
+export const BRANCH_FORM_STATUSES = ["active", "inactive", "archived"] as const;
+
+type BranchFormStatus = (typeof BRANCH_FORM_STATUSES)[number];
+
+function isBranchFormStatus(value: unknown): value is BranchFormStatus {
+  return BRANCH_FORM_STATUSES.includes(value as BranchFormStatus);
+}
 
 const branchContactFormSchema = z.object({
   contactId: z.union([z.string(), z.number()]).optional(),
@@ -46,7 +46,7 @@ const branchBankFormSchema = z.object({
 
 export const branchFormSchema = z.object({
   organizationId: z.string().trim().min(1, "Vui lòng chọn đơn vị chủ quản."),
-  code: z.string().trim().min(1, "Vui lòng nhập mã chi nhánh."),
+  code: z.string().trim().default(""),
   name: z.string().trim().min(1, "Vui lòng nhập tên chi nhánh."),
   taxCode: z.string().trim().default(""),
   taxAddress: z.string().trim().default(""),
@@ -88,21 +88,29 @@ export const emptyBranchFormValues: BranchFormInput = {
 };
 
 const isFilledContact = (contact: BranchContactRequest) =>
-  Boolean(contact.contactId || contact.name || contact.position || contact.phone || contact.email);
+  Boolean(
+    contact.contactId ||
+    contact.name ||
+    contact.position ||
+    contact.phone ||
+    contact.email,
+  );
 
 const isFilledBankAccount = (bankAccount: BranchBankRequest) =>
   Boolean(
     bankAccount.id ||
-      bankAccount.bankCode ||
-      bankAccount.bankName ||
-      bankAccount.accountNumber ||
-      bankAccount.accountHolder ||
-      bankAccount.branch ||
-      bankAccount.note ||
-      bankAccount.logoUrl,
+    bankAccount.bankCode ||
+    bankAccount.bankName ||
+    bankAccount.accountNumber ||
+    bankAccount.accountHolder ||
+    bankAccount.branch ||
+    bankAccount.note ||
+    bankAccount.logoUrl,
   );
 
-function dedupeContacts(contacts: BranchContactRequest[]) {
+function dedupeContacts<
+  T extends { name?: string; phone?: string; email?: string },
+>(contacts: T[]) {
   const seen = new Set<string>();
 
   return contacts.filter((contact) => {
@@ -144,7 +152,9 @@ export function createBranchFormValues(
   if (!branch) return emptyBranchFormValues;
 
   return {
-    organizationId: String(branch.organizationId ?? branch.organization?.id ?? ""),
+    organizationId: String(
+      branch.organizationId ?? branch.organization?.id ?? "",
+    ),
     code: branch.code ?? "",
     name: branch.name ?? "",
     taxCode: branch.taxCode ?? "",
@@ -172,15 +182,17 @@ export function createBranchFormValues(
       bankId: bankAccount.bank?.id,
       ownerType: bankAccount.ownerType ?? "",
       ownerId: bankAccount.ownerId,
-      bankCode: bankAccount.bank?.code ?? bankAccount.bankCode ?? "",
-      bankName: bankAccount.bank?.shortName ?? bankAccount.bank?.name ?? bankAccount.bankName ?? "",
-      bin: bankAccount.bank?.bin ?? bankAccount.bin ?? "",
+      bankCode: bankAccount.bank?.code ?? "",
+      bankName: bankAccount.bank?.shortName ?? bankAccount.bank?.name ?? "",
+      bin: bankAccount.bank?.bin ?? "",
       accountNumber: bankAccount.accountNumber ?? "",
       accountHolder: bankAccount.accountHolder ?? "",
       branch: bankAccount.branch ?? "",
       note: bankAccount.note ?? "",
-      logoUrl: bankAccount.bank?.logoUrl ?? bankAccount.logoUrl ?? "",
-      status: (bankAccount.status as BranchStatus) ?? "active",
+      logoUrl: bankAccount.bank?.logoUrl ?? "",
+      status: isBranchFormStatus(bankAccount.status)
+        ? bankAccount.status
+        : "active",
       isPrimary: Boolean(bankAccount.isPrimary),
       metadataJson: bankAccount.metadataJson ?? null,
     })),
@@ -193,16 +205,16 @@ export function buildBranchPayload(
   branchId?: number | string,
 ): BranchCreateRequest | BranchUpdateRequest {
   const contacts = ensurePrimaryContact(
-    dedupeContacts(values.contacts.filter(isFilledContact)).map<BranchContactRequest>(
-      (contact) => ({
-        contactId: contact.contactId,
-        name: contact.name.trim(),
-        position: contact.position.trim() || undefined,
-        phone: contact.phone.trim() || undefined,
-        email: contact.email.trim() || undefined,
-        isPrimary: contact.isPrimary,
-      }),
-    ),
+    dedupeContacts(
+      values.contacts.filter(isFilledContact),
+    ).map<BranchContactRequest>((contact) => ({
+      contactId: contact.contactId,
+      name: contact.name.trim(),
+      position: contact.position.trim() || undefined,
+      phone: contact.phone.trim() || undefined,
+      email: contact.email.trim() || undefined,
+      isPrimary: contact.isPrimary,
+    })),
   );
 
   const bankAccounts = ensurePrimaryContact(
@@ -227,13 +239,6 @@ export function buildBranchPayload(
       })),
   );
 
-  const address = buildBranchFullAddress({
-    address: values.address,
-    ward: values.ward,
-    district: values.district,
-    city: values.city,
-  });
-
   const payload: BranchCreateRequest = {
     ...(branchId ? { id: branchId } : {}),
     organizationId: Number(values.organizationId),
@@ -242,7 +247,7 @@ export function buildBranchPayload(
     taxCode: values.taxCode.trim() || undefined,
     taxAddress: values.taxAddress.trim() || undefined,
     website: values.website.trim() || undefined,
-    address: address || values.address.trim() || undefined,
+    address: values.address.trim() || undefined,
     city: values.city.trim() || undefined,
     district: values.district.trim() || undefined,
     ward: values.ward.trim() || undefined,

@@ -305,7 +305,7 @@ export function useBranchForm() {
   });
 
   const { getValues, setValue, reset, clearErrors, trigger } = form;
-  const formValues = useWatch({ control: form.control });
+  const formValues = useWatch({ control: form.control }) as BranchFormValues;
   const formData = useMemo(
     () => normalizeBranchFormData(formValues, enterprises),
     [enterprises, formValues],

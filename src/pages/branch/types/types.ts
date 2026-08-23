@@ -52,6 +52,7 @@ export interface BranchFormData {
   contactInfos: ContactInfo[];
   contacts: ContactPerson[];
   bankAccounts: BranchBankAccount[];
+  metadataJson?: Record<string, unknown> | null;
 }
 
 export interface BranchEnterpriseOption {

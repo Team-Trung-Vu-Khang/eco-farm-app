@@ -103,35 +103,7 @@ export function BasicInfoStep({ enterprises, isEdit }: BasicInfoStepProps) {
         ) : null}
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label htmlFor="code" required>
-            Mã chi nhánh
-          </Label>
-          <Controller
-            control={control}
-            name="code"
-            render={({ field }) => (
-              <Input
-                id="code"
-                value={field.value}
-                onChange={(event) => {
-                  clearErrors("code");
-                  field.onChange(event.target.value);
-                }}
-                onBlur={field.onBlur}
-                ref={field.ref}
-                name={field.name}
-                placeholder="VD: CN001"
-                aria-invalid={!!errors.code}
-              />
-            )}
-          />
-          {errors.code ? (
-            <p className="text-xs text-red-600">{errors.code.message}</p>
-          ) : null}
-        </div>
-
+      <div className="grid grid-cols-1 gap-4">
         <div className="space-y-2">
           <Label htmlFor="name" required>
             Tên chi nhánh
