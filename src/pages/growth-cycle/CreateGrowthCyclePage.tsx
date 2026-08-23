@@ -15,7 +15,7 @@ import {
   CardContent,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { ArrowLeft, Loader2 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import { GrowthCycleSteps } from "./components/GrowthCycleSteps";
 import { useCreateGrowthCycleForm } from "./hooks/useCreateGrowthCycleForm";
@@ -60,14 +60,12 @@ export default function CreateGrowthCyclePage() {
     params: { page: 0, size: 100, status: "active" },
   });
 
-  const totalDays = useMemo(
-    () =>
-      watchedStages.reduce(
-        (sum, stage) => sum + parseDurationToDays(String(stage.duration)),
-        0,
-      ),
-    [watchedStages],
-  );
+  const totalDays = form
+    .getValues("stages")
+    .reduce(
+      (sum, stage) => sum + parseDurationToDays(String(stage.duration)),
+      0,
+    );
   const selectedGroupNames = watchedGroupIds.map(
     (id) => cropGroups.find((group) => String(group.id) === id)?.name || id,
   );

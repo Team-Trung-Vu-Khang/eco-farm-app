@@ -14,7 +14,7 @@ import {
   CardContent,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { ArrowLeft, Loader2 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import {
   animalGrowthCycleFormSchema,
@@ -57,14 +57,15 @@ export default function CreateAquacultureGrowthCyclePage() {
   const watchedGroupIds = watch("groupIds") || [];
   const watchedStages = watch("stages") || [];
 
-  const totalDays = useMemo(
-    () =>
-      watchedStages.reduce(
-        (sum, stage) => sum + parseDurationToDays(String(stage.duration)),
-        0,
-      ),
-    [watchedStages],
-  );
+  // Read the latest form values when the outer confirmation dialog opens.
+  // The stages step updates nested fields internally, so relying only on the
+  // parent's watched snapshot can leave this summary one render behind.
+  const totalDays = form
+    .getValues("stages")
+    .reduce(
+      (sum, stage) => sum + parseDurationToDays(String(stage.duration)),
+      0,
+    );
 
   const { crops, varieties, handleComplete, setLocation, isSubmitting } =
     useAquacultureCreateGrowthCycleForm();
