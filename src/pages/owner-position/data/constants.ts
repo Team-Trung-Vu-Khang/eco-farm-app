@@ -7,7 +7,6 @@ export const POSITION_STATUS_OPTIONS = [
 ] as const;
 
 export const emptyPositionFormData: PositionFormData = {
-  code: "",
   name: "",
   positionGroupId: "",
   description: "",

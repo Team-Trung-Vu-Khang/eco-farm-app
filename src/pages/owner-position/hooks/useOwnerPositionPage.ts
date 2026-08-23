@@ -49,7 +49,6 @@ function buildCreatePayload(formData: PositionFormData): FarmPositionRequest {
     : undefined;
 
   return {
-    code: formData.code.trim().toUpperCase(),
     name: formData.name.trim(),
     description: formData.description.trim() || undefined,
     status: "active",
@@ -76,7 +75,6 @@ function buildUpdatePayload(
     : undefined;
 
   return {
-    code: formData.code.trim().toUpperCase(),
     name: formData.name.trim(),
     description: formData.description.trim() || undefined,
     status: formData.status as FarmMasterDataStatus,
