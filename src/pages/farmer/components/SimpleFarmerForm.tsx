@@ -72,7 +72,7 @@ export default function SimpleFarmerForm({
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2"><Label required>Mã nông hộ</Label><Input value={formData.code} onChange={(e) => onChange("code", e.target.value)} placeholder="VD: NH001" /></div>
             <div className="space-y-2"><Label required>Tên nông hộ</Label><Input value={formData.name} onChange={(e) => onChange("name", e.target.value)} placeholder="Nhập tên nông hộ" /></div>
-            <div className="space-y-2"><Label required>Mã số thuế</Label><Input value={formData.taxCode} onChange={(e) => onChange("taxCode", e.target.value)} placeholder="Nhập mã số thuế" /></div>
+            <div className="space-y-2"><Label>Mã số thuế</Label><Input value={formData.taxCode} onChange={(e) => onChange("taxCode", e.target.value)} placeholder="Nhập mã số thuế" /></div>
             <div className="space-y-2"><Label required>Số điện thoại</Label><Input value={formData.phone} onChange={(e) => onChange("phone", e.target.value)} placeholder="Nhập số điện thoại" /></div>
           </div>
           <div className="space-y-4 border-t border-slate-100 pt-5">
