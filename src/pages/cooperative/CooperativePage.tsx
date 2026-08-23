@@ -55,6 +55,7 @@ export default function CooperativePage() {
         type="cooperative"
         personalColumns={columns}
         onTabChange={setSourceTab}
+        onSystemView={(item) => setLocation(`/cooperative/${item.id}`)}
         searchPlaceholder="Tìm kiếm hợp tác xã hệ thống..."
         personal={<CooperativeTable
         columns={columns}

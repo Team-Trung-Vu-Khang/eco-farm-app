@@ -56,6 +56,7 @@ export default function EnterprisePage() {
         type="enterprise"
         personalColumns={columns}
         onTabChange={setSourceTab}
+        onSystemView={(item) => setLocation(`/enterprise/${item.id}`)}
         searchPlaceholder="Tìm kiếm doanh nghiệp hệ thống..."
         personal={<DataTable
         columns={columns}

@@ -57,6 +57,7 @@ export default function FarmerPage() {
         type="farm"
         personalColumns={columns}
         onTabChange={setSourceTab}
+        onSystemView={handleView}
         searchPlaceholder="Tìm kiếm nông hộ hệ thống..."
         personal={<DataTable
         columns={columns}
