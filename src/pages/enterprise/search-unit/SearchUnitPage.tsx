@@ -21,6 +21,7 @@ const SearchUnitPage = () => {
     isAdvancedSearchOpen,
     setIsAdvancedSearchOpen,
     advancedFilters,
+    draftFilters,
     bankSearchQuery,
     setBankSearchQuery,
     branchSearchQuery,
@@ -34,6 +35,8 @@ const SearchUnitPage = () => {
     activeFilterCount,
     toggleFilter,
     resetFilters,
+    applyFilters,
+    filterOptions,
     setLocation,
   } = useEnterpriseSearch();
 
@@ -85,11 +88,14 @@ const SearchUnitPage = () => {
 
           <AdvancedFilterPanel
             isOpen={isAdvancedSearchOpen}
-            filters={advancedFilters}
+            filters={draftFilters}
             onToggleFilter={toggleFilter}
             onReset={resetFilters}
-            onClose={() => setIsAdvancedSearchOpen(false)}
+            onClose={() => {
+              applyFilters();
+            }}
             resultCount={enterprises.length}
+            options={filterOptions}
           />
 
           {!isAdvancedSearchOpen && (
