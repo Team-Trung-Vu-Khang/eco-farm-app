@@ -99,7 +99,10 @@ export function useAquacultureZoneCreateForm(
   }, [isEditMode, zoneData, reset]);
 
   // ─── Submit ────────────────────────────────────────────────────────────
-  const handleComplete = async (data: CultivationZoneFormValues) => {
+  const handleComplete = async (
+    data: CultivationZoneFormValues,
+    isDetailMode: boolean,
+  ) => {
     setIsSubmitting(true);
     try {
       const request: FarmCultivationZoneRequest = {
@@ -127,7 +130,9 @@ export function useAquacultureZoneCreateForm(
           })
           .filter((s) => !isNaN(s.scopeId)),
         farmingMethodId: Number(data.farmingMethodId),
-        rearingMethodId: data.rearingMethodId ? Number(data.rearingMethodId) : undefined,
+        rearingMethodId: data.rearingMethodId
+          ? Number(data.rearingMethodId)
+          : undefined,
         seedIds: (data.seedIds ?? []).map(Number).filter((id) => !isNaN(id)),
         certificateIds: isEditMode
           ? (data.certificateIds ?? []).map(Number).filter((id) => !isNaN(id))
@@ -138,7 +143,10 @@ export function useAquacultureZoneCreateForm(
         notes: data.notes || undefined,
         status: data.status,
         displayOrder: zoneData?.displayOrder,
-        metadataJson: zoneData?.metadataJson,
+        metadataJson: {
+          ...(zoneData?.metadataJson ?? {}),
+          formType: isDetailMode ? "advanced" : "basic",
+        },
       };
 
       if (isEditMode && zoneId > 0) {
@@ -169,5 +177,5 @@ export function useAquacultureZoneCreateForm(
 
   const handleCancel = () => setLocation(basePath);
 
-  return { handleComplete, handleCancel, isSubmitting, isEditMode };
+  return { handleComplete, handleCancel, isSubmitting, isEditMode, zoneData };
 }

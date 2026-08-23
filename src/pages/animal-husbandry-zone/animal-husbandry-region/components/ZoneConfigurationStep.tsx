@@ -28,6 +28,7 @@ import {
   type MethodApplicationSubject,
 } from "@/features/foundation";
 import { useDebounce } from "@/shared/hooks/useDebounce";
+import { useIrrigationSystems } from "@/features/master-data/hooks/useIrrigationSystems";
 import type { CultivationZoneFormValues } from "../data/cultivation-zone-form.schema";
 
 interface VariantSelectorDialogProps {
@@ -200,6 +201,10 @@ export const ZoneConfigurationStep = () => {
     params: { domainCode: "LIVESTOCK", size: 100, status: "active" },
   });
 
+  const { items: irrigationSystems, loading: irLoading } = useIrrigationSystems({
+    params: { size: 100 },
+  });
+
   const selectedFarmingMethodId = watch("farmingMethodId");
   const selectedSeedIds = watch("seedIds") ?? [];
 
@@ -306,6 +311,49 @@ export const ZoneConfigurationStep = () => {
                   )}
                   <p className="text-xs text-muted-foreground">
                     Quyết định tiêu chuẩn chăn nuôi áp dụng
+                  </p>
+                </div>
+              )}
+            />
+
+            {/* Irrigation System */}
+            <Controller
+              control={control}
+              name="irrigationSystemId"
+              render={({ field }) => (
+                <div className="space-y-2 mt-4">
+                  <Label className="text-sm font-medium">
+                    Hệ thống cấp nước/chuồng trại{" "}
+                    <span className="text-red-500">*</span>
+                  </Label>
+                  <Select
+                    disabled={irLoading}
+                    value={field.value > 0 ? field.value.toString() : ""}
+                    onValueChange={(val) => {
+                      field.onChange(parseInt(val, 10));
+                    }}
+                  >
+                    <SelectTrigger className="h-11 bg-white">
+                      <SelectValue placeholder="Chọn hệ thống..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {irrigationSystems.map((system) => (
+                        <SelectItem
+                          key={system.id}
+                          value={system.id.toString()}
+                        >
+                          <span className="font-medium">{system.name}</span>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {errors.irrigationSystemId && (
+                    <p className="text-xs font-medium text-red-500 mt-1">
+                      {errors.irrigationSystemId.message}
+                    </p>
+                  )}
+                  <p className="text-xs text-muted-foreground">
+                    Chọn hệ thống chuồng trại hoặc cấp nước phù hợp
                   </p>
                 </div>
               )}

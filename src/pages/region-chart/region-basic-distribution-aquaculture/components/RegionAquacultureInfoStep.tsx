@@ -1,30 +1,30 @@
+import { useCatalog } from "@/features/foundation/hooks/useCatalog";
+import { useProductionSubjects } from "@/features/foundation/hooks/useProductionSubjects";
+import { useAddressOptions } from "@/features/master-data/hooks/useAddressOptions";
 import {
   Card,
   CardContent,
   CardHeader,
   CardTitle,
+  Combobox,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
   Input,
+  MultiSelect,
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
   Textarea,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-  Combobox,
-  MultiSelect,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import { useMemo } from "react";
 import { useFormContext } from "react-hook-form";
-import { useAddressOptions } from "@/features/master-data/hooks/useAddressOptions";
-import { useCatalog } from "@/features/foundation/hooks/useCatalog";
-import { useCrops } from "@/features/foundation/hooks/useCrops";
-import { useEffect, useState, useMemo } from "react";
-import type { RegionBasicFormValues } from "../region-basic-distribution/data/region-basic-form.schema";
 import { CenterPointMapPicker } from "../../region-distribution/components/CenterPointMapPicker";
+import type { RegionBasicFormValues } from "../../region-basic-distribution/data/region-basic-form.schema";
 
 interface RegionAquacultureInfoStepProps {
   showCenterPoint?: boolean;
@@ -35,16 +35,17 @@ export const RegionAquacultureInfoStep = ({
 }: RegionAquacultureInfoStepProps = {}) => {
   const { items: lands } = useCatalog("soil-types");
   const { items: terrains } = useCatalog("terrain-features");
-  const { data: cropsData } = useCrops({ params: { size: 100 } });
-  const crops = cropsData?.content || [];
+  const { items: subjects } = useProductionSubjects({
+    params: { domainCode: "AQUACULTURE", size: 100, status: "active" },
+  });
 
   const cropOptions = useMemo(() => {
-    return crops.map((crop) => ({
+    return subjects.map((crop) => ({
       value: crop.id.toString(),
       label: crop.name,
       image: crop.imageUrl,
     }));
-  }, [crops]);
+  }, [subjects]);
 
   const { control, setValue, watch } = useFormContext<RegionBasicFormValues>();
   const provinceId = watch("provinceId");
@@ -79,7 +80,10 @@ export const RegionAquacultureInfoStep = ({
             name="cropIds"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Đối tượng nuôi trồng chính</FormLabel>
+                <FormLabel>
+                  Đối tượng nuôi trồng chính{" "}
+                  <span className="text-red-500">*</span>
+                </FormLabel>
                 <FormControl>
                   <MultiSelect
                     options={cropOptions}

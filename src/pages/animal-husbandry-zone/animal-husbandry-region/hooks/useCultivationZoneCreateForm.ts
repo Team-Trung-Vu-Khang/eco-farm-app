@@ -104,7 +104,10 @@ export function useCultivationZoneCreateForm(
   }, [isEditMode, zoneData, reset, hasInitialized, workspaceId]);
 
   // ─── Submit ────────────────────────────────────────────────────────────
-  const handleComplete = async (data: CultivationZoneFormValues) => {
+  const handleComplete = async (
+    data: CultivationZoneFormValues,
+    isDetailMode: boolean,
+  ) => {
     setIsSubmitting(true);
     try {
       const request: FarmCultivationZoneRequest = {
@@ -146,6 +149,7 @@ export function useCultivationZoneCreateForm(
         metadataJson: {
           ...(zoneData?.metadataJson ?? {}),
           enterpriseId: data.enterpriseId,
+          formType: isDetailMode ? "advanced" : "basic",
         },
       };
 
@@ -177,5 +181,5 @@ export function useCultivationZoneCreateForm(
 
   const handleCancel = () => setLocation("/animal-husbandry-region");
 
-  return { handleComplete, handleCancel, isSubmitting, isEditMode };
+  return { handleComplete, handleCancel, isSubmitting, isEditMode, zoneData };
 }

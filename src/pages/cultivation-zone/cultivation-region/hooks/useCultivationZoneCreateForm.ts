@@ -105,7 +105,10 @@ export function useCultivationZoneCreateForm(
   }, [isEditMode, zoneData, reset, hasInitialized, workspaceId]);
 
   // ─── Submit ────────────────────────────────────────────────────────────
-  const handleComplete = async (data: CultivationZoneFormValues) => {
+  const handleComplete = async (
+    data: CultivationZoneFormValues,
+    isDetailMode: boolean,
+  ) => {
     setIsSubmitting(true);
     try {
       const request: FarmCultivationZoneRequest = {
@@ -132,7 +135,9 @@ export function useCultivationZoneCreateForm(
           })
           .filter((s) => !isNaN(s.scopeId)),
         farmingMethodId: Number(data.farmingMethodId),
-        rearingMethodId: data.rearingMethodId ? Number(data.rearingMethodId) : undefined,
+        rearingMethodId: data.rearingMethodId
+          ? Number(data.rearingMethodId)
+          : undefined,
         seedIds: (data.seedIds ?? []).map(Number).filter((id) => !isNaN(id)),
         certificateIds: (data.certificateIds ?? [])
           .map(Number)
@@ -146,6 +151,7 @@ export function useCultivationZoneCreateForm(
         metadataJson: {
           ...(zoneData?.metadataJson ?? {}),
           enterpriseId: data.enterpriseId,
+          formType: isDetailMode ? "advanced" : "basic",
         },
       };
 
@@ -177,5 +183,5 @@ export function useCultivationZoneCreateForm(
 
   const handleCancel = () => setLocation("/cultivation-region");
 
-  return { handleComplete, handleCancel, isSubmitting, isEditMode };
+  return { handleComplete, handleCancel, isSubmitting, isEditMode, zoneData };
 }

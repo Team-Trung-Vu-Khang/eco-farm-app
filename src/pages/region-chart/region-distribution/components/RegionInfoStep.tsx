@@ -22,7 +22,7 @@ import { OrganizationSelector } from "@/pages/cultivation-zone/cultivation-regio
 import { useFormContext } from "react-hook-form";
 import { useAddressOptions } from "@/features/master-data/hooks/useAddressOptions";
 import { useCatalog } from "@/features/foundation/hooks/useCatalog";
-import { useCrops } from "@/features/foundation/hooks/useCrops";
+import { useProductionSubjects } from "@/features/foundation/hooks/useProductionSubjects";
 import { useEffect, useState, useMemo } from "react";
 import type { RegionFormValues } from "../data/region-form.schema";
 import { CenterPointMapPicker } from "./CenterPointMapPicker";
@@ -38,16 +38,17 @@ export const RegionInfoStep = ({
 }: RegionInfoStepProps = {}) => {
   const { items: lands } = useCatalog("soil-types");
   const { items: terrains } = useCatalog("terrain-features");
-  const { data: cropsData } = useCrops({ params: { size: 100 } });
-  const crops = cropsData?.content || [];
+  const { items: subjects } = useProductionSubjects({
+    params: { domainCode: "CROP", size: 100, status: "active" },
+  });
 
   const cropOptions = useMemo(() => {
-    return crops.map((crop) => ({
+    return subjects.map((crop) => ({
       value: crop.id.toString(),
       label: crop.name,
       image: crop.imageUrl,
     }));
-  }, [crops]);
+  }, [subjects]);
 
   const { control, setValue, watch } = useFormContext<RegionFormValues>();
   const provinceId = watch("provinceId");
@@ -154,7 +155,10 @@ export const RegionInfoStep = ({
             name="cropIds"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Cây trồng chính</FormLabel>
+                <FormLabel>
+                  Cây trồng chính
+                  <span className="text-red-500">*</span>
+                </FormLabel>
                 <FormControl>
                   <MultiSelect
                     options={cropOptions}

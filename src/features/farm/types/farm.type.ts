@@ -317,6 +317,7 @@ export interface FarmCultivationZoneRequest {
   personnelIds?: number[];
   farmingMethodId: number;
   rearingMethodId?: number;
+  irrigationSystemId?: number;
   seedIds?: number[];
   notes?: string;
   status?: FarmCultivationZoneStatus;
@@ -335,6 +336,7 @@ export interface FarmCultivationZoneResponse {
   farmingMethod?: CatalogRef;
   productionMethod?: CatalogRef;
   rearingMethod?: CatalogRef;
+  irrigationSystem?: CatalogRef;
   seeds?: SeedRef[];
   notes?: string;
   subjectVariants?: SubjectVariantRef[];

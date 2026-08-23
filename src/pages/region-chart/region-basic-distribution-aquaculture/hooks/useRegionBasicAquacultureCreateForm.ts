@@ -4,16 +4,28 @@ import { useLocation, useRoute } from "wouter";
 import { useToast } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { useRegionById } from "@/features/farm/hooks/useRegions";
 import { useRegionMutations } from "@/features/farm/hooks/useRegionMutations";
-import type { FarmRegionRequest } from "@/features/farm/types/farm.type";
+import type {
+  FarmRegionRequest,
+  FarmRegionResponse,
+} from "@/features/farm/types/farm.type";
+import type { RegionBasicFormValues } from "../../region-basic-distribution/data/region-basic-form.schema";
 
-import type { RegionBasicFormValues } from "../region-basic-distribution/data/region-basic-form.schema";
+type RegionCropSource = {
+  id?: number;
+  cropId?: number;
+  crop?: { id?: number };
+  productionSubjectId?: number;
+  productionSubject?: { id?: number };
+};
 
 export function useRegionBasicAquacultureCreateForm(
   reset: (values: Partial<RegionBasicFormValues>) => void,
 ) {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
-  const [match, params] = useRoute("/cultivation-region-identification/aquaculture/edit/:id");
+  const [match, params] = useRoute(
+    "/cultivation-region-identification/aquaculture/edit/:id",
+  );
   const isEditMode = match && !!params?.id;
   const regionId = parseInt(params?.id || "0", 10);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -30,14 +42,31 @@ export function useRegionBasicAquacultureCreateForm(
 
     if (isEditMode) {
       if (regionDataResponse) {
+        const cropSources: RegionCropSource[] =
+          (
+            regionDataResponse as FarmRegionResponse & {
+              productionSubjects?: RegionCropSource[];
+            }
+          ).productionSubjects ||
+          regionDataResponse.crops ||
+          [];
+
         reset({
           id: regionDataResponse.id,
           code: regionDataResponse.code,
           name: regionDataResponse.name || "",
-          cropIds:
-            regionDataResponse.crops
-              ?.map((c) => (c.cropId || c.crop?.id || 0).toString())
-              .filter((id) => id !== "0") || [],
+          cropIds: cropSources
+            .map((c) =>
+              (
+                c.cropId ||
+                c.crop?.id ||
+                c.productionSubjectId ||
+                c.productionSubject?.id ||
+                c.id ||
+                0
+              ).toString(),
+            )
+            .filter((id) => id !== "0"),
           area: regionDataResponse.acreage || undefined,
           provinceId: regionDataResponse.province || "",
           wardId: regionDataResponse.ward || regionDataResponse.district || "",
@@ -58,9 +87,10 @@ export function useRegionBasicAquacultureCreateForm(
             address: (regionDataResponse.metadataJson?.address as string) || "",
           },
           isDetailed: false,
-          status: regionDataResponse.status ?? "active",
+          status:
+            (regionDataResponse.status as "active" | "inactive" | "archived") ??
+            "active",
         });
-        // eslint-disable-next-line react-hooks/set-state-in-effect
         setHasInitialized(true);
       }
     } else {
@@ -106,9 +136,13 @@ export function useRegionBasicAquacultureCreateForm(
         status: data.status,
         metadataJson: {
           address: data.metadataJson?.address,
+          formType: "basic",
         },
         crops: data.cropIds?.length
-          ? data.cropIds.map((id) => ({ cropId: parseInt(id, 10), role: "MAIN" }))
+          ? data.cropIds.map((id) => ({
+              cropId: parseInt(id, 10),
+              role: "MAIN",
+            }))
           : undefined,
         domainCode: "AQUACULTURE",
       };
