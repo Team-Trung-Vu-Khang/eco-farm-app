@@ -1,17 +1,11 @@
-import React from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
-  Badge,
   Button,
   Checkbox,
   cn,
   Label,
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { Filter, Layers } from "lucide-react";
+import { ChevronDown, Filter, Layers } from "lucide-react";
 import { type AdvancedFilters, FILTER_GROUP_CONFIG } from "../data/constants";
 
 interface MultiSelectFieldProps {
@@ -30,75 +24,68 @@ const MultiSelectField = ({
   onToggle,
   placeholder = "Tất cả",
   icon: Icon,
-}: MultiSelectFieldProps) => (
-  <div className="space-y-2">
+}: MultiSelectFieldProps) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleOutsideClick = (event: MouseEvent) => {
+      if (!containerRef.current?.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleOutsideClick);
+    return () => document.removeEventListener("mousedown", handleOutsideClick);
+  }, []);
+
+  return (
+  <div ref={containerRef} className="relative space-y-2">
     <div className="flex items-center gap-2 ml-1">
       {Icon && <Icon size={14} className="text-slate-400" />}
       <Label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">
         {label}
       </Label>
     </div>
-    <Select
-      value={selectedValues?.[0]?.toString() || ""}
-      onValueChange={(v) => onToggle(v)}
+    <button
+      type="button"
+      className="flex h-10 w-full items-center justify-between rounded-md border border-slate-200 bg-white px-3 text-left text-sm shadow-sm"
+      onClick={() => setIsOpen((open) => !open)}
     >
-      <SelectTrigger className="rounded-md bg-white border-slate-200 h-10 shadow-sm text-sm">
-        <SelectValue
-          placeholder={
-            selectedValues && selectedValues.length > 0
-              ? `Đã chọn ${selectedValues.length}`
-              : placeholder
-          }
-        />
-      </SelectTrigger>
-      <SelectContent>
-        {options.map((opt) => (
-          <SelectItem
-            key={opt.id}
-            value={opt.id.toString()}
-            className={cn(
-              selectedValues?.includes(opt.id) && "bg-primary/5 font-bold",
-            )}
-          >
-            <div className="flex items-center gap-2 py-0.5">
-              <Checkbox
-                checked={selectedValues?.includes(opt.id)}
-                onCheckedChange={() => onToggle(opt.id)}
-                className="mr-2"
-              />
-              <span className="text-sm">{opt.name}</span>
-            </div>
-          </SelectItem>
-        ))}
-      </SelectContent>
-    </Select>
-    {selectedValues && selectedValues.length > 0 && (
-      <div className="flex flex-wrap gap-1.5 mt-2">
-        {selectedValues.map((val) => {
-          const opt = options.find((o) => o.id.toString() === val.toString());
+      <span className={selectedValues?.length ? "text-slate-800" : "text-slate-500"}>
+        {selectedValues?.length === 1
+          ? options.find(
+              (option) => option.id.toString() === selectedValues[0]?.toString(),
+            )?.name || placeholder
+          : selectedValues?.length
+            ? `Đã chọn ${selectedValues.length}`
+            : placeholder}
+      </span>
+      <ChevronDown size={16} className="text-slate-400" />
+    </button>
+    {isOpen && (
+      <div className="absolute z-50 mt-1 max-h-60 w-full overflow-y-auto rounded-md border bg-white p-1 shadow-lg">
+        {options.map((opt) => {
+          const isSelected = selectedValues?.includes(opt.id);
           return (
-            <Badge
-              key={val}
-              variant="secondary"
-              className="text-[10px] h-6 bg-primary/5 text-primary border-primary/20 gap-1 px-2 rounded-md font-bold"
+            <button
+              key={opt.id}
+              type="button"
+              className={cn(
+                "flex w-full items-center gap-2 rounded px-3 py-2 text-left text-sm hover:bg-slate-50",
+                isSelected && "bg-primary/5 font-bold",
+              )}
+              onClick={() => onToggle(opt.id)}
             >
-              {opt?.name || val}
-              <button
-                className="cursor-pointer hover:text-destructive transition-colors ml-1"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onToggle(val);
-                }}
-              >
-                ×
-              </button>
-            </Badge>
+              <Checkbox checked={isSelected} className="mr-2" />
+              <span>{opt.name}</span>
+            </button>
           );
         })}
       </div>
     )}
   </div>
-);
+  );
+};
 
 interface AdvancedFilterPanelProps {
   isOpen: boolean;
@@ -107,6 +94,7 @@ interface AdvancedFilterPanelProps {
   onReset: () => void;
   onClose: () => void;
   resultCount: number;
+  options: Record<keyof AdvancedFilters, { id: string; name: string }[]>;
 }
 
 export const AdvancedFilterPanel: React.FC<AdvancedFilterPanelProps> = ({
@@ -116,11 +104,12 @@ export const AdvancedFilterPanel: React.FC<AdvancedFilterPanelProps> = ({
   onReset,
   onClose,
   resultCount,
+  options,
 }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="bg-white z-30 animate-in slide-in-from-top-2 duration-200 mt-2 border rounded-md overflow-hidden shadow-sm">
+    <div className="relative z-30 mt-2 overflow-visible rounded-md border bg-white shadow-sm animate-in slide-in-from-top-2 duration-200">
       <div className="px-6 py-4 bg-slate-50 border-b flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Filter size={18} className="text-primary" />
@@ -151,7 +140,7 @@ export const AdvancedFilterPanel: React.FC<AdvancedFilterPanelProps> = ({
                   key={field.key}
                   label={field.label}
                   icon={field.icon}
-                  options={field.options}
+                  options={options[field.key]}
                   selectedValues={filters[field.key]}
                   onToggle={(val) => onToggleFilter(field.key, val)}
                 />
@@ -185,7 +174,7 @@ export const AdvancedFilterPanel: React.FC<AdvancedFilterPanelProps> = ({
             className="w-full h-11 rounded-md font-bold bg-primary shadow-lg shadow-primary/20 hover:scale-[1.02] transition-transform"
             onClick={onClose}
           >
-            Áp dụng và thu gọn
+            Áp dụng
           </Button>
         </div>
       </div>

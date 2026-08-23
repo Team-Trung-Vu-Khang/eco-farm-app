@@ -2,7 +2,12 @@ import { useToast } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation } from "wouter";
 
-import { useOrganizationSearch, type OrganizationRecord } from "@/features/organization";
+import {
+  organizationApi,
+  type OrganizationRecord,
+  type OrganizationQueryParams,
+} from "@/features/organization";
+import { useMasterData } from "@/features/master-data";
 import { useSelectedWorkspaceId } from "@/features/workspace";
 import type { CultivationRegion } from "@/stores/useCultivationRegionStore";
 import useCultivationRegionStore from "@/stores/useCultivationRegionStore";
@@ -178,6 +183,9 @@ export function useEnterpriseSearch() {
   const { toast } = useToast();
   const [, setLocation] = useLocation();
   const workspaceId = useSelectedWorkspaceId();
+  const businessLinesQuery = useMasterData("business-lines", {
+    params: { status: "active", page: 0, size: 100 },
+  });
   const { areas: cultivationRegions } = useCultivationRegionStore();
   const { regions } = useRegionStore();
 
@@ -188,6 +196,7 @@ export function useEnterpriseSearch() {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isAdvancedSearchOpen, setIsAdvancedSearchOpen] = useState(false);
   const [advancedFilters, setAdvancedFilters] = useState<AdvancedFilters>({});
+  const [draftFilters, setDraftFilters] = useState<AdvancedFilters>({});
   const [bankSearchQuery, setBankSearchQuery] = useState("");
   const [branchSearchQuery, setBranchSearchQuery] = useState("");
 
@@ -197,66 +206,90 @@ export function useEnterpriseSearch() {
     [selectedEnterpriseId],
   );
 
-  const organizationsQuery = useOrganizationSearch(
-    {
-      keyword: searchQuery.trim() || undefined,
-      page: 0,
-      size: DEFAULT_PAGE_SIZE,
-    },
-    workspaceId ?? "missing",
-    {
-      enabled: workspaceId !== null,
-    },
-  );
+  const searchParams: OrganizationQueryParams = {
+    keyword: searchQuery.trim() || undefined,
+    status: advancedFilters.status?.join(",") || undefined,
+    businessLine: advancedFilters.classifications?.join(",") || undefined,
+    page: 0,
+    size: DEFAULT_PAGE_SIZE,
+  };
+
+  const [loadedOrganizations, setLoadedOrganizations] = useState<OrganizationRecord[]>([]);
+  const [isLoadingOrganizations, setIsLoadingOrganizations] = useState(false);
+
+  useEffect(() => {
+    if (workspaceId === null) {
+      setLoadedOrganizations([]);
+      setIsLoadingOrganizations(false);
+      return;
+    }
+
+    const controller = new AbortController();
+    let isCancelled = false;
+
+    setLoadedOrganizations([]);
+    setIsLoadingOrganizations(true);
+
+    const loadPages = async () => {
+      let page = 0;
+      let totalPages = 1;
+
+      try {
+        while (!isCancelled && page < totalPages) {
+          const response = await organizationApi.search(
+            { ...searchParams, page },
+            workspaceId,
+            controller.signal,
+          );
+
+          if (isCancelled) return;
+
+          setLoadedOrganizations((previous) => [...previous, ...response.content]);
+          totalPages = response.totalPages || 1;
+          page += 1;
+        }
+      } catch (error) {
+        if (!isCancelled && !controller.signal.aborted) {
+          console.error("[SearchUnit] Failed to load organizations", error);
+        }
+      } finally {
+        if (!isCancelled) setIsLoadingOrganizations(false);
+      }
+    };
+
+    void loadPages();
+
+    return () => {
+      isCancelled = true;
+      controller.abort();
+    };
+  }, [
+    workspaceId,
+    searchParams.keyword,
+    searchParams.status,
+    searchParams.businessLine,
+  ]);
 
   const allEnterprises = useMemo(
-    () => (organizationsQuery.items ?? []).map(toEnterprise),
-    [organizationsQuery.items],
+    () => loadedOrganizations.map(toEnterprise),
+    [loadedOrganizations],
   );
 
-  const enterprises = useMemo(() => {
-    return allEnterprises.filter((enterprise) => {
-      const matchesGlobal =
-        !searchQuery ||
-        enterprise.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (enterprise.brandName || "")
-          .toLowerCase()
-          .includes(searchQuery.toLowerCase()) ||
-        enterprise.code.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        enterprise.taxCode.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (enterprise.representative || "")
-          .toLowerCase()
-          .includes(searchQuery.toLowerCase()) ||
-        enterprise.phone.toLowerCase().includes(searchQuery.toLowerCase());
+  const filterOptions = useMemo(() => {
+    const classifications = businessLinesQuery.items.map((item) => ({
+      id: item.code,
+      name: item.name,
+    }));
+    const statuses = [
+      { id: "active", name: "Đang hoạt động" },
+      { id: "inactive", name: "Ngưng hoạt động" },
+      { id: "archived", name: "Đã lưu trữ" },
+    ];
+    return { classifications, status: statuses };
+  }, [allEnterprises, businessLinesQuery.items]);
 
-      const matchesType =
-        !advancedFilters.types?.length ||
-        advancedFilters.types.includes(enterprise.type);
-
-      const matchesClassification =
-        !advancedFilters.classifications?.length ||
-        enterprise.classification.some((classification) =>
-          advancedFilters.classifications?.includes(classification),
-        );
-
-      const matchesStatus =
-        !advancedFilters.status?.length ||
-        advancedFilters.status.includes(enterprise.status);
-
-      const matchesProvince =
-        !advancedFilters.provinces?.length ||
-        (enterprise.province &&
-          advancedFilters.provinces.includes(enterprise.province));
-
-      return (
-        matchesGlobal &&
-        matchesType &&
-        matchesClassification &&
-        matchesStatus &&
-        matchesProvince
-      );
-    });
-  }, [allEnterprises, searchQuery, advancedFilters]);
+  // The API response is the single source of truth. No local filtering is applied.
+  const enterprises = allEnterprises;
 
   const selectedEnterprise = useMemo(() => {
     if (selectedEnterpriseId === null) return null;
@@ -594,19 +627,29 @@ export function useEnterpriseSearch() {
   };
 
   const toggleFilter = (key: keyof AdvancedFilters, value: string) => {
-    setAdvancedFilters((prev) => {
+    setDraftFilters((prev) => {
       const current = (prev[key] as string[]) || [];
-      const next = current.includes(value)
-        ? current.filter((item) => item !== value)
-        : [...current, value];
+      const next = current.includes(value) ? [] : [value];
       return { ...prev, [key]: next };
     });
   };
 
   const resetFilters = () => {
+    setDraftFilters({});
     setAdvancedFilters({});
-    toast({ title: "Thông báo", description: "Đã đặt lại tất cả bộ lọc." });
+    toast({ title: "Thông báo", description: "Đã xóa các bộ lọc đang chọn." });
   };
+
+  const applyFilters = () => {
+    setAdvancedFilters(draftFilters);
+    toast({ title: "Thông báo", description: "Đã áp dụng bộ lọc." });
+  };
+
+  useEffect(() => {
+    if (isAdvancedSearchOpen) {
+      setDraftFilters(advancedFilters);
+    }
+  }, [isAdvancedSearchOpen]);
 
   const activeFilterCount = Object.keys(advancedFilters).reduce((count, key) => {
     const val = advancedFilters[key as keyof AdvancedFilters];
@@ -658,6 +701,8 @@ export function useEnterpriseSearch() {
     isAdvancedSearchOpen,
     setIsAdvancedSearchOpen,
     advancedFilters,
+    filterOptions,
+    draftFilters,
     setAdvancedFilters,
     bankSearchQuery,
     setBankSearchQuery,
@@ -673,6 +718,8 @@ export function useEnterpriseSearch() {
     activeFilterCount,
     toggleFilter,
     resetFilters,
+    applyFilters,
+    isLoadingOrganizations,
     setLocation,
     toast,
   };

@@ -248,6 +248,7 @@ export interface OrganizationQueryParams {
   keyword?: string;
   status?: OrganizationStatus;
   businessLine?: string;
+  onlyOwner?: boolean;
   page?: number;
   size?: number;
 }

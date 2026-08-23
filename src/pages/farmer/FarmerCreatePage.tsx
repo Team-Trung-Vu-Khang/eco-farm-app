@@ -156,6 +156,10 @@ export default function FarmerCreatePage() {
           formData={formData}
           onChange={(field, value) => updateField(field, value as never)}
           onImageUpload={processLogoImage}
+          onSelectLocation={({ latitude, longitude }) => {
+            updateField("latitude", latitude);
+            updateField("longitude", longitude);
+          }}
           onComplete={openConfirmDialog}
           isEdit={isEdit}
           isSubmitting={isSubmitting}

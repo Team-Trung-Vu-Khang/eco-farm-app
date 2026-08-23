@@ -12,6 +12,7 @@ import {
   Switch,
   Textarea,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import AddressSearchInput from "@/components/AddressSearchInput";
 import { Building2, ImagePlus, MapPin, Upload } from "lucide-react";
 import { useRef } from "react";
 import { useGeoProvinces, useGeoWards, useMasterData } from "@/features/master-data";
@@ -224,11 +225,14 @@ export default function SimpleEnterpriseForm({
             </div>
             <div className="space-y-2">
               <Label required>Địa chỉ chi tiết</Label>
-              <Input
+              <AddressSearchInput
                 value={formData.address}
-                onChange={(event) =>
-                  setFormData((prev) => ({ ...prev, address: event.target.value }))
+                onChange={(value) => setFormData((prev) => ({ ...prev, address: value }))}
+                onSelectLocation={({ latitude, longitude }) =>
+                  setFormData((prev) => ({ ...prev, latitude, longitude }))
                 }
+                latitude={formData.latitude}
+                longitude={formData.longitude}
                 placeholder="Số nhà, đường, thôn/xóm..."
               />
             </div>
