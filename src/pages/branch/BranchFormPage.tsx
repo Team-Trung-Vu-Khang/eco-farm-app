@@ -11,10 +11,12 @@ import {
   Card,
   CardContent,
   StepperForm,
+  Switch,
   type Step,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { ArrowLeft } from "lucide-react";
 import { FormProvider } from "react-hook-form";
+import { useState } from "react";
 
 import PageWrapper from "@/components/PageWrapper";
 import { BankingStep } from "./components/steps/BankingStep";
@@ -22,6 +24,7 @@ import { BasicInfoStep } from "./components/steps/BasicInfoStep";
 import { ConfirmStep } from "./components/steps/ConfirmStep";
 import { ContactInfoStep } from "./components/steps/ContactInfoStep";
 import { LocationStep } from "./components/steps/LocationStep";
+import { SimpleBranchForm } from "./components/SimpleBranchForm";
 import { useBranchForm } from "./hooks/useBranchForm";
 
 export default function BranchFormPage() {
@@ -36,7 +39,9 @@ export default function BranchFormPage() {
     handleComplete,
     submitForm,
     handleCancel,
+    isSaving,
   } = useBranchForm();
+  const [isSimpleMode, setIsSimpleMode] = useState(true);
 
   const selectedEnterprise = enterprises.find(
     (enterprise) => enterprise.id.toString() === formData.enterpriseId,
@@ -50,7 +55,6 @@ export default function BranchFormPage() {
       content: <BasicInfoStep enterprises={enterprises} isEdit={isEdit} />,
       isValid:
         formData.name.length > 0 &&
-        formData.code.length > 0 &&
         formData.enterpriseId.length > 0,
     },
     {
@@ -95,6 +99,18 @@ export default function BranchFormPage() {
       title={isEdit ? "Chỉnh sửa Chi nhánh" : "Tạo mới Chi nhánh"}
       description="Điền thông tin theo từng bước để tạo hoặc cập nhật chi nhánh"
       actions={[
+        <div
+          key="mode"
+          className="flex items-center gap-3 rounded-full border bg-white px-4 py-2 shadow-sm"
+        >
+          <span className="text-sm font-semibold text-slate-700">
+            Thông tin chuyên sâu
+          </span>
+          <Switch
+            checked={!isSimpleMode}
+            onCheckedChange={(checked) => setIsSimpleMode(!checked)}
+          />
+        </div>,
         <Button
           type="button"
           variant="outline"
@@ -106,18 +122,29 @@ export default function BranchFormPage() {
         </Button>,
       ]}
     >
-      <Card>
-        <CardContent className="p-6">
-          <FormProvider {...form}>
-            <StepperForm
-              steps={steps}
-              onComplete={handleComplete}
-              onCancel={handleCancel}
-              completeLabel={isEdit ? "Cập nhật" : "Tạo mới"}
-            />
-          </FormProvider>
-        </CardContent>
-      </Card>
+      {isSimpleMode ? (
+        <SimpleBranchForm
+          formData={formData}
+          updateFormData={updateFormData}
+          enterprises={enterprises}
+          onComplete={handleComplete}
+          isEdit={isEdit}
+          isSaving={isSaving}
+        />
+      ) : (
+        <Card>
+          <CardContent className="p-6">
+            <FormProvider {...form}>
+              <StepperForm
+                steps={steps}
+                onComplete={handleComplete}
+                onCancel={handleCancel}
+                completeLabel={isEdit ? "Cập nhật" : "Tạo mới"}
+              />
+            </FormProvider>
+          </CardContent>
+        </Card>
+      )}
 
       <AlertDialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
         <AlertDialogContent>

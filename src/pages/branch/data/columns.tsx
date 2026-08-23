@@ -38,7 +38,16 @@ export const branchColumns: Column<BranchTableRow>[] = [
   },
   { key: "phone", label: "Điện thoại" },
   { key: "email", label: "Email" },
-  { key: "address", label: "Địa chỉ", width: "200px" },
+  {
+    key: "address",
+    label: "Địa chỉ",
+    width: "400px",
+    render: (value) => (
+      <div className="min-w-[400px] whitespace-normal break-words leading-6">
+        {(value as string) || "-"}
+      </div>
+    ),
+  },
   {
     key: "status",
     label: "Trạng thái",

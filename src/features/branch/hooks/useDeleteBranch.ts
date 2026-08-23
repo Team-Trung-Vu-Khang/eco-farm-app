@@ -41,7 +41,7 @@ export function useDeleteBranch({
 
       if (invalidateDetail) {
         await queryClient.invalidateQueries({
-          queryKey: branchDetailKeys.byId(variables.id, workspaceId),
+          queryKey: branchDetailKeys.byId(variables.id, workspaceId ?? undefined),
         });
       }
 
