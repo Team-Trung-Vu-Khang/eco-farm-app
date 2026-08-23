@@ -32,7 +32,6 @@ import {
   Calendar,
   CheckCircle2,
   Clock,
-  Info,
   Layers,
   Leaf,
   MapPin,
@@ -68,7 +67,6 @@ export default function PlanGrowthEditPage({
     formData,
     setFormData,
     selections,
-    setSelections,
     selectedEnterpriseId,
     seasons,
     personnel,
@@ -78,7 +76,6 @@ export default function PlanGrowthEditPage({
     isWorkflowContext,
     workflowInfo,
     selectionSummary,
-    calculateArea,
     summarizeTaskSelections: getTaskSelectionSummary,
     handleSeasonChange,
     handleDurationPartChange,
@@ -124,28 +121,26 @@ export default function PlanGrowthEditPage({
     );
 
   const [newManualStage, setNewManualStage] = useState("");
+  const [removedGrowthCycleStages, setRemovedGrowthCycleStages] = useState<
+    Set<string>
+  >(new Set());
   const [isSimpleMode, setIsSimpleMode] = useState(true);
-  const [applyRegimen, setApplyRegimen] = useState(() => !!formData.regimenId);
   const purpose = formData.purpose as string;
-  const isCultivationLike =
-    purpose === "cultivation" || purpose === "facility-upgrade";
   const isTreatmentOrAmendment =
     purpose === "treatment" || purpose === "amendment";
   const isHarvest = purpose === "harvest";
   const isCultivation = purpose === "cultivation";
-  // Cultivation and treatment/amendment plans both treat the picked
-  // growth-cycle stage(s) as their planned work items — only
-  // facility-upgrade and harvest stay fully manual.
-  const derivesStagesFromGrowthCycle = isCultivation || isTreatmentOrAmendment;
+  const isFacilityUpgrade = purpose === "facility-upgrade";
+  // Only cultivation automatically turns picked growth-cycle stages into
+  // planned work items. Treatment/amendment stages remain optional checkboxes.
+  const derivesStagesFromGrowthCycle = isCultivation;
 
   // Keep `selectedStages` synced to the picked growth-cycle stage(s) (as
   // `${cycleId}:${stageName}` entries, the same key shape the
   // "resources"/"confirmation" steps below already expect in order to look
   // up and badge the owning cycle — mirroring how regimen steps are
   // prefixed with the regimen id) so users don't have to re-type stage
-  // names by hand. Manually added items (no prefix) are left untouched, as
-  // are regimen steps for treatment/amendment ("facility-upgrade", which
-  // shares `isCultivationLike` styling with cultivation, is excluded).
+  // names by hand. Manually added items and regimen steps are left untouched.
   const isGrowthCycleStageKey = (key: string) =>
     growthCycles.some((c) => key.startsWith(`${c.id}:`));
 
@@ -168,7 +163,8 @@ export default function PlanGrowthEditPage({
           })
           .filter((e): e is { key: string; order: number } => Boolean(e))
           .sort((a, b) => a.order - b.order)
-          .map((e) => e.key),
+          .map((e) => e.key)
+          .filter((key) => !removedGrowthCycleStages.has(key)),
       ),
     );
 
@@ -179,7 +175,9 @@ export default function PlanGrowthEditPage({
         existingGcKeys.every((key, idx) => key === derivedKeys[idx]);
       if (unchanged) return prev;
 
-      const removedKeys = existingGcKeys.filter((k) => !derivedKeys.includes(k));
+      const removedKeys = existingGcKeys.filter(
+        (k) => !derivedKeys.includes(k),
+      );
       return {
         ...prev,
         selectedStages: [
@@ -203,14 +201,62 @@ export default function PlanGrowthEditPage({
     formData.purpose,
     formData.growthCycleSelections,
     growthCycles,
+    removedGrowthCycleStages,
   ]);
 
-  const growthCycleDerivedStages = formData.selectedStages.filter(
-    isGrowthCycleStageKey,
-  );
+  // Regimen items are always included automatically. Growth-cycle stages for
+  // treatment/amendment are intentionally handled by checkboxes in the UI.
+  useEffect(() => {
+    if (!isTreatmentOrAmendment || !formData.regimenId) return;
+    const regimen = regimens.find((item) => item.id === formData.regimenId);
+    if (!regimen) return;
+    const regimenKeys = regimen.steps?.length
+      ? regimen.steps.map(
+          (step: { title: string }) => `${regimen.id}:${step.title}`,
+        )
+      : [`${regimen.id}:${regimen.name}`];
+    setFormData((prev) => {
+      const withoutRegimenItems = prev.selectedStages.filter(
+        (stage) => !stage.startsWith(`${prev.regimenId}:`),
+      );
+      const nextStages = [...withoutRegimenItems, ...regimenKeys];
+      return nextStages.length === prev.selectedStages.length &&
+        nextStages.every((stage, index) => stage === prev.selectedStages[index])
+        ? prev
+        : { ...prev, selectedStages: nextStages };
+    });
+  }, [formData.regimenId, isTreatmentOrAmendment, regimens, setFormData]);
+
   const manualSelectedStages = formData.selectedStages.filter(
-    (s) => !s.includes(":"),
+    (stage) => !stage.includes(":"),
   );
+  const availableGrowthCycleStagesMap = new Map<
+    string,
+    { key: string; name: string; cycleName: string }
+  >();
+  formData.growthCycleSelections.forEach((selection) => {
+    const cycle = growthCycles.find((item) => item.id === selection.cycleId);
+    const stage = cycle?.stages.find((item) => item.id === selection.stageId);
+    if (!cycle || !stage) return;
+    const key = `${cycle.id}:${stage.name}`;
+    availableGrowthCycleStagesMap.set(key, {
+      key,
+      name: stage.name,
+      cycleName: cycle.name,
+    });
+  });
+  const availableGrowthCycleStages = Array.from(
+    availableGrowthCycleStagesMap.values(),
+  );
+
+  const selectedRegimen = regimens.find(
+    (item) => item.id === formData.regimenId,
+  );
+  const regimenStageTitles: string[] = selectedRegimen?.steps?.length
+    ? selectedRegimen.steps.map((step: { title: string }) => step.title)
+    : selectedRegimen
+      ? [selectedRegimen.name]
+      : [];
 
   const purposeOptions = [
     {
@@ -765,286 +811,241 @@ export default function PlanGrowthEditPage({
     {
       id: "process",
       title: "Quy trình & Giai đoạn",
-      description: "Lộ trình canh tác",
+      description: "Chọn hạng mục triển khai",
       content: (
         <div className="max-w-2xl mx-auto space-y-6">
           <div className="space-y-6">
-            {isTreatmentOrAmendment && (
-              <div className="space-y-4 animation-slide-up bg-slate-50/30 p-6 rounded-3xl border border-slate-100 shadow-sm">
-                <div className="flex items-center justify-between rounded-xl border border-slate-100 bg-white p-3">
-                  <div>
-                    <p className="text-xs font-bold text-slate-700">
-                      Áp dụng phác đồ có sẵn
-                    </p>
-                    <p className="text-[10px] text-slate-400">
-                      Tắt để tự nhập các hạng mục công việc thay vì dùng phác
-                      đồ.
-                    </p>
+            <div className="space-y-5 animation-slide-up rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <h3 className="text-base font-bold text-slate-900">
+                    Danh sách hạng mục
+                  </h3>
+                  <p className="mt-1 text-xs text-slate-500">
+                    {isCultivation
+                      ? "Các hạng mục được điền sẵn từ quy trình. Bạn có thể chọn, xoá hoặc thêm hạng mục mới."
+                      : "Hạng mục phác đồ được điền sẵn. Giai đoạn áp dụng là lựa chọn bổ sung cho kế hoạch này."}
+                  </p>
+                </div>
+                <Badge
+                  variant="outline"
+                  className="shrink-0 bg-slate-50 text-slate-600"
+                >
+                  {formData.selectedStages.length} mục đã chọn
+                </Badge>
+              </div>
+
+              {isTreatmentOrAmendment && (
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-xs font-bold text-slate-700">
+                      {purpose === "treatment"
+                        ? "Phác đồ điều trị"
+                        : "Phác đồ cải tạo đất"}
+                    </Label>
+                    {formData.regimenId && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() =>
+                          setFormData((prev) => ({
+                            ...prev,
+                            regimenId: "",
+                            selectedStages: prev.selectedStages.filter(
+                              (stage) =>
+                                !stage.startsWith(`${prev.regimenId}:`),
+                            ),
+                          }))
+                        }
+                        className="h-7 px-2 text-[10px] font-bold text-red-500 hover:bg-red-50"
+                      >
+                        Xoá phác đồ
+                      </Button>
+                    )}
                   </div>
-                  <Switch
-                    checked={applyRegimen}
-                    onCheckedChange={(checked) => {
-                      setApplyRegimen(checked);
+                  <RegimenSelector
+                    regimens={regimens}
+                    selectedRegimenId={formData.regimenId}
+                    type={formData.purpose as "treatment" | "amendment"}
+                    onSelect={(regimen) => {
+                      const regimenStages = regimen.steps?.length
+                        ? regimen.steps.map(
+                            (step) => `${regimen.id}:${step.title}`,
+                          )
+                        : [`${regimen.id}:${regimen.name}`];
                       setFormData((prev) => ({
                         ...prev,
-                        regimenId: checked ? prev.regimenId : "",
-                        // Turning the regimen off drops only its own steps
-                        // (`${regimenId}:...`) — manual entries and
-                        // growth-cycle-derived stages (also ":"-tagged)
-                        // must stay either way.
-                        selectedStages: checked
-                          ? prev.selectedStages.filter(
-                              (stage) =>
-                                stage.includes(":") ||
-                                isGrowthCycleStageKey(stage),
-                            )
-                          : prev.selectedStages.filter(
-                              (stage) =>
-                                !stage.includes(":") ||
-                                isGrowthCycleStageKey(stage),
-                            ),
+                        regimenId: regimen.id,
+                        selectedStages: [
+                          ...prev.selectedStages.filter(
+                            (stage) => !stage.startsWith(`${prev.regimenId}:`),
+                          ),
+                          ...regimenStages,
+                        ],
                       }));
                     }}
                   />
-                </div>
-
-                {applyRegimen ? (
-                  <>
-                    <div className="flex items-center justify-between">
-                      <Label className="text-base uppercase tracking-wider text-slate-500 font-bold text-[10px]">
-                        {purpose === "treatment"
-                          ? "Phác đồ điều trị"
-                          : "Phác đồ cải tạo đất"}
-                      </Label>
-                      {formData.regimenId && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() =>
-                            setFormData((prev) => ({
-                              ...prev,
-                              regimenId: "",
-                              selectedStages: prev.selectedStages.filter(
-                                (stage) =>
-                                  !stage.startsWith(`${prev.regimenId}:`),
-                              ),
-                            }))
-                          }
-                          className="h-7 text-[10px] font-bold text-red-500 hover:text-red-600 hover:bg-red-50 rounded-lg px-2"
+                  {regimenStageTitles.length > 0 && (
+                    <div className="grid gap-2 sm:grid-cols-2">
+                      {regimenStageTitles.map((title, index) => (
+                        <div
+                          key={`${formData.regimenId}:${title}`}
+                          className="flex items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 px-3 py-3 text-sm font-semibold text-slate-700"
                         >
-                          XÓA PHÁC ĐỒ
-                        </Button>
-                      )}
+                          <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-white text-xs text-slate-500">
+                            {index + 1}
+                          </span>
+                          <span className="line-clamp-2">{title}</span>
+                        </div>
+                      ))}
                     </div>
-                    <RegimenSelector
-                      regimens={regimens}
-                      selectedRegimenId={formData.regimenId}
-                      type={formData.purpose as "treatment" | "amendment"}
-                      onSelect={(regimen) => {
-                        const regimenStages =
-                          regimen.steps && regimen.steps.length > 0
-                            ? regimen.steps.map(
-                                (step) => `${regimen.id}:${step.title}`,
-                              )
-                            : [`${regimen.id}:${regimen.name}`];
-                        setFormData((prev) => ({
-                          ...prev,
-                          regimenId: regimen.id,
-                          selectedStages: [
-                            // Drop only the *previous* regimen's own steps —
-                            // manual entries and growth-cycle-derived stages
-                            // (which also contain a ":") must survive
-                            // picking a new regimen.
-                            ...prev.selectedStages.filter(
-                              (stage) => !stage.startsWith(`${prev.regimenId}:`),
-                            ),
-                            ...regimenStages,
-                          ],
-                        }));
-                      }}
-                    />
+                  )}
+                </div>
+              )}
 
-                    {formData.regimenId &&
-                      (() => {
-                        const selectedRegimen = regimens.find(
-                          (item) => item.id === formData.regimenId,
+              {isTreatmentOrAmendment &&
+                availableGrowthCycleStages.length > 0 && (
+                  <div className="space-y-3 border-t border-dashed border-slate-200 pt-5">
+                    <div>
+                      <Label className="text-xs font-bold text-slate-700">
+                        Giai đoạn áp dụng (tuỳ chọn)
+                      </Label>
+                      <p className="mt-1 text-[11px] text-slate-500">
+                        Tick chọn các giai đoạn cần áp dụng thêm.
+                      </p>
+                    </div>
+                    <div className="grid gap-2 sm:grid-cols-2">
+                      {availableGrowthCycleStages.map((stage) => {
+                        const checked = formData.selectedStages.includes(
+                          stage.key,
                         );
-                        const stageTitles: string[] =
-                          selectedRegimen?.steps &&
-                          selectedRegimen.steps.length > 0
-                            ? selectedRegimen.steps.map(
-                                (step: { title: string }) => step.title,
-                              )
-                            : selectedRegimen
-                              ? [selectedRegimen.name]
-                              : [];
-                        if (!stageTitles.length) return null;
-
                         return (
-                          <div className="space-y-2 pt-4 border-t border-dashed border-slate-200">
-                            <Label className="text-[10px] uppercase font-black text-slate-400">
-                              Hạng mục công việc của phác đồ
-                            </Label>
-                            <div className="flex flex-col gap-2 p-4 bg-white rounded-2xl border border-slate-100 shadow-sm">
-                              {stageTitles.map((title) => {
-                                const stageKey = `${formData.regimenId}:${title}`;
-                                const checked =
-                                  formData.selectedStages.includes(stageKey);
-
-                                return (
-                                  <label
-                                    key={stageKey}
-                                    className={cn(
-                                      "flex w-full cursor-pointer items-center gap-2.5 rounded-xl border px-3 py-2.5 text-xs font-bold transition-colors",
-                                      checked
-                                        ? "border-slate-200 bg-slate-50 text-slate-700"
-                                        : "border-slate-100 bg-white text-slate-400",
-                                    )}
-                                  >
-                                    <Checkbox
-                                      checked={checked}
-                                      onCheckedChange={(value) =>
-                                        setFormData((prev) => ({
-                                          ...prev,
-                                          selectedStages: value
-                                            ? [...prev.selectedStages, stageKey]
-                                            : prev.selectedStages.filter(
-                                                (s) => s !== stageKey,
-                                              ),
-                                        }))
-                                      }
-                                    />
-                                    {title}
-                                  </label>
-                                );
-                              })}
-                            </div>
-                          </div>
-                        );
-                      })()}
-
-                    <div className="space-y-2 pt-4 border-t border-dashed border-slate-200">
-                      <div className="flex items-center justify-between">
-                        <Label className="text-[10px] uppercase font-black text-slate-400">
-                          Hạng mục dự kiến thêm (tự tạo)
-                        </Label>
-                        <Badge
-                          variant="outline"
-                          className="bg-amber-50 text-amber-700 border-amber-200 text-[10px] font-bold"
-                        >
-                          {manualSelectedStages.length} mục
-                        </Badge>
-                      </div>
-                      <div className="flex gap-2">
-                        <Input
-                          placeholder="Nhập tên hạng mục (VD: Bón vôi, Làm đất...)"
-                          value={newManualStage}
-                          onChange={(e) => setNewManualStage(e.target.value)}
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter") {
-                              e.preventDefault();
-                              const name = newManualStage.trim();
-                              if (name && !formData.selectedStages.includes(name)) {
+                          <label
+                            key={stage.key}
+                            className={cn(
+                              "flex cursor-pointer items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 px-3 py-3 text-sm font-semibold text-slate-700 transition-colors hover:border-slate-300",
+                            )}
+                          >
+                            <Checkbox
+                              checked={checked}
+                              onCheckedChange={(value) =>
                                 setFormData((prev) => ({
                                   ...prev,
-                                  selectedStages: [...prev.selectedStages, name],
-                                }));
-                                setNewManualStage("");
+                                  selectedStages: value
+                                    ? [...prev.selectedStages, stage.key]
+                                    : prev.selectedStages.filter(
+                                        (item) => item !== stage.key,
+                                      ),
+                                }))
                               }
-                            }
-                          }}
-                          className="bg-white border-slate-200 h-11 text-sm rounded-xl"
-                        />
-                        <Button
-                          type="button"
-                          onClick={() => {
-                            const name = newManualStage.trim();
-                            if (name && !formData.selectedStages.includes(name)) {
-                              setFormData((prev) => ({
-                                ...prev,
-                                selectedStages: [...prev.selectedStages, name],
-                              }));
-                              setNewManualStage("");
-                            }
-                          }}
-                          className="px-6 h-11 rounded-xl font-bold uppercase text-xs"
-                        >
-                          THÊM
-                        </Button>
-                      </div>
-
-                      {manualSelectedStages.length > 0 && (
-                        <div className="flex flex-col gap-2 p-4 bg-white rounded-2xl border border-slate-100 shadow-sm">
-                          {manualSelectedStages.map((stage, idx) => (
-                            <div
-                              key={stage}
-                              className="flex w-full items-center gap-2.5 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-xs font-bold text-slate-700 transition-colors"
-                            >
-                              <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-white text-[11px] font-bold text-slate-700 shadow-sm">
-                                {idx + 1}
+                            />
+                            <span>
+                              <span className="block font-semibold">
+                                {stage.name}
                               </span>
-                              <span className="flex-1">{stage}</span>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() =>
-                                  setFormData((prev) => ({
-                                    ...prev,
-                                    selectedStages: prev.selectedStages.filter(
-                                      (s) => s !== stage,
-                                    ),
-                                  }))
-                                }
-                                className="h-6 w-6 rounded-md hover:bg-red-100 hover:text-red-600 shrink-0"
-                              >
-                                <X className="w-3 h-3" />
-                              </Button>
-                            </div>
-                          ))}
-                        </div>
-                      )}
+                              <span className="block text-[11px] text-slate-400">
+                                {stage.cycleName}
+                              </span>
+                            </span>
+                          </label>
+                        );
+                      })}
                     </div>
-                  </>
-                ) : (
-                  <div className="space-y-4 pt-4 border-t border-dashed border-slate-200">
-                    <div className="flex items-center justify-between">
-                      <Label className="text-[10px] uppercase font-black text-slate-400">
-                        Hạng mục công việc dự kiến
-                      </Label>
-                      <Badge
-                        variant="outline"
-                        className="bg-amber-50 text-amber-700 border-amber-200 text-[10px] font-bold"
-                      >
-                        {formData.selectedStages.length} mục
-                      </Badge>
-                    </div>
+                  </div>
+                )}
 
-                    <div className="flex gap-2">
-                      <Input
-                        placeholder="Nhập tên hạng mục (VD: Bón vôi, Làm đất...)"
-                        value={newManualStage}
-                        onChange={(e) => setNewManualStage(e.target.value)}
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter") {
-                            e.preventDefault();
-                            const name = newManualStage.trim();
-                            if (
-                              name &&
-                              !formData.selectedStages.includes(name)
-                            ) {
+              {isTreatmentOrAmendment && (
+                <div className="space-y-4 border-t border-dashed border-slate-200 pt-4">
+                  <div className="flex gap-2">
+                    <Input
+                      value={newManualStage}
+                      onChange={(event) =>
+                        setNewManualStage(event.target.value)
+                      }
+                      onKeyDown={(event) => {
+                        if (event.key !== "Enter") return;
+                        event.preventDefault();
+                        const name = newManualStage.trim();
+                        if (!name || formData.selectedStages.includes(name))
+                          return;
+                        setFormData((prev) => ({
+                          ...prev,
+                          selectedStages: [...prev.selectedStages, name],
+                        }));
+                        setNewManualStage("");
+                      }}
+                      placeholder="Thêm hạng mục mới..."
+                      className="h-11 rounded-xl border-slate-200"
+                    />
+                    <Button
+                      type="button"
+                      onClick={() => {
+                        const name = newManualStage.trim();
+                        if (!name || formData.selectedStages.includes(name))
+                          return;
+                        setFormData((prev) => ({
+                          ...prev,
+                          selectedStages: [...prev.selectedStages, name],
+                        }));
+                        setNewManualStage("");
+                      }}
+                      className="h-11 rounded-xl px-5 text-xs font-bold"
+                    >
+                      Thêm
+                    </Button>
+                  </div>
+                  {newManualStage.trim() &&
+                    formData.selectedStages.includes(newManualStage.trim()) && (
+                      <p className="text-xs text-amber-600">
+                        Hạng mục này đã có trong danh sách.
+                      </p>
+                    )}
+                  {manualSelectedStages.length > 0 && (
+                    <div className="grid gap-2 sm:grid-cols-2">
+                      {manualSelectedStages.map((stage, index) => (
+                        <div
+                          key={stage}
+                          className="flex items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 px-3 py-3 text-sm font-semibold text-slate-700"
+                        >
+                          <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-white text-xs text-slate-500">
+                            {index + 1}
+                          </span>
+                          <span className="flex-1">{stage}</span>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            onClick={() =>
                               setFormData((prev) => ({
                                 ...prev,
-                                selectedStages: [...prev.selectedStages, name],
-                              }));
-                              setNewManualStage("");
+                                selectedStages: prev.selectedStages.filter(
+                                  (item) => item !== stage,
+                                ),
+                              }))
                             }
-                          }
-                        }}
-                        className="bg-white border-slate-200 h-11 text-sm rounded-xl"
-                      />
-                      <Button
-                        type="button"
-                        onClick={() => {
+                            className="h-7 w-7 shrink-0 text-slate-400 hover:bg-red-50 hover:text-red-600"
+                          >
+                            <X className="h-3.5 w-3.5" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {isCultivation && (
+                <div className="space-y-4">
+                  <div className="flex gap-2 border-t border-dashed border-slate-200 pt-4">
+                    <Input
+                      placeholder="Thêm hạng mục mới..."
+                      value={newManualStage}
+                      onChange={(event) =>
+                        setNewManualStage(event.target.value)
+                      }
+                      onKeyDown={(event) => {
+                        if (event.key === "Enter") {
+                          event.preventDefault();
                           const name = newManualStage.trim();
                           if (name && !formData.selectedStages.includes(name)) {
                             setFormData((prev) => ({
@@ -1053,275 +1054,230 @@ export default function PlanGrowthEditPage({
                             }));
                             setNewManualStage("");
                           }
-                        }}
-                        className="px-6 h-11 rounded-xl font-bold uppercase text-xs"
-                      >
-                        THÊM
-                      </Button>
-                    </div>
-
-                    {formData.selectedStages.length > 0 && (
-                      <div className="flex flex-col gap-2 p-4 bg-white rounded-2xl border border-slate-100 shadow-sm">
-                        {formData.selectedStages.map((stage, idx) => (
+                        }
+                      }}
+                      className="h-11 rounded-xl border-slate-200"
+                    />
+                    <Button
+                      type="button"
+                      onClick={() => {
+                        const name = newManualStage.trim();
+                        if (name && !formData.selectedStages.includes(name)) {
+                          setFormData((prev) => ({
+                            ...prev,
+                            selectedStages: [...prev.selectedStages, name],
+                          }));
+                          setNewManualStage("");
+                        }
+                      }}
+                      className="h-11 rounded-xl px-5 text-xs font-bold"
+                    >
+                      Thêm
+                    </Button>
+                  </div>
+                  {formData.selectedStages.length > 0 && (
+                    <div className="grid gap-2 sm:grid-cols-2">
+                      {formData.selectedStages.map((stageKey, index) => {
+                        const stage = availableGrowthCycleStages.find(
+                          (item) => item.key === stageKey,
+                        );
+                        const name = stage?.name || stageKey;
+                        return (
                           <div
-                            key={stage}
-                            className="flex w-full items-center gap-2.5 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-xs font-bold text-slate-700 transition-colors"
+                            key={stageKey}
+                            className="flex items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 px-3 py-3 text-sm font-semibold text-slate-700"
                           >
-                            <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-white text-[11px] font-bold text-slate-700 shadow-sm">
-                              {idx + 1}
+                            <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-white text-xs text-slate-500">
+                              {index + 1}
                             </span>
-                            <span className="flex-1">{stage}</span>
+                            <span className="flex-1">{name}</span>
                             <Button
+                              type="button"
                               variant="ghost"
                               size="icon"
-                              onClick={() =>
+                              onClick={() => {
+                                if (isGrowthCycleStageKey(stageKey)) {
+                                  setRemovedGrowthCycleStages((prev) =>
+                                    new Set(prev).add(stageKey),
+                                  );
+                                }
                                 setFormData((prev) => ({
                                   ...prev,
                                   selectedStages: prev.selectedStages.filter(
-                                    (s) => s !== stage,
+                                    (item) => item !== stageKey,
                                   ),
-                                }))
-                              }
-                              className="h-6 w-6 rounded-md hover:bg-red-100 hover:text-red-600 shrink-0"
+                                  materialAllocations:
+                                    prev.materialAllocations.filter(
+                                      (item) => item.stageId !== stageKey,
+                                    ),
+                                }));
+                              }}
+                              className="h-7 w-7 shrink-0 text-slate-400 hover:bg-red-50 hover:text-red-600"
                             >
-                              <X className="w-3 h-3" />
+                              <X className="h-3.5 w-3.5" />
                             </Button>
                           </div>
-                        ))}
-                      </div>
-                    )}
-
-                    <div className="flex items-center gap-2 p-3 bg-amber-50/50 rounded-xl border border-amber-100/50">
-                      <Info className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-                      <p className="text-[10px] text-amber-700 font-medium">
-                        Nhập tên các hạng mục công việc bạn muốn triển khai. Bạn
-                        sẽ phân bổ vật tư cho từng hạng mục ở bước tiếp theo.
-                      </p>
+                        );
+                      })}
                     </div>
-                  </div>
-                )}
-              </div>
-            )}
+                  )}
+                </div>
+              )}
 
-            {derivesStagesFromGrowthCycle && growthCycleDerivedStages.length > 0 && (
-              <div className="space-y-3 animation-slide-up bg-slate-50/30 p-6 rounded-3xl border border-slate-100 shadow-sm">
-                <Label className="text-base uppercase tracking-wider text-slate-500 font-bold text-[10px]">
-                  Hạng mục dự kiến (theo giai đoạn đã chọn)
-                </Label>
-                <div className="flex flex-col gap-2 p-4 bg-white rounded-2xl border border-slate-100 shadow-sm">
-                  {growthCycleDerivedStages.map((stage) => (
-                    <label
-                      key={stage}
-                      className="flex w-full cursor-pointer items-center gap-2.5 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-xs font-bold text-slate-700 transition-colors"
+              {isFacilityUpgrade && (
+                <div className="space-y-3">
+                  <div className="flex gap-2 border-t border-dashed border-slate-200 pt-4">
+                    <Input
+                      value={newManualStage}
+                      onChange={(event) =>
+                        setNewManualStage(event.target.value)
+                      }
+                      onKeyDown={(event) => {
+                        if (event.key !== "Enter") return;
+                        event.preventDefault();
+                        const name = newManualStage.trim();
+                        if (!name || formData.selectedStages.includes(name))
+                          return;
+                        setFormData((prev) => ({
+                          ...prev,
+                          selectedStages: [...prev.selectedStages, name],
+                        }));
+                        setNewManualStage("");
+                      }}
+                      placeholder="Thêm hạng mục mới..."
+                      className="h-11 rounded-xl border-slate-200"
+                    />
+                    <Button
+                      type="button"
+                      onClick={() => {
+                        const name = newManualStage.trim();
+                        if (!name || formData.selectedStages.includes(name))
+                          return;
+                        setFormData((prev) => ({
+                          ...prev,
+                          selectedStages: [...prev.selectedStages, name],
+                        }));
+                        setNewManualStage("");
+                      }}
+                      className="h-11 rounded-xl px-5 text-xs font-bold"
                     >
-                      <Checkbox
-                        checked
-                        onCheckedChange={(value) => {
-                          if (value) return;
-                          setFormData((prev) => ({
-                            ...prev,
-                            selectedStages: prev.selectedStages.filter((s) => s !== stage),
-                            materialAllocations: prev.materialAllocations.filter(
-                              (m) => m.stageId !== stage,
-                            ),
-                          }));
-                        }}
-                      />
-                      {stage.split(":").slice(1).join(":")}
-                    </label>
-                  ))}
+                      Thêm
+                    </Button>
+                  </div>
+                  {newManualStage.trim() &&
+                    formData.selectedStages.includes(newManualStage.trim()) && (
+                      <p className="text-xs text-amber-600">
+                        Hạng mục này đã có trong danh sách.
+                      </p>
+                    )}
+                  {formData.selectedStages.length > 0 && (
+                    <div className="grid gap-2 sm:grid-cols-2">
+                      {formData.selectedStages.map((stage, index) => (
+                        <div
+                          key={stage}
+                          className="flex items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 px-3 py-3 text-sm font-semibold text-slate-700"
+                        >
+                          <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-white text-xs text-slate-500">
+                            {index + 1}
+                          </span>
+                          <span className="flex-1">{stage}</span>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            onClick={() =>
+                              setFormData((prev) => ({
+                                ...prev,
+                                selectedStages: prev.selectedStages.filter(
+                                  (item) => item !== stage,
+                                ),
+                              }))
+                            }
+                            className="h-7 w-7 text-slate-400 hover:bg-red-50 hover:text-red-600"
+                          >
+                            <X className="h-3.5 w-3.5" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
-              </div>
-            )}
+              )}
 
-            {isCultivationLike && (
-              <div className="space-y-4 animation-slide-up bg-slate-50/30 p-6 rounded-3xl border border-slate-100 shadow-sm">
-                <div className="flex items-center justify-between">
-                  <Label className="text-base uppercase tracking-wider text-slate-500 font-bold text-[10px]">
-                    {isCultivation && growthCycleDerivedStages.length > 0
-                      ? "Hạng mục dự kiến thêm (tự tạo)"
-                      : "Hạng mục công việc dự kiến"}
-                  </Label>
-                  <Badge
-                    variant="outline"
-                    className="bg-amber-50 text-amber-700 border-amber-200 text-[10px] font-bold"
-                  >
-                    {manualSelectedStages.length} mục
-                  </Badge>
-                </div>
-
-                <div className="flex gap-2">
-                  <Input
-                    placeholder="Nhập tên hạng mục (VD: Bón phân, Tưới nước...)"
-                    value={newManualStage}
-                    onChange={(e) => setNewManualStage(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") {
-                        e.preventDefault();
-                        const name = newManualStage.trim();
-                        if (name && !formData.selectedStages.includes(name)) {
-                          setFormData((prev) => ({
-                            ...prev,
-                            selectedStages: [...prev.selectedStages, name],
-                          }));
-                          setNewManualStage("");
-                        }
+              {isHarvest && (
+                <div className="space-y-4 border-t border-dashed border-slate-200 pt-4">
+                  <div className="flex gap-2">
+                    <Input
+                      placeholder="Thêm hạng mục mới..."
+                      value={newManualStage}
+                      onChange={(event) =>
+                        setNewManualStage(event.target.value)
                       }
-                    }}
-                    className="bg-white border-slate-200 h-11 text-sm rounded-xl"
-                  />
-                  <Button
-                    type="button"
-                    onClick={() => {
-                      const name = newManualStage.trim();
-                      if (name && !formData.selectedStages.includes(name)) {
+                      onKeyDown={(event) => {
+                        if (event.key !== "Enter") return;
+                        event.preventDefault();
+                        const name = newManualStage.trim();
+                        if (!name || formData.selectedStages.includes(name))
+                          return;
                         setFormData((prev) => ({
                           ...prev,
                           selectedStages: [...prev.selectedStages, name],
                         }));
                         setNewManualStage("");
-                      }
-                    }}
-                    className="px-6 h-11 rounded-xl font-bold uppercase text-xs"
-                  >
-                    THÊM
-                  </Button>
-                </div>
-
-                {manualSelectedStages.length > 0 && (
-                  <div className="flex flex-col gap-2 p-4 bg-white rounded-2xl border border-slate-100 shadow-sm">
-                    {manualSelectedStages.map((stage, idx) => (
-                      <div
-                        key={stage}
-                        className="flex w-full items-center gap-2.5 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-xs font-bold text-slate-700 transition-colors"
-                      >
-                        <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-white text-[11px] font-bold text-slate-700 shadow-sm">
-                          {idx + 1}
-                        </span>
-                        <span className="flex-1">{stage}</span>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() =>
-                            setFormData((prev) => ({
-                              ...prev,
-                              selectedStages: prev.selectedStages.filter(
-                                (s) => s !== stage,
-                              ),
-                            }))
-                          }
-                          className="h-6 w-6 rounded-md hover:bg-red-100 hover:text-red-600 shrink-0"
-                        >
-                          <X className="w-3 h-3" />
-                        </Button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-
-                <div className="flex items-center gap-2 p-3 bg-amber-50/50 rounded-xl border border-amber-100/50">
-                  <Info className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-                  <p className="text-[10px] text-amber-700 font-medium">
-                    {purpose === "facility-upgrade"
-                      ? "Nhập tên các hạng mục nâng cấp cơ sở vật chất bạn muốn triển khai."
-                      : "Nhập tên các hạng mục công việc dự kiến. Bạn sẽ phân bổ vật tư cho từng hạng mục ở bước tiếp theo."}
-                  </p>
-                </div>
-              </div>
-            )}
-
-            {isHarvest && (
-              <div className="space-y-4 animation-slide-up bg-slate-50/30 p-6 rounded-3xl border border-slate-100 shadow-sm">
-                <div className="flex items-center justify-between">
-                  <Label className="text-base uppercase tracking-wider text-slate-500 font-bold text-[10px]">
-                    Hạng mục công việc dự kiến
-                  </Label>
-                  <Badge
-                    variant="outline"
-                    className="bg-amber-50 text-amber-700 border-amber-200 text-[10px] font-bold"
-                  >
-                    {formData.selectedStages.length} mục
-                  </Badge>
-                </div>
-
-                <div className="flex gap-2">
-                  <Input
-                    placeholder="Nhập tên hạng mục (VD: Tập kết, Kiểm tra, Bốc dỡ...)"
-                    value={newManualStage}
-                    onChange={(e) => setNewManualStage(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") {
-                        e.preventDefault();
+                      }}
+                      className="h-11 rounded-xl border-slate-200"
+                    />
+                    <Button
+                      type="button"
+                      onClick={() => {
                         const name = newManualStage.trim();
-                        if (name && !formData.selectedStages.includes(name)) {
-                          setFormData((prev) => ({
-                            ...prev,
-                            selectedStages: [...prev.selectedStages, name],
-                          }));
-                          setNewManualStage("");
-                        }
-                      }
-                    }}
-                    className="bg-white border-slate-200 h-11 text-sm rounded-xl"
-                  />
-                  <Button
-                    type="button"
-                    onClick={() => {
-                      const name = newManualStage.trim();
-                      if (name && !formData.selectedStages.includes(name)) {
+                        if (!name || formData.selectedStages.includes(name))
+                          return;
                         setFormData((prev) => ({
                           ...prev,
                           selectedStages: [...prev.selectedStages, name],
                         }));
                         setNewManualStage("");
-                      }
-                    }}
-                    className="px-6 h-11 rounded-xl font-bold uppercase text-xs"
-                  >
-                    THÊM
-                  </Button>
-                </div>
-
-                {formData.selectedStages.length > 0 && (
-                  <div className="flex flex-col gap-2 p-4 bg-white rounded-2xl border border-slate-100 shadow-sm">
-                    {formData.selectedStages.map((stage, idx) => (
-                      <div
-                        key={stage}
-                        className="flex w-full items-center gap-2.5 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-xs font-bold text-slate-700 transition-colors"
-                      >
-                        <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-white text-[11px] font-bold text-slate-700 shadow-sm">
-                          {idx + 1}
-                        </span>
-                        <span className="flex-1">{stage}</span>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() =>
-                            setFormData((prev) => ({
-                              ...prev,
-                              selectedStages: prev.selectedStages.filter(
-                                (s) => s !== stage,
-                              ),
-                            }))
-                          }
-                          className="h-6 w-6 rounded-md hover:bg-red-100 hover:text-red-600 shrink-0"
-                        >
-                          <X className="w-3 h-3" />
-                        </Button>
-                      </div>
-                    ))}
+                      }}
+                      className="h-11 rounded-xl px-5 text-xs font-bold"
+                    >
+                      Thêm
+                    </Button>
                   </div>
-                )}
-
-                <div className="flex items-center gap-2 p-3 bg-amber-50/50 rounded-xl border border-amber-100/50">
-                  <Info className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-                  <p className="text-[10px] text-amber-700 font-medium">
-                    Nhập các hạng mục công việc dự kiến để phân bổ vật tư và
-                    nhân sự ở bước tiếp theo.
-                  </p>
+                  {formData.selectedStages.length > 0 && (
+                    <div className="grid gap-2 sm:grid-cols-2">
+                      {formData.selectedStages.map((stage, index) => (
+                        <div
+                          key={stage}
+                          className="flex items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 px-3 py-3 text-sm font-semibold text-slate-700"
+                        >
+                          <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-white text-xs text-slate-500">
+                            {index + 1}
+                          </span>
+                          <span className="flex-1">{stage}</span>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            onClick={() =>
+                              setFormData((prev) => ({
+                                ...prev,
+                                selectedStages: prev.selectedStages.filter(
+                                  (item) => item !== stage,
+                                ),
+                              }))
+                            }
+                            className="h-7 w-7 text-slate-400 hover:bg-red-50 hover:text-red-600"
+                          >
+                            <X className="h-3.5 w-3.5" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
-              </div>
-            )}
+              )}
+            </div>
           </div>
         </div>
       ),

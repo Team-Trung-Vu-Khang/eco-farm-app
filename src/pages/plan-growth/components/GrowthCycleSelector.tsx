@@ -43,6 +43,8 @@ const GrowthCycleSelector = ({
   const isLocked = Boolean(lockedCycleIds?.length);
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+  // Which cycles have their (read-only, in non-locked mode) stage list
+  // expanded for viewing — purely a display toggle, unrelated to selection.
   const [expandedCycles, setExpandedCycles] = useState<string[]>([]);
   const [tempSelections, setTempSelections] = useState<GrowthCycleSelection[]>(
     [],
@@ -51,7 +53,6 @@ const GrowthCycleSelector = ({
   useEffect(() => {
     if (isOpen) {
       setTempSelections(existingSelections);
-      if (lockedCycleIds) setExpandedCycles(lockedCycleIds);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, existingSelections]);
@@ -73,7 +74,7 @@ const GrowthCycleSelector = ({
     );
   }, [visibleCycles, searchTerm]);
 
-  const toggleCycle = (id: string) => {
+  const toggleExpanded = (id: string) => {
     setExpandedCycles((prev) =>
       prev.includes(id) ? prev.filter((cid) => cid !== id) : [...prev, id],
     );
@@ -220,7 +221,7 @@ const GrowthCycleSelector = ({
             <p className="text-xs text-muted-foreground mt-1">
               {isLocked
                 ? "Chọn 1 hoặc nhiều giai đoạn, từ 1 hoặc nhiều chu kỳ, áp dụng cho kế hoạch này"
-                : "Chọn 1 hoặc nhiều Chu kỳ sinh trưởng, hoặc từng Giai đoạn cụ thể"}
+                : "Chọn 1 hoặc nhiều Chu kỳ sinh trưởng"}
             </p>
           </DialogHeader>
 
@@ -261,7 +262,8 @@ const GrowthCycleSelector = ({
                   ) : (
                     <div className="flex items-center gap-2 group">
                       <button
-                        onClick={() => toggleCycle(cycle.id)}
+                        type="button"
+                        onClick={() => toggleExpanded(cycle.id)}
                         className="p-1 hover:bg-slate-100 rounded transition-colors"
                       >
                         {expandedCycles.includes(cycle.id) ? (
@@ -312,15 +314,43 @@ const GrowthCycleSelector = ({
                     </div>
                   )}
 
-                  {/* Stages level */}
-                  {(isLocked || expandedCycles.includes(cycle.id)) && (
-                    <div
-                      className={
-                        isLocked
-                          ? "space-y-2"
-                          : "ml-6 pl-4 border-l-2 border-slate-100 space-y-2 py-1"
-                      }
-                    >
+                  {/* Stages level — read-only preview in non-locked mode, no
+                      selection there; the locked (stage-only) mode below is
+                      the one that lets stages be picked. */}
+                  {!isLocked && expandedCycles.includes(cycle.id) && (
+                    <div className="ml-6 pl-4 border-l-2 border-slate-100 space-y-2 py-1">
+                      {cycle.stages?.map((stage) => (
+                        <div
+                          key={stage.id}
+                          className="flex items-center gap-3 p-2.5 rounded-xl border border-slate-100 bg-slate-50/60"
+                        >
+                          <div className="w-7 h-7 rounded-lg bg-slate-100 text-slate-500 flex items-center justify-center">
+                            <Layers className="w-4 h-4" />
+                          </div>
+                          <div>
+                            <div className="font-bold text-slate-700 text-xs">
+                              {stage.name}
+                            </div>
+                            {stage.duration && (
+                              <div className="text-[9px] text-muted-foreground uppercase tracking-wider">
+                                {stage.duration} ngày
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+
+                      {(!cycle.stages || cycle.stages.length === 0) && (
+                        <p className="text-xs text-muted-foreground py-1">
+                          Chu kỳ này chưa có giai đoạn nào
+                        </p>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Stages level — only shown in locked (stage-only) mode */}
+                  {isLocked && (
+                    <div className="space-y-2">
                       {cycle.stages?.map((stage) => (
                         <div
                           key={stage.id}
