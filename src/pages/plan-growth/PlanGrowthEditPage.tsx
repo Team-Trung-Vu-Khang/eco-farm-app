@@ -92,16 +92,11 @@ export default function PlanGrowthEditPage({
   } = usePlanForm("edit", basePath, { onSaved, onCancel });
   const supplyCatalog = useCropSupplyCatalog();
 
-  // No backend/config yet ties a plan's inherited growth cycle(s) to its
-  // workflow — `workflowInfo` only carries them when the workflow-info form
-  // was set up earlier in the same session. Fall back to the first two
-  // available growth cycles so the multi-cycle inheritance UI has something
-  // to show.
-  const inheritedCycleIds = workflowInfo?.growthCycleSelections?.length
-    ? Array.from(
-        new Set(workflowInfo.growthCycleSelections.map((s) => s.cycleId)),
-      )
-    : growthCycles.slice(0, 2).map((c) => c.id);
+  const inheritedCycleIds = workflowInfo?.seasonIds?.length
+    ? workflowInfo.seasonIds.map(String)
+    : workflowInfo?.growthCycleSelections?.length
+      ? Array.from(new Set(workflowInfo.growthCycleSelections.map((s) => s.cycleId)))
+      : [];
   const inheritedCycles = growthCycles.filter((c) =>
     inheritedCycleIds.includes(c.id),
   );
@@ -146,6 +141,17 @@ export default function PlanGrowthEditPage({
 
   useEffect(() => {
     if (!derivesStagesFromGrowthCycle) return;
+
+    // On edit, the API's `stages` list is authoritative. Only generate
+    // stage rows from the selected Season when the plan has no stages yet;
+    // otherwise this effect must not append/replace API rows and create
+    // duplicate items with the same name.
+    if (
+      formData.selectedStages.length > 0 &&
+      !formData.selectedStages.some(isGrowthCycleStageKey)
+    ) {
+      return;
+    }
 
     const derivedKeys = Array.from(
       new Set(

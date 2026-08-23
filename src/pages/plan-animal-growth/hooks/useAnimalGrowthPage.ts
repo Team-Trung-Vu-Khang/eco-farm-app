@@ -93,6 +93,7 @@ function toFarmWorkflowRequest(workflow: Workflow): FarmWorkflowRequest {
             : "REGION",
       scopeId: Number(selection.plotId || selection.areaId || selection.regionId),
     })),
+    seasonIds: workflow.seasonIds,
     status: workflow.isActive ? "ACTIVE" : "INACTIVE",
   };
 }

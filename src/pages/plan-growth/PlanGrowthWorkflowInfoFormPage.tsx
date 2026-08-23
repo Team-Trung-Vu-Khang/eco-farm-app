@@ -1,12 +1,16 @@
 import PageWrapper from "@/components/PageWrapper";
-import { useCultivationZones } from "@/features/farm";
+import {
+  useCultivationZones,
+  farmGrowthCycleSeasonApi,
+  systemGrowthCycleSeasonApi,
+} from "@/features/farm";
 import {
   useFarmWorkflowById,
   useFarmWorkflowMutations,
 } from "@/features/farm-workflow/hooks";
 import type { FarmWorkflowScopeRequest } from "@/features/farm-workflow/types/farm-workflow.type";
-import useGrowthCycleStore from "@/stores/useGrowthCycleStore";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useInfiniteQuery } from "@tanstack/react-query";
 import {
   Badge,
   Button,
@@ -40,6 +44,7 @@ import {
   type DiagramInfoRecord,
 } from "./hooks/usePlanWorkflowDraftStore";
 import type { GeographicalSelection, GrowthCycleSelection, Plan } from "./types";
+import type { GrowthCycle } from "../growth-cycle/types/types";
 import {
   getFallbackPlans,
   mapCultivationZonesToRegionTree,
@@ -73,6 +78,32 @@ function toDurationDays(years: string, months: string, days: string) {
   return Math.max(1, totalDays);
 }
 
+function mapSeasonsToGrowthCycles(seasons: any[]): GrowthCycle[] {
+  return seasons.map((season) => ({
+    id: String(season.id),
+    name: season.name || season.code || `Season #${season.id}`,
+    cycleType: "plant",
+    scope: "crop",
+    scopeNames: [],
+    cropId: String(season.productionSubject?.id ?? ""),
+    cropName: season.productionSubject?.name || "",
+    totalDays: (season.stages || []).reduce(
+      (total: number, stage: any) => total + (Number(stage.durationDays) || 0),
+      0,
+    ),
+    numStages: (season.stages || []).length,
+    stages: (season.stages || []).map((stage: any, index: number) => ({
+      id: String(stage.id ?? `${season.id}-${index}`),
+      name: stage.name || `Giai đoạn ${index + 1}`,
+      duration: Number(stage.durationDays) || 0,
+      usePdf: false,
+      content: stage.description || "",
+    })),
+    createdAt: 0,
+    updatedAt: 0,
+  }));
+}
+
 // Info nodes created before the API integration carry a local
 // `info-<timestamp>-<rand>` id; only numeric ids are real backend workflow ids.
 function isPersistedWorkflowId(id: string) {
@@ -94,6 +125,53 @@ export default function PlanGrowthWorkflowInfoFormPage() {
   const { items: cultivationZones } = useCultivationZones({
     params: { domainCode: WORKFLOW_DOMAIN_CODE, page: 0, size: 100 },
   });
+  const [seasonSearch, setSeasonSearch] = useState("");
+  const seasonQueryParams = {
+    domainCode: WORKFLOW_DOMAIN_CODE,
+    keyword: seasonSearch.trim() || undefined,
+    size: 20,
+  };
+  const userSeasonsQuery = useInfiniteQuery({
+    queryKey: ["workflow-seasons", "user", seasonQueryParams],
+    queryFn: ({ pageParam }) =>
+      farmGrowthCycleSeasonApi.list({ ...seasonQueryParams, page: pageParam }),
+    initialPageParam: 0,
+    getNextPageParam: (lastPage: any) =>
+      lastPage.last ? undefined : Number(lastPage.page) + 1,
+  });
+  const systemSeasonsQuery = useInfiniteQuery({
+    queryKey: ["workflow-seasons", "system", seasonQueryParams],
+    queryFn: ({ pageParam }) =>
+      systemGrowthCycleSeasonApi.list({ ...seasonQueryParams, page: pageParam }),
+    initialPageParam: 0,
+    getNextPageParam: (lastPage: any) =>
+      lastPage.last ? undefined : Number(lastPage.page) + 1,
+  });
+  const growthCycles = useMemo(() => {
+    const byId = new Map<number, any>();
+    [
+      ...systemSeasonsQuery.data?.pages.flatMap((page: any) => page.content || []) || [],
+      ...userSeasonsQuery.data?.pages.flatMap((page: any) => page.content || []) || [],
+    ].forEach((season) => {
+      if (season?.id != null) byId.set(Number(season.id), season);
+    });
+    return mapSeasonsToGrowthCycles(Array.from(byId.values()));
+  }, [systemSeasonsQuery.data, userSeasonsQuery.data]);
+  const seasonsLoading =
+    userSeasonsQuery.isLoading ||
+    systemSeasonsQuery.isLoading ||
+    userSeasonsQuery.isFetchingNextPage ||
+    systemSeasonsQuery.isFetchingNextPage;
+  const seasonsHaveMore =
+    Boolean(userSeasonsQuery.hasNextPage) || Boolean(systemSeasonsQuery.hasNextPage);
+  const loadMoreSeasons = () => {
+    if (userSeasonsQuery.hasNextPage && !userSeasonsQuery.isFetchingNextPage) {
+      void userSeasonsQuery.fetchNextPage();
+    }
+    if (systemSeasonsQuery.hasNextPage && !systemSeasonsQuery.isFetchingNextPage) {
+      void systemSeasonsQuery.fetchNextPage();
+    }
+  };
   const regions = useMemo(
     () => mapCultivationZonesToRegionTree(cultivationZones),
     [cultivationZones],
@@ -148,8 +226,19 @@ export default function PlanGrowthWorkflowInfoFormPage() {
   // `editingRecord` (which may be the freshly API-mapped record).
   const [growthCycleSelections, setGrowthCycleSelections] = useState<
     GrowthCycleSelection[]
-  >(localRecord?.growthCycleSelections ?? []);
-  const growthCycles = useGrowthCycleStore((state) => state.growthCycles);
+  >(
+    localRecord?.growthCycleSelections ??
+      (editingRecord?.seasonIds ?? []).map((seasonId) => ({
+        id: `season-${seasonId}`,
+        type: "cycle",
+        cycleId: String(seasonId),
+      })),
+  );
+  // Plan Growth keeps its existing UI. Existing API-linked seasons are only
+  // carried through edit/update; no new selector is introduced here.
+  const [seasonIds, setSeasonIds] = useState<number[]>(
+    editingRecord?.seasonIds ?? [],
+  );
 
   const selectionSummary = useMemo(
     () => summarizeSelections(selections, regions || []),
@@ -199,6 +288,14 @@ export default function PlanGrowthWorkflowInfoFormPage() {
     setPlannedDurationYears(record.plannedDurationYears);
     setPlannedDurationMonths(record.plannedDurationMonths);
     setPlannedDurationDays(record.plannedDurationDays);
+    setSeasonIds(record.seasonIds ?? []);
+    setGrowthCycleSelections(
+      (record.seasonIds ?? []).map((seasonId) => ({
+        id: `season-${seasonId}`,
+        type: "cycle",
+        cycleId: String(seasonId),
+      })),
+    );
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [workflowDetail]);
 
@@ -246,6 +343,7 @@ export default function PlanGrowthWorkflowInfoFormPage() {
         plannedDurationDays,
       ),
       scopes: toWorkflowScopes(selections),
+      seasonIds,
       status: "ACTIVE" as const,
     };
 
@@ -261,6 +359,7 @@ export default function PlanGrowthWorkflowInfoFormPage() {
               plannedDurationMonths,
               plannedDurationDays,
               growthCycleSelections,
+              seasonIds,
             }
           : {
               id: "",
@@ -271,6 +370,7 @@ export default function PlanGrowthWorkflowInfoFormPage() {
               plannedDurationMonths,
               plannedDurationDays,
               growthCycleSelections,
+              seasonIds,
               isActive: true,
               position:
                 editingRecord?.position ?? getNextInfoNodePosition(infoNodes),
@@ -538,7 +638,22 @@ export default function PlanGrowthWorkflowInfoFormPage() {
                   <GrowthCycleSelector
                     growthCycles={growthCycles}
                     existingSelections={growthCycleSelections}
-                    onConfirm={setGrowthCycleSelections}
+                    onSearchChange={setSeasonSearch}
+                    isLoading={seasonsLoading}
+                    hasMore={seasonsHaveMore}
+                    onLoadMore={loadMoreSeasons}
+                    onConfirm={(nextSelections) => {
+                      setGrowthCycleSelections(nextSelections);
+                      setSeasonIds(
+                        Array.from(
+                          new Set(
+                            nextSelections.map((selection) =>
+                              Number(selection.cycleId),
+                            ),
+                          ),
+                        ).filter((id) => Number.isFinite(id)),
+                      );
+                    }}
                   />
 
                   {growthCycleSummary.length > 0 && (

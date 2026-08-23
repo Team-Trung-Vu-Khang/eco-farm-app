@@ -216,9 +216,7 @@ function getPosterMetricItems(plan: Plan): WorkflowSummaryItem[] {
 }
 
 function getPlanStageTags(plan: Plan) {
-  if (!plan.selectedStages.length) return ["Chưa chọn giai đoạn"];
-  if (plan.selectedStages.length <= 2) return plan.selectedStages;
-  return [plan.selectedStages[0], plan.selectedStages[1]];
+  return plan.seasonStageNames || [];
 }
 
 function getPlanRegionLabels(plan: Plan, regions: any[]) {

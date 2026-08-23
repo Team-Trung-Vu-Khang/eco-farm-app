@@ -282,7 +282,7 @@ function getMaterialBreakdown(
 function getStageTags(stageNames: string[]) {
   const names = stageNames.map((name) => name.trim()).filter(Boolean);
 
-  if (!names.length) return ["Chưa có giai đoạn"];
+  if (!names.length) return [];
   if (names.length <= 2) return names;
   return [names[0], names[1]];
 }
@@ -439,7 +439,7 @@ function toDisplayNode(
       wide: true,
       targetTopHandleId: `${id}-target-top`,
       sourceBottomHandleId: `${id}-source-bottom`,
-      tags: getStageTags(plan.selectedStages),
+      tags: getStageTags(plan.seasonStageNames ?? []),
       regionLabels: getRegionLabelsFromPlan(plan, regions),
       summaries: [
         { label: "Nhân lực", value: String(laborCount) },
@@ -881,6 +881,7 @@ export default function PlanAquacultureGrowthCreateWorkflowPage() {
             scopes: workflowDetail.scopes
               .map(toWorkflowScopeRequest)
               .filter((scope): scope is FarmWorkflowScopeRequest => scope !== null),
+            seasonIds: (workflowDetail.seasons || []).map((season) => season.id),
             status: workflowDetail.status.toUpperCase() as FarmWorkflowRequestStatus,
             metadataJson: {
               ...workflowDetail.metadataJson,

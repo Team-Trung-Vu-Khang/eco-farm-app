@@ -79,6 +79,8 @@ export function mapWorkflowResponseToWorkflow(
     name: workflow.name,
     description: workflow.description || "",
     selections: [],
+    seasonIds: (workflow.seasons || []).map((season) => season.id),
+    seasonNames: (workflow.seasons || []).map((season) => season.name || season.code || `#${season.id}`),
     isActive: workflow.status === "active",
     createdAt: workflow.createdAt || new Date().toISOString(),
     planCount: workflow.planCount ?? 0,
@@ -170,6 +172,8 @@ export function mapWorkflowResponseToInfoRecord(
     description: workflow.description || "",
     selections: mapWorkflowScopesToSelections(workflow.scopes),
     regionLabels: mapWorkflowScopesToRegionLabels(workflow.scopes),
+    seasonIds: (workflow.seasons || []).map((season) => season.id),
+    seasonNames: (workflow.seasons || []).map((season) => season.name || season.code || `#${season.id}`),
     ...mapDurationDaysToParts(workflow.durationDays),
     isActive: workflow.status === "active",
     position,
@@ -255,6 +259,12 @@ export function mapPlanResponseToPlan(plan: FarmPlanResponse): Plan {
 
   const stages = plan.stages || [];
   const selectedStages = stages.map((stage) => stage.name);
+  const seasonStageIds = stages
+    .map((stage) => stage.seasonStage?.id)
+    .filter((id): id is number => typeof id === "number");
+  const seasonStageNames = stages
+    .filter((stage) => stage.seasonStage?.id != null)
+    .map((stage) => stage.name);
   const materialAllocations = stages.flatMap((stage) =>
     (stage.supplyLines || []).map((line) => ({
       id: line.id,
@@ -316,6 +326,8 @@ export function mapPlanResponseToPlan(plan: FarmPlanResponse): Plan {
     growthCycleId: "",
     regimenId: undefined,
     selectedStages,
+    seasonStageIds,
+    seasonStageNames,
     materialAllocations,
     taskAllocations,
     status: planStatusMap[plan.status] ?? "draft",
@@ -368,8 +380,23 @@ export function buildFarmPlanStagesRequest(
         durationUnit: task.durationUnit,
       }));
 
+    const selectedCycleStage = formData.growthCycleSelections.find((selection) => {
+      if (selection.type !== "stage" || selection.stageId == null) return false;
+      if (stageKey.includes(":")) {
+        const [cycleId, ...nameParts] = stageKey.split(":");
+        return (
+          selection.cycleId === cycleId &&
+          nameParts.join(":") === stageName
+        );
+      }
+      return selection.stageName === stageName;
+    });
+
     return {
       name: stageName,
+      ...(selectedCycleStage?.stageId
+        ? { seasonStageId: Number(selectedCycleStage.stageId) }
+        : {}),
       supplyLines,
       workItems,
     } satisfies FarmPlanStageRequest;

@@ -81,6 +81,8 @@ export interface Plan {
   growthCycleId: string;
   regimenId?: string;
   selectedStages: string[];
+  seasonStageIds?: number[];
+  seasonStageNames?: string[];
   materialAllocations: MaterialAllocation[];
   taskAllocations: TaskAllocation[];
   status: "draft" | "active" | "completed" | "cancelled";
@@ -111,6 +113,8 @@ export interface Workflow {
   name: string;
   description: string;
   selections: GeographicalSelection[];
+  seasonIds?: number[];
+  seasonNames?: string[];
   isActive: boolean;
   createdAt: string;
   nodes?: unknown[];
@@ -147,6 +151,7 @@ export interface PlanFormData {
   growthCycleId: string;
   regimenId: string;
   selectedStages: string[];
+  seasonStageIds?: number[];
   status: Plan["status"];
   materialAllocations: MaterialAllocation[];
   taskAllocations: TaskAllocation[];

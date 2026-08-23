@@ -35,6 +35,12 @@ export interface FarmWorkflowScopeRequest {
   scopeId: number;
 }
 
+export interface FarmWorkflowSeasonRef {
+  id: number;
+  code?: string;
+  name?: string;
+}
+
 // Only the scope's own type is guaranteed populated at the top level — e.g.
 // an AREA scope has `region: null` and carries the region under `area.region`
 // instead, and a PLOT scope nests both area and region under `plot`.
@@ -79,6 +85,8 @@ export interface FarmWorkflowRequest {
   description?: string;
   durationDays: number;
   scopes: FarmWorkflowScopeRequest[];
+  /** Optional season links. The API replaces the complete set on update. */
+  seasonIds?: number[];
   status?: FarmWorkflowRequestStatus;
   metadataJson?: Record<string, any>;
 }
@@ -91,6 +99,7 @@ export interface FarmWorkflowResponse {
   description?: string;
   durationDays: number;
   scopes: FarmWorkflowScopeResponse[];
+  seasons?: FarmWorkflowSeasonRef[];
   status: FarmWorkflowResponseStatus;
   metadataJson?: Record<string, any>;
   planCount?: number;
@@ -201,6 +210,8 @@ export interface FarmPlanStageRequest {
   code?: string | null;
   name: string;
   description?: string;
+  /** ID of the stage from a Season attached to the parent workflow. */
+  seasonStageId?: number | null;
   supplyLines?: FarmPlanStageSupplyLineRequest[];
   workItems?: FarmPlanWorkItemRequest[];
 }
@@ -212,6 +223,7 @@ export interface FarmPlanStageResponse {
   code?: string;
   name: string;
   description?: string;
+  seasonStage?: FarmCatalogRef | null;
   supplyLines?: FarmPlanStageSupplyLineResponse[];
   workItems?: FarmPlanWorkItemResponse[];
 }

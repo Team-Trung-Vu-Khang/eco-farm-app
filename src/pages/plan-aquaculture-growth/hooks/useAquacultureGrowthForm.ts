@@ -372,6 +372,7 @@ export function useAquacultureGrowthForm(
           growthCycleId: plan.growthCycleId || "",
           regimenId: plan.regimenId || "",
           selectedStages: plan.selectedStages || [],
+          seasonStageIds: plan.seasonStageIds || [],
           materialAllocations:
             (plan.materialAllocations as MaterialAllocation[]) || [],
           taskAllocations: (plan.taskAllocations as TaskAllocation[]) || [],
@@ -409,6 +410,7 @@ export function useAquacultureGrowthForm(
       growthCycleId: plan.growthCycleId || "",
       regimenId: plan.regimenId || "",
       selectedStages: plan.selectedStages || [],
+      seasonStageIds: plan.seasonStageIds || [],
       materialAllocations:
         (plan.materialAllocations as MaterialAllocation[]) || [],
       taskAllocations: (plan.taskAllocations as TaskAllocation[]) || [],
@@ -630,6 +632,7 @@ export function useAquacultureGrowthForm(
             durationDays,
             personnel: buildPersonnelRequest(formData),
             stages,
+            metadataJson: plan?.metadataJson,
             status: "IN_PROGRESS",
           },
         });

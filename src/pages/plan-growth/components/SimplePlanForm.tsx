@@ -131,6 +131,7 @@ interface SimplePlanFormProps {
   isWorkflowContext?: boolean;
   workflowInfo?: {
     name?: string;
+    seasonIds?: number[];
     growthCycleSelections?: GrowthCycleSelection[];
   } | null;
   growthCycles: GrowthCycle[];
@@ -364,12 +365,12 @@ export default function SimplePlanForm({
 
   const inheritedCycleIds = useMemo(
     () =>
-      workflowInfo?.growthCycleSelections?.length
-        ? Array.from(
-            new Set(workflowInfo.growthCycleSelections.map((s) => s.cycleId)),
-          )
-        : growthCycles.slice(0, 2).map((c) => c.id),
-    [workflowInfo, growthCycles],
+      workflowInfo?.seasonIds?.length
+        ? workflowInfo.seasonIds.map(String)
+        : workflowInfo?.growthCycleSelections?.length
+          ? Array.from(new Set(workflowInfo.growthCycleSelections.map((s) => s.cycleId)))
+          : [],
+    [workflowInfo],
   );
   const inheritedCycles = useMemo(
     () => growthCycles.filter((c) => inheritedCycleIds.includes(c.id)),
@@ -411,6 +412,16 @@ export default function SimplePlanForm({
 
   useEffect(() => {
     if (!derivesStagesFromGrowthCycle) return;
+
+    // Trust stages already returned by the plan API. Auto-fill from the
+    // selected growth cycle only for a plan that currently has no stages;
+    // otherwise the same API stages can be duplicated by this effect.
+    if (
+      formData.selectedStages.length > 0 &&
+      !formData.selectedStages.some(isGrowthCycleStageKey)
+    ) {
+      return;
+    }
 
     const derivedKeys = Array.from(
       new Set(
