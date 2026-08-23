@@ -24,7 +24,6 @@ const GrowthCyclePage = () => {
     deleteOpen,
     setDeleteOpen,
     handleEdit,
-    handleWorkflow,
     handleDelete,
     handleConfirmDelete,
     loading,
@@ -46,9 +45,8 @@ const GrowthCyclePage = () => {
         onView: handleView,
         onEdit: handleEdit,
         onDelete: handleDelete,
-        onWorkflow: handleWorkflow,
       }),
-    [handleDelete, handleEdit, handleView, handleWorkflow],
+    [handleDelete, handleEdit, handleView],
   );
 
   return (
