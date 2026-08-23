@@ -1,27 +1,34 @@
+import { zodResolver } from "@hookform/resolvers/zod";
 import { useToast, type Step } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import QrScanner from "qr-scanner";
-import { useEffect, useMemo, useRef, useState, type SetStateAction } from "react";
-import { useLocation, useRoute } from "wouter";
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type SetStateAction,
+} from "react";
 import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
+import { useLocation, useRoute } from "wouter";
 
 import { vietQrBankData } from "@/constants/banks";
+import { useMasterData } from "@/features/master-data";
 import {
   useOrganizationById,
   useUpdateOrganization,
 } from "@/features/organization";
-import { useMasterData } from "@/features/master-data";
 import { useUploadStorageFile } from "@/features/storage/hooks/useUploadStorageFile";
 import { useSelectedWorkspaceId } from "@/features/workspace";
 import { parseVietQR } from "@/utils/commons";
 import readXlsxFile from "read-excel-file";
 import { EnterpriseBankAccountsStep } from "../components/steps/EnterpriseBankAccountsStep";
 import { EnterpriseBasicInfoStep } from "../components/steps/EnterpriseBasicInfoStep";
-import { EnterpriseContactsStep } from "../components/steps/EnterpriseContactsStep";
 import { EnterpriseBranchesStep } from "../components/steps/EnterpriseBranchesStep";
 import { EnterpriseConfirmationStep } from "../components/steps/EnterpriseConfirmationStep";
+import { EnterpriseContactsStep } from "../components/steps/EnterpriseContactsStep";
 import { EnterpriseDocumentsStep } from "../components/steps/EnterpriseDocumentsStep";
 import type { BankAccount, Branch, Contact } from "../data/constants";
+import { getDefaultOrganizationImage } from "../data/default-organization-images";
 import {
   defaultEnterpriseFormValues,
   enterpriseFormSchema,
@@ -29,7 +36,6 @@ import {
   type EnterpriseFormValues,
 } from "../data/enterprise-form.schema";
 import type { EnterpriseFormData } from "../types";
-import { getDefaultOrganizationImage } from "../data/default-organization-images";
 
 const BUSINESS_LINE_CODE_TO_CLASSIFICATION: Record<string, string> = {
   SX: "production",
@@ -143,6 +149,7 @@ export function useEnterpriseEditForm() {
       organizationTypeId: enterpriseData.organizationType?.id ?? "",
       code: enterpriseData.code,
       name: enterpriseData.name,
+      aliasName: enterpriseData.aliasName,
       brandName: enterpriseData.brandName || "",
       taxCode: enterpriseData.taxCode,
       taxAddress: enterpriseData.taxAddress || "",
@@ -151,7 +158,9 @@ export function useEnterpriseEditForm() {
       classification:
         enterpriseData.businessLines?.map((line) => {
           const code = String(line.code || "").toUpperCase();
-          return BUSINESS_LINE_CODE_TO_CLASSIFICATION[code] || line.name || code;
+          return (
+            BUSINESS_LINE_CODE_TO_CLASSIFICATION[code] || line.name || code
+          );
         }) ?? [],
       foundedDate: enterpriseData.foundedDate || "",
       representative: enterpriseData.representative || "",
@@ -197,7 +206,9 @@ export function useEnterpriseEditForm() {
         id: doc.id,
         name: doc.name || "",
         type: doc.mimeType || doc.documentType || "",
-        size: doc.sizeBytes ? `${(doc.sizeBytes / (1024 * 1024)).toFixed(2)} MB` : "",
+        size: doc.sizeBytes
+          ? `${(doc.sizeBytes / (1024 * 1024)).toFixed(2)} MB`
+          : "",
         url: doc.fileUrl || "",
         fileName: doc.fileName || "",
         fileUrl: doc.fileUrl || "",
@@ -516,7 +527,9 @@ export function useEnterpriseEditForm() {
     const file = files[0];
     if (!file) return;
     const previewUrl = URL.createObjectURL(file);
-    const previousDocuments = getValues("documents") as EnterpriseFormData["documents"];
+    const previousDocuments = getValues(
+      "documents",
+    ) as EnterpriseFormData["documents"];
     const requestSeq = ++documentUploadSeqRef.current;
 
     setFormData((prev) => ({
@@ -730,7 +743,8 @@ export function useEnterpriseEditForm() {
       if (workspaceId === null) {
         toast({
           title: "Thiếu workspace",
-          description: "Vui lòng chọn workspace trước khi cập nhật doanh nghiệp.",
+          description:
+            "Vui lòng chọn workspace trước khi cập nhật doanh nghiệp.",
           variant: "destructive",
         });
         return;
@@ -748,7 +762,8 @@ export function useEnterpriseEditForm() {
       const businessLines = values.classification.map(
         (classification: string) => {
           const record = businessLineRecords.find(
-            (item) => item.code === classification || item.name === classification,
+            (item) =>
+              item.code === classification || item.name === classification,
           );
 
           return (
@@ -764,7 +779,9 @@ export function useEnterpriseEditForm() {
       const payload = {
         type: values.type,
         organizationTypeId: values.organizationTypeId,
+        code: values.code?.trim() || "",
         name: values.name.trim(),
+        aliasName: values.aliasName.trim(),
         brandName: values.brandName.trim(),
         taxCode: values.taxCode.trim(),
         taxAuthority: values.taxAuthority.trim(),
@@ -810,18 +827,19 @@ export function useEnterpriseEditForm() {
           latitude: 0,
           longitude: 0,
           status: "active" as const,
-          contacts: branch.phone || branch.email
-            ? [
-                {
-                  contactId: branch.contactId ?? undefined,
-                  name: branch.name,
-                  position: "",
-                  phone: branch.phone,
-                  email: branch.email,
-                  isPrimary: true,
-                },
-              ]
-            : [],
+          contacts:
+            branch.phone || branch.email
+              ? [
+                  {
+                    contactId: branch.contactId ?? undefined,
+                    name: branch.name,
+                    position: "",
+                    phone: branch.phone,
+                    email: branch.email,
+                    isPrimary: true,
+                  },
+                ]
+              : [],
           bankAccounts: [],
           metadataJson: null,
         })),
@@ -841,16 +859,16 @@ export function useEnterpriseEditForm() {
           isPrimary: index === 0,
           metadataJson: null,
         })),
-      documents: values.documents.map((doc) => ({
-        id: doc.id ?? undefined,
-        documentType: doc.type,
-        name: doc.name,
-        fileUrl: doc.fileUrl || doc.url || "",
-        fileName: doc.fileName || doc.name,
-        mimeType: doc.mimeType || doc.type,
-        sizeBytes: doc.sizeBytes,
-        content: doc.content ?? undefined,
-      })),
+        documents: values.documents.map((doc) => ({
+          id: doc.id ?? undefined,
+          documentType: doc.type,
+          name: doc.name,
+          fileUrl: doc.fileUrl || doc.url || "",
+          fileName: doc.fileName || doc.name,
+          mimeType: doc.mimeType || doc.type,
+          sizeBytes: doc.sizeBytes,
+          content: doc.content ?? undefined,
+        })),
         metadataJson: enterpriseQuery.item?.metadataJson ?? null,
       };
 
@@ -884,9 +902,7 @@ export function useEnterpriseEditForm() {
         title: "Thông tin cơ bản",
         description: "Tên, tên gợi nhớ và thông tin thuế",
         content: <EnterpriseBasicInfoStep />,
-        isValid:
-          formData.name.length > 0 &&
-          formData.organizationTypeId !== "",
+        isValid: formData.name.length > 0 && formData.organizationTypeId !== "",
       },
       {
         id: "contacts",

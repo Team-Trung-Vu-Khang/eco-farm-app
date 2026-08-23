@@ -126,6 +126,7 @@ const toEnterprise = (organization: OrganizationRecord): SearchEnterprise => {
     email: primaryContact?.email || "",
     status: normalizeStatus(organization.status),
     createdAt: organization.createdAt || "",
+    aliasName: organization.aliasName || "",
     brandName: organization.brandName || "",
     representative: organization.representative || "",
     foundedDate: organization.foundedDate || "",
