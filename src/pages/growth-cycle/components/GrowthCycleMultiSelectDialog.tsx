@@ -2,25 +2,26 @@ import { useInfiniteQuery } from "@tanstack/react-query";
 import { Badge, Button, Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, Input, cn } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { Check, Loader2, Search } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { catalogApi, productionSubjectApi, productionSubjectVariantApi } from "../../../features/foundation/api/foundation.api";
-import type { CatalogRecordResponse, PageResponse, ProductionSubjectResponse, ProductionSubjectVariantResponse } from "../../../features/foundation/types/foundation.type";
+import { productionSubjectApi, productionSubjectGroupApi, productionSubjectVariantApi } from "../../../features/foundation/api/foundation.api";
+import type { PageResponse, ProductionSubjectGroupResponse, ProductionSubjectResponse, ProductionSubjectVariantResponse } from "../../../features/foundation/types/foundation.type";
 
 export interface GrowthCycleMultiSelectOption { id: string; name: string; group: string; image: string; description?: string; code?: string; }
 type ScopeResource = "group" | "crop" | "variety";
-type ScopeResponse = PageResponse<CatalogRecordResponse> | PageResponse<ProductionSubjectResponse> | PageResponse<ProductionSubjectVariantResponse>;
+type ScopeResponse = PageResponse<ProductionSubjectGroupResponse> | PageResponse<ProductionSubjectResponse> | PageResponse<ProductionSubjectVariantResponse>;
 
 interface GrowthCycleMultiSelectDialogProps {
   open: boolean; onOpenChange: (open: boolean) => void; title: string; description?: string; searchPlaceholder: string;
   selectedIds: string[]; resource: ScopeResource; subjectIds?: string[];
   optionsLabel: string; onConfirm: (ids: string[]) => void;
+  domainCode?: "CROP" | "LIVESTOCK" | "AQUACULTURE";
 }
 
 const PAGE_SIZE = 20;
 
-function toOption(item: CatalogRecordResponse | ProductionSubjectResponse | ProductionSubjectVariantResponse): GrowthCycleMultiSelectOption {
+function toOption(item: ProductionSubjectGroupResponse | ProductionSubjectResponse | ProductionSubjectVariantResponse): GrowthCycleMultiSelectOption {
   if ("domainCode" in item && "subject" in item) return { id: String(item.id), name: item.name, group: item.subject?.name || item.origin || "", image: item.imageUrl || "", description: item.description || "", code: item.code };
-  if ("domainCode" in item) return { id: String(item.id), name: item.name, group: item.scientificName || "", image: item.imageUrl || "", description: item.scientificName || "", code: item.code };
-  return { id: String(item.id), name: item.name, group: "", image: item.imageUrl || "", description: item.description || "", code: item.code };
+  if ("biological" in item) return { id: String(item.id), name: item.name, group: "", image: "", description: item.description || item.biological || "", code: item.code };
+  return { id: String(item.id), name: item.name, group: item.scientificName || "", image: item.imageUrl || "", description: item.scientificName || "", code: item.code };
 }
 
 function OptionCard({ option, selected, onClick }: { option: GrowthCycleMultiSelectOption; selected: boolean; onClick: () => void }) {
@@ -30,7 +31,7 @@ function OptionCard({ option, selected, onClick }: { option: GrowthCycleMultiSel
   </button>;
 }
 
-export function GrowthCycleMultiSelectDialog({ open, onOpenChange, title, description, searchPlaceholder, selectedIds, resource, subjectIds = [], optionsLabel, onConfirm }: GrowthCycleMultiSelectDialogProps) {
+export function GrowthCycleMultiSelectDialog({ open, onOpenChange, title, description, searchPlaceholder, selectedIds, resource, subjectIds = [], optionsLabel, onConfirm, domainCode = "CROP" }: GrowthCycleMultiSelectDialogProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [keyword, setKeyword] = useState("");
   const [tempIds, setTempIds] = useState<string[]>(selectedIds);
@@ -47,17 +48,17 @@ export function GrowthCycleMultiSelectDialog({ open, onOpenChange, title, descri
   }, [open, selectedIds]);
 
   const query = useInfiniteQuery<ScopeResponse, Error>({
-    queryKey: ["growth-cycle-scope-options", resource, keyword, subjectIds], enabled: open, initialPageParam: 0,
+    queryKey: ["growth-cycle-scope-options", resource, keyword, subjectIds, domainCode], enabled: open, initialPageParam: 0,
     queryFn: ({ pageParam }) => {
-      const params = { page: pageParam as number, size: PAGE_SIZE, keyword: keyword || undefined, status: "active" as const, domainCode: "CROP" as const };
-      if (resource === "group") return catalogApi.list("crop-groups", params);
+      const params = { page: pageParam as number, size: PAGE_SIZE, keyword: keyword || undefined, status: "active" as const, domainCode };
+      if (resource === "group") return productionSubjectGroupApi.list({ ...params, domainCode });
       if (resource === "crop") return productionSubjectApi.list(params);
       return productionSubjectVariantApi.list({ ...params, subjectId: subjectIds.length === 1 ? Number(subjectIds[0]) : undefined });
     },
     getNextPageParam: (lastPage) => lastPage.last ? undefined : lastPage.page + 1,
     refetchOnWindowFocus: false,
   });
-  const fetchedOptions = useMemo(() => query.data?.pages.flatMap((page) => page.content).map((item) => toOption(item as CatalogRecordResponse | ProductionSubjectResponse | ProductionSubjectVariantResponse)).filter((option, index, all) => all.findIndex((item) => item.id === option.id) === index) ?? [], [query.data?.pages]);
+  const fetchedOptions = useMemo(() => query.data?.pages.flatMap((page) => page.content).map((item) => toOption(item as ProductionSubjectGroupResponse | ProductionSubjectResponse | ProductionSubjectVariantResponse)).filter((option, index, all) => all.findIndex((item) => item.id === option.id) === index) ?? [], [query.data?.pages]);
   const totalElements = query.data?.pages[0]?.totalElements ?? fetchedOptions.length;
   const toggleOption = (id: string) => setTempIds((prev) => prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]);
 

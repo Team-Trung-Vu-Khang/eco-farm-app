@@ -1,140 +1,35 @@
 import { Badge, Card, CardContent } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import {
-  Calendar,
-  ChevronRight,
-  Fish,
-  Layers,
-  Layout,
-  Sprout,
-} from "lucide-react";
+import { Calendar, ChevronRight, Layers, Layout, PawPrint } from "lucide-react";
+import { useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useFormContext } from "react-hook-form";
 import type { AnimalGrowthCycleFormValues } from "../../schemas/animalGrowthCycleSchema";
-import type {
-  FoundationCropResponse,
-  FoundationCropVarietyResponse,
-} from "../../../../../features/foundation/types/foundation.type";
+import type { FoundationCropResponse, FoundationCropVarietyResponse } from "../../../../../features/foundation/types/foundation.type";
+import { productionSubjectGroupApi } from "../../../../../features/foundation/api/foundation.api";
+import type { PageResponse, ProductionSubjectGroupResponse } from "../../../../../features/foundation/types/foundation.type";
+import { formatDaysToDuration, parseDurationToDays } from "../../utils/duration";
 
-interface AnimalGrowthCycleConfirmStepProps {
-  varieties: FoundationCropVarietyResponse[];
-  crops: FoundationCropResponse[];
-}
+interface AnimalGrowthCycleConfirmStepProps { varieties: FoundationCropVarietyResponse[]; crops: FoundationCropResponse[]; }
 
-export function AnimalGrowthCycleConfirmStep({
-  varieties,
-  crops,
-}: AnimalGrowthCycleConfirmStepProps) {
+export function AnimalGrowthCycleConfirmStep({ varieties, crops }: AnimalGrowthCycleConfirmStepProps) {
   const { watch } = useFormContext<AnimalGrowthCycleFormValues>();
   const formData = watch();
+  const cropName = crops.filter((crop) => (formData.cropIds || []).includes(String(crop.id))).map((crop) => crop.name).join(", ");
+  const varietyName = varieties.filter((variety) => (formData.varietyIds || []).includes(String(variety.id))).map((variety) => variety.name).join(", ");
+  const { data: groupResponse } = useQuery<PageResponse<ProductionSubjectGroupResponse>>({ queryKey: ["animal-growth-cycle-groups", "LIVESTOCK"], queryFn: () => productionSubjectGroupApi.list({ domainCode: "LIVESTOCK", page: 0, size: 100, status: "active" }), staleTime: 300_000 });
+  const groupName = (formData.groupIds || []).map((id) => groupResponse?.content.find((group) => String(group.id) === id)?.name || id).join(", ") || "-";
+  const totalDays = useMemo(() => formData.stages.reduce((sum, stage) => sum + parseDurationToDays(String(stage.duration)), 0), [formData.stages]);
 
-  const cropName =
-    crops.find((crop) => String(crop.id) === formData.cropId)?.name ||
-    formData.cropId;
-  const varietyName =
-    varieties.find((variety) => String(variety.id) === formData.variety)
-      ?.name || formData.variety;
-  const isAnimal = (formData.cycleType ?? "animal") === "animal";
-
-  return (
-    <div className="max-w-4xl mx-auto space-y-6 py-4">
-      <div className="flex items-center gap-2 text-primary">
-        <Layout className="w-5 h-5" />
-        <h3 className="font-bold text-lg">Xác nhận chu kỳ sinh trưởng</h3>
-      </div>
-
-      <Card className="border-none shadow-none bg-muted/30">
-        <CardContent className="p-6 grid grid-cols-1 md:grid-cols-2 gap-y-4 gap-x-12">
-          <div className="flex justify-between items-center py-2 border-b border-muted col-span-full">
-            <span className="text-sm text-muted-foreground">Tên chu kỳ:</span>
-            <span className="font-bold text-base text-slate-900">{formData.name || "-"}</span>
-          </div>
-          <div className="flex justify-between items-center py-2 border-b border-muted">
-            <span className="text-sm text-muted-foreground">Nhóm chu kỳ:</span>
-            <Badge variant={isAnimal ? "default" : "secondary"}>
-              {isAnimal ? (
-                <span className="flex items-center gap-2">
-                  <Sprout className="w-3.5 h-3.5" />
-                  Động vật
-                </span>
-              ) : (
-                <span className="flex items-center gap-2">
-                  <Fish className="w-3.5 h-3.5" />
-                  Vật nuôi / Thủy sản
-                </span>
-              )}
-            </Badge>
-          </div>
-          <div className="flex justify-between items-center py-2 border-b border-muted">
-            <span className="text-sm text-muted-foreground">Phạm vi:</span>
-            <Badge
-              variant={formData.scope === "crop" ? "default" : "secondary"}
-            >
-              {formData.scope === "crop" ? "Theo loại cây" : "Theo giống"}
-            </Badge>
-          </div>
-          <div className="flex justify-between items-center py-2 border-b border-muted">
-            <span className="text-sm text-muted-foreground">
-              {isAnimal ? "Loại vật nuôi:" : "Đối tượng nuôi:"}
-            </span>
-            <span className="font-bold">{cropName}</span>
-          </div>
-          {formData.scope === "variety" && (
-            <div className="flex justify-between items-center py-2 border-b border-muted">
-              <span className="text-sm text-muted-foreground">
-                {isAnimal ? "Giống vật nuôi:" : "Giống / dòng:"}
-              </span>
-              <div className="flex items-center gap-2">
-                <Sprout className="w-4 h-4 text-green-600" />
-                <span className="font-bold">{varietyName}</span>
-              </div>
-            </div>
-          )}
-          <div className="flex justify-between items-center py-2 border-b border-muted">
-            <span className="text-sm text-muted-foreground">
-              Tổng thời gian:
-            </span>
-            <Badge className="bg-blue-50 text-blue-700 border-blue-100 font-bold">
-              {formData.totalDays}
-            </Badge>
-          </div>
-          <div className="flex justify-between items-center py-2 border-b border-muted">
-            <span className="text-sm text-muted-foreground">Số giai đoạn:</span>
-            <span className="font-bold">
-              {formData.stages.length} giai đoạn
-            </span>
-          </div>
-        </CardContent>
-      </Card>
-
-      <div className="space-y-4">
-        <span className="text-xs font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-2">
-          <Layers className="w-3 h-3" />
-          Chi tiết các giai đoạn
-        </span>
-        <div className="space-y-2">
-          {formData.stages.map((stage, index) => (
-            <div
-              key={stage.id}
-              className="flex items-center justify-between p-4 rounded-lg bg-white border shadow-sm group hover:border-primary/30 transition-all"
-            >
-              <div className="flex items-center gap-4">
-                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-orange-50 text-orange-600">
-                  <Calendar className="w-4 h-4" />
-                </div>
-                <div>
-                  <p className="font-bold text-sm">Giai đoạn {index + 1}</p>
-                  <p className="text-xs text-muted-foreground">{stage.name}</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-4">
-                <Badge variant="outline" className="text-[10px] font-bold">
-                  {stage.duration}
-                </Badge>
-                <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-primary transform group-hover:translate-x-1 transition-all" />
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
+  return <div className="mx-auto max-w-4xl space-y-6 py-4">
+    <div className="flex items-center gap-2 text-primary"><Layout className="h-5 w-5" /><h3 className="text-lg font-bold">Xác nhận chu kỳ sinh trưởng</h3></div>
+    <Card className="border-none bg-muted/30 shadow-none"><CardContent className="grid grid-cols-1 gap-x-12 gap-y-4 p-6 md:grid-cols-2">
+      <div className="col-span-full flex items-center justify-between border-b border-muted py-2"><span className="text-sm text-muted-foreground">Tên chu kỳ:</span><span className="text-base font-bold text-slate-900">{formData.name || "-"}</span></div>
+      <div className="flex items-center justify-between border-b border-muted py-2"><span className="text-sm text-muted-foreground">Nhóm chu kỳ:</span><Badge variant="default"><span className="flex items-center gap-2"><PawPrint className="h-3.5 w-3.5" />Vụ nuôi</span></Badge></div>
+      <div className="flex items-center justify-between border-b border-muted py-2"><span className="text-sm text-muted-foreground">Phạm vi:</span><Badge variant="default">{formData.scope === "group" ? "Theo nhóm vật nuôi" : formData.scope === "crop" ? "Theo vật nuôi" : "Theo giống vật nuôi"}</Badge></div>
+      <div className="col-span-full flex items-start justify-between border-b border-muted py-2"><span className="shrink-0 text-sm text-muted-foreground">{formData.scope === "group" ? "Nhóm vật nuôi:" : formData.scope === "crop" ? "Vật nuôi:" : "Giống vật nuôi:"}</span><Badge variant="outline" className="font-bold">{formData.scope === "group" ? groupName : formData.scope === "crop" ? cropName || "-" : varietyName || "-"}</Badge></div>
+      <div className="flex items-center justify-between border-b border-muted py-2"><span className="text-sm text-muted-foreground">Tổng thời gian:</span><Badge className="border-blue-100 bg-blue-50 font-bold text-blue-700">{formatDaysToDuration(totalDays) || "0 ngày"}</Badge></div>
+      <div className="flex items-center justify-between border-b border-muted py-2"><span className="text-sm text-muted-foreground">Số giai đoạn:</span><span className="font-bold">{formData.stages.length} giai đoạn</span></div>
+    </CardContent></Card>
+    <div className="space-y-4"><span className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-muted-foreground"><Layers className="h-3 w-3" />Chi tiết các giai đoạn</span><div className="space-y-2">{formData.stages.map((stage, index) => <div key={stage.id} className="group flex items-center justify-between rounded-lg border bg-white p-4 shadow-sm transition-all hover:border-primary/30"><div className="flex items-center gap-4"><div className="flex h-8 w-8 items-center justify-center rounded-full bg-orange-50 text-orange-600"><Calendar className="h-4 w-4" /></div><div><p className="text-sm font-bold">Giai đoạn {index + 1}</p><p className="text-xs text-muted-foreground">{stage.name}</p></div></div><div className="flex items-center gap-4"><Badge variant="outline" className="text-[10px] font-bold">{stage.duration}</Badge><ChevronRight className="h-4 w-4 text-muted-foreground transition-all group-hover:translate-x-1 group-hover:text-primary" /></div></div>)}</div></div>
+  </div>;
 }

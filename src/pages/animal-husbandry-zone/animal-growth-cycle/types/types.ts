@@ -11,7 +11,7 @@ export interface AnimalGrowthCycle {
   id: string;
   name: string;
   cycleType?: "animal" | "animal";
-  scope: "crop" | "variety";
+  scope: "group" | "crop" | "variety";
   cropId: string;
   cropName: string;
   variety?: string; // Optional if scope is 'crop'

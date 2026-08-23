@@ -63,8 +63,9 @@ export default function UpdateAnimalGrowthCyclePage() {
 
   const { watch, reset } = form;
   const watchedScope = watch("scope");
-  const watchedCropId = watch("cropId");
-  const watchedVariety = watch("variety");
+  const watchedGroupIds = watch("groupIds") || [];
+  const watchedCropIds = watch("cropIds") || [];
+  const watchedVarietyIds = watch("varietyIds") || [];
   const watchedStages = watch("stages") || [];
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -73,8 +74,13 @@ export default function UpdateAnimalGrowthCyclePage() {
   useEffect(() => {
     if (currentCycle && !isLoaded) {
       const metadata: Record<string, unknown> = currentCycle.metadataJson || {};
+      const cropIds = (currentCycle.productionSubjects || []).map((item: { id?: number }) => item.id).filter((id: number | undefined): id is number => id != null);
+      const varietyIds = (currentCycle.productionSubjectVariants || []).map((item: { id?: number }) => item.id).filter((id: number | undefined): id is number => id != null);
       const cropIdVal = currentCycle.productionSubject?.id;
       const varietyIdVal = currentCycle.productionSubjectVariant?.id;
+      if (cropIds.length === 0 && cropIdVal) cropIds.push(cropIdVal);
+      if (varietyIds.length === 0 && varietyIdVal) varietyIds.push(varietyIdVal);
+      const groupIdVal = (currentCycle.productionSubjectGroups || [])[0]?.id;
       const totalDaysVal =
         currentCycle.stages?.reduce(
           (sum: number, s: any) => sum + (s.durationDays || 0),
@@ -86,9 +92,10 @@ export default function UpdateAnimalGrowthCyclePage() {
         cycleType: String(metadata.cycleType || "animal") as
           | "animal"
           | "animal",
-        scope: varietyIdVal ? "variety" : "crop",
-        cropId: cropIdVal ? String(cropIdVal) : "",
-        variety: varietyIdVal ? String(varietyIdVal) : "",
+        scope: groupIdVal ? "group" : varietyIdVal ? "variety" : "crop",
+        groupIds: (currentCycle.productionSubjectGroups || []).map((item: { id?: number }) => item.id).filter((id: number | undefined): id is number => id != null).map(String),
+        cropIds: cropIds.map(String),
+        varietyIds: varietyIds.map(String),
         totalDays: totalDaysVal,
         stages: (currentCycle.stages || []).map((s: any) => {
           let usePdf = false;
@@ -130,9 +137,14 @@ export default function UpdateAnimalGrowthCyclePage() {
     [watchedStages],
   );
 
-  const varietyName =
-    cropVarieties.find((variety) => String(variety.id) === watchedVariety)
-      ?.name || watchedVariety;
+  const varietyName = cropVarieties
+    .filter((variety) => watchedVarietyIds.includes(String(variety.id)))
+    .map((variety) => variety.name)
+    .join(", ");
+  const cropName = crops
+    .filter((crop) => watchedCropIds.includes(String(crop.id)))
+    .map((crop) => crop.name)
+    .join(", ");
 
   const handleComplete = async (values: AnimalGrowthCycleFormValues) => {
     if (!numericId) return;
@@ -194,11 +206,13 @@ export default function UpdateAnimalGrowthCyclePage() {
 
       const metadataJson = { cycleType: values.cycleType };
 
-      const cropIdVal = Number(values.cropId);
-      const varietyIdVal =
-        values.scope === "variety" && values.variety
-          ? Number(values.variety)
-          : undefined;
+      const cropIds = values.cropIds.map(Number);
+      const varietyIds = values.varietyIds.map(Number);
+      const scopeType = values.scope === "group"
+        ? "SUBJECT_GROUP"
+        : values.scope === "variety"
+          ? "SUBJECT_VARIANT"
+          : "SUBJECT";
 
       await updateTemplate.mutateAsync({
         id: numericId,
@@ -206,8 +220,12 @@ export default function UpdateAnimalGrowthCyclePage() {
           domainCode: "LIVESTOCK",
           code: currentCycle?.code || undefined,
           name: values.name.trim(),
-          productionSubjectId: cropIdVal,
-          productionSubjectVariantId: varietyIdVal ?? null,
+          scopeType,
+          productionSubjectGroupIds: values.scope === "group" ? values.groupIds.map(Number) : [],
+          productionSubjectIds: values.scope === "crop" ? cropIds : [],
+          productionSubjectVariantIds: values.scope === "variety" ? varietyIds : [],
+          productionSubjectId: values.scope === "group" ? null : cropIds[0] ?? null,
+          productionSubjectVariantId: values.scope === "variety" ? varietyIds[0] ?? null : null,
           description: currentCycle?.description || "Chu kỳ sinh trưởng",
           stages: preparedStages,
           displayOrder: currentCycle?.displayOrder || 1,
@@ -247,7 +265,7 @@ export default function UpdateAnimalGrowthCyclePage() {
   return (
     <PageWrapper
       title="Cập nhật chu kỳ sinh trưởng"
-      description={`Chỉnh sửa thông tin cho ${varietyName || watchedCropId}`}
+      description={`Chỉnh sửa thông tin cho ${varietyName || cropName || "vật nuôi"}`}
       actions={[
         <Button
           variant="outline"
@@ -291,13 +309,13 @@ export default function UpdateAnimalGrowthCyclePage() {
                   <div className="flex justify-between gap-4">
                     <span className="text-muted-foreground">Chu kỳ:</span>
                     <span className="font-medium">
-                      {varietyName || watchedCropId}
+                      {watchedScope === "variety" ? varietyName || "-" : cropName || "-"}
                     </span>
                   </div>
                   <div className="flex justify-between gap-4">
                     <span className="text-muted-foreground">Phạm vi:</span>
                     <span className="font-medium">
-                      {watchedScope === "crop" ? "Theo vật nuôi" : "Theo giống"}
+                      {watchedScope === "group" ? "Theo nhóm vật nuôi" : watchedScope === "crop" ? "Theo vật nuôi" : "Theo giống vật nuôi"}
                     </span>
                   </div>
                   <div className="flex justify-between gap-4">

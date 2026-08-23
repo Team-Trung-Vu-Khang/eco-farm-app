@@ -7,10 +7,12 @@ import {
   DialogHeader,
   DialogTitle,
   Input,
-  ScrollArea,
   cn,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { Check, Search } from "lucide-react";
+import { useInfiniteQuery } from "@tanstack/react-query";
+import { productionSubjectApi, productionSubjectGroupApi, productionSubjectVariantApi } from "../../../../features/foundation/api/foundation.api";
+import type { PageResponse, ProductionSubjectGroupResponse, ProductionSubjectResponse, ProductionSubjectVariantResponse } from "../../../../features/foundation/types/foundation.type";
+import { Check, Loader2, Search } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 export interface AnimalGrowthCycleHierarchyPrimaryOption {
@@ -134,44 +136,41 @@ export function AnimalGrowthCycleHierarchyDialog({
   const [tempChildId, setTempChildId] = useState(selectedChildId);
   const childSectionRef = useRef<HTMLDivElement | null>(null);
 
-  const filteredPrimaryOptions = useMemo(() => {
-    const query = searchTerm.toLowerCase().trim();
-    if (!query) return primaryOptions;
+  const isGroup = primaryLabel === "Nhóm vật nuôi";
+  const primaryQuery = useInfiniteQuery<PageResponse<ProductionSubjectGroupResponse | ProductionSubjectResponse>, Error>({
+    queryKey: ["animal-growth-cycle-dialog-primary", isGroup ? "groups" : "subjects", searchTerm],
+    enabled: open,
+    initialPageParam: 0,
+    queryFn: ({ pageParam }) => isGroup
+      ? productionSubjectGroupApi.list({ page: pageParam as number, size: 20, keyword: searchTerm || undefined, status: "active", domainCode: "LIVESTOCK" })
+      : productionSubjectApi.list({ page: pageParam as number, size: 20, keyword: searchTerm || undefined, status: "active", domainCode: "LIVESTOCK" }),
+    getNextPageParam: (lastPage) => lastPage.last ? undefined : lastPage.page + 1,
+    refetchOnWindowFocus: false,
+  });
+  const childQuery = useInfiniteQuery<PageResponse<ProductionSubjectVariantResponse>, Error>({
+    queryKey: ["animal-growth-cycle-dialog-varieties", searchTerm, tempPrimaryId],
+    enabled: open && showChildSection && !!tempPrimaryId,
+    initialPageParam: 0,
+    queryFn: ({ pageParam }) => productionSubjectVariantApi.list({ page: pageParam as number, size: 20, keyword: searchTerm || undefined, status: "active", domainCode: "LIVESTOCK", subjectId: Number(tempPrimaryId) }),
+    getNextPageParam: (lastPage) => lastPage.last ? undefined : lastPage.page + 1,
+    refetchOnWindowFocus: false,
+  });
 
-    return primaryOptions.filter((option) => {
-      const searchable = [
-        option.name,
-        option.group,
-        option.code,
-        option.description,
-      ]
-        .filter(Boolean)
-        .join(" ")
-        .toLowerCase();
-      return searchable.includes(query);
-    });
-  }, [primaryOptions, searchTerm]);
+  const apiPrimaryOptions = useMemo(() => primaryQuery.data?.pages.flatMap((page) => page.content).map((item) => {
+    if (isGroup) {
+      const group = item as ProductionSubjectGroupResponse;
+      return { id: String(group.id), name: group.name, group: "", image: group.imageUrl || "", description: group.description || "", code: group.code };
+    }
+    const subject = item as ProductionSubjectResponse;
+    return { id: String(subject.id), name: subject.name, group: subject.family || "", image: subject.imageUrl || "", description: subject.origin || "", code: subject.code };
+  }).filter((option, index, all) => all.findIndex((item) => item.id === option.id) === index) || [], [isGroup, primaryQuery.data?.pages]);
+  const apiChildOptions = useMemo(() => childQuery.data?.pages.flatMap((page) => page.content).map((item) => ({ id: String(item.id), primaryId: String(item.subject?.id), name: item.name, group: item.origin || "", image: item.imageUrl || "", description: item.description || "", code: item.code })).filter((option, index, all) => all.findIndex((item) => item.id === option.id) === index) || [], [childQuery.data?.pages]);
 
-  const filteredChildOptions = useMemo(() => {
-    const query = searchTerm.toLowerCase().trim();
-    return childOptions.filter((option) => {
-      if (option.primaryId !== tempPrimaryId) return false;
-      if (!query) return true;
+  const filteredPrimaryOptions = apiPrimaryOptions;
 
-      const searchable = [
-        option.name,
-        option.group,
-        option.code,
-        option.description,
-      ]
-        .filter(Boolean)
-        .join(" ")
-        .toLowerCase();
-      return searchable.includes(query);
-    });
-  }, [childOptions, searchTerm, tempPrimaryId]);
+  const filteredChildOptions = apiChildOptions;
 
-  const selectedPrimary = primaryOptions.find((item) => item.id === tempPrimaryId);
+  const selectedPrimary = filteredPrimaryOptions.find((item) => item.id === tempPrimaryId) || primaryOptions.find((item) => item.id === tempPrimaryId);
 
   useEffect(() => {
     if (!open) return;
@@ -236,13 +235,19 @@ export function AnimalGrowthCycleHierarchyDialog({
           </div>
         </div>
 
-        <ScrollArea className="min-h-0 flex-1">
+        <div className="min-h-0 flex-1 overflow-y-auto" onScroll={(event) => {
+          const element = event.currentTarget;
+          const nearBottom = element.scrollHeight - element.scrollTop - element.clientHeight < 240;
+          if (nearBottom && primaryQuery.hasNextPage && !primaryQuery.isFetchingNextPage) void primaryQuery.fetchNextPage();
+          if (nearBottom && childQuery.hasNextPage && !childQuery.isFetchingNextPage) void childQuery.fetchNextPage();
+        }}>
           <div className="space-y-5 p-5">
             <div>
               <div className="mb-3 text-sm font-semibold text-slate-700">
                 {primaryLabel}
               </div>
               <div className="grid gap-3 sm:grid-cols-2">
+                {primaryQuery.isLoading && <div className="col-span-full flex items-center justify-center gap-2 py-10 text-sm text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" />Đang tải dữ liệu...</div>}
                 {filteredPrimaryOptions.map((option) => {
                   const isSelected = tempPrimaryId === option.id;
                   return (
@@ -258,6 +263,7 @@ export function AnimalGrowthCycleHierarchyDialog({
                   );
                 })}
               </div>
+              {primaryQuery.isFetchingNextPage && <div className="flex items-center justify-center gap-2 py-3 text-xs text-muted-foreground"><Loader2 className="h-3.5 w-3.5 animate-spin" />Đang tải thêm...</div>}
             </div>
 
             {showChildSection ? (
@@ -267,6 +273,7 @@ export function AnimalGrowthCycleHierarchyDialog({
                 </div>
                 <div ref={childSectionRef} />
                 <div className="grid gap-3 sm:grid-cols-2">
+                  {childQuery.isLoading && <div className="col-span-full flex items-center justify-center gap-2 py-10 text-sm text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" />Đang tải dữ liệu...</div>}
                   {tempPrimaryId && filteredChildOptions.length > 0 ? (
                     filteredChildOptions.map((option) => {
                       const isSelected = tempChildId === option.id;
@@ -285,10 +292,11 @@ export function AnimalGrowthCycleHierarchyDialog({
                     </div>
                   )}
                 </div>
+                {childQuery.isFetchingNextPage && <div className="flex items-center justify-center gap-2 py-3 text-xs text-muted-foreground"><Loader2 className="h-3.5 w-3.5 animate-spin" />Đang tải thêm...</div>}
               </div>
             ) : null}
           </div>
-        </ScrollArea>
+        </div>
 
         <DialogFooter className="shrink-0 border-t bg-white px-6 py-4">
           <Button variant="ghost" onClick={() => onOpenChange(false)}>
@@ -297,7 +305,7 @@ export function AnimalGrowthCycleHierarchyDialog({
           <Button
             onClick={() => {
               if (!selectedPrimary) return;
-              const child = childOptions.find((item) => item.id === tempChildId);
+              const child = filteredChildOptions.find((item) => item.id === tempChildId) || childOptions.find((item) => item.id === tempChildId);
               onConfirm({ primary: selectedPrimary, child });
               onOpenChange(false);
             }}
