@@ -44,6 +44,7 @@ export const organizationApi = {
   async search(
     params: OrganizationQueryParams = {},
     workspaceId: number | string,
+    signal?: AbortSignal,
   ): Promise<OrganizationPageResponse<OrganizationRecord>> {
     assertWorkspaceId(workspaceId);
 
@@ -51,6 +52,7 @@ export const organizationApi = {
       OrganizationPageResponse<OrganizationRecord>
     >(ORGANIZATION_SEARCH_PATH, {
       params,
+      signal,
       ...withWorkspaceHeader(workspaceId),
     });
 

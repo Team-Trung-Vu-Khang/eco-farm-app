@@ -1,6 +1,6 @@
 import PageWrapper from "@/components/PageWrapper";
 import { Badge, Button, cn, Input } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { Filter, Layers, Search } from "lucide-react";
+import { Filter, Layers, Loader2, Search } from "lucide-react";
 
 import { AdvancedFilterPanel } from "./components/AdvancedFilterPanel";
 import { EnterpriseDetailPanel } from "./components/EnterpriseDetailPanel";
@@ -37,6 +37,7 @@ const SearchUnitPage = () => {
     resetFilters,
     applyFilters,
     filterOptions,
+    isLoadingOrganizations,
     setLocation,
   } = useEnterpriseSearch();
 
@@ -114,6 +115,12 @@ const SearchUnitPage = () => {
                       {enterprises.length}
                     </span>{" "}
                     đơn vị phù hợp với tiêu chí hiện tại.
+                    {isLoadingOrganizations && (
+                      <span className="ml-2 inline-flex items-center gap-1 text-green-600">
+                        <Loader2 className="h-3 w-3 animate-spin" />
+                        Đang tải...
+                      </span>
+                    )}
                   </p>
                 </div>
               </div>

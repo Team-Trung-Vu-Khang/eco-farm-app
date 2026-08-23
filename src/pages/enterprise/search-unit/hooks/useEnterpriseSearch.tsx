@@ -2,7 +2,11 @@ import { useToast } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation } from "wouter";
 
-import { useOrganizationSearch, type OrganizationRecord } from "@/features/organization";
+import {
+  organizationApi,
+  type OrganizationRecord,
+  type OrganizationQueryParams,
+} from "@/features/organization";
 import { useMasterData } from "@/features/master-data";
 import { useSelectedWorkspaceId } from "@/features/workspace";
 import type { CultivationRegion } from "@/stores/useCultivationRegionStore";
@@ -202,23 +206,73 @@ export function useEnterpriseSearch() {
     [selectedEnterpriseId],
   );
 
-  const organizationsQuery = useOrganizationSearch(
-    {
-      keyword: searchQuery.trim() || undefined,
-      status: advancedFilters.status?.join(",") || undefined,
-      businessLine: advancedFilters.classifications?.join(",") || undefined,
-      page: 0,
-      size: DEFAULT_PAGE_SIZE,
-    },
-    workspaceId ?? "missing",
-    {
-      enabled: workspaceId !== null,
-    },
-  );
+  const searchParams: OrganizationQueryParams = {
+    keyword: searchQuery.trim() || undefined,
+    status: advancedFilters.status?.join(",") || undefined,
+    businessLine: advancedFilters.classifications?.join(",") || undefined,
+    page: 0,
+    size: DEFAULT_PAGE_SIZE,
+  };
+
+  const [loadedOrganizations, setLoadedOrganizations] = useState<OrganizationRecord[]>([]);
+  const [isLoadingOrganizations, setIsLoadingOrganizations] = useState(false);
+
+  useEffect(() => {
+    if (workspaceId === null) {
+      setLoadedOrganizations([]);
+      setIsLoadingOrganizations(false);
+      return;
+    }
+
+    const controller = new AbortController();
+    let isCancelled = false;
+
+    setLoadedOrganizations([]);
+    setIsLoadingOrganizations(true);
+
+    const loadPages = async () => {
+      let page = 0;
+      let totalPages = 1;
+
+      try {
+        while (!isCancelled && page < totalPages) {
+          const response = await organizationApi.search(
+            { ...searchParams, page },
+            workspaceId,
+            controller.signal,
+          );
+
+          if (isCancelled) return;
+
+          setLoadedOrganizations((previous) => [...previous, ...response.content]);
+          totalPages = response.totalPages || 1;
+          page += 1;
+        }
+      } catch (error) {
+        if (!isCancelled && !controller.signal.aborted) {
+          console.error("[SearchUnit] Failed to load organizations", error);
+        }
+      } finally {
+        if (!isCancelled) setIsLoadingOrganizations(false);
+      }
+    };
+
+    void loadPages();
+
+    return () => {
+      isCancelled = true;
+      controller.abort();
+    };
+  }, [
+    workspaceId,
+    searchParams.keyword,
+    searchParams.status,
+    searchParams.businessLine,
+  ]);
 
   const allEnterprises = useMemo(
-    () => (organizationsQuery.items ?? []).map(toEnterprise),
-    [organizationsQuery.items],
+    () => loadedOrganizations.map(toEnterprise),
+    [loadedOrganizations],
   );
 
   const filterOptions = useMemo(() => {
@@ -665,6 +719,7 @@ export function useEnterpriseSearch() {
     toggleFilter,
     resetFilters,
     applyFilters,
+    isLoadingOrganizations,
     setLocation,
     toast,
   };
