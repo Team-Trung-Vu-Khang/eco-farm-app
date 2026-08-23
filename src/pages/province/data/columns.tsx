@@ -1,15 +1,12 @@
 import { type Column } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import type { ProvinceRow } from "../types";
+import { CodeBadge } from "@/components/CodeBadge";
 
 export const columns: Column<ProvinceRow>[] = [
   {
     key: "code",
     label: "Mã Tỉnh/Thành",
-    render: (value: unknown) => (
-      <span className="rounded-md bg-slate-100 px-2 py-1 font-mono text-xs font-bold text-slate-700">
-        {String(value ?? "")}
-      </span>
-    ),
+    render: (value: unknown) => <CodeBadge value={value} />,
   },
   {
     key: "fullName",

@@ -5,6 +5,7 @@ import type {
   DocumentVersion,
   VersionStatus,
 } from "../types";
+import { CodeBadge } from "@/components/CodeBadge";
 
 export function formatDate(value: string | null) {
   if (!value) return "Không giới hạn";
@@ -118,7 +119,7 @@ export function hasDateOverlap(
 }
 
 export const DOCUMENT_COLUMNS: Column<DocumentTableRow>[] = [
-  { key: "code", label: "Mã tài liệu" },
+  { key: "code", label: "Mã tài liệu", render: (value) => <CodeBadge value={value} /> },
   { key: "name", label: "Tên tài liệu" },
   { key: "type", label: "Loại" },
   { key: "currentVersion", label: "Phiên bản hiện tại" },

@@ -1,11 +1,12 @@
 import { Badge, type Column } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { originOptions, applicationStageOptions } from "./constants";
+import { CodeBadge } from "@/components/CodeBadge";
 
 export const getFertilizerColumns = (
   onView: (id: string) => void,
 ): Column<any>[] => [
-  { key: "code", label: "Mã" },
-  { key: "sku", label: "Mã SKU" },
+  { key: "code", label: "Mã", render: (value) => <CodeBadge value={value} /> },
+  { key: "sku", label: "Mã SKU", render: (value) => <CodeBadge value={value} /> },
   {
     key: "name",
     label: "Tên phân bón",

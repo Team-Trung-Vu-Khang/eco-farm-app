@@ -1,6 +1,7 @@
 import { Badge, type Column } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { Users } from "lucide-react";
 import type { Task } from "../../../stores/useTaskStore";
+import { CodeBadge } from "@/components/CodeBadge";
 
 const ROLE_LABELS: Record<string, string> = {
   MANAGER: "Quản lý",
@@ -32,7 +33,7 @@ function getAssignmentCounts(
 }
 
 export const taskColumns: Column<Task>[] = [
-  { key: "code", label: "Mã" },
+  { key: "code", label: "Mã", render: (value) => <CodeBadge value={value} /> },
   { key: "name", label: "Tên công việc" },
   { key: "plan", label: "Kế hoạch" },
   { key: "stage", label: "Giai đoạn" },

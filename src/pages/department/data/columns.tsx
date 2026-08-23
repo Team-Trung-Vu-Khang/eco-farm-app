@@ -1,4 +1,5 @@
 import { Badge, type Column } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import { CodeBadge } from "@/components/CodeBadge";
 import type { DepartmentItem } from "../types/types";
 
 const STATUS_LABELS: Record<string, string> = {
@@ -11,11 +12,7 @@ export const DEPARTMENT_COLUMNS: Column<DepartmentItem>[] = [
   {
     key: "code",
     label: "Mã phòng ban",
-    render: (value) => (
-      <span className="font-mono text-sm font-semibold text-slate-700 bg-slate-100 px-2 py-1 rounded-md tracking-widest">
-        {value as string}
-      </span>
-    ),
+    render: (value) => <CodeBadge value={value} />,
   },
   { key: "name", label: "Tên phòng ban", sortable: true },
   {

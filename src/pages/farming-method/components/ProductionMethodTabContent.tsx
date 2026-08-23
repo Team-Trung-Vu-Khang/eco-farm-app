@@ -3,13 +3,14 @@ import { useState, useMemo } from "react";
 import { useDebounce } from "@/shared/hooks/useDebounce";
 import { useProductionMethods } from "@/features/foundation/hooks/useProductionMethods";
 import { useProductionMethodMutations } from "@/features/foundation/hooks/useProductionMethodMutations";
+import { CodeBadge } from "@/components/CodeBadge";
 import {
   convertLexicalToHtml,
   type EditorState,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 
 const columns = [
-  { key: "code", label: "Mã" },
+  { key: "code", label: "Mã", render: (value: unknown) => <CodeBadge value={value} /> },
   { key: "name", label: "Tên" },
   {
     key: "description",

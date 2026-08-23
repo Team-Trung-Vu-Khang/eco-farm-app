@@ -1,5 +1,6 @@
 import type { IrrigationSystemRecord } from "@/features/master-data/types/master-data.type";
 import { Badge, type Column } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import { CodeBadge } from "@/components/CodeBadge";
 
 const statusLabelMap: Record<IrrigationSystemRecord["status"], string> = {
   active: "Hoạt động",
@@ -11,11 +12,7 @@ export const irrigationSystemColumns: Column<IrrigationSystemRecord>[] = [
   {
     key: "code",
     label: "Mã hệ thống",
-    render: (value) => (
-      <Badge variant="outline" className="bg-background font-mono">
-        {String(value ?? "")}
-      </Badge>
-    ),
+    render: (value) => <CodeBadge value={value} />,
   },
   { key: "name", label: "Tên hệ thống" },
   { key: "description", label: "Mô tả" },

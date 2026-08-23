@@ -1,5 +1,6 @@
 import { Badge, type Column } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import type { IoTDeviceGroupRecord } from "@/features/master-data/types/master-data.type";
+import { CodeBadge } from "@/components/CodeBadge";
 
 const statusLabelMap: Record<IoTDeviceGroupRecord["status"], string> = {
   active: "Hoạt động",
@@ -11,11 +12,7 @@ export const iotDeviceGroupColumns: Column<IoTDeviceGroupRecord>[] = [
   {
     key: "code",
     label: "Mã nhóm",
-    render: (value) => (
-      <Badge variant="outline" className="bg-background font-mono">
-        {String(value ?? "")}
-      </Badge>
-    ),
+    render: (value) => <CodeBadge value={value} />,
   },
   { key: "name", label: "Tên nhóm" },
   { key: "description", label: "Mô tả" },

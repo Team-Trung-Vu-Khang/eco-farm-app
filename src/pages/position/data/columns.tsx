@@ -1,4 +1,5 @@
 import { Badge, type Column } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import { CodeBadge } from "@/components/CodeBadge";
 import type { PositionItem } from "../types";
 
 function formatDateTime(value: unknown) {
@@ -20,11 +21,7 @@ export const positionColumns: Column<PositionItem>[] = [
   {
     key: "code",
     label: "Mã chức vụ",
-    render: (value) => (
-      <span className="inline-flex items-center rounded-md border border-slate-200 bg-slate-50 px-2.5 py-1 font-mono text-xs font-semibold tracking-widest text-slate-700">
-        {String(value)}
-      </span>
-    ),
+    render: (value) => <CodeBadge value={value} />,
   },
   { key: "name", label: "Tên chức vụ" },
   {

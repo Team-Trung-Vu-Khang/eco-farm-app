@@ -2,6 +2,7 @@ import type { FarmSeedResponse } from "@/features/farm";
 import type { Column } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { Sprout } from "lucide-react";
 import { Link } from "wouter";
+import { CodeBadge } from "@/components/CodeBadge";
 
 export const seedColumns: Column<FarmSeedResponse>[] = [
   {
@@ -25,8 +26,8 @@ export const seedColumns: Column<FarmSeedResponse>[] = [
     label: "Mã hạt giống",
     render: (_, item) => (
       <Link href={`/seed/${item.id}`}>
-        <span className="cursor-pointer text-green-600 transition-colors hover:text-green-700 hover:underline font-mono">
-          {item.code || item.cropVariety?.code || ""}
+        <span className="cursor-pointer hover:opacity-80">
+          <CodeBadge value={item.code || item.cropVariety?.code} />
         </span>
       </Link>
     ),

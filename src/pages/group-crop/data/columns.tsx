@@ -1,18 +1,14 @@
 import type { Column } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { Badge } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { Hash, Leaf } from "lucide-react";
+import { Leaf } from "lucide-react";
+import { CodeBadge } from "@/components/CodeBadge";
 import type { ProductionSubjectGroupResponse } from "../../../features/foundation";
 
 export const groupCropColumns: Column<ProductionSubjectGroupResponse>[] = [
   {
     key: "code",
     label: "Mã nhóm cây",
-    render: (value: string) => (
-      <div className="flex items-center gap-1.5 font-mono text-xs font-bold text-muted-foreground bg-muted/50 px-2 py-1 rounded-md border w-fit">
-        <Hash className="w-3 h-3 opacity-60" />
-        {value || "—"}
-      </div>
-    ),
+    render: (value: string) => <CodeBadge value={value} />,
   },
   {
     key: "name",
@@ -65,4 +61,3 @@ export const groupCropColumns: Column<ProductionSubjectGroupResponse>[] = [
     ),
   },
 ];
-
