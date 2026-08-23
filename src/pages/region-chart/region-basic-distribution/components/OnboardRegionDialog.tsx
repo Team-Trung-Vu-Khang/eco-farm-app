@@ -170,7 +170,7 @@ export const OnboardRegionDialog: React.FC<OnboardRegionDialogProps> = ({
               isEditMode={false}
               isDialogMode={true}
               completeLabel="Hoàn tất và Khởi tạo"
-              bypassSeedSelection={true}
+              bypassSeedSelection={false}
             />
           </div>
         </DialogContent>
