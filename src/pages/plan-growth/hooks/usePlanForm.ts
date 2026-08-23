@@ -542,14 +542,60 @@ export function usePlanForm(
         Boolean(selection),
       );
 
+    // Farm and master-data Seasons can use different stage identifiers for
+    // the same logical stage. If the farm detail request falls back to the
+    // master-data endpoint, resolve any IDs that did not match by the stage
+    // name returned on the saved plan.
+    const selectedByCycleStage = new Set(
+      selectionsFromApiStageIds.map(
+        (selection) => `${selection.cycleId}:${selection.stageId}`,
+      ),
+    );
+    const selectionsFromStageNames = (plan?.seasonStageNames || [])
+      .map((stageName) => {
+        const match = growthCycles
+          .flatMap((cycle) =>
+            cycle.stages
+              .filter(
+                (stage) =>
+                  stage.name === stageName &&
+                  !selectedByCycleStage.has(`${cycle.id}:${stage.id}`),
+              )
+              .map((stage) => ({ cycle, stage })),
+          )
+          .find(({ cycle, stage }) =>
+            !selectedByCycleStage.has(`${cycle.id}:${stage.id}`),
+          );
+        if (!match) return null;
+        selectedByCycleStage.add(`${match.cycle.id}:${match.stage.id}`);
+        return {
+          id: `api-${match.cycle.id}-${match.stage.id}`,
+          type: "stage" as const,
+          cycleId: match.cycle.id,
+          stageId: match.stage.id,
+          stageName: match.stage.name,
+        };
+      })
+      .filter((selection): selection is NonNullable<typeof selection> =>
+        Boolean(selection),
+      );
+    const resolvedApiSelections = [
+      ...selectionsFromApiStageIds,
+      ...selectionsFromStageNames,
+    ];
+
     // Season details can arrive one by one, especially when the farm detail
     // request fails and the master-data fallback is used. Do not hydrate
     // from the first returned Season; wait until every API stage ID is
     // resolved so stages from different cycles are all restored.
     const apiStageIds = Array.from(new Set(plan.seasonStageIds || []));
-    if (apiStageIds.length > 0) {
+    if (apiStageIds.length > 0 || (plan.seasonStageNames || []).length > 0) {
+      const expectedSelectionCount = Math.max(
+        apiStageIds.length,
+        plan.seasonStageNames?.length || 0,
+      );
       if (
-        selectionsFromApiStageIds.length !== apiStageIds.length ||
+        resolvedApiSelections.length < expectedSelectionCount ||
         hydratedGrowthCyclePlanIdRef.current === plan.id
       ) {
         return;
@@ -558,7 +604,7 @@ export function usePlanForm(
       hydratedGrowthCyclePlanIdRef.current = plan.id;
       setFormData((prev) => ({
         ...prev,
-        growthCycleSelections: selectionsFromApiStageIds,
+        growthCycleSelections: resolvedApiSelections,
       }));
       return;
     }

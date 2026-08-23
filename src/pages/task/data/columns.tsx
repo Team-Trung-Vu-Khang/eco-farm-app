@@ -1,5 +1,5 @@
-import { Users } from "lucide-react";
 import { Badge, type Column } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import { Users } from "lucide-react";
 import type { Task } from "../../../stores/useTaskStore";
 
 const ROLE_LABELS: Record<string, string> = {
@@ -7,6 +7,29 @@ const ROLE_LABELS: Record<string, string> = {
   QUALITY_INSPECTOR: "Kiểm định",
   EXECUTOR: "Thực hiện",
 };
+
+const ROLE_ORDER = ["EXECUTOR", "MANAGER", "QUALITY_INSPECTOR"] as const;
+
+function getAssignmentCounts(
+  value: unknown,
+  row: Task,
+): Array<{ role: (typeof ROLE_ORDER)[number]; count: number }> {
+  if (Array.isArray(row.personnel) && row.personnel.length > 0) {
+    return ROLE_ORDER.map((role) => {
+      const people = new Set(
+        (row.personnel || [])
+          .filter((person) => String(person.role).toUpperCase() === role)
+          .map((person) => person.id ?? person.fullName)
+          .filter(Boolean),
+      );
+      return { role, count: people.size };
+    }).filter(({ count }) => count > 0);
+  }
+
+  // Legacy task rows only expose executors through `assignedTo`.
+  const executorCount = Array.isArray(value) ? new Set(value).size : 0;
+  return executorCount > 0 ? [{ role: "EXECUTOR", count: executorCount }] : [];
+}
 
 export const taskColumns: Column<Task>[] = [
   { key: "code", label: "Mã" },
@@ -16,35 +39,37 @@ export const taskColumns: Column<Task>[] = [
   {
     key: "assignedTo",
     label: "Phân công",
-    render: (value, row) => (
-      <div className="flex items-start gap-2">
-        <Users
-          className={
-            row.assignedType === "team"
-              ? "mt-0.5 w-4 h-4 text-blue-500 shrink-0"
-              : "mt-0.5 w-4 h-4 text-green-500 shrink-0"
-          }
-        />
-        <div className="flex flex-wrap gap-1.5">
-          {row.personnel && row.personnel.length > 0 ? (
-            row.personnel.map((person, index) => (
-              <Badge key={`${person.id}-${index}`} variant="outline" className="text-xs">
-                {ROLE_LABELS[person.role] || person.role}
-                {person.fullName ? `: ${person.fullName}` : ""}
-              </Badge>
-            ))
-          ) : Array.isArray(value) && value.length > 0 ? (
-            value.map((person, index) => (
-              <Badge key={`${person}-${index}`} variant="outline" className="text-xs">
-                {person}
-              </Badge>
-            ))
-          ) : (
-            <span className="text-sm text-muted-foreground">Chưa phân công</span>
-          )}
+    render: (value, row) => {
+      const assignmentCounts = getAssignmentCounts(value, row);
+
+      return (
+        <div className="flex items-start gap-2">
+          <Users
+            className={
+              row.assignedType === "team"
+                ? "mt-0.5 w-4 h-4 text-blue-500 shrink-0"
+                : "mt-0.5 w-4 h-4 text-green-500 shrink-0"
+            }
+          />
+          <div className="flex flex-col gap-1">
+            {assignmentCounts.length > 0 ? (
+              assignmentCounts.map(({ role, count }) => (
+                <span
+                  key={role}
+                  className="text-sm font-medium whitespace-nowrap"
+                >
+                  {ROLE_LABELS[role]}: {count} người
+                </span>
+              ))
+            ) : (
+              <span className="text-sm text-muted-foreground">
+                Chưa phân công
+              </span>
+            )}
+          </div>
         </div>
-      </div>
-    ),
+      );
+    },
   },
   {
     key: "priority",

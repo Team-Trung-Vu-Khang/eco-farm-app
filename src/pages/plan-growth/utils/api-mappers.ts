@@ -258,17 +258,47 @@ export function mapPlanResponseToPlan(plan: FarmPlanResponse): Plan {
     .map((selection) => String(selection.plotId));
 
   const stages = plan.stages || [];
-  const selectedStages = stages.map((stage) => stage.name);
+  const getSeasonStageId = (stage: FarmPlanResponse["stages"][number]) => {
+    // Depending on the backend version, the relation is returned either as
+    // `seasonStage.id` or as the flattened `seasonStageId`. Keep both forms
+    // so a freshly-created plan can hydrate its selected stages on edit.
+    const rawId =
+      stage.seasonStage?.id ??
+      (stage as FarmPlanResponse["stages"][number] & {
+        seasonStageId?: number | string | null;
+      }).seasonStageId;
+    const id = Number(rawId);
+    return Number.isFinite(id) ? id : undefined;
+  };
+  const getApiStageKey = (stage: FarmPlanResponse["stages"][number]) => {
+    const seasonStageId = getSeasonStageId(stage);
+    return seasonStageId != null
+      ? `api-stage-${seasonStageId}:${stage.name}`
+      : stage.name;
+  };
+  const selectedStages = stages.map(getApiStageKey);
   const seasonStageIds = stages
-    .map((stage) => stage.seasonStage?.id)
-    .filter((id): id is number => typeof id === "number");
+    .map(getSeasonStageId)
+    .filter((id): id is number => id != null);
   const seasonStageNames = stages
-    .filter((stage) => stage.seasonStage?.id != null)
+    .filter((stage) => getSeasonStageId(stage) != null)
     .map((stage) => stage.name);
+  const seenSupplyLineIds = new Set<number>();
   const materialAllocations = stages.flatMap((stage) =>
-    (stage.supplyLines || []).map((line) => ({
+    (stage.supplyLines || [])
+      .filter((line) => {
+        // A plan response can contain the same supply line more than once
+        // when a stage is expanded through multiple relations. The API line
+        // id is the source of truth, so only suppress an exact id duplicate;
+        // different lines with the same material remain visible.
+        if (line.id == null) return true;
+        if (seenSupplyLineIds.has(line.id)) return false;
+        seenSupplyLineIds.add(line.id);
+        return true;
+      })
+      .map((line) => ({
       id: line.id,
-      stageId: stage.name,
+      stageId: getApiStageKey(stage),
       materialCategory: line.supplyItem?.supplyType || "",
       materialType: line.supplyItem?.supplyType || "",
       materialName: line.supplyItem?.name || "",
@@ -283,12 +313,12 @@ export function mapPlanResponseToPlan(plan: FarmPlanResponse): Plan {
       unitOptions: [line.unitBase ?? line.packagingVariant?.unitBase]
         .filter(Boolean)
         .map((unit) => ({ id: unit.id, name: unit.name })),
-    })),
+      })),
   );
   const taskAllocations = stages.flatMap((stage) =>
     (stage.workItems || []).map((item) => ({
       id: item.id,
-      stageId: stage.name,
+      stageId: getApiStageKey(stage),
       name: item.name,
       taskCategoryName: item.taskCategory?.name,
       description: item.description || "",
@@ -352,8 +382,12 @@ export function buildFarmPlanStagesRequest(
     formData.purpose === "harvest" ? ["Thu hoạch"] : formData.selectedStages;
 
   return stageKeys.map((stageKey) => {
-    const stageName = stageKey.includes(":")
-      ? stageKey.split(":")[1]
+    const separatorIndex = stageKey.indexOf(":");
+    const stagePrefix = separatorIndex >= 0
+      ? stageKey.slice(0, separatorIndex)
+      : "";
+    const stageName = separatorIndex >= 0
+      ? stageKey.slice(separatorIndex + 1)
       : stageKey;
 
     const supplyLines = formData.materialAllocations
@@ -382,6 +416,9 @@ export function buildFarmPlanStagesRequest(
 
     const selectedCycleStage = formData.growthCycleSelections.find((selection) => {
       if (selection.type !== "stage" || selection.stageId == null) return false;
+      if (stagePrefix.startsWith("api-stage-")) {
+        return String(selection.stageId) === stagePrefix.slice("api-stage-".length);
+      }
       if (stageKey.includes(":")) {
         const [cycleId, ...nameParts] = stageKey.split(":");
         return (

@@ -1016,7 +1016,12 @@ export default function TaskCreatePage() {
           title: "Thành công",
           description: `Đã tạo ${createdTasks.length} công việc mới`,
         });
-        setLocation("/task");
+        const returnPlanId = presetPlanId || formData.planId;
+        setLocation(
+          returnPlanId
+            ? `/task?planId=${encodeURIComponent(returnPlanId)}`
+            : "/task",
+        );
       })
       .catch((error: Error) => {
         toast({

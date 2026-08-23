@@ -1,5 +1,13 @@
 import PageWrapper from "@/components/PageWrapper";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
   Badge,
   Button,
   Card,
@@ -50,6 +58,7 @@ import SimplePlanForm from "./components/SimplePlanForm";
 import { StageAllocation } from "./components/StageAllocation";
 import { useCropSupplyCatalog } from "./hooks/useCropSupplyCatalog";
 import { usePlanForm } from "./hooks/usePlanForm";
+import type { GrowthCycleSelection } from "./types";
 
 interface PlanGrowthEditPageProps {
   basePath?: string;
@@ -120,6 +129,8 @@ export default function PlanGrowthEditPage({
     Set<string>
   >(new Set());
   const [isSimpleMode, setIsSimpleMode] = useState(true);
+  const [pendingGrowthCycleSelections, setPendingGrowthCycleSelections] =
+    useState<GrowthCycleSelection[] | null>(null);
   const purpose = formData.purpose as string;
   const isTreatmentOrAmendment =
     purpose === "treatment" || purpose === "amendment";
@@ -129,6 +140,37 @@ export default function PlanGrowthEditPage({
   // Only cultivation automatically turns picked growth-cycle stages into
   // planned work items. Treatment/amendment stages remain optional checkboxes.
   const derivesStagesFromGrowthCycle = isCultivation;
+
+  const handleGrowthCycleSelection = (
+    nextSelections: GrowthCycleSelection[],
+  ) => {
+    const selectionKey = (items: GrowthCycleSelection[]) =>
+      items
+        .map((item) => `${item.type}:${item.cycleId}:${item.stageId || ""}`)
+        .sort()
+        .join("|");
+
+    if (
+      selectionKey(formData.growthCycleSelections) ===
+      selectionKey(nextSelections)
+    ) {
+      return;
+    }
+
+    setPendingGrowthCycleSelections(nextSelections);
+  };
+
+  const applyGrowthCycleSelection = () => {
+    if (!pendingGrowthCycleSelections) return;
+    setFormData((prev) => ({
+      ...prev,
+      growthCycleSelections: pendingGrowthCycleSelections,
+      selectedStages: [],
+      materialAllocations: [],
+      taskAllocations: [],
+    }));
+    setPendingGrowthCycleSelections(null);
+  };
 
   // Keep `selectedStages` synced to the picked growth-cycle stage(s) (as
   // `${cycleId}:${stageName}` entries, the same key shape the
@@ -592,12 +634,7 @@ export default function PlanGrowthEditPage({
                           growthCycles={growthCycles}
                           lockedCycleIds={inheritedCycleIds}
                           existingSelections={formData.growthCycleSelections}
-                          onConfirm={(nextSelections) =>
-                            setFormData((prev) => ({
-                              ...prev,
-                              growthCycleSelections: nextSelections,
-                            }))
-                          }
+                          onConfirm={handleGrowthCycleSelection}
                         />
                       ) : (
                         <p className="text-xs text-emerald-800/60 italic text-center py-2">
@@ -1958,7 +1995,8 @@ export default function PlanGrowthEditPage({
   if (!plan) return null;
 
   return (
-    <PageWrapper
+    <>
+      <PageWrapper
       title={pageTitle}
       description={pageDescription}
       actions={
@@ -2015,6 +2053,29 @@ export default function PlanGrowthEditPage({
           />
         )}
       </div>
-    </PageWrapper>
+      </PageWrapper>
+      <AlertDialog
+        open={pendingGrowthCycleSelections !== null}
+        onOpenChange={(open) => {
+          if (!open) setPendingGrowthCycleSelections(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Thay đổi giai đoạn sinh trưởng?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Khi đổi lựa chọn, danh sách hạng mục, vật tư và công việc đã phân
+              bổ hiện tại sẽ được xoá để đồng bộ với giai đoạn mới.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Hủy</AlertDialogCancel>
+            <AlertDialogAction onClick={applyGrowthCycleSelection}>
+              Xác nhận thay đổi
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }

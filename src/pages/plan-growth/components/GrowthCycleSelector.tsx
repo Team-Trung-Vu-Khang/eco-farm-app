@@ -376,7 +376,7 @@ const GrowthCycleSelector = ({
 
                   {/* Stages level — only shown in locked (stage-only) mode */}
                   {isLocked && (
-                    <div className="space-y-2">
+                    <div className="ml-4 space-y-2 border-l-2 border-slate-100 pl-4">
                       {cycle.stages?.map((stage) => (
                         <div
                           key={stage.id}

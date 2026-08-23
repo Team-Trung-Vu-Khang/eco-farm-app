@@ -767,10 +767,24 @@ export default function SimplePlanForm({
               lockedCycleIds={inheritedCycleIds}
               existingSelections={formData.growthCycleSelections}
               onConfirm={(nextSelections) =>
-                setFormData((prev) => ({
-                  ...prev,
-                  growthCycleSelections: nextSelections,
-                }))
+                setFormData((prev) => {
+                  const currentKey = prev.growthCycleSelections
+                    .map((item) => `${item.type}:${item.cycleId}:${item.stageId || ""}`)
+                    .sort()
+                    .join("|");
+                  const nextKey = nextSelections
+                    .map((item) => `${item.type}:${item.cycleId}:${item.stageId || ""}`)
+                    .sort()
+                    .join("|");
+                  if (currentKey === nextKey) return prev;
+                  return {
+                    ...prev,
+                    growthCycleSelections: nextSelections,
+                    selectedStages: [],
+                    materialAllocations: [],
+                    taskAllocations: [],
+                  };
+                })
               }
             />
           ) : (
