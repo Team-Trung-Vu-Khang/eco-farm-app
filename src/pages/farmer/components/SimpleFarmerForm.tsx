@@ -14,12 +14,14 @@ import {
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { ImagePlus, MapPin, Upload } from "lucide-react";
 import { useRef } from "react";
+import AddressSearchInput from "@/components/AddressSearchInput";
 import type { FarmerFormData } from "../types";
 
 interface SimpleFarmerFormProps {
   formData: FarmerFormData;
   onChange: (field: keyof FarmerFormData, value: string) => void;
   onImageUpload: (file: File) => void;
+  onSelectLocation: (location: { latitude: number; longitude: number }) => void;
   onComplete: () => void;
   isEdit?: boolean;
   isSubmitting?: boolean;
@@ -29,6 +31,7 @@ export default function SimpleFarmerForm({
   formData,
   onChange,
   onImageUpload,
+  onSelectLocation,
   onComplete,
   isEdit = false,
   isSubmitting = false,
@@ -81,7 +84,7 @@ export default function SimpleFarmerForm({
               <div className="space-y-2"><Label required>Tỉnh thành</Label><Select value={formData.province || ""} onValueChange={(value) => { onChange("province", value); onChange("ward", ""); }}><SelectTrigger><SelectValue placeholder={isLoadingProvinces ? "Đang tải..." : "Chọn tỉnh thành"} /></SelectTrigger><SelectContent className="max-h-60 overflow-y-auto">{provinces.map((item) => <SelectItem key={item.code} value={item.code}>{item.fullName || item.name}</SelectItem>)}</SelectContent></Select></div>
               <div className="space-y-2"><Label required>Phường xã</Label><Select value={formData.ward || ""} onValueChange={(value) => onChange("ward", value)} disabled={!formData.province}><SelectTrigger><SelectValue placeholder={isLoadingWards ? "Đang tải..." : "Chọn phường xã"} /></SelectTrigger><SelectContent className="max-h-60 overflow-y-auto">{wards.map((item) => <SelectItem key={item.code} value={item.code}>{item.fullName || item.name}</SelectItem>)}</SelectContent></Select></div>
             </div>
-            <div className="space-y-2"><Label required>Địa chỉ chi tiết</Label><Input value={formData.address} onChange={(e) => onChange("address", e.target.value)} placeholder="Số nhà, đường, thôn/xóm..." /></div>
+            <div className="space-y-2"><Label required>Địa chỉ chi tiết</Label><AddressSearchInput value={formData.address} onChange={(value) => onChange("address", value)} onSelectLocation={onSelectLocation} latitude={formData.latitude} longitude={formData.longitude} placeholder="Số nhà, đường, thôn/xóm..." /></div>
           </div>
           <div className="space-y-2 border-t border-slate-100 pt-5"><Label>Ghi chú</Label><Textarea value={formData.description || ""} onChange={(e) => onChange("description", e.target.value)} rows={4} placeholder="Nhập ghi chú về nông hộ..." /></div>
           <Button type="button" onClick={onComplete} disabled={!isValid || isSubmitting} className="h-12 w-full rounded-xl text-base font-bold">{isEdit ? "Cập nhật nông hộ" : "Tạo mới nông hộ"}</Button>

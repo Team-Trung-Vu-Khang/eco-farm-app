@@ -16,6 +16,7 @@ import { Image, MapPin, Upload } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { CLASSIFICATION_OPTIONS } from "../../data/constants";
 import type { CooperativeFormData } from "../../types/types";
+import AddressSearchInput from "@/components/AddressSearchInput";
 
 interface BasicInfoStepProps {
   formData: CooperativeFormData;
@@ -378,49 +379,18 @@ export function BasicInfoStep({
           </div>
         </div>
 
-        <div className="space-y-2 mt-4" ref={searchContainerRef}>
+        <div className="space-y-2 mt-4">
           <Label htmlFor="address">Địa chỉ chi tiết</Label>
-          <Input
-            id="address"
-            value={addressQuery}
-            onFocus={() => {
-              setIsFocused(true);
-              if (suggestions.length > 0) setShowSuggestions(true);
-            }}
-            onChange={(e) => {
-              setAddressQuery(e.target.value);
-              setFormData({ ...formData, address: e.target.value });
-              if (!e.target.value) {
-                setShowSuggestions(false);
-                setSuggestions([]);
-              }
-            }}
+          <AddressSearchInput
+            value={formData.address}
+            onChange={(address) => setFormData({ ...formData, address })}
+            onSelectLocation={({ address, latitude, longitude }) =>
+              setFormData({ ...formData, address, latitude, longitude })
+            }
+            latitude={formData.latitude}
+            longitude={formData.longitude}
             placeholder="Số nhà, đường, ấp..."
           />
-          {showSuggestions && suggestions.length > 0 && (
-            <div className="z-[99999] mt-1 max-h-56 overflow-y-auto rounded-md border bg-white shadow">
-              {suggestions.map((item, index) => (
-                <button
-                  key={`${item.lat}-${item.lng}-${index}`}
-                  type="button"
-                  className="w-full border-b px-3 py-2 text-left text-sm hover:bg-slate-50 last:border-b-0"
-                  onMouseDown={(e) => e.preventDefault()}
-                  onClick={() => handleSelectAddress(item)}
-                >
-                  <div className="font-medium text-slate-800 truncate">
-                    {item.name || item.address}
-                  </div>
-                  <div className="text-xs text-slate-500 truncate">
-                    {item.address}
-                  </div>
-                </button>
-              ))}
-            </div>
-          )}
-          <p className="text-xs text-slate-500">
-            Tọa độ: {formData.latitude?.toFixed(6) ?? "--"},{" "}
-            {formData.longitude?.toFixed(6) ?? "--"}
-          </p>
         </div>
       </div>
 

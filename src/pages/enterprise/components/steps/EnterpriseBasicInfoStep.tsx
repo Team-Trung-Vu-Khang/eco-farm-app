@@ -20,6 +20,7 @@ import { Image, MapPin, Upload } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Controller } from "react-hook-form";
 import { useEnterpriseFormContext } from "../../context/EnterpriseFormContext";
+import AddressSearchInput from "@/components/AddressSearchInput";
 
 const classificationOptions = [
   { value: "production", label: "Sản xuất" },
@@ -612,58 +613,18 @@ function EnterpriseBasicInfoStepContent({
           </div>
         </div>
 
-        <div className="space-y-2 mt-4" ref={searchContainerRef}>
+        <div className="space-y-2 mt-4">
           <Label htmlFor="address">Địa chỉ chi tiết</Label>
-          <Controller
-            control={control}
-            name="address"
-            render={({ field }) => (
-              <Input
-                id="address"
-                value={addressQuery}
-                onFocus={() => {
-                  setIsFocused(true);
-                  if (suggestions.length > 0) setShowSuggestions(true);
-                }}
-                onChange={(e) => {
-                  setAddressQuery(e.target.value);
-                  field.onChange(e.target.value);
-                  if (!e.target.value) {
-                    setShowSuggestions(false);
-                    setSuggestions([]);
-                  }
-                }}
-                onBlur={field.onBlur}
-                ref={field.ref}
-                name={field.name}
-                placeholder="Số nhà, đường, ấp..."
-              />
-            )}
+          <AddressSearchInput
+            value={formData.address}
+            onChange={(address) => setFormData((prev) => ({ ...prev, address }))}
+            onSelectLocation={({ address, latitude, longitude }) =>
+              setFormData((prev) => ({ ...prev, address, latitude, longitude }))
+            }
+            latitude={formData.latitude}
+            longitude={formData.longitude}
+            placeholder="Số nhà, đường, ấp..."
           />
-          {showSuggestions && suggestions.length > 0 && (
-            <div className="z-[99999] mt-1 max-h-56 overflow-y-auto rounded-md border bg-white shadow">
-              {suggestions.map((item, index) => (
-                <button
-                  key={`${item.lat}-${item.lng}-${index}`}
-                  type="button"
-                  className="w-full border-b px-3 py-2 text-left text-sm hover:bg-slate-50 last:border-b-0"
-                  onMouseDown={(e) => e.preventDefault()}
-                  onClick={() => handlePickAddress(item)}
-                >
-                  <div className="font-medium text-slate-800 truncate">
-                    {item.name || item.address}
-                  </div>
-                  <div className="text-xs text-slate-500 truncate">
-                    {item.address}
-                  </div>
-                </button>
-              ))}
-            </div>
-          )}
-          <p className="text-xs text-slate-500">
-            Tọa độ: {formData.latitude?.toFixed(6) ?? "--"},{" "}
-            {formData.longitude?.toFixed(6) ?? "--"}
-          </p>
         </div>
       </div>
 
