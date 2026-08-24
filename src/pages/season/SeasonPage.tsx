@@ -74,7 +74,7 @@ export default function SeasonPage() {
 
   return (
     <PageWrapper
-      title="Quản lý mùa vụ"
+      title="Chu kỳ sinh trưởng"
       description="Quản lý riêng vụ mùa, vụ nuôi và vụ nuôi thủy sản"
       actions={
         <Button
@@ -88,7 +88,7 @@ export default function SeasonPage() {
     >
       <div className="space-y-6">
         <Tabs defaultValue="CROP">
-          <TabsList className="grid w-full grid-cols-3">
+          {/* <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="CROP" className="gap-2">
               <TreeDeciduous className="h-4 w-4" />
               Vụ mùa
@@ -101,7 +101,7 @@ export default function SeasonPage() {
               <Fish className="h-4 w-4" />
               Vụ thả nuôi
             </TabsTrigger>
-          </TabsList>
+          </TabsList> */}
 
           <TabsContent value="CROP" className="mt-5">
             <SeasonTabContent

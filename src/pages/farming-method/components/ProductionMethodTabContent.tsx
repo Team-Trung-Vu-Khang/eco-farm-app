@@ -10,7 +10,11 @@ import {
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 
 const columns = [
-  { key: "code", label: "Mã", render: (value: unknown) => <CodeBadge value={value} /> },
+  {
+    key: "code",
+    label: "Mã",
+    render: (value: unknown) => <CodeBadge value={value} />,
+  },
   { key: "name", label: "Tên" },
   {
     key: "description",
@@ -61,7 +65,8 @@ export const ProductionMethodTabContent = ({
 
   const { createMutation, updateMutation, deleteMutation } =
     useProductionMethodMutations();
-  const formDialogLoading = createMutation.isPending || updateMutation.isPending;
+  const formDialogLoading =
+    createMutation.isPending || updateMutation.isPending;
 
   const data = useMemo(() => {
     return items.map((item) => ({

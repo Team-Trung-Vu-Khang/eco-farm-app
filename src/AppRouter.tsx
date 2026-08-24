@@ -7,6 +7,10 @@ import { ReportPageContainer } from "./pages/reports/ReportPageContainer";
 import { AdminReportPage } from "./pages/reports/AdminReportPage";
 
 const DashboardPage = lazy(() => import("./pages/dashboard/Dashboard"));
+const HistoryCreatePage = lazy(
+  () => import("./pages/history/HistoryCreatePage"),
+);
+const HistoryPage = lazy(() => import("./pages/history/HistoryPage"));
 const TerrainPage = lazy(() => import("./pages/terrain/TerrainPage"));
 
 const EnterprisePage = lazy(() => import("./pages/enterprise/EnterprisePage"));
@@ -1989,6 +1993,10 @@ function Router() {
         <Route path="/iot-device/:id/edit" component={IoTDeviceCreatePage} />
         <Route path="/iot-device/:id" component={IoTDeviceDetailPage} />
         <Route path="/map-iot-device" component={IoTMapViewPage} />
+
+        {/* History Routes */}
+        <Route path="/history" component={HistoryPage} />
+        <Route path="/history/create" component={HistoryCreatePage} />
 
         <Route component={NotFoundPage} />
       </Switch>
