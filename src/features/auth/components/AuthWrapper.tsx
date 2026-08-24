@@ -18,7 +18,7 @@ export function AuthWrapper({ children }: { children: ReactNode }) {
       }
 
       authApi.setToken(tokenFromUrl);
-      window.location.replace("/unit");
+      window.location.replace("/enterprise");
       return;
     }
 
