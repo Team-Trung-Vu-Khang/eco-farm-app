@@ -16,7 +16,6 @@ export const emptyContactFormData: ContactFormData = {
 };
 
 export const emptyContactGroupFormData: ContactGroupFormData = {
-  code: "",
   name: "",
   description: "",
   status: "active",

@@ -36,6 +36,27 @@ export const groupColumns: Column<ContactGroup>[] = [
       ),
   },
   {
+    key: "status",
+    label: "Trạng thái",
+    render: (_value, row) => {
+      const statusConfig = {
+        active: { label: "Hoạt động", className: "bg-emerald-50 text-emerald-700" },
+        inactive: { label: "Ngừng hoạt động", className: "bg-amber-50 text-amber-700" },
+        archived: { label: "Đã lưu trữ", className: "bg-slate-100 text-slate-700" },
+      } as const;
+      const status = statusConfig[row.status as keyof typeof statusConfig] ?? {
+        label: row.status,
+        className: "bg-slate-100 text-slate-700",
+      };
+
+      return (
+        <Badge variant="secondary" className={`rounded-full px-2.5 py-1 ${status.className}`}>
+          {status.label}
+        </Badge>
+      );
+    },
+  },
+  {
     key: "contactCount",
     label: "Số liên hệ",
     render: (_value, row) => (

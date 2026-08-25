@@ -47,7 +47,6 @@ export function GroupFormDialog({
 }: GroupFormDialogProps) {
   const defaultValues = useMemo<ContactGroupFormValues>(
     () => ({
-      code: editItem?.code ?? "",
       name: editItem?.name ?? "",
       description: editItem?.description ?? "",
       status: (editItem?.status || "active") as any,
@@ -93,37 +92,7 @@ export function GroupFormDialog({
       loading={loading}
     >
       <div className="space-y-4">
-        <div className="grid grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Label htmlFor="code" required>
-              Mã nhóm
-            </Label>
-            <Controller
-              control={control}
-              name="code"
-              render={({ field }) => (
-                <>
-                  <Input
-                    id="code"
-                    value={field.value}
-                    onChange={(e) => field.onChange(e.target.value)}
-                    onBlur={field.onBlur}
-                    ref={field.ref}
-                    name={field.name}
-                    placeholder="VD: KH, NCC, DT..."
-                    aria-invalid={!!errors.code}
-                  />
-                  {errors.code ? (
-                    <p className="text-xs text-red-600">
-                      {errors.code.message}
-                    </p>
-                  ) : null}
-                </>
-              )}
-            />
-          </div>
-
-          <div className="space-y-2">
+        <div className="space-y-2">
             <Label htmlFor="name" required>
               Tên nhóm
             </Label>
@@ -150,11 +119,10 @@ export function GroupFormDialog({
                 </>
               )}
             />
-          </div>
         </div>
 
         {editItem ? (
-          <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-2">
             <div className="space-y-2">
               <Label htmlFor="status" required>
                 Trạng thái
@@ -165,7 +133,11 @@ export function GroupFormDialog({
                 render={({ field }) => (
                   <>
                     <Select value={field.value} onValueChange={field.onChange}>
-                      <SelectTrigger id="status" aria-invalid={!!errors.status}>
+                    <SelectTrigger
+                      id="status"
+                      className="w-full"
+                      aria-invalid={!!errors.status}
+                    >
                         <SelectValue placeholder="Chọn trạng thái" />
                       </SelectTrigger>
                       <SelectContent>

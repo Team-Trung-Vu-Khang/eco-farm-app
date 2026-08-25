@@ -31,7 +31,8 @@ export interface ContactGroupPageResponse<T = ContactGroupRecord> {
 }
 
 export interface ContactGroupCommonRequest {
-  code: string;
+  /** Mã nhóm được hệ thống tự sinh; không nhập từ form. */
+  code?: string;
   name: string;
   description?: string;
   status?: ContactGroupStatus;
