@@ -18,6 +18,7 @@ interface OrganizationSourceTabsProps {
   searchPlaceholder: string;
   onTabChange?: (tab: "personal" | "system") => void;
   onSystemView?: (item: any) => void;
+  showSystemView?: boolean;
 }
 
 export function OrganizationSourceTabs({
@@ -27,6 +28,7 @@ export function OrganizationSourceTabs({
   searchPlaceholder,
   onTabChange,
   onSystemView,
+  showSystemView = true,
 }: OrganizationSourceTabsProps) {
   const [search, setSearch] = useState("");
   const [pageSize, setPageSize] = useState(10);
@@ -104,7 +106,7 @@ export function OrganizationSourceTabs({
             setCurrentIndex(1);
           }}
           selectable={false}
-          onView={onSystemView}
+          onView={showSystemView ? onSystemView : undefined}
         />
       </TabsContent>
     </Tabs>
