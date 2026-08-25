@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { useLocation, useRoute } from "wouter";
 import { useToast } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import {
+  contactApi,
   useContactById,
   useDeleteContact,
   useUpdateContact,
@@ -124,7 +125,6 @@ export function useContactForm({ mode }: UseContactFormOptions) {
       phone: formData.phone.trim(),
       email: formData.email.trim() || null,
       position: (selectedPosition?.name ?? formData.position.trim()) || null,
-      entityName: formData.entityName.trim() || null,
       groupId: formData.groupId ? Number(formData.groupId) : null,
       departmentType: department?.source ?? null,
       departmentId: department ? department.id : null,
@@ -136,6 +136,42 @@ export function useContactForm({ mode }: UseContactFormOptions) {
       id: contactId,
       payload,
     });
+
+    const selectedOwner = enterprises.find(
+      (enterprise) => enterprise.name === formData.entityName,
+    );
+    const previousOwner = enterprises.find(
+      (enterprise) => enterprise.name === contact?.entityName,
+    );
+    if (
+      selectedOwner &&
+      workspaceId !== null &&
+      workspaceId !== undefined &&
+      selectedOwner.id !== previousOwner?.id
+    ) {
+      if (previousOwner) {
+        await contactApi.detachOwner(
+          "ORGANIZATION",
+          previousOwner.id,
+          contactId,
+          workspaceId,
+        );
+      }
+      await contactApi.attachOwner(
+        "ORGANIZATION",
+        selectedOwner.id,
+        {
+          contactId,
+          name: formData.fullName.trim(),
+          position: (selectedPosition?.name ?? formData.position.trim()) || null,
+          phone: formData.phone.trim(),
+          email: formData.email.trim() || null,
+          displayOrder: 1,
+          isPrimary: true,
+        },
+        workspaceId,
+      );
+    }
 
     toast({
       title: "Cập nhật thành công",

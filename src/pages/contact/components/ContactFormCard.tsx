@@ -114,7 +114,7 @@ export function ContactFormCard({
                 <SelectTrigger id="groupId">
                   <SelectValue placeholder="Chọn nhóm danh bạ" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="max-h-60 overflow-y-auto">
                   {groups.map((g) => (
                     <SelectItem key={g.id} value={g.id.toString()}>
                       {g.name}
@@ -140,7 +140,7 @@ export function ContactFormCard({
                   <SelectTrigger id="department">
                     <SelectValue placeholder="Chọn phòng ban" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="max-h-60 overflow-y-auto">
                     {departments.map((d) => (
                       <SelectItem key={d.id} value={d.name}>
                         {d.name}
@@ -165,7 +165,7 @@ export function ContactFormCard({
                     <SelectTrigger id="position">
                       <SelectValue placeholder="Chọn chức vụ" />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="max-h-60 overflow-y-auto">
                       {positions.map((position) => (
                         <SelectItem
                           key={position.id}

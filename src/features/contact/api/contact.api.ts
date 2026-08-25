@@ -7,9 +7,11 @@ import type {
   ContactRecord,
   ContactUpdateRequest,
   ContactUpdateResponse,
+  ContactLinkRequest,
 } from "../types/contact.type";
 
 const CONTACT_PATH = "/api/farm/contacts" as const;
+const CONTACT_LINK_PATH = "/api/farm/contact-links" as const;
 
 const withWorkspaceHeader = (workspaceId: number | string) => ({
   headers: {
@@ -90,5 +92,53 @@ export const contactApi = {
     assertWorkspaceId(workspaceId);
 
     await apiClient.delete(`${CONTACT_PATH}/${id}`, withWorkspaceHeader(workspaceId));
+  },
+
+  async attachOwner(
+    ownerType: string,
+    ownerId: number | string,
+    payload: ContactLinkRequest,
+    workspaceId: number | string,
+  ): Promise<ContactRecord> {
+    assertWorkspaceId(workspaceId);
+
+    const response = await apiClient.post<ContactRecord>(
+      `${CONTACT_LINK_PATH}/${ownerType}/${ownerId}`,
+      payload,
+      withWorkspaceHeader(workspaceId),
+    );
+
+    return response.data;
+  },
+
+  async replaceOwner(
+    ownerType: string,
+    ownerId: number | string,
+    payload: ContactLinkRequest[],
+    workspaceId: number | string,
+  ): Promise<ContactRecord[]> {
+    assertWorkspaceId(workspaceId);
+
+    const response = await apiClient.put<ContactRecord[]>(
+      `${CONTACT_LINK_PATH}/${ownerType}/${ownerId}`,
+      payload,
+      withWorkspaceHeader(workspaceId),
+    );
+
+    return response.data;
+  },
+
+  async detachOwner(
+    ownerType: string,
+    ownerId: number | string,
+    contactId: number | string,
+    workspaceId: number | string,
+  ): Promise<void> {
+    assertWorkspaceId(workspaceId);
+
+    await apiClient.delete(
+      `${CONTACT_LINK_PATH}/${ownerType}/${ownerId}/${contactId}`,
+      withWorkspaceHeader(workspaceId),
+    );
   },
 };

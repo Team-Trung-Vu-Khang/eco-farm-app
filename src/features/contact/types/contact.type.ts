@@ -59,7 +59,6 @@ export interface ContactCommonRequest {
   phone: string;
   email?: string | null;
   position?: string | null;
-  entityName?: string | null;
   groupId?: number | string | null;
   departmentType?: ContactDepartmentType | null;
   departmentId?: number | string | null;
@@ -67,6 +66,16 @@ export interface ContactCommonRequest {
   isPrimary?: boolean;
   status?: ContactStatus;
   metadataJson?: Record<string, unknown> | null;
+}
+
+export interface ContactLinkRequest {
+  contactId?: number | string | null;
+  name: string;
+  position?: string | null;
+  phone?: string | null;
+  email?: string | null;
+  displayOrder?: number;
+  isPrimary?: boolean;
 }
 
 export type ContactCreateRequest = ContactCommonRequest;

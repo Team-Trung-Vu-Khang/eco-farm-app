@@ -1,10 +1,14 @@
 import PageWrapper from "@/components/PageWrapper";
 import {
+  contactApi,
+  contactKeys,
   useCreateContact,
   type ContactCreateRequest,
 } from "@/features/contact";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useQueryClient } from "@tanstack/react-query";
 import { Button, useToast } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import { useSelectedWorkspaceId } from "@/features/workspace";
 import { Loader2, Save, X } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { ContactFormCard } from "./components/ContactFormCard";
@@ -21,6 +25,8 @@ import { useContactCreate } from "./hooks/useContactCreate";
  */
 export default function ContactCreatePage() {
   const { toast } = useToast();
+  const workspaceId = useSelectedWorkspaceId();
+  const queryClient = useQueryClient();
   const {
     defaultValues,
     enterprises,
@@ -63,7 +69,6 @@ export default function ContactCreatePage() {
       phone: values.phone.trim(),
       email: values.email.trim() || null,
       position: (selectedPosition?.name ?? values.position.trim()) || null,
-      entityName: values.entityName.trim() || null,
       groupId: values.groupId ? Number(values.groupId) : null,
       departmentType: department?.source ?? null,
       departmentId: department ? department.id : null,
@@ -72,7 +77,30 @@ export default function ContactCreatePage() {
     };
 
     try {
-      await createContact(payload);
+      const createdContact = await createContact(payload);
+      const selectedOwner = enterprises.find(
+        (enterprise) => enterprise.name === values.entityName,
+      );
+
+      if (!selectedOwner || workspaceId === null || workspaceId === undefined) {
+        throw new Error("Không xác định được đơn vị sở hữu để liên kết liên hệ");
+      }
+
+      await contactApi.attachOwner(
+        "ORGANIZATION",
+        selectedOwner.id,
+        {
+          contactId: createdContact.id,
+          name: createdContact.name || createdContact.fullName,
+          position: createdContact.position,
+          phone: createdContact.phone,
+          email: createdContact.email,
+          displayOrder: 1,
+          isPrimary: true,
+        },
+        workspaceId,
+      );
+      await queryClient.invalidateQueries({ queryKey: contactKeys.all });
 
       toast({
         title: "Thành công",
