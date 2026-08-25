@@ -1,6 +1,5 @@
 import type { BranchRecord } from "@/features/branch";
 import { Badge, type Column } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { CodeBadge } from "@/components/CodeBadge";
 
 export type BranchTableRow = BranchRecord & {
   enterpriseName: string;
@@ -12,7 +11,14 @@ export const branchColumns: Column<BranchTableRow>[] = [
   {
     key: "code",
     label: "Mã",
-    render: (value) => <CodeBadge value={value} />,
+    render: (value) => (
+      <Badge
+        variant="outline"
+        className="rounded-full bg-slate-50 px-2.5 py-1 font-mono text-[10px] text-slate-700"
+      >
+        {value as string}
+      </Badge>
+    ),
   },
   { key: "name", label: "Tên chi nhánh" },
   {

@@ -21,6 +21,11 @@ interface SimpleBranchFormProps {
   formData: BranchFormData;
   updateFormData: (updates: Partial<BranchFormData>) => void;
   enterprises: Enterprise[];
+  enterpriseSearchTerm?: string;
+  onEnterpriseSearch?: (value: string) => void;
+  onLoadMoreEnterprises?: () => void;
+  hasMoreEnterprises?: boolean;
+  enterprisesLoading?: boolean;
   onComplete: () => void;
   isEdit?: boolean;
   isSaving?: boolean;
@@ -30,6 +35,11 @@ export function SimpleBranchForm({
   formData,
   updateFormData,
   enterprises,
+  enterpriseSearchTerm,
+  onEnterpriseSearch,
+  onLoadMoreEnterprises,
+  hasMoreEnterprises,
+  enterprisesLoading,
   onComplete,
   isEdit = false,
   isSaving = false,
@@ -94,6 +104,11 @@ export function SimpleBranchForm({
               enterprises={enterprises}
               selectedId={formData.enterpriseId}
               onSelect={(id) => updateFormData({ enterpriseId: id })}
+              searchTerm={enterpriseSearchTerm}
+              onSearch={onEnterpriseSearch}
+              onLoadMore={onLoadMoreEnterprises}
+              hasMore={hasMoreEnterprises}
+              loading={enterprisesLoading}
             />
           </section>
 

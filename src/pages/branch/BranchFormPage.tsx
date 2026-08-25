@@ -33,6 +33,11 @@ export default function BranchFormPage() {
     formData,
     updateFormData,
     enterprises,
+    enterpriseSearchTerm,
+    setEnterpriseSearchTerm,
+    enterprisesLoading,
+    hasMoreEnterprises,
+    loadMoreEnterprises,
     isEdit,
     showConfirmDialog,
     setShowConfirmDialog,
@@ -52,7 +57,17 @@ export default function BranchFormPage() {
       id: "basic",
       title: "Thông tin cơ bản",
       description: "Tên, mã, đơn vị",
-      content: <BasicInfoStep enterprises={enterprises} isEdit={isEdit} />,
+      content: (
+        <BasicInfoStep
+          enterprises={enterprises}
+          isEdit={isEdit}
+          enterpriseSearchTerm={enterpriseSearchTerm}
+          onEnterpriseSearch={setEnterpriseSearchTerm}
+          onLoadMoreEnterprises={loadMoreEnterprises}
+          hasMoreEnterprises={hasMoreEnterprises}
+          enterprisesLoading={enterprisesLoading}
+        />
+      ),
       isValid:
         formData.name.length > 0 &&
         formData.enterpriseId.length > 0,
@@ -127,6 +142,11 @@ export default function BranchFormPage() {
           formData={formData}
           updateFormData={updateFormData}
           enterprises={enterprises}
+          enterpriseSearchTerm={enterpriseSearchTerm}
+          onEnterpriseSearch={setEnterpriseSearchTerm}
+          onLoadMoreEnterprises={loadMoreEnterprises}
+          hasMoreEnterprises={hasMoreEnterprises}
+          enterprisesLoading={enterprisesLoading}
           onComplete={handleComplete}
           isEdit={isEdit}
           isSaving={isSaving}

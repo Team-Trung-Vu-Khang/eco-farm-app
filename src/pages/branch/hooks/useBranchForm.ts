@@ -1,6 +1,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useToast } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { useEffect, useMemo, useState } from "react";
+import { useInfiniteQuery } from "@tanstack/react-query";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import { useLocation, useRoute } from "wouter";
 import {
@@ -11,7 +12,7 @@ import {
   type BranchUpdateRequest,
 } from "@/features/branch";
 import {
-  useOrganizations,
+  organizationApi,
   type OrganizationRecord,
 } from "@/features/organization";
 import { useSelectedWorkspaceId } from "@/features/workspace";
@@ -238,17 +239,49 @@ export function useBranchForm() {
     },
   );
 
-  const organizationsQuery = useOrganizations(
-    {
-      type: "enterprise",
-      page: 0,
-      size: 10,
-    },
-    workspaceId ?? "missing",
-    {
-      enabled: workspaceId !== null,
-    },
+  const [enterpriseSearchTerm, setEnterpriseSearchTerm] = useState("");
+  const [debouncedEnterpriseSearch, setDebouncedEnterpriseSearch] =
+    useState("");
+
+  useEffect(() => {
+    const timeoutId = window.setTimeout(
+      () => setDebouncedEnterpriseSearch(enterpriseSearchTerm.trim()),
+      300,
+    );
+    return () => window.clearTimeout(timeoutId);
+  }, [enterpriseSearchTerm]);
+
+  const organizationsQuery = useInfiniteQuery({
+    queryKey: [
+      "branch-form-enterprises",
+      workspaceId,
+      debouncedEnterpriseSearch,
+    ],
+    queryFn: ({ pageParam }) =>
+      organizationApi.list(
+        {
+          type: "enterprise",
+          keyword: debouncedEnterpriseSearch || undefined,
+          onlyOwner: true,
+          page: pageParam,
+          size: 20,
+        },
+        workspaceId!,
+      ),
+    initialPageParam: 0,
+    getNextPageParam: (lastPage) =>
+      lastPage.last ? undefined : lastPage.page + 1,
+    enabled: workspaceId !== null,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const organizationItems = useMemo(
+    () => organizationsQuery.data?.pages.flatMap((page) => page.content) ?? [],
+    [organizationsQuery.data],
   );
+
+  const [selectedEnterpriseCache, setSelectedEnterpriseCache] =
+    useState<Enterprise | null>(null);
 
   const createBranchMutation = useCreateBranch({
     onSuccess: () => {
@@ -284,14 +317,21 @@ export function useBranchForm() {
     },
   });
 
-  const enterprises = useMemo<Enterprise[]>(
-    () =>
-      organizationsQuery.items
-        .slice()
-        .sort((a, b) => a.name.localeCompare(b.name))
-        .map(mapOrganizationToEnterprise),
-    [organizationsQuery.items],
-  );
+  const enterprises = useMemo<Enterprise[]>(() => {
+    const loaded = organizationItems
+      .slice()
+      .sort((a, b) => a.name.localeCompare(b.name))
+      .map(mapOrganizationToEnterprise);
+
+    if (
+      selectedEnterpriseCache &&
+      !loaded.some((item) => item.id === selectedEnterpriseCache.id)
+    ) {
+      return [selectedEnterpriseCache, ...loaded];
+    }
+
+    return loaded;
+  }, [organizationItems, selectedEnterpriseCache]);
 
   const defaultValues = useMemo(
     () => createBranchFormValues(branchQuery.item),
@@ -306,6 +346,18 @@ export function useBranchForm() {
 
   const { getValues, setValue, reset, clearErrors, trigger } = form;
   const formValues = useWatch({ control: form.control }) as BranchFormValues;
+  const previousWorkspaceIdRef = useRef(workspaceId);
+
+  useEffect(() => {
+    if (previousWorkspaceIdRef.current === workspaceId) return;
+    previousWorkspaceIdRef.current = workspaceId;
+
+    setSelectedEnterpriseCache(null);
+    setValue("organizationId", "", {
+      shouldDirty: true,
+      shouldTouch: true,
+    });
+  }, [setValue, workspaceId]);
   const formData = useMemo(
     () => normalizeBranchFormData(formValues, enterprises),
     [enterprises, formValues],
@@ -319,6 +371,50 @@ export function useBranchForm() {
       clearErrors();
     }
   }, [clearErrors, defaultValues, reset]);
+
+  useEffect(() => {
+    const organization = branchQuery.item?.organization;
+    if (!organization) return;
+
+    setSelectedEnterpriseCache((prev) => {
+      if (prev && prev.id === Number(organization.id)) return prev;
+      return {
+        id: Number(organization.id),
+        code: organization.code || "",
+        name: organization.name,
+        type: "enterprise",
+        classification: ["other"],
+        taxCode: "",
+        address: "",
+        phone: "",
+        email: "",
+        status: "active",
+        createdAt: new Date().toISOString(),
+        contacts: [],
+        branches: [],
+        bankAccounts: [],
+        documents: [],
+      };
+    });
+  }, [branchQuery.item?.organization]);
+
+  useEffect(() => {
+    const selectedId = formValues.organizationId;
+    if (!selectedId) return;
+
+    const match = organizationItems.find(
+      (item) => item.id.toString() === selectedId,
+    );
+    if (!match) return;
+
+    setSelectedEnterpriseCache((prev) => {
+      const mapped = mapOrganizationToEnterprise(match);
+      if (prev && prev.id === mapped.id && prev.name === mapped.name) {
+        return prev;
+      }
+      return mapped;
+    });
+  }, [formValues.organizationId, organizationItems]);
 
   const updateFormData = (updates: Partial<BranchFormData>) => {
     if (updates.enterpriseId !== undefined) {
@@ -500,6 +596,12 @@ export function useBranchForm() {
     formData,
     updateFormData,
     enterprises,
+    enterpriseSearchTerm,
+    setEnterpriseSearchTerm,
+    enterprisesLoading:
+      organizationsQuery.isLoading || organizationsQuery.isFetchingNextPage,
+    hasMoreEnterprises: organizationsQuery.hasNextPage,
+    loadMoreEnterprises: organizationsQuery.fetchNextPage,
     isEdit,
     showConfirmDialog,
     setShowConfirmDialog,
@@ -507,9 +609,11 @@ export function useBranchForm() {
     submitForm,
     handleCancel,
     isLoading:
-      organizationsQuery.loading ||
+      organizationsQuery.isLoading ||
       (isEdit && branchQuery.loading && !branchQuery.item),
-    error: branchQuery.error || organizationsQuery.error,
+    error:
+      branchQuery.error ||
+      (organizationsQuery.error ? organizationsQuery.error.message : null),
     isSaving: createBranchMutation.isPending || updateBranchMutation.isPending,
   };
 }

@@ -18,9 +18,22 @@ import { BranchEnterpriseSelector } from "./BranchEnterpriseSelector";
 interface BasicInfoStepProps {
   enterprises: Enterprise[];
   isEdit: boolean;
+  enterpriseSearchTerm?: string;
+  onEnterpriseSearch?: (value: string) => void;
+  onLoadMoreEnterprises?: () => void;
+  hasMoreEnterprises?: boolean;
+  enterprisesLoading?: boolean;
 }
 
-export function BasicInfoStep({ enterprises, isEdit }: BasicInfoStepProps) {
+export function BasicInfoStep({
+  enterprises,
+  isEdit,
+  enterpriseSearchTerm,
+  onEnterpriseSearch,
+  onLoadMoreEnterprises,
+  hasMoreEnterprises,
+  enterprisesLoading,
+}: BasicInfoStepProps) {
   const {
     control,
     clearErrors,
@@ -86,6 +99,11 @@ export function BasicInfoStep({ enterprises, isEdit }: BasicInfoStepProps) {
                     clearErrors("organizationId");
                     field.onChange(value);
                   }}
+                  searchTerm={enterpriseSearchTerm}
+                  onSearch={onEnterpriseSearch}
+                  onLoadMore={onLoadMoreEnterprises}
+                  hasMore={hasMoreEnterprises}
+                  loading={enterprisesLoading}
                 />
                 {errors.organizationId ? (
                   <p className="text-xs text-red-600">
