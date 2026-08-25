@@ -21,8 +21,19 @@ import { useContactCreate } from "./hooks/useContactCreate";
  */
 export default function ContactCreatePage() {
   const { toast } = useToast();
-  const { defaultValues, enterprises, groups, departments, positions, goBack } =
-    useContactCreate();
+  const {
+    defaultValues,
+    enterprises,
+    enterpriseSearch,
+    setEnterpriseSearch,
+    loadMoreEnterprises,
+    hasMoreEnterprises,
+    enterprisesLoading,
+    groups,
+    departments,
+    positions,
+    goBack,
+  } = useContactCreate();
   const { createContact } = useCreateContact();
 
   const buildOptionValue = (source: string, id: number) => `${source}_${id}`;
@@ -110,6 +121,11 @@ export default function ContactCreatePage() {
           groups={groups}
           departments={departments}
           positions={positions}
+          enterpriseSearch={enterpriseSearch}
+          onEnterpriseSearch={setEnterpriseSearch}
+          onLoadMoreEnterprises={loadMoreEnterprises}
+          hasMoreEnterprises={hasMoreEnterprises}
+          enterprisesLoading={enterprisesLoading}
           showStatus={false}
         />
       </div>

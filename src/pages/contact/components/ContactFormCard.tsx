@@ -35,6 +35,11 @@ interface ContactFormProps {
   groups: ContactGroupRecord[];
   departments: DepartmentOptionResponse[];
   positions: PositionOptionResponse[];
+  enterpriseSearch?: string;
+  onEnterpriseSearch?: (value: string) => void;
+  onLoadMoreEnterprises?: () => void;
+  hasMoreEnterprises?: boolean;
+  enterprisesLoading?: boolean;
   showStatus?: boolean;
 }
 
@@ -45,6 +50,11 @@ export function ContactFormCard({
   groups,
   departments,
   positions,
+  enterpriseSearch,
+  onEnterpriseSearch,
+  onLoadMoreEnterprises,
+  hasMoreEnterprises,
+  enterprisesLoading,
   showStatus = false,
 }: ContactFormProps) {
   return (
@@ -78,6 +88,11 @@ export function ContactFormCard({
                     );
                     field.onChange(enterprise?.name || "");
                   }}
+                  searchTerm={enterpriseSearch}
+                  onSearch={onEnterpriseSearch}
+                  onLoadMore={onLoadMoreEnterprises}
+                  hasMore={hasMoreEnterprises}
+                  loading={enterprisesLoading}
                 />
                 {errors.entityName ? (
                   <p className="text-xs text-red-600">

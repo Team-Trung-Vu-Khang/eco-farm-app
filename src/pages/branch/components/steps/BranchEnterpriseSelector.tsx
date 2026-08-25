@@ -6,9 +6,8 @@ import {
   DialogHeader,
   DialogTitle,
   Input,
-  ScrollArea,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { Briefcase, Search } from "lucide-react";
+import { Briefcase, Loader2, Search } from "lucide-react";
 import { useMemo, useState } from "react";
 import type { Enterprise } from "@/pages/enterprise/data/constants";
 
@@ -17,6 +16,11 @@ interface BranchEnterpriseSelectorProps {
   selectedId: string;
   onSelect: (id: string) => void;
   disabled?: boolean;
+  searchTerm?: string;
+  onSearch?: (value: string) => void;
+  onLoadMore?: () => void;
+  hasMore?: boolean;
+  loading?: boolean;
 }
 
 export function BranchEnterpriseSelector({
@@ -24,24 +28,45 @@ export function BranchEnterpriseSelector({
   selectedId,
   onSelect,
   disabled = false,
+  searchTerm: controlledSearchTerm,
+  onSearch,
+  onLoadMore,
+  hasMore: remoteHasMore,
+  loading = false,
 }: BranchEnterpriseSelectorProps) {
+  const PAGE_SIZE = 8;
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [tempSelectedId, setTempSelectedId] = useState(selectedId);
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
 
   const selectedEnterprise = enterprises.find(
     (enterprise) => enterprise.id.toString() === selectedId,
   );
 
+  const isRemoteSearch = Boolean(onSearch);
+  const displayedSearchTerm = controlledSearchTerm ?? searchTerm;
   const filteredEnterprises = useMemo(() => {
-    const keyword = searchTerm.toLowerCase();
+    if (isRemoteSearch) return enterprises;
+    const keyword = displayedSearchTerm.toLowerCase();
     return enterprises.filter((enterprise) => {
       return (
         enterprise.name.toLowerCase().includes(keyword) ||
         enterprise.code.toLowerCase().includes(keyword)
       );
     });
-  }, [enterprises, searchTerm]);
+  }, [displayedSearchTerm, enterprises, isRemoteSearch]);
+
+  const visibleEnterprises = useMemo(
+    () =>
+      isRemoteSearch
+        ? filteredEnterprises
+        : filteredEnterprises.slice(0, visibleCount),
+    [filteredEnterprises, isRemoteSearch, visibleCount],
+  );
+  const hasMore = isRemoteSearch
+    ? Boolean(remoteHasMore)
+    : visibleCount < filteredEnterprises.length;
 
   const handleConfirm = () => {
     onSelect(tempSelectedId);
@@ -50,7 +75,9 @@ export function BranchEnterpriseSelector({
 
   const handleCancel = () => {
     setTempSelectedId(selectedId);
-    setSearchTerm("");
+    if (isRemoteSearch) onSearch?.("");
+    else setSearchTerm("");
+    setVisibleCount(PAGE_SIZE);
     setIsOpen(false);
   };
 
@@ -69,7 +96,9 @@ export function BranchEnterpriseSelector({
         onClick={() => {
           if (disabled) return;
           setTempSelectedId(selectedId);
-          setSearchTerm("");
+          if (isRemoteSearch) onSearch?.("");
+          else setSearchTerm("");
+          setVisibleCount(PAGE_SIZE);
           setIsOpen(true);
         }}
       >
@@ -166,14 +195,35 @@ export function BranchEnterpriseSelector({
               <Input
                 placeholder="Tìm theo tên hoặc mã đơn vị..."
                 className="border-slate-200 bg-slate-50 pl-10 transition-all focus:bg-white"
-                value={searchTerm}
-                onChange={(event) => setSearchTerm(event.target.value)}
+                value={displayedSearchTerm}
+                onChange={(event) => {
+                  if (isRemoteSearch) onSearch?.(event.target.value);
+                  else setSearchTerm(event.target.value);
+                  setVisibleCount(PAGE_SIZE);
+                }}
               />
             </div>
 
-            <ScrollArea className="h-100 rounded-xl border bg-slate-50/50">
+            <div
+              className="h-100 overflow-y-auto rounded-xl border bg-slate-50/50"
+              onScroll={(event) => {
+                const { scrollTop, scrollHeight, clientHeight } = event.currentTarget;
+                if (
+                  hasMore &&
+                  !loading &&
+                  scrollHeight - scrollTop - clientHeight < 48
+                ) {
+                  if (isRemoteSearch) onLoadMore?.();
+                  else {
+                    setVisibleCount((count) =>
+                      Math.min(count + PAGE_SIZE, filteredEnterprises.length),
+                    );
+                  }
+                }
+              }}
+            >
               <div className="grid grid-cols-1 gap-3 p-3 md:grid-cols-2">
-                {filteredEnterprises.map((enterprise) => (
+                {visibleEnterprises.map((enterprise) => (
                   <div
                     key={enterprise.id}
                     className={[
@@ -231,16 +281,36 @@ export function BranchEnterpriseSelector({
                   </div>
                 ))}
 
-                {filteredEnterprises.length === 0 && (
+                {loading && filteredEnterprises.length === 0 ? (
+                  <div className="col-span-full flex flex-col items-center justify-center gap-3 py-12 text-muted-foreground">
+                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                    <div className="text-sm">Đang tìm kiếm đơn vị...</div>
+                  </div>
+                ) : filteredEnterprises.length === 0 ? (
                   <div className="col-span-full flex flex-col items-center justify-center gap-3 py-12 text-muted-foreground">
                     <div className="flex h-12 w-12 items-center justify-center rounded-full bg-slate-100">
                       <Search className="h-6 w-6 text-slate-300" />
                     </div>
                     <div className="text-sm">Không tìm thấy đơn vị phù hợp</div>
                   </div>
-                )}
+                ) : null}
               </div>
-            </ScrollArea>
+              {hasMore ? (
+                <p className="py-3 text-center text-sm text-muted-foreground">
+                  {loading ? (
+                    <span className="inline-flex items-center gap-2">
+                      <Loader2 className="h-4 w-4 animate-spin" /> Đang tải đơn vị...
+                    </span>
+                  ) : (
+                    "Cuộn xuống để tải thêm đơn vị"
+                  )}
+                </p>
+              ) : loading && filteredEnterprises.length > 0 ? (
+                <p className="flex items-center justify-center gap-2 py-3 text-sm text-muted-foreground">
+                  <Loader2 className="h-4 w-4 animate-spin" /> Đang tìm đơn vị...
+                </p>
+              ) : null}
+            </div>
 
             <div className="flex justify-end gap-2">
               <Button variant="outline" onClick={handleCancel}>
