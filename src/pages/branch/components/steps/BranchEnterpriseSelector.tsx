@@ -23,6 +23,15 @@ interface BranchEnterpriseSelectorProps {
   loading?: boolean;
 }
 
+const enterpriseTypeLabels: Record<Enterprise["type"], string> = {
+  enterprise: "Doanh nghiệp",
+  farm: "Nông hộ",
+  cooperative: "Hợp tác xã",
+};
+
+const getEnterpriseTypeLabel = (type: Enterprise["type"]) =>
+  enterpriseTypeLabels[type] ?? type;
+
 export function BranchEnterpriseSelector({
   enterprises,
   selectedId,
@@ -128,7 +137,7 @@ export function BranchEnterpriseSelector({
                     variant="secondary"
                     className="h-4 bg-slate-100 px-1.5 py-0 text-[10px] capitalize font-medium"
                   >
-                    {selectedEnterprise.type}
+                    {getEnterpriseTypeLabel(selectedEnterprise.type)}
                   </Badge>
                 </div>
                 <div className="mb-1 text-base font-bold leading-tight text-slate-900">
@@ -260,7 +269,7 @@ export function BranchEnterpriseSelector({
                           variant="outline"
                           className="h-4 bg-slate-50 px-1.5 py-0 text-[10px] capitalize"
                         >
-                          {enterprise.type}
+                          {getEnterpriseTypeLabel(enterprise.type)}
                         </Badge>
                       </div>
                     </div>
