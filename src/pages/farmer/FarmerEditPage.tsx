@@ -119,11 +119,7 @@ export default function FarmerEditPage() {
       title: "Xác nhận",
       description: "Kiểm tra thông tin",
       content: (
-        <FarmerConfirmationStep
-          formData={formData}
-          bankSearchQuery={bankSearchQuery}
-          setBankSearchQuery={setBankSearchQuery}
-        />
+        <FarmerConfirmationStep formData={formData} />
       ),
     },
   ];

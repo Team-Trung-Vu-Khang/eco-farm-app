@@ -39,8 +39,6 @@ export default function FarmerCreatePage() {
     hasCamera,
     bankSearchQuery,
     setBankSearchQuery,
-    confirmBankSearchQuery,
-    setConfirmBankSearchQuery,
     isDragging,
     handleDrag,
     processExcelFile,
@@ -122,11 +120,7 @@ export default function FarmerCreatePage() {
       title: "Xác nhận",
       description: "Kiểm tra thông tin",
       content: (
-        <FarmerConfirmationStep
-          formData={formData}
-          bankSearchQuery={confirmBankSearchQuery}
-          setBankSearchQuery={setConfirmBankSearchQuery}
-        />
+        <FarmerConfirmationStep formData={formData} />
       ),
     },
   ];

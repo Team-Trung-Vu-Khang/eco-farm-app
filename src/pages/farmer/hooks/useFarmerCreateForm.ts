@@ -54,30 +54,6 @@ type BankMasterDataRecord = {
 
 type QrScanResult = Array<{ rawValue: string }>;
 
-const CLASSIFICATION_TO_BUSINESS_LINE: Record<string, string> = {
-  production: "SX",
-  processing: "CB",
-  trading: "TM",
-  service: "DV",
-  other: "KHAC",
-};
-
-const CLASSIFICATION_LABELS: Record<string, string> = {
-  production: "Sản xuất",
-  processing: "Chế biến",
-  trading: "Thương mại",
-  service: "Dịch vụ",
-  other: "Khác",
-};
-
-const BUSINESS_LINE_TO_CLASSIFICATION: Record<string, string> = {
-  SX: "production",
-  CB: "processing",
-  TM: "trading",
-  DV: "service",
-  KHAC: "other",
-};
-
 const normalizeBytes = (size?: string) => {
   if (!size) return undefined;
   const numeric = Number.parseFloat(size.replace(/[^0-9.,]/g, "").replace(",", "."));
@@ -156,16 +132,7 @@ const mapOrganizationToFarmerFormData = (
   taxAuthority: data.taxAuthority || "",
   issueDate: data.issueDate || "",
   classification:
-    data.businessLines
-      ?.map(
-        (line) =>
-          BUSINESS_LINE_TO_CLASSIFICATION[line.code || ""] ||
-          BUSINESS_LINE_TO_CLASSIFICATION[line.name || ""] ||
-          line.code ||
-          line.name ||
-          "",
-      )
-      .filter(Boolean) as FarmerFormInput["classification"] ?? [],
+    data.businessLines?.map((line) => String(line.id)) ?? [],
   foundedDate: data.foundedDate || "",
   representative: data.representative || "",
   website: data.website || "",
@@ -229,23 +196,14 @@ const mapClassificationToBusinessLines = (
   classifications: string[],
   businessLineRecords: BusinessLineRecord[],
 ): OrganizationBusinessLineRecord[] =>
-  classifications.map((classification: string) => {
-    const mappedCode =
-      CLASSIFICATION_TO_BUSINESS_LINE[classification] || classification;
-    const mappedName = CLASSIFICATION_LABELS[classification] || classification;
+  classifications.flatMap((businessLineId: string) => {
     const record = businessLineRecords.find(
-      (item) =>
-        item.code === mappedCode ||
-        item.name.toLowerCase() === mappedName.toLowerCase(),
+      (item) => String(item.id) === businessLineId,
     );
 
-    return (
-      record || {
-        id: mappedCode,
-        code: mappedCode,
-        name: mappedName,
-      }
-    );
+    return record
+      ? [{ id: record.id, code: record.code, name: record.name }]
+      : [];
   });
 
 export function useFarmerCreateForm() {
@@ -412,7 +370,6 @@ export function useFarmerCreateForm() {
   >("manual");
   const [hasCamera, setHasCamera] = useState(false);
   const [bankSearchQuery, setBankSearchQuery] = useState("");
-  const [confirmBankSearchQuery, setConfirmBankSearchQuery] = useState("");
   const [isDragging, setIsDragging] = useState<Record<string, boolean>>({});
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const isSubmitting =
@@ -862,6 +819,17 @@ export function useFarmerCreateForm() {
       values.classification,
       businessLineRecords,
     );
+
+    if (businessLines.length !== values.classification.length) {
+      toast({
+        title: "Không thể xác định phân loại",
+        description:
+          "Không tìm thấy ID phân loại từ dữ liệu danh mục. Vui lòng tải lại trang và thử lại.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     const contacts = [...values.contacts];
     if (values.phone.trim() || values.email.trim()) {
       if (contacts[0]) {
@@ -1029,8 +997,6 @@ export function useFarmerCreateForm() {
     hasCamera,
     bankSearchQuery,
     setBankSearchQuery,
-    confirmBankSearchQuery,
-    setConfirmBankSearchQuery,
     isDragging,
     handleDrag,
     processExcelFile,

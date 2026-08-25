@@ -1,4 +1,4 @@
-import { useAddressOptions } from "@/features/master-data";
+import { useAddressOptions, useMasterData } from "@/features/master-data";
 import {
   Button,
   Input,
@@ -17,7 +17,6 @@ import { useEffect, useRef, useState } from "react";
 import { Controller, type Control, type FieldErrors } from "react-hook-form";
 import type { FarmerFormInput } from "../../data/farmer-form.schema";
 import type { FarmerFormData } from "../../types";
-import { farmerClassificationOptions } from "../../types";
 import AddressSearchInput from "@/components/AddressSearchInput";
 import { getDefaultOrganizationImage } from "../../../enterprise/data/default-organization-images";
 
@@ -52,6 +51,17 @@ export const FarmerBasicInfoStep = ({
   const { toast } = useToast();
   const { provinces, wards, isLoadingProvinces, isLoadingWards } =
     useAddressOptions(formData.province);
+  const businessLinesQuery = useMasterData("business-lines", {
+    params: {
+      status: "active",
+      page: 0,
+      size: 100,
+    },
+  });
+  const farmerClassificationOptions = businessLinesQuery.items.map((item) => ({
+    value: String(item.id),
+    label: item.name || item.code || String(item.id),
+  }));
   const [isFocused, setIsFocused] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [suggestions, setSuggestions] = useState<
@@ -282,20 +292,26 @@ export const FarmerBasicInfoStep = ({
           />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="taxCode">Mã số thuế</Label>
+          <Label htmlFor="taxCode" required>Mã số thuế</Label>
           <Controller
             control={control}
             name="taxCode"
-            render={({ field }) => (
-              <Input
-                id="taxCode"
-                value={asInputValue(field.value)}
-                onChange={field.onChange}
-                onBlur={field.onBlur}
-                ref={field.ref}
-                name={field.name}
-                placeholder="Nhập mã số thuế"
-              />
+            render={({ field, fieldState }) => (
+              <>
+                <Input
+                  id="taxCode"
+                  value={asInputValue(field.value)}
+                  onChange={field.onChange}
+                  onBlur={field.onBlur}
+                  ref={field.ref}
+                  name={field.name}
+                  placeholder="Nhập mã số thuế"
+                  aria-invalid={!!fieldState.error}
+                />
+                {fieldState.error ? (
+                  <p className="text-xs text-red-600">{fieldState.error.message}</p>
+                ) : null}
+              </>
             )}
           />
         </div>
@@ -303,38 +319,50 @@ export const FarmerBasicInfoStep = ({
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="space-y-2">
-          <Label htmlFor="taxAuthority">Cơ quan thuế</Label>
+          <Label htmlFor="taxAuthority" required>Cơ quan thuế</Label>
           <Controller
             control={control}
             name="taxAuthority"
-            render={({ field }) => (
-              <Input
-                id="taxAuthority"
-                value={asInputValue(field.value)}
-                onChange={field.onChange}
-                onBlur={field.onBlur}
-                ref={field.ref}
-                name={field.name}
-                placeholder="Cục thuế / Chi cục thuế..."
-              />
+            render={({ field, fieldState }) => (
+              <>
+                <Input
+                  id="taxAuthority"
+                  value={asInputValue(field.value)}
+                  onChange={field.onChange}
+                  onBlur={field.onBlur}
+                  ref={field.ref}
+                  name={field.name}
+                  placeholder="Cục thuế / Chi cục thuế..."
+                  aria-invalid={!!fieldState.error}
+                />
+                {fieldState.error ? (
+                  <p className="text-xs text-red-600">{fieldState.error.message}</p>
+                ) : null}
+              </>
             )}
           />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="issueDate">Ngày cấp</Label>
+          <Label htmlFor="issueDate" required>Ngày cấp</Label>
           <Controller
             control={control}
             name="issueDate"
-            render={({ field }) => (
-              <Input
-                id="issueDate"
-                type="date"
-                value={asInputValue(field.value)}
-                onChange={field.onChange}
-                onBlur={field.onBlur}
-                ref={field.ref}
-                name={field.name}
-              />
+            render={({ field, fieldState }) => (
+              <>
+                <Input
+                  id="issueDate"
+                  type="date"
+                  value={asInputValue(field.value)}
+                  onChange={field.onChange}
+                  onBlur={field.onBlur}
+                  ref={field.ref}
+                  name={field.name}
+                  aria-invalid={!!fieldState.error}
+                />
+                {fieldState.error ? (
+                  <p className="text-xs text-red-600">{fieldState.error.message}</p>
+                ) : null}
+              </>
             )}
           />
         </div>
@@ -342,17 +370,22 @@ export const FarmerBasicInfoStep = ({
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="space-y-2">
-          <Label htmlFor="classification">Phân loại</Label>
+          <Label htmlFor="classification" required>Phân loại</Label>
           <Controller
             control={control}
             name="classification"
-            render={({ field }) => (
-              <MultiSelect
-                options={farmerClassificationOptions}
-                placeholder="Chọn phân loại..."
-                value={asMultiValue(field.value)}
-                onChange={field.onChange}
-              />
+            render={({ field, fieldState }) => (
+              <>
+                <MultiSelect
+                  options={farmerClassificationOptions}
+                  placeholder="Chọn phân loại..."
+                  value={asMultiValue(field.value)}
+                  onChange={field.onChange}
+                />
+                {fieldState.error ? (
+                  <p className="text-xs text-red-600">{fieldState.error.message}</p>
+                ) : null}
+              </>
             )}
           />
         </div>
@@ -378,7 +411,7 @@ export const FarmerBasicInfoStep = ({
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="space-y-2">
-          <Label htmlFor="representative">
+          <Label htmlFor="representative" required>
             Người đại diện pháp luật
           </Label>
           <Controller
