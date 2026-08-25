@@ -1,4 +1,7 @@
-import type { BankAccountRecord } from "@/features/bank";
+import { bankAccountApi, type BankAccountQueryParams, type BankAccountRecord } from "@/features/bank";
+import { masterDataApi } from "@/features/master-data/api/master-data.api";
+import { useSelectedWorkspaceId } from "@/features/workspace";
+import { useInfiniteQuery } from "@tanstack/react-query";
 import {
   Badge,
   Button,
@@ -9,7 +12,6 @@ import {
   DialogHeader,
   DialogTitle,
   Input,
-  ScrollArea,
   Select,
   SelectContent,
   SelectItem,
@@ -17,7 +19,7 @@ import {
   SelectValue,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { Check, Search } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 type BankOption = {
   id: number | string;
@@ -32,9 +34,7 @@ type EnterpriseBankSelectorDialogProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   selectedAccountLabel: string;
-  accounts: BankAccountRecord[];
-  banks: BankOption[];
-  loading?: boolean;
+  accountQueryParams?: Omit<BankAccountQueryParams, "keyword" | "page" | "size">;
   onSelect: (account: BankAccountRecord) => void;
   onSelectBank?: (bank: BankOption) => void;
 };
@@ -47,54 +47,90 @@ export function EnterpriseBankSelectorDialog({
   open,
   onOpenChange,
   selectedAccountLabel,
-  accounts,
-  banks,
-  loading = false,
+  accountQueryParams,
   onSelect,
   onSelectBank,
 }: EnterpriseBankSelectorDialogProps) {
+  const workspaceId = useSelectedWorkspaceId();
   const [searchTerm, setSearchTerm] = useState("");
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
   const [viewMode, setViewMode] = useState<"account" | "bank">("account");
   const [tempSelectedId, setTempSelectedId] = useState<number | string | null>(
     null,
   );
 
-  const filteredAccounts = useMemo(() => {
-    const query = searchTerm.toLowerCase().trim();
-    if (!query) return accounts;
+  useEffect(() => {
+    const timeoutId = window.setTimeout(
+      () => setDebouncedSearchTerm(searchTerm.trim()),
+      300,
+    );
+    return () => window.clearTimeout(timeoutId);
+  }, [searchTerm]);
 
-    return accounts.filter((account) => {
-      const searchable = [
-        getBankDisplayName(account),
-        account.bank?.code,
-        account.bank?.bin,
-        account.accountNumber,
-        account.accountHolder,
-        account.branch,
-        account.note,
-      ]
-        .join(" ")
-        .toLowerCase();
-      return searchable.includes(query);
-    });
-  }, [accounts, searchTerm]);
-
-  const filteredBanks = useMemo(() => {
-    const query = searchTerm.toLowerCase().trim();
-    if (!query) return banks;
-
-    return banks.filter((bank) => {
-      const searchable = [bank.shortName, bank.name, bank.code, bank.bin]
-        .join(" ")
-        .toLowerCase();
-      return searchable.includes(query);
-    });
-  }, [banks, searchTerm]);
-
-  const selectedAccount = accounts.find(
-    (account) => account.id === tempSelectedId,
+  const accountsQuery = useInfiniteQuery({
+    queryKey: ["enterprise-bank-selector-accounts", accountQueryParams, debouncedSearchTerm],
+    queryFn: ({ pageParam }) =>
+      bankAccountApi.list(
+        { ...accountQueryParams, keyword: debouncedSearchTerm || undefined, page: pageParam, size: 20 },
+        workspaceId!,
+      ),
+    initialPageParam: 0,
+    getNextPageParam: (lastPage) =>
+      lastPage.last ? undefined : lastPage.page + 1,
+    enabled: open && viewMode === "account" && workspaceId != null,
+    staleTime: 5 * 60 * 1000,
+  });
+  const banksQuery = useInfiniteQuery({
+    queryKey: ["enterprise-bank-selector-banks", debouncedSearchTerm],
+    queryFn: ({ pageParam }) =>
+      masterDataApi.list("banks", {
+        status: "active",
+        keyword: debouncedSearchTerm || undefined,
+        page: pageParam,
+        size: 20,
+      }),
+    initialPageParam: 0,
+    getNextPageParam: (lastPage) =>
+      lastPage.last ? undefined : lastPage.page + 1,
+    enabled: open && viewMode === "bank",
+    staleTime: 5 * 60 * 1000,
+  });
+  const accounts = useMemo(
+    () => accountsQuery.data?.pages.flatMap((page) => page.content) ?? [],
+    [accountsQuery.data],
   );
-  const selectedBank = banks.find((bank) => bank.id === tempSelectedId);
+  const banks = useMemo<BankOption[]>(
+    () =>
+      banksQuery.data?.pages.flatMap((page) => page.content).map((bank) => ({
+        id: bank.id,
+        code: bank.code,
+        bin: bank.bin,
+        shortName: bank.shortName,
+        name: bank.name,
+        logoUrl: bank.logoUrl,
+      })) ?? [],
+    [banksQuery.data],
+  );
+  const isLoading =
+    viewMode === "account" ? accountsQuery.isLoading : banksQuery.isLoading;
+  const isFetchingNextPage =
+    viewMode === "account"
+      ? accountsQuery.isFetchingNextPage
+      : banksQuery.isFetchingNextPage;
+  const hasNextPage =
+    viewMode === "account" ? accountsQuery.hasNextPage : banksQuery.hasNextPage;
+  const fetchNextPage =
+    viewMode === "account" ? accountsQuery.fetchNextPage : banksQuery.fetchNextPage;
+  const handleScroll = (event: React.UIEvent<HTMLDivElement>) => {
+    const element = event.currentTarget;
+    if (
+      hasNextPage &&
+      !isFetchingNextPage &&
+      element.scrollHeight - element.scrollTop - element.clientHeight < 160
+    ) {
+      fetchNextPage();
+    }
+  };
 
   return (
     <Dialog
@@ -113,6 +149,7 @@ export function EnterpriseBankSelectorDialog({
           });
           setTempSelectedId(selected?.id ?? null);
           setSearchTerm("");
+          setDebouncedSearchTerm("");
         }
         onOpenChange(nextOpen);
       }}
@@ -138,6 +175,7 @@ export function EnterpriseBankSelectorDialog({
               onValueChange={(value) => {
                 setViewMode(value as "account" | "bank");
                 setSearchTerm("");
+                setDebouncedSearchTerm("");
                 setTempSelectedId(null);
               }}
             >
@@ -165,16 +203,16 @@ export function EnterpriseBankSelectorDialog({
           </div>
         </div>
 
-        <ScrollArea className="min-h-0 flex-1">
+        <div className="min-h-0 flex-1 overflow-y-auto" onScroll={handleScroll}>
           <div className="grid gap-3 p-4 sm:p-6 sm:grid-cols-2">
-            {loading && (
+            {isLoading && (
               <div className="col-span-full flex flex-col items-center justify-center rounded-2xl border border-dashed border-slate-200 bg-slate-50 py-12 text-sm text-muted-foreground">
                 Đang tải danh sách tài khoản...
               </div>
             )}
 
             {viewMode === "account" &&
-              filteredAccounts.map((account) => {
+              accounts.map((account) => {
                 const bankName = getBankDisplayName(account);
                 const isSelected = tempSelectedId === account.id;
 
@@ -256,7 +294,7 @@ export function EnterpriseBankSelectorDialog({
               })}
 
             {viewMode === "bank" &&
-              filteredBanks.map((bank) => {
+              banks.map((bank) => {
                 const isSelected = tempSelectedId === bank.id;
                 const displayName = bank.shortName || bank.name || "";
                 const accountCount = accounts.filter(
@@ -331,21 +369,26 @@ export function EnterpriseBankSelectorDialog({
                 );
               })}
 
-            {viewMode === "account" && filteredAccounts.length === 0 && (
+            {viewMode === "account" && !isLoading && accounts.length === 0 && (
               <div className="col-span-full flex flex-col items-center justify-center rounded-2xl border border-dashed border-slate-200 bg-slate-50 py-12 text-sm text-muted-foreground">
                 <Search className="mb-2 h-5 w-5 text-slate-400" />
                 Không tìm thấy tài khoản phù hợp
               </div>
             )}
 
-            {viewMode === "bank" && filteredBanks.length === 0 && (
+            {viewMode === "bank" && !isLoading && banks.length === 0 && (
               <div className="col-span-full flex flex-col items-center justify-center rounded-2xl border border-dashed border-slate-200 bg-slate-50 py-12 text-sm text-muted-foreground">
                 <Search className="mb-2 h-5 w-5 text-slate-400" />
                 Không tìm thấy ngân hàng phù hợp
               </div>
             )}
+            {isFetchingNextPage && (
+              <div className="col-span-full py-4 text-center text-sm text-muted-foreground">
+                Đang tải thêm...
+              </div>
+            )}
           </div>
-        </ScrollArea>
+        </div>
 
         <DialogFooter className="shrink-0 border-t bg-white px-4 py-4 sm:px-6">
           <Button variant="ghost" onClick={() => onOpenChange(false)}>

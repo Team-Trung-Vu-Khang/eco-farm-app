@@ -197,7 +197,15 @@ export function useEnterprisePage() {
         </div>
       ),
     },
-    { key: "address", label: "Địa chỉ" },
+    {
+      key: "address",
+      label: "Địa chỉ",
+      render: (value) => (
+        <div className="max-w-70 truncate" title={String(value || "-")}>
+          {String(value || "-")}
+        </div>
+      ),
+    },
     {
       key: "status",
       label: "Trạng thái",

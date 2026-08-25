@@ -7,7 +7,6 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-  Input,
   Separator,
   Tabs,
   TabsContent,
@@ -26,31 +25,27 @@ import {
   Mail,
   MapPin,
   Phone,
-  Search,
   User,
   Users,
 } from "lucide-react";
-import { useState } from "react";
 import { useEnterpriseFormContext } from "../../context/EnterpriseFormContext";
 import type { BankAccount, Branch, Contact } from "../../data/constants";
 import { getDefaultOrganizationImage } from "../../data/default-organization-images";
 import type { EnterpriseDocument } from "../../types";
 
-const classificationOptions = [
-  { value: "production", label: "Sản xuất" },
-  { value: "processing", label: "Chế biến" },
-  { value: "trading", label: "Thương mại" },
-  { value: "service", label: "Dịch vụ" },
-  { value: "other", label: "Khác" },
-];
-
 export function EnterpriseConfirmationStep() {
   const { formData } = useEnterpriseFormContext();
   const displayImage =
     formData.image?.trim() || getDefaultOrganizationImage(formData.type);
-  const [confirmBankSearchQuery, setConfirmBankSearchQuery] = useState("");
   const defaultContact = formData.contacts[0];
   const organizationTypesQuery = useMasterData("organization-types", {
+    params: {
+      status: "active",
+      page: 0,
+      size: 100,
+    },
+  });
+  const businessLinesQuery = useMasterData("business-lines", {
     params: {
       status: "active",
       page: 0,
@@ -114,8 +109,9 @@ export function EnterpriseConfirmationStep() {
                     variant="outline"
                     className="capitalize px-3 py-1 text-xs font-semibold bg-primary/5 text-primary border-primary/20"
                   >
-                    {classificationOptions.find((opt) => opt.value === item)
-                      ?.label ?? item}
+                    {businessLinesQuery.items.find(
+                      (businessLine) => String(businessLine.id) === item,
+                    )?.name ?? item}
                   </Badge>
                 ))}
               </div>
@@ -514,17 +510,6 @@ export function EnterpriseConfirmationStep() {
                       {formData.bankAccounts.length}
                     </Badge>
                   </div>
-                  <div className="relative w-full md:w-80 group">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
-                    <Input
-                      placeholder="Tìm nhanh: Tên, Số tài khoản, Chủ thẻ..."
-                      value={confirmBankSearchQuery}
-                      onChange={(e) =>
-                        setConfirmBankSearchQuery(e.target.value)
-                      }
-                      className="pl-10 bg-background border-primary/20 focus:border-primary shadow-sm h-10 text-sm"
-                    />
-                  </div>
                 </div>
 
                 {formData.bankAccounts.length === 0 ? (
@@ -536,16 +521,8 @@ export function EnterpriseConfirmationStep() {
                   </div>
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {formData.bankAccounts
-                      .filter((acc: BankAccount) => {
-                        const query = confirmBankSearchQuery.toLowerCase();
-                        return (
-                          acc.bankName.toLowerCase().includes(query) ||
-                          acc.accountNumber.includes(query) ||
-                          acc.accountHolder.toLowerCase().includes(query)
-                        );
-                      })
-                      .map((acc: BankAccount, i: number) => {
+                    {formData.bankAccounts.map(
+                      (acc: BankAccount, i: number) => {
                         const bankInfo = vietQrBankData.find(
                           (b) => b.bin === acc.bin,
                         );

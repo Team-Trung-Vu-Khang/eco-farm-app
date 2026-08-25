@@ -1,7 +1,6 @@
-import { useBankAccounts } from "@/features/bank";
-import { useMasterData } from "@/features/master-data";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { useRoute } from "wouter";
+import { useMasterData } from "@/features/master-data";
 import { useEnterpriseFormContext } from "../../context/EnterpriseFormContext";
 import { EnterpriseBankAccountFormCard } from "./EnterpriseBankAccountFormCard";
 import { EnterpriseBankAccountList } from "./EnterpriseBankAccountList";
@@ -29,60 +28,17 @@ export function EnterpriseBankAccountsStep() {
   } = useEnterpriseFormContext();
 
   const [isBankDialogOpen, setIsBankDialogOpen] = useState(false);
-  const { items: bankAccounts, loading: bankAccountsLoading } = useBankAccounts({
-    params: {
-      page: 0,
-      size: 100,
-      ownerType: "ORGANIZATION",
-      ownerId: editParams?.id ? Number(editParams.id) : undefined,
-    },
+  const { items: bankMasterData } = useMasterData("banks", {
+    params: { status: "active", page: 0, size: 100 },
   });
-  const { items: banks, loading: banksLoading } = useMasterData("banks", {
-    params: {
-      status: "active",
-      page: 0,
-      size: 100,
-    },
-  });
-
-  const bankMasterData = useMemo(() => {
-    const uniqueBanks = new Map<string, BankOption>();
-
-    bankAccounts.forEach((account) => {
-      const bank = account.bank;
-      if (!bank) return;
-
-      const key = String(bank.id ?? bank.code ?? bank.bin ?? bank.name);
-      if (uniqueBanks.has(key)) return;
-
-      uniqueBanks.set(key, {
-        id: bank.id,
-        code: bank.code,
-        bin: bank.bin,
-        shortName: bank.shortName,
-        name: bank.name,
-        logoUrl: bank.logoUrl ?? "",
-      });
-    });
-
-    banks.forEach((bank) => {
-      const key = String(bank.id ?? bank.code ?? bank.bin ?? bank.name);
-      if (uniqueBanks.has(key)) return;
-
-      uniqueBanks.set(key, {
-        id: bank.id,
-        code: bank.code,
-        bin: bank.bin,
-        shortName: bank.shortName,
-        name: bank.name,
-        logoUrl: bank.logoUrl ?? "",
-      });
-    });
-
-    return Array.from(uniqueBanks.values());
-  }, [bankAccounts, banks]);
-
-  const handleSelectAccount = (account: (typeof bankAccounts)[number]) => {
+  const handleSelectAccount = (account: {
+    id: number | string;
+    bank?: BankOption | null;
+    accountNumber?: string;
+    accountHolder?: string;
+    branch?: string;
+    note?: string;
+  }) => {
     setNewBankAccount({
       id: account.id,
       bankId: account.bank?.id ?? "",
@@ -146,9 +102,10 @@ export function EnterpriseBankAccountsStep() {
             ? `${newBankAccount.bankName} - ${newBankAccount.accountNumber}`
             : newBankAccount.bankName
         }
-        accounts={bankAccounts}
-        banks={bankMasterData}
-        loading={bankAccountsLoading || banksLoading}
+        accountQueryParams={{
+          ownerType: "ORGANIZATION",
+          ownerId: editParams?.id ? Number(editParams.id) : undefined,
+        }}
         onSelect={handleSelectAccount}
         onSelectBank={handleSelectBank}
       />

@@ -24,6 +24,7 @@ import { EnterpriseContactsStep } from "../components/steps/EnterpriseContactsSt
 import { EnterpriseDocumentsStep } from "../components/steps/EnterpriseDocumentsStep";
 
 import { parseVietQR } from "@/utils/commons";
+import { getApiErrorDetails, getFirstApiFieldError } from "@/shared/lib/api-error";
 import type { BankAccount, Branch, Contact } from "../data/constants";
 import { getDefaultOrganizationImage } from "../data/default-organization-images";
 import {
@@ -44,22 +45,6 @@ type BankMasterDataRecord = MasterDataRecord<"banks"> & {
   shortName?: string;
   logoUrl?: string;
   bin?: string;
-};
-
-const CLASSIFICATION_TO_BUSINESS_LINE: Record<string, string> = {
-  production: "SX",
-  processing: "CB",
-  trading: "TM",
-  service: "DV",
-  other: "KHAC",
-};
-
-const CLASSIFICATION_LABELS: Record<string, string> = {
-  production: "Sản xuất",
-  processing: "Chế biến",
-  trading: "Thương mại",
-  service: "Dịch vụ",
-  other: "Khác",
 };
 
 const normalizeBytes = (size?: string) => {
@@ -107,9 +92,12 @@ export function useEnterpriseCreateForm() {
       setLocation("/enterprise");
     },
     onError: (error) => {
+      const fieldError = getFirstApiFieldError(error);
       toast({
         title: "Lỗi",
-        description: error.message,
+        description: fieldError
+          ? `${fieldError.field}: ${fieldError.message}`
+          : getApiErrorDetails(error).message,
         variant: "destructive",
       });
     },
@@ -657,7 +645,13 @@ export function useEnterpriseCreateForm() {
   };
 
   const addBranch = () => {
-    if (newBranch.name.trim()) {
+    if (
+      newBranch.name.trim() &&
+      newBranch.taxCode.trim() &&
+      newBranch.phone.trim() &&
+      newBranch.taxAddress.trim() &&
+      newBranch.address.trim()
+    ) {
       setFormData((prev) => ({
         ...prev,
         branches: [...(prev.branches ?? []), newBranch],
@@ -674,7 +668,8 @@ export function useEnterpriseCreateForm() {
     } else {
       toast({
         title: "Lỗi",
-        description: "Tên chi nhánh không được để trống",
+        description:
+          "Vui lòng nhập tên chi nhánh, mã số thuế, số điện thoại, địa chỉ thuế và địa chỉ chi nhánh",
         variant: "destructive",
       });
     }
@@ -727,27 +722,27 @@ export function useEnterpriseCreateForm() {
         return;
       }
 
-      const businessLines: BusinessLineRecord[] = values.classification.map(
-        (classification: string) => {
-          const mappedCode =
-            CLASSIFICATION_TO_BUSINESS_LINE[classification] || classification;
-          const mappedName =
-            CLASSIFICATION_LABELS[classification] || classification;
+      const businessLines: BusinessLineRecord[] = values.classification.flatMap(
+        (businessLineId: string) => {
           const record = businessLineRecords.find(
-            (item) =>
-              item.code === mappedCode ||
-              item.name.toLowerCase() === mappedName.toLowerCase(),
+            (item) => String(item.id) === businessLineId,
           );
 
-          return (
-            record || {
-              id: mappedCode,
-              code: mappedCode,
-              name: mappedName,
-            }
-          );
+          return record
+            ? [{ id: record.id, code: record.code, name: record.name }]
+            : [];
         },
       );
+
+      if (businessLines.length !== values.classification.length) {
+        toast({
+          title: "Không thể xác định phân loại",
+          description:
+            "Không tìm thấy ID phân loại từ dữ liệu danh mục. Vui lòng tải lại trang và thử lại.",
+          variant: "destructive",
+        });
+        return;
+      }
 
       const payload = {
         type: values.type,
@@ -875,7 +870,14 @@ export function useEnterpriseCreateForm() {
         title: "Thông tin cơ bản",
         description: "Tên, tên gợi nhớ và thông tin thuế",
         content: <EnterpriseBasicInfoStep />,
-        isValid: formData.name.length > 0 && formData.organizationTypeId !== "",
+        isValid:
+          formData.name.trim().length > 0 &&
+          formData.taxCode.trim().length > 0 &&
+          formData.taxAuthority.trim().length > 0 &&
+          formData.issueDate.trim().length > 0 &&
+          formData.taxAddress.trim().length > 0 &&
+          formData.classification.length > 0 &&
+          formData.organizationTypeId !== "",
       },
       {
         id: "contacts",
@@ -939,8 +941,13 @@ export function useEnterpriseCreateForm() {
     formData.bankAccounts.length,
     formData.branches.length,
     formData.contacts.length,
+    formData.classification.length,
     formData.name,
     formData.organizationTypeId,
+    formData.issueDate,
+    formData.taxAddress,
+    formData.taxAuthority,
+    formData.taxCode,
     formData.type,
   ]);
 

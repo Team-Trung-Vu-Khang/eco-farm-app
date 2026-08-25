@@ -156,7 +156,7 @@ export function EnterpriseBranchesStep() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>Mã số thuế</Label>
+                  <Label required>Mã số thuế</Label>
                   <Input
                     value={newBranch.taxCode}
                     onChange={(e) =>
@@ -169,7 +169,7 @@ export function EnterpriseBranchesStep() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>Số điện thoại</Label>
+                  <Label required>Số điện thoại</Label>
                   <Input
                     value={newBranch.phone}
                     onChange={(e) =>
@@ -189,7 +189,7 @@ export function EnterpriseBranchesStep() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>Địa chỉ thuế</Label>
+                  <Label required>Địa chỉ thuế</Label>
                   <Input
                     value={newBranch.taxAddress}
                     onChange={(e) =>
@@ -202,7 +202,7 @@ export function EnterpriseBranchesStep() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>Địa chỉ chi nhánh</Label>
+                  <Label required>Địa chỉ chi nhánh</Label>
                   <Input
                     value={newBranch.address}
                     onChange={(e) =>

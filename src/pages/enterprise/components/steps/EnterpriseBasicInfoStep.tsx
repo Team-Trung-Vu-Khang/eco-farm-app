@@ -23,14 +23,6 @@ import { useEnterpriseFormContext } from "../../context/EnterpriseFormContext";
 import AddressSearchInput from "@/components/AddressSearchInput";
 import { getDefaultOrganizationImage } from "../../data/default-organization-images";
 
-const classificationOptions = [
-  { value: "production", label: "Sản xuất" },
-  { value: "processing", label: "Chế biến" },
-  { value: "trading", label: "Thương mại" },
-  { value: "service", label: "Dịch vụ" },
-  { value: "other", label: "Khác" },
-];
-
 export function EnterpriseBasicInfoStep() {
   return <EnterpriseBasicInfoStepContent showContactSelector />;
 }
@@ -45,6 +37,13 @@ function EnterpriseBasicInfoStepContent({
   const MAP4D_ACCESS_KEY = import.meta.env.VITE_MAP4D_ACCESS_KEY;
   const { toast } = useToast();
   const organizationTypesQuery = useMasterData("organization-types", {
+    params: {
+      status: "active",
+      page: 0,
+      size: 100,
+    },
+  });
+  const businessLinesQuery = useMasterData("business-lines", {
     params: {
       status: "active",
       page: 0,
@@ -94,6 +93,10 @@ function EnterpriseBasicInfoStepContent({
   const wardOptions = wardsQuery.items.map((ward) => ({
     value: ward.code,
     label: ward.fullName || ward.name,
+  }));
+  const classificationOptions = businessLinesQuery.items.map((item) => ({
+    value: String(item.id),
+    label: item.name || item.code || String(item.id),
   }));
 
   useEffect(() => {
@@ -317,20 +320,26 @@ function EnterpriseBasicInfoStepContent({
           />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="taxCode">Mã số thuế</Label>
+          <Label htmlFor="taxCode" required>Mã số thuế</Label>
           <Controller
             control={control}
             name="taxCode"
-            render={({ field }) => (
-              <Input
-                id="taxCode"
-                value={field.value || ""}
-                onChange={(e) => field.onChange(e.target.value)}
-                onBlur={field.onBlur}
-                ref={field.ref}
-                name={field.name}
-                placeholder="Nhập mã số thuế"
-              />
+            render={({ field, fieldState }) => (
+              <>
+                <Input
+                  id="taxCode"
+                  value={field.value || ""}
+                  onChange={(e) => field.onChange(e.target.value)}
+                  onBlur={field.onBlur}
+                  ref={field.ref}
+                  name={field.name}
+                  placeholder="Nhập mã số thuế"
+                  aria-invalid={!!fieldState.error}
+                />
+                {fieldState.error ? (
+                  <p className="text-xs text-red-600">{fieldState.error.message}</p>
+                ) : null}
+              </>
             )}
           />
         </div>
@@ -338,38 +347,50 @@ function EnterpriseBasicInfoStepContent({
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="space-y-2">
-          <Label htmlFor="taxAuthority">Cơ quan thuế</Label>
+          <Label htmlFor="taxAuthority" required>Cơ quan thuế</Label>
           <Controller
             control={control}
             name="taxAuthority"
-            render={({ field }) => (
-              <Input
-                id="taxAuthority"
-                value={field.value || ""}
-                onChange={(e) => field.onChange(e.target.value)}
-                onBlur={field.onBlur}
-                ref={field.ref}
-                name={field.name}
-                placeholder="Cục thuế / Chi cục thuế..."
-              />
+            render={({ field, fieldState }) => (
+              <>
+                <Input
+                  id="taxAuthority"
+                  value={field.value || ""}
+                  onChange={(e) => field.onChange(e.target.value)}
+                  onBlur={field.onBlur}
+                  ref={field.ref}
+                  name={field.name}
+                  placeholder="Cục thuế / Chi cục thuế..."
+                  aria-invalid={!!fieldState.error}
+                />
+                {fieldState.error ? (
+                  <p className="text-xs text-red-600">{fieldState.error.message}</p>
+                ) : null}
+              </>
             )}
           />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="issueDate">Ngày cấp</Label>
+          <Label htmlFor="issueDate" required>Ngày cấp</Label>
           <Controller
             control={control}
             name="issueDate"
-            render={({ field }) => (
-              <Input
-                id="issueDate"
-                type="date"
-                value={field.value || ""}
-                onChange={(e) => field.onChange(e.target.value)}
-                onBlur={field.onBlur}
-                ref={field.ref}
-                name={field.name}
-              />
+            render={({ field, fieldState }) => (
+              <>
+                <Input
+                  id="issueDate"
+                  type="date"
+                  value={field.value || ""}
+                  onChange={(e) => field.onChange(e.target.value)}
+                  onBlur={field.onBlur}
+                  ref={field.ref}
+                  name={field.name}
+                  aria-invalid={!!fieldState.error}
+                />
+                {fieldState.error ? (
+                  <p className="text-xs text-red-600">{fieldState.error.message}</p>
+                ) : null}
+              </>
             )}
           />
         </div>
@@ -377,20 +398,26 @@ function EnterpriseBasicInfoStepContent({
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="space-y-2">
-          <Label htmlFor="taxAddress">Địa chỉ thuế</Label>
+          <Label htmlFor="taxAddress" required>Địa chỉ thuế</Label>
           <Controller
             control={control}
             name="taxAddress"
-            render={({ field }) => (
-              <Input
-                id="taxAddress"
-                value={field.value || ""}
-                onChange={(e) => field.onChange(e.target.value)}
-                onBlur={field.onBlur}
-                ref={field.ref}
-                name={field.name}
-                placeholder="Địa chỉ đăng ký thuế"
-              />
+            render={({ field, fieldState }) => (
+              <>
+                <Input
+                  id="taxAddress"
+                  value={field.value || ""}
+                  onChange={(e) => field.onChange(e.target.value)}
+                  onBlur={field.onBlur}
+                  ref={field.ref}
+                  name={field.name}
+                  placeholder="Địa chỉ đăng ký thuế"
+                  aria-invalid={!!fieldState.error}
+                />
+                {fieldState.error ? (
+                  <p className="text-xs text-red-600">{fieldState.error.message}</p>
+                ) : null}
+              </>
             )}
           />
         </div>
@@ -431,17 +458,22 @@ function EnterpriseBasicInfoStepContent({
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="space-y-2 sm:col-span-2">
-          <Label htmlFor="classification">Phân loại</Label>
+          <Label htmlFor="classification" required>Phân loại</Label>
           <Controller
             control={control}
             name="classification"
-            render={({ field }) => (
-              <MultiSelect
-                options={classificationOptions}
-                placeholder="Chọn phân loại..."
-                value={field.value ?? []}
-                onChange={field.onChange}
-              />
+            render={({ field, fieldState }) => (
+              <>
+                <MultiSelect
+                  options={classificationOptions}
+                  placeholder="Chọn phân loại..."
+                  value={field.value ?? []}
+                  onChange={field.onChange}
+                />
+                {fieldState.error ? (
+                  <p className="text-xs text-red-600">{fieldState.error.message}</p>
+                ) : null}
+              </>
             )}
           />
         </div>

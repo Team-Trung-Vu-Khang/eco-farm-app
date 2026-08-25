@@ -4,6 +4,7 @@ import { authStorage } from "@/features/auth/api/auth.api";
 import { AUTH_PATHS } from "../constants/auth.constants";
 import { apiEnv } from "../config/api.env";
 import { getSelectedWorkspaceIdFromStorage } from "@/features/workspace";
+import { getApiErrorDetails } from "./api-error";
 
 export const apiClient = axios.create({
   baseURL: apiEnv.apiBaseUrl,
@@ -133,6 +134,10 @@ apiClient.interceptors.response.use(
       if (!error.response) {
         console.error("[apiClient] Network error:", error.message);
       }
+
+      // Keep the backend payload intact for field-level handling, while making
+      // the standard Error message safe to show in generic UI toasts.
+      error.message = getApiErrorDetails(error).message;
     }
 
     return Promise.reject(error);
