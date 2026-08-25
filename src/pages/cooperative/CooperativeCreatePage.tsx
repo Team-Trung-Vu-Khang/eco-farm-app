@@ -45,8 +45,6 @@ export default function CooperativeCreatePage() {
     hasCamera,
     bankSearchQuery,
     setBankSearchQuery,
-    confirmBankSearchQuery,
-    setConfirmBankSearchQuery,
     isDragging,
     handleDrag,
     handleExcelUpload,
@@ -88,7 +86,15 @@ export default function CooperativeCreatePage() {
           handleLogoDrop={handleLogoDrop}
         />
       ),
-      isValid: formData.name.length > 0,
+      isValid:
+        formData.name.trim().length > 0 &&
+        formData.taxCode.trim().length > 0 &&
+        formData.taxAuthority.trim().length > 0 &&
+        formData.issueDate.trim().length > 0 &&
+        formData.classification.length > 0 &&
+        formData.representative.trim().length > 0 &&
+        formData.province.trim().length > 0 &&
+        formData.district.trim().length > 0,
     },
     {
       id: "contact",
@@ -171,11 +177,7 @@ export default function CooperativeCreatePage() {
       title: "Xác nhận",
       description: "Kiểm tra thông tin",
       content: (
-        <ConfirmStep
-          formData={formData}
-          confirmBankSearchQuery={confirmBankSearchQuery}
-          setConfirmBankSearchQuery={setConfirmBankSearchQuery}
-        />
+        <ConfirmStep formData={formData} />
       ),
     },
   ];

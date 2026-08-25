@@ -8,26 +8,6 @@ import type {
   CooperativeFormData,
 } from "../types/types";
 import type { Enterprise } from "@/pages/enterprise/data/constants";
-import { CLASSIFICATION_OPTIONS } from "../data/constants";
-
-const CLASSIFICATION_TO_BUSINESS_LINE_META: Record<
-  string,
-  { code: string; label: string }
-> = {
-  production: { code: "SX", label: "Sản xuất" },
-  processing: { code: "CB", label: "Chế biến" },
-  trading: { code: "TM", label: "Thương mại" },
-  service: { code: "DV", label: "Dịch vụ" },
-  other: { code: "KHAC", label: "Khác" },
-};
-
-const BUSINESS_LINE_TO_CLASSIFICATION: Record<string, string> = {
-  SX: "production",
-  CB: "processing",
-  TM: "trading",
-  DV: "service",
-  KHAC: "other",
-};
 
 const toTextSize = (sizeBytes?: number, fallback = "") => {
   if (!sizeBytes) return fallback;
@@ -43,66 +23,22 @@ export type CooperativeRow = Omit<Enterprise, "classification"> & {
   image: string;
 };
 
-const normalizeText = (value?: string | null) =>
-  (value || "").trim().toLowerCase();
-
 export const mapOrganizationBusinessLinesToClassification = (
   businessLines: OrganizationRecord["businessLines"] | undefined,
-) =>
-  (businessLines ?? [])
-    .map((line) => {
-      const normalizedCode = normalizeText(line.code);
-      const normalizedName = normalizeText(line.name);
-
-      if (normalizedCode.toUpperCase() in BUSINESS_LINE_TO_CLASSIFICATION) {
-        return BUSINESS_LINE_TO_CLASSIFICATION[
-          normalizedCode.toUpperCase()
-        ] as Enterprise["classification"][number];
-      }
-
-      const optionByValue = CLASSIFICATION_OPTIONS.find(
-        (option) =>
-          normalizeText(option.value) === normalizedCode ||
-          normalizeText(option.value) === normalizedName,
-      );
-      if (optionByValue) return optionByValue.value;
-
-      const optionByLabel = CLASSIFICATION_OPTIONS.find(
-        (option) =>
-          normalizeText(option.label) === normalizedName ||
-          normalizeText(option.label) === normalizedCode,
-      );
-      if (optionByLabel) return optionByLabel.value;
-
-      return undefined;
-    })
-    .filter(Boolean) as Enterprise["classification"];
+): Enterprise["classification"] =>
+  (businessLines ?? []).map((line) => String(line.id));
 
 export const mapClassificationToBusinessLines = (
   classifications: string[],
   businessLineRecords: OrganizationRecord["businessLines"] | undefined,
 ) =>
-  classifications
-    .map((classification) => {
-      const meta = CLASSIFICATION_TO_BUSINESS_LINE_META[classification] ?? {
-        code: classification,
-        label: classification,
-      };
-
-      return businessLineRecords?.find(
-        (item) =>
-          normalizeText(item.code) === normalizeText(meta.code) ||
-          normalizeText(item.name) === normalizeText(meta.label) ||
-          normalizeText(item.code) === normalizeText(classification) ||
-          normalizeText(item.name) === normalizeText(classification),
-      );
-    })
-    .filter(
-      (item): item is NonNullable<typeof item> => Boolean(item),
+  classifications.flatMap((businessLineId) => {
+    const record = businessLineRecords?.find(
+      (item) => String(item.id) === businessLineId,
     );
 
-export const classificationLabel = (value: string) =>
-  CLASSIFICATION_OPTIONS.find((option) => option.value === value)?.label ?? value;
+    return record ? [record] : [];
+  });
 
 export const toCooperativeRow = (
   cooperative: OrganizationRecord,
@@ -195,8 +131,9 @@ export const toCooperativeRow = (
       })) ?? [],
     businessLine: businessLineValue,
     businessLineText:
-      mapOrganizationBusinessLinesToClassification(cooperative.businessLines)
-        .map(classificationLabel)
+      cooperative.businessLines
+        ?.map((line) => line.name)
+        .filter(Boolean)
         .join(", ") || "-",
     primaryPhone: primaryContact?.phone || "-",
     primaryEmail: primaryContact?.email || "-",

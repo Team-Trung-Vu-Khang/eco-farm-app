@@ -2,6 +2,7 @@
 import type { Enterprise } from "@/pages/enterprise/data/constants";
 import { Badge, type Column } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { vietQrBankData } from "../../../constants/banks";
+import type { CooperativeRow } from "../utils/cooperative.mapper";
 
 const formatContactTooltip = (cooperative: Enterprise) => {
   const contacts = cooperative.contacts?.length
@@ -103,7 +104,7 @@ export const INITIAL_DATA: Enterprise[] = [
   },
 ];
 
-export const COOPERATIVE_COLUMNS: Column<Enterprise>[] = [
+export const COOPERATIVE_COLUMNS: Column<CooperativeRow>[] = [
   {
     key: "code",
     label: "Mã",
@@ -130,30 +131,13 @@ export const COOPERATIVE_COLUMNS: Column<Enterprise>[] = [
   },
   { key: "name", label: "Tên đơn vị" },
   {
-    key: "classification",
-    label: "Phân loại",
-    render: (value) => {
-      const labels: Record<string, string> = {
-        production: "Sản xuất",
-        processing: "Chế biến",
-        trading: "Thương mại",
-        service: "Dịch vụ",
-        other: "Khác",
-      };
-      return (
-        <div className="flex flex-wrap gap-1.5">
-          {(value as string[]).map((item: string) => (
-            <Badge
-              key={item}
-              variant="secondary"
-              className="rounded-full bg-primary/10 px-2.5 py-1 text-primary"
-            >
-              {labels[item] || item}
-            </Badge>
-          ))}
-        </div>
-      );
-    },
+    key: "businessLineText",
+    label: "Ngành nghề",
+    render: (value) => (
+      <div className="max-w-60 truncate" title={String(value || "-")}>
+        {String(value || "-")}
+      </div>
+    ),
   },
   {
     key: "phone",

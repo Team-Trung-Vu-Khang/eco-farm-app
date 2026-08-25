@@ -1,9 +1,7 @@
-import { useBankAccounts, type BankAccountRecord } from "@/features/bank";
-import {
-  BankSelectorDialog,
-  type BankOption,
-} from "@/features/bank/components/BankSelectorDialog";
+import type { BankAccountRecord } from "@/features/bank";
 import { useMasterData } from "@/features/master-data";
+import { EnterpriseBankSelectorDialog } from "@/pages/enterprise/components/steps/EnterpriseBankSelectorDialog";
+import type { BankOption } from "@/features/bank/components/BankSelectorDialog";
 import {
   Badge,
   Button,
@@ -75,17 +73,7 @@ export function BankInfoStep({
   const [, editParams] = useRoute("/cooperative/:id/edit");
   const [isBankDialogOpen, setIsBankDialogOpen] = useState(false);
   const ownerId = editParams?.id ? Number(editParams.id) : null;
-  const { items: bankAccountOptions, loading: bankAccountsLoading } =
-    useBankAccounts({
-      params: {
-        page: 0,
-        size: 100,
-        ownerType: "ORGANIZATION",
-        ownerId: ownerId ?? undefined,
-      },
-      enabled: ownerId !== null,
-    });
-  const { items: bankItems, loading: banksLoading } = useMasterData("banks", {
+  const { items: bankItems } = useMasterData("banks", {
     params: {
       status: "active",
       page: 0,
@@ -285,13 +273,14 @@ export function BankInfoStep({
         </CardContent>
       </Card>
 
-      <BankSelectorDialog
+      <EnterpriseBankSelectorDialog
         open={isBankDialogOpen}
         onOpenChange={setIsBankDialogOpen}
         selectedAccountLabel={selectedBankLabel}
-        accounts={bankAccountOptions}
-        banks={bankMasterData}
-        loading={bankAccountsLoading || banksLoading}
+        accountQueryParams={{
+          ownerType: "ORGANIZATION",
+          ownerId: ownerId ?? undefined,
+        }}
         onSelect={handleSelectAccount}
         onSelectBank={handleSelectBank}
       />

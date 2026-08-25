@@ -1,4 +1,4 @@
-import { useGeoProvinces, useGeoWards } from "@/features/master-data";
+import { useGeoProvinces, useGeoWards, useMasterData } from "@/features/master-data";
 import {
   Button,
   Input,
@@ -14,7 +14,6 @@ import {
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { Image, MapPin, Upload } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { CLASSIFICATION_OPTIONS } from "../../data/constants";
 import type { CooperativeFormData } from "../../types/types";
 import AddressSearchInput from "@/components/AddressSearchInput";
 import { getDefaultOrganizationImage } from "../../../enterprise/data/default-organization-images";
@@ -54,6 +53,17 @@ export function BasicInfoStep({
     },
     enabled: Boolean(formData.province),
   });
+  const businessLinesQuery = useMasterData("business-lines", {
+    params: {
+      status: "active",
+      page: 0,
+      size: 100,
+    },
+  });
+  const classificationOptions = businessLinesQuery.items.map((item) => ({
+    value: String(item.id),
+    label: item.name || item.code || String(item.id),
+  }));
   const [addressQuery, setAddressQuery] = useState(formData.address || "");
   const [isFocused, setIsFocused] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -213,7 +223,7 @@ export function BasicInfoStep({
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="space-y-2">
-          <Label htmlFor="name">Tên hợp tác xã *</Label>
+          <Label htmlFor="name" required>Tên hợp tác xã</Label>
           <Input
             id="name"
             value={formData.name}
@@ -237,7 +247,7 @@ export function BasicInfoStep({
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="space-y-2">
-          <Label htmlFor="taxCode">Mã số thuế</Label>
+          <Label htmlFor="taxCode" required>Mã số thuế</Label>
           <Input
             id="taxCode"
             value={formData.taxCode}
@@ -248,9 +258,9 @@ export function BasicInfoStep({
           />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="classification">Phân loại</Label>
+          <Label htmlFor="classification" required>Phân loại</Label>
           <MultiSelect
-            options={CLASSIFICATION_OPTIONS}
+            options={classificationOptions}
             placeholder="Chọn phân loại..."
             value={formData.classification}
             onChange={(v) => setFormData({ ...formData, classification: v })}
@@ -271,7 +281,7 @@ export function BasicInfoStep({
           />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="taxAuthority">Cơ quan thuế</Label>
+          <Label htmlFor="taxAuthority" required>Cơ quan thuế</Label>
           <Input
             id="taxAuthority"
             value={formData.taxAuthority}
@@ -296,7 +306,7 @@ export function BasicInfoStep({
           />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="issueDate">Ngày cấp</Label>
+          <Label htmlFor="issueDate" required>Ngày cấp</Label>
           <Input
             id="issueDate"
             type="date"
@@ -310,7 +320,9 @@ export function BasicInfoStep({
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="space-y-2">
-          <Label htmlFor="representative">Người đại diện pháp luật *</Label>
+          <Label htmlFor="representative" required>
+            Người đại diện pháp luật
+          </Label>
           <Input
             id="representative"
             value={formData.representative}
@@ -340,7 +352,7 @@ export function BasicInfoStep({
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="space-y-2">
-            <Label htmlFor="province">Tỉnh / Thành phố *</Label>
+            <Label htmlFor="province" required>Tỉnh / Thành phố</Label>
             <Select
               value={formData.province}
               onValueChange={(val) =>
@@ -360,7 +372,7 @@ export function BasicInfoStep({
             </Select>
           </div>
           <div className="space-y-2">
-            <Label htmlFor="district">Quận / Huyện</Label>
+            <Label htmlFor="district" required>Phường / Xã</Label>
             <Select
               value={formData.district}
               onValueChange={(val) =>
@@ -368,7 +380,7 @@ export function BasicInfoStep({
               }
             >
               <SelectTrigger>
-                <SelectValue placeholder="Chọn Quận / Huyện" />
+                <SelectValue placeholder="Chọn Phường / Xã" />
               </SelectTrigger>
               <SelectContent className="max-h-80 overflow-y-auto">
                 {wardsQuery.items.map((district) => (

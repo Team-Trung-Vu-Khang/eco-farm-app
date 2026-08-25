@@ -10,7 +10,6 @@ import {
   Phone,
   Mail,
   Building2,
-  Search,
   FileText,
   Users,
 } from "lucide-react";
@@ -26,25 +25,25 @@ import {
   TabsList,
   TabsTrigger,
   TabsContent,
-  Input,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import { useMasterData } from "@/features/master-data";
 import type { CooperativeFormData } from "../../types/types";
-import { CLASSIFICATION_OPTIONS } from "../../data/constants";
 import { vietQrBankData } from "@/constants/banks";
 import { getDefaultOrganizationImage } from "../../../enterprise/data/default-organization-images";
 
 interface ConfirmStepProps {
   formData: CooperativeFormData;
-  confirmBankSearchQuery: string;
-  setConfirmBankSearchQuery: (q: string) => void;
 }
 
-export function ConfirmStep({
-  formData,
-  confirmBankSearchQuery,
-  setConfirmBankSearchQuery,
-}: ConfirmStepProps) {
+export function ConfirmStep({ formData }: ConfirmStepProps) {
   const displayImage = formData.image || getDefaultOrganizationImage("cooperative");
+  const businessLinesQuery = useMasterData("business-lines", {
+    params: {
+      status: "active",
+      page: 0,
+      size: 100,
+    },
+  });
   return (
     <div className="space-y-10 max-w-6xl mx-auto">
       <div className="text-center mb-10">
@@ -98,8 +97,9 @@ export function ConfirmStep({
                     variant="outline"
                     className="capitalize px-3 py-1 text-xs font-semibold bg-primary/5 text-primary border-primary/20"
                   >
-                    {CLASSIFICATION_OPTIONS.find((opt) => opt.value === item)
-                      ?.label ?? item}
+                    {businessLinesQuery.items.find(
+                      (businessLine) => String(businessLine.id) === item,
+                    )?.name ?? item}
                   </Badge>
                 ))}
               </div>
@@ -396,25 +396,12 @@ export function ConfirmStep({
                 value="banks"
                 className="m-0 space-y-6 animate-in fade-in duration-300"
               >
-                <div className="flex flex-col md:flex-row md:items-center gap-4 justify-between bg-muted/5 p-4 rounded-xl border border-primary/10">
-                  <div className="flex items-center gap-3">
-                    <CreditCard className="w-5 h-5 text-primary" />
-                    <h4 className="font-bold text-lg">Tài khoản thanh toán</h4>
-                    <Badge className="bg-primary/10 text-primary border-none">
-                      {formData.bankAccounts.length}
-                    </Badge>
-                  </div>
-                  <div className="relative w-full md:w-80 group">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
-                    <Input
-                      placeholder="Tìm nhanh: Tên, Số tài khoản, Chủ thẻ..."
-                      value={confirmBankSearchQuery}
-                      onChange={(e) =>
-                        setConfirmBankSearchQuery(e.target.value)
-                      }
-                      className="pl-10 bg-background border-primary/20 focus:border-primary shadow-sm h-10 text-sm"
-                    />
-                  </div>
+                <div className="flex items-center gap-3 bg-muted/5 p-4 rounded-xl border border-primary/10">
+                  <CreditCard className="w-5 h-5 text-primary" />
+                  <h4 className="font-bold text-lg">Tài khoản thanh toán</h4>
+                  <Badge className="bg-primary/10 text-primary border-none">
+                    {formData.bankAccounts.length}
+                  </Badge>
                 </div>
 
                 {formData.bankAccounts.length === 0 ? (
@@ -426,16 +413,7 @@ export function ConfirmStep({
                   </div>
                 ) : (
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                    {formData.bankAccounts
-                      .filter((acc) => {
-                        const query = confirmBankSearchQuery.toLowerCase();
-                        return (
-                          acc.bankName.toLowerCase().includes(query) ||
-                          acc.accountNumber.includes(query) ||
-                          acc.accountHolder.toLowerCase().includes(query)
-                        );
-                      })
-                      .map((acc, i) => {
+                    {formData.bankAccounts.map((acc, i) => {
                         const bankInfo = vietQrBankData.find(
                           (b) => b.bin === acc.bin,
                         );

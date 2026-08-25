@@ -237,7 +237,6 @@ export function useCooperativeForm(initialData?: Partial<CooperativeFormData>) {
   >("create");
   const [hasCamera, setHasCamera] = useState(false);
   const [bankSearchQuery, setBankSearchQuery] = useState("");
-  const [confirmBankSearchQuery, setConfirmBankSearchQuery] = useState("");
   const [isDragging, setIsDragging] = useState<Record<string, boolean>>({});
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const logoUploadSeqRef = useRef(0);
@@ -875,8 +874,6 @@ export function useCooperativeForm(initialData?: Partial<CooperativeFormData>) {
     hasCamera,
     bankSearchQuery,
     setBankSearchQuery,
-    confirmBankSearchQuery,
-    setConfirmBankSearchQuery,
     isDragging,
     handleDrag,
     handleExcelUpload,
