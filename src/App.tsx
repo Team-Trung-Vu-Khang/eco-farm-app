@@ -11,6 +11,7 @@ import { OnboardRegionDialog } from "./pages/region-chart/region-basic-distribut
 import { useRegions } from "./features/farm/hooks/useRegions";
 
 import { useCurrentUser } from "./features/auth/hooks/useCurrentUser";
+import { WorkspaceChangeHandler } from "./components/WorkspaceChangeHandler";
 
 interface OnboardCheckerProps {
   children: React.ReactNode;
@@ -73,6 +74,7 @@ function App() {
       <AuthWrapper>
         <AdminLayout isDev>
           <Suspense fallback={<AppLoadingState />}>
+            <WorkspaceChangeHandler />
             <OnboardChecker>
               <AppRouter />
             </OnboardChecker>
