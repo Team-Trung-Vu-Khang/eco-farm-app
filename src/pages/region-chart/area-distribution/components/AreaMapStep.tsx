@@ -25,7 +25,10 @@ import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { getBoundsFromPoints } from "../utils/map";
 import * as turf from "@turf/turf";
-import { useRegions } from "@/features/farm/hooks/useRegions";
+import {
+  useRegionById,
+  useRegions,
+} from "@/features/farm/hooks/useRegions";
 import { useAreas } from "@/features/farm/hooks/useAreas";
 
 interface AreaMapStepProps {
@@ -129,6 +132,22 @@ const FitBoundsOnce = ({
   return null;
 };
 
+const InvalidateMapSize = () => {
+  const map = useMap();
+
+  useEffect(() => {
+    const frame = window.requestAnimationFrame(() => map.invalidateSize());
+    const timer = window.setTimeout(() => map.invalidateSize(), 200);
+
+    return () => {
+      window.cancelAnimationFrame(frame);
+      window.clearTimeout(timer);
+    };
+  }, [map]);
+
+  return null;
+};
+
 interface MapLayoutProps {
   center: L.LatLng;
   areaPoints: L.LatLng[];
@@ -178,13 +197,14 @@ const MapLayout = ({
 }: MapLayoutProps) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   return (
-    <div className="flex flex-col md:flex-row flex-1 gap-4 overflow-y-auto md:overflow-hidden p-4 h-full w-full">
-      <div className="relative z-0 h-96 md:h-full w-full md:flex-1 shrink-0 md:shrink overflow-hidden rounded-lg border">
+    <div className="grid h-full w-full flex-1 gap-4 overflow-y-auto p-4 md:grid-cols-[minmax(0,1fr)_300px] md:overflow-hidden">
+      <div className="relative z-0 h-96 min-h-96 min-w-0 overflow-hidden rounded-lg border md:h-full">
         <MapContainer
           center={[center.lat, center.lng]}
           zoom={14}
           className="h-full w-full"
         >
+          <InvalidateMapSize />
           <FitBoundsOnce
             points={areaPoints}
             regionPoints={regionPoints}
@@ -262,7 +282,7 @@ const MapLayout = ({
         </MapContainer>
       </div>
 
-      <div className="flex h-[450px] md:h-full w-full md:w-[300px] shrink-0 flex-col overflow-hidden rounded-lg border bg-slate-50">
+      <div className="flex h-[450px] w-full flex-col overflow-hidden rounded-lg border bg-slate-50 md:h-full">
         <div className="flex flex-col border-b bg-white p-3 gap-2.5">
           <div>
             <h4 className="text-sm font-semibold">Danh sách toạ độ</h4>
@@ -376,15 +396,20 @@ export const AreaMapStep = ({ markerIcon }: AreaMapStepProps) => {
   const coordinates = watch("coordinates") || [];
 
   const { data: regionsData } = useRegions({ params: { size: 100 } });
+  const selectedRegionId = Number(regionId);
+  const { data: selectedRegionDetail } = useRegionById(selectedRegionId, {
+    enabled: Number.isFinite(selectedRegionId) && selectedRegionId > 0,
+  });
   const { items: allAreas } = useAreas({
     params: { size: 100 },
     enabled: !!regionId,
   });
 
   const selectedRegion = useMemo(() => {
+    if (selectedRegionDetail) return selectedRegionDetail;
     if (!regionId || !regionsData?.content) return null;
-    return regionsData.content.find((r) => r.id === Number(regionId));
-  }, [regionId, regionsData]);
+    return regionsData.content.find((r) => r.id === selectedRegionId) ?? null;
+  }, [regionId, regionsData, selectedRegionDetail, selectedRegionId]);
 
   const regionPoints = useMemo(() => {
     if (!selectedRegion?.boundary) return [];

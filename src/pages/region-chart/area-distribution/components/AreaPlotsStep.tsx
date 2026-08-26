@@ -1,3 +1,4 @@
+import { zodResolver } from "@hookform/resolvers/zod";
 import {
   Button,
   Card,
@@ -20,12 +21,9 @@ import booleanPointInPolygon from "@turf/boolean-point-in-polygon";
 import { point, polygon } from "@turf/helpers";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
-import { Maximize2, Plus, Trash2, X, Edit } from "lucide-react";
-import { useCallback, useEffect, useMemo, useState, useRef } from "react";
-import { useFormContext, useForm } from "react-hook-form";
-import { z } from "zod";
-import { zodResolver } from "@hookform/resolvers/zod";
-import readXlsxFile from "read-excel-file";
+import { Edit, Maximize2, Plus, Trash2, X } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useForm, useFormContext } from "react-hook-form";
 import {
   MapContainer,
   Marker,
@@ -34,6 +32,8 @@ import {
   TileLayer,
   Tooltip,
 } from "react-leaflet";
+import readXlsxFile from "read-excel-file";
+import { z } from "zod";
 
 import { useCatalog } from "@/features/foundation/hooks/useCatalog";
 import {
@@ -398,7 +398,7 @@ const PlotEditForm = ({
                 return (
                   <div
                     key={`coord-${index}`}
-                    className={`rounded border p-2 transition-colors ${
+                    className={`mt-1 rounded border p-2 transition-colors ${
                       hasWarning
                         ? "border-red-300 bg-red-50"
                         : isActive

@@ -24,7 +24,7 @@ import { useFormContext } from "react-hook-form";
 import type { AreaFormValues } from "../data/area-form.schema";
 import { AreaRegionSelector, SelectedRegionCard } from "./AreaRegionSelector";
 import { CenterPointMapPicker } from "../../region-distribution/components/CenterPointMapPicker";
-import React from "react";
+import React, { useState } from "react";
 
 interface AreaInfoStepProps {
   showEnterprise?: boolean;
@@ -37,6 +37,8 @@ export function AreaInfoStep({
 }: AreaInfoStepProps = {}) {
   const { control, watch, setValue } = useFormContext<AreaFormValues>();
   const enterpriseId = watch("enterpriseId");
+  const [selectedRegion, setSelectedRegion] =
+    useState<FarmRegionResponse | undefined>();
 
   const { data: regionsData } = useRegions({
     params: { size: 100 }, // ideally we filter by workspaceId: enterpriseId
@@ -79,6 +81,7 @@ export function AreaInfoStep({
                         selectedId={field.value ?? ""}
                         onSelect={(value) => {
                           field.onChange(value);
+                          setSelectedRegion(undefined);
                           setValue("regionId", undefined as unknown as number);
                           setValue("soilType", "");
                           setValue("terrainFeature", "");
@@ -102,17 +105,14 @@ export function AreaInfoStep({
                   <FormControl>
                     <div>
                       <AreaRegionSelector
-                        regions={regions as FarmRegionResponse[]}
                         showEnterprise={showEnterprise}
                         enterpriseId={
                           enterpriseId ? Number(enterpriseId) : null
                         }
                         selectedId={field.value?.toString()}
-                        onSelect={(id) => {
-                          const region = regions.find(
-                            (item) => item.id === Number(id),
-                          );
-                          field.onChange(Number(id));
+                        onSelect={(region) => {
+                          setSelectedRegion(region);
+                          field.onChange(region.id);
                           if (region) {
                             setValue(
                               "soilType",
@@ -131,7 +131,9 @@ export function AreaInfoStep({
                           <SelectedRegionCard
                             regionId={field.value.toString()}
                             regions={regions as FarmRegionResponse[]}
+                            regionOverride={selectedRegion}
                             onRemove={() => {
+                              setSelectedRegion(undefined);
                               field.onChange(undefined);
                               setValue("soilType", "");
                               setValue("terrainFeature", "");
