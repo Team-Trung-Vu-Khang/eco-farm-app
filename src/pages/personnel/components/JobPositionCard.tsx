@@ -86,7 +86,7 @@ export function JobPositionCard() {
             name="department"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Phòng ban</FormLabel>
+                <FormLabel required>Phòng ban</FormLabel>
                 <FormControl>
                   <Combobox
                     options={departmentOptions}
@@ -118,7 +118,7 @@ export function JobPositionCard() {
             name="position"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Chức vụ</FormLabel>
+                <FormLabel required>Chức vụ</FormLabel>
                 <FormControl>
                   <Combobox
                     options={positionOptions}

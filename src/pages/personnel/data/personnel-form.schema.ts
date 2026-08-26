@@ -6,95 +6,28 @@ export const personnelFormSchema = z
     phone: z.string().min(1, "Số điện thoại là bắt buộc"),
     email: z
       .string()
-      .optional()
+      .min(1, "Email là bắt buộc")
       .refine(
-        (val) => !val || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val),
+        (val) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val),
         "Email không hợp lệ",
       ),
     province: z.string().optional(),
     ward: z.string().optional(), // Replaced district with ward
     address: z.string().optional(),
-    personalTaxCode: z.string().optional(), // Replaced taxCode with personalTaxCode
+    personalTaxCode: z.string().min(1, "Mã số thuế là bắt buộc"), // Replaced taxCode with personalTaxCode
     taxAddress: z.string().optional(),
     avatarUrl: z.string().optional(),
     avatarFile: z.any().optional(),
     departmentType: z.enum(["OWNER", "MASTER"]).optional(),
-    department: z.string().optional(),
+    department: z.string().min(1, "Vui lòng chọn phòng ban"),
     positionType: z.enum(["OWNER", "MASTER"]).optional(),
-    position: z.string().optional(),
+    position: z.string().min(1, "Vui lòng chọn chức vụ"),
     teamIds: z.array(z.string()).optional(),
     status: z.enum(["active", "inactive", "archived"] as const), // Added archived
     bankName: z.string().optional(),
     accountNumber: z.string().optional(),
     accountHolder: z.string().optional(),
     bankBranch: z.string().optional(),
-  })
-  .superRefine((data, ctx) => {
-    const hasAnyJobInfo =
-      !!data.department ||
-      !!data.position ||
-      (data.teamIds && data.teamIds.length > 0);
-
-    if (hasAnyJobInfo) {
-      if (!data.department) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: "Vui lòng chọn phòng ban",
-          path: ["department"],
-        });
-      }
-      if (!data.position) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: "Vui lòng chọn chức vụ",
-          path: ["position"],
-        });
-      }
-      if (!data.teamIds || data.teamIds.length === 0) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: "Vui lòng chọn đội / nhóm",
-          path: ["teamIds"],
-        });
-      }
-    }
-
-    const hasAnyBankInfo =
-      !!data.bankName ||
-      !!data.accountNumber ||
-      !!data.accountHolder ||
-      !!data.bankBranch;
-
-    if (hasAnyBankInfo) {
-      if (!data.bankName) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: "Vui lòng chọn ngân hàng",
-          path: ["bankName"],
-        });
-      }
-      if (!data.bankBranch) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: "Vui lòng nhập chi nhánh",
-          path: ["bankBranch"],
-        });
-      }
-      if (!data.accountNumber) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: "Vui lòng nhập số tài khoản",
-          path: ["accountNumber"],
-        });
-      }
-      if (!data.accountHolder) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: "Vui lòng nhập tên chủ tài khoản",
-          path: ["accountHolder"],
-        });
-      }
-    }
   });
 
 export type PersonnelFormValues = z.infer<typeof personnelFormSchema>;

@@ -54,7 +54,7 @@ export function PersonalInfoCard() {
             name="email"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Email</FormLabel>
+                <FormLabel required>Email</FormLabel>
                 <FormControl>
                   <Input
                     type="email"
@@ -73,7 +73,7 @@ export function PersonalInfoCard() {
             name="personalTaxCode"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Mã số thuế cá nhân</FormLabel>
+                <FormLabel required>Mã số thuế cá nhân</FormLabel>
                 <FormControl>
                   <Input placeholder="MST cá nhân" {...field} />
                 </FormControl>

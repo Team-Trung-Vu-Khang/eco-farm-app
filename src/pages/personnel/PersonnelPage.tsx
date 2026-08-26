@@ -68,7 +68,6 @@ export default function PersonnelPage() {
       <DataTable
         columns={personnelColumns as any}
         data={personnel}
-        onView={(item) => setLocation(`/personnel/${item.id}/edit`)}
         onEdit={(item) => setLocation(`/personnel/${item.id}/edit`)}
         onDelete={handleDelete}
         searchPlaceholder="Tìm kiếm nhân sự..."
