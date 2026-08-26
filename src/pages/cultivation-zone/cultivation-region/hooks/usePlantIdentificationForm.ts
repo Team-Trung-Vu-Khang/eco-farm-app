@@ -168,7 +168,10 @@ export const usePlantIdentificationForm = ({
   };
 
   // ---- Fetch Cultivation Zones from API ----
-  const { items: apiCultivationRegions } = useCultivationZones({
+  const {
+    items: apiCultivationRegions,
+    loading: isLoadingCultivationRegions,
+  } = useCultivationZones({
     params: { domainCode: "CROP" },
   });
   const filteredCultivationRegions = apiCultivationRegions;
@@ -1012,6 +1015,7 @@ export const usePlantIdentificationForm = ({
     irrigationMethod,
     selectedCropsData,
     filteredCultivationRegions,
+    isLoadingCultivationRegions,
     findGeographicalUnit,
     areasByRegion,
     plotsByArea,

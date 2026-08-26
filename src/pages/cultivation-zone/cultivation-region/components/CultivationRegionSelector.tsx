@@ -9,13 +9,14 @@ import {
   Button,
   Badge,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { Layers, MapPin, Plus, Search } from "lucide-react";
+import { Layers, Loader2, MapPin, Plus, Search } from "lucide-react";
 
 interface CultivationRegionSelectorProps {
   areas: any[];
   selectedId: string;
   onSelect: (id: string) => void;
   disabled?: boolean;
+  loading?: boolean;
 }
 
 /** Build a short scope summary string from the scopes array */
@@ -55,6 +56,7 @@ export const CultivationRegionSelector = ({
   selectedId,
   onSelect,
   disabled,
+  loading = false,
 }: CultivationRegionSelectorProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
@@ -122,26 +124,35 @@ export const CultivationRegionSelector = ({
       </div>
 
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
-        <DialogContent className="w-[95vw] sm:max-w-2xl">
-          <DialogHeader className="border-b pb-6 w-full">
+        <DialogContent className="w-[95vw] sm:max-w-2xl flex flex-col max-h-[85vh] p-0 overflow-hidden">
+          <DialogHeader className="border-b p-6 pb-6 w-full shrink-0">
             <DialogTitle className="flex items-start gap-2">
               <Layers className="w-5 h-5 text-primary" />
               Chọn vùng canh tác
             </DialogTitle>
           </DialogHeader>
 
-          <div className="p-4 space-y-4 w-full">
-            <div className="w-full space-y-3">
-              <div className="w-full relative">
+          <div className="p-4 flex-1 flex flex-col min-h-0 w-full">
+            <div className="w-full flex-1 flex flex-col min-h-0 space-y-3">
+              <div className="w-full relative shrink-0">
                 <Search className="z-10 absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
                 <Input
                   value={searchTerm}
                   className="w-full max-w-xl pl-10 h-10 bg-white"
                   onChange={(e) => setSearchTerm(e.target.value)}
                   placeholder="Tìm tên vùng, phạm vi, mã..."
+                  disabled={loading}
                 />
               </div>
-              <div className="h-80 w-full max-w-xl overflow-y-auto overflow-x-hidden pr-1">
+              <div className="flex-1 min-h-0 w-full max-w-xl overflow-y-auto overflow-x-hidden pr-1">
+                {loading ? (
+                  <div className="flex flex-col items-center justify-center gap-3 py-16 text-muted-foreground">
+                    <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                    <span className="text-sm">
+                      Đang tải danh sách vùng canh tác...
+                    </span>
+                  </div>
+                ) : (
                 <div className="space-y-2 w-full overflow-hidden">
                   {filteredAreas.map((a) => {
                     const isSelected = String(a.id) === String(selectedId);
@@ -212,6 +223,7 @@ export const CultivationRegionSelector = ({
                     </div>
                   )}
                 </div>
+                )}
               </div>
             </div>
           </div>

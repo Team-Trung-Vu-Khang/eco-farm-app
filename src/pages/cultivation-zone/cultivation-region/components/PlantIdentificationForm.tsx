@@ -54,6 +54,7 @@ const PlantIdentificationForm = ({
     irrigationMethod,
     selectedCropsData,
     filteredCultivationRegions,
+    isLoadingCultivationRegions,
     areasByRegion,
     plotsByArea,
   } = usePlantIdentificationForm({ initialData, initialList, onSubmit });
@@ -69,6 +70,7 @@ const PlantIdentificationForm = ({
           cultivationRegionId={cultivationRegionId}
           setCultivationRegionId={setCultivationRegionId}
           filteredCultivationRegions={filteredCultivationRegions}
+          isLoadingCultivationRegions={isLoadingCultivationRegions}
           selectedCultivationRegion={selectedCultivationRegion}
           geographicalUnits={geographicalUnits}
           selectedScopeIds={selectedScopeIds}
@@ -87,9 +89,9 @@ const PlantIdentificationForm = ({
       id: "plants",
       title: "Thông tin cây trồng",
       description: "Thêm từng cây trồng, chọn vị trí và điền thông tin",
-      isValid:
-        plants.length > 0 &&
-        plants.every((p) => p.plotId && !p.isInvalidBoundary),
+      // Optional step — user may proceed without adding any plant.
+      // Plants that are added must still have a valid plot/boundary.
+      isValid: plants.every((p) => p.plotId && !p.isInvalidBoundary),
       content: (
         <Step2PlantEntry
           plants={plants as any}

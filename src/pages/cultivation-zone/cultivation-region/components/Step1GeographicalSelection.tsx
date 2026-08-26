@@ -15,6 +15,7 @@ interface Step1GeographicalSelectionProps {
   cultivationRegionId: string;
   setCultivationRegionId: (id: string) => void;
   filteredCultivationRegions: any[];
+  isLoadingCultivationRegions?: boolean;
   selectedCultivationRegion: any;
   geographicalUnits: any[];
   selectedScopeIds: string[];
@@ -34,6 +35,7 @@ export const Step1GeographicalSelection: React.FC<
   cultivationRegionId,
   setCultivationRegionId,
   filteredCultivationRegions,
+  isLoadingCultivationRegions = false,
   selectedCultivationRegion,
   geographicalUnits,
   selectedScopeIds,
@@ -107,6 +109,7 @@ export const Step1GeographicalSelection: React.FC<
                 areas={filteredCultivationRegions}
                 selectedId={cultivationRegionId}
                 onSelect={handleCultivationRegionSelect}
+                loading={isLoadingCultivationRegions}
               />
             </CardContent>
           </Card>
