@@ -44,6 +44,10 @@ function EnterpriseCertificateStepperContent({
   standards,
   regions,
   areas,
+  onRegionSearchChange,
+  loadMoreRegions,
+  hasMoreRegions,
+  isLoadingMoreRegions,
 }: {
   isEdit: boolean;
   loading: boolean;
@@ -52,6 +56,10 @@ function EnterpriseCertificateStepperContent({
   standards: Standard[];
   regions: FarmRegionResponse[];
   areas: Area[];
+  onRegionSearchChange: (keyword: string) => void;
+  loadMoreRegions: () => void;
+  hasMoreRegions: boolean;
+  isLoadingMoreRegions: boolean;
 }) {
   const { watch } = useFormContext<EnterpriseCertificateFormValues>();
   const watchedValues = watch();
@@ -78,7 +86,15 @@ function EnterpriseCertificateStepperContent({
       id: "entity",
       title: "Phạm vi chứng nhận",
       description: "Đơn vị - tổ chức hoặc vùng canh tác cụ thể",
-      content: <CertificateEntitySelection regions={regions} />,
+      content: (
+        <CertificateEntitySelection
+          regions={regions}
+          onRegionSearchChange={onRegionSearchChange}
+          onLoadMoreRegions={loadMoreRegions}
+          hasMoreRegions={hasMoreRegions}
+          isLoadingMoreRegions={isLoadingMoreRegions}
+        />
+      ),
       isValid:
         enterpriseCertificateEntityStepSchema.safeParse(watchedValues).success,
     },
@@ -121,6 +137,10 @@ export default function EnterpriseCertificateFormPage() {
     standards,
     regions,
     areas,
+    onRegionSearchChange,
+    loadMoreRegions,
+    hasMoreRegions,
+    isLoadingMoreRegions,
     loading,
     error,
     showConfirmDialog,
@@ -163,6 +183,10 @@ export default function EnterpriseCertificateFormPage() {
           standards={standards}
           regions={regions}
           areas={areas}
+          onRegionSearchChange={onRegionSearchChange}
+          loadMoreRegions={loadMoreRegions}
+          hasMoreRegions={hasMoreRegions}
+          isLoadingMoreRegions={isLoadingMoreRegions}
         />
       </FormProvider>
 

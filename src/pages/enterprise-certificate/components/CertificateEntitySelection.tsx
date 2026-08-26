@@ -19,7 +19,7 @@ import {
   SelectValue,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { Check, MapPin, Search } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Controller, useFormContext, useWatch } from "react-hook-form";
 import type { EnterpriseCertificateFormValues } from "../data/enterprise-certificate-form.schema";
 import { CertificateRegionScopeMap } from "./CertificateRegionScopeMap";
@@ -31,6 +31,10 @@ const ENTITY_TYPE_LABELS = {
 
 interface EntitySelectionProps {
   regions?: FarmRegionResponse[];
+  onRegionSearchChange?: (keyword: string) => void;
+  onLoadMoreRegions?: () => void;
+  hasMoreRegions?: boolean;
+  isLoadingMoreRegions?: boolean;
 }
 
 interface SelectorItem {
@@ -52,6 +56,10 @@ interface SearchSelectorProps {
   emptyStateText: string;
   onConfirm: (ids: string[]) => void;
   disabled?: boolean;
+  onSearchChange?: (keyword: string) => void;
+  onLoadMore?: () => void;
+  hasMore?: boolean;
+  isLoadingMore?: boolean;
 }
 
 function SearchSelector({
@@ -65,10 +73,15 @@ function SearchSelector({
   emptyStateText,
   onConfirm,
   disabled = false,
+  onSearchChange,
+  onLoadMore,
+  hasMore = false,
+  isLoadingMore = false,
 }: SearchSelectorProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [tempSelectedIds, setTempSelectedIds] = useState(selectedIds);
+  const observerRef = useRef<IntersectionObserver | null>(null);
 
   const selectedItems = items.filter((item) => selectedIds.includes(item.id));
   const primarySelectedItem =
@@ -91,12 +104,14 @@ function SearchSelector({
     if (disabled) return;
     setTempSelectedIds(selectedIds);
     setSearchTerm("");
+    onSearchChange?.("");
     setIsOpen(true);
   };
 
   const handleCancel = () => {
     setTempSelectedIds(selectedIds);
     setSearchTerm("");
+    onSearchChange?.("");
     setIsOpen(false);
   };
 
@@ -105,6 +120,20 @@ function SearchSelector({
     onConfirm(tempSelectedIds);
     setIsOpen(false);
   };
+
+  const loadMoreRef = useCallback(
+    (node: HTMLDivElement | null) => {
+      if (isLoadingMore || !hasMore || !onLoadMore) return;
+      observerRef.current?.disconnect();
+
+      observerRef.current = new IntersectionObserver((entries) => {
+        if (entries[0]?.isIntersecting) onLoadMore();
+      });
+
+      if (node) observerRef.current.observe(node);
+    },
+    [hasMore, isLoadingMore, onLoadMore],
+  );
 
   return (
     <>
@@ -234,7 +263,11 @@ function SearchSelector({
                 placeholder={searchPlaceholder}
                 className="border-slate-200 bg-slate-50 pl-10 transition-all focus:bg-white"
                 value={searchTerm}
-                onChange={(event) => setSearchTerm(event.target.value)}
+                onChange={(event) => {
+                  const keyword = event.target.value;
+                  setSearchTerm(keyword);
+                  onSearchChange?.(keyword);
+                }}
               />
             </div>
 
@@ -310,6 +343,14 @@ function SearchSelector({
                     <div className="text-sm">{emptyStateText}</div>
                   </div>
                 )}
+                {hasMore ? (
+                  <div
+                    ref={loadMoreRef}
+                    className="col-span-full flex justify-center py-3 text-xs text-slate-500"
+                  >
+                    {isLoadingMore ? "Đang tải thêm..." : "Cuộn để tải thêm"}
+                  </div>
+                ) : null}
               </div>
             </ScrollArea>
 
@@ -333,6 +374,10 @@ function SearchSelector({
 
 export function CertificateEntitySelection({
   regions = [],
+  onRegionSearchChange,
+  onLoadMoreRegions,
+  hasMoreRegions,
+  isLoadingMoreRegions,
 }: EntitySelectionProps) {
   const workspaceId = useSelectedWorkspaceId();
   const {
@@ -480,6 +525,10 @@ export function CertificateEntitySelection({
           selectedIds={targetIds}
           items={regionItems}
           emptyStateText="Không tìm thấy vùng canh tác phù hợp"
+          onSearchChange={onRegionSearchChange}
+          onLoadMore={onLoadMoreRegions}
+          hasMore={hasMoreRegions}
+          isLoadingMore={isLoadingMoreRegions}
           onConfirm={(ids) => {
             const selectedRegions = safeRegions.filter(
               (region) =>

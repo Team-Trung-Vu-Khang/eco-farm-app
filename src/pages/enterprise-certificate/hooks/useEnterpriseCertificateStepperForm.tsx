@@ -1,9 +1,15 @@
 import { farmCertificateApi } from "@/features/farm-certificate";
-import { useRegions } from "@/features/farm/hooks/useRegions";
+import { regionApi } from "@/features/farm/api/farm.api";
 import { useMasterData } from "@/features/master-data";
 import { useSelectedWorkspaceId } from "@/features/workspace";
+import { useDebounce } from "@/shared/hooks/useDebounce";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  useInfiniteQuery,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
 import { useToast } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
@@ -37,6 +43,8 @@ export function useEnterpriseCertificateStepperForm() {
 
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [showLoadingDialog, setShowLoadingDialog] = useState(false);
+  const [regionSearch, setRegionSearch] = useState("");
+  const debouncedRegionSearch = useDebounce(regionSearch, 300);
 
   const standardsQuery = useMasterData("certificate-standards", {
     params: {
@@ -46,12 +54,25 @@ export function useEnterpriseCertificateStepperForm() {
     enabled: true,
   });
 
-  const regionsQuery = useRegions({
-    params: {
-      size: 100,
-    },
-    enabled: true,
+  const regionsQuery = useInfiniteQuery({
+    queryKey: ["enterprise-certificate", "regions", debouncedRegionSearch] as const,
+    queryFn: ({ pageParam }) =>
+      regionApi.list({
+        keyword: debouncedRegionSearch.trim() || undefined,
+        page: pageParam,
+        size: 20,
+      }),
+    initialPageParam: 0,
+    getNextPageParam: (lastPage) =>
+      lastPage.last ? undefined : lastPage.page + 1,
+    staleTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: false,
   });
+
+  const regions = useMemo(
+    () => regionsQuery.data?.pages.flatMap((page) => page.content) ?? [],
+    [regionsQuery.data],
+  );
 
   const detailQuery = useQuery({
     queryKey: ["enterprise-certificate", "detail", editId] as const,
@@ -78,8 +99,8 @@ export function useEnterpriseCertificateStepperForm() {
   );
 
   const areas = useMemo<Area[]>(
-    () => regionsQuery.items.map(mapRegionRecordToArea),
-    [regionsQuery.items],
+    () => regions.map(mapRegionRecordToArea),
+    [regions],
   );
 
   const methods = useForm<
@@ -201,18 +222,22 @@ export function useEnterpriseCertificateStepperForm() {
       : null,
     methods,
     standards,
-    regions: regionsQuery.items,
+    regions,
+    onRegionSearchChange: setRegionSearch,
+    loadMoreRegions: regionsQuery.fetchNextPage,
+    hasMoreRegions: regionsQuery.hasNextPage,
+    isLoadingMoreRegions: regionsQuery.isFetchingNextPage,
     areas,
     showConfirmDialog,
     setShowConfirmDialog,
     showLoadingDialog,
     loading:
       standardsQuery.loading ||
-      regionsQuery.loading ||
+      regionsQuery.isLoading ||
       detailQuery.isLoading,
     error: resolveErrorMessage(
       standardsQuery.error,
-      regionsQuery.error,
+      regionsQuery.error?.message,
       detailQuery.error?.message,
     ),
     handleComplete,
