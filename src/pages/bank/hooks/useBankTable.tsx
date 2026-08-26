@@ -29,12 +29,21 @@ export function useBankTable() {
   const [pageSize, setPageSize] = useState(10);
   const [currentIndex, setCurrentIndex] = useState(1);
 
+  // The shared table emits "all" when an unfiltered option is selected.
+  // It is a UI sentinel, not an API filter value.
+  const selectedBankName = bankNameFilter.trim();
+  const bankNameKeyword =
+    selectedBankName.toLowerCase() === "all" ? undefined : selectedBankName;
+  const selectedStatus = statusFilter.trim();
+  const status =
+    selectedStatus.toLowerCase() === "all" ? undefined : selectedStatus;
+  const keywordParts = [searchTerm.trim(), bankNameKeyword].filter(Boolean);
+
   const bankAccountsQuery = useBankAccounts({
     params: {
-      keyword:
-        [searchTerm.trim(), bankNameFilter].filter(Boolean).join(" ") ||
-        undefined,
-      status: statusFilter === "all" ? undefined : statusFilter,
+      keyword: keywordParts.join(" ") || undefined,
+      status,
+      onlyOwner: true,
       page: Math.max(currentIndex - 1, 0),
       size: pageSize,
     },

@@ -79,9 +79,17 @@ export const bankAccountApi = {
   ): Promise<BankAccountUpdateResponse> {
     assertWorkspaceId(workspaceId);
 
+    const requestPayload: BankAccountUpdateRequest = {
+      ...payload,
+      // The API requires the identifier in both the route and request body.
+      id: payload.id ?? id,
+      // Swagger defines this field as an object rather than nullable.
+      metadataJson: payload.metadataJson ?? {},
+    };
+
     const response = await apiClient.put<BankAccountUpdateResponse>(
       `${BANK_ACCOUNT_PATH}/${id}`,
-      payload,
+      requestPayload,
       withWorkspaceHeader(workspaceId),
     );
 

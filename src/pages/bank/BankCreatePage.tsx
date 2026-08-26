@@ -67,7 +67,7 @@ function mapFormValuesToPayload(
     status: values.status,
     displayOrder: 0,
     isPrimary: values.isPrimary,
-    metadataJson: null,
+    metadataJson: {},
   };
 }
 

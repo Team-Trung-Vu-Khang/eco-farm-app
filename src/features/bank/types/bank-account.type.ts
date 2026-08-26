@@ -1,4 +1,11 @@
 export type BankAccountStatus = "active" | "inactive" | "archived" | (string & {});
+export type BankAccountOwnerType =
+  | "WORKSPACE"
+  | "ORGANIZATION"
+  | "BRANCH"
+  | "PERSONNEL"
+  | (string & {});
+export type BankAccountSource = "OWNER" | "SYSTEM" | (string & {});
 
 export interface BankRecord {
   id: number | string;
@@ -18,7 +25,8 @@ export interface BankAccountMetadata {
 
 export interface BankAccountRecord {
   id: number | string;
-  ownerType?: string;
+  source?: BankAccountSource;
+  ownerType?: BankAccountOwnerType;
   ownerId?: number | string;
   bankId?: number | string;
   bank?: BankRecord | null;
@@ -47,8 +55,11 @@ export interface BankAccountPageResponse<T = BankAccountRecord> {
 export interface BankAccountQueryParams {
   keyword?: string;
   status?: BankAccountStatus;
-  ownerType?: string;
+  /** Limits accounts to a particular owner; ownerId requires this value. */
+  ownerType?: BankAccountOwnerType;
   ownerId?: number | string;
+  /** When true, excludes system sample data and returns workspace-owned accounts only. */
+  onlyOwner?: boolean;
   page?: number;
   size?: number;
 }
