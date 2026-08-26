@@ -211,6 +211,7 @@ export interface FarmTeamResponse {
 
 export interface FarmPersonnelQueryParams extends FarmBaseQueryParams {
   teamId?: number;
+  departmentId?: number;
 }
 
 export interface FarmPersonnelRequest {

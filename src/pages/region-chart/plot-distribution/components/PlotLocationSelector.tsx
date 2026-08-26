@@ -33,6 +33,7 @@ interface PlotLocationSelectorProps {
   selectedAreaId: string | null;
   selectedAreaName?: string | null;
   onSelect: (regionId: number, areaId: string) => void;
+  onSearchChange?: (value: string) => void;
   showEnterprise?: boolean;
 }
 
@@ -132,6 +133,7 @@ export const PlotLocationSelector = ({
   selectedAreaId,
   selectedAreaName,
   onSelect,
+  onSearchChange,
   showEnterprise = false,
 }: PlotLocationSelectorProps) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -147,10 +149,14 @@ export const PlotLocationSelector = ({
         )
       : regions;
 
-    if (!searchTerm) return base;
+    const normalizedQuery = searchTerm.trim().toLowerCase();
+    if (!normalizedQuery) return base;
 
-    const query = searchTerm.toLowerCase();
-    return base.filter((region) => region.name?.toLowerCase().includes(query));
+    return base.filter(
+      (region) =>
+        region.name?.toLowerCase().includes(normalizedQuery) ||
+        region.code?.toLowerCase().includes(normalizedQuery),
+    );
   }, [regions, enterpriseId, searchTerm]);
 
   const toggleRegion = (id: string) =>
@@ -162,6 +168,7 @@ export const PlotLocationSelector = ({
     onSelect(regionId, areaId);
     setIsOpen(false);
     setSearchTerm("");
+    onSearchChange?.("");
     setExpandedRegions([]);
   };
 
@@ -186,6 +193,7 @@ export const PlotLocationSelector = ({
           setIsOpen(open);
           if (!open) {
             setSearchTerm("");
+            onSearchChange?.("");
             setExpandedRegions([]);
           }
         }}
@@ -208,7 +216,11 @@ export const PlotLocationSelector = ({
                 placeholder="Tìm kiếm vùng trồng..."
                 className="rounded-xl border-slate-200 bg-slate-50 pl-10 transition-all focus:bg-white"
                 value={searchTerm}
-                onChange={(event) => setSearchTerm(event.target.value)}
+                onChange={(event) => {
+                  const value = event.target.value;
+                  setSearchTerm(value);
+                  onSearchChange?.(value);
+                }}
               />
             </div>
           </div>

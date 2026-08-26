@@ -212,16 +212,32 @@ export const areaApi = {
 
 // ─── Plot API ─────────────────────────────────────────────────────────────────
 
+/**
+ * The plot endpoint returns its parent area as `productionArea`, whose parent
+ * region is named `productionRegion`. Normalize that nested shape so screens
+ * can consistently read `plot.area.region`.
+ */
+const normalizePlot = (item: any) => {
+  const area = item.area || item.productionArea;
+
+  return {
+    ...item,
+    area: area
+      ? {
+          ...area,
+          region: area.region || area.productionRegion,
+        }
+      : area,
+  };
+};
+
 export const plotApi = {
   list: (params?: PlotQueryParams) =>
     apiClient
       .get<PageResponse<any>>(FARM_ENDPOINTS.plots, { params })
       .then((r) => {
         if (r.data?.content) {
-          r.data.content = r.data.content.map((item: any) => ({
-            ...item,
-            area: item.area || item.productionArea,
-          }));
+          r.data.content = r.data.content.map(normalizePlot);
         }
         return r.data as PageResponse<FarmPlotResponse>;
       }),
@@ -230,7 +246,7 @@ export const plotApi = {
     apiClient.get<any>(`${FARM_ENDPOINTS.plots}/${id}`).then((r) => {
       const item = r.data;
       if (item) {
-        item.area = item.area || item.productionArea;
+        return normalizePlot(item) as FarmPlotResponse;
       }
       return item as FarmPlotResponse;
     }),

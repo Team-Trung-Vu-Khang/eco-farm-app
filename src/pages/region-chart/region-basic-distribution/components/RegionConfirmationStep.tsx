@@ -8,7 +8,8 @@ import { useMemo } from "react";
 import { CheckCircle2, Droplets, Leaf, ScrollText, Sprout } from "lucide-react";
 import { Badge, Card } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import type { RegionBasicFormValues } from "../data/region-basic-form.schema";
-// import { useMethodApplications } from "@/features/foundation";
+import { useMethodApplications } from "@/features/foundation";
+import { useSeeds } from "@/features/farm/hooks/useSeeds";
 import type { FarmSeedResponse } from "@/features/farm/types/farm.type";
 
 interface RegionConfirmationStepProps {
@@ -57,18 +58,33 @@ export const RegionConfirmationStep = ({
   //   params: { domainCode, size: 100 },
   // });
 
-  // Method applications to extract seed/variant names
   const selectedFarmingMethodId = Number(formValues.farmingMethodId);
-  // const { items: methodApplications } = useMethodApplications({
-  //   params: { domainCode, size: 100 },
-  //   enabled: !!selectedFarmingMethodId && selectedFarmingMethodId > 0,
-  // });
+  const isCropDomain = domainCode === "CROP";
 
-  // const activeMethodApp = useMemo(() => {
-  //   return methodApplications.find(
-  //     (item) => item.productionMethod?.id === selectedFarmingMethodId,
-  //   );
-  // }, [methodApplications, selectedFarmingMethodId]);
+  // CROP zones resolve seedIds against the farm seed catalog.
+  // API: GET /api/farm/subject-variants?productionMethodId=&domainCode=CROP&status=active
+  const { items: seedItems } = useSeeds({
+    params: {
+      productionMethodId: selectedFarmingMethodId,
+      domainCode,
+      status: "active",
+      size: 100,
+    },
+    enabled: isCropDomain && !!selectedFarmingMethodId && selectedFarmingMethodId > 0,
+  });
+
+  // LIVESTOCK / AQUACULTURE zones still resolve seedIds against method-application variants.
+  const { items: methodApplications } = useMethodApplications({
+    params: { domainCode, size: 100, status: "active" },
+    enabled:
+      !isCropDomain && !!selectedFarmingMethodId && selectedFarmingMethodId > 0,
+  });
+
+  const activeMethodApp = useMemo(() => {
+    return methodApplications.find(
+      (item) => item.productionMethod?.id === selectedFarmingMethodId,
+    );
+  }, [methodApplications, selectedFarmingMethodId]);
 
   // Selected details
   const landTypeName =
@@ -87,18 +103,40 @@ export const RegionConfirmationStep = ({
   // }, [subjects, formValues.cropIds]);
 
   const selectedVariants = useMemo(() => {
+    const selectedIds = (formValues.seedIds ?? []).map(Number);
     const list: Array<{ id: number; name: string; subjectName: string }> = [];
-    allSeeds.forEach((seed) => {
-      if ((formValues.seedIds ?? []).map(Number).includes(Number(seed.id))) {
-        list.push({
-          id: seed.id,
-          name: seed.name || "",
-          subjectName: seed.productionSubject?.name || "",
+
+    if (isCropDomain) {
+      // Prefer the freshly-fetched seed catalog; fall back to a caller-supplied
+      // list for consumers that still pass `allSeeds` directly.
+      const source = seedItems.length > 0 ? seedItems : allSeeds;
+      source.forEach((seed) => {
+        if (selectedIds.includes(Number(seed.id))) {
+          list.push({
+            id: seed.id,
+            name: seed.name || "",
+            subjectName: (seed.productionSubject ?? seed.crop)?.name || "",
+          });
+        }
+      });
+      return list;
+    }
+
+    if (activeMethodApp) {
+      activeMethodApp.subjects?.forEach((subject) => {
+        subject.variants?.forEach((variant) => {
+          if (selectedIds.includes(Number(variant.id))) {
+            list.push({
+              id: variant.id,
+              name: variant.name || "",
+              subjectName: subject.subjectName || "",
+            });
+          }
         });
-      }
-    });
+      });
+    }
     return list;
-  }, [allSeeds, formValues.seedIds]);
+  }, [isCropDomain, seedItems, allSeeds, activeMethodApp, formValues.seedIds]);
 
   // Labels customized based on domainCode
   const domainLabels = useMemo(() => {

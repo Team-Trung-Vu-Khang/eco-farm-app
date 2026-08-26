@@ -2,11 +2,13 @@ import { useAreaPlots } from "@/features/farm/hooks/useAreas";
 import { useRegionAreas } from "@/features/farm/hooks/useRegions";
 import { useFarmPersonnel, useMasterData } from "@/features/master-data";
 import { useSelectedWorkspaceId } from "@/features/workspace";
+import { useDebounce } from "@/shared/hooks/useDebounce";
 import useSeedStore from "@/stores/useSeedStore";
 import {
   Badge,
   Button,
   cn,
+  Combobox,
   Dialog,
   DialogContent,
   DialogFooter,
@@ -14,11 +16,6 @@ import {
   DialogTitle,
   Input,
   ScrollArea,
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import {
   Award,
@@ -42,6 +39,7 @@ import type { GeographicalSelection } from "./types";
 
 type RegionOption = {
   id: string | number;
+  code?: string;
   name: string;
   enterpriseId?: string;
   subAreas?: Array<{
@@ -297,6 +295,7 @@ interface GeographicalSelectorProps {
   regionOnly?: boolean;
   customTrigger?: React.ReactNode;
   onRegionSearchChange?: (keyword: string) => void;
+  isRegionSearching?: boolean;
 }
 
 interface AreaPlotsListProps {
@@ -542,6 +541,7 @@ export const GeographicalSelector = ({
   regionOnly = false,
   customTrigger,
   onRegionSearchChange,
+  isRegionSearching = false,
 }: GeographicalSelectorProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
@@ -552,13 +552,17 @@ export const GeographicalSelector = ({
   );
 
   const filteredRegions = useMemo(() => {
+    const query = searchTerm.trim().toLowerCase();
+
     return regions.filter(
       (region) =>
         (!showEnterprise ||
           !enterpriseId ||
           region.enterpriseId === `ent-${enterpriseId}` ||
           region.enterpriseId === enterpriseId) &&
-        region.name.toLowerCase().includes(searchTerm.toLowerCase()),
+        (!query ||
+          region.name.toLowerCase().includes(query) ||
+          region.code?.toLowerCase().includes(query)),
     );
   }, [enterpriseId, regions, searchTerm, showEnterprise]);
 
@@ -774,95 +778,104 @@ export const GeographicalSelector = ({
 
           <ScrollArea className="flex-1 overflow-y-auto">
             <div className="p-6 space-y-4">
-              {filteredRegions.map((region) => (
-                <div key={region.id} className="space-y-2">
-                  <div className="flex items-center gap-2 group">
-                    {!regionOnly && (
-                      <button
-                        type="button"
-                        onClick={() => toggleRegion(region.id.toString())}
-                        className="p-1 hover:bg-slate-100 rounded transition-colors"
-                      >
-                        {expandedRegions.includes(region.id.toString()) ? (
-                          <ChevronDown className="w-4 h-4 text-slate-400" />
-                        ) : (
-                          <ChevronRight className="w-4 h-4 text-slate-400" />
-                        )}
-                      </button>
-                    )}
-                    <div
-                      onClick={() =>
-                        handleSelect(
-                          "region",
-                          region.id.toString(),
-                          undefined,
-                          undefined,
-                          region.name,
-                        )
-                      }
-                      className={cn(
-                        "flex-1 flex items-center justify-between p-3 rounded-xl border-2 transition-all cursor-pointer",
-                        isSelected("region", region.id.toString())
-                          ? "bg-primary/10 border-primary/40 opacity-60 cursor-not-allowed"
-                          : "bg-white border-slate-100 hover:border-primary/20 hover:bg-slate-50",
-                      )}
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
-                          <MapPin className="w-4 h-4" />
-                        </div>
-                        <div>
-                          <div className="font-bold text-slate-800 text-sm">
-                            {region.name}
-                          </div>
-                          <div className="text-[10px] text-muted-foreground uppercase tracking-wider">
-                            Vùng trồng
-                          </div>
-                        </div>
-                      </div>
-                      {isSelected("region", region.id.toString()) ? (
-                        <div className="flex items-center gap-2">
-                          <CheckCircle2 className="w-5 h-5 text-primary" />
-                          <Badge
-                            variant="secondary"
-                            className="text-[10px] bg-primary/10 text-primary border-none"
+              {isRegionSearching ? (
+                <div className="flex min-h-[260px] flex-col items-center justify-center gap-3 text-sm text-muted-foreground">
+                  <Loader2 className="h-7 w-7 animate-spin text-primary" />
+                  <span>Đang tải dữ liệu...</span>
+                </div>
+              ) : (
+                <>
+                  {filteredRegions.map((region) => (
+                    <div key={region.id} className="space-y-2">
+                      <div className="flex items-center gap-2 group">
+                        {!regionOnly && (
+                          <button
+                            type="button"
+                            onClick={() => toggleRegion(region.id.toString())}
+                            className="p-1 hover:bg-slate-100 rounded transition-colors"
                           >
-                            Đã chọn
-                          </Badge>
+                            {expandedRegions.includes(region.id.toString()) ? (
+                              <ChevronDown className="w-4 h-4 text-slate-400" />
+                            ) : (
+                              <ChevronRight className="w-4 h-4 text-slate-400" />
+                            )}
+                          </button>
+                        )}
+                        <div
+                          onClick={() =>
+                            handleSelect(
+                              "region",
+                              region.id.toString(),
+                              undefined,
+                              undefined,
+                              region.name,
+                            )
+                          }
+                          className={cn(
+                            "flex-1 flex items-center justify-between p-3 rounded-xl border-2 transition-all cursor-pointer",
+                            isSelected("region", region.id.toString())
+                              ? "bg-primary/10 border-primary/40 opacity-60 cursor-not-allowed"
+                              : "bg-white border-slate-100 hover:border-primary/20 hover:bg-slate-50",
+                          )}
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
+                              <MapPin className="w-4 h-4" />
+                            </div>
+                            <div>
+                              <div className="font-bold text-slate-800 text-sm">
+                                {region.name}
+                              </div>
+                              <div className="text-[10px] text-muted-foreground uppercase tracking-wider">
+                                Vùng trồng
+                              </div>
+                            </div>
+                          </div>
+                          {isSelected("region", region.id.toString()) ? (
+                            <div className="flex items-center gap-2">
+                              <CheckCircle2 className="w-5 h-5 text-primary" />
+                              <Badge
+                                variant="secondary"
+                                className="text-[10px] bg-primary/10 text-primary border-none"
+                              >
+                                Đã chọn
+                              </Badge>
+                            </div>
+                          ) : (
+                            <div className="w-5 h-5 rounded border-2 border-slate-200 group-hover:border-primary transition-colors flex items-center justify-center">
+                              <Plus className="w-3.5 h-3.5 text-slate-300 group-hover:text-primary" />
+                            </div>
+                          )}
                         </div>
-                      ) : (
-                        <div className="w-5 h-5 rounded border-2 border-slate-200 group-hover:border-primary transition-colors flex items-center justify-center">
-                          <Plus className="w-3.5 h-3.5 text-slate-300 group-hover:text-primary" />
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  {!regionOnly &&
-                    expandedRegions.includes(region.id.toString()) && (
-                      <div className="ml-6 pl-4 border-l-2 border-slate-100 space-y-2 py-1">
-                        <RegionAreasList
-                          regionId={region.id.toString()}
-                          regionName={region.name}
-                          expandedAreas={expandedAreas}
-                          toggleArea={toggleArea}
-                          isSelected={isSelected}
-                          onSelect={handleSelect}
-                        />
                       </div>
-                    )}
-                </div>
-              ))}
 
-              {filteredRegions.length === 0 && (
-                <div className="text-center py-12">
-                  <div className="bg-slate-50 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 border border-slate-100">
-                    <Search className="w-6 h-6 text-slate-300" />
-                  </div>
-                  <div className="text-slate-500 font-medium text-sm">
-                    Không tìm thấy dữ liệu phù hợp
-                  </div>
-                </div>
+                      {!regionOnly &&
+                        expandedRegions.includes(region.id.toString()) && (
+                          <div className="ml-6 pl-4 border-l-2 border-slate-100 space-y-2 py-1">
+                            <RegionAreasList
+                              regionId={region.id.toString()}
+                              regionName={region.name}
+                              expandedAreas={expandedAreas}
+                              toggleArea={toggleArea}
+                              isSelected={isSelected}
+                              onSelect={handleSelect}
+                            />
+                          </div>
+                        )}
+                    </div>
+                  ))}
+
+                  {filteredRegions.length === 0 && (
+                    <div className="text-center py-12">
+                      <div className="bg-slate-50 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 border border-slate-100">
+                        <Search className="w-6 h-6 text-slate-300" />
+                      </div>
+                      <div className="text-slate-500 font-medium text-sm">
+                        Không tìm thấy dữ liệu phù hợp
+                      </div>
+                    </div>
+                  )}
+                </>
               )}
             </div>
           </ScrollArea>
@@ -902,6 +915,7 @@ export const ManagerSelector = ({
   const [departmentFilter, setDepartmentFilter] = useState("all");
   const [page, setPage] = useState(0);
   const [loadedPersonnel, setLoadedPersonnel] = useState<any[]>([]);
+  const debouncedSearchTerm = useDebounce(searchTerm, 300);
 
   const workspaceId = useSelectedWorkspaceId();
 
@@ -910,11 +924,14 @@ export const ManagerSelector = ({
     items: newItems,
     response,
     loading,
+    isFetching,
   } = useFarmPersonnel({
     params: {
-      keyword: searchTerm.trim() || undefined,
+      keyword: debouncedSearchTerm.trim() || undefined,
+      departmentId:
+        departmentFilter === "all" ? undefined : Number(departmentFilter),
       page,
-      size: 100,
+      size: 20,
     },
     workspaceId: typeof workspaceId === "number" ? workspaceId : undefined,
     enabled: true,
@@ -927,14 +944,25 @@ export const ManagerSelector = ({
   const departments = useMemo(() => {
     return departmentItems
       .filter((d) => d.status === "active")
-      .map((d) => d.name);
+      .map((d) => ({ id: String(d.id), name: d.name }));
   }, [departmentItems]);
 
-  // Reset page and loaded items when search keyword changes
+  const departmentOptions = useMemo(
+    () => [
+      { label: "Tất cả", value: "all" },
+      ...departments.map((department) => ({
+        label: department.name,
+        value: department.id,
+      })),
+    ],
+    [departments],
+  );
+
+  // Restart paging whenever the server-side search or filter changes.
   useEffect(() => {
     setPage(0);
     setLoadedPersonnel([]);
-  }, [searchTerm]);
+  }, [debouncedSearchTerm, departmentFilter]);
 
   // Append new items to loadedPersonnel list when they arrive
   useEffect(() => {
@@ -947,19 +975,49 @@ export const ManagerSelector = ({
     }
   }, [newItems]);
 
-  // Client-side department filtering on loaded personnel list
+  // Keep the client-side filter as a safe fallback for APIs that do not yet
+  // apply the departmentId query parameter.
   const filteredManagers = useMemo(() => {
+    const searchQuery = searchTerm.trim().toLowerCase();
+
     return loadedPersonnel.filter((manager) => {
-      const managerDept = manager.department?.name || manager.department || "";
-      return departmentFilter === "all" || managerDept === departmentFilter;
+      const managerDepartmentId =
+        manager.departmentId ?? manager.department?.id;
+      const managerPosition = manager.position?.name || manager.position || "";
+      const managerDepartment =
+        manager.department?.name || manager.department || "";
+      const matchesSearch =
+        !searchQuery ||
+        manager.fullName?.toLowerCase().includes(searchQuery) ||
+        manager.code?.toLowerCase().includes(searchQuery) ||
+        managerPosition.toLowerCase().includes(searchQuery) ||
+        managerDepartment.toLowerCase().includes(searchQuery);
+
+      return (
+        matchesSearch &&
+        (departmentFilter === "all" ||
+          String(managerDepartmentId) === departmentFilter)
+      );
     });
-  }, [loadedPersonnel, departmentFilter]);
+  }, [loadedPersonnel, departmentFilter, searchTerm]);
+
+  const isSearchDebouncing = searchTerm.trim() !== debouncedSearchTerm.trim();
+  const isPersonnelLoading = isFetching || isSearchDebouncing;
 
   // IntersectionObserver for infinite scroll trigger
   const observerRef = useRef<HTMLDivElement>(null);
+  const scrollViewportRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (!observerRef.current || !response || response.last || loading) return;
+    if (
+      !observerRef.current ||
+      !scrollViewportRef.current ||
+      !response ||
+      response.last ||
+      isPersonnelLoading
+    ) {
+      return;
+    }
 
     const observer = new IntersectionObserver(
       (entries) => {
@@ -967,12 +1025,12 @@ export const ManagerSelector = ({
           setPage((prev) => prev + 1);
         }
       },
-      { threshold: 0.1 },
+      { root: scrollViewportRef.current, rootMargin: "96px", threshold: 0 },
     );
 
     observer.observe(observerRef.current);
     return () => observer.disconnect();
-  }, [response, loading]);
+  }, [response, isPersonnelLoading]);
 
   return (
     <>
@@ -1065,25 +1123,18 @@ export const ManagerSelector = ({
                   onChange={(event) => setSearchTerm(event.target.value)}
                 />
               </div>
-              <Select
+              <Combobox
+                className="w-36 shrink-0 bg-slate-50"
+                options={departmentOptions}
                 value={departmentFilter}
-                onValueChange={setDepartmentFilter}
-              >
-                <SelectTrigger className="w-35 bg-slate-50">
-                  <SelectValue placeholder="Phòng ban" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Tất cả</SelectItem>
-                  {departments.map((department) => (
-                    <SelectItem key={department} value={department}>
-                      {department}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                onChange={(value) => setDepartmentFilter(value || "all")}
+                placeholder="Chọn phòng ban"
+                searchPlaceholder="Tìm kiếm phòng ban..."
+                emptyText="Không tìm thấy phòng ban"
+              />
             </div>
 
-            <ScrollArea className="h-75 pr-4">
+            <div ref={scrollViewportRef} className="h-75 overflow-y-auto">
               <div className="space-y-2">
                 {filteredManagers.map((manager) => {
                   const managerPos =
@@ -1141,19 +1192,19 @@ export const ManagerSelector = ({
                 {/* Observer anchor for infinite scroll loading */}
                 <div ref={observerRef} className="h-2 w-full bg-transparent" />
 
-                {loading && (
+                {(loading || (isPersonnelLoading && page > 0)) && (
                   <div className="flex justify-center py-4">
                     <Loader2 className="h-5 w-5 animate-spin text-slate-400" />
                   </div>
                 )}
 
-                {filteredManagers.length === 0 && !loading && (
+                {filteredManagers.length === 0 && !isPersonnelLoading && (
                   <div className="text-center py-8 text-muted-foreground text-sm">
                     Không tìm thấy quản lý nào
                   </div>
                 )}
               </div>
-            </ScrollArea>
+            </div>
           </div>
         </DialogContent>
       </Dialog>

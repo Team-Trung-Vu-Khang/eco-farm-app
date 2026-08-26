@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React from "react";
 import {
   FormProvider,
   type UseFormReturn,
@@ -10,11 +10,6 @@ import { RegionInfoStep } from "../../region-distribution/components/RegionInfoS
 import { ZoneConfigurationStep } from "../../../cultivation-zone/cultivation-region/components/ZoneConfigurationStep";
 import { RegionConfirmationStep } from "./RegionConfirmationStep";
 import type { RegionBasicFormValues } from "../data/region-basic-form.schema";
-import { useMethodApplications } from "@/features/foundation";
-import { useQueries } from "@tanstack/react-query";
-import { seedApi } from "@/features/farm/api/farm.api";
-import { seedKeys } from "@/features/farm/hooks/useSeeds";
-import type { FarmSeedResponse } from "@/features/farm/types/farm.type";
 
 interface RegionBasicDistributionFormProps {
   form: UseFormReturn<RegionBasicFormValues>;
@@ -41,75 +36,17 @@ export const RegionBasicDistributionForm: React.FC<
 }) => {
   const { control, handleSubmit } = form;
 
-  const [name, farmingMethodId, seedIds] = useWatch({
+  const [name, farmingMethodId] = useWatch({
     control,
     name: ["name", "farmingMethodId", "seedIds"],
   });
 
   const { errors } = useFormState({ control });
 
-  // 1. Lấy thông tin các Cây trồng và Giống cây trồng của Phương pháp canh tác đang được áp dụng
-  const { items: methodApplications } = useMethodApplications({
-    params: {
-      domainCode: "CROP",
-      size: 100,
-      status: "active",
-    },
-    enabled: !!farmingMethodId && farmingMethodId > 0,
-  });
-
-  const activeMethodApp = useMemo(() => {
-    if (!farmingMethodId || farmingMethodId <= 0) return null;
-    return methodApplications.find(
-      (item) => item.productionMethod?.id === farmingMethodId,
-    );
-  }, [methodApplications, farmingMethodId]);
-
-  const allVariants = useMemo(() => {
-    const list: Array<{ id: number; name?: string }> = [];
-    activeMethodApp?.subjects?.forEach((s) => {
-      s.variants?.forEach((v) => {
-        list.push(v);
-      });
-    });
-    return list;
-  }, [activeMethodApp]);
-
-  // 2. Sử dụng useQueries để gọi song song danh sách hạt giống (Seeds) theo từng Giống (Variant)
-  const seedQueries = useQueries({
-    queries: allVariants.map((v) => ({
-      queryKey: seedKeys.list({
-        foundationSubjectVariantId: v.id,
-        size: 100,
-        status: "active",
-      }),
-      queryFn: () =>
-        seedApi.list({
-          foundationSubjectVariantId: v.id,
-          size: 100,
-          status: "active",
-        }),
-      enabled: !!v.id && allVariants.length > 0,
-    })),
-  });
-
-  // 3. Gộp tất cả hạt giống từ các query kết quả và loại bỏ trùng lặp
-  const allSeeds = useMemo(() => {
-    const all: FarmSeedResponse[] = [];
-    seedQueries.forEach((q) => {
-      if (q.data?.content) {
-        all.push(...q.data.content);
-      }
-    });
-    return Array.from(new Map(all.map((item) => [item.id, item])).values());
-  }, [seedQueries]);
-
   const step1Valid = !!name && name.trim().length > 0 && !errors.name;
 
-  const step2Valid =
-    !!farmingMethodId &&
-    farmingMethodId > 0 &&
-    (bypassSeedSelection ? true : !!seedIds && seedIds.length > 0);
+  // seedIds (Giống / Hạt giống) is optional — user may leave it unselected.
+  const step2Valid = !!farmingMethodId && farmingMethodId > 0;
 
   const steps = [
     {
@@ -124,10 +61,7 @@ export const RegionBasicDistributionForm: React.FC<
       title: "Cấu hình canh tác",
       description: "Thiết lập phương pháp & giống cây trồng",
       content: (
-        <ZoneConfigurationStep
-          allSeeds={allSeeds}
-          bypassSeedSelection={bypassSeedSelection}
-        />
+        <ZoneConfigurationStep bypassSeedSelection={bypassSeedSelection} />
       ),
       isValid: step2Valid,
     },
@@ -135,7 +69,7 @@ export const RegionBasicDistributionForm: React.FC<
       id: "step3",
       title: "Xác nhận thông tin",
       description: "Xác nhận lại các thông tin trước khi hoàn thành",
-      content: <RegionConfirmationStep domainCode="CROP" allSeeds={allSeeds} />,
+      content: <RegionConfirmationStep domainCode="CROP" />,
       isValid: true,
     },
   ];

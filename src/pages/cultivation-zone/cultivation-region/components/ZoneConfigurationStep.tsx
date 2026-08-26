@@ -8,42 +8,46 @@ import {
   Input,
   Label,
   ScrollArea,
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   Button,
   cn,
+  RemoteAutoCompleteSelect,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import {
   CheckCircle2,
-  Droplets,
   Leaf,
   Search,
   Sprout,
   ChevronRight,
 } from "lucide-react";
 import { useState, useMemo } from "react";
-import {
-  useProductionMethods,
-  useMethodApplications,
-  type MethodApplicationSubject,
-} from "@/features/foundation";
+import { useProductionMethods } from "@/features/foundation";
 import { useRearingMethods } from "@/features/master-data/hooks/useRearingMethods";
+import { useSeeds } from "@/features/farm/hooks/useSeeds";
+import type { FarmSeedResponse } from "@/features/farm/types/farm.type";
 import { useDebounce } from "@/shared/hooks/useDebounce";
 import type { CultivationZoneFormValues } from "../data/cultivation-zone-form.schema";
-import type { FarmSeedResponse } from "@/features/farm/types/farm.type";
+type SubjectVariantOption = {
+  id: number;
+  code?: string;
+  name?: string;
+};
+
+type SeedSubjectGroup = {
+  subjectId: number;
+  subjectName?: string;
+  subjectCode?: string;
+  variants: FarmSeedResponse[];
+};
 
 interface VariantSelectorDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   subjectName: string;
-  variants: FarmSeedResponse[]; // Đổi kiểu sang FarmSeedResponse
+  variants: SubjectVariantOption[];
   selectedVariantIds: number[];
   onConfirm: (selectedIds: number[]) => void;
 }
@@ -67,8 +71,7 @@ export const VariantSelectorDialog = ({
     return variants.filter(
       (v) =>
         v.name?.toLowerCase().includes(keyword) ||
-        v.code?.toLowerCase().includes(keyword) ||
-        v.subjectVariant?.name?.toLowerCase().includes(keyword),
+        v.code?.toLowerCase().includes(keyword),
     );
   }, [variants, debouncedSearch]);
 
@@ -92,10 +95,10 @@ export const VariantSelectorDialog = ({
         <DialogHeader className="p-6 bg-slate-50 border-b shrink-0">
           <DialogTitle className="flex items-center gap-2 text-slate-800">
             <Sprout className="w-5 h-5 text-green-600" />
-            <span>Chọn hạt giống cho {subjectName}</span>
+            <span>Chọn giống cây trồng cho {subjectName}</span>
           </DialogTitle>
           <p className="text-xs text-muted-foreground mt-1">
-            Chọn các hạt giống phù hợp thuộc giống cây trồng này để đưa vào
+            Chọn các giống phù hợp thuộc cây trồng này để đưa vào
             phương án sản xuất.
           </p>
         </DialogHeader>
@@ -104,7 +107,7 @@ export const VariantSelectorDialog = ({
           <div className="relative">
             <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground z-10" />
             <Input
-              placeholder="Tìm kiếm giống/hạt giống..."
+              placeholder="Tìm kiếm giống cây trồng..."
               className="pl-10 bg-slate-50 border-slate-200 focus:bg-white transition-all rounded-lg"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
@@ -140,8 +143,7 @@ export const VariantSelectorDialog = ({
                       {variant.name}
                     </div>
                     <div className="text-xs text-muted-foreground mt-0.5 truncate">
-                      Giống: {variant.subjectVariant?.name || "---"} • Supplier:{" "}
-                      {variant.supplier?.name || "---"}
+                      Mã giống: {variant.code || "---"}
                     </div>
                   </div>
                   <div
@@ -161,7 +163,7 @@ export const VariantSelectorDialog = ({
             })}
             {filteredVariants.length === 0 && (
               <div className="text-center py-10 text-muted-foreground text-sm italic">
-                Không tìm thấy hạt giống phù hợp
+                Không tìm thấy giống phù hợp
               </div>
             )}
           </div>
@@ -192,12 +194,10 @@ export const VariantSelectorDialog = ({
 };
 
 interface ZoneConfigurationStepProps {
-  allSeeds?: FarmSeedResponse[];
   bypassSeedSelection?: boolean;
 }
 
 export const ZoneConfigurationStep: React.FC<ZoneConfigurationStepProps> = ({
-  allSeeds = [],
   bypassSeedSelection = false,
 }) => {
   const {
@@ -209,17 +209,38 @@ export const ZoneConfigurationStep: React.FC<ZoneConfigurationStepProps> = ({
 
   const [varietySearch, setVarietySearch] = useState("");
   const debouncedVarietySearch = useDebounce(varietySearch, 500);
+  const [farmingMethodSearch, setFarmingMethodSearch] = useState("");
+  const [rearingMethodSearch, setRearingMethodSearch] = useState("");
+  const debouncedFarmingMethodSearch = useDebounce(farmingMethodSearch, 300);
+  const debouncedRearingMethodSearch = useDebounce(rearingMethodSearch, 300);
 
   // Dialog State
   const [activeSubject, setActiveSubject] =
-    useState<MethodApplicationSubject | null>(null);
+    useState<SeedSubjectGroup | null>(null);
 
   // ─── Reference data ────────────────────────────────────────────────────
-  const { items: farmingMethods, loading: fmLoading } = useProductionMethods({
-    params: { domainCode: "CROP", size: 100, status: "active" },
+  const {
+    items: farmingMethods,
+    loading: fmLoading,
+    isFetching: isFetchingFarmingMethods,
+  } = useProductionMethods({
+    params: {
+      domainCode: "CROP",
+      size: 100,
+      status: "active",
+      keyword: debouncedFarmingMethodSearch.trim() || undefined,
+    },
   });
-  const { items: rearingMethods, loading: irLoading } = useRearingMethods({
-    params: { domainCode: "CROP", size: 100 },
+  const {
+    items: rearingMethods,
+    loading: irLoading,
+    isFetching: isFetchingRearingMethods,
+  } = useRearingMethods({
+    params: {
+      domainCode: "CROP",
+      size: 100,
+      keyword: debouncedRearingMethodSearch.trim() || undefined,
+    },
   });
   const filteredRearingMethods = useMemo(() => {
     return rearingMethods.filter((item) => item.domainCode === "CROP");
@@ -228,26 +249,34 @@ export const ZoneConfigurationStep: React.FC<ZoneConfigurationStepProps> = ({
   const selectedFarmingMethodId = watch("farmingMethodId");
   const selectedSeedIds = watch("seedIds") ?? [];
 
-  const { items: methodApplications, loading: fmcLoading } =
-    useMethodApplications({
-      params: {
-        domainCode: "CROP",
-        size: 100,
-        status: "active",
-      },
-      enabled: !!selectedFarmingMethodId && selectedFarmingMethodId > 0,
+  // Giống / Hạt giống áp dụng cho phương pháp canh tác đang chọn.
+  // API: GET /api/farm/subject-variants?productionMethodId=&domainCode=CROP&status=active
+  const { items: seedItems, loading: fmcLoading } = useSeeds({
+    params: {
+      productionMethodId: selectedFarmingMethodId,
+      domainCode: "CROP",
+      status: "active",
+      size: 100,
+    },
+    enabled: !!selectedFarmingMethodId && selectedFarmingMethodId > 0,
+  });
+
+  const subjects = useMemo<SeedSubjectGroup[]>(() => {
+    const groups = new Map<number, SeedSubjectGroup>();
+    seedItems.forEach((seed) => {
+      const subject = seed.productionSubject ?? seed.crop;
+      if (!subject?.id) return;
+      if (!groups.has(subject.id)) {
+        groups.set(subject.id, {
+          subjectId: subject.id,
+          subjectName: subject.name,
+          variants: [],
+        });
+      }
+      groups.get(subject.id)!.variants.push(seed);
     });
-
-  const activeMethodApp = useMemo(() => {
-    if (!selectedFarmingMethodId || selectedFarmingMethodId <= 0) return null;
-    return methodApplications.find(
-      (item) => item.productionMethod?.id === selectedFarmingMethodId,
-    );
-  }, [methodApplications, selectedFarmingMethodId]);
-
-  const subjects = useMemo(() => {
-    return activeMethodApp?.subjects ?? [];
-  }, [activeMethodApp]);
+    return Array.from(groups.values());
+  }, [seedItems]);
 
   const filteredSubjects = useMemo(() => {
     const keyword = debouncedVarietySearch.toLowerCase().trim();
@@ -260,31 +289,20 @@ export const ZoneConfigurationStep: React.FC<ZoneConfigurationStepProps> = ({
   }, [subjects, debouncedVarietySearch]);
 
   const variants = useMemo(() => {
-    const variantIds = activeSubject?.variants?.map((v) => v.id) || [];
-    return allSeeds.filter(
-      (seed) =>
-        seed.subjectVariant && variantIds.includes(seed.subjectVariant.id),
-    );
-  }, [activeSubject, allSeeds]);
+    return activeSubject?.variants ?? [];
+  }, [activeSubject]);
 
   const handleConfirmVariants = (selectedIds: number[]) => {
     if (!activeSubject) return;
 
-    // Lấy danh sách ID của các Hạt giống thuộc về subject hiện tại
+    // Replace only variants belonging to the subject currently being edited.
     const variantIds = activeSubject.variants?.map((v) => v.id) || [];
-    const currentSubjectSeedIds = allSeeds
-      .filter(
-        (seed) =>
-          seed.subjectVariant && variantIds.includes(seed.subjectVariant.id),
-      )
-      .map((seed) => seed.id);
 
-    // Lọc bỏ hạt giống thuộc subject hiện tại khỏi selectedSeedIds
-    const otherSubjectSeedIds = selectedSeedIds.filter(
-      (id) => !currentSubjectSeedIds.includes(id),
+    const otherSubjectVariantIds = selectedSeedIds.filter(
+      (id) => !variantIds.includes(id),
     );
 
-    const nextIds = [...otherSubjectSeedIds, ...selectedIds];
+    const nextIds = [...otherSubjectVariantIds, ...selectedIds];
 
     setValue("seedIds", nextIds, {
       shouldValidate: true,
@@ -322,29 +340,26 @@ export const ZoneConfigurationStep: React.FC<ZoneConfigurationStepProps> = ({
                   <Label className="text-sm font-medium">
                     Phương pháp canh tác <span className="text-red-500">*</span>
                   </Label>
-                  <Select
+                  <RemoteAutoCompleteSelect
                     disabled={fmLoading}
+                    options={farmingMethods.map((method) => ({
+                      label: method.name,
+                      value: method.id.toString(),
+                    }))}
                     value={field.value > 0 ? field.value.toString() : ""}
-                    onValueChange={(val) => {
-                      field.onChange(parseInt(val, 10));
+                    onChange={(value) => {
+                      if (!value) return;
+                      field.onChange(Number(value));
                       // Reset seeds when farming method changes
                       setValue("seedIds", []);
                     }}
-                  >
-                    <SelectTrigger className="h-11 bg-white">
-                      <SelectValue placeholder="Chọn phương pháp..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {farmingMethods.map((method) => (
-                        <SelectItem
-                          key={method.id}
-                          value={method.id.toString()}
-                        >
-                          <span className="font-medium">{method.name}</span>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                    onSearch={setFarmingMethodSearch}
+                    placeholder="Chọn phương pháp..."
+                    searchPlaceholder="Tìm kiếm phương pháp canh tác..."
+                    emptyText="Không tìm thấy phương pháp canh tác"
+                    loading={isFetchingFarmingMethods}
+                    clearable={false}
+                  />
                   {errors.farmingMethodId && (
                     <p className="text-xs font-medium text-red-500 mt-1">
                       {errors.farmingMethodId.message}
@@ -366,34 +381,26 @@ export const ZoneConfigurationStep: React.FC<ZoneConfigurationStepProps> = ({
                   <Label className="text-sm font-medium">
                     Phương pháp tưới tiêu
                   </Label>
-                  <Select
+                  <RemoteAutoCompleteSelect
                     disabled={irLoading}
+                    options={filteredRearingMethods.map((method) => ({
+                      label: method.name,
+                      value: method.id.toString(),
+                    }))}
                     value={
                       field.value && field.value > 0
                         ? field.value.toString()
                         : ""
                     }
-                    onValueChange={(val) => {
-                      field.onChange(parseInt(val, 10));
+                    onChange={(value) => {
+                      field.onChange(value ? Number(value) : undefined);
                     }}
-                  >
-                    <SelectTrigger className="h-11 bg-white">
-                      <SelectValue placeholder="Chọn phương pháp tưới..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {filteredRearingMethods.map((system) => (
-                        <SelectItem
-                          key={system.id}
-                          value={system.id.toString()}
-                        >
-                          <div className="flex items-center gap-2">
-                            <Droplets className="w-4 h-4 text-blue-500" />
-                            <span>{system.name}</span>
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                    onSearch={setRearingMethodSearch}
+                    placeholder="Chọn phương pháp tưới..."
+                    searchPlaceholder="Tìm kiếm phương pháp tưới..."
+                    emptyText="Không tìm thấy phương pháp tưới"
+                    loading={isFetchingRearingMethods}
+                  />
                   {errors.rearingMethodId && (
                     <p className="text-xs font-medium text-red-500 mt-1">
                       {errors.rearingMethodId.message}
@@ -448,13 +455,12 @@ export const ZoneConfigurationStep: React.FC<ZoneConfigurationStepProps> = ({
                     ) : filteredSubjects.length > 0 ? (
                       <div className="w-full space-y-2">
                         {filteredSubjects.map((subject) => {
-                          // Lọc các hạt giống đã chọn thuộc subject hiện tại
-                          const subjectSelectedSeeds = allSeeds.filter(
-                            (seed) =>
-                              selectedSeedIds.includes(seed.id) &&
-                              seed.productionSubject?.id === subject.subjectId,
-                          );
-                          const hasSelected = subjectSelectedSeeds.length > 0;
+                          const subjectSelectedVariants =
+                            subject.variants?.filter((variant) =>
+                              selectedSeedIds.includes(variant.id),
+                            ) ?? [];
+                          const hasSelected =
+                            subjectSelectedVariants.length > 0;
 
                           return (
                             <div
@@ -475,9 +481,8 @@ export const ZoneConfigurationStep: React.FC<ZoneConfigurationStepProps> = ({
                                     {subject.subjectName}
                                   </div>
                                   <div className="text-xs text-muted-foreground mt-0.5">
-                                    Mã: {subject.subjectCode || "---"}{" "}
-                                    {subject.subjectGroupName &&
-                                      `• Nhóm: ${subject.subjectGroupName}`}
+                                    {subject.variants.length} giống/hạt giống
+                                    khả dụng
                                   </div>
                                 </div>
                                 <div className="shrink-0 flex items-center gap-2">
@@ -486,7 +491,7 @@ export const ZoneConfigurationStep: React.FC<ZoneConfigurationStepProps> = ({
                                       variant="secondary"
                                       className="bg-green-100 text-green-800 border-none font-semibold text-xs animate-in scale-in duration-200"
                                     >
-                                      {subjectSelectedSeeds.length} hạt giống
+                                      {subjectSelectedVariants.length} giống
                                     </Badge>
                                   )}
                                   <ChevronRight className="w-4 h-4 text-slate-400" />
@@ -495,14 +500,14 @@ export const ZoneConfigurationStep: React.FC<ZoneConfigurationStepProps> = ({
 
                               {hasSelected && (
                                 <div className="mt-3 pt-3 border-t border-slate-100 flex flex-wrap gap-2">
-                                  {subjectSelectedSeeds.map((seed) => (
+                                  {subjectSelectedVariants.map((variant) => (
                                     <Badge
-                                      key={seed.id}
+                                      key={variant.id}
                                       variant="outline"
                                       className="bg-white border-slate-200 text-slate-600 text-[11px] py-1 px-2.5 rounded-md flex items-center gap-1.5 shadow-xs"
                                     >
                                       <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
-                                      <span>{seed.name}</span>
+                                      <span>{variant.name}</span>
                                     </Badge>
                                   ))}
                                 </div>
@@ -534,14 +539,7 @@ export const ZoneConfigurationStep: React.FC<ZoneConfigurationStepProps> = ({
           subjectName={activeSubject.subjectName || ""}
           variants={variants}
           selectedVariantIds={selectedSeedIds.filter((id) =>
-            allSeeds.some(
-              (seed) =>
-                seed.id === id &&
-                seed.subjectVariant &&
-                activeSubject.variants?.some(
-                  (v) => v.id === seed.subjectVariant?.id,
-                ),
-            ),
+            activeSubject.variants?.some((variant) => variant.id === id),
           )}
           onConfirm={handleConfirmVariants}
         />

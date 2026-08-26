@@ -132,6 +132,17 @@ const FitBoundsOnce = ({
   return null;
 };
 
+const RefreshMapSize = () => {
+  const map = useMap();
+
+  useEffect(() => {
+    const frame = requestAnimationFrame(() => map.invalidateSize());
+    return () => cancelAnimationFrame(frame);
+  }, [map]);
+
+  return null;
+};
+
 // ── Map Layout Sub-component ───────────────────────────────────────────────────
 interface MapLayoutProps {
   center: L.LatLng;
@@ -201,8 +212,8 @@ const MapLayout = ({
   boundaryWarning,
 }: MapLayoutProps) => {
   return (
-    <div className="flex flex-col md:flex-row flex-1 gap-4 overflow-y-auto md:overflow-hidden p-4 h-full w-full">
-      <div className="relative z-0 h-96 md:h-full w-full md:flex-1 shrink-0 md:shrink overflow-hidden rounded-lg border">
+    <div className="grid h-full w-full flex-1 grid-cols-1 gap-4 overflow-y-auto p-4 md:grid-cols-[minmax(0,1fr)_300px] md:overflow-hidden">
+      <div className="relative z-0 min-h-[450px] min-w-0 overflow-hidden rounded-lg border md:min-h-0">
         <MapContainer
           center={[center.lat, center.lng]}
           zoom={17}
@@ -320,6 +331,7 @@ const MapLayout = ({
             areaPoints={areaPolygon}
             fitTrigger={fitTrigger}
           />
+          <RefreshMapSize />
         </MapContainer>
 
         {activePersistentWarning && !isDraggingPoint && selectedAreaId && (
@@ -356,7 +368,7 @@ const MapLayout = ({
         )}
       </div>
 
-      <div className="flex h-[450px] md:h-full w-full md:w-[300px] shrink-0 flex-col overflow-hidden rounded-lg border bg-slate-50">
+      <div className="flex min-h-[450px] min-w-0 flex-col overflow-hidden rounded-lg border bg-slate-50 md:min-h-0">
         <div className="border-b bg-white p-3">
           <h4 className="text-sm font-semibold">Danh sách toạ độ</h4>
           <p className="mt-1 text-xs text-muted-foreground">

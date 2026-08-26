@@ -1,4 +1,5 @@
 import { useFormContext, Controller } from "react-hook-form";
+import { useState } from "react";
 import { Award, MapPin, ScrollText } from "lucide-react";
 import {
   Badge,
@@ -15,6 +16,7 @@ import {
   OrganizationSelector,
 } from "./index";
 import { useRegions } from "@/features/farm/hooks/useRegions";
+import { useDebounce } from "@/shared/hooks/useDebounce";
 import type { GeographicalSelection } from "./types";
 import type { FarmRegionResponse } from "@/features/farm/types/farm.type";
 
@@ -22,6 +24,7 @@ import type { FarmRegionResponse } from "@/features/farm/types/farm.type";
 function toRegionOptions(apiRegions: FarmRegionResponse[]) {
   return apiRegions.map((r) => ({
     id: r.id,
+    code: r.code,
     name: r.name ?? "",
     enterpriseId: (r.metadataJson?.enterpriseId as string) ?? "",
     subAreas: (r.areas ?? []).map((a) => ({
@@ -48,8 +51,15 @@ export const ZoneGeneralInfoStep = ({
 
   const selections = watch("selections") ?? [];
   const enterpriseId = watch("enterpriseId") ?? "";
+  const [regionSearch, setRegionSearch] = useState("");
+  const debouncedRegionSearch = useDebounce(regionSearch, 300);
 
-  const { items: apiRegions } = useRegions({ params: { size: 100 } });
+  const { items: apiRegions, isFetching: isRegionSearching } = useRegions({
+    params: {
+      size: 100,
+      keyword: debouncedRegionSearch.trim() || undefined,
+    },
+  });
   const regionOptions = toRegionOptions(apiRegions);
 
   const geoSelections: GeographicalSelection[] = selections;
@@ -153,6 +163,8 @@ export const ZoneGeneralInfoStep = ({
                 enterpriseId={enterpriseId}
                 existingSelections={geoSelections}
                 onConfirm={handleConfirmSelections}
+                onRegionSearchChange={setRegionSearch}
+                isRegionSearching={isRegionSearching}
               />
 
               <div className="grid grid-cols-1 gap-4 mt-2">

@@ -5,7 +5,7 @@ import { useRearingMethods } from "@/features/master-data/hooks/useRearingMethod
 import { useMasterData, useFarmPersonnel } from "@/features/master-data";
 import { useSelectedWorkspaceId } from "@/features/workspace";
 import { CultivationRegionCreateConfirmationStep } from "./CultivationRegionCreateConfirmationStep";
-import { useMethodApplications } from "@/features/foundation";
+import { useSeeds } from "@/features/farm/hooks/useSeeds";
 import { useMemo } from "react";
 
 export const ZoneReviewStep = () => {
@@ -28,35 +28,30 @@ export const ZoneReviewStep = () => {
 
   const selectedFarmingMethodId = Number(formValues.farmingMethodId);
 
-  const { items: methodApplications } = useMethodApplications({
-    params: { domainCode: "CROP", size: 100 },
+  // Giống / Hạt giống đã chọn cho phương pháp canh tác đang áp dụng.
+  // API: GET /api/farm/subject-variants?productionMethodId=&domainCode=CROP&status=active
+  const { items: seedItems } = useSeeds({
+    params: {
+      productionMethodId: selectedFarmingMethodId,
+      domainCode: "CROP",
+      status: "active",
+      size: 100,
+    },
     enabled: !!selectedFarmingMethodId && selectedFarmingMethodId > 0,
   });
 
-  const activeMethodApp = useMemo(() => {
-    return methodApplications.find(
-      (item) => item.productionMethod?.id === selectedFarmingMethodId,
-    );
-  }, [methodApplications, selectedFarmingMethodId]);
-
   // Extract selected variants
   const selectedVariants = useMemo(() => {
-    if (!activeMethodApp) return [];
-    const list: Array<{ id: number; name: string; code: string; subjectName: string }> = [];
-    activeMethodApp.subjects?.forEach((subject) => {
-      subject.variants?.forEach((variant) => {
-        if ((formValues.seedIds ?? []).map(Number).includes(Number(variant.id))) {
-          list.push({
-            id: variant.id,
-            name: variant.name || "",
-            code: variant.code || "",
-            subjectName: subject.subjectName || "",
-          });
-        }
-      });
-    });
-    return list;
-  }, [activeMethodApp, formValues.seedIds]);
+    const selectedIds = (formValues.seedIds ?? []).map(Number);
+    return seedItems
+      .filter((seed) => selectedIds.includes(Number(seed.id)))
+      .map((seed) => ({
+        id: seed.id,
+        name: seed.name || "",
+        code: seed.code || "",
+        subjectName: (seed.productionSubject ?? seed.crop)?.name || "",
+      }));
+  }, [seedItems, formValues.seedIds]);
 
   const workspaceId = useSelectedWorkspaceId();
   const numericWorkspaceId = workspaceId ? Number(workspaceId) : undefined;

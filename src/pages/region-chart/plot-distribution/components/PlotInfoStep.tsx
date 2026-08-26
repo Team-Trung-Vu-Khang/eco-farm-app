@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import {
   Card,
   CardContent,
@@ -21,6 +21,7 @@ import { useRegions } from "@/features/farm/hooks/useRegions";
 import { useAreaById } from "@/features/farm/hooks/useAreas";
 import { OrganizationSelector } from "@/pages/cultivation-zone/cultivation-region/components";
 import { PlotLocationSelector } from "./PlotLocationSelector";
+import { useDebounce } from "@/shared/hooks/useDebounce";
 
 interface PlotInfoStepProps {
   showEnterprise?: boolean;
@@ -33,9 +34,14 @@ export function PlotInfoStep({
   const enterpriseId = watch("enterpriseId");
   const regionId = watch("regionId");
   const areaId = watch("areaId");
+  const [regionSearch, setRegionSearch] = useState("");
+  const debouncedRegionSearch = useDebounce(regionSearch, 300);
 
   const { data: regionsData } = useRegions({
-    params: { size: 100 },
+    params: {
+      size: 100,
+      keyword: debouncedRegionSearch.trim() || undefined,
+    },
   });
   const regions = regionsData?.content || [];
 
@@ -114,6 +120,7 @@ export function PlotInfoStep({
                 enterpriseId={enterpriseId ?? null}
                 selectedAreaId={areaId ? String(areaId) : null}
                 selectedAreaName={selectedArea?.name}
+                onSearchChange={setRegionSearch}
                 onSelect={(selectedRegId, selectedArId) => {
                   setValue("regionId", selectedRegId);
                   setValue("areaId", Number(selectedArId));
