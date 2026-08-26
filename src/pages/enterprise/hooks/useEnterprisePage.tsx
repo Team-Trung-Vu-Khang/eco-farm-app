@@ -6,6 +6,7 @@ import {
 import { useMemo, useState } from "react";
 import { useLocation } from "wouter";
 
+import { CodeBadge } from "@/components/CodeBadge";
 import { useMasterData } from "@/features/master-data";
 import {
   useDeleteOrganization,
@@ -132,14 +133,7 @@ export function useEnterprisePage() {
     {
       key: "code",
       label: "Mã",
-      render: (value) => (
-        <Badge
-          variant="outline"
-          className="rounded-full bg-slate-50 px-2.5 py-1 font-mono text-[10px] text-slate-700"
-        >
-          {value as string}
-        </Badge>
-      ),
+      render: (value) => <CodeBadge value={value} />,
     },
     {
       key: "image",
