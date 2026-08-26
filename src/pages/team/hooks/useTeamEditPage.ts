@@ -1,5 +1,5 @@
 import {
-  useFarmDepartmentOptions,
+  useFarmDepartments,
   useFarmPersonnel,
   useFarmTeamById,
   useFarmTeamMutations,
@@ -32,9 +32,9 @@ export function useTeamEditPage() {
 
   const { updateTeam } = useFarmTeamMutations(parsedWorkspaceId);
 
-  const farmDepartmentsQuery = useFarmDepartmentOptions({
+  const farmDepartmentsQuery = useFarmDepartments({
     workspaceId: parsedWorkspaceId,
-    params: { size: 100 },
+    params: { onlyOwner: true, size: 100 },
   });
 
   const farmPersonnelQuery = useFarmPersonnel({
@@ -78,11 +78,9 @@ export function useTeamEditPage() {
               (d) => d.id === team.department.id,
             );
             if (found) {
-              return `${found.id}_${found.source}`;
+              return String(found.id);
             }
-            return team.department.source
-              ? `${team.department.id}_${team.department.source}`
-              : String(team.department.id);
+            return String(team.department.id);
           }
           return "";
         })(),

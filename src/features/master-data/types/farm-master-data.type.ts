@@ -19,6 +19,7 @@ export interface FarmPageResponse<T> {
 export interface FarmBaseQueryParams {
   keyword?: string;
   status?: FarmMasterDataStatus;
+  onlyOwner?: boolean;
   page?: number;
   size?: number;
 }

@@ -1,5 +1,5 @@
 import {
-  useFarmDepartmentOptions,
+  useFarmDepartments,
   useFarmPersonnel,
   useFarmTeamMutations,
 } from "@/features/master-data";
@@ -24,9 +24,9 @@ export function useTeamCreatePage() {
 
   const { createTeam } = useFarmTeamMutations(parsedWorkspaceId);
 
-  const farmDepartmentsQuery = useFarmDepartmentOptions({
+  const farmDepartmentsQuery = useFarmDepartments({
     workspaceId: parsedWorkspaceId,
-    params: { size: 100 },
+    params: { onlyOwner: true, size: 100 },
   });
 
   const farmPersonnelQuery = useFarmPersonnel({
@@ -37,7 +37,7 @@ export function useTeamCreatePage() {
   const departmentOptions = useMemo(() => {
     return farmDepartmentsQuery.items.map((d) => ({
       label: d.name,
-      value: `${d.id}_${d.source}`,
+      value: String(d.id),
     }));
   }, [farmDepartmentsQuery.items]);
 
