@@ -22,7 +22,19 @@ export function createRegionDistributionColumns(
     },
     { key: "name", label: "Tên vùng" },
     { key: "area", label: "Diện tích (ha)" },
-    { key: "address", label: "Địa chỉ" },
+    {
+      key: "address",
+      label: "Địa chỉ",
+      width: "360px",
+      render: (value) => {
+        const address = (value as string) || "-";
+        return (
+          <span className="block max-w-[360px] truncate" title={address}>
+            {address}
+          </span>
+        );
+      },
+    },
     {
       key: "status",
       label: "Trạng thái",

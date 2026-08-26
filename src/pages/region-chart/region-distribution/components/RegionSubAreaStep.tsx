@@ -471,6 +471,15 @@ const SubAreaLayout = ({
   handleDownloadSampleExcel,
   subAreaMapFitTrigger,
 }: SubAreaLayoutProps) => {
+  // Leaflet mutates marker LatLng objects while dragging. Convert them to
+  // immutable tuples so the outline always receives the latest coordinates.
+  const editablePolygonPositions = subAreaPoints.map(
+    (point) => [point.lat, point.lng] as L.LatLngTuple,
+  );
+  const editablePolygonKey = editablePolygonPositions
+    .map(([lat, lng]) => `${lat}:${lng}`)
+    .join("|");
+
   return (
     <div className="grid h-auto lg:h-full w-full grid-cols-1 gap-6 p-4 lg:grid-cols-5 overflow-y-auto lg:overflow-hidden">
       <div className="relative z-0 h-96 lg:h-full w-full lg:col-span-3 shrink-0 lg:shrink overflow-hidden rounded-lg border">
@@ -523,7 +532,8 @@ const SubAreaLayout = ({
           {editingSubArea && (
             <>
               <Polygon
-                positions={subAreaPoints}
+                key={editablePolygonKey}
+                positions={editablePolygonPositions}
                 pathOptions={{
                   color: "#22c55e",
                   weight: 2,
@@ -950,10 +960,11 @@ export const RegionSubAreaStep = ({
     options?: { persist?: boolean; preview?: boolean },
   ) => {
     const { persist = true, preview = false } = options || {};
+    const nextLatLng = L.latLng(latlng.lat, latlng.lng);
 
     setSubAreaPoints((prev) => {
       const next = [...prev];
-      next[index] = latlng;
+      next[index] = nextLatLng;
       return next;
     });
 
@@ -965,7 +976,7 @@ export const RegionSubAreaStep = ({
       }
     };
 
-    const pointFeature = point([latlng.lng, latlng.lat]);
+    const pointFeature = point([nextLatLng.lng, nextLatLng.lat]);
 
     let violationType: "outsideRegion" | "overlapsSubArea" | null = null;
     let overlapPolygon: NonNullable<
@@ -1002,9 +1013,12 @@ export const RegionSubAreaStep = ({
 
     let nearestValid: L.LatLng | null = null;
     if (violationType === "outsideRegion") {
-      nearestValid = getNearestValidSubAreaPosition(latlng);
+      nearestValid = getNearestValidSubAreaPosition(nextLatLng);
     } else if (violationType === "overlapsSubArea" && overlapPolygon) {
-      nearestValid = getNearestPointOnPolygonBoundary(overlapPolygon, latlng);
+      nearestValid = getNearestPointOnPolygonBoundary(
+        overlapPolygon,
+        nextLatLng,
+      );
     }
 
     if (!nearestValid) {
@@ -1017,7 +1031,7 @@ export const RegionSubAreaStep = ({
 
     const warningData: PointWarning = {
       index,
-      invalidLatLng: latlng,
+      invalidLatLng: nextLatLng,
       suggestedLatLng: nearestValid,
     };
 
@@ -1051,7 +1065,7 @@ export const RegionSubAreaStep = ({
     if (options?.finalize) {
       setSubAreaPoints((prev) => {
         const next = [...prev];
-        next[index] = latlng;
+        next[index] = L.latLng(latlng.lat, latlng.lng);
 
         if (next.length <= 2) {
           validateAllSubAreaPoints(next);
@@ -1147,7 +1161,9 @@ export const RegionSubAreaStep = ({
     const newSub: Omit<SubArea, "regionId"> = {
       area: 0,
       plots: [],
-      landType: "",
+      // Inherit the region's land type selected in step 1. It can still be
+      // changed for this individual area in the editor.
+      landType: watch("landType") || "",
       coordinates: [],
       status: "active",
       name: "Khu vực mới",

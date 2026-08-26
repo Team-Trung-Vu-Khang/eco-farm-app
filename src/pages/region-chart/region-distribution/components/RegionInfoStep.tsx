@@ -18,6 +18,7 @@ import {
   Combobox,
   MultiSelect,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import AddressSearchInput from "@/components/AddressSearchInput";
 import { OrganizationSelector } from "@/pages/cultivation-zone/cultivation-region/components";
 import { useFormContext } from "react-hook-form";
 import { useAddressOptions } from "@/features/master-data/hooks/useAddressOptions";
@@ -52,6 +53,7 @@ export const RegionInfoStep = ({
 
   const { control, setValue, watch } = useFormContext<RegionFormValues>();
   const provinceId = watch("provinceId");
+  const centerPoint = watch("centerPoint");
   const { provinces, wards, isLoadingProvinces, isLoadingWards } =
     useAddressOptions(provinceId);
 
@@ -206,7 +208,7 @@ export const RegionInfoStep = ({
             name="provinceId"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Tỉnh / Thành Phố</FormLabel>
+                <FormLabel required>Tỉnh / Thành phố</FormLabel>
                 <FormControl>
                   <Combobox
                     options={provinces.map((p) => ({
@@ -219,7 +221,7 @@ export const RegionInfoStep = ({
                       setValue("wardId", ""); // Reset ward when province changes
                     }}
                     disabled={isLoadingProvinces}
-                    placeholder="Chọn Tỉnh / Thành Phố"
+                    placeholder="Chọn Tỉnh / Thành phố"
                     searchPlaceholder="Tìm kiếm..."
                     className="w-full"
                   />
@@ -234,7 +236,7 @@ export const RegionInfoStep = ({
             name="wardId"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Phường/Xã</FormLabel>
+                <FormLabel required>Phường / Xã</FormLabel>
                 <FormControl>
                   <Combobox
                     options={wards.map((w) => ({
@@ -262,7 +264,21 @@ export const RegionInfoStep = ({
             <FormItem>
               <FormLabel>Địa chỉ chi tiết</FormLabel>
               <FormControl>
-                <Input {...field} placeholder="Số nhà, đường, thôn/xóm..." />
+                <AddressSearchInput
+                  value={field.value ?? ""}
+                  onChange={field.onChange}
+                  onSelectLocation={({ address, latitude, longitude }) => {
+                    setValue("address", address, { shouldDirty: true });
+                    setValue(
+                      "centerPoint",
+                      { lat: latitude, lng: longitude },
+                      { shouldDirty: true },
+                    );
+                  }}
+                  latitude={centerPoint?.lat}
+                  longitude={centerPoint?.lng}
+                  placeholder="Số nhà, đường, thôn/xóm..."
+                />
               </FormControl>
               <FormMessage />
             </FormItem>

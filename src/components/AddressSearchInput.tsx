@@ -22,6 +22,53 @@ interface AddressSearchInputProps {
   placeholder?: string;
 }
 
+declare global {
+  interface Window {
+    google?: {
+      maps?: {
+        places?: {
+          Autocomplete: new (
+            input: HTMLInputElement,
+            options?: Record<string, unknown>,
+          ) => {
+            addListener: (eventName: string, callback: () => void) => void;
+            getPlace: () => {
+              formatted_address?: string;
+              name?: string;
+              geometry?: {
+                location?: { lat: () => number; lng: () => number };
+              };
+            };
+          };
+        };
+      };
+    };
+  }
+}
+
+let googleMapsScriptPromise: Promise<void> | undefined;
+
+function loadGooglePlaces(apiKey: string) {
+  if (window.google?.maps?.places?.Autocomplete) return Promise.resolve();
+  if (googleMapsScriptPromise) return googleMapsScriptPromise;
+
+  googleMapsScriptPromise = new Promise((resolve, reject) => {
+    const script = document.createElement("script");
+    const url = new URL("https://maps.googleapis.com/maps/api/js");
+    url.searchParams.set("key", apiKey);
+    url.searchParams.set("libraries", "places");
+    url.searchParams.set("language", "vi");
+    url.searchParams.set("region", "VN");
+    script.src = url.toString();
+    script.async = true;
+    script.onload = () => resolve();
+    script.onerror = () => reject(new Error("Không thể tải Google Places"));
+    document.head.appendChild(script);
+  });
+
+  return googleMapsScriptPromise;
+}
+
 export default function AddressSearchInput({
   value,
   onChange,
@@ -32,9 +79,70 @@ export default function AddressSearchInput({
 }: AddressSearchInputProps) {
   const [results, setResults] = useState<SearchResult[]>([]);
   const [isSearching, setIsSearching] = useState(false);
+  const [googlePlacesUnavailable, setGooglePlacesUnavailable] = useState(false);
   const selectedQueryRef = useRef("");
+  const inputWrapperRef = useRef<HTMLDivElement>(null);
+  const onSelectLocationRef = useRef(onSelectLocation);
+  const onChangeRef = useRef(onChange);
 
   useEffect(() => {
+    onSelectLocationRef.current = onSelectLocation;
+    onChangeRef.current = onChange;
+  }, [onChange, onSelectLocation]);
+
+  useEffect(() => {
+    const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY?.trim();
+    if (!apiKey) return;
+
+    let disposed = false;
+    let listener: { remove?: () => void } | undefined;
+
+    void loadGooglePlaces(apiKey)
+      .then(() => {
+        if (disposed) return;
+        const input = inputWrapperRef.current?.querySelector("input");
+        const Autocomplete = window.google?.maps?.places?.Autocomplete;
+        if (!input || !Autocomplete) return;
+
+        const autocomplete = new Autocomplete(input, {
+          componentRestrictions: { country: "vn" },
+          fields: ["formatted_address", "geometry", "name"],
+          types: ["geocode"],
+        });
+        listener = autocomplete.addListener("place_changed", () => {
+          const place = autocomplete.getPlace();
+          const latitude = place.geometry?.location?.lat();
+          const longitude = place.geometry?.location?.lng();
+          const address = place.formatted_address || place.name;
+          if (!address || !Number.isFinite(latitude) || !Number.isFinite(longitude)) {
+            return;
+          }
+
+          selectedQueryRef.current = address;
+          onChangeRef.current(address);
+          onSelectLocationRef.current({ address, latitude, longitude });
+        });
+        setGooglePlacesUnavailable(false);
+      })
+      .catch(() => {
+        // Keep the existing geocoding search available when Google is not configured correctly.
+        if (!disposed) setGooglePlacesUnavailable(true);
+      });
+
+    return () => {
+      disposed = true;
+      listener?.remove?.();
+    };
+  }, []);
+
+  useEffect(() => {
+    if (
+      import.meta.env.VITE_GOOGLE_MAPS_API_KEY?.trim() &&
+      !googlePlacesUnavailable
+    ) {
+      setResults([]);
+      return;
+    }
     const query = value.trim();
     if (query.length < 3 || query === selectedQueryRef.current) {
       setResults([]);
@@ -61,7 +169,7 @@ export default function AddressSearchInput({
     }, 600);
 
     return () => window.clearTimeout(timer);
-  }, [value]);
+  }, [value, googlePlacesUnavailable]);
 
   const selectResult = (result: SearchResult) => {
     const latitude = Number(result.lat);
@@ -78,7 +186,7 @@ export default function AddressSearchInput({
   };
 
   return (
-    <div className="relative">
+    <div ref={inputWrapperRef} className="relative">
       <Input
         value={value}
         onChange={(event) => {
