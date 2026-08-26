@@ -11,7 +11,6 @@ import { positionColumns } from "./data/columns";
 import { useOwnerPositionPage } from "./hooks/useOwnerPositionPage";
 
 const POSITION_FILTER_STATUS_OPTIONS = [
-  { value: "all", label: "Tất cả trạng thái" },
   { value: "active", label: "Hoạt động" },
   { value: "inactive", label: "Ngừng hoạt động" },
   { value: "archived", label: "Đã lưu trữ" },

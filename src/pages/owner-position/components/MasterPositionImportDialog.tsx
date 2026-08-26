@@ -40,10 +40,12 @@ export function MasterPositionImportDialog({
   const [hasMore, setHasMore] = useState(true);
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const keyword = searchTerm.trim();
 
   // Fetch only positions that have NOT been used in this workspace
   const masterDataQuery = useFarmPositionsMasterData({
     params: {
+      keyword: keyword || undefined,
       page,
       size: 20,
       used: false,
@@ -64,6 +66,15 @@ export function MasterPositionImportDialog({
       setSelectedIds([]);
     }
   }, [open]);
+
+  // A new keyword starts a new paginated result set.
+  useEffect(() => {
+    if (!open) return;
+
+    setPage(0);
+    setLoadedPositions([]);
+    setHasMore(true);
+  }, [keyword, open]);
 
   // Accumulate loaded positions as page increases
   useEffect(() => {
@@ -92,17 +103,9 @@ export function MasterPositionImportDialog({
     }
   }, [masterDataQuery.data, open]);
 
-  // Filter based on search input (client-side)
-  const filteredPositions = useMemo(() => {
-    if (!searchTerm.trim()) return loadedPositions;
-    const term = searchTerm.toLowerCase();
-    return loadedPositions.filter(
-      (pos) =>
-        pos.name.toLowerCase().includes(term) ||
-        pos.code.toLowerCase().includes(term) ||
-        pos.positionGroupName?.toLowerCase().includes(term),
-    );
-  }, [loadedPositions, searchTerm]);
+  // Search and pagination are performed by the master-data API. The local
+  // collection contains only pages returned for the current keyword.
+  const filteredPositions = useMemo(() => loadedPositions, [loadedPositions]);
 
   // IntersectionObserver callback for infinite scroll trigger
   const observerRef = useRef<IntersectionObserver | null>(null);

@@ -14,7 +14,7 @@ import {
   Textarea,
   useToast,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { Controller, useFieldArray, useForm } from "react-hook-form";
+import { Controller, useFieldArray, useForm, useWatch } from "react-hook-form";
 import { Plus, Trash2, Upload } from "lucide-react";
 import { useFarmPositionById } from "@/features/master-data";
 import { useSelectedWorkspaceId } from "@/features/workspace";
@@ -131,6 +131,7 @@ export function OwnerPositionFormDialog({
     control,
     name: "documents",
   });
+  const documentValues = useWatch({ control, name: "documents" });
 
   const [uploadingDocumentIndex, setUploadingDocumentIndex] = useState<
     number | null
@@ -169,17 +170,18 @@ export function OwnerPositionFormDialog({
       });
 
       const currentName = getValues(`documents.${index}.name`) ?? "";
+      const fileName = uploaded.fileName || file.name;
 
       setValue(`documents.${index}.fileUrl`, uploaded.fileUrl, {
         shouldDirty: true,
         shouldValidate: true,
       });
-      setValue(`documents.${index}.fileName`, uploaded.fileName, {
+      setValue(`documents.${index}.fileName`, fileName, {
         shouldDirty: true,
         shouldValidate: true,
       });
       if (!currentName.trim()) {
-        setValue(`documents.${index}.name`, uploaded.fileName, {
+        setValue(`documents.${index}.name`, fileName, {
           shouldDirty: true,
           shouldValidate: true,
         });
@@ -189,11 +191,6 @@ export function OwnerPositionFormDialog({
     } finally {
       setUploadingDocumentIndex(null);
     }
-  };
-
-  const handleOpenDocument = (fileUrl: string) => {
-    if (!fileUrl) return;
-    window.open(fileUrl, "_blank", "noopener,noreferrer");
   };
 
   const handleDialogSubmit = handleRHFSubmit(async (values) => {
@@ -350,11 +347,14 @@ export function OwnerPositionFormDialog({
 
           {documentFields.length > 0 ? (
             <div className="space-y-3">
-              {documentFields.map((field, index) => (
-                <div
-                  key={field.id}
-                  className="rounded-lg border border-slate-200 bg-white p-3"
-                >
+              {documentFields.map((field, index) => {
+                const documentValue = documentValues?.[index] ?? field;
+
+                return (
+                  <div
+                    key={field.id}
+                    className="rounded-lg border border-slate-200 bg-white p-3"
+                  >
                   <div className="mb-3 flex items-center justify-between gap-3">
                     <p className="text-sm font-medium text-slate-700">
                       Tài liệu {index + 1}
@@ -506,27 +506,24 @@ export function OwnerPositionFormDialog({
                                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 w-full overflow-hidden">
                                     <div className="min-w-0 flex-1 w-full overflow-hidden">
                                       <p className="truncate text-sm font-medium text-slate-700">
-                                        {field.fileName || "Chưa tải file PDF"}
+                                        {documentValue.fileName || "Chưa tải file PDF"}
                                       </p>
-                                      <p className="break-all text-xs text-slate-500">
-                                        {field.fileUrl ||
-                                          "Chọn file PDF để tải lên storage"}
-                                      </p>
+                                      {documentValue.fileUrl ? (
+                                        <a
+                                          href={documentValue.fileUrl}
+                                          target="_blank"
+                                          rel="noreferrer"
+                                          className="block break-all text-xs text-primary underline underline-offset-2 hover:text-primary/80"
+                                        >
+                                          Mở tài liệu đã tải lên
+                                        </a>
+                                      ) : (
+                                        <p className="break-all text-xs text-slate-500">
+                                          Chọn file PDF để tải lên storage
+                                        </p>
+                                      )}
                                     </div>
                                     <div className="flex items-center gap-2 shrink-0">
-                                      {field.fileUrl ? (
-                                        <Button
-                                          type="button"
-                                          variant="outline"
-                                          onClick={() =>
-                                            handleOpenDocument(
-                                              field.fileUrl ?? "",
-                                            )
-                                          }
-                                        >
-                                          Xem
-                                        </Button>
-                                      ) : null}
                                       <Button
                                         type="button"
                                         variant="outline"
@@ -544,7 +541,7 @@ export function OwnerPositionFormDialog({
                                         <Upload className="mr-2 h-4 w-4" />
                                         {uploadingDocumentIndex === index
                                           ? "Đang tải..."
-                                          : field.fileUrl
+                                          : documentValue.fileUrl
                                             ? "Đổi PDF"
                                             : "Tải PDF"}
                                       </Button>
@@ -574,8 +571,9 @@ export function OwnerPositionFormDialog({
                       );
                     }}
                   />
-                </div>
-              ))}
+                  </div>
+                );
+              })}
             </div>
           ) : (
             <div className="rounded-lg border border-dashed border-slate-300 bg-white px-4 py-6 text-sm text-slate-500">

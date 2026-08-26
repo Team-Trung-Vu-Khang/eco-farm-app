@@ -21,7 +21,10 @@ export const farmDepartmentKeys = {
       params ?? {},
       workspaceId,
     ] as const,
-  masterData: (params?: { used?: boolean; page?: number; size?: number }, workspaceId?: number) =>
+  masterData: (
+    params?: { keyword?: string; used?: boolean; page?: number; size?: number },
+    workspaceId?: number,
+  ) =>
     [
       ...farmDepartmentKeys.all(),
       "masterData",
@@ -112,7 +115,7 @@ export function useFarmDepartmentsMasterData({
   workspaceId,
   enabled = true,
 }: {
-  params?: { used?: boolean; page?: number; size?: number };
+  params?: { keyword?: string; used?: boolean; page?: number; size?: number };
   workspaceId?: number;
   enabled?: boolean;
 } = {}) {

@@ -74,7 +74,7 @@ export const farmDepartmentApi = {
       .then((r) => r.data),
 
   masterData: (
-    params?: { used?: boolean; page?: number; size?: number },
+    params?: { keyword?: string; used?: boolean; page?: number; size?: number },
     workspaceId?: number,
   ) =>
     apiClient
@@ -131,7 +131,7 @@ export const farmPositionApi = {
       .then((r) => r.data),
 
   masterData: (
-    params?: { used?: boolean; page?: number; size?: number },
+    params?: { keyword?: string; used?: boolean; page?: number; size?: number },
     workspaceId?: number,
   ) =>
     apiClient

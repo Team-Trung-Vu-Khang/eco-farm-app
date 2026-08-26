@@ -154,7 +154,11 @@ export function useOwnerPositionPage() {
 
   const handleFilterChange = (key: string, value: string) => {
     if (key === "status") {
-      setStatus(value as PositionStatusFilter);
+      setStatus(
+        value.trim().toLowerCase() === ALL_STATUS
+          ? ALL_STATUS
+          : (value as FarmMasterDataStatus),
+      );
       setCurrentIndex(1);
     }
   };

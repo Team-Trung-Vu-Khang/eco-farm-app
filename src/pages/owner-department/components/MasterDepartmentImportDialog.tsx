@@ -40,10 +40,12 @@ export function MasterDepartmentImportDialog({
   const [hasMore, setHasMore] = useState(true);
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const keyword = searchTerm.trim();
 
   // Fetch only departments that have NOT been used in this workspace
   const masterDataQuery = useFarmDepartmentsMasterData({
     params: {
+      keyword: keyword || undefined,
       page,
       size: 20,
       used: false,
@@ -64,6 +66,15 @@ export function MasterDepartmentImportDialog({
       setSelectedIds([]);
     }
   }, [open]);
+
+  // A new keyword starts a new paginated result set.
+  useEffect(() => {
+    if (!open) return;
+
+    setPage(0);
+    setLoadedDepartments([]);
+    setHasMore(true);
+  }, [keyword, open]);
 
   // Accumulate loaded departments as page increases
   useEffect(() => {
@@ -92,16 +103,12 @@ export function MasterDepartmentImportDialog({
     }
   }, [masterDataQuery.data, open]);
 
-  // Filter based on search input (client-side)
-  const filteredDepartments = useMemo(() => {
-    if (!searchTerm.trim()) return loadedDepartments;
-    const term = searchTerm.toLowerCase();
-    return loadedDepartments.filter(
-      (dep) =>
-        dep.name.toLowerCase().includes(term) ||
-        dep.code.toLowerCase().includes(term),
-    );
-  }, [loadedDepartments, searchTerm]);
+  // Search and pagination are performed by the master-data API. The local
+  // collection contains only pages returned for the current keyword.
+  const filteredDepartments = useMemo(
+    () => loadedDepartments,
+    [loadedDepartments],
+  );
 
   // IntersectionObserver callback for infinite scroll trigger
   const observerRef = useRef<IntersectionObserver | null>(null);
