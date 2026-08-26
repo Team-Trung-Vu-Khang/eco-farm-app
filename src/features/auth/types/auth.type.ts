@@ -6,6 +6,15 @@ export interface ReferrerSummary {
   phoneNumber: string;
 }
 
+export interface WorkspaceRole {
+  id: number;
+  roleId: number;
+  roleCode: string;
+  roleName: string;
+  workspaceId: number | null;
+  createdAt: string;
+}
+
 export interface AuthMeResponse {
   id: number;
   username: string;
@@ -18,6 +27,7 @@ export interface AuthMeResponse {
   isReferrer: boolean;
   referrer?: ReferrerSummary;
   roleCodes: string[];
+  workspaceRoles: WorkspaceRole[];
   status: string;
   mustChangePassword: boolean;
   createdAt: string;

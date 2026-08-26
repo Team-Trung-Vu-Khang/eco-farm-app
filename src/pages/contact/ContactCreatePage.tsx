@@ -69,7 +69,7 @@ export default function ContactCreatePage() {
       phone: values.phone.trim(),
       email: values.email.trim() || null,
       position: (selectedPosition?.name ?? values.position.trim()) || null,
-      groupId: values.groupId ? Number(values.groupId) : null,
+      groupIds: values.groupIds.length ? values.groupIds.map(Number) : null,
       departmentType: department?.source ?? null,
       departmentId: department ? department.id : null,
       note: values.note.trim() || null,

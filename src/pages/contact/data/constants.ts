@@ -5,7 +5,7 @@ import type {
 
 export const emptyContactFormData: ContactFormData = {
   entityName: "",
-  groupId: "",
+  groupIds: [],
   department: "",
   position: "",
   fullName: "",

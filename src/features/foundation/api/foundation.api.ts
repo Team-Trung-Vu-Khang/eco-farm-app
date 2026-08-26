@@ -46,29 +46,53 @@ export const catalogApi = {
     apiClient
       .get<
         PageResponse<CatalogRecordResponse>
-      >(`${FOUNDATION_BASE_PATH}/${catalog}`, { params })
+      >(catalog === "crop-groups"
+        ? FOUNDATION_ENDPOINTS.cropGroups
+        : catalog === "farming-methods"
+          ? FOUNDATION_ENDPOINTS.farmingMethods
+          : `${FOUNDATION_BASE_PATH}/${catalog}`, {
+        params: ["crop-groups", "farming-methods"].includes(catalog)
+          ? { ...params, domainCode: "CROP" }
+          : params,
+      })
       .then((r) => r.data),
 
   getById: (catalog: CatalogType, id: number) =>
     apiClient
-      .get<CatalogRecordResponse>(`${FOUNDATION_BASE_PATH}/${catalog}/${id}`)
+      .get<CatalogRecordResponse>(`${catalog === "crop-groups"
+        ? FOUNDATION_ENDPOINTS.cropGroups
+        : catalog === "farming-methods"
+          ? FOUNDATION_ENDPOINTS.farmingMethods
+          : `${FOUNDATION_BASE_PATH}/${catalog}`}/${id}`)
       .then((r) => r.data),
 
   create: (catalog: CatalogType, data: CatalogRecordRequest) =>
     apiClient
-      .post<CatalogRecordResponse>(`${FOUNDATION_BASE_PATH}/${catalog}`, data)
+      .post<CatalogRecordResponse>(catalog === "crop-groups"
+        ? FOUNDATION_ENDPOINTS.cropGroups
+        : catalog === "farming-methods"
+          ? FOUNDATION_ENDPOINTS.farmingMethods
+          : `${FOUNDATION_BASE_PATH}/${catalog}`, data)
       .then((r) => r.data),
 
   update: (catalog: CatalogType, id: number, data: CatalogRecordRequest) =>
     apiClient
       .put<CatalogRecordResponse>(
-        `${FOUNDATION_BASE_PATH}/${catalog}/${id}`,
+        `${catalog === "crop-groups"
+          ? FOUNDATION_ENDPOINTS.cropGroups
+          : catalog === "farming-methods"
+            ? FOUNDATION_ENDPOINTS.farmingMethods
+            : `${FOUNDATION_BASE_PATH}/${catalog}`}/${id}`,
         data,
       )
       .then((r) => r.data),
 
   delete: (catalog: CatalogType, id: number) =>
-    apiClient.delete(`${FOUNDATION_BASE_PATH}/${catalog}/${id}`),
+    apiClient.delete(`${catalog === "crop-groups"
+      ? FOUNDATION_ENDPOINTS.cropGroups
+      : catalog === "farming-methods"
+        ? FOUNDATION_ENDPOINTS.farmingMethods
+        : `${FOUNDATION_BASE_PATH}/${catalog}`}/${id}`),
 };
 
 // ─── Crop API ─────────────────────────────────────────────────────────────────
@@ -403,4 +427,3 @@ export const methodApplicationApi = {
   delete: (id: number) =>
     apiClient.delete(`${FOUNDATION_BASE_PATH}/production/method-applications/${id}`),
 };
-

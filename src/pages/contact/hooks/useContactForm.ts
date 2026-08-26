@@ -89,7 +89,7 @@ export function useContactForm({ mode }: UseContactFormOptions) {
       contact
         ? {
             entityName: contact.entityName ?? "",
-            groupId: contact.group?.id ? contact.group.id.toString() : "",
+            groupIds: (contact.groups ?? []).map((group) => String(group.id)),
             department: contact.department?.name ?? "",
             position: positionValue,
             fullName: contact.fullName,
@@ -125,7 +125,7 @@ export function useContactForm({ mode }: UseContactFormOptions) {
       phone: formData.phone.trim(),
       email: formData.email.trim() || null,
       position: (selectedPosition?.name ?? formData.position.trim()) || null,
-      groupId: formData.groupId ? Number(formData.groupId) : null,
+      groupIds: formData.groupIds.length ? formData.groupIds.map(Number) : null,
       departmentType: department?.source ?? null,
       departmentId: department ? department.id : null,
       note: formData.note.trim() || null,

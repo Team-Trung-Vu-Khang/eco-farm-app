@@ -112,16 +112,21 @@ export function getContactColumns(): Column<Contact>[] {
         ),
     },
     {
-      key: "group",
+      key: "groups",
       label: "Nhóm danh bạ",
       render: (_value, row) => {
-        return row.group?.name ? (
-          <Badge
-            variant="secondary"
-            className="rounded-full bg-slate-100 px-2.5 py-1 text-slate-700"
-          >
-            {row.group.name}
-          </Badge>
+        return row.groups.length ? (
+          <div className="flex flex-wrap gap-1">
+            {row.groups.map((group) => (
+              <Badge
+                key={group.id}
+                variant="secondary"
+                className="rounded-full bg-slate-100 px-2.5 py-1 text-slate-700"
+              >
+                {group.name}
+              </Badge>
+            ))}
+          </div>
         ) : (
           <span className="text-muted-foreground text-sm">Chưa phân nhóm</span>
         );

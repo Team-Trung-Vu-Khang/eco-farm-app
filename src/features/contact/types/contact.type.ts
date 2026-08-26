@@ -19,7 +19,7 @@ export interface ContactDepartmentRecord {
 export interface ContactRecord {
   id: number | string;
   workspace?: ContactWorkspaceRecord | null;
-  group?: ContactGroupSummaryRecord | null;
+  groups: ContactGroupSummaryRecord[];
   department?: ContactDepartmentRecord | null;
   fullName: string;
   name: string;
@@ -59,7 +59,7 @@ export interface ContactCommonRequest {
   phone: string;
   email?: string | null;
   position?: string | null;
-  groupId?: number | string | null;
+  groupIds?: Array<number | string> | null;
   departmentType?: ContactDepartmentType | null;
   departmentId?: number | string | null;
   note?: string | null;

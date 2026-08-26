@@ -11,7 +11,7 @@ export const MASTER_DATA_PATHS = {
   geoWards: `${MASTER_DATA_BASE_PATH}/geo/wards`,
   equipmentToolGroups: `${MASTER_DATA_BASE_PATH}/equipment-tool-groups`,
   fertilizerGroups: `${MASTER_DATA_BASE_PATH}/fertilizer-groups`,
-  irrigationSystems: `${MASTER_DATA_BASE_PATH}/irrigation-systems`,
+  irrigationSystems: `${MASTER_DATA_BASE_PATH}/rearing-methods`,
   rearingMethods: `${MASTER_DATA_BASE_PATH}/rearing-methods`,
   materialGroups: `${MASTER_DATA_BASE_PATH}/material-groups`,
   medicineGroups: `${MASTER_DATA_BASE_PATH}/medicine-groups`,

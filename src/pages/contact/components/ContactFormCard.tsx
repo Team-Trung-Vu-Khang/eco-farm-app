@@ -13,6 +13,7 @@ import {
   CardTitle,
   Input,
   Label,
+  MultiSelect,
   Select,
   SelectContent,
   SelectItem,
@@ -105,23 +106,21 @@ export function ContactFormCard({
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="groupId">Nhóm danh bạ</Label>
+          <Label htmlFor="groupIds">Nhóm danh bạ</Label>
           <Controller
             control={control}
-            name="groupId"
+            name="groupIds"
             render={({ field }) => (
-              <Select value={field.value ?? ""} onValueChange={field.onChange}>
-                <SelectTrigger id="groupId">
-                  <SelectValue placeholder="Chọn nhóm danh bạ" />
-                </SelectTrigger>
-                <SelectContent className="max-h-60 overflow-y-auto">
-                  {groups.map((g) => (
-                    <SelectItem key={g.id} value={g.id.toString()}>
-                      {g.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <MultiSelect
+                options={groups.map((group) => ({
+                  value: String(group.id),
+                  label: group.name,
+                }))}
+                value={field.value ?? []}
+                onChange={field.onChange}
+                placeholder="Chọn nhóm danh bạ"
+                emptyText="Không tìm thấy nhóm danh bạ"
+              />
             )}
           />
         </div>

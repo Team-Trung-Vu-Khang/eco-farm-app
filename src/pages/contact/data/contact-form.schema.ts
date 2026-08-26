@@ -2,7 +2,7 @@ import { z } from "zod";
 
 export const contactFormSchema = z.object({
   entityName: z.string().trim().min(1, "Vui lòng chọn đơn vị sở hữu."),
-  groupId: z.string().default(""),
+  groupIds: z.array(z.string()).default([]),
   department: z.string().default(""),
   position: z.string().trim().default(""),
   fullName: z.string().trim().min(1, "Vui lòng nhập họ và tên."),

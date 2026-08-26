@@ -62,8 +62,8 @@ export interface CatalogRecordResponse {
 export type CatalogQueryParams = BaseQueryParams;
 
 // ─── Crops ────────────────────────────────────────────────────────────────────
-// Endpoint: GET/POST /api/foundation/crops
-// Endpoint: GET/PUT/DELETE /api/foundation/crops/{id}
+// Endpoint: GET/POST /api/admin/foundation/production/subjects
+// Endpoint: GET/PUT/DELETE /api/admin/foundation/production/subjects/{id}
 
 export interface FoundationCropTechnicalSpecs {
   scientificName?: string;
@@ -125,8 +125,8 @@ export interface CropQueryParams extends BaseQueryParams {
 }
 
 // ─── Crop Varieties ───────────────────────────────────────────────────────────
-// Endpoint: GET/POST /api/foundation/crop-varieties
-// Endpoint: GET/PUT/DELETE /api/foundation/crop-varieties/{id}
+// Endpoint: GET/POST /api/admin/foundation/production/subject-variants
+// Endpoint: GET/PUT/DELETE /api/admin/foundation/production/subject-variants/{id}
 
 export interface FoundationCropVarietyRequest {
   code?: string;
@@ -168,8 +168,8 @@ export interface CropVarietyQueryParams extends BaseQueryParams {
 }
 
 // ─── Growth Cycle Templates ───────────────────────────────────────────────────
-// Endpoint: GET/POST /api/foundation/growth-cycle-templates
-// Endpoint: GET/PUT/DELETE /api/foundation/growth-cycle-templates/{id}
+// Endpoint: GET/POST /api/admin/foundation/production/lifecycle-templates
+// Endpoint: GET/PUT/DELETE /api/admin/foundation/production/lifecycle-templates/{id}
 
 export interface FoundationGrowthCycleStageRequest {
   name?: string;
@@ -234,8 +234,8 @@ export interface GrowthCycleTemplateQueryParams extends BaseQueryParams {
 }
 
 // ─── Farming Method Crops ─────────────────────────────────────────────────────
-// Endpoint: GET/POST /api/foundation/farming-method-crops
-// Endpoint: GET/PUT/DELETE /api/foundation/farming-method-crops/{id}
+// Endpoint: GET/POST /api/admin/foundation/production/method-applications
+// Endpoint: GET/PUT/DELETE /api/admin/foundation/production/method-applications/{id}
 
 export interface CropAssignment {
   cropId: number;
@@ -448,4 +448,3 @@ export interface MethodApplicationQueryParams extends BaseQueryParams {
   keyword?: string;
   status?: string;
 }
-

@@ -3,11 +3,12 @@ import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
 import { authApi } from "../api/auth.api";
 import type { AuthMeResponse } from "../types/auth.type";
+import { useSelectedWorkspaceId } from "@/features/workspace";
 
 export const authCurrentUserKeys = {
   all: ["auth-current-user"] as const,
-  byToken: (token: string | null | undefined) =>
-    ["auth-current-user", token ?? ""] as const,
+  byToken: (token: string | null | undefined, workspaceId?: number | string | null) =>
+    ["auth-current-user", token ?? "", workspaceId ?? "global"] as const,
 };
 
 interface UseCurrentUserOptions {
@@ -18,10 +19,11 @@ export function useCurrentUser(
   { enabled = true }: UseCurrentUserOptions = {},
 ) {
   const token = authApi.getToken();
+  const workspaceId = useSelectedWorkspaceId();
 
   const queryResult = useQuery<AuthMeResponse, Error>({
-    queryKey: authCurrentUserKeys.byToken(token),
-    queryFn: () => authApi.getCurrentUser(token),
+    queryKey: authCurrentUserKeys.byToken(token, workspaceId),
+    queryFn: () => authApi.getCurrentUser(token, workspaceId),
     enabled: enabled && Boolean(token),
     staleTime: 1000 * 60 * 5,
   });
