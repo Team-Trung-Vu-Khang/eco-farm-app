@@ -2,7 +2,7 @@ import type { FarmPageResponse } from "@/features/master-data/types/farm-master-
 
 export type LegalIdentificationStatus =
   | "draft"
-  | "in_review"
+  | "pending"
   | "approved"
   | (string & {});
 
@@ -37,9 +37,7 @@ export interface LegalIdentificationScopeResponse {
 
 export interface LegalIdentificationScopeRequest {
   scopeType: LegalIdentificationScopeType;
-  regionId?: number;
-  areaId?: number;
-  plotId?: number;
+  scopeId: number;
 }
 
 export interface LegalIdentificationDocumentResponse {
@@ -107,7 +105,7 @@ export interface LegalIdentificationUpsertRequest {
   purposeDocuments: LegalIdentificationDocumentRequest[];
   notes: string;
   displayOrder: number;
-  metadataJson: Record<string, unknown> | null;
+  metadataJson: Record<string, unknown>;
 }
 
 export type LegalIdentificationCreateRequest = LegalIdentificationUpsertRequest;

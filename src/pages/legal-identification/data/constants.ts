@@ -5,7 +5,7 @@ export type LegalFileGroupId =
   | "boundaryProof"
   | "soilSuitability";
 
-export type LegalIdentificationStatus = "draft" | "in_review" | "approved";
+export type LegalIdentificationStatus = "draft" | "pending" | "approved";
 
 export interface LegalIdentificationFileMeta {
   id: string;
@@ -75,14 +75,14 @@ export const LEGAL_FILE_GROUPS: LegalFileGroupConfig[] = [
 
 export const LEGAL_STATUS_LABELS: Record<LegalIdentificationStatus, string> = {
   draft: "Nháp",
-  in_review: "Đang duyệt",
+  pending: "Đang duyệt",
   approved: "Đã duyệt",
 };
 
 export const LEGAL_STATUS_CLASSNAMES: Record<LegalIdentificationStatus, string> =
   {
     draft: "bg-slate-100 text-slate-600 border-slate-200",
-    in_review: "bg-amber-50 text-amber-700 border-amber-200",
+    pending: "bg-amber-50 text-amber-700 border-amber-200",
     approved: "bg-emerald-50 text-emerald-700 border-emerald-200",
   };
 
@@ -131,7 +131,7 @@ export function createSampleLegalIdentificationRecords(): LegalIdentificationRec
       address: "Lô 04, xã An Phú, huyện Củ Chi, TP.HCM",
       ownerName: "Nguyễn Văn A",
       note: "Hồ sơ đang chờ rà soát chữ ký giáp ranh.",
-      status: "in_review",
+      status: "pending",
       documents: {
         landProof: [
           createFileMeta("so-do-khu-a.pdf", 1542300, "application/pdf"),

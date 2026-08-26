@@ -1,5 +1,6 @@
 import PageWrapper from "@/components/PageWrapper";
 import { useRegions } from "@/features/farm/hooks/useRegions";
+import { useDebounce } from "@/shared/hooks/useDebounce";
 import {
   useCreateLegalIdentification,
   useLegalIdentificationById,
@@ -72,6 +73,7 @@ function LegalIdentificationFormBody({
   regions,
   initialCode,
   isSubmitting,
+  onRegionSearchChange,
 }: {
   isEditMode: boolean;
   onSave: (
@@ -82,6 +84,7 @@ function LegalIdentificationFormBody({
   initialDocuments: Record<LegalFileGroupId, LegalIdentificationFileMeta[]>;
   initialCode: string;
   isSubmitting: boolean;
+  onRegionSearchChange: (keyword: string) => void;
   regions: Array<{
     id: string | number;
     name: string;
@@ -118,6 +121,7 @@ function LegalIdentificationFormBody({
           value={formValue}
           regions={regions}
           showStatus={isEditMode}
+          onRegionSearchChange={onRegionSearchChange}
           onChange={(nextValue) =>
             setFormValue((prev) => ({ ...prev, ...nextValue }))
           }
@@ -125,8 +129,7 @@ function LegalIdentificationFormBody({
       ),
       isValid:
         formValue.name.trim().length > 0 &&
-        formValue.scopeSelections.length > 0 &&
-        formValue.address.trim().length > 0,
+        formValue.scopeSelections.length > 0,
     },
     {
       id: "land",
@@ -136,6 +139,7 @@ function LegalIdentificationFormBody({
         <LegalIdentificationFileGroup
           group={LEGAL_FILE_GROUPS[0]}
           files={documents.landProof}
+          required
           onChange={updateFiles("landProof")}
         />
       ),
@@ -149,6 +153,7 @@ function LegalIdentificationFormBody({
         <LegalIdentificationFileGroup
           group={LEGAL_FILE_GROUPS[1]}
           files={documents.boundaryProof}
+          required
           onChange={updateFiles("boundaryProof")}
         />
       ),
@@ -162,6 +167,7 @@ function LegalIdentificationFormBody({
         <LegalIdentificationFileGroup
           group={LEGAL_FILE_GROUPS[2]}
           files={documents.soilSuitability}
+          required
           onChange={updateFiles("soilSuitability")}
         />
       ),
@@ -199,7 +205,14 @@ function LegalIdentificationFormBody({
 export default function LegalIdentificationCreateEditPage() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
-  const { items: regionItems } = useRegions({ params: { size: 100 } });
+  const [regionSearch, setRegionSearch] = useState("");
+  const debouncedRegionSearch = useDebounce(regionSearch, 300);
+  const { items: regionItems } = useRegions({
+    params: {
+      keyword: debouncedRegionSearch.trim() || undefined,
+      size: 100,
+    },
+  });
   const [matchEdit, paramsEdit] = useRoute("/legal-identification/:id/edit");
   const recordId = Number(paramsEdit?.id || 0);
   const isEditMode = Boolean(matchEdit && recordId > 0);
@@ -348,6 +361,7 @@ export default function LegalIdentificationCreateEditPage() {
           initialCode={initialCode}
           isSubmitting={createMutation.isPending || updateMutation.isPending}
           regions={regionOptions}
+          onRegionSearchChange={setRegionSearch}
         />
       </div>
     </PageWrapper>

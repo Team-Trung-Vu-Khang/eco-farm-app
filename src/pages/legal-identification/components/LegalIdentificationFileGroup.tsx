@@ -25,6 +25,7 @@ type LegalIdentificationFileGroupProps = {
   readOnly?: boolean;
   variant?: "card" | "flat";
   uploadFolder?: string;
+  required?: boolean;
 };
 
 export function LegalIdentificationFileGroup({
@@ -34,6 +35,7 @@ export function LegalIdentificationFileGroup({
   readOnly = false,
   variant = "card",
   uploadFolder,
+  required = false,
 }: LegalIdentificationFileGroupProps) {
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [isDragging, setIsDragging] = useState(false);
@@ -130,6 +132,7 @@ export function LegalIdentificationFileGroup({
         <div className="space-y-2">
           <h3 className="text-base font-semibold text-slate-900">
             {group.title}
+            {required ? <span className="ml-1 text-red-500">*</span> : null}
           </h3>
           <p className="max-w-3xl text-sm text-slate-500">
             {group.description}

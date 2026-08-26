@@ -15,7 +15,7 @@ const DEFAULT_PAGE_SIZE = 10;
 
 const LEGAL_STATUS_OPTIONS = [
   { value: "draft", label: "Nháp" },
-  { value: "in_review", label: "Đang duyệt" },
+  { value: "pending", label: "Đang duyệt" },
   { value: "approved", label: "Đã duyệt" },
 ];
 

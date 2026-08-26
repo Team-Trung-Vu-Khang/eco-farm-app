@@ -17,6 +17,9 @@ import type {
 
 type LegalIdentificationMetadata = {
   address?: string;
+  regionName?: string;
+  areaName?: string;
+  ownerName?: string;
   scopeSelections?: GeographicalSelection[];
   [key: string]: unknown;
 };
@@ -183,7 +186,7 @@ export function mapLegalIdentificationResponseToRecord(
 ): LegalIdentificationRecord {
   const metadata = asMetadataJson(response.metadataJson);
   const scopeSelections =
-    metadata.scopeSelections?.length > 0
+    metadata.scopeSelections && metadata.scopeSelections.length > 0
       ? uniqueRegionSelections(metadata.scopeSelections)
       : response.scopes
           .map(mapScopeResponseToSelection)
@@ -204,15 +207,15 @@ export function mapLegalIdentificationResponseToRecord(
     areaName:
       metadata.areaName ||
       primaryScope?.areaName ||
-      primaryScope?.name ||
+      (primaryScope?.type !== "region" ? primaryScope?.name : "") ||
       "",
     address: response.plotAddress || metadata.address || "",
     ownerName: metadata.ownerName ? String(metadata.ownerName) : "",
     note: response.notes || "",
     status: response.status === "draft"
       ? "draft"
-      : response.status === "in_review"
-        ? "in_review"
+      : response.status === "pending"
+        ? "pending"
         : "approved",
     documents: mapDocumentsResponseToRecord(response),
     createdAt: response.createdAt,
@@ -229,13 +232,12 @@ export function mapLegalIdentificationRecordToUpsertRequest(
     plotAddress: record.address,
     status: record.status,
     scopes: record.scopeSelections
-      .filter((selection) => selection.type === "region")
       .map(mapSelectionToScopeRequest)
       .filter((scope): scope is LegalIdentificationScopeRequest => scope !== null),
     legalDocuments: record.documents.landProof.map(mapDocumentMetaToRequest),
     surveyDocuments: record.documents.boundaryProof.map(mapDocumentMetaToRequest),
     purposeDocuments: record.documents.soilSuitability.map(mapDocumentMetaToRequest),
-    notes: record.note,
+    notes: record.note || "",
     displayOrder: 0,
     metadataJson: {},
   };

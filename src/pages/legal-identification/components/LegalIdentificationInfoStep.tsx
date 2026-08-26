@@ -26,6 +26,7 @@ type LegalIdentificationInfoStepProps = {
   }>;
   showStatus: boolean;
   onChange: (value: Partial<LegalIdentificationFormState>) => void;
+  onRegionSearchChange?: (keyword: string) => void;
 };
 
 function describeScopeChip(selection: GeographicalSelection) {
@@ -43,6 +44,7 @@ export function LegalIdentificationInfoStep({
   regions,
   showStatus,
   onChange,
+  onRegionSearchChange,
 }: LegalIdentificationInfoStepProps) {
   const handleRemoveScope = (selectionId: string) => {
     const nextSelections = value.scopeSelections.filter(
@@ -57,12 +59,13 @@ export function LegalIdentificationInfoStep({
       <CardContent className="p-5">
         <div className="space-y-6">
           <div className="space-y-2">
-            <Label>Phạm vi vùng trồng</Label>
+            <Label required>Phạm vi vùng trồng</Label>
             <GeographicalSelector
               regions={regions}
               enterpriseId=""
               showEnterprise={false}
               regionOnly
+              onRegionSearchChange={onRegionSearchChange}
               existingSelections={value.scopeSelections}
               onConfirm={(selections) => {
                 const uniqueSelections = selections.filter(
@@ -137,7 +140,7 @@ export function LegalIdentificationInfoStep({
             )}
           </div>
           <div className="space-y-2">
-            <Label>Tên hồ sơ</Label>
+            <Label required>Tên hồ sơ</Label>
             <Input
               value={value.name}
               onChange={(event) => onChange({ name: event.target.value })}
@@ -160,7 +163,7 @@ export function LegalIdentificationInfoStep({
                 {(
                   [
                     ["draft", "Nháp"],
-                    ["in_review", "Đang duyệt"],
+                    ["pending", "Đang duyệt"],
                     ["approved", "Đã duyệt"],
                   ] as const
                 ).map(([status, label]) => (

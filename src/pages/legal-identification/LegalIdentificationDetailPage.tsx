@@ -1,11 +1,20 @@
 import PageWrapper from "@/components/PageWrapper";
 import { useLegalIdentificationById } from "@/features/legal-identification";
-import { Button, Card, CardContent } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import {
+  Badge,
+  Button,
+  Card,
+  CardContent,
+} from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { ArrowLeft, Edit } from "lucide-react";
 import { useEffect, useMemo } from "react";
 import { useLocation, useRoute } from "wouter";
 import { LegalIdentificationFileGroup } from "./components/LegalIdentificationFileGroup";
-import { LEGAL_FILE_GROUPS } from "./data/constants";
+import {
+  LEGAL_FILE_GROUPS,
+  LEGAL_STATUS_CLASSNAMES,
+  LEGAL_STATUS_LABELS,
+} from "./data/constants";
 import { mapLegalIdentificationResponseToRecord } from "./utils/legal-identification.mapper";
 
 export default function LegalIdentificationDetailPage() {
@@ -103,6 +112,12 @@ export default function LegalIdentificationDetailPage() {
               <h2 className="text-sm font-semibold uppercase tracking-widest text-slate-500">
                 Thông tin hồ sơ
               </h2>
+              <Badge
+                variant="outline"
+                className={LEGAL_STATUS_CLASSNAMES[record.status]}
+              >
+                {LEGAL_STATUS_LABELS[record.status]}
+              </Badge>
             </div>
             <div className="mt-4 grid gap-4 md:grid-cols-2">
               <div className="space-y-1">

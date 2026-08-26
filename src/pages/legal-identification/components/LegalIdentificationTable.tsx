@@ -25,6 +25,16 @@ function getCompletedGroups(record: LegalIdentificationRecord) {
   );
 }
 
+function getScopeSummary(record: LegalIdentificationRecord) {
+  const uniqueNames = [...new Set(
+    [record.regionName, record.areaName]
+      .map((name) => name?.trim())
+      .filter((name): name is string => Boolean(name)),
+  )];
+
+  return uniqueNames.join(" • ") || "Chưa chọn phạm vi";
+}
+
 type LegalIdentificationTableProps = {
   data: LegalIdentificationRecord[];
   onView: (id: number) => void;
@@ -88,7 +98,7 @@ export function LegalIdentificationTable({
             {item.name}
           </div>
           <div className="text-[11px] text-slate-500">
-            {item.regionName} • {item.areaName}
+            {getScopeSummary(item)}
           </div>
         </div>
       ),

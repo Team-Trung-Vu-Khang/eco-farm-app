@@ -296,6 +296,7 @@ interface GeographicalSelectorProps {
   showEnterprise?: boolean;
   regionOnly?: boolean;
   customTrigger?: React.ReactNode;
+  onRegionSearchChange?: (keyword: string) => void;
 }
 
 interface AreaPlotsListProps {
@@ -540,6 +541,7 @@ export const GeographicalSelector = ({
   showEnterprise = false,
   regionOnly = false,
   customTrigger,
+  onRegionSearchChange,
 }: GeographicalSelectorProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
@@ -735,7 +737,10 @@ export const GeographicalSelector = ({
             setTempSelections(existingSelections);
           }
           setIsOpen(open);
-          if (!open) setSearchTerm("");
+          if (!open) {
+            setSearchTerm("");
+            onRegionSearchChange?.("");
+          }
         }}
       >
         <DialogContent className="max-w-xl p-0 overflow-hidden rounded-2xl border-none shadow-2xl flex flex-col max-h-[90vh]">
@@ -758,7 +763,11 @@ export const GeographicalSelector = ({
                 placeholder="Tìm kiếm vùng trồng..."
                 className="pl-10 bg-slate-50 border-slate-200 focus:bg-white transition-all rounded-xl"
                 value={searchTerm}
-                onChange={(event) => setSearchTerm(event.target.value)}
+                onChange={(event) => {
+                  const keyword = event.target.value;
+                  setSearchTerm(keyword);
+                  onRegionSearchChange?.(keyword);
+                }}
               />
             </div>
           </div>
