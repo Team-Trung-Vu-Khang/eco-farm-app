@@ -589,7 +589,7 @@ export const masterDataApi = {
   listVsicIndustryTree: (params?: VsicIndustryTreeQueryParams) =>
     apiClient
       .get<VsicIndustryTreeResponse>(
-        `${MASTER_DATA_PATHS.vsicIndustries}/tree`,
+        MASTER_DATA_PATHS.vsicIndustryTree,
         { params },
       )
       .then((response) => response.data),

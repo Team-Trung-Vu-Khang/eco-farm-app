@@ -1,4 +1,5 @@
 export const MASTER_DATA_BASE_PATH = "/api/admin/master-data" as const;
+export const PUBLIC_MASTER_DATA_BASE_PATH = "/api/master-data" as const;
 
 export const MASTER_DATA_PATHS = {
   base: MASTER_DATA_BASE_PATH,
@@ -18,6 +19,7 @@ export const MASTER_DATA_PATHS = {
   planGroups: `${MASTER_DATA_BASE_PATH}/plan-groups`,
   planTypes: `${MASTER_DATA_BASE_PATH}/plan-types`,
   vsicIndustries: `${MASTER_DATA_BASE_PATH}/vsic-industries`,
+  vsicIndustryTree: `${PUBLIC_MASTER_DATA_BASE_PATH}/vsic-industries/tree`,
   seasons: `${MASTER_DATA_BASE_PATH}/seasons`,
 } as const;
 
