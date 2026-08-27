@@ -51,6 +51,7 @@ export function useCropFoundationPage() {
       status: status === "all" ? undefined : status,
       page: Math.max(currentIndex - 1, 0),
       size: pageSize,
+      domainCode: "CROP",
     },
   });
   const { deleteCrop } = useCropMutations();

@@ -90,7 +90,8 @@ export interface FoundationDocument {
 export interface FoundationCropRequest {
   code?: string;
   name?: string;
-  cropGroupId: number; // required
+  domainCode: "CROP" | "LIVESTOCK" | "AQUACULTURE"; // required
+  subjectGroupId: number; // required
   description?: string;
   harvestMethod?: string;
   imageUrl?: string;
@@ -122,6 +123,7 @@ export interface FoundationCropResponse {
 
 export interface CropQueryParams extends BaseQueryParams {
   cropGroupId?: number;
+  domainCode?: "CROP" | "LIVESTOCK" | "AQUACULTURE";
 }
 
 // ─── Crop Varieties ───────────────────────────────────────────────────────────

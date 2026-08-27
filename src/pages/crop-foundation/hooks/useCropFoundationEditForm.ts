@@ -199,7 +199,8 @@ export function useCropFoundationEditForm() {
       const payload = {
         code: formData.code || undefined,
         name: formData.name || undefined,
-        cropGroupId: Number(formData.cropGroupId),
+        domainCode: "CROP" as const,
+        subjectGroupId: Number(formData.cropGroupId),
         description: formData.description || undefined,
         harvestMethod: formData.harvestMethod || undefined,
         imageUrl: illustrationUrl || undefined,
