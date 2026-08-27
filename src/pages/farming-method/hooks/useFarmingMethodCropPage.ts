@@ -15,6 +15,9 @@ import type {
   FarmingMethodCropFormData,
   RelatedCropForm,
 } from "../types/types";
+import type { FarmingMethodCropRequest } from "../../../features/foundation/types/foundation.type";
+
+const DOMAIN_CODE = "CROP" as const;
 
 export function useFarmingMethodCropPage() {
   const { toast } = useToast();
@@ -34,6 +37,7 @@ export function useFarmingMethodCropPage() {
     loading,
   } = useFarmingMethodCrops({
     params: {
+      domainCode: DOMAIN_CODE,
       keyword: debouncedSearch.trim() || undefined,
       page: Math.max(currentIndex - 1, 0),
       size: pageSize,
@@ -129,7 +133,8 @@ export function useFarmingMethodCropPage() {
 
   const handleSubmit = async () => {
     try {
-      const payload: any = {
+      const payload: FarmingMethodCropRequest = {
+        domainCode: DOMAIN_CODE,
         farmingMethodId: Number(formData.farmingMethodId),
         description: formData.description,
         status: formData.status,

@@ -25,9 +25,11 @@ export function CropVarietySelectorDialog({
   onOpenChange: (open: boolean) => void;
 }) {
   const { items: cropItems, loading: cropsLoading } = useCrops({
+    params: { domainCode: "CROP" },
     enabled: open,
   });
   const { items: varietyItems, loading: varietiesLoading } = useCropVarieties({
+    params: { domainCode: "CROP" },
     enabled: open,
   });
 

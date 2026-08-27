@@ -167,6 +167,7 @@ export interface FoundationCropVarietyResponse {
 
 export interface CropVarietyQueryParams extends BaseQueryParams {
   cropId?: number;
+  domainCode?: "CROP" | "LIVESTOCK" | "AQUACULTURE";
 }
 
 // ─── Growth Cycle Templates ───────────────────────────────────────────────────
@@ -255,6 +256,7 @@ export interface CropAssignmentView {
 }
 
 export interface FarmingMethodCropRequest {
+  domainCode: "CROP" | "LIVESTOCK" | "AQUACULTURE";
   code?: string;
   farmingMethodId?: number;
   description?: string;
@@ -265,7 +267,13 @@ export interface FarmingMethodCropRequest {
 
 export interface FarmingMethodCropResponse {
   id: number;
+  domainCode: "CROP" | "LIVESTOCK" | "AQUACULTURE";
   code: string;
+  productionMethod?: {
+    id: number;
+    code?: string;
+    name?: string;
+  };
   farmingMethodId?: number;
   farmingMethodCode?: string;
   farmingMethodName?: string;
@@ -273,12 +281,16 @@ export interface FarmingMethodCropResponse {
   displayOrder?: number;
   status: FoundationStatus;
   cropCount?: number;
+  subjectCount?: number;
+  subjects?: MethodApplicationSubject[];
   createdAt: string;
   updatedAt: string;
   crops?: CropAssignmentView[];
 }
 
-export type FarmingMethodCropQueryParams = BaseQueryParams;
+export interface FarmingMethodCropQueryParams extends BaseQueryParams {
+  domainCode: "CROP" | "LIVESTOCK" | "AQUACULTURE";
+}
 
 
 // ─── Lifecycle Templates (Animal/Crop/Aquaculture Lifecycle) ──────────────────
