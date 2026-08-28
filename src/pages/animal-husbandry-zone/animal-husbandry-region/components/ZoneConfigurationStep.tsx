@@ -16,7 +16,7 @@ import {
   Button,
   cn,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { CheckCircle2, Leaf, Search, Sprout, ChevronRight } from "lucide-react";
+import { CheckCircle2, PawPrint, Search, ChevronRight } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import {
   useProductionMethods,
@@ -78,7 +78,7 @@ export const VariantSelectorDialog = ({
       <DialogContent className="max-w-xl p-0 overflow-hidden rounded-2xl border-none shadow-2xl flex flex-col max-h-[90vh]">
         <DialogHeader className="p-6 bg-slate-50 border-b shrink-0">
           <DialogTitle className="flex items-center gap-2 text-slate-800">
-            <Sprout className="w-5 h-5 text-green-600" />
+            <PawPrint className="w-5 h-5 text-amber-600" />
             <span>Chọn giống vật nuôi cho {subjectName}</span>
           </DialogTitle>
           <p className="text-xs text-muted-foreground mt-1">
@@ -115,7 +115,7 @@ export const VariantSelectorDialog = ({
                   )}
                 >
                   <div className="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center shrink-0 border border-slate-200 overflow-hidden">
-                    <Leaf className="w-4 h-4 text-slate-400" />
+                    <PawPrint className="w-4 h-4 text-slate-400" />
                   </div>
                   <div className="flex flex-col flex-1 min-w-0">
                     <div
@@ -293,7 +293,7 @@ export const ZoneConfigurationStep = () => {
           <CardHeader className="pb-3 border-b bg-linear-to-r from-green-50/50 to-white">
             <CardTitle className="flex items-center gap-2 text-base">
               <div className="w-8 h-8 rounded-lg bg-green-100 flex items-center justify-center">
-                <Sprout className="w-4 h-4 text-green-600" />
+                <PawPrint className="w-4 h-4 text-amber-600" />
               </div>
               <span>Phương pháp chăn nuôi</span>
             </CardTitle>
@@ -389,7 +389,7 @@ export const ZoneConfigurationStep = () => {
           <CardHeader className="pb-3 border-b bg-linear-to-r from-green-50/50 to-white">
             <CardTitle className="flex items-center gap-2 text-base">
               <div className="w-8 h-8 rounded-lg bg-green-100 flex items-center justify-center">
-                <Leaf className="w-4 h-4 text-green-600" />
+                <PawPrint className="w-4 h-4 text-amber-600" />
               </div>
               <span>Con giống / Vật nuôi</span>
               {selectedSeedIds.length > 0 && (
@@ -402,7 +402,7 @@ export const ZoneConfigurationStep = () => {
           <CardContent className="pt-6 flex-1 flex flex-col min-h-0">
             {!selectedFarmingMethodId || selectedFarmingMethodId <= 0 ? (
               <div className="flex-1 flex flex-col items-center justify-center border-2 border-dashed rounded-xl bg-slate-50 text-slate-400 gap-3 py-12">
-                <Sprout className="w-10 h-10 opacity-50" />
+                <PawPrint className="w-10 h-10 opacity-50 text-amber-500" />
                 <span className="text-sm text-center px-4">
                   Vui lòng chọn phương pháp chăn nuôi trước
                 </span>
@@ -444,7 +444,7 @@ export const ZoneConfigurationStep = () => {
                           >
                             <div className="flex items-center gap-3">
                               <div className="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center shrink-0 border border-slate-200 overflow-hidden">
-                                <Leaf className="w-4 h-4 text-slate-400" />
+                                <PawPrint className="w-4 h-4 text-slate-400" />
                               </div>
                               <div className="flex flex-col flex-1 min-w-0">
                                 <div className="text-sm font-semibold truncate text-slate-700">

@@ -1,11 +1,11 @@
 import {
   CheckCircle2,
   Droplets,
+  Fish,
   Layers,
-  Leaf,
   MapPin,
   ScrollText,
-  Sprout,
+  Waves,
 } from "lucide-react";
 import { Badge, Card } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import type { CultivationRegionConfig } from "../../../stores/useCultivationRegionStore";
@@ -165,7 +165,7 @@ export const CultivationRegionCreateConfirmationStep = ({
 
         <Card className="border-slate-200 shadow-sm overflow-hidden">
           <div className="bg-slate-50 border-b p-4 flex items-center gap-2">
-            <Sprout className="w-4 h-4 text-slate-500" />
+            <Waves className="w-4 h-4 text-cyan-600" />
             <h4 className="font-semibold text-slate-800">
               Cấu hình nuôi trồng áp dụng
             </h4>
@@ -178,7 +178,7 @@ export const CultivationRegionCreateConfirmationStep = ({
                 </div>
                 <div>
                   <div className="text-xs text-muted-foreground uppercase tracking-wider font-semibold mb-1">
-                    Phương pháp
+                    Loại hình nuôi
                   </div>
                   <div className="font-bold text-slate-900">
                     {farmingMethods.find(
@@ -196,7 +196,7 @@ export const CultivationRegionCreateConfirmationStep = ({
                 </div>
                 <div>
                   <div className="text-xs text-muted-foreground uppercase tracking-wider font-semibold mb-1">
-                    Tưới tiêu
+                    Hình thức nuôi thả
                   </div>
                   <div className="font-bold text-slate-900">
                     {irrigationSystems.find(
@@ -211,7 +211,7 @@ export const CultivationRegionCreateConfirmationStep = ({
 
             <div className="pt-6 border-t border-slate-100">
               <div className="text-xs text-muted-foreground uppercase tracking-wider font-bold mb-4 flex items-center gap-2">
-                <Leaf className="w-4 h-4 text-green-600" />
+                <Fish className="w-4 h-4 text-cyan-600" />
                 Danh sách loài nuôi áp dụng (
                 {(commonConfig.selectedCrops || []).length})
               </div>

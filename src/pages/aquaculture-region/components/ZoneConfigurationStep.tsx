@@ -5,14 +5,10 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
+  Combobox,
   Input,
   Label,
   ScrollArea,
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
   Dialog,
   DialogContent,
   DialogHeader,
@@ -22,7 +18,6 @@ import {
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import {
   CheckCircle2,
-  Droplets,
   Fish,
   Search,
   Waves,
@@ -289,29 +284,26 @@ export const ZoneConfigurationStep = () => {
                   <Label className="text-sm font-medium">
                     Loại hình nuôi <span className="text-red-500">*</span>
                   </Label>
-                  <Select
+                  <Combobox
                     disabled={fmLoading}
+                    className="w-full"
+                    options={farmingMethods.map((method) => ({
+                      label: method.name ?? "",
+                      value: method.id.toString(),
+                    }))}
                     value={field.value > 0 ? field.value.toString() : ""}
-                    onValueChange={(val) => {
-                      field.onChange(parseInt(val, 10));
+                    onChange={(value) => {
+                      const methodId = parseInt(value, 10);
+                      if (Number.isNaN(methodId)) return;
+
+                      field.onChange(methodId);
                       // Reset seeds when farming method changes
                       setValue("seedIds", []);
                     }}
-                  >
-                    <SelectTrigger className="h-11 bg-white">
-                      <SelectValue placeholder="Chọn loại hình nuôi..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {farmingMethods.map((method) => (
-                        <SelectItem
-                          key={method.id}
-                          value={method.id.toString()}
-                        >
-                          <span className="font-medium">{method.name}</span>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                    placeholder="Chọn loại hình nuôi..."
+                    searchPlaceholder="Tìm kiếm loại hình nuôi..."
+                    emptyText="Không tìm thấy loại hình nuôi"
+                  />
                   {errors.farmingMethodId && (
                     <p className="text-xs font-medium text-red-500 mt-1">
                       {errors.farmingMethodId.message}
@@ -330,34 +322,26 @@ export const ZoneConfigurationStep = () => {
                   <Label className="text-sm font-medium">
                     Hình thức nuôi thả
                   </Label>
-                  <Select
+                  <Combobox
                     disabled={irLoading}
+                    className="w-full"
+                    options={filteredRearingMethods.map((method) => ({
+                      label: method.name ?? "",
+                      value: method.id.toString(),
+                    }))}
                     value={
                       field.value && field.value > 0
                         ? field.value.toString()
                         : ""
                     }
-                    onValueChange={(val) => {
-                      field.onChange(parseInt(val, 10));
+                    onChange={(value) => {
+                      const methodId = parseInt(value, 10);
+                      if (!Number.isNaN(methodId)) field.onChange(methodId);
                     }}
-                  >
-                    <SelectTrigger className="h-11 bg-white">
-                      <SelectValue placeholder="Chọn hệ thống..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {filteredRearingMethods.map((system) => (
-                        <SelectItem
-                          key={system.id}
-                          value={system.id.toString()}
-                        >
-                          <div className="flex items-center gap-2">
-                            <Droplets className="w-4 h-4 text-cyan-500" />
-                            <span>{system.name}</span>
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                    placeholder="Chọn hình thức nuôi thả..."
+                    searchPlaceholder="Tìm kiếm hình thức nuôi thả..."
+                    emptyText="Không tìm thấy hình thức nuôi thả"
+                  />
                   {errors.rearingMethodId && (
                     <p className="text-xs font-medium text-red-500 mt-1">
                       {errors.rearingMethodId.message}
