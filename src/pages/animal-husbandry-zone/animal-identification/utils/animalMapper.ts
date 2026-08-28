@@ -44,10 +44,15 @@ export const mapApiPlantToFrontend = (
       p.location?.region?.id?.toString() ||
       "",
     coordinate: { lat: p.latitude || 0, lng: p.longitude || 0 },
+    regionId:
+      p.location?.region?.id?.toString() ||
+      p.location?.area?.region?.id?.toString() ||
+      p.location?.plot?.area?.region?.id?.toString() ||
+      "",
     regionName:
       p.location?.region?.name ||
-      p.location?.area?.name ||
-      p.location?.plot?.name ||
+      p.location?.area?.region?.name ||
+      p.location?.plot?.area?.region?.name ||
       "",
     areaName: p.location?.area?.name || "",
     plotName: p.location?.plot?.name || "",
