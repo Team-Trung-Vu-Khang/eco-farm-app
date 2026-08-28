@@ -126,7 +126,9 @@ export const GrowthStageCard = ({ index, onRemove }: GrowthStageCardProps) => {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="space-y-2">
-            <Label className="text-sm font-semibold">Tên giai đoạn</Label>
+            <Label className="text-sm font-semibold" required>
+              Tên giai đoạn
+            </Label>
             <FormField
               control={control}
               name={`stages.${index}.name`}
@@ -145,7 +147,9 @@ export const GrowthStageCard = ({ index, onRemove }: GrowthStageCardProps) => {
             name={`stages.${index}.duration`}
             render={() => (
               <FormItem className="space-y-2">
-                <Label className="text-sm font-semibold">Thời gian</Label>
+                <Label className="text-sm font-semibold" required>
+                  Thời gian
+                </Label>
                 <FormControl>
                   <div className="relative flex items-center h-10 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm shadow-sm transition-colors focus-within:border-primary focus-within:ring-1 focus-within:ring-primary/20 group">
                     <Calendar className="w-4 h-4 text-slate-400 mr-2 group-focus-within:text-primary transition-colors shrink-0" />

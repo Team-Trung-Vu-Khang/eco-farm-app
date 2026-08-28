@@ -34,7 +34,7 @@ export function VarietyFoundationClassificationStep({
   const { control, watch, setValue } =
     useFormContext<VarietyFoundationFormValues>();
   const watchedCrop = watch("crop");
-  const { items: apiCrops } = useCrops();
+  const { items: apiCrops } = useCrops({ params: { domainCode: "CROP" } });
   const [startIndex, setStartIndex] = useState(0);
 
   const cropOptions = apiCrops.map((c) => ({
@@ -174,7 +174,9 @@ export function VarietyFoundationClassificationStep({
                         {...field}
                         disabled={isEdit}
                         clearable={!isEdit}
-                        placeholder={isEdit ? field.value : "Tự động sinh nếu để trống"}
+                        placeholder={
+                          isEdit ? field.value : "Tự động sinh nếu để trống"
+                        }
                         className="pl-10 border-slate-200 focus:border-green-500 focus:ring-green-500/20"
                       />
                     </FormControl>

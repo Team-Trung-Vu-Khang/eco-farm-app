@@ -153,6 +153,7 @@ const EnterpriseFormPage = () => {
         loading={organizationForm.formLoading}
       >
         <OrganizationTypeForm
+          isEdit={!!organizationForm.editItem}
           control={organizationForm.control}
           register={organizationForm.register}
           errors={organizationForm.errors}
@@ -171,6 +172,7 @@ const EnterpriseFormPage = () => {
         loading={businessForm.formLoading}
       >
         <BusinessLineForm
+          isEdit={!!businessForm.editItem}
           register={businessForm.register}
           errors={businessForm.errors}
         />

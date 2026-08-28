@@ -9,6 +9,7 @@ import type {
   MasterDataStatus,
 } from "@/features/master-data/types/master-data.type";
 import type { IrrigationSystemFormValues } from "../data/irrigation-system-form.schema";
+import { useDebounce } from "@/shared/hooks/useDebounce";
 
 const ALL_STATUS = "all" as const;
 const DEFAULT_PAGE_SIZE = 10;
@@ -37,6 +38,7 @@ export function useIrrigationSystemPage(
 ) {
   const { toast } = useToast();
   const [search, setSearch] = useState("");
+  const debouncedSearch = useDebounce(search, 500);
   const [status, setStatus] =
     useState<IrrigationSystemStatusFilter>(ALL_STATUS);
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
@@ -51,10 +53,10 @@ export function useIrrigationSystemPage(
   const query = useIrrigationSystems({
     params: {
       domainCode,
-      keyword: search.trim() || undefined,
-      status: status === ALL_STATUS ? undefined : status,
-      page: Math.max(currentIndex - 1, 0),
       size: pageSize,
+      page: Math.max(currentIndex - 1, 0),
+      keyword: debouncedSearch.trim() || undefined,
+      status: status === ALL_STATUS ? undefined : status,
     },
   });
 

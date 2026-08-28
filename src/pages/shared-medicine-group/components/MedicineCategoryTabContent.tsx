@@ -8,7 +8,6 @@ import { useMedicineCategoryPage } from "../hooks/useMedicineCategoryPage";
 import { MedicineCategoryFormDialog } from "./MedicineCategoryFormDialog";
 import { medicineCategoryColumns } from "../data/columns";
 import { MEDICINE_CATEGORY_STATUS_OPTIONS } from "../data/constants";
-import type { MasterDataCatalog } from "@/features/master-data/types/master-data.type";
 
 interface MedicineCategoryTabContentProps {
   domainCode: "CROP" | "LIVESTOCK" | "AQUACULTURE";
@@ -55,7 +54,10 @@ export function MedicineCategoryTabContent({
           <h2 className="text-2xl font-semibold">{title}</h2>
           <p className="text-sm text-muted-foreground mt-1">{description}</p>
         </div>
-        <Button onClick={handleAdd} data-testid={`add-${domainCode}-${classification}`}>
+        <Button
+          onClick={handleAdd}
+          data-testid={`add-${domainCode}-${classification}`}
+        >
           <Plus className="w-4 h-4 mr-2" />
           Thêm phân loại
         </Button>

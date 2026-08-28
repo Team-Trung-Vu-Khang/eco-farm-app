@@ -5,10 +5,8 @@ import type {
   FertilizerGroupRecord,
   MasterDataStatus,
 } from "@/features/master-data/types/master-data.type";
-import {
-  emptyFertilizerGroupFormData,
-} from "../data/constants";
 import type { FertilizerGroupFormValues } from "../data/fertilizer-group-form.schema";
+import { useDebounce } from "@/shared/hooks/useDebounce";
 
 const ALL_STATUS = "all" as const;
 const DEFAULT_PAGE_SIZE = 10;
@@ -28,10 +26,12 @@ export function useFertilizerGroupPage(classification?: string) {
     null,
   );
 
+  const searchDebounce = useDebounce(search, 400);
+
   const query = useMasterData("fertilizer-groups", {
     params: {
       classification,
-      keyword: search.trim() || undefined,
+      keyword: searchDebounce.trim() || undefined,
       status: status === ALL_STATUS ? undefined : status,
       page: Math.max(currentIndex - 1, 0),
       size: pageSize,
@@ -64,7 +64,9 @@ export function useFertilizerGroupPage(classification?: string) {
 
   const handleFilterChange = (key: string, value: string) => {
     if (key === "status") {
-      setStatus(value === ALL_STATUS ? ALL_STATUS : (value as MasterDataStatus));
+      setStatus(
+        value === ALL_STATUS ? ALL_STATUS : (value as MasterDataStatus),
+      );
       setCurrentIndex(1);
     }
   };

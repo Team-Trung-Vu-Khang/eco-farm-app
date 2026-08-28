@@ -59,8 +59,10 @@ export const COLUMNS: Column<FoundationCropResponse>[] = [
   {
     key: "cropGroupName",
     label: "Nhóm cây trồng",
-    render: (value: string) => (
-      <span className="text-sm text-muted-foreground">{value}</span>
+    render: (_: any, item: FoundationCropResponse) => (
+      <span className="text-sm text-muted-foreground">
+        {item.subjectGroup?.name || item.subjectGroupName || item.cropGroupName || "---"}
+      </span>
     ),
   },
   {
@@ -68,7 +70,7 @@ export const COLUMNS: Column<FoundationCropResponse>[] = [
     label: "Nguồn gốc",
     render: (_: any, item: FoundationCropResponse) => (
       <span className="text-sm text-foreground">
-        {item.technicalSpecs?.origin || "---"}
+        {item.origin || item.technicalSpecs?.origin || "---"}
       </span>
     ),
   },

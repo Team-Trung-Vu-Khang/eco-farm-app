@@ -9,10 +9,38 @@ import {
   createLandFormDataFromItem,
   type LandFormData,
 } from "../data/land.constants";
+import { useDebounce } from "../../../shared/hooks/useDebounce";
 
 export function useLandPage() {
   const { toast } = useToast();
-  const { items, loading } = useCatalog("soil-types");
+
+  const [currentIndex, setCurrentIndex] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [search, setSearch] = useState("");
+  const debouncedSearch = useDebounce(search, 500);
+  const [status, setStatus] = useState<string>("all");
+
+  const { items, response, loading } = useCatalog("soil-types", {
+    params: {
+      keyword: debouncedSearch.trim() || undefined,
+      status: status === "all" ? undefined : status,
+      page: Math.max(currentIndex - 1, 0),
+      size: pageSize,
+    },
+  });
+
+  const handleSearch = (value: string) => {
+    setSearch(value);
+    setCurrentIndex(1);
+  };
+
+  const handleFilterChange = (key: string, value: string) => {
+    if (key === "status") {
+      setStatus(value);
+      setCurrentIndex(1);
+    }
+  };
+
   const { createCatalog, updateCatalog, deleteCatalog } =
     useCatalogMutations("soil-types");
   const { uploadStorageFile, isPending: isUploading } = useUploadStorageFile();
@@ -142,5 +170,12 @@ export function useLandPage() {
     handleFileSelect,
     handleSubmit,
     handleConfirmDelete,
+    response,
+    pageSize,
+    setPageSize,
+    currentIndex,
+    setCurrentIndex,
+    handleSearch,
+    handleFilterChange,
   };
 }

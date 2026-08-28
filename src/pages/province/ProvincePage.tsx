@@ -4,6 +4,12 @@ import { ProvinceWardDetailModal } from "./components/ProvinceWardDetailModal";
 import { columns } from "./data/columns";
 import { useProvincePage } from "./hooks/useProvincePage";
 
+const provinceStatusOptions = [
+  { value: "active", label: "Hoạt động" },
+  { value: "inactive", label: "Ngừng hoạt động" },
+  { value: "archived", label: "Đã lưu trữ" },
+] as const;
+
 export default function ProvincePage() {
   const {
     data,
@@ -19,12 +25,6 @@ export default function ProvincePage() {
     handleSearch,
     handleFilterChange,
   } = useProvincePage();
-
-  const provinceStatusOptions = [
-    { value: "active", label: "Hoạt động" },
-    { value: "inactive", label: "Ngừng hoạt động" },
-    { value: "archived", label: "Đã lưu trữ" },
-  ] as const;
 
   return (
     <PageWrapper

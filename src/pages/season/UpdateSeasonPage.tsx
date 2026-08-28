@@ -1,5 +1,8 @@
-import { useEffect, useMemo, useState } from "react";
-import { useLocation, useRoute } from "wouter";
+import {
+  useSeasonById,
+  useSeasonMutations,
+} from "@/features/master-data/hooks/useSeasons";
+import { safeConvertLexicalToHtml } from "@/utils/commons";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   AlertDialog,
@@ -16,29 +19,23 @@ import {
   useToast,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { ArrowLeft, Loader2 } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
-import {
-  useSeasonById,
-  useSeasonMutations,
-} from "@/features/master-data/hooks/useSeasons";
-import { GrowthCycleSteps } from "../growth-cycle/components/GrowthCycleSteps";
-import { AnimalGrowthCycleSteps } from "../animal-husbandry-zone/animal-growth-cycle/components/AnimalGrowthCycleSteps";
-import { AquacultureGrowthCycleSteps } from "../aquaculture-growth-cycle/components/AquacultureGrowthCycleSteps";
-import {
-  growthCycleFormSchema,
-  type GrowthCycleFormValues,
-} from "../growth-cycle/schemas/growthCycleSchema";
-import { animalGrowthCycleFormSchema } from "../animal-husbandry-zone/animal-growth-cycle/schemas/animalGrowthCycleSchema";
-import {
-  formatDaysToDuration,
-  parseDurationToDays,
-} from "../growth-cycle/utils/duration";
+import { useLocation, useRoute } from "wouter";
 import {
   useProductionSubjects,
   useProductionSubjectVariants,
 } from "../../features/foundation";
 import { useFileUpload } from "../../features/storage";
-import { safeConvertLexicalToHtml } from "@/utils/commons";
+import { AnimalGrowthCycleSteps } from "../animal-husbandry-zone/animal-growth-cycle/components/AnimalGrowthCycleSteps";
+import { animalGrowthCycleFormSchema } from "../animal-husbandry-zone/animal-growth-cycle/schemas/animalGrowthCycleSchema";
+import { AquacultureGrowthCycleSteps } from "../aquaculture-growth-cycle/components/AquacultureGrowthCycleSteps";
+import { GrowthCycleSteps } from "../growth-cycle/components/GrowthCycleSteps";
+import { growthCycleFormSchema } from "../growth-cycle/schemas/growthCycleSchema";
+import {
+  formatDaysToDuration,
+  parseDurationToDays,
+} from "../growth-cycle/utils/duration";
 
 export default function UpdateSeasonPage() {
   const [, params] = useRoute("/season/:id/edit");
@@ -78,30 +75,73 @@ function UpdateSeasonContent({ id }: { id: number }) {
   const form = useForm<any>({
     resolver: zodResolver(activeSchema),
     mode: "onChange",
+    defaultValues: {
+      name: "",
+      groupIds: [],
+      cropIds: [],
+      varietyIds: [],
+      totalDays: 0,
+      scope: "crop",
+      cycleType: domainCode === "CROP" ? "plant" : "animal",
+      stages: [
+        {
+          id: "1",
+          content: "",
+          duration: "",
+          usePdf: false,
+          name: "Giai đoạn 1",
+        },
+      ],
+    },
   });
 
   const { watch, reset, handleSubmit } = form;
   const watchedScope = watch("scope");
-  const watchedCropId = watch("cropId");
-  const watchedVariety = watch("variety");
+  const watchedCropIds = watch("cropIds") || [];
+  const watchedVarietyIds = watch("varietyIds") || [];
   const watchedStages = watch("stages") || [];
 
   useEffect(() => {
     if (season && !isLoaded) {
-      const cropIdVal = season.productionSubject?.id;
-      const varietyIdVal = season.productionSubjectVariant?.id;
+      const cropIds =
+        season.productionSubjects?.map((c: any) => String(c.id)) ??
+        (season.productionSubject?.id
+          ? [String(season.productionSubject.id)]
+          : []);
+      const varietyIds =
+        season.productionSubjectVariants?.map((v: any) => String(v.id)) ??
+        (season.productionSubjectVariant?.id
+          ? [String(season.productionSubjectVariant.id)]
+          : []);
+      const groupIds =
+        season.productionSubjectGroups?.map((g: any) => String(g.id)) ?? [];
+
       const totalDaysVal =
         season.stages?.reduce(
           (sum: number, s: any) => sum + (s.durationDays || 0),
           0,
         ) ?? 0;
 
+      // Determine scope
+      let scope: "group" | "crop" | "variety" = "crop";
+      if (season.scopeType) {
+        scope =
+          season.scopeType === "SUBJECT_GROUP"
+            ? "group"
+            : season.scopeType === "SUBJECT_VARIANT"
+              ? "variety"
+              : "crop";
+      } else {
+        scope = varietyIds.length > 0 ? "variety" : "crop";
+      }
+
       reset({
         name: season.name ?? "",
         cycleType: domainCode === "CROP" ? "plant" : "animal",
-        scope: varietyIdVal ? "variety" : "crop",
-        cropId: cropIdVal ? String(cropIdVal) : "",
-        variety: varietyIdVal ? String(varietyIdVal) : "",
+        scope,
+        groupIds,
+        cropIds,
+        varietyIds,
         totalDays: totalDaysVal,
         stages: (season.stages || []).map((s: any) => {
           let usePdf = false;
@@ -137,80 +177,138 @@ function UpdateSeasonContent({ id }: { id: number }) {
   const totalDays = useMemo(
     () =>
       watchedStages.reduce(
-        (sum, stage) => sum + parseDurationToDays(String(stage.duration)),
+        (sum: number, stage: Record<string, unknown>) =>
+          sum + parseDurationToDays(String(stage.duration)),
         0,
       ) || 0,
     [watchedStages],
   );
 
-  const subjectName =
-    crops.find((c) => String(c.id) === watchedCropId)?.name || watchedCropId;
+  const subjectName = useMemo(() => {
+    if (watchedCropIds.length === 0) return "-";
+    return watchedCropIds
+      .map((id: string) => crops.find((c) => String(c.id) === id)?.name || id)
+      .join(", ");
+  }, [watchedCropIds, crops]);
 
-  const varietyName =
-    cropVarieties.find((variety) => String(variety.id) === watchedVariety)
-      ?.name || watchedVariety;
+  const varietyName = useMemo(() => {
+    if (watchedVarietyIds.length === 0) return "-";
+    return watchedVarietyIds
+      .map(
+        (id: string) =>
+          cropVarieties.find((variety) => String(variety.id) === id)?.name ||
+          id,
+      )
+      .join(", ");
+  }, [watchedVarietyIds, cropVarieties]);
 
   const handleComplete = async (values: any) => {
     setIsSubmitting(true);
     try {
       // Upload PDFs and prepare stages
       const preparedStages = await Promise.all(
-        values.stages.map(async (stage, index) => {
-          let documents: any[] = [];
-          let description = "";
+        values.stages.map(
+          async (
+            stage: Record<
+              string,
+              string | number | File | Record<string, unknown>
+            >,
+            index: number,
+          ) => {
+            let documents: any[] = [];
+            let description = "";
 
-          if (stage.usePdf) {
-            if (stage.pdfFile instanceof File) {
-              const res = await uploadFile.mutateAsync({
-                file: stage.pdfFile,
-                folder: "season-stages",
-              });
-              if (res.fileUrl) {
+            if (stage.usePdf) {
+              if (stage.pdfFile instanceof File) {
+                const res = await uploadFile.mutateAsync({
+                  file: stage.pdfFile,
+                  folder: "season-stages",
+                });
+                if (res.fileUrl) {
+                  documents = [
+                    {
+                      documentType: "pdf",
+                      name: stage.pdfFile.name,
+                      fileUrl: res.fileUrl,
+                      fileName: res.fileName || stage.pdfFile.name,
+                      mimeType: "application/pdf",
+                      sizeBytes: stage.pdfFile.size,
+                      displayOrder: 1,
+                    },
+                  ];
+                }
+              } else if (
+                stage.pdfFile &&
+                typeof stage.pdfFile === "object" &&
+                "url" in stage.pdfFile
+              ) {
                 documents = [
                   {
                     documentType: "pdf",
                     name: stage.pdfFile.name,
-                    fileUrl: res.fileUrl,
-                    fileName: res.fileName || stage.pdfFile.name,
+                    fileUrl: stage.pdfFile.url,
+                    fileName: stage.pdfFile.name,
                     mimeType: "application/pdf",
-                    sizeBytes: stage.pdfFile.size,
+                    sizeBytes: stage.pdfFile.size || 0,
                     displayOrder: 1,
                   },
                 ];
               }
-            } else if (stage.pdfFile && "url" in stage.pdfFile) {
-              documents = [
-                {
-                  documentType: "pdf",
-                  name: stage.pdfFile.name,
-                  fileUrl: stage.pdfFile.url,
-                  fileName: stage.pdfFile.name,
-                  mimeType: "application/pdf",
-                  sizeBytes: stage.pdfFile.size || 0,
-                  displayOrder: 1,
-                },
-              ];
+            } else {
+              description =
+                (await safeConvertLexicalToHtml(stage.content)) || "";
             }
-          } else {
-            description = (await safeConvertLexicalToHtml(stage.content)) || "";
-          }
 
-          return {
-            id: isNaN(Number(stage.id)) ? undefined : Number(stage.id),
-            name: stage.name,
-            durationDays: parseDurationToDays(String(stage.duration)),
-            description: description,
-            documents: documents,
-            displayOrder: index + 1,
-          };
-        }),
+            return {
+              id: isNaN(Number(stage.id)) ? undefined : Number(stage.id),
+              name: stage.name,
+              durationDays: parseDurationToDays(String(stage.duration)),
+              description: description,
+              documents: documents,
+              displayOrder: index + 1,
+            };
+          },
+        ),
       );
 
-      const cropIdVal = Number(values.cropId);
-      const varietyIdVal =
-        values.scope === "variety" && values.variety
-          ? Number(values.variety)
-          : undefined;
+      let scopeType: "SUBJECT_GROUP" | "SUBJECT" | "SUBJECT_VARIANT" =
+        "SUBJECT";
+      let productionSubjectGroupIds: number[] = [];
+      let productionSubjectIds: number[] = [];
+      let productionSubjectVariantIds: number[] = [];
+
+      if (values.scope === "variety") {
+        scopeType = "SUBJECT_VARIANT";
+        const activeVarietyId = values.varietyIds?.[0];
+        if (activeVarietyId) {
+          productionSubjectVariantIds = [Number(activeVarietyId)];
+          const matched = cropVarieties.find(
+            (v) => String(v.id) === activeVarietyId,
+          );
+          if (matched) {
+            const subjectId = Number(
+              matched.subject?.id ??
+                // fallback for stale data
+                // @ts-ignore
+                matched.subjectId ??
+                // fallback for stale data
+                // @ts-ignore
+                matched.cropId,
+            );
+            if (subjectId) {
+              productionSubjectIds = [subjectId];
+            }
+          }
+        }
+      } else if (values.scope === "group") {
+        scopeType = "SUBJECT_GROUP";
+        productionSubjectGroupIds = values.groupIds
+          ? values.groupIds.map(Number)
+          : [];
+      } else {
+        scopeType = "SUBJECT";
+        productionSubjectIds = values.cropIds ? values.cropIds.map(Number) : [];
+      }
 
       await updateSeason.mutateAsync({
         id: id,
@@ -218,8 +316,10 @@ function UpdateSeasonContent({ id }: { id: number }) {
           domainCode: domainCode,
           code: season?.code || undefined,
           name: values.name.trim(),
-          productionSubjectId: cropIdVal,
-          productionSubjectVariantId: varietyIdVal ?? null,
+          scopeType,
+          productionSubjectGroupIds,
+          productionSubjectIds,
+          productionSubjectVariantIds,
           description: season?.description || "Mùa vụ canh tác",
           stages: preparedStages,
           displayOrder: season?.displayOrder || 1,

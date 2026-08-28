@@ -48,7 +48,9 @@ function VarietyFoundationEditFormContent({
   const watchedValues = watch();
 
   // Try to find selected crop data for confirmation step
-  const { items: crops } = useCrops();
+  const { items: crops } = useCrops({
+    params: { domainCode: "CROP", status: "active", page: 0, size: 100 },
+  });
   const selectedCrop = React.useMemo(() => {
     if (!watchedValues.crop) return undefined;
     const crop = crops.find((c) => String(c.id) === String(watchedValues.crop));
@@ -56,7 +58,7 @@ function VarietyFoundationEditFormContent({
     return {
       name: crop.name,
       image: crop.imageUrl || "",
-      group: crop.cropGroupName || "N/A",
+      group: crop.subjectGroup?.name || "N/A",
     };
   }, [watchedValues.crop, crops]);
 
@@ -123,6 +125,7 @@ export default function VarietyFoundationEditPage() {
     handleComplete,
     handleCancel,
     isLoadingVariety,
+    isInitializing,
     isSubmitting,
   } = useVarietyFoundationEditForm();
   const [, setLocation] = useLocation();
@@ -173,7 +176,23 @@ export default function VarietyFoundationEditPage() {
     setIllustrationPreview(URL.createObjectURL(file));
   };
 
-  if (!isLoadingVariety && !initialValues) {
+  if (isLoadingVariety || isInitializing) {
+    return (
+      <PageWrapper
+        title="Chỉnh sửa giống cây (nền tảng)"
+        description="Đang tải dữ liệu và khởi tạo form..."
+      >
+        <div className="flex flex-col items-center justify-center py-20 gap-3 text-slate-400 bg-white rounded-3xl shadow-sm border border-slate-100">
+          <div className="h-8 w-8 rounded-full border-2 border-slate-200 border-t-green-500 animate-spin" />
+          <span className="text-sm font-medium">
+            Đang tải dữ liệu giống cây trồng...
+          </span>
+        </div>
+      </PageWrapper>
+    );
+  }
+
+  if (!initialValues) {
     return (
       <PageWrapper title="Không tìm thấy">
         <div className="flex flex-col items-center justify-center py-20">

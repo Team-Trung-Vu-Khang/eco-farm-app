@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useToast } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import {
   type CertificateStandardRecord,
@@ -16,6 +16,7 @@ import type {
   CertificationOrganization,
   OrganizationFormData,
 } from "../types/types";
+import { useDebounce } from "@/shared/hooks/useDebounce";
 
 function normalizeStatus(
   status: Certificate["status"] | string | null | undefined,
@@ -27,14 +28,18 @@ function mapStandardRecordToItem(
   item: CertificateStandardRecord,
   organizations: CertificationOrganization[],
 ): Certificate {
-  const issuers = item.issuers ?? [];
-  const organizationIds = issuers.map((issuer) => issuer.id);
+  const itemRaw = item as any;
+  const organizationIds: number[] =
+    itemRaw.issuerIds ??
+    (itemRaw.issuers ?? []).map((issuer: any) => issuer.id) ??
+    [];
 
-  const matchedOrganizations = issuers.length
-    ? issuers
-    : organizations.filter((organization) =>
-        organizationIds.includes(organization.id),
-      );
+  const matchedOrganizations =
+    itemRaw.issuers && itemRaw.issuers.length > 0
+      ? itemRaw.issuers
+      : organizations.filter((organization) =>
+          organizationIds.includes(organization.id),
+        );
 
   return {
     id: item.id,
@@ -94,19 +99,41 @@ function buildOrganizationPayload(formData: OrganizationFormData) {
 export function useCertificate() {
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState<CategoryType>("standards");
+
+  // Standards States
+  const [standardsSearchQuery, setStandardsSearchQuery] = useState("");
+  const debouncedStandardsSearch = useDebounce(standardsSearchQuery, 500);
+  const [standardsStatusFilter, setStandardsStatusFilter] = useState("all");
+  const [standardsPageSize, setStandardsPageSize] = useState(10);
+  const [standardsCurrentIndex, setStandardsCurrentIndex] = useState(1);
+
+  // Organizations States
   const [organizationSearchQuery, setOrganizationSearchQuery] = useState("");
+  const debouncedOrganizationSearch = useDebounce(organizationSearchQuery, 500);
   const [organizationStatusFilter, setOrganizationStatusFilter] =
     useState("all");
+  const [organizationPageSize, setOrganizationPageSize] = useState(10);
+  const [organizationCurrentIndex, setOrganizationCurrentIndex] = useState(1);
+
+  useEffect(() => {
+    setStandardsSearchQuery("");
+    setStandardsStatusFilter("all");
+    setStandardsCurrentIndex(1);
+
+    setOrganizationSearchQuery("");
+    setOrganizationStatusFilter("all");
+    setOrganizationCurrentIndex(1);
+  }, [activeTab]);
 
   const organizationsQuery = useMasterData("certificate-issuers", {
     params: {
-      keyword: organizationSearchQuery.trim() || undefined,
+      keyword: debouncedOrganizationSearch.trim() || undefined,
       status:
         organizationStatusFilter === "all"
           ? undefined
           : organizationStatusFilter,
-      page: 0,
-      size: 100,
+      page: Math.max(organizationCurrentIndex - 1, 0),
+      size: organizationPageSize,
     },
   });
 
@@ -121,15 +148,21 @@ export function useCertificate() {
 
   const standardsQuery = useMasterData("certificate-standards", {
     params: {
-      page: 0,
-      size: 100,
+      keyword: debouncedStandardsSearch.trim() || undefined,
+      status:
+        standardsStatusFilter === "all" ? undefined : standardsStatusFilter,
+      page: Math.max(standardsCurrentIndex - 1, 0),
+      size: standardsPageSize,
     },
   });
 
   const standards = useMemo<Certificate[]>(
     () =>
       standardsQuery.items.map((item) =>
-        mapStandardRecordToItem(item as CertificateStandardRecord, organizations),
+        mapStandardRecordToItem(
+          item as CertificateStandardRecord,
+          organizations,
+        ),
       ),
     [organizations, standardsQuery.items],
   );
@@ -180,7 +213,9 @@ export function useCertificate() {
         });
       } catch (error) {
         const message =
-          error instanceof Error ? error.message : "Đã xảy ra lỗi không xác định";
+          error instanceof Error
+            ? error.message
+            : "Đã xảy ra lỗi không xác định";
 
         toast({
           title: "Không thể cập nhật",
@@ -200,7 +235,9 @@ export function useCertificate() {
         });
       } catch (error) {
         const message =
-          error instanceof Error ? error.message : "Đã xảy ra lỗi không xác định";
+          error instanceof Error
+            ? error.message
+            : "Đã xảy ra lỗi không xác định";
 
         toast({
           title: "Không thể thêm",
@@ -227,9 +264,8 @@ export function useCertificate() {
   const handleSubmitOrg = async (
     formData: OrganizationFormData,
   ): Promise<void> => {
-    const payload: CertificateIssuerCreateRequest = buildOrganizationPayload(
-      formData,
-    );
+    const payload: CertificateIssuerCreateRequest =
+      buildOrganizationPayload(formData);
 
     try {
       if (editOrg) {
@@ -295,14 +331,28 @@ export function useCertificate() {
     setActiveTab,
     standards,
     organizations,
+    standardsSearchQuery,
+    setStandardsSearchQuery,
+    standardsStatusFilter,
+    setStandardsStatusFilter,
+    standardsPageSize,
+    setStandardsPageSize,
+    standardsCurrentIndex,
+    setStandardsCurrentIndex,
     organizationSearchQuery,
     setOrganizationSearchQuery,
     organizationStatusFilter,
     setOrganizationStatusFilter,
+    organizationPageSize,
+    setOrganizationPageSize,
+    organizationCurrentIndex,
+    setOrganizationCurrentIndex,
     organizationsLoading: organizationsQuery.loading,
     organizationsError: organizationsQuery.error,
+    organizationsResponse: organizationsQuery.response,
     standardsLoading: standardsQuery.loading,
     standardsError: standardsQuery.error,
+    standardsResponse: standardsQuery.response,
     standardFormOpen,
     setStandardFormOpen,
     orgFormOpen,

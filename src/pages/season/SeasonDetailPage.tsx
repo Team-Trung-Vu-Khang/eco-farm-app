@@ -25,14 +25,20 @@ import type { MasterDataSeasonResponse } from "@/features/master-data/types/mast
 function StatusBadge({ status }: { status: string }) {
   const config: Record<
     string,
-    { label: string; variant: "default" | "secondary" | "outline" | "destructive" }
+    {
+      label: string;
+      variant: "default" | "secondary" | "outline" | "destructive";
+    }
   > = {
     active: { label: "Đang hoạt động", variant: "default" },
     inactive: { label: "Tạm ngưng", variant: "secondary" },
     archived: { label: "Lưu trữ", variant: "outline" },
   };
 
-  const { label, variant } = config[status] || { label: status, variant: "outline" as const };
+  const { label, variant } = config[status] || {
+    label: status,
+    variant: "outline" as const,
+  };
 
   return (
     <Badge variant={variant} className="text-sm">
@@ -41,7 +47,13 @@ function StatusBadge({ status }: { status: string }) {
   );
 }
 
-function StageCard({ stage, index }: { stage: MasterDataSeasonResponse["stages"][number]; index: number }) {
+function StageCard({
+  stage,
+  index,
+}: {
+  stage: MasterDataSeasonResponse["stages"][number];
+  index: number;
+}) {
   return (
     <div className="flex items-start gap-3 p-3 rounded-lg border bg-white hover:shadow-sm transition-all">
       <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-green-100 text-green-700 text-sm font-bold">
@@ -50,9 +62,10 @@ function StageCard({ stage, index }: { stage: MasterDataSeasonResponse["stages"]
       <div className="flex-1 min-w-0">
         <h4 className="font-medium text-sm">{stage.name}</h4>
         {stage.description && (
-          <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
-            {stage.description}
-          </p>
+          <div
+            className="text-xs text-muted-foreground mt-1 line-clamp-2 prose-xs"
+            dangerouslySetInnerHTML={{ __html: stage.description }}
+          />
         )}
         <div className="flex items-center gap-3 mt-2">
           {stage.durationDays > 0 && (

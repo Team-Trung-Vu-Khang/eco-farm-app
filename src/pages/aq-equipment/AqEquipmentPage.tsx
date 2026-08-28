@@ -7,6 +7,7 @@ import {
 import { Plus } from "lucide-react";
 import { equipmentColumns } from "../equipment/data/columns";
 import { useAqEquipmentPage } from "./hooks/useAqEquipmentPage";
+import { DeletionImpactDialog } from "@/components/DeletionImpactDialog";
 
 export default function AqEquipmentPage() {
   const {
@@ -27,13 +28,15 @@ export default function AqEquipmentPage() {
     setCurrentIndex,
     totalElements,
     totalPages,
-    search,
     setSearch,
-    status,
     setStatus,
     onlyOwner,
     setOnlyOwner,
     loading,
+    deleteImpactItem,
+    deleteImpactOpen,
+    setDeleteImpactOpen,
+    supplyType,
   } = useAqEquipmentPage();
 
   return (
@@ -104,10 +107,14 @@ export default function AqEquipmentPage() {
         loading={loading}
       />
 
-      <DeleteDialog
-        open={deleteOpen}
-        onOpenChange={setDeleteOpen}
-        onConfirm={handleConfirmDelete}
+      <DeletionImpactDialog
+        scope="admin"
+        supplyType={supplyType}
+        open={deleteImpactOpen}
+        itemName={deleteImpactItem?.name}
+        onOpenChange={setDeleteImpactOpen}
+        itemId={deleteImpactItem?.id ?? null}
+        onConfirmDelete={handleConfirmDelete}
       />
     </PageWrapper>
   );

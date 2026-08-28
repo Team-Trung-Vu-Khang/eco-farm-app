@@ -89,17 +89,21 @@ function MultiSelectCard({
   selectedOptions,
   onOpen,
   onRemove,
+  required,
 }: {
   label: string;
   emptyText: string;
   selectedOptions: GrowthCycleMultiSelectOption[];
   onOpen: () => void;
   onRemove: (id: string) => void;
+  required?: boolean;
 }) {
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between">
-        <Label className="text-sm font-semibold">{label}</Label>
+        <Label className="text-sm font-semibold" required={required}>
+          {label}
+        </Label>
         <Badge
           variant="outline"
           className="bg-amber-50 text-amber-700 border-amber-200 text-[10px] font-bold"
@@ -178,12 +182,12 @@ export function GrowthCycleBasicInfoStep({
 
   const groupOptions: GrowthCycleMultiSelectOption[] = useMemo(() => {
     return cropGroups.map((group) => ({
-        id: String(group.id),
-        name: group.name,
-        group: "",
-        image: group.imageUrl ?? "",
-        description: group.description || "",
-      }));
+      id: String(group.id),
+      name: group.name,
+      group: "",
+      image: group.imageUrl ?? "",
+      description: group.description || "",
+    }));
   }, [cropGroups]);
 
   const cropOptions: GrowthCycleMultiSelectOption[] = useMemo(
@@ -350,6 +354,7 @@ export function GrowthCycleBasicInfoStep({
                       { shouldValidate: true },
                     )
                   }
+                  required
                 />
               </FormControl>
               <FormMessage />

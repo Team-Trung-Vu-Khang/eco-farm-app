@@ -11,6 +11,7 @@ import {
 } from "../../../features/master-data";
 import type { DepartmentFormValues } from "../data/department-form.schema";
 import { type DepartmentItem } from "../types/types";
+import { useDebounce } from "@/shared/hooks/useDebounce";
 
 const DEFAULT_PAGE_SIZE = 10;
 const ALL_STATUS = "all" as const;
@@ -60,9 +61,11 @@ export function useDepartment() {
   const [editItem, setEditItem] = useState<DepartmentItem | null>(null);
   const [deleteItem, setDeleteItem] = useState<DepartmentItem | null>(null);
 
+  const searchDebounce = useDebounce(search, 400);
+
   const departmentQuery = useMasterData("departments", {
     params: {
-      keyword: search.trim() || undefined,
+      keyword: searchDebounce.trim() || undefined,
       status: status === ALL_STATUS ? undefined : status,
       page: Math.max(currentIndex - 1, 0),
       size: pageSize,

@@ -12,7 +12,8 @@ interface TechnicalSpecsTabProps {
 }
 
 export function TechnicalSpecsTab({ cropFoundation }: TechnicalSpecsTabProps) {
-  const specs = cropFoundation.technicalSpecs;
+  // API Subject schema: flat fields, không có nested technicalSpecs
+  const specs = cropFoundation;
 
   return (
     <Card className="border-none shadow-sm ring-1 ring-slate-200/50 bg-white rounded-xl animate-in fade-in slide-in-from-bottom-2 duration-500">
@@ -102,7 +103,7 @@ export function TechnicalSpecsTab({ cropFoundation }: TechnicalSpecsTabProps) {
                   <span className="text-xs font-bold uppercase">Mật độ</span>
                 </div>
                 <p className="text-sm font-bold text-slate-900 line-clamp-2">
-                  {specs?.plantingDensity || "--"}
+                  {specs?.densityDescription || "--"}
                 </p>
               </div>
             </div>

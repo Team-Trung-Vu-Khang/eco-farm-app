@@ -3,23 +3,25 @@ import type { FieldErrors, UseFormRegister } from "react-hook-form";
 import type { BusinessLineFormInput } from "../data/business-line.schema";
 
 interface BusinessLineFormProps {
+  isEdit: boolean;
   register: UseFormRegister<BusinessLineFormInput>;
   errors: FieldErrors<BusinessLineFormInput>;
 }
 
 export const BusinessLineForm = ({
   register,
+  isEdit,
   errors,
 }: BusinessLineFormProps) => {
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         <div className="space-y-2">
-          <Label htmlFor="code" required>
-            Mã
-          </Label>
+          <Label htmlFor="code">Mã</Label>
           <Input
             id="code"
+            disabled={isEdit}
+            clearable={!isEdit}
             placeholder="VD: SX, CB, TM..."
             {...register("code")}
           />

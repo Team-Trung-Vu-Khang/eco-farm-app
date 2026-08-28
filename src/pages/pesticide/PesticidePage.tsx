@@ -31,6 +31,7 @@ export default function PesticidePage() {
     deleteImpactItem,
     deleteImpactOpen,
     setDeleteImpactOpen,
+    scope,
   } = usePesticidePage();
 
   return (
@@ -108,7 +109,7 @@ export default function PesticidePage() {
       /> */}
 
       <DeletionImpactDialog
-        scope="farm"
+        scope={scope as "farm" | "admin"}
         supplyType={supplyType}
         open={deleteImpactOpen}
         itemName={deleteImpactItem?.name}

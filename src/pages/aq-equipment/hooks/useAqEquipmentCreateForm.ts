@@ -18,9 +18,12 @@ const equipmentSchema = z.object({
 
 export function useAqEquipmentCreateForm() {
   const [location, setLocation] = useLocation();
-  const [matchFarm, paramsFarm] = useRoute("/aquaculture-material/equipment/:id/edit");
+  const [matchFarm, paramsFarm] = useRoute(
+    "/aquaculture-material/equipment/:id/edit",
+  );
   const [matchAdmin, paramsAdmin] = useRoute("/admin/aq-equipment/:id/edit");
-  const isEdit = (matchFarm || matchAdmin) && !!(paramsFarm?.id || paramsAdmin?.id);
+  const isEdit =
+    (matchFarm || matchAdmin) && !!(paramsFarm?.id || paramsAdmin?.id);
   const params = paramsFarm || paramsAdmin;
   const scope = matchAdmin || location.startsWith("/admin") ? "admin" : "farm";
   const { toast } = useToast();
@@ -142,7 +145,7 @@ export function useAqEquipmentCreateForm() {
   };
 
   const resetForm = () => {
-    setFormData((prev) => ({ ...prev, sku: "" }));
+    setFormData((prev) => ({ ...prev }));
   };
 
   const handleConfirmSubmit = async () => {
@@ -229,7 +232,12 @@ export function useAqEquipmentCreateForm() {
       };
 
       if (isEdit && params?.id) {
-        await farmSupplyApi.update("equipment", Number(params.id), payload, scope);
+        await farmSupplyApi.update(
+          "equipment",
+          Number(params.id),
+          payload,
+          scope,
+        );
         toast({
           title: "Thành công",
           description: "Đã cập nhật thông tin thiết bị thành công",
@@ -241,8 +249,14 @@ export function useAqEquipmentCreateForm() {
           description: "Đã thêm mới thiết bị thành công",
         });
       }
-      queryClient.invalidateQueries({ queryKey: [scope === "admin" ? "admin-supplies" : "farm-supplies"] });
-      setLocation(scope === "admin" ? "/admin/aq-equipment" : "/aquaculture-material/equipment");
+      queryClient.invalidateQueries({
+        queryKey: [scope === "admin" ? "admin-supplies" : "farm-supplies"],
+      });
+      setLocation(
+        scope === "admin"
+          ? "/admin/aq-equipment"
+          : "/aquaculture-material/equipment",
+      );
     } catch (err: any) {
       if (err.response?.status === 409) {
         toast({
@@ -284,7 +298,12 @@ export function useAqEquipmentCreateForm() {
     confirmOpen,
     setConfirmOpen,
     handleConfirmSubmit,
-    navigateBack: () => setLocation(scope === "admin" ? "/admin/aq-equipment" : "/aquaculture-material/equipment"),
+    navigateBack: () =>
+      setLocation(
+        scope === "admin"
+          ? "/admin/aq-equipment"
+          : "/aquaculture-material/equipment",
+      ),
     loading,
     submitting,
     isDetailMode,

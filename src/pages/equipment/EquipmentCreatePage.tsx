@@ -14,7 +14,6 @@ import {
   Switch,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { ChevronLeft, Loader2 } from "lucide-react";
-import { useState } from "react";
 import { EquipmentBasicInfoStep } from "./components/steps/EquipmentBasicInfoStep";
 import { EquipmentTechnicalStep } from "./components/steps/EquipmentTechnicalStep";
 import { EquipmentOperationStep } from "./components/steps/EquipmentOperationStep";

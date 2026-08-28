@@ -7,12 +7,11 @@ import {
 import { Plus } from "lucide-react";
 import { equipmentColumns } from "../equipment/data/columns";
 import { useAhEquipmentPage } from "./hooks/useAhEquipmentPage";
+import { DeletionImpactDialog } from "@/components/DeletionImpactDialog";
 
 export default function AhEquipmentPage() {
   const {
     equipments,
-    deleteOpen,
-    setDeleteOpen,
     handleAdd,
     handleEdit,
     handleView,
@@ -27,13 +26,16 @@ export default function AhEquipmentPage() {
     setCurrentIndex,
     totalElements,
     totalPages,
-    search,
     setSearch,
-    status,
     setStatus,
     onlyOwner,
     setOnlyOwner,
     loading,
+    supplyType,
+    deleteImpactItem,
+    deleteImpactOpen,
+    setDeleteImpactOpen,
+    scope,
   } = useAhEquipmentPage();
 
   return (
@@ -104,10 +106,14 @@ export default function AhEquipmentPage() {
         loading={loading}
       />
 
-      <DeleteDialog
-        open={deleteOpen}
-        onOpenChange={setDeleteOpen}
-        onConfirm={handleConfirmDelete}
+      <DeletionImpactDialog
+        supplyType={supplyType}
+        open={deleteImpactOpen}
+        scope={scope as "farm" | "admin"}
+        itemName={deleteImpactItem?.name}
+        onOpenChange={setDeleteImpactOpen}
+        itemId={deleteImpactItem?.id ?? null}
+        onConfirmDelete={handleConfirmDelete}
       />
     </PageWrapper>
   );

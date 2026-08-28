@@ -50,7 +50,10 @@ export function MaterialGroupTabContent({
           <h2 className="text-2xl font-semibold">{title}</h2>
           <p className="text-sm text-muted-foreground mt-1">{description}</p>
         </div>
-        <Button onClick={handleAdd} data-testid={`add-material-${classification}`}>
+        <Button
+          onClick={handleAdd}
+          data-testid={`add-material-${classification}`}
+        >
           <Plus className="w-4 h-4 mr-2" />
           Thêm nhóm
         </Button>
@@ -74,7 +77,6 @@ export function MaterialGroupTabContent({
             key: "status",
             label: "Trạng thái",
             options: [
-              { label: "Tất cả", value: "all" },
               { label: "Hoạt động", value: "active" },
               { label: "Ngừng hoạt động", value: "inactive" },
               { label: "Đã lưu trữ", value: "archived" },

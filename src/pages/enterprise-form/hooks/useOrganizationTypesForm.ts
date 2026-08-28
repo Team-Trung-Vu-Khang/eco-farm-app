@@ -14,12 +14,15 @@ import {
   type OrganizationTypeFormInput,
   type OrganizationTypeFormValues,
 } from "../data/organization-type.schema";
+import { useDebounce } from "@/shared/hooks/useDebounce";
 
 type OrganizationTypeRecord = MasterDataRecord<"organization-types">;
 
-type OrganizationTypeCreateRequest = MasterDataCreateRequest<"organization-types">;
+type OrganizationTypeCreateRequest =
+  MasterDataCreateRequest<"organization-types">;
 
-type OrganizationTypeUpdateRequest = MasterDataUpdateRequest<"organization-types">;
+type OrganizationTypeUpdateRequest =
+  MasterDataUpdateRequest<"organization-types">;
 
 const defaultValues: OrganizationTypeFormInput = {
   code: "",
@@ -35,7 +38,7 @@ export function useOrganizationTypesForm() {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<MasterDataStatus | "">("");
   const [pageSize, setPageSize] = useState(10);
-  const [currentIndex, setCurrentIndex] = useState(0);
+  const [currentIndex, setCurrentIndex] = useState(1);
   const [formOpen, setFormOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [editItem, setEditItem] = useState<OrganizationTypeRecord | null>(null);
@@ -43,32 +46,33 @@ export function useOrganizationTypesForm() {
     null,
   );
 
+  const searchDebounce = useDebounce(searchQuery, 400);
+
   const params = useMemo(
     () => ({
-      keyword: searchQuery.trim() || undefined,
+      keyword: searchDebounce.trim() || undefined,
       status: statusFilter || undefined,
-      page: currentIndex,
+      page: Math.max(currentIndex - 1, 0),
       size: pageSize,
     }),
-    [currentIndex, pageSize, searchQuery, statusFilter],
+    [currentIndex, pageSize, searchDebounce, statusFilter],
   );
 
   const query = useMasterData("organization-types", {
     params,
   });
 
-  const {
-    createMasterData,
-    updateMasterData,
-    deleteMasterData,
-  } = useMasterDataMutations("organization-types");
+  const { createMasterData, updateMasterData, deleteMasterData } =
+    useMasterDataMutations("organization-types");
 
-  const form = useForm<OrganizationTypeFormInput, unknown, OrganizationTypeFormValues>(
-    {
-      defaultValues,
-      resolver: zodResolver(organizationTypeFormSchema),
-    },
-  );
+  const form = useForm<
+    OrganizationTypeFormInput,
+    unknown,
+    OrganizationTypeFormValues
+  >({
+    defaultValues,
+    resolver: zodResolver(organizationTypeFormSchema),
+  });
 
   const {
     control,
@@ -91,13 +95,13 @@ export function useOrganizationTypesForm() {
 
   const handleFilterChange = (key: string, value: string) => {
     if (key === "status") {
-      setCurrentIndex(0);
+      setCurrentIndex(1);
       setStatusFilter(value as MasterDataStatus | "");
     }
   };
 
   const handlePageSize = (nextPageSize: number) => {
-    setCurrentIndex(0);
+    setCurrentIndex(1);
     setPageSize(nextPageSize);
   };
 
@@ -111,14 +115,9 @@ export function useOrganizationTypesForm() {
       code: item.code,
       name: item.name,
       description: item.description ?? "",
-      type: item.type ?? "enterprise",
-      status:
-        item.status === "active" ||
-        item.status === "inactive" ||
-        item.status === "archived"
-          ? item.status
-          : "active",
-      metadataJson: item.metadataJson ?? null,
+      type: (item.type as any) ?? "enterprise",
+      status: (item.status as any) || "active",
+      metadataJson: item.metadataJson as any,
     });
     setFormOpen(true);
   };

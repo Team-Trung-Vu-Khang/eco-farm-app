@@ -32,7 +32,12 @@ const VSIC_LEVEL_OPTIONS = [
 ];
 
 const columns: Column<VsicIndustry>[] = [
-  { key: "code", label: "Mã ngành", sortable: true, render: (value) => <CodeBadge value={value} /> },
+  {
+    key: "code",
+    label: "Mã ngành",
+    sortable: true,
+    render: (value) => <CodeBadge value={value} />,
+  },
   { key: "name", label: "Tên ngành", sortable: true },
   { key: "level", label: "Cấp" },
   { key: "parentCode", label: "Mã ngành cha" },

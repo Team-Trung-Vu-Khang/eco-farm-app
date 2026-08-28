@@ -5,11 +5,38 @@ import { useCatalogMutations } from "../../../features/foundation/hooks/useCatal
 import { emptyLandSpecsFormData } from "../data/constants";
 import type { LandSpecsFormData } from "../types/types";
 import type { LandSpec } from "../../../stores/useLandSpecStore";
+import { useDebounce } from "../../../shared/hooks/useDebounce";
 
 export function useLandSpecsPage() {
   const { toast } = useToast();
 
-  const { items, loading } = useCatalog("terrain-parameters");
+  const [currentIndex, setCurrentIndex] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [search, setSearch] = useState("");
+  const debouncedSearch = useDebounce(search, 500);
+  const [status, setStatus] = useState<string>("all");
+
+  const { items, response, loading } = useCatalog("terrain-parameters", {
+    params: {
+      keyword: debouncedSearch.trim() || undefined,
+      status: status === "all" ? undefined : status,
+      page: Math.max(currentIndex - 1, 0),
+      size: pageSize,
+    },
+  });
+
+  const handleSearch = (value: string) => {
+    setSearch(value);
+    setCurrentIndex(1);
+  };
+
+  const handleFilterChange = (key: string, value: string) => {
+    if (key === "status") {
+      setStatus(value);
+      setCurrentIndex(1);
+    }
+  };
+
   const { createCatalog, updateCatalog, deleteCatalog } =
     useCatalogMutations("terrain-parameters");
 
@@ -127,5 +154,12 @@ export function useLandSpecsPage() {
     handleConfirmDelete,
     loading,
     isPending,
+    response,
+    pageSize,
+    setPageSize,
+    currentIndex,
+    setCurrentIndex,
+    handleSearch,
+    handleFilterChange,
   };
 }

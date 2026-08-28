@@ -1,5 +1,9 @@
 import { useQuery } from "@tanstack/react-query";
-import { productionSubjectApi, productionSubjectVariantApi, productionMethodApi } from "../api/foundation.api";
+import {
+  productionSubjectApi,
+  productionSubjectVariantApi,
+  productionMethodApi,
+} from "../api/foundation.api";
 import type {
   ProductionSubjectQueryParams,
   ProductionSubjectResponse,
@@ -21,7 +25,12 @@ export const productionSubjectKeys = {
 export const productionSubjectVariantKeys = {
   all: () => ["foundation", "production-subject-variants"] as const,
   list: (params?: ProductionSubjectVariantQueryParams) =>
-    ["foundation", "production-subject-variants", "list", params ?? {}] as const,
+    [
+      "foundation",
+      "production-subject-variants",
+      "list",
+      params ?? {},
+    ] as const,
   detail: (id: number) =>
     ["foundation", "production-subject-variants", "detail", id] as const,
 };
@@ -37,6 +46,8 @@ export function useProductionSubjects({
     queryKey: productionSubjectKeys.list(params),
     queryFn: () => productionSubjectApi.list(params),
     enabled,
+    gcTime: 10 * 60 * 1000,
+    staleTime: 5 * 60 * 1000,
   });
 
   return {
@@ -73,6 +84,8 @@ export function useProductionSubjectVariants({
     queryKey: productionSubjectVariantKeys.list(params),
     queryFn: () => productionSubjectVariantApi.list(params),
     enabled,
+    staleTime: 5 * 60 * 1000, // Cache trong 5 phút
+    gcTime: 10 * 60 * 1000, // Giữ trong garbage collector 10 phút
   });
 
   return {
@@ -110,10 +123,7 @@ export function useProductionMethods({
   params?: ProductionMethodQueryParams;
   enabled?: boolean;
 } = {}) {
-  const queryResult = useQuery<
-    PageResponse<ProductionMethodResponse>,
-    Error
-  >({
+  const queryResult = useQuery<PageResponse<ProductionMethodResponse>, Error>({
     queryKey: productionMethodKeys.list(params),
     queryFn: () => productionMethodApi.list(params),
     enabled,

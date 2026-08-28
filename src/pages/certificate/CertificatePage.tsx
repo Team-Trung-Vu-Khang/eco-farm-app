@@ -20,6 +20,12 @@ const ORGANIZATION_STATUS_OPTIONS = [
   { value: "archived", label: "Đã lưu trữ" },
 ];
 
+const STANDARD_STATUS_OPTIONS = [
+  { value: "active", label: "Hoạt động" },
+  { value: "inactive", label: "Ngừng hoạt động" },
+  { value: "archived", label: "Đã lưu trữ" },
+];
+
 /**
  * Certificate page component.
  * Manages standards and certification organizations using a tabbed interface.
@@ -30,8 +36,24 @@ export default function CertificatePage() {
     setActiveTab,
     standards,
     organizations,
+    standardsSearchQuery,
+    setStandardsSearchQuery,
+    standardsStatusFilter,
+    setStandardsStatusFilter,
+    standardsPageSize,
+    setStandardsPageSize,
+    standardsCurrentIndex,
+    setStandardsCurrentIndex,
+    standardsResponse,
+    organizationSearchQuery,
     setOrganizationSearchQuery,
+    organizationStatusFilter,
     setOrganizationStatusFilter,
+    organizationPageSize,
+    setOrganizationPageSize,
+    organizationCurrentIndex,
+    setOrganizationCurrentIndex,
+    organizationsResponse,
     standardsLoading,
     standardsError,
     standardFormOpen,
@@ -97,6 +119,31 @@ export default function CertificatePage() {
             onEdit={handleEditStandard}
             onDelete={handleDelete}
             loading={standardsLoading}
+            searchable
+            searchPlaceholder="Tìm kiếm tiêu chuẩn..."
+            onSearch={(val) => {
+              setStandardsSearchQuery(val);
+              setStandardsCurrentIndex(1);
+            }}
+            filters={[
+              {
+                key: "status",
+                label: "Trạng thái",
+                options: STANDARD_STATUS_OPTIONS,
+              },
+            ]}
+            onFilterChange={(key, value) => {
+              if (key === "status") {
+                setStandardsStatusFilter(value);
+                setStandardsCurrentIndex(1);
+              }
+            }}
+            pageSize={standardsPageSize}
+            currentIndex={standardsCurrentIndex}
+            totalElements={standardsResponse?.totalElements}
+            totalPages={standardsResponse?.totalPages}
+            onPageSize={setStandardsPageSize}
+            onIndexChange={setStandardsCurrentIndex}
           />
         </TabsContent>
 
@@ -109,7 +156,10 @@ export default function CertificatePage() {
             loading={organizationsLoading}
             searchable
             searchPlaceholder="Tìm kiếm tổ chức..."
-            onSearch={setOrganizationSearchQuery}
+            onSearch={(val) => {
+              setOrganizationSearchQuery(val);
+              setOrganizationCurrentIndex(1);
+            }}
             filters={[
               {
                 key: "status",
@@ -120,8 +170,15 @@ export default function CertificatePage() {
             onFilterChange={(key, value) => {
               if (key === "status") {
                 setOrganizationStatusFilter(value);
+                setOrganizationCurrentIndex(1);
               }
             }}
+            pageSize={organizationPageSize}
+            currentIndex={organizationCurrentIndex}
+            totalElements={organizationsResponse?.totalElements}
+            totalPages={organizationsResponse?.totalPages}
+            onPageSize={setOrganizationPageSize}
+            onIndexChange={setOrganizationCurrentIndex}
           />
         </TabsContent>
       </Tabs>

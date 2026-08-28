@@ -67,6 +67,8 @@ interface GenericPageProps {
   totalPages?: number;
   onPageSize?: (size: number) => void;
   onIndexChange?: (index: number) => void;
+  filters?: any[];
+  onFilterChange?: (key: string, value: string) => void;
 }
 
 export function GenericPage({
@@ -91,6 +93,8 @@ export function GenericPage({
   totalPages,
   onPageSize,
   onIndexChange,
+  filters,
+  onFilterChange,
 }: GenericPageProps) {
   const { toast } = useToast();
   const [data, setData] = useState<GenericItem[]>(initialData);
@@ -291,6 +295,8 @@ export function GenericPage({
         totalPages={totalPages}
         onPageSize={onPageSize}
         onIndexChange={onIndexChange}
+        filters={filters}
+        onFilterChange={onFilterChange}
       />
 
       <FormDialog

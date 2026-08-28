@@ -6,6 +6,7 @@ import type {
   MaterialGroupRecord,
 } from "@/features/master-data/types/master-data.type";
 import type { MaterialGroupFormValues } from "../data/material-group-form.schema";
+import { useDebounce } from "@/shared/hooks/useDebounce";
 
 const ALL_STATUS = "all" as const;
 const DEFAULT_PAGE_SIZE = 10;
@@ -25,10 +26,12 @@ export function useMaterialGroupPage(classification?: string) {
     null,
   );
 
+  const searchDebounce = useDebounce(search, 400);
+
   const query = useMasterData("material-groups", {
     params: {
       classification,
-      keyword: search.trim() || undefined,
+      keyword: searchDebounce.trim() || undefined,
       status: status === ALL_STATUS ? undefined : status,
       page: Math.max(currentIndex - 1, 0),
       size: pageSize,

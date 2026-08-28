@@ -6,6 +6,7 @@ import type {
   MasterDataStatus,
 } from "@/features/master-data/types/master-data.type";
 import type { IoTDeviceGroupFormValues } from "../data/iot-device-group-form.schema";
+import { useDebounce } from "@/shared/hooks/useDebounce";
 
 const ALL_STATUS = "all" as const;
 const DEFAULT_PAGE_SIZE = 10;
@@ -25,10 +26,12 @@ export function useIoTDeviceGroupPage(classification?: string) {
     null,
   );
 
+  const searchDebounce = useDebounce(search, 400);
+
   const query = useMasterData("iot-device-groups", {
     params: {
       classification,
-      keyword: search.trim() || undefined,
+      keyword: searchDebounce.trim() || undefined,
       status: status === ALL_STATUS ? undefined : status,
       page: Math.max(currentIndex - 1, 0),
       size: pageSize,

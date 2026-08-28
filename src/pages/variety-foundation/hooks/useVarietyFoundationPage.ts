@@ -56,6 +56,7 @@ export function useVarietyFoundationPage() {
       page: 0,
       size: 100,
       status: "active",
+      domainCode: "CROP",
     },
   });
 
@@ -89,6 +90,7 @@ export function useVarietyFoundationPage() {
       cropId: cropId === "all" ? undefined : Number(cropId),
       page: Math.max(currentIndex - 1, 0),
       size: pageSize,
+      domainCode: "CROP",
     },
   });
   const { deleteCropVariety } = useCropVarietyMutations();
@@ -102,9 +104,9 @@ export function useVarietyFoundationPage() {
   const varieties: VarietyFoundation[] = items.map((item) => {
     const metadata = item.metadataJson || {};
 
-    const docs = item.documents || [];
-    const pdfDoc = docs.find((d) => d.type === "pdf");
-    const editorDoc = docs.find((d) => d.type === "editor");
+    const docs = metadata.documents || item.documents || [];
+    const pdfDoc = docs.find((d: any) => d.type === "pdf");
+    const editorDoc = docs.find((d: any) => d.type === "editor");
 
     let contentType: "pdf" | "editor" = "editor";
     if (pdfDoc) contentType = "pdf";
@@ -113,7 +115,7 @@ export function useVarietyFoundationPage() {
       id: String(item.id),
       varietyFoundationCode: item.code || "",
       varietyFoundationName: item.name || "",
-      crop: String(item.cropName), // or map crop name if available
+      crop: String(item.subject?.name || item.cropName || ""),
       description: item.description || "",
       origin: item.origin || "",
       growthDuration: formatDaysToDuration(item.growthDurationDays),
@@ -123,11 +125,14 @@ export function useVarietyFoundationPage() {
           : "",
       status: item.status as "active" | "inactive",
       updatedAt: new Date().toISOString(), // Or from item if available
-      illustration: (item as any).imageUrl || metadata.illustrationUrl || null,
+      illustration: item.imageUrl || metadata.illustrationUrl || null,
       scientificName: metadata.scientificName || "",
       documents: docs
-        .filter((d) => d.type === "pdf")
-        .map((d) => ({ name: d.name || "Tài liệu PDF", url: d.fileUrl || "" })),
+        .filter((d: any) => d.type === "pdf")
+        .map((d: any) => ({
+          name: d.name || "Tài liệu PDF",
+          url: d.fileUrl || "",
+        })),
       contentType,
       editorContent: editorDoc?.content || "",
       // pdfFile is rarely preserved from API, typically just a URL in documents

@@ -2,14 +2,19 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { useToast } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { masterDataApi } from "@/features/master-data";
-import { masterDataKeys, useMasterData } from "@/features/master-data/hooks/useMasterData";
+import {
+  masterDataKeys,
+  useMasterData,
+} from "@/features/master-data/hooks/useMasterData";
 import type { VsicIndustry } from "../types";
 import type { VsicIndustryFormValues } from "../data/vsic-industry-form.schema";
+import { useDebounce } from "@/shared/hooks/useDebounce";
 
 export function useEnterpriseGroupForm() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
+  const debouncedSearch = useDebounce(search, 500);
   const [status, setStatus] = useState<"all" | VsicIndustry["status"]>("all");
   const [level, setLevel] = useState<"all" | number>("all");
   const [pageSize, setPageSize] = useState(10);
@@ -17,7 +22,7 @@ export function useEnterpriseGroupForm() {
 
   const { items, loading, response, error } = useMasterData("vsic-industries", {
     params: {
-      keyword: search.trim() || undefined,
+      keyword: debouncedSearch.trim() || undefined,
       status: status === "all" ? undefined : status,
       level: level === "all" ? undefined : level,
       page: Math.max(currentIndex - 1, 0),
@@ -74,8 +79,7 @@ export function useEnterpriseGroupForm() {
     }: {
       code: string;
       data: VsicIndustryFormValues;
-    }) =>
-      masterDataApi.updateVsicIndustryByCode(code, buildPayload(data)),
+    }) => masterDataApi.updateVsicIndustryByCode(code, buildPayload(data)),
     onSuccess: async () => {
       await refresh();
     },

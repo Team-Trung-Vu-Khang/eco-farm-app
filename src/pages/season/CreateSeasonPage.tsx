@@ -1,5 +1,5 @@
-import { useState, useMemo } from "react";
-import { useLocation } from "wouter";
+import { useSeasonMutations } from "@/features/master-data/hooks/useSeasons";
+import { safeConvertLexicalToHtml } from "@/utils/commons";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   AlertDialog,
@@ -20,28 +20,25 @@ import {
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import {
   ArrowLeft,
-  Loader2,
-  TreeDeciduous,
-  PawPrint,
   Fish,
+  Loader2,
+  PawPrint,
+  TreeDeciduous,
 } from "lucide-react";
+import { useMemo, useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
-import { useSeasonMutations } from "@/features/master-data/hooks/useSeasons";
-import { GrowthCycleSteps } from "../growth-cycle/components/GrowthCycleSteps";
-import { AnimalGrowthCycleSteps } from "../animal-husbandry-zone/animal-growth-cycle/components/AnimalGrowthCycleSteps";
-import { AquacultureGrowthCycleSteps } from "../aquaculture-growth-cycle/components/AquacultureGrowthCycleSteps";
-import {
-  growthCycleFormSchema,
-  type GrowthCycleFormValues,
-} from "../growth-cycle/schemas/growthCycleSchema";
-import { animalGrowthCycleFormSchema } from "../animal-husbandry-zone/animal-growth-cycle/schemas/animalGrowthCycleSchema";
-import { parseDurationToDays } from "../growth-cycle/utils/duration";
+import { useLocation } from "wouter";
 import {
   useProductionSubjects,
   useProductionSubjectVariants,
 } from "../../features/foundation";
 import { useFileUpload } from "../../features/storage";
-import { safeConvertLexicalToHtml } from "@/utils/commons";
+import { AnimalGrowthCycleSteps } from "../animal-husbandry-zone/animal-growth-cycle/components/AnimalGrowthCycleSteps";
+import { animalGrowthCycleFormSchema } from "../animal-husbandry-zone/animal-growth-cycle/schemas/animalGrowthCycleSchema";
+import { AquacultureGrowthCycleSteps } from "../aquaculture-growth-cycle/components/AquacultureGrowthCycleSteps";
+import { GrowthCycleSteps } from "../growth-cycle/components/GrowthCycleSteps";
+import { growthCycleFormSchema } from "../growth-cycle/schemas/growthCycleSchema";
+import { parseDurationToDays } from "../growth-cycle/utils/duration";
 
 export default function CreateSeasonPage() {
   const [, setLocation] = useLocation();
@@ -49,35 +46,41 @@ export default function CreateSeasonPage() {
   const { createSeason } = useSeasonMutations();
   const { uploadFile } = useFileUpload();
 
-  // Load CROP subjects & variants
-  const { items: cropSubjects } = useProductionSubjects({
-    params: { domainCode: "CROP", size: 100 },
-  });
-  const { items: cropVariants } = useProductionSubjectVariants({
-    params: { domainCode: "CROP", size: 100 },
-  });
-
-  // Load LIVESTOCK subjects & variants
-  const { items: livestockSubjects } = useProductionSubjects({
-    params: { domainCode: "LIVESTOCK", size: 100 },
-  });
-  const { items: livestockVariants } = useProductionSubjectVariants({
-    params: { domainCode: "LIVESTOCK", size: 100 },
-  });
-
-  // Load AQUACULTURE subjects & variants
-  const { items: aquacultureSubjects } = useProductionSubjects({
-    params: { domainCode: "AQUACULTURE", size: 100 },
-  });
-  const { items: aquacultureVarieties } = useProductionSubjectVariants({
-    params: { domainCode: "AQUACULTURE", size: 100 },
-  });
-
   const [selectedDomain, setSelectedDomain] = useState<
     "CROP" | "LIVESTOCK" | "AQUACULTURE"
   >("CROP");
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Load CROP subjects & variants
+  const { items: cropSubjects } = useProductionSubjects({
+    params: { domainCode: "CROP", size: 100 },
+    enabled: selectedDomain === "CROP",
+  });
+  const { items: cropVariants } = useProductionSubjectVariants({
+    params: { domainCode: "CROP", size: 100 },
+    enabled: selectedDomain === "CROP",
+  });
+
+  // Load LIVESTOCK subjects & variants
+  const { items: livestockSubjects } = useProductionSubjects({
+    params: { domainCode: "LIVESTOCK", size: 100 },
+    enabled: selectedDomain === "LIVESTOCK",
+  });
+  const { items: livestockVariants } = useProductionSubjectVariants({
+    params: { domainCode: "LIVESTOCK", size: 100 },
+    enabled: selectedDomain === "LIVESTOCK",
+  });
+
+  // Load AQUACULTURE subjects & variants
+  const { items: aquacultureSubjects } = useProductionSubjects({
+    params: { domainCode: "AQUACULTURE", size: 100 },
+    enabled: selectedDomain === "AQUACULTURE",
+  });
+  const { items: aquacultureVarieties } = useProductionSubjectVariants({
+    params: { domainCode: "AQUACULTURE", size: 100 },
+    enabled: selectedDomain === "AQUACULTURE",
+  });
 
   const activeSchema =
     selectedDomain === "CROP"
@@ -89,11 +92,12 @@ export default function CreateSeasonPage() {
     mode: "onChange",
     defaultValues: {
       name: "",
-      cropId: "",
-      variety: "",
+      groupIds: [],
+      cropIds: [],
+      varietyIds: [],
       totalDays: 0,
       scope: "crop",
-      cycleType: "plant",
+      cycleType: selectedDomain === "CROP" ? "plant" : "animal",
       stages: [
         {
           id: "1",
@@ -108,8 +112,8 @@ export default function CreateSeasonPage() {
 
   const { watch, reset, handleSubmit } = form;
   const watchedScope = watch("scope");
-  const watchedCropId = watch("cropId");
-  const watchedVariety = watch("variety");
+  const watchedCropIds = watch("cropIds") || [];
+  const watchedVarietyIds = watch("varietyIds") || [];
   const watchedStages = watch("stages") || [];
 
   const totalDays = useMemo(
@@ -126,8 +130,9 @@ export default function CreateSeasonPage() {
     setSelectedDomain(domain);
     reset({
       name: "",
-      cropId: "",
-      variety: "",
+      groupIds: [],
+      cropIds: [],
+      varietyIds: [],
       totalDays: 0,
       scope: "crop",
       cycleType: domain === "CROP" ? "plant" : "animal",
@@ -148,7 +153,7 @@ export default function CreateSeasonPage() {
     try {
       // Upload PDFs and prepare stages
       const preparedStages = await Promise.all(
-        values.stages.map(async (stage, index) => {
+        values.stages.map(async (stage: any, index: number) => {
           let documents: any[] = [];
           let description = "";
 
@@ -184,11 +189,45 @@ export default function CreateSeasonPage() {
         }),
       );
 
-      const cropIdVal = Number(values.cropId);
-      const varietyIdVal =
-        values.scope === "variety" && values.variety
-          ? Number(values.variety)
-          : undefined;
+      let scopeType: "SUBJECT_GROUP" | "SUBJECT" | "SUBJECT_VARIANT" = "SUBJECT";
+      let productionSubjectGroupIds: number[] = [];
+      let productionSubjectIds: number[] = [];
+      let productionSubjectVariantIds: number[] = [];
+
+      if (values.scope === "variety") {
+        scopeType = "SUBJECT_VARIANT";
+        const activeVarietyId = values.varietyIds?.[0];
+        if (activeVarietyId) {
+          productionSubjectVariantIds = [Number(activeVarietyId)];
+          const list =
+            selectedDomain === "CROP"
+              ? cropVariants
+              : selectedDomain === "LIVESTOCK"
+                ? livestockVariants
+                : aquacultureVarieties;
+          const matched = list.find((v) => String(v.id) === activeVarietyId);
+          if (matched) {
+            const subjectId = Number(
+              matched.subject?.id ??
+                // fallback for stale data
+                // @ts-ignore
+                (matched.subjectId as unknown as string) ??
+                // fallback for stale data
+                // @ts-ignore
+                (matched.cropId as unknown as string),
+            );
+            if (subjectId) {
+              productionSubjectIds = [subjectId];
+            }
+          }
+        }
+      } else if (values.scope === "group") {
+        scopeType = "SUBJECT_GROUP";
+        productionSubjectGroupIds = values.groupIds ? values.groupIds.map(Number) : [];
+      } else {
+        scopeType = "SUBJECT";
+        productionSubjectIds = values.cropIds ? values.cropIds.map(Number) : [];
+      }
 
       const domainDescriptions = {
         CROP: "Mùa vụ trồng trọt",
@@ -199,8 +238,10 @@ export default function CreateSeasonPage() {
       await createSeason.mutateAsync({
         domainCode: selectedDomain,
         name: values.name.trim(),
-        productionSubjectId: cropIdVal,
-        productionSubjectVariantId: varietyIdVal ?? null,
+        scopeType,
+        productionSubjectGroupIds,
+        productionSubjectIds,
+        productionSubjectVariantIds,
         description: domainDescriptions[selectedDomain],
         stages: preparedStages,
         displayOrder: 1,
@@ -226,41 +267,29 @@ export default function CreateSeasonPage() {
 
   // Helper selectors for summary dialog names
   const getSelectedSubjectName = () => {
-    if (selectedDomain === "CROP") {
-      return (
-        cropSubjects.find((c) => String(c.id) === watchedCropId)?.name ||
-        watchedCropId
-      );
-    }
-    if (selectedDomain === "LIVESTOCK") {
-      return (
-        livestockSubjects.find((c) => String(c.id) === watchedCropId)?.name ||
-        watchedCropId
-      );
-    }
-    return (
-      aquacultureSubjects.find((c) => String(c.id) === watchedCropId)?.name ||
-      watchedCropId
-    );
+    if (watchedCropIds.length === 0) return "-";
+    const subjects =
+      selectedDomain === "CROP"
+        ? cropSubjects
+        : selectedDomain === "LIVESTOCK"
+          ? livestockSubjects
+          : aquacultureSubjects;
+    return watchedCropIds
+      .map((id) => subjects.find((c) => String(c.id) === id)?.name || id)
+      .join(", ");
   };
 
   const getSelectedVarietyName = () => {
-    if (selectedDomain === "CROP") {
-      return (
-        cropVariants.find((v) => String(v.id) === watchedVariety)?.name ||
-        watchedVariety
-      );
-    }
-    if (selectedDomain === "LIVESTOCK") {
-      return (
-        livestockVariants.find((v) => String(v.id) === watchedVariety)?.name ||
-        watchedVariety
-      );
-    }
-    return (
-      aquacultureVarieties.find((v) => String(v.id) === watchedVariety)?.name ||
-      watchedVariety
-    );
+    if (watchedVarietyIds.length === 0) return "-";
+    const varieties =
+      selectedDomain === "CROP"
+        ? cropVariants
+        : selectedDomain === "LIVESTOCK"
+          ? livestockVariants
+          : aquacultureVarieties;
+    return watchedVarietyIds
+      .map((id) => varieties.find((v) => String(v.id) === id)?.name || id)
+      .join(", ");
   };
 
   const domainTitles = {

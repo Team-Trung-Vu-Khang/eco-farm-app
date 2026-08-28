@@ -69,13 +69,13 @@ export default function TaskCategoryPage() {
         onValueChange={(value) => setActiveDomain(value as TaskCategoryDomain)}
         className="space-y-4"
       >
-        {/* <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-3">
           {taskCategoryDomainOptions.map((option) => (
             <TabsTrigger key={option.value} value={option.value}>
               {taskCategoryDomainLabel[option.value]}
             </TabsTrigger>
           ))}
-        </TabsList> */}
+        </TabsList>
 
         {taskCategoryDomainOptions.map((option) => (
           <TabsContent

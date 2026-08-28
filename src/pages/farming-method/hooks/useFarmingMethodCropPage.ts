@@ -22,10 +22,18 @@ export function useFarmingMethodCropPage() {
   const debouncedSearch = useDebounce(search, 500);
   const [pageSize, setPageSize] = useState(10);
   const [currentIndex, setCurrentIndex] = useState(1);
+  const [status, setStatus] = useState<string>("all");
 
   const handleSearch = (value: string) => {
     setSearch(value);
     setCurrentIndex(1);
+  };
+
+  const handleFilterChange = (key: string, value: string) => {
+    if (key === "status") {
+      setStatus(value);
+      setCurrentIndex(1);
+    }
   };
 
   const {
@@ -35,8 +43,10 @@ export function useFarmingMethodCropPage() {
   } = useFarmingMethodCrops({
     params: {
       keyword: debouncedSearch.trim() || undefined,
+      status: status === "all" ? undefined : (status as any),
       page: Math.max(currentIndex - 1, 0),
       size: pageSize,
+      domainCode: "CROP",
     },
   });
   const {
@@ -44,7 +54,11 @@ export function useFarmingMethodCropPage() {
     updateFarmingMethodCrop,
     deleteFarmingMethodCrop,
   } = useFarmingMethodCropMutations();
-  const { items: farmingMethods } = useCatalog("farming-methods");
+  const { items: farmingMethods } = useCatalog("farming-methods", {
+    params: {
+      domainCode: "CROP",
+    },
+  });
 
   const data = useMemo(
     () => farmingMethodCrops.map(apiToRow),
@@ -130,9 +144,19 @@ export function useFarmingMethodCropPage() {
   const handleSubmit = async () => {
     try {
       const payload: any = {
+        domainCode: "CROP",
+        productionMethodId: Number(formData.farmingMethodId),
+        // Backward compatibility
         farmingMethodId: Number(formData.farmingMethodId),
         description: formData.description,
         status: formData.status,
+        subjects: formData.relatedCrops
+          .filter((c) => c.cropId > 0)
+          .map((c) => ({
+            subjectId: c.cropId,
+            subjectVariantIds: c.varietyIds,
+          })),
+        // Backward compatibility
         crops: formData.relatedCrops
           .filter((c) => c.cropId > 0)
           .map((c) => ({
@@ -217,5 +241,6 @@ export function useFarmingMethodCropPage() {
     handleConfirmLink,
     handleSubmit,
     handleConfirmDelete,
+    handleFilterChange,
   };
 }

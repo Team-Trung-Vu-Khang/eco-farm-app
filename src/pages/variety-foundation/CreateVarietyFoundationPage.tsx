@@ -46,7 +46,9 @@ function VarietyFoundationCreateFormContent({
   const { watch, handleSubmit } = useFormContext<VarietyFoundationFormValues>();
   const watchedValues = watch();
 
-  const { items: crops } = useCrops();
+  const { items: crops } = useCrops({
+    params: { domainCode: "CROP", status: "active", page: 0, size: 100 },
+  });
   const selectedCrop = React.useMemo(() => {
     if (!watchedValues.crop) return undefined;
     const crop = crops.find((c) => String(c.id) === String(watchedValues.crop));
@@ -54,7 +56,7 @@ function VarietyFoundationCreateFormContent({
     return {
       name: crop.name,
       image: crop.imageUrl || "",
-      group: crop.cropGroupName || "N/A",
+      group: crop.subjectGroup?.name || "N/A",
     };
   }, [watchedValues.crop, crops]);
 

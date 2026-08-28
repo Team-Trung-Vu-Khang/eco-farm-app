@@ -117,12 +117,14 @@ export function useVarietyFoundationForm() {
       const metadataJson = {
         illustrationUrl,
         scientificName: formData.scientificName,
+        documents,
       };
 
       const payload: any = {
+        domainCode: "CROP",
         code: formData.varietyFoundationCode || undefined,
         name: formData.varietyFoundationName,
-        cropId: Number(formData.crop),
+        subjectId: Number(formData.crop),
         description: formData.description,
         origin: formData.origin,
         growthDurationDays: parseDurationToDays(formData.growthDuration || ""),
@@ -134,7 +136,6 @@ export function useVarietyFoundationForm() {
           : undefined,
         status: "active" as const,
         metadataJson,
-        documents,
         imageUrl: illustrationUrl,
       };
 

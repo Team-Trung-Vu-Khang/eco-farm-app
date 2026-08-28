@@ -24,7 +24,7 @@ const FarmingMethodPage = () => {
         onValueChange={(value) => setActiveTab(value as ProductionDomain)}
         className="w-full"
       >
-        {/* <TabsList className="grid w-full grid-cols-3 mb-6">
+        <TabsList className="grid w-full grid-cols-3 mb-6">
           <TabsTrigger value="CROP" className="gap-2">
             <Leaf className="w-4 h-4" />
             Trồng trọt
@@ -37,13 +37,13 @@ const FarmingMethodPage = () => {
             <Waves className="w-4 h-4" />
             Nuôi trồng thủy sản
           </TabsTrigger>
-        </TabsList> */}
+        </TabsList>
 
         <TabsContent value="CROP">
           <ProductionMethodTabContent
             domainCode="CROP"
-            // title="Phương pháp Trồng trọt"
-            // description="Quản lý các phương pháp sản xuất áp dụng trong trồng trọt"
+            title="Phương pháp Trồng trọt"
+            description="Quản lý các phương pháp sản xuất áp dụng trong trồng trọt"
           />
         </TabsContent>
 

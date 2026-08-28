@@ -27,5 +27,12 @@ export function useAhEquipmentPage() {
     onlyOwner: listHook.onlyOwner,
     setOnlyOwner: listHook.setOnlyOwner,
     loading: listHook.loading,
+
+    // Deletion Impact
+    deleteImpactOpen: listHook.deleteImpactOpen,
+    setDeleteImpactOpen: listHook.setDeleteImpactOpen,
+    deleteImpactItem: listHook.deleteImpactItem,
+    supplyType: listHook.supplyType,
+    scope: listHook.scope,
   };
 }

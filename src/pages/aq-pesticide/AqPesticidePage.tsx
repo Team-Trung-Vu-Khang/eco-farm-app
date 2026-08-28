@@ -32,6 +32,7 @@ export default function AqPesticidePage() {
     deleteImpactItem,
     deleteImpactOpen,
     setDeleteImpactOpen,
+    scope,
   } = useAqPesticidePage();
 
   return (
@@ -103,9 +104,9 @@ export default function AqPesticidePage() {
       />
 
       <DeletionImpactDialog
-        scope="farm"
         supplyType={supplyType}
         open={deleteImpactOpen}
+        scope={scope as "farm" | "admin"}
         itemName={deleteImpactItem?.name}
         onOpenChange={setDeleteImpactOpen}
         itemId={deleteImpactItem?.id ?? null}

@@ -16,6 +16,17 @@ interface StandardTabProps {
   onEdit: (item: Certificate) => void;
   onDelete: (item: Certificate) => void;
   loading?: boolean;
+  searchable?: boolean;
+  searchPlaceholder?: string;
+  onSearch?: (value: string) => void;
+  filters?: any[];
+  onFilterChange?: (key: string, value: string) => void;
+  pageSize?: number;
+  currentIndex?: number;
+  totalElements?: number;
+  totalPages?: number;
+  onPageSize?: (size: number) => void;
+  onIndexChange?: (index: number) => void;
 }
 
 export function StandardTab({
@@ -25,6 +36,17 @@ export function StandardTab({
   onEdit,
   onDelete,
   loading,
+  searchable,
+  searchPlaceholder,
+  onSearch,
+  filters,
+  onFilterChange,
+  pageSize,
+  currentIndex,
+  totalElements,
+  totalPages,
+  onPageSize,
+  onIndexChange,
 }: StandardTabProps) {
   return (
     <div className="space-y-4">
@@ -45,7 +67,17 @@ export function StandardTab({
         data={standards}
         onEdit={onEdit}
         onDelete={onDelete}
-        searchPlaceholder="Tìm kiếm tiêu chuẩn..."
+        searchPlaceholder={searchPlaceholder || "Tìm kiếm tiêu chuẩn..."}
+        searchable={searchable}
+        onSearch={onSearch}
+        filters={filters}
+        onFilterChange={onFilterChange}
+        pageSize={pageSize}
+        currentIndex={currentIndex}
+        totalElements={totalElements}
+        totalPages={totalPages}
+        onPageSize={onPageSize}
+        onIndexChange={onIndexChange}
         loading={loading}
       />
     </div>

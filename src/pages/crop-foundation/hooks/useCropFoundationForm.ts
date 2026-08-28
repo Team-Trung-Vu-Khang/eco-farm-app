@@ -109,28 +109,31 @@ export function useCropFoundationForm() {
       }
 
       const payload: any = {
+        domainCode: "CROP",
         code: formData.code || undefined,
         name: formData.name || undefined,
-        cropGroupId: Number(formData.cropGroupId),
+        subjectGroupId: Number(formData.cropGroupId),
         description: formData.description || undefined,
         harvestMethod: formData.harvestMethod || undefined,
         imageUrl: illustrationUrl,
         status: "active" as const,
-        technicalSpecs: {
-          scientificName: formData.technicalSpecs.scientificName || undefined,
-          family: formData.technicalSpecs.family || undefined,
-          origin: formData.technicalSpecs.origin || undefined,
-          temperatureFrom: formData.technicalSpecs.temperatureFrom || undefined,
-          temperatureTo: formData.technicalSpecs.temperatureTo || undefined,
-          humidityFrom: formData.technicalSpecs.humidityFrom || undefined,
-          humidityTo: formData.technicalSpecs.humidityTo || undefined,
-          phFrom: formData.technicalSpecs.phFrom || undefined,
-          phTo: formData.technicalSpecs.phTo || undefined,
-          plantingDensity: formData.technicalSpecs.plantingDensity || undefined,
+        // Technical specs — flat theo schema Subject API
+        scientificName: formData.technicalSpecs.scientificName || undefined,
+        family: formData.technicalSpecs.family || undefined,
+        origin: formData.technicalSpecs.origin || undefined,
+        temperatureFrom: formData.technicalSpecs.temperatureFrom ?? undefined,
+        temperatureTo: formData.technicalSpecs.temperatureTo ?? undefined,
+        humidityFrom: formData.technicalSpecs.humidityFrom ?? undefined,
+        humidityTo: formData.technicalSpecs.humidityTo ?? undefined,
+        phFrom: formData.technicalSpecs.phFrom ?? undefined,
+        phTo: formData.technicalSpecs.phTo ?? undefined,
+        densityDescription:
+          formData.technicalSpecs.plantingDensity || undefined,
+        metadataJson: {
+          source: "farm-admin",
           watering: formData.technicalSpecs.watering || undefined,
+          documents,
         },
-        documents,
-        metadataJson: { source: "farm-admin" },
       };
 
       createCrop.mutate(payload, {

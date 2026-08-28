@@ -81,7 +81,27 @@ function formatFileSize(bytes: number): string {
 export function DocumentationTab({ cropFoundation }: DocumentationTabProps) {
   let doc: any = null;
 
-  if (cropFoundation.documents && cropFoundation.documents.length > 0) {
+  // Format mới: documents lưu trong metadataJson.documents
+  const metaDocs = cropFoundation.metadataJson?.documents;
+  if (metaDocs && metaDocs.length > 0) {
+    const farmingDoc = metaDocs.find(
+      (d: any) => d.name === "Kỹ thuật canh tác",
+    );
+    if (farmingDoc) {
+      doc = {
+        type: farmingDoc.type || "editor",
+        content: farmingDoc.content,
+        fileUrl: farmingDoc.fileUrl,
+        fileName: farmingDoc.fileName,
+        file: farmingDoc.fileUrl
+          ? { name: farmingDoc.fileName || "Tài liệu đính kèm" }
+          : null,
+      };
+    }
+  }
+
+  // Fallback: format cũ — documents array ở root
+  if (!doc && cropFoundation.documents && cropFoundation.documents.length > 0) {
     const farmingDoc = cropFoundation.documents.find(
       (d: any) => d.name === "Kỹ thuật canh tác",
     );
@@ -89,23 +109,24 @@ export function DocumentationTab({ cropFoundation }: DocumentationTabProps) {
       doc = {
         type: farmingDoc.type || "editor",
         content: farmingDoc.content,
+        fileUrl: farmingDoc.fileUrl,
+        fileName: farmingDoc.fileName,
         file: farmingDoc.fileUrl
           ? { name: farmingDoc.fileName || "Tài liệu đính kèm" }
           : null,
       };
     }
-  } else {
-    // Fallback for older data format
-    let docs: any = null;
+  }
+
+  // Fallback: docs trong metadataJson (format rất cũ)
+  if (!doc) {
     try {
-      if (cropFoundation.metadataJson) {
-        const meta = cropFoundation.metadataJson;
-        docs = meta.docs;
+      if (cropFoundation.metadataJson?.docs) {
+        doc = cropFoundation.metadataJson.docs.farmingTechnique;
       }
     } catch (error) {
       console.error("Failed to parse metadataJson", error);
     }
-    doc = docs?.farmingTechnique;
   }
 
   if (!doc) {

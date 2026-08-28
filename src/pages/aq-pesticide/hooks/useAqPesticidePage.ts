@@ -33,5 +33,6 @@ export function useAqPesticidePage() {
     setDeleteImpactOpen: listHook.setDeleteImpactOpen,
     deleteImpactItem: listHook.deleteImpactItem,
     supplyType: listHook.supplyType,
+    scope: listHook.scope,
   };
 }

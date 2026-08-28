@@ -51,7 +51,10 @@ export function FertilizerGroupTabContent({
           <h2 className="text-2xl font-semibold">{title}</h2>
           <p className="text-sm text-muted-foreground mt-1">{description}</p>
         </div>
-        <Button onClick={handleAdd} data-testid={`add-fertilizer-${classification}`}>
+        <Button
+          onClick={handleAdd}
+          data-testid={`add-fertilizer-${classification}`}
+        >
           <Plus className="w-4 h-4 mr-2" />
           Thêm nhóm
         </Button>
@@ -73,7 +76,6 @@ export function FertilizerGroupTabContent({
             key: "status",
             label: "Trạng thái",
             options: [
-              { label: "Tất cả", value: "all" },
               { label: "Hoạt động", value: "active" },
               { label: "Ngừng hoạt động", value: "inactive" },
               { label: "Đã lưu trữ", value: "archived" },

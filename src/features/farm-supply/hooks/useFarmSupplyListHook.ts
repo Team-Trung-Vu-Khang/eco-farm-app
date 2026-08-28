@@ -10,6 +10,7 @@ import type {
   SupplyItemResponse,
 } from "../types";
 import axios from "axios";
+import { useDebounce } from "@/shared/hooks/useDebounce";
 
 export function getSupplyBasePath(
   type: SupplyType,
@@ -17,15 +18,21 @@ export function getSupplyBasePath(
   scope: "admin" | "farm" = "farm",
 ): string {
   if (scope === "admin") {
+    const splash = domainCode === "CROP" ? "/" : "";
+
     const typeSuffix =
       type === "medicine"
-        ? "/pesticide"
+        ? `${splash}pesticide`
         : type === "fertilizer"
-          ? "/fertilizer"
+          ? `${splash}fertilizer`
           : type === "material"
-            ? "/material"
-            : "/equipment";
-    return `/admin${typeSuffix}`;
+            ? `${splash}material`
+            : `${splash}equipment`;
+
+    const domainPrefix =
+      domainCode === "CROP" ? "" : domainCode === "LIVESTOCK" ? "/ah-" : "/aq-";
+
+    return `/admin${domainPrefix}${typeSuffix}`;
   }
 
   const domainPrefix =
@@ -58,7 +65,7 @@ export function useFarmSupplyListHook(
   const scope = location.startsWith("/admin") ? "admin" : "farm";
 
   const [search, setSearch] = useState("");
-  const [status, setStatus] = useState<MasterDataStatus>("active");
+  const [status, setStatus] = useState<MasterDataStatus | undefined>(undefined);
   const [currentIndex, setCurrentIndex] = useState(1);
   const [pageSize, setPageSize] = useState(20);
   const [onlyOwner, setOnlyOwner] = useState(false);
@@ -73,6 +80,8 @@ export function useFarmSupplyListHook(
 
   const basePath = getSupplyBasePath(type, domainCode, scope);
 
+  const searchDebounce = useDebounce(search, 400);
+
   const query = useQuery({
     queryKey: [
       scope === "admin" ? "admin-supplies" : "farm-supplies",
@@ -80,7 +89,7 @@ export function useFarmSupplyListHook(
       type,
       {
         domainCode,
-        keyword: search,
+        keyword: searchDebounce,
         status,
         page: currentIndex - 1,
         size: pageSize,
@@ -92,7 +101,7 @@ export function useFarmSupplyListHook(
         type,
         {
           domainCode,
-          keyword: search.trim() || undefined,
+          keyword: searchDebounce.trim() || undefined,
           status: status || undefined,
           page: currentIndex - 1,
           size: pageSize,
@@ -196,7 +205,8 @@ export function useFarmSupplyListHook(
     search,
     setSearch,
     status,
-    setStatus,
+    setStatus: (_status: string) =>
+      setStatus(_status === "all" ? undefined : status),
     currentIndex,
     setCurrentIndex,
     pageSize,

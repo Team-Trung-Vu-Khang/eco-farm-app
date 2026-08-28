@@ -13,7 +13,7 @@ export const ORGANIZATION_TYPE_FORM_TYPES = [
 ] as const;
 
 export const organizationTypeFormSchema = z.object({
-  code: z.string().trim().min(1, "Vui lòng nhập mã."),
+  code: z.string(),
   name: z.string().trim().min(1, "Vui lòng nhập tên."),
   description: z.string().trim().default(""),
   type: z.enum(ORGANIZATION_TYPE_FORM_TYPES).default("enterprise"),
@@ -23,5 +23,9 @@ export const organizationTypeFormSchema = z.object({
   metadataJson: z.record(z.string(), z.unknown()).nullable().optional(),
 });
 
-export type OrganizationTypeFormInput = z.input<typeof organizationTypeFormSchema>;
-export type OrganizationTypeFormValues = z.output<typeof organizationTypeFormSchema>;
+export type OrganizationTypeFormInput = z.input<
+  typeof organizationTypeFormSchema
+>;
+export type OrganizationTypeFormValues = z.output<
+  typeof organizationTypeFormSchema
+>;

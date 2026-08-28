@@ -10,6 +10,18 @@ import { TerrainFormDialog } from "./components/TerrainFormDialog";
 import { terrainColumns } from "./data/columns";
 import { useTerrainPage } from "./hooks/useTerrainPage";
 
+const filters = [
+  {
+    key: "status",
+    label: "Trạng thái",
+    options: [
+      { label: "Hoạt động", value: "active" },
+      { label: "Ngừng hoạt động", value: "inactive" },
+      { label: "Đã lưu trữ", value: "archived" },
+    ],
+  },
+];
+
 export default function TerrainPage() {
   const {
     terrains,
@@ -19,7 +31,6 @@ export default function TerrainPage() {
     setDeleteOpen,
     editItem,
     formData,
-    setFormData,
     handleAdd,
     handleEdit,
     handleDelete,
@@ -27,6 +38,13 @@ export default function TerrainPage() {
     handleConfirmDelete,
     loading,
     isPending,
+    response,
+    pageSize,
+    setPageSize,
+    currentIndex,
+    setCurrentIndex,
+    handleSearch,
+    handleFilterChange,
   } = useTerrainPage();
 
   useDialogBugWorkaround([formOpen, deleteOpen]);
@@ -49,6 +67,16 @@ export default function TerrainPage() {
         onEdit={handleEdit}
         onDelete={handleDelete}
         searchPlaceholder="Tìm kiếm địa hình..."
+        searchable
+        onSearch={handleSearch}
+        pageSize={pageSize}
+        currentIndex={currentIndex}
+        totalElements={response?.totalElements}
+        totalPages={response?.totalPages}
+        onPageSize={setPageSize}
+        onIndexChange={setCurrentIndex}
+        filters={filters}
+        onFilterChange={handleFilterChange}
       />
 
       <TerrainFormDialog

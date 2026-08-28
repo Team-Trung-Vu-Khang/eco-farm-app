@@ -33,6 +33,7 @@ export default function FertilizerPage() {
     setDeleteImpactOpen,
     deleteImpactItem,
     supplyType,
+    scope,
   } = useFertilizerPage();
 
   return (
@@ -104,7 +105,7 @@ export default function FertilizerPage() {
       />
 
       <DeletionImpactDialog
-        scope="farm"
+        scope={scope as "farm" | "admin"}
         supplyType={supplyType}
         open={deleteImpactOpen}
         itemName={deleteImpactItem?.name}

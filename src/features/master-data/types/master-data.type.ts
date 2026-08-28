@@ -279,8 +279,8 @@ export type MasterDataRecord<
 };
 
 export interface MasterDataCommonFields {
-  code: string;
   name: string;
+  code?: string;
   description?: string;
   displayOrder?: number;
   status: MasterDataStatus;
@@ -509,6 +509,23 @@ export interface MasterDataSeasonResponse {
   name: string;
   description: string;
   domainCode: SeasonDomainCode;
+  scopeType: "SUBJECT_GROUP" | "SUBJECT" | "SUBJECT_VARIANT";
+  productionSubjectGroups?: {
+    id: number;
+    code?: string;
+    name?: string;
+  }[];
+  productionSubjects?: {
+    id: number;
+    code?: string;
+    name?: string;
+  }[];
+  productionSubjectVariants?: {
+    id: number;
+    code?: string;
+    name?: string;
+  }[];
+  // Backward compat
   productionSubject?: {
     id: number;
     code: string;
@@ -530,10 +547,12 @@ export interface MasterDataSeasonResponse {
 export interface MasterDataSeasonRequest {
   domainCode: SeasonDomainCode;
   code?: string;
+  scopeType: "SUBJECT_GROUP" | "SUBJECT" | "SUBJECT_VARIANT";
+  productionSubjectGroupIds?: number[];
+  productionSubjectIds?: number[];
+  productionSubjectVariantIds?: number[];
   name: string;
   description?: string;
-  productionSubjectId?: number;
-  productionSubjectVariantId?: number;
   stages?: MasterDataSeasonStageRequest[];
   displayOrder?: number;
   status?: MasterDataStatus;

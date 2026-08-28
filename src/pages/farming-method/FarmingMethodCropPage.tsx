@@ -20,6 +20,17 @@ import { CropVarietySelectorDialog } from "./components/CropVarietySelectorDialo
 import { columns } from "./data/columns";
 import { useFarmingMethodCropPage } from "./hooks/useFarmingMethodCropPage";
 
+const filters = [
+  {
+    key: "status",
+    label: "Trạng thái",
+    options: [
+      { label: "Hoạt động", value: "active" },
+      { label: "Ngừng hoạt động", value: "inactive" },
+    ],
+  },
+];
+
 export default function FarmingMethodCropPage() {
   const {
     data,
@@ -50,6 +61,7 @@ export default function FarmingMethodCropPage() {
     handleConfirmLink,
     handleSubmit,
     handleConfirmDelete,
+    handleFilterChange,
   } = useFarmingMethodCropPage();
 
   useDialogBugWorkaround([formOpen, deleteOpen, linkDialogOpen]);
@@ -81,6 +93,8 @@ export default function FarmingMethodCropPage() {
         onPageSize={setPageSize}
         onIndexChange={setCurrentIndex}
         loading={loading}
+        filters={filters}
+        onFilterChange={handleFilterChange}
       />
 
       <FormDialog

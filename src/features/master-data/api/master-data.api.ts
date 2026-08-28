@@ -149,10 +149,9 @@ export const masterDataApi = {
 
   listGeoProvinces: (params?: MasterDataQueryParams) =>
     apiClient
-      .get<MasterDataPageResponse<ProvinceRecord>>(
-        MASTER_DATA_PATHS.geoProvinces,
-        { params },
-      )
+      .get<
+        MasterDataPageResponse<ProvinceRecord>
+      >(MASTER_DATA_PATHS.geoProvinces, { params })
       .then((response) => response.data),
 
   getGeoProvinceByCode: (code: string) =>
@@ -162,25 +161,26 @@ export const masterDataApi = {
 
   listGeoWards: (params: ProvinceWardQueryParams) =>
     apiClient
-      .get<MasterDataPageResponse<ProvinceWardRecord>>(MASTER_DATA_PATHS.geoWards, {
-        params,
-      })
+      .get<MasterDataPageResponse<ProvinceWardRecord>>(
+        MASTER_DATA_PATHS.geoWards,
+        {
+          params,
+        },
+      )
       .then((response) => response.data),
 
   listEquipmentToolGroups: (params?: MasterDataQueryParams) =>
     apiClient
-      .get<MasterDataPageResponse<EquipmentToolGroupRecord>>(
-        MASTER_DATA_PATHS.equipmentToolGroups,
-        { params },
-      )
+      .get<
+        MasterDataPageResponse<EquipmentToolGroupRecord>
+      >(MASTER_DATA_PATHS.equipmentToolGroups, { params })
       .then((response) => response.data),
 
   listIrrigationSystems: (params?: MasterDataQueryParams) =>
     apiClient
-      .get<MasterDataPageResponse<IrrigationSystemRecord>>(
-        MASTER_DATA_PATHS.irrigationSystems,
-        { params },
-      )
+      .get<
+        MasterDataPageResponse<IrrigationSystemRecord>
+      >(MASTER_DATA_PATHS.irrigationSystems, { params })
       .then((response) => response.data),
 
   getIrrigationSystemById: (id: number | string) =>
@@ -192,7 +192,10 @@ export const masterDataApi = {
 
   createIrrigationSystem: (payload: IrrigationSystemCreateRequest) =>
     apiClient
-      .post<IrrigationSystemRecord>(MASTER_DATA_PATHS.irrigationSystems, payload)
+      .post<IrrigationSystemRecord>(
+        MASTER_DATA_PATHS.irrigationSystems,
+        payload,
+      )
       .then((response) => response.data),
 
   updateIrrigationSystem: (
@@ -244,10 +247,9 @@ export const masterDataApi = {
 
   listIoTDeviceGroups: (params?: MasterDataQueryParams) =>
     apiClient
-      .get<MasterDataPageResponse<IoTDeviceGroupRecord>>(
-        `${MASTER_DATA_PATHS.base}/iot-device-groups`,
-        { params },
-      )
+      .get<
+        MasterDataPageResponse<IoTDeviceGroupRecord>
+      >(`${MASTER_DATA_PATHS.base}/iot-device-groups`, { params })
       .then((response) => response.data),
 
   getIoTDeviceGroupById: (id: number | string) =>
@@ -328,10 +330,9 @@ export const masterDataApi = {
 
   listFertilizerGroups: (params?: MasterDataQueryParams) =>
     apiClient
-      .get<MasterDataPageResponse<FertilizerGroupRecord>>(
-        MASTER_DATA_PATHS.fertilizerGroups,
-        { params },
-      )
+      .get<
+        MasterDataPageResponse<FertilizerGroupRecord>
+      >(MASTER_DATA_PATHS.fertilizerGroups, { params })
       .then((response) => response.data),
 
   getFertilizerGroupById: (id: number | string) =>
@@ -362,10 +363,9 @@ export const masterDataApi = {
 
   listMaterialGroups: (params?: MasterDataQueryParams) =>
     apiClient
-      .get<MasterDataPageResponse<MaterialGroupRecord>>(
-        MASTER_DATA_PATHS.materialGroups,
-        { params },
-      )
+      .get<
+        MasterDataPageResponse<MaterialGroupRecord>
+      >(MASTER_DATA_PATHS.materialGroups, { params })
       .then((response) => response.data),
 
   getMaterialGroupById: (id: number | string) =>
@@ -396,10 +396,9 @@ export const masterDataApi = {
 
   listPesticideGroups: (params?: MasterDataQueryParams) =>
     apiClient
-      .get<MasterDataPageResponse<PesticideGroupRecord>>(
-        MASTER_DATA_PATHS.pesticideGroups,
-        { params },
-      )
+      .get<
+        MasterDataPageResponse<PesticideGroupRecord>
+      >(MASTER_DATA_PATHS.pesticideGroups, { params })
       .then((response) => response.data),
 
   getPesticideGroupById: (id: number | string) =>
@@ -430,17 +429,14 @@ export const masterDataApi = {
 
   listPesticideOrigins: (params?: MasterDataQueryParams) =>
     apiClient
-      .get<MasterDataPageResponse<PesticideOriginRecord>>(
-        MASTER_DATA_PATHS.pesticideOrigins,
-        { params },
-      )
+      .get<
+        MasterDataPageResponse<PesticideOriginRecord>
+      >(MASTER_DATA_PATHS.pesticideOrigins, { params })
       .then((response) => response.data),
 
   getPesticideOriginById: (id: number | string) =>
     apiClient
-      .get<PesticideOriginRecord>(
-        `${MASTER_DATA_PATHS.pesticideOrigins}/${id}`,
-      )
+      .get<PesticideOriginRecord>(`${MASTER_DATA_PATHS.pesticideOrigins}/${id}`)
       .then((response) => response.data),
 
   createPesticideOrigin: (payload: PesticideOriginCreateRequest) =>
@@ -466,10 +462,9 @@ export const masterDataApi = {
 
   listPesticideToxicityClasses: (params?: MasterDataQueryParams) =>
     apiClient
-      .get<MasterDataPageResponse<PesticideToxicityClassRecord>>(
-        MASTER_DATA_PATHS.pesticideToxicityClasses,
-        { params },
-      )
+      .get<
+        MasterDataPageResponse<PesticideToxicityClassRecord>
+      >(MASTER_DATA_PATHS.pesticideToxicityClasses, { params })
       .then((response) => response.data),
 
   getPesticideToxicityClassById: (id: number | string) =>
@@ -522,10 +517,7 @@ export const masterDataApi = {
       .post<PlanGroupRecord>(MASTER_DATA_PATHS.planGroups, payload)
       .then((response) => response.data),
 
-  updatePlanGroup: (
-    id: number | string,
-    payload: PlanGroupUpdateRequest,
-  ) =>
+  updatePlanGroup: (id: number | string, payload: PlanGroupUpdateRequest) =>
     apiClient
       .put<PlanGroupRecord>(`${MASTER_DATA_PATHS.planGroups}/${id}`, payload)
       .then((response) => response.data),
@@ -582,16 +574,15 @@ export const masterDataApi = {
   listVsicIndustryChildrenByCode: (code: string) =>
     apiClient
       .get<VsicIndustryChildrenRecord>(
-        `${MASTER_DATA_PATHS.vsicIndustries}/${code}/children`,
+        `/api/master-data/vsic-industries/${code}/children`,
       )
       .then((response) => response.data),
 
   listVsicIndustryTree: (params?: VsicIndustryTreeQueryParams) =>
     apiClient
-      .get<VsicIndustryTreeResponse>(
-        `${MASTER_DATA_PATHS.vsicIndustries}/tree`,
-        { params },
-      )
+      .get<VsicIndustryTreeResponse>(`/api/master-data/vsic-industries/tree`, {
+        params,
+      })
       .then((response) => response.data),
 
   createVsicIndustry: (payload: VsicIndustryCreateRequest) =>
@@ -678,23 +669,15 @@ export const masterDataApi = {
 
   getSeasonById: (id: number | string) =>
     apiClient
-      .get<MasterDataSeasonResponse>(
-        `${MASTER_DATA_PATHS.seasons}/${id}`,
-      )
+      .get<MasterDataSeasonResponse>(`${MASTER_DATA_PATHS.seasons}/${id}`)
       .then((response) => response.data),
 
   createSeason: (payload: MasterDataSeasonRequest) =>
     apiClient
-      .post<MasterDataSeasonResponse>(
-        `${MASTER_DATA_PATHS.seasons}`,
-        payload,
-      )
+      .post<MasterDataSeasonResponse>(`${MASTER_DATA_PATHS.seasons}`, payload)
       .then((response) => response.data),
 
-  updateSeason: (
-    id: number | string,
-    payload: MasterDataSeasonRequest,
-  ) =>
+  updateSeason: (id: number | string, payload: MasterDataSeasonRequest) =>
     apiClient
       .put<MasterDataSeasonResponse>(
         `${MASTER_DATA_PATHS.seasons}/${id}`,

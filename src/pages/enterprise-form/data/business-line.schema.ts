@@ -7,7 +7,7 @@ export const BUSINESS_LINE_FORM_STATUSES = [
 ] as const;
 
 export const businessLineFormSchema = z.object({
-  code: z.string().trim().min(1, "Vui lòng nhập mã."),
+  code: z.string(),
   name: z.string().trim().min(1, "Vui lòng nhập tên."),
   description: z.string().trim().default(""),
   status: z.enum(BUSINESS_LINE_FORM_STATUSES, {

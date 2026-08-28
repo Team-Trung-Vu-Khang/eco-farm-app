@@ -18,9 +18,12 @@ const equipmentSchema = z.object({
 
 export function useEquipmentCreateForm() {
   const [location, setLocation] = useLocation();
-  const [matchFarm, paramsFarm] = useRoute("/cultivation-material/equipment/:id/edit");
+  const [matchFarm, paramsFarm] = useRoute(
+    "/cultivation-material/equipment/:id/edit",
+  );
   const [matchAdmin, paramsAdmin] = useRoute("/admin/equipment/:id/edit");
-  const isEdit = (matchFarm || matchAdmin) && !!(paramsFarm?.id || paramsAdmin?.id);
+  const isEdit =
+    (matchFarm || matchAdmin) && !!(paramsFarm?.id || paramsAdmin?.id);
   const params = paramsFarm || paramsAdmin;
   const scope = matchAdmin || location.startsWith("/admin") ? "admin" : "farm";
   const { toast } = useToast();
@@ -143,7 +146,7 @@ export function useEquipmentCreateForm() {
   };
 
   const resetForm = () => {
-    setFormData((prev) => ({ ...prev, sku: "" }));
+    setFormData((prev) => ({ ...prev }));
   };
 
   const handleConfirmSubmit = async () => {
@@ -231,7 +234,12 @@ export function useEquipmentCreateForm() {
       };
 
       if (isEdit && params?.id) {
-        await farmSupplyApi.update("equipment", Number(params.id), payload, scope);
+        await farmSupplyApi.update(
+          "equipment",
+          Number(params.id),
+          payload,
+          scope,
+        );
         toast({
           title: "Thành công",
           description: "Đã cập nhật thông tin thiết bị thành công",
@@ -243,8 +251,14 @@ export function useEquipmentCreateForm() {
           description: "Đã thêm mới thiết bị thành công",
         });
       }
-      queryClient.invalidateQueries({ queryKey: [scope === "admin" ? "admin-supplies" : "farm-supplies"] });
-      setLocation(scope === "admin" ? "/admin/equipment" : "/cultivation-material/equipment");
+      queryClient.invalidateQueries({
+        queryKey: [scope === "admin" ? "admin-supplies" : "farm-supplies"],
+      });
+      setLocation(
+        scope === "admin"
+          ? "/admin/equipment"
+          : "/cultivation-material/equipment",
+      );
     } catch (err: any) {
       if (err.response?.status === 409) {
         toast({
@@ -286,7 +300,12 @@ export function useEquipmentCreateForm() {
     confirmOpen,
     setConfirmOpen,
     handleConfirmSubmit,
-    navigateBack: () => setLocation(scope === "admin" ? "/admin/equipment" : "/cultivation-material/equipment"),
+    navigateBack: () =>
+      setLocation(
+        scope === "admin"
+          ? "/admin/equipment"
+          : "/cultivation-material/equipment",
+      ),
     loading,
     submitting,
     isDetailMode,

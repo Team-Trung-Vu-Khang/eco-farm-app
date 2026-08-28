@@ -3,6 +3,7 @@ import { masterDataApi } from "@/features/master-data";
 import type { MasterDataPageResponse } from "@/features/master-data/types/master-data.type";
 import type { MasterDataStatus } from "@/features/master-data/types/master-data.type";
 import type { ProvinceRow } from "../types";
+import { useDebounce } from "@/shared/hooks/useDebounce";
 
 const ALL_STATUS = "all" as const;
 const DEFAULT_PAGE_SIZE = 20;
@@ -23,6 +24,8 @@ export function useProvincePage() {
     null,
   );
 
+  const searchDebounce = useDebounce(search, 400);
+
   useEffect(() => {
     let mounted = true;
 
@@ -31,7 +34,7 @@ export function useProvincePage() {
 
     masterDataApi
       .listGeoProvinces({
-        keyword: search.trim() || undefined,
+        keyword: searchDebounce.trim() || undefined,
         status: status === ALL_STATUS ? undefined : status,
         page: Math.max(currentIndex - 1, 0),
         size: pageSize,
@@ -66,7 +69,7 @@ export function useProvincePage() {
     return () => {
       mounted = false;
     };
-  }, [currentIndex, pageSize, search, status]);
+  }, [currentIndex, pageSize, searchDebounce, status]);
 
   const handleSearch = (value: string) => {
     setSearch(value);
@@ -75,7 +78,9 @@ export function useProvincePage() {
 
   const handleFilterChange = (key: string, value: string) => {
     if (key === "status") {
-      setStatus(value === ALL_STATUS ? ALL_STATUS : (value as MasterDataStatus));
+      setStatus(
+        value === ALL_STATUS ? ALL_STATUS : (value as MasterDataStatus),
+      );
       setCurrentIndex(1);
     }
   };

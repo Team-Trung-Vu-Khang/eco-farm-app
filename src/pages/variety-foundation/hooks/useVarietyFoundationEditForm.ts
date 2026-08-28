@@ -1,4 +1,7 @@
-import { useToast } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import {
+  convertHtmlToLexical,
+  useToast,
+} from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { useLocation, useParams } from "wouter";
 import {
   useCropVarietyById,
@@ -6,7 +9,7 @@ import {
 } from "../../../features/foundation";
 import { useFileUpload } from "../../../features/storage";
 import { safeConvertLexicalToHtml } from "@/utils/commons";
-import { useRef, useMemo, useState } from "react";
+import { useRef, useMemo, useState, useEffect } from "react";
 import type { VarietyFoundationFormValues } from "../schemas/varietyFoundationSchema";
 
 function parseDurationToDays(duration: string): number | undefined {
@@ -66,52 +69,69 @@ export function useVarietyFoundationEditForm() {
 
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const initialValues =
-    useMemo((): Partial<VarietyFoundationFormValues> | null => {
-      if (!existingData) return null;
+  const [initialValues, setInitialValues] =
+    useState<Partial<VarietyFoundationFormValues> | null>(null);
+  const [isInitializing, setIsInitializing] = useState(false);
 
-      let metadata: any = {};
-      if (existingData.metadataJson) {
-        try {
-          const meta = existingData.metadataJson || {};
-          metadata = meta;
-        } catch (e) {
-          console.error("Failed to parse metadataJson");
-        }
+  useEffect(() => {
+    if (!existingData) return;
+
+    const buildInitialValues = async () => {
+      setIsInitializing(true);
+      try {
+        const metadata = existingData.metadataJson || {};
+
+        // Ưu tiên đọc documents từ metadataJson.documents (format mới), fallback về existingData.documents
+        const docs = metadata.documents || existingData.documents || [];
+        const pdfDoc = docs.find((d: any) => d.type === "pdf");
+        const editorDoc = docs.find((d: any) => d.type === "editor");
+
+        let contentType: "pdf" | "editor" = "editor";
+        if (pdfDoc) contentType = "pdf";
+
+        const averageYield =
+          existingData.avgYieldFrom && existingData.avgYieldTo
+            ? `${existingData?.avgYieldFrom || 0}-${existingData?.avgYieldTo || 0}`
+            : (existingData.avgYieldFrom || existingData.avgYieldTo || "") + "";
+
+        // Chuyển đổi content html sang lexical structure
+        const lexicalContent = editorDoc?.content
+          ? await convertHtmlToLexical(editorDoc.content)
+          : "";
+
+        setInitialValues({
+          varietyFoundationCode: existingData.code || "",
+          varietyFoundationName: existingData.name || "",
+          scientificName: metadata.scientificName || "",
+          crop: String(
+            existingData.subject?.id ??
+              existingData.subjectId ??
+              existingData.cropId ??
+              "",
+          ),
+          origin: existingData.origin || "",
+          growthDuration: formatDaysToDuration(existingData.growthDurationDays),
+          averageYield,
+          description: existingData.description || "",
+          illustration:
+            existingData.imageUrl || metadata.illustrationUrl || null,
+          contentType,
+          pdfFile: pdfDoc?.fileUrl
+            ? new File([], pdfDoc.fileName || pdfDoc.name || "document.pdf", {
+                type: "application/pdf",
+              })
+            : null,
+          editorContent: lexicalContent,
+        });
+      } catch (e) {
+        console.error("Failed to build initial values", e);
+      } finally {
+        setIsInitializing(false);
       }
+    };
 
-      const docs = existingData.documents || [];
-      const pdfDoc = docs.find((d) => d.type === "pdf");
-      const editorDoc = docs.find((d) => d.type === "editor");
-
-      let contentType: "pdf" | "editor" = "editor";
-      if (pdfDoc) contentType = "pdf";
-
-      const averageYield =
-        existingData.avgYieldFrom && existingData.avgYieldTo
-          ? `${existingData?.avgYieldFrom || 0}-${existingData?.avgYieldTo || 0}`
-          : (existingData.avgYieldFrom || existingData.avgYieldTo || "") + "";
-
-      return {
-        varietyFoundationCode: existingData.code || "",
-        varietyFoundationName: existingData.name || "",
-        scientificName: metadata.scientificName || "",
-        crop: String(existingData.cropId),
-        origin: existingData.origin || "",
-        growthDuration: formatDaysToDuration(existingData.growthDurationDays),
-        averageYield,
-        description: existingData.description || "",
-        illustration:
-          (existingData as any).imageUrl || metadata.illustrationUrl || null,
-        contentType,
-        pdfFile: pdfDoc?.fileUrl
-          ? new File([], pdfDoc.fileName || pdfDoc.name || "document.pdf", {
-              type: "application/pdf",
-            })
-          : (null as any),
-        editorContent: editorDoc?.content || "",
-      };
-    }, [existingData]);
+    buildInitialValues();
+  }, [existingData]);
 
   const handleComplete = async (formData: VarietyFoundationFormValues) => {
     if (!varietyId) return;
@@ -169,9 +189,10 @@ export function useVarietyFoundationEditForm() {
           }
         }
       } else if (formData.contentType === "pdf" && existingData) {
-        const existingPdf = existingData.documents?.find(
-          (d) => d.type === "pdf",
-        );
+        // Ưu tiên đọc documents từ metadataJson.documents
+        const metaDocs =
+          existingData.metadataJson?.documents || existingData.documents || [];
+        const existingPdf = metaDocs.find((d: any) => d.type === "pdf");
         if (existingPdf) {
           pdfUrl = existingPdf.fileUrl;
           pdfName = existingPdf.fileName || existingPdf.name;
@@ -202,12 +223,14 @@ export function useVarietyFoundationEditForm() {
       const metadataJson = {
         illustrationUrl,
         scientificName: formData.scientificName,
+        documents,
       };
 
       const payload = {
+        domainCode: "CROP",
         code: formData.varietyFoundationCode,
         name: formData.varietyFoundationName,
-        cropId: Number(formData.crop),
+        subjectId: Number(formData.crop),
         description: formData.description,
         origin: formData.origin,
         growthDurationDays: parseDurationToDays(formData.growthDuration || ""),
@@ -219,7 +242,6 @@ export function useVarietyFoundationEditForm() {
           : undefined,
         status: "active" as const,
         metadataJson,
-        documents,
         imageUrl: illustrationUrl,
       };
 
@@ -266,6 +288,7 @@ export function useVarietyFoundationEditForm() {
     handleComplete,
     handleCancel,
     isLoadingVariety,
+    isInitializing,
     isSubmitting,
   };
 }

@@ -9,6 +9,7 @@ import {
 import { emptyTaskCategoryFormData } from "../data/constants";
 import { taskCategoryDomainLabel } from "../data/constants";
 import type { TaskCategoryDomain, TaskCategoryFormData } from "../types/types";
+import { useDebounce } from "@/shared/hooks/useDebounce";
 
 const domainCodePrefix: Record<TaskCategoryDomain, string> = {
   crop: "CV",
@@ -16,7 +17,10 @@ const domainCodePrefix: Record<TaskCategoryDomain, string> = {
   aquaculture: "AQ",
 };
 
-const domainCodeMap: Record<TaskCategoryDomain, "CROP" | "LIVESTOCK" | "AQUACULTURE"> = {
+const domainCodeMap: Record<
+  TaskCategoryDomain,
+  "CROP" | "LIVESTOCK" | "AQUACULTURE"
+> = {
   crop: "CROP",
   animal: "LIVESTOCK",
   aquaculture: "AQUACULTURE",
@@ -29,8 +33,8 @@ export function useTaskCategoryPage() {
   const { toast } = useToast();
   const [activeDomain, setActiveDomain] = useState<TaskCategoryDomain>("crop");
   const [search, setSearch] = useState("");
-  const [stage, setStage] = useState("");
-  const [status, setStatus] = useState<StatusFilter>(ALL);
+  const [stage, setStage] = useState<string>();
+  const [status, setStatus] = useState<StatusFilter>();
   const [pageSize, setPageSize] = useState(10);
   const [currentIndex, setCurrentIndex] = useState(1);
 
@@ -44,12 +48,23 @@ export function useTaskCategoryPage() {
   const [isPending, setIsPending] = useState(false);
 
   const domainCode = domainCodeMap[activeDomain];
+
+  const searchDebounce = useDebounce(search, 400);
+
   const categoriesQuery = useQuery({
-    queryKey: ["admin-task-categories", domainCode, search, stage, status, pageSize, currentIndex],
+    queryKey: [
+      "admin-task-categories",
+      domainCode,
+      searchDebounce,
+      stage,
+      status,
+      pageSize,
+      currentIndex,
+    ],
     queryFn: () =>
       taskCategoryApi.listAdmin({
         domainCode,
-        keyword: search.trim() || undefined,
+        keyword: searchDebounce.trim() || undefined,
         stage: stage || undefined,
         status: status === ALL ? undefined : status,
         page: Math.max(currentIndex - 1, 0),
@@ -78,7 +93,12 @@ export function useTaskCategoryPage() {
     setFormData({
       name: item.name,
       description: item.example,
-      domain: item.domainCode === "CROP" ? "crop" : item.domainCode === "LIVESTOCK" ? "animal" : "aquaculture",
+      domain:
+        item.domainCode === "CROP"
+          ? "crop"
+          : item.domainCode === "LIVESTOCK"
+            ? "animal"
+            : "aquaculture",
       status: item.status === "archived" ? "inactive" : item.status,
     });
     setFormOpen(true);
@@ -96,7 +116,8 @@ export function useTaskCategoryPage() {
       const payload = {
         domainCode,
         stage: editItem?.stage || taskCategoryDomainLabel[values.domain],
-        code: editItem?.code || `${domainCodePrefix[values.domain]}-${Date.now()}`,
+        code:
+          editItem?.code || `${domainCodePrefix[values.domain]}-${Date.now()}`,
         name: values.name.trim(),
         example: values.description.trim(),
         displayOrder: editItem?.displayOrder || 10,
@@ -167,12 +188,19 @@ export function useTaskCategoryPage() {
       setCurrentIndex(1);
     },
     handleFilterChange: (key: string, value: string) => {
-      if (key === "stage") setStage(value);
-      if (key === "status") setStatus(value === ALL ? ALL : value as TaskCategoryStatus);
+      if (key === "stage") {
+        setStage(value === ALL ? undefined : value);
+      }
+      if (key === "status") {
+        setStatus(value === ALL ? undefined : (value as TaskCategoryStatus));
+      }
       setCurrentIndex(1);
     },
     pageSize,
-    setPageSize: (size: number) => { setPageSize(size); setCurrentIndex(1); },
+    setPageSize: (size: number) => {
+      setPageSize(size);
+      setCurrentIndex(1);
+    },
     currentIndex,
     setCurrentIndex,
     formOpen,

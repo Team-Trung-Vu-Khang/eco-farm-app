@@ -2,17 +2,22 @@ import { useMemo, useState } from "react";
 import { useToast } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { useMasterData, useMasterDataMutations } from "@/features/master-data";
 import type {
+  EquipmentToolGroupCreateRequest,
   EquipmentToolGroupRecord,
+  EquipmentToolGroupUpdateRequest,
   MasterDataStatus,
 } from "@/features/master-data/types/master-data.type";
 import type { EquipmentGroupFormValues } from "../data/equipment-group-form.schema";
+import { useDebounce } from "@/shared/hooks/useDebounce";
 
 const ALL_STATUS = "all" as const;
 const DEFAULT_PAGE_SIZE = 10;
 
 type EquipmentGroupStatusFilter = MasterDataStatus | typeof ALL_STATUS;
 
-function buildPayload(values: EquipmentGroupFormValues) {
+function buildPayload(
+  values: EquipmentGroupFormValues,
+): EquipmentToolGroupCreateRequest & EquipmentToolGroupUpdateRequest {
   return {
     code: values.code.trim().toUpperCase(),
     name: values.name.trim(),
@@ -22,7 +27,8 @@ function buildPayload(values: EquipmentGroupFormValues) {
     metadataJson: {
       source: "manual",
     },
-  };
+  } as unknown as EquipmentToolGroupCreateRequest &
+    EquipmentToolGroupUpdateRequest;
 }
 
 export function useEquipmentGroupForm() {
@@ -40,9 +46,11 @@ export function useEquipmentGroupForm() {
     null,
   );
 
+  const searchDebounce = useDebounce(search, 400);
+
   const query = useMasterData("equipment-tool-groups", {
     params: {
-      keyword: search.trim() || undefined,
+      keyword: searchDebounce.trim() || undefined,
       status: status === ALL_STATUS ? undefined : status,
       page: Math.max(currentIndex - 1, 0),
       size: pageSize,
@@ -61,7 +69,9 @@ export function useEquipmentGroupForm() {
 
   const handleFilterChange = (key: string, value: string) => {
     if (key === "status") {
-      setStatus(value === ALL_STATUS ? ALL_STATUS : (value as MasterDataStatus));
+      setStatus(
+        value === ALL_STATUS ? ALL_STATUS : (value as MasterDataStatus),
+      );
       setCurrentIndex(1);
     }
   };
@@ -84,7 +94,7 @@ export function useEquipmentGroupForm() {
   const handleSubmit = async (values: EquipmentGroupFormValues) => {
     const payload = buildPayload(values);
 
-    if (!payload.code || !payload.name) {
+    if (!payload.name) {
       toast({
         title: "Thiếu thông tin",
         description: "Vui lòng nhập mã và tên nhóm máy móc.",
@@ -96,8 +106,8 @@ export function useEquipmentGroupForm() {
     try {
       if (editItem) {
         await updateMasterData.mutateAsync({
-          id: editItem.id,
           data: payload,
+          id: editItem.id,
         });
       } else {
         await createMasterData.mutateAsync(payload);

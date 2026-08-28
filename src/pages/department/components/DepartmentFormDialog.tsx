@@ -101,9 +101,7 @@ export function DepartmentFormDialog({
     >
       <div className="space-y-4">
         <div className="space-y-2">
-          <Label htmlFor="code" required>
-            Mã phòng ban
-          </Label>
+          <Label htmlFor="code">Mã phòng ban</Label>
           <Controller
             control={control}
             name="code"

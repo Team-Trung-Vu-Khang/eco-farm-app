@@ -5,13 +5,37 @@ import { useCatalogMutations } from "../../../features/foundation/hooks/useCatal
 import { emptyTerrainFormData } from "../data/constants";
 import type { TerrainFormData } from "../types/types";
 import type { Terrain } from "../../../stores/useTerrainStore";
+import { useDebounce } from "../../../shared/hooks/useDebounce";
 
 export function useTerrainPage() {
   const { toast } = useToast();
 
-  const { items, loading } = useCatalog("terrain-features");
-  const { createCatalog, updateCatalog, deleteCatalog } =
-    useCatalogMutations("terrain-features");
+  const [currentIndex, setCurrentIndex] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [search, setSearch] = useState("");
+  const debouncedSearch = useDebounce(search, 500);
+  const [status, setStatus] = useState<string>("all");
+
+  const { items, response, loading } = useCatalog("terrain-features", {
+    params: {
+      keyword: debouncedSearch.trim() || undefined,
+      status: status === "all" ? undefined : status,
+      page: Math.max(currentIndex - 1, 0),
+      size: pageSize,
+    },
+  });
+
+  const handleSearch = (value: string) => {
+    setSearch(value);
+    setCurrentIndex(1);
+  };
+
+  const handleFilterChange = (key: string, value: string) => {
+    if (key === "status") {
+      setStatus(value);
+      setCurrentIndex(1);
+    }
+  };
 
   const terrains: Terrain[] = useMemo(() => {
     return items.map((item) => ({
@@ -23,6 +47,9 @@ export function useTerrainPage() {
       createdAt: item.createdAt ? item.createdAt.split("T")[0] : "",
     }));
   }, [items]);
+
+  const { createCatalog, updateCatalog, deleteCatalog } =
+    useCatalogMutations("terrain-features");
 
   const [formOpen, setFormOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
@@ -122,5 +149,12 @@ export function useTerrainPage() {
     handleConfirmDelete,
     loading,
     isPending,
+    response,
+    pageSize,
+    setPageSize,
+    currentIndex,
+    setCurrentIndex,
+    handleSearch,
+    handleFilterChange,
   };
 }

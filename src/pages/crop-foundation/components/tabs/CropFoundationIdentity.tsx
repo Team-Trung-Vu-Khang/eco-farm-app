@@ -38,7 +38,7 @@ export function CropFoundationIdentity({
                 </h2>
                 <div className="flex flex-wrap items-center gap-2 mb-4">
                   <Badge className="bg-blue-50 text-blue-700 hover:bg-blue-100 border-none px-3 py-1 text-xs font-bold transition-colors">
-                    {cropFoundation.cropGroupName || "Chưa phân nhóm"}
+                    {cropFoundation.subjectGroup?.name || cropFoundation.subjectGroupName || cropFoundation.cropGroupName || "Chưa phân nhóm"}
                   </Badge>
                   {cropFoundation.harvestMethod && (
                     <Badge className="bg-amber-50 text-amber-700 hover:bg-amber-100 border-none px-3 py-1 text-xs font-bold transition-colors">

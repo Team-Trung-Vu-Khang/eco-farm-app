@@ -21,6 +21,12 @@ interface OrganizationTabProps {
     options: Array<{ value: string; label: string }>;
   }>;
   onFilterChange?: (key: string, value: string) => void;
+  pageSize?: number;
+  currentIndex?: number;
+  totalElements?: number;
+  totalPages?: number;
+  onPageSize?: (size: number) => void;
+  onIndexChange?: (index: number) => void;
 }
 
 export function OrganizationTab({
@@ -34,6 +40,12 @@ export function OrganizationTab({
   onSearch,
   filters,
   onFilterChange,
+  pageSize,
+  currentIndex,
+  totalElements,
+  totalPages,
+  onPageSize,
+  onIndexChange,
 }: OrganizationTabProps) {
   return (
     <div className="space-y-4">
@@ -59,6 +71,12 @@ export function OrganizationTab({
         onSearch={onSearch}
         filters={filters}
         onFilterChange={onFilterChange}
+        pageSize={pageSize}
+        currentIndex={currentIndex}
+        totalElements={totalElements}
+        totalPages={totalPages}
+        onPageSize={onPageSize}
+        onIndexChange={onIndexChange}
         loading={loading}
       />
     </div>

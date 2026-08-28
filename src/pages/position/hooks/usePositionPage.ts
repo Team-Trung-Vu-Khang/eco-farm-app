@@ -12,11 +12,8 @@ import {
   useUpdateMasterData,
 } from "../../../features/master-data";
 
-import type {
-  PositionFormData,
-  PositionItem,
-  PositionRecord,
-} from "../types";
+import type { PositionFormData, PositionItem, PositionRecord } from "../types";
+import { useDebounce } from "@/shared/hooks/useDebounce";
 
 const DEFAULT_PAGE_SIZE = 10;
 const ALL_STATUS = "all" as const;
@@ -49,7 +46,9 @@ function buildCreatePayload(
   formData: PositionFormData,
 ): MasterDataCreateRequest<"positions"> {
   const positionGroupIdValue = formData.positionGroupId.trim();
-  const positionGroupId = positionGroupIdValue ? Number(positionGroupIdValue) : undefined;
+  const positionGroupId = positionGroupIdValue
+    ? Number(positionGroupIdValue)
+    : undefined;
 
   return {
     code: formData.code.trim().toUpperCase(),
@@ -57,8 +56,11 @@ function buildCreatePayload(
     description: formData.description.trim() || undefined,
     status: "active",
     displayOrder: formData.displayOrder,
-    positionGroupId: Number.isNaN(positionGroupId) ? undefined : positionGroupId,
-    responsibilityDescription: formData.responsibilityDescription.trim() || undefined,
+    positionGroupId: Number.isNaN(positionGroupId)
+      ? undefined
+      : positionGroupId,
+    responsibilityDescription:
+      formData.responsibilityDescription.trim() || undefined,
     documents: mapFormDocuments(formData.documents),
     metadataJson: {
       source: "manual",
@@ -71,7 +73,9 @@ function buildUpdatePayload(
   currentItem: PositionItem,
 ): MasterDataUpdateRequest<"positions"> {
   const positionGroupIdValue = formData.positionGroupId.trim();
-  const positionGroupId = positionGroupIdValue ? Number(positionGroupIdValue) : undefined;
+  const positionGroupId = positionGroupIdValue
+    ? Number(positionGroupIdValue)
+    : undefined;
 
   return {
     code: formData.code.trim().toUpperCase(),
@@ -79,10 +83,9 @@ function buildUpdatePayload(
     description: formData.description.trim() || undefined,
     status: formData.status,
     displayOrder: formData.displayOrder,
-    positionGroupId:
-      Number.isNaN(positionGroupId)
-        ? currentItem.positionGroupId ?? undefined
-        : positionGroupId,
+    positionGroupId: Number.isNaN(positionGroupId)
+      ? (currentItem.positionGroupId ?? undefined)
+      : positionGroupId,
     responsibilityDescription:
       formData.responsibilityDescription.trim() || undefined,
     documents: mapFormDocuments(formData.documents),
@@ -105,9 +108,11 @@ export function usePositionPage() {
   const [editItem, setEditItem] = useState<PositionItem | null>(null);
   const [deleteItem, setDeleteItem] = useState<PositionItem | null>(null);
 
+  const searchDebounce = useDebounce(search, 400);
+
   const positionsQuery = useMasterData("positions", {
     params: {
-      keyword: search.trim() || undefined,
+      keyword: searchDebounce.trim() || undefined,
       status: status === ALL_STATUS ? undefined : status,
       page: Math.max(currentIndex - 1, 0),
       size: pageSize,

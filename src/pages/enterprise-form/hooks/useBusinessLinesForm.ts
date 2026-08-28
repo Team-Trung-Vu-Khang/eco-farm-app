@@ -14,6 +14,7 @@ import {
   type BusinessLineFormInput,
   type BusinessLineFormValues,
 } from "../data/business-line.schema";
+import { useDebounce } from "@/shared/hooks/useDebounce";
 
 const defaultValues: BusinessLineFormInput = {
   code: "",
@@ -34,25 +35,24 @@ export function useBusinessLinesForm() {
   const [editItem, setEditItem] = useState<BusinessLineRecord | null>(null);
   const [deleteItem, setDeleteItem] = useState<BusinessLineRecord | null>(null);
 
+  const searchDebounce = useDebounce(searchQuery, 400);
+
   const params = useMemo(
     () => ({
-      keyword: searchQuery.trim() || undefined,
+      keyword: searchDebounce.trim() || undefined,
       status: statusFilter || undefined,
       page: currentIndex,
       size: pageSize,
     }),
-    [currentIndex, pageSize, searchQuery, statusFilter],
+    [currentIndex, pageSize, searchDebounce, statusFilter],
   );
 
   const query = useMasterData("business-lines", {
     params,
   });
 
-  const {
-    createMasterData,
-    updateMasterData,
-    deleteMasterData,
-  } = useMasterDataMutations("business-lines");
+  const { createMasterData, updateMasterData, deleteMasterData } =
+    useMasterDataMutations("business-lines");
 
   const form = useForm<BusinessLineFormInput, unknown, BusinessLineFormValues>({
     defaultValues,
@@ -99,13 +99,8 @@ export function useBusinessLinesForm() {
       code: item.code,
       name: item.name,
       description: item.description ?? "",
-      status:
-        item.status === "active" ||
-        item.status === "inactive" ||
-        item.status === "archived"
-          ? item.status
-          : "active",
-      metadataJson: item.metadataJson ?? null,
+      status: (item.status as any) || "active",
+      metadataJson: item.metadataJson as any,
     });
     setFormOpen(true);
   };

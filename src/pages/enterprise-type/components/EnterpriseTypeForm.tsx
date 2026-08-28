@@ -58,10 +58,7 @@ export function EnterpriseTypeForm({
   editItem,
   onSubmit,
 }: EnterpriseTypeFormProps) {
-  const defaultValues = useMemo(
-    () => buildDefaultValues(editItem),
-    [editItem],
-  );
+  const defaultValues = useMemo(() => buildDefaultValues(editItem), [editItem]);
 
   const {
     register,
@@ -98,6 +95,8 @@ export function EnterpriseTypeForm({
             </Label>
             <Input
               id="code"
+              clearable={!editItem}
+              disabled={!!editItem}
               placeholder="VD: 01110"
               aria-invalid={!!errors.code}
               {...register("code")}

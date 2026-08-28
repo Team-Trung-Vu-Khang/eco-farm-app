@@ -41,6 +41,17 @@ interface Props {
   description: string;
 }
 
+const filters = [
+  {
+    key: "status",
+    label: "Trạng thái",
+    options: [
+      { label: "Hoạt động", value: "active" },
+      { label: "Ngừng hoạt động", value: "inactive" },
+    ],
+  },
+];
+
 export const ProductionMethodTabContent = ({
   domainCode,
   title,
@@ -50,15 +61,24 @@ export const ProductionMethodTabContent = ({
   const debouncedSearch = useDebounce(search, 500);
   const [pageSize, setPageSize] = useState(10);
   const [currentIndex, setCurrentIndex] = useState(1);
+  const [status, setStatus] = useState<string>("all");
 
   const handleSearch = (value: string) => {
     setSearch(value);
     setCurrentIndex(1);
   };
 
+  const handleFilterChange = (key: string, value: string) => {
+    if (key === "status") {
+      setStatus(value);
+      setCurrentIndex(1);
+    }
+  };
+
   const { items, response, loading } = useProductionMethods({
     domainCode,
     keyword: debouncedSearch.trim() || undefined,
+    status: status === "all" ? undefined : (status as any),
     page: Math.max(currentIndex - 1, 0),
     size: pageSize,
   });
@@ -136,6 +156,8 @@ export const ProductionMethodTabContent = ({
       totalPages={response?.totalPages}
       onPageSize={setPageSize}
       onIndexChange={setCurrentIndex}
+      filters={filters}
+      onFilterChange={handleFilterChange}
     />
   );
 };

@@ -10,6 +10,18 @@ import { LandSpecsFormDialog } from "./components/LandSpecsFormDialog";
 import { landSpecsColumns } from "./data/columns";
 import { useLandSpecsPage } from "./hooks/useLandSpecsPage";
 
+const filters = [
+  {
+    key: "status",
+    label: "Trạng thái",
+    options: [
+      { label: "Hoạt động", value: "active" },
+      { label: "Ngừng hoạt động", value: "inactive" },
+      { label: "Đã lưu trữ", value: "archived" },
+    ],
+  },
+];
+
 export default function LandSpecsPage() {
   const {
     landSpecs,
@@ -26,6 +38,13 @@ export default function LandSpecsPage() {
     handleConfirmDelete,
     loading,
     isPending,
+    response,
+    pageSize,
+    setPageSize,
+    currentIndex,
+    setCurrentIndex,
+    handleSearch,
+    handleFilterChange,
   } = useLandSpecsPage();
 
   useDialogBugWorkaround([formOpen, deleteOpen]);
@@ -48,6 +67,16 @@ export default function LandSpecsPage() {
         onEdit={handleEdit}
         onDelete={handleDelete}
         searchPlaceholder="Tìm kiếm thông số địa hình..."
+        searchable
+        onSearch={handleSearch}
+        pageSize={pageSize}
+        currentIndex={currentIndex}
+        totalElements={response?.totalElements}
+        totalPages={response?.totalPages}
+        onPageSize={setPageSize}
+        onIndexChange={setCurrentIndex}
+        filters={filters}
+        onFilterChange={handleFilterChange}
       />
 
       <LandSpecsFormDialog

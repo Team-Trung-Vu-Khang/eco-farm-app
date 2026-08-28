@@ -100,7 +100,7 @@ export default function DocumentVersionPage() {
         </div>
       </div>
 
-      <div className="grid gap-6 xl:grid-cols-[1fr_400px]">
+      <div className="grid min-w-0 gap-6 xl:grid-cols-[1fr_400px]">
         <DocumentLibrarySection
           columns={documentColumns}
           rows={documentRows}
@@ -109,7 +109,7 @@ export default function DocumentVersionPage() {
           onView={handleViewDetail}
         />
 
-        <section id="document-version-detail" className="space-y-6">
+        <section id="document-version-detail" className="min-w-0 space-y-6">
           <DocumentVersionContent
             selectedDocument={selectedDocument}
             selectedLogs={selectedLogs}

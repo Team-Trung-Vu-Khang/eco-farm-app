@@ -1,5 +1,7 @@
 // ─── Shared ───────────────────────────────────────────────────────────────────
 
+import type { DomainCode } from "@/features/farm-supply";
+
 export type FoundationStatus =
   | "active"
   | "inactive"
@@ -22,6 +24,7 @@ export interface BaseQueryParams {
   status?: FoundationStatus;
   page?: number;
   size?: number;
+  domainCode?: DomainCode;
 }
 
 // ─── Catalogs ─────────────────────────────────────────────────────────────────
@@ -65,6 +68,7 @@ export type CatalogQueryParams = BaseQueryParams;
 // Endpoint: GET/POST /api/admin/foundation/production/subjects
 // Endpoint: GET/PUT/DELETE /api/admin/foundation/production/subjects/{id}
 
+/** @deprecated Dùng nội bộ form (technical specs nested) — không gửi lên API */
 export interface FoundationCropTechnicalSpecs {
   scientificName?: string;
   family?: string;
@@ -87,30 +91,65 @@ export interface FoundationDocument {
   fileName?: string;
 }
 
+/** Body gửi lên API POST/PUT /production/subjects — flat theo schema Subject */
 export interface FoundationCropRequest {
+  domainCode?: string;
   code?: string;
   name?: string;
-  cropGroupId: number; // required
+  subjectGroupId: number; // required
   description?: string;
   harvestMethod?: string;
   imageUrl?: string;
-  technicalSpecs?: FoundationCropTechnicalSpecs;
-  documents?: FoundationDocument[];
+  // Technical specs — flat fields
+  scientificName?: string;
+  family?: string;
+  origin?: string;
+  temperatureFrom?: number | null;
+  temperatureTo?: number | null;
+  humidityFrom?: number | null;
+  humidityTo?: number | null;
+  phFrom?: number | null;
+  phTo?: number | null;
+  densityDescription?: string;
   displayOrder?: number;
   status?: FoundationStatus;
   metadataJson?: Record<string, unknown>;
 }
 
+/** Response từ API GET /production/subjects — flat theo schema Subject */
 export interface FoundationCropResponse {
   id: number;
+  domainCode?: string;
   code: string;
   name: string;
-  cropGroupId: number;
-  cropGroupCode: string;
-  cropGroupName: string;
+  /** Nhóm subject — API trả về nested object */
+  subjectGroup?: {
+    id: number;
+    code?: string;
+    name?: string;
+  };
+  // Backward compat (API cũ có thể vẫn trả flat)
+  subjectGroupId?: number;
+  subjectGroupCode?: string;
+  subjectGroupName?: string;
+  cropGroupId?: number;
+  cropGroupCode?: string;
+  cropGroupName?: string;
   description?: string;
   harvestMethod?: string;
   imageUrl?: string;
+  // Technical specs — flat fields
+  scientificName?: string;
+  family?: string;
+  origin?: string;
+  temperatureFrom?: number;
+  temperatureTo?: number;
+  humidityFrom?: number;
+  humidityTo?: number;
+  phFrom?: number;
+  phTo?: number;
+  densityDescription?: string;
+  // Không có nested technicalSpecs nữa (giữ optional để không break code cũ)
   technicalSpecs?: FoundationCropTechnicalSpecs;
   documents?: FoundationDocument[];
   displayOrder?: number;
@@ -122,6 +161,7 @@ export interface FoundationCropResponse {
 
 export interface CropQueryParams extends BaseQueryParams {
   cropGroupId?: number;
+  domainCode?: DomainCode;
 }
 
 // ─── Crop Varieties ───────────────────────────────────────────────────────────
@@ -129,9 +169,11 @@ export interface CropQueryParams extends BaseQueryParams {
 // Endpoint: GET/PUT/DELETE /api/admin/foundation/production/subject-variants/{id}
 
 export interface FoundationCropVarietyRequest {
+  domainCode?: "CROP" | "LIVESTOCK" | "AQUACULTURE";
   code?: string;
   name?: string;
-  cropId: number; // required
+  subjectId: number; // required (was cropId)
+  cropId?: number; // backward compat
   description?: string;
   origin?: string;
   growthDurationDays?: number;
@@ -139,32 +181,53 @@ export interface FoundationCropVarietyRequest {
   avgYieldTo?: number;
   displayOrder?: number;
   status?: FoundationStatus;
-  metadataJson?: Record<string, unknown>;
-  documents?: FoundationDocument[];
+  imageUrl?: string;
+  metadataJson?: {
+    scientificName?: string;
+    illustrationUrl?: string;
+    documents?: FoundationDocument[];
+    [key: string]: any;
+  };
 }
 
 export interface FoundationCropVarietyResponse {
   id: number;
+  domainCode?: "CROP" | "LIVESTOCK" | "AQUACULTURE";
   code: string;
   name: string;
-  cropId: number;
-  cropCode: string;
-  cropName: string;
-  description?: string;
+  subject?: {
+    id: number;
+    code?: string;
+    name?: string;
+  };
+  subjectId?: number;
+  imageUrl?: string;
   origin?: string;
+  description?: string;
   growthDurationDays?: number;
   avgYieldFrom?: number;
   avgYieldTo?: number;
   displayOrder?: number;
   status: FoundationStatus;
-  metadataJson?: Record<string, unknown>;
+  metadataJson?: {
+    scientificName?: string;
+    illustrationUrl?: string;
+    documents?: FoundationDocument[];
+    [key: string]: any;
+  };
   createdAt: string;
   updatedAt: string;
+  // Backward compat
+  cropId?: number;
+  cropCode?: string;
+  cropName?: string;
   documents?: FoundationDocument[];
 }
 
 export interface CropVarietyQueryParams extends BaseQueryParams {
+  subjectId?: number;
   cropId?: number;
+  domainCode?: DomainCode;
 }
 
 // ─── Growth Cycle Templates ───────────────────────────────────────────────────
@@ -237,6 +300,21 @@ export interface GrowthCycleTemplateQueryParams extends BaseQueryParams {
 // Endpoint: GET/POST /api/admin/foundation/production/method-applications
 // Endpoint: GET/PUT/DELETE /api/admin/foundation/production/method-applications/{id}
 
+export interface SubjectAssignment {
+  subjectId: number;
+  subjectVariantIds?: number[];
+}
+
+export interface SubjectAssignmentView {
+  subjectId: number;
+  subjectCode: string;
+  subjectName: string;
+  subjectGroupId?: number;
+  subjectGroupCode?: string;
+  subjectGroupName?: string;
+  variants?: { id: number; code?: string; name?: string }[];
+}
+
 export interface CropAssignment {
   cropId: number;
   varietyIds?: number[];
@@ -254,30 +332,45 @@ export interface CropAssignmentView {
 
 export interface FarmingMethodCropRequest {
   code?: string;
+  domainCode?: "CROP" | "LIVESTOCK" | "AQUACULTURE";
+  productionMethodId?: number;
+  // Backward compatibility
   farmingMethodId?: number;
   description?: string;
   displayOrder?: number;
   status?: FoundationStatus;
+  subjects?: SubjectAssignment[];
+  // Backward compatibility
   crops?: CropAssignment[];
 }
 
 export interface FarmingMethodCropResponse {
   id: number;
   code: string;
+  domainCode?: "CROP" | "LIVESTOCK" | "AQUACULTURE";
+  productionMethod?: {
+    id: number;
+    code: string;
+    name: string;
+  } | null;
+  // Backward compatibility
   farmingMethodId?: number;
   farmingMethodCode?: string;
   farmingMethodName?: string;
   description?: string;
   displayOrder?: number;
   status: FoundationStatus;
+  subjectCount?: number;
+  // Backward compatibility
   cropCount?: number;
   createdAt: string;
   updatedAt: string;
+  subjects?: SubjectAssignmentView[];
+  // Backward compatibility
   crops?: CropAssignmentView[];
 }
 
 export type FarmingMethodCropQueryParams = BaseQueryParams;
-
 
 // ─── Lifecycle Templates (Animal/Crop/Aquaculture Lifecycle) ──────────────────
 export interface LifecycleStage {
@@ -338,7 +431,6 @@ export interface ProductionSubjectGroupRequest {
   displayOrder?: number;
   status: FoundationStatus;
 }
-
 
 export interface ProductionSubjectGroupQueryParams extends BaseQueryParams {
   domainCode: "CROP" | "LIVESTOCK" | "AQUACULTURE";

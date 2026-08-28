@@ -10,6 +10,7 @@ import {
   useUpdateMasterData,
 } from "../../../features/master-data";
 import type { PositionGroup, PositionGroupFormData } from "../types";
+import { useDebounce } from "@/shared/hooks/useDebounce";
 
 const DEFAULT_PAGE_SIZE = 10;
 const ALL_STATUS = "all" as const;
@@ -20,6 +21,7 @@ function buildCreatePayload(
   formData: PositionGroupFormData,
 ): MasterDataCreateRequest<"position-groups"> {
   return {
+    displayOrder: 1,
     code: formData.code.trim().toUpperCase(),
     name: formData.name.trim(),
     description: formData.description.trim() || undefined,
@@ -59,12 +61,14 @@ export function useGroupPositionForm() {
   const [editItem, setEditItem] = useState<PositionGroup | null>(null);
   const [deleteItem, setDeleteItem] = useState<PositionGroup | null>(null);
 
+  const searchDebounce = useDebounce(search, 400);
+
   const groupQuery = useMasterData("position-groups", {
     params: {
-      keyword: search.trim() || undefined,
-      status: status === ALL_STATUS ? undefined : status,
-      page: Math.max(currentIndex - 1, 0),
       size: pageSize,
+      page: Math.max(currentIndex - 1, 0),
+      keyword: searchDebounce.trim() || undefined,
+      status: status === ALL_STATUS ? undefined : status,
     },
   });
 

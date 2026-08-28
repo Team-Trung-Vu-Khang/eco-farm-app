@@ -8,16 +8,23 @@ import {
   SelectValue,
   Textarea,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { Controller, type Control, type FieldErrors, type UseFormRegister } from "react-hook-form";
+import {
+  Controller,
+  type Control,
+  type FieldErrors,
+  type UseFormRegister,
+} from "react-hook-form";
 import type { OrganizationTypeFormInput } from "../data/organization-type.schema";
 
 interface OrganizationTypeFormProps {
+  isEdit?: boolean;
   control: Control<OrganizationTypeFormInput>;
   register: UseFormRegister<OrganizationTypeFormInput>;
   errors: FieldErrors<OrganizationTypeFormInput>;
 }
 
 export const OrganizationTypeForm = ({
+  isEdit,
   control,
   register,
   errors,
@@ -26,10 +33,10 @@ export const OrganizationTypeForm = ({
     <div className="space-y-4">
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         <div className="space-y-2">
-          <Label htmlFor="code" required>
-            Mã
-          </Label>
+          <Label htmlFor="code">Mã</Label>
           <Input
+            disabled={isEdit}
+            clearable={!isEdit}
             id="code"
             placeholder="VD: HTX, DN..."
             {...register("code")}

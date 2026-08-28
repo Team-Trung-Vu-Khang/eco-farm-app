@@ -12,6 +12,7 @@ import {
 import { Check, Search, X } from "lucide-react";
 import { useCrops, useCropVarieties } from "../../../features/foundation";
 import type { RelatedCropForm, CropOption } from "../types/types";
+import { useDebounce } from "@/shared/hooks/useDebounce";
 
 export function CropVarietySelectorDialog({
   open,
@@ -24,49 +25,81 @@ export function CropVarietySelectorDialog({
   onConfirm: (value: RelatedCropForm) => void;
   onOpenChange: (open: boolean) => void;
 }) {
-  const { items: cropItems, loading: cropsLoading } = useCrops({
+  const [searchTerm, setSearchTerm] = useState("");
+  const debouncedSearch = useDebounce(searchTerm, 500);
+  const [page, setPage] = useState(0);
+  const [allCrops, setAllCrops] = useState<any[]>([]);
+  const [selectedCropId, setSelectedCropId] = useState(initialValue?.cropId);
+
+  const {
+    items: cropItems,
+    response,
+    loading: cropsLoading,
+  } = useCrops({
     enabled: open,
-  });
-  const { items: varietyItems, loading: varietiesLoading } = useCropVarieties({
-    enabled: open,
+    params: {
+      domainCode: "CROP",
+      status: "active",
+      keyword: debouncedSearch.trim() || undefined,
+      page,
+      size: 15,
+    },
   });
 
-  const [searchTerm, setSearchTerm] = useState("");
+  const { items: varietyItems, loading: varietiesLoading } = useCropVarieties({
+    enabled: open && !!selectedCropId,
+    params: {
+      subjectId: selectedCropId || undefined,
+      cropId: selectedCropId || undefined,
+      size: 100,
+      status: "active",
+      domainCode: "CROP",
+    },
+  });
+
   const [selectedGroup, setSelectedGroup] = useState(initialValue?.cropGroup);
-  const [selectedCropId, setSelectedCropId] = useState(initialValue?.cropId);
   const [selectedVarieties, setSelectedVarieties] = useState<number[]>(
     initialValue?.varietyIds || [],
   );
 
-  const isFetchingData = cropsLoading || varietiesLoading;
+  const isFetchingData = cropsLoading && page === 0;
+
+  useEffect(() => {
+    setPage(0);
+    if (open) {
+      setAllCrops(cropItems || []);
+    } else {
+      setAllCrops([]);
+    }
+  }, [debouncedSearch, open]);
+
+  useEffect(() => {
+    if (!cropItems) return;
+    if (page === 0) {
+      setAllCrops(cropItems);
+    } else {
+      setAllCrops((prev) => {
+        const existingIds = new Set(prev.map((c) => c.id));
+        const newItems = cropItems.filter((c) => !existingIds.has(c.id));
+        return [...prev, ...newItems];
+      });
+    }
+  }, [cropItems, page]);
 
   const allCropOptions = useMemo<CropOption[]>(() => {
-    return cropItems.map((crop) => ({
-      cropGroupId: crop.cropGroupId || null,
-      cropGroup: crop.cropGroupName || "Chưa phân loại",
+    return allCrops.map((crop) => ({
       cropId: crop.id,
       crop: crop.name,
-      varieties: varietyItems
-        .filter((v) => v.cropId === crop.id)
-        .map((v) => ({ id: v.id, name: v.name || "" })),
+      cropGroupId: crop?.subjectGroup?.id || null,
+      cropGroup: crop?.subjectGroup?.name || "Chưa phân loại",
+      varieties:
+        crop.id === selectedCropId
+          ? varietyItems.map((v) => ({ id: v.id, name: v.name || "" }))
+          : [],
     }));
-  }, [cropItems, varietyItems]);
+  }, [allCrops, varietyItems, selectedCropId]);
 
-  const filteredCropOptions = useMemo(() => {
-    const query = searchTerm.trim().toLowerCase();
-    if (!query) return allCropOptions;
-
-    return allCropOptions.filter((item) => {
-      const searchableText = [
-        item.cropGroup,
-        item.crop,
-        ...item.varieties.map((v) => v.name),
-      ]
-        .join(" ")
-        .toLowerCase();
-      return searchableText.includes(query);
-    });
-  }, [allCropOptions, searchTerm]);
+  const filteredCropOptions = allCropOptions;
 
   useEffect(() => {
     if (!open) return undefined;
@@ -85,6 +118,15 @@ export function CropVarietySelectorDialog({
       (option) =>
         option.cropGroup === selectedGroup && option.cropId === selectedCropId,
     ) ?? null;
+
+  const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    const target = e.currentTarget;
+    if (target.scrollHeight - target.scrollTop <= target.clientHeight + 50) {
+      if (!cropsLoading && response && page < response.totalPages - 1) {
+        setPage((p) => p + 1);
+      }
+    }
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -132,7 +174,10 @@ export function CropVarietySelectorDialog({
           </div>
         ) : (
           <div className="grid min-h-0 flex-1 grid-cols-1 gap-0 overflow-hidden lg:grid-cols-[1.1fr_0.9fr]">
-            <ScrollArea className="min-h-0 border-r bg-white">
+            <div
+              onScroll={handleScroll}
+              className="min-h-0 border-r bg-white overflow-y-auto h-full max-h-[calc(90vh-11rem)]"
+            >
               <div className="space-y-3 p-6">
                 {filteredCropOptions.map((option) => {
                   const isSelected =
@@ -144,9 +189,11 @@ export function CropVarietySelectorDialog({
                       key={`${option.cropGroup}-${option.cropId}`}
                       type="button"
                       onClick={() => {
-                        setSelectedGroup(option.cropGroup);
-                        setSelectedCropId(option.cropId);
-                        setSelectedVarieties(option.varieties.map((v) => v.id));
+                        if (!isSelected) {
+                          setSelectedGroup(option.cropGroup);
+                          setSelectedCropId(option.cropId);
+                          setSelectedVarieties([]);
+                        }
                       }}
                       className={`group flex w-full items-start gap-4 rounded-2xl border bg-white p-4 text-left transition-all hover:border-primary/30 hover:shadow-md ${
                         isSelected
@@ -174,30 +221,16 @@ export function CropVarietySelectorDialog({
                             {isSelected && <Check className="h-3 w-3" />}
                           </div>
                         </div>
-
-                        <div className="mt-3 flex flex-wrap items-center gap-2">
-                          <Badge
-                            variant="secondary"
-                            className="bg-slate-100 text-slate-700"
-                          >
-                            {option.varieties.length} giống
-                          </Badge>
-                          <Badge variant="outline" className="border-slate-200">
-                            {option.varieties[0]?.name}
-                          </Badge>
-                          {option.varieties.length > 1 && (
-                            <Badge
-                              variant="outline"
-                              className="border-slate-200"
-                            >
-                              +{option.varieties.length - 1}
-                            </Badge>
-                          )}
-                        </div>
                       </div>
                     </button>
                   );
                 })}
+
+                {cropsLoading && page > 0 && (
+                  <div className="flex justify-center py-2">
+                    <div className="h-5 w-5 animate-spin rounded-full border-2 border-slate-200 border-t-primary" />
+                  </div>
+                )}
 
                 {filteredCropOptions.length === 0 && (
                   <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-slate-200 bg-slate-50 py-12 text-sm text-muted-foreground">
@@ -206,7 +239,7 @@ export function CropVarietySelectorDialog({
                   </div>
                 )}
               </div>
-            </ScrollArea>
+            </div>
 
             <div className="min-h-0 bg-slate-50">
               <ScrollArea className="h-full">

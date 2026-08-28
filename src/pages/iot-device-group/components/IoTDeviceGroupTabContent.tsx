@@ -74,7 +74,6 @@ export function IoTDeviceGroupTabContent({
             key: "status",
             label: "Trạng thái",
             options: [
-              { label: "Tất cả", value: "all" },
               { label: "Hoạt động", value: "active" },
               { label: "Ngừng hoạt động", value: "inactive" },
               { label: "Đã lưu trữ", value: "archived" },

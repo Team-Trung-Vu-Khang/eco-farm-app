@@ -67,10 +67,7 @@ export function PositionGroupForm({
   onSubmit,
   loading = false,
 }: PositionGroupFormProps) {
-  const defaultValues = useMemo(
-    () => buildDefaultValues(editItem),
-    [editItem],
-  );
+  const defaultValues = useMemo(() => buildDefaultValues(editItem), [editItem]);
 
   const {
     control,
@@ -107,14 +104,14 @@ export function PositionGroupForm({
     >
       <div className="space-y-4">
         <div className="space-y-2">
-          <Label htmlFor="pg-code" required>
-            Mã nhóm
-          </Label>
+          <Label htmlFor="pg-code">Mã nhóm</Label>
           <Controller
             control={control}
             name="code"
             render={({ field }) => (
               <Input
+                clearable={!editItem}
+                disabled={!!editItem}
                 id="pg-code"
                 placeholder="VD: GRP-MNG, GRP-TECH..."
                 aria-invalid={!!errors.code}
@@ -185,9 +182,7 @@ export function PositionGroupForm({
             )}
           />
           {errors.description ? (
-            <p className="text-xs text-red-600">
-              {errors.description.message}
-            </p>
+            <p className="text-xs text-red-600">{errors.description.message}</p>
           ) : null}
         </div>
 

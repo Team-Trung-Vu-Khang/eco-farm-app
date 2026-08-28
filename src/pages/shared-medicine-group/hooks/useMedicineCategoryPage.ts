@@ -3,6 +3,7 @@ import { useToast } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { useMasterData, useMasterDataMutations } from "@/features/master-data";
 import type { MasterDataStatus } from "@/features/master-data/types/master-data.type";
 import type { MedicineCategoryFormValues } from "../data/schema";
+import { useDebounce } from "@/shared/hooks/useDebounce";
 
 export type MedicineCategoryItem = {
   id: number;
@@ -28,11 +29,13 @@ export function useMedicineCategoryPage(
     null,
   );
 
+  const searchDebounce = useDebounce(search, 400);
+
   const { items, loading, error, response } = useMasterData("medicine-groups", {
     params: {
       domainCode,
       classification,
-      keyword: search.trim() || undefined,
+      keyword: searchDebounce.trim() || undefined,
       status: status === "all" ? undefined : status,
       page: Math.max(currentIndex - 1, 0),
       size: pageSize,
@@ -170,6 +173,7 @@ export function useMedicineCategoryPage(
     deleteOpen,
     setDeleteOpen,
     editItem,
+    deleteItem,
     handleAdd,
     handleEdit,
     handleDelete,

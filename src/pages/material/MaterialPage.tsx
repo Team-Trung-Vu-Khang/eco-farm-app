@@ -32,6 +32,7 @@ export default function MaterialPage() {
     deleteImpactItem,
     deleteImpactOpen,
     setDeleteImpactOpen,
+    scope,
   } = useMaterialPage();
 
   return (
@@ -103,9 +104,9 @@ export default function MaterialPage() {
       />
 
       <DeletionImpactDialog
-        scope="farm"
         supplyType={supplyType}
         open={deleteImpactOpen}
+        scope={scope as "farm" | "admin"}
         itemName={deleteImpactItem?.name}
         onOpenChange={setDeleteImpactOpen}
         itemId={deleteImpactItem?.id ?? null}

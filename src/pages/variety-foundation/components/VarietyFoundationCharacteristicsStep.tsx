@@ -36,7 +36,9 @@ export function VarietyFoundationCharacteristicsStep({
   const watchedDescription = watch("description");
   const watchedAverageYield = watch("averageYield");
   const processedCropRef = useRef<string>("");
-  const { items: crops } = useCrops();
+  const { items: crops } = useCrops({
+    params: { domainCode: "CROP", status: "active", page: 0, size: 100 },
+  });
 
   useEffect(() => {
     if (watchedCrop && watchedCrop !== processedCropRef.current) {
@@ -66,8 +68,8 @@ export function VarietyFoundationCharacteristicsStep({
           ]
             .filter(Boolean)
             .join("\n");
-          
-          // Only populate default crop specs description if it's currently empty, 
+
+          // Only populate default crop specs description if it's currently empty,
           // or if the user changed the crop selection (not the initial form loading).
           if (!watchedDescription || !isFirstLoad) {
             setValue("description", desc, { shouldValidate: true });

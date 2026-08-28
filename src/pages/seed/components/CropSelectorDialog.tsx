@@ -55,6 +55,7 @@ export function CropSelectorDialog({
       keyword: debouncedSearchTerm.trim() || undefined,
       page: page,
       size: 20,
+      domainCode: "CROP",
     },
     enabled: open,
   });
@@ -69,8 +70,9 @@ export function CropSelectorDialog({
     if (cropsQuery.data) {
       const rawItems = cropsQuery.data.content ?? [];
       const newItems = rawItems.filter(
-        (item) => item.cropGroupId === cropGroupId,
+        (item) => (item.cropGroupId ?? item.subjectGroup?.id) === cropGroupId,
       );
+
       const totalPages = cropsQuery.data.totalPages ?? 0;
       const currentPage = cropsQuery.data.page ?? 0;
 

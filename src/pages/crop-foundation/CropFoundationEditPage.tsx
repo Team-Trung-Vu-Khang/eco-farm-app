@@ -94,6 +94,7 @@ export default function CropFoundationEditPage() {
     handleComplete,
     handleCancel,
     isLoadingCrop,
+    isInitializing,
     isSubmitting,
   } = useCropFoundationEditForm();
 
@@ -106,7 +107,7 @@ export default function CropFoundationEditPage() {
 
   useEffect(() => {
     if (initialValues) {
-      methods.reset(initialValues);
+      methods.reset(initialValues as CropFoundationFormValues);
     }
   }, [initialValues, methods]);
 
@@ -128,7 +129,7 @@ export default function CropFoundationEditPage() {
           fileInputRef={fileInputRef}
           handleComplete={handleComplete}
           handleCancel={handleCancel}
-          isLoadingCrop={isLoadingCrop}
+          isLoadingCrop={isLoadingCrop || isInitializing}
           isSubmitting={isSubmitting}
         />
       </FormProvider>

@@ -24,12 +24,14 @@ export function SeedSelectionStep() {
   const selectedCropGroup = watch("cropGroupId");
   const watchedCropName = watch("cropName");
 
+  console.log("selectedCropGroup", selectedCropGroup);
+
   const [isCropDialogOpen, setIsCropDialogOpen] = useState(false);
 
   const { items: cropGroups } = useCatalog("crop-groups");
 
   const { items: varieties } = useCropVarieties({
-    params: { cropId: Number(selectedCrop) },
+    params: { cropId: Number(selectedCrop), domainCode: "CROP" },
     enabled: !!selectedCrop,
   });
 

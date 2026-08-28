@@ -32,6 +32,7 @@ export default function AhMaterialPage() {
     deleteImpactOpen,
     setDeleteImpactOpen,
     supplyType,
+    scope,
   } = useAhMaterialPage();
 
   return (
@@ -103,9 +104,9 @@ export default function AhMaterialPage() {
       />
 
       <DeletionImpactDialog
-        scope="farm"
         supplyType={supplyType}
         open={deleteImpactOpen}
+        scope={scope as "admin" | "farm"}
         itemName={deleteImpactItem?.name}
         onOpenChange={setDeleteImpactOpen}
         itemId={deleteImpactItem?.id ?? null}

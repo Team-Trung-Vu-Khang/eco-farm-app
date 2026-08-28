@@ -13,6 +13,7 @@ import type {
 } from "../../../features/bank-directory/types/bank-directory.type";
 import { emptyBankFormData } from "../data/constants";
 import type { Bank } from "../types/types";
+import { useDebounce } from "@/shared/hooks/useDebounce";
 
 const DEFAULT_STATUS: BankDirectoryCreateRequest["status"] = "active";
 const ALL_STATUS = "all" as const;
@@ -96,6 +97,7 @@ export function useBankDirectory() {
   const [logoPreview, setLogoPreview] = useState<string>("");
   const [formData, setFormData] = useState<Bank>(emptyBankFormData);
   const [search, setSearch] = useState("");
+  const debouncedSearch = useDebounce(search, 500);
   const [status, setStatus] = useState<BankDirectoryStatus | typeof ALL_STATUS>(
     ALL_STATUS,
   );
@@ -110,7 +112,7 @@ export function useBankDirectory() {
 
   const bankQuery = useBankDirectoryQuery({
     initialQuery: {
-      keyword: search.trim() || undefined,
+      keyword: debouncedSearch.trim() || undefined,
       status: status === ALL_STATUS ? undefined : status,
       transferSupported:
         transferSupported === ALL_BOOL ? undefined : transferSupported,

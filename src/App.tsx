@@ -44,6 +44,7 @@ const OnboardChecker: React.FC<OnboardCheckerProps> = ({ children }) => {
       );
 
       if (!hasExcludedRole && response.totalElements === 0 && !hasChecked) {
+        // if (response.totalElements === 0 && !hasChecked) {
         setShowOnboard(true);
         setHasChecked(true);
       } else {

@@ -16,17 +16,15 @@ export default function IrrigationSystemPage() {
 
   return (
     <PageWrapper
-      // title="Danh mục phương pháp bổ trợ (Tưới tiêu / Hình thức nuôi)"
-      // description="Quản lý phương pháp tưới tiêu cho trồng trọt hoặc hình thức nuôi cho thủy sản"
-      title="Phương pháp Tưới tiêu"
-      description="Quản lý các phương pháp tưới tiêu áp dụng trong trồng trọt"
+      title="Danh mục phương pháp bổ trợ (Tưới tiêu / Hình thức nuôi)"
+      description="Quản lý phương pháp tưới tiêu cho trồng trọt hoặc hình thức nuôi cho thủy sản"
     >
       <Tabs
         value={activeTab}
         onValueChange={(value) => setActiveTab(value as ProductionDomain)}
         className="w-full"
       >
-        {/* <TabsList className="grid w-full grid-cols-2 mb-6">
+        <TabsList className="grid w-full grid-cols-2 mb-6">
           <TabsTrigger value="CROP" className="gap-2">
             <Leaf className="w-4 h-4" />
             Trồng trọt (Tưới tiêu)
@@ -35,13 +33,13 @@ export default function IrrigationSystemPage() {
             <Waves className="w-4 h-4" />
             Nuôi trồng thủy sản (Hình thức nuôi)
           </TabsTrigger>
-        </TabsList> */}
+        </TabsList>
 
         <TabsContent value="CROP">
           <IrrigationSystemTabContent
             domainCode="CROP"
-            // title="Phương pháp Tưới tiêu"
-            // description="Quản lý các phương pháp tưới tiêu áp dụng trong trồng trọt"
+            title="Phương pháp Tưới tiêu"
+            description="Quản lý các phương pháp tưới tiêu áp dụng trong trồng trọt"
           />
         </TabsContent>
 
