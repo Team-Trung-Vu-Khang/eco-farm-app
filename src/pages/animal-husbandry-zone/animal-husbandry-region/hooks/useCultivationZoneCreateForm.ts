@@ -135,7 +135,10 @@ export function useCultivationZoneCreateForm(
           })
           .filter((s) => !isNaN(s.scopeId)),
         farmingMethodId: Number(data.farmingMethodId),
-        rearingMethodId: Number(data.rearingMethodId),
+        rearingMethodId:
+          Number(data.rearingMethodId) > 0
+            ? Number(data.rearingMethodId)
+            : undefined,
         seedIds: (data.seedIds ?? []).map(Number).filter((id) => !isNaN(id)),
         certificateIds: isEditMode
           ? (data.certificateIds ?? []).map(Number).filter((id) => !isNaN(id))

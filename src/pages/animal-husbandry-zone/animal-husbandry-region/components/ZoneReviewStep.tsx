@@ -17,7 +17,7 @@ export const ZoneReviewStep = () => {
     params: { size: 100 },
   });
   const { items: irrigationSystems } = useIrrigationSystems({
-    params: { size: 100 },
+    params: { domainCode: "LIVESTOCK", size: 100 },
   });
   const { items: certificateStandards } = useMasterData(
     "certificate-standards",

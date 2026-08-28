@@ -5,14 +5,10 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
+  Combobox,
   Input,
   Label,
   ScrollArea,
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
   Dialog,
   DialogContent,
   DialogHeader,
@@ -21,7 +17,7 @@ import {
   cn,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { CheckCircle2, Leaf, Search, Sprout, ChevronRight } from "lucide-react";
-import { useState, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   useProductionMethods,
   useMethodApplications,
@@ -203,12 +199,42 @@ export const ZoneConfigurationStep = () => {
 
   const { items: irrigationSystems, loading: irLoading } = useIrrigationSystems(
     {
-      params: { size: 100 },
+      params: { domainCode: "LIVESTOCK", size: 100, status: "active" },
     },
   );
 
+  // The API query is the source of truth, but keep this guard because older
+  // deployments can return rearing methods from other domains in the result.
+  const livestockRearingMethods = useMemo(
+    () =>
+      irrigationSystems.filter((system) => {
+        const attributeDomainCode = (
+          system.attributes as { domainCode?: string } | undefined
+        )?.domainCode;
+        return (
+          system.domainCode === "LIVESTOCK" ||
+          attributeDomainCode === "LIVESTOCK"
+        );
+      }),
+    [irrigationSystems],
+  );
+
   const selectedFarmingMethodId = watch("farmingMethodId");
+  const selectedRearingMethodId = watch("rearingMethodId");
   const selectedSeedIds = watch("seedIds") ?? [];
+
+  useEffect(() => {
+    if (irLoading || !selectedRearingMethodId || selectedRearingMethodId <= 0) {
+      return;
+    }
+
+    const isValidLivestockMethod = livestockRearingMethods.some(
+      (method) => method.id === selectedRearingMethodId,
+    );
+    if (!isValidLivestockMethod) {
+      setValue("rearingMethodId", 0, { shouldDirty: true, shouldValidate: true });
+    }
+  }, [irLoading, livestockRearingMethods, selectedRearingMethodId, setValue]);
 
   const { items: methodApplications, loading: fmcLoading } =
     useMethodApplications({
@@ -283,29 +309,26 @@ export const ZoneConfigurationStep = () => {
                     Phương pháp chăn nuôi{" "}
                     <span className="text-red-500">*</span>
                   </Label>
-                  <Select
+                  <Combobox
                     disabled={fmLoading}
+                    className="w-full"
+                    options={farmingMethods.map((method) => ({
+                      label: method.name ?? "",
+                      value: method.id.toString(),
+                    }))}
                     value={field.value > 0 ? field.value.toString() : ""}
-                    onValueChange={(val) => {
-                      field.onChange(parseInt(val, 10));
+                    onChange={(value) => {
+                      const methodId = parseInt(value, 10);
+                      if (Number.isNaN(methodId)) return;
+
+                      field.onChange(methodId);
                       // Reset seeds when farming method changes
                       setValue("seedIds", []);
                     }}
-                  >
-                    <SelectTrigger className="h-11 bg-white">
-                      <SelectValue placeholder="Chọn phương pháp..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {farmingMethods.map((method) => (
-                        <SelectItem
-                          key={method.id}
-                          value={method.id.toString()}
-                        >
-                          <span className="font-medium">{method.name}</span>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                    placeholder="Chọn phương pháp..."
+                    searchPlaceholder="Tìm kiếm phương pháp..."
+                    emptyText="Không tìm thấy phương pháp"
+                  />
                   {errors.farmingMethodId && (
                     <p className="text-xs font-medium text-red-500 mt-1">
                       {errors.farmingMethodId.message}
@@ -327,31 +350,26 @@ export const ZoneConfigurationStep = () => {
                   <Label className="text-sm font-medium">
                     Hệ thống cấp nước/chuồng trại{" "}
                   </Label>
-                  <Select
+                  <Combobox
                     disabled={irLoading}
+                    className="w-full"
+                    options={livestockRearingMethods.map((system) => ({
+                      label: system.name ?? "",
+                      value: system.id.toString(),
+                    }))}
                     value={
                       field?.value && field?.value > 0
                         ? field.value.toString()
                         : ""
                     }
-                    onValueChange={(val) => {
-                      field.onChange(parseInt(val, 10));
+                    onChange={(value) => {
+                      const systemId = parseInt(value, 10);
+                      if (!Number.isNaN(systemId)) field.onChange(systemId);
                     }}
-                  >
-                    <SelectTrigger className="h-11 bg-white">
-                      <SelectValue placeholder="Chọn hệ thống..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {irrigationSystems.map((system) => (
-                        <SelectItem
-                          key={system.id}
-                          value={system.id.toString()}
-                        >
-                          <span className="font-medium">{system.name}</span>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                    placeholder="Chọn hệ thống..."
+                    searchPlaceholder="Tìm kiếm hệ thống..."
+                    emptyText="Không tìm thấy hệ thống"
+                  />
                   {errors.rearingMethodId && (
                     <p className="text-xs font-medium text-red-500 mt-1">
                       {errors.rearingMethodId.message}

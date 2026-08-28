@@ -21,7 +21,9 @@ interface StaffTabProps {
 }
 
 export const StaffTab = ({ details }: StaffTabProps) => {
-  const [selectedStaffId, setSelectedStaffId] = useState<number | null>(null);
+  const [selectedStaffId, setSelectedStaffId] = useState<number | null>(
+    () => details.personnel?.[0]?.id ?? null,
+  );
 
   const personnel = details.personnel ?? [];
 

@@ -2,11 +2,13 @@ import { useAreaPlots } from "@/features/farm/hooks/useAreas";
 import { useRegionAreas } from "@/features/farm/hooks/useRegions";
 import { useFarmPersonnel, useMasterData } from "@/features/master-data";
 import { useSelectedWorkspaceId } from "@/features/workspace";
+import { useDebounce } from "@/shared/hooks/useDebounce";
 import useSeedStore from "@/stores/useSeedStore";
 import {
   Badge,
   Button,
   cn,
+  Combobox,
   Dialog,
   DialogContent,
   DialogFooter,
@@ -14,11 +16,6 @@ import {
   DialogTitle,
   Input,
   ScrollArea,
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import {
   Award,
@@ -42,6 +39,7 @@ import type { GeographicalSelection } from "./types";
 
 type RegionOption = {
   id: string | number;
+  code?: string;
   name: string;
   enterpriseId?: string;
   subAreas?: Array<{
@@ -296,6 +294,10 @@ interface GeographicalSelectorProps {
   showEnterprise?: boolean;
   regionOnly?: boolean;
   customTrigger?: React.ReactNode;
+  onRegionSearchChange?: (keyword: string) => void;
+  onReachEnd?: () => void;
+  hasMoreRegions?: boolean;
+  isRegionSearching?: boolean;
 }
 
 interface AreaPlotsListProps {
@@ -540,6 +542,10 @@ export const GeographicalSelector = ({
   showEnterprise = false,
   regionOnly = false,
   customTrigger,
+  onRegionSearchChange,
+  onReachEnd,
+  hasMoreRegions = false,
+  isRegionSearching = false,
 }: GeographicalSelectorProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
@@ -548,17 +554,44 @@ export const GeographicalSelector = ({
   const [tempSelections, setTempSelections] = useState<GeographicalSelection[]>(
     [],
   );
+  const observerRef = useRef<HTMLDivElement>(null);
+  const scrollViewportRef = useRef<HTMLDivElement>(null);
 
   const filteredRegions = useMemo(() => {
+    const query = searchTerm.trim().toLowerCase();
+
     return regions.filter(
       (region) =>
         (!showEnterprise ||
           !enterpriseId ||
           region.enterpriseId === `ent-${enterpriseId}` ||
           region.enterpriseId === enterpriseId) &&
-        region.name.toLowerCase().includes(searchTerm.toLowerCase()),
+        (!query ||
+          region.name.toLowerCase().includes(query) ||
+          region.code?.toLowerCase().includes(query)),
     );
   }, [enterpriseId, regions, searchTerm, showEnterprise]);
+
+  useEffect(() => {
+    if (
+      !observerRef.current ||
+      !scrollViewportRef.current ||
+      !hasMoreRegions ||
+      isRegionSearching
+    ) {
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) onReachEnd?.();
+      },
+      { root: scrollViewportRef.current, rootMargin: "96px", threshold: 0 },
+    );
+
+    observer.observe(observerRef.current);
+    return () => observer.disconnect();
+  }, [hasMoreRegions, isRegionSearching, onReachEnd]);
 
   const toggleRegion = (id: string) => {
     setExpandedRegions((prev) =>
@@ -735,7 +768,10 @@ export const GeographicalSelector = ({
             setTempSelections(existingSelections);
           }
           setIsOpen(open);
-          if (!open) setSearchTerm("");
+          if (!open) {
+            setSearchTerm("");
+            onRegionSearchChange?.("");
+          }
         }}
       >
         <DialogContent className="max-w-xl p-0 overflow-hidden rounded-2xl border-none shadow-2xl flex flex-col max-h-[90vh]">
@@ -758,12 +794,16 @@ export const GeographicalSelector = ({
                 placeholder="Tìm kiếm vùng trồng..."
                 className="pl-10 bg-slate-50 border-slate-200 focus:bg-white transition-all rounded-xl"
                 value={searchTerm}
-                onChange={(event) => setSearchTerm(event.target.value)}
+                onChange={(event) => {
+                  const keyword = event.target.value;
+                  setSearchTerm(keyword);
+                  onRegionSearchChange?.(keyword);
+                }}
               />
             </div>
           </div>
 
-          <ScrollArea className="flex-1 overflow-y-auto">
+          <div ref={scrollViewportRef} className="flex-1 overflow-y-auto">
             <div className="p-6 space-y-4">
               {filteredRegions.map((region) => (
                 <div key={region.id} className="space-y-2">
@@ -855,8 +895,15 @@ export const GeographicalSelector = ({
                   </div>
                 </div>
               )}
+
+              <div ref={observerRef} className="h-2 w-full" />
+              {isRegionSearching && (
+                <div className="flex justify-center py-4">
+                  <Loader2 className="h-5 w-5 animate-spin text-slate-400" />
+                </div>
+              )}
             </div>
-          </ScrollArea>
+          </div>
 
           <div className="p-4 bg-slate-50 border-t flex justify-end gap-3 shrink-0">
             <Button variant="outline" onClick={() => setIsOpen(false)}>
@@ -893,6 +940,7 @@ export const ManagerSelector = ({
   const [departmentFilter, setDepartmentFilter] = useState("all");
   const [page, setPage] = useState(0);
   const [loadedPersonnel, setLoadedPersonnel] = useState<any[]>([]);
+  const debouncedSearchTerm = useDebounce(searchTerm, 300);
 
   const workspaceId = useSelectedWorkspaceId();
 
@@ -901,11 +949,14 @@ export const ManagerSelector = ({
     items: newItems,
     response,
     loading,
+    isFetching,
   } = useFarmPersonnel({
     params: {
-      keyword: searchTerm.trim() || undefined,
+      keyword: debouncedSearchTerm.trim() || undefined,
+      departmentId:
+        departmentFilter === "all" ? undefined : Number(departmentFilter),
       page,
-      size: 100,
+      size: 20,
     },
     workspaceId: typeof workspaceId === "number" ? workspaceId : undefined,
     enabled: true,
@@ -918,14 +969,25 @@ export const ManagerSelector = ({
   const departments = useMemo(() => {
     return departmentItems
       .filter((d) => d.status === "active")
-      .map((d) => d.name);
+      .map((d) => ({ id: String(d.id), name: d.name }));
   }, [departmentItems]);
 
-  // Reset page and loaded items when search keyword changes
+  const departmentOptions = useMemo(
+    () => [
+      { label: "Tất cả", value: "all" },
+      ...departments.map((department) => ({
+        label: department.name,
+        value: department.id,
+      })),
+    ],
+    [departments],
+  );
+
+  // Restart paging whenever the server-side search or filter changes.
   useEffect(() => {
     setPage(0);
     setLoadedPersonnel([]);
-  }, [searchTerm]);
+  }, [debouncedSearchTerm, departmentFilter]);
 
   // Append new items to loadedPersonnel list when they arrive
   useEffect(() => {
@@ -938,19 +1000,49 @@ export const ManagerSelector = ({
     }
   }, [newItems]);
 
-  // Client-side department filtering on loaded personnel list
+  // Keep the client-side filter as a fallback for APIs that do not yet apply
+  // the departmentId query parameter.
   const filteredManagers = useMemo(() => {
+    const searchQuery = searchTerm.trim().toLowerCase();
+
     return loadedPersonnel.filter((manager) => {
-      const managerDept = manager.department?.name || manager.department || "";
-      return departmentFilter === "all" || managerDept === departmentFilter;
+      const managerDepartmentId =
+        manager.departmentId ?? manager.department?.id;
+      const managerPosition = manager.position?.name || manager.position || "";
+      const managerDepartment =
+        manager.department?.name || manager.department || "";
+      const matchesSearch =
+        !searchQuery ||
+        manager.fullName?.toLowerCase().includes(searchQuery) ||
+        manager.code?.toLowerCase().includes(searchQuery) ||
+        managerPosition.toLowerCase().includes(searchQuery) ||
+        managerDepartment.toLowerCase().includes(searchQuery);
+
+      return (
+        matchesSearch &&
+        (departmentFilter === "all" ||
+          String(managerDepartmentId) === departmentFilter)
+      );
     });
-  }, [loadedPersonnel, departmentFilter]);
+  }, [loadedPersonnel, departmentFilter, searchTerm]);
+
+  const isSearchDebouncing = searchTerm.trim() !== debouncedSearchTerm.trim();
+  const isPersonnelLoading = isFetching || isSearchDebouncing;
 
   // IntersectionObserver for infinite scroll trigger
   const observerRef = useRef<HTMLDivElement>(null);
+  const scrollViewportRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (!observerRef.current || !response || response.last || loading) return;
+    if (
+      !observerRef.current ||
+      !scrollViewportRef.current ||
+      !response ||
+      response.last ||
+      isPersonnelLoading
+    ) {
+      return;
+    }
 
     const observer = new IntersectionObserver(
       (entries) => {
@@ -958,12 +1050,12 @@ export const ManagerSelector = ({
           setPage((prev) => prev + 1);
         }
       },
-      { threshold: 0.1 },
+      { root: scrollViewportRef.current, rootMargin: "96px", threshold: 0 },
     );
 
     observer.observe(observerRef.current);
     return () => observer.disconnect();
-  }, [response, loading]);
+  }, [response, isPersonnelLoading]);
 
   return (
     <>
@@ -1056,25 +1148,18 @@ export const ManagerSelector = ({
                   onChange={(event) => setSearchTerm(event.target.value)}
                 />
               </div>
-              <Select
+              <Combobox
+                className="w-36 shrink-0 bg-slate-50"
+                options={departmentOptions}
                 value={departmentFilter}
-                onValueChange={setDepartmentFilter}
-              >
-                <SelectTrigger className="w-35 bg-slate-50">
-                  <SelectValue placeholder="Phòng ban" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Tất cả</SelectItem>
-                  {departments.map((department) => (
-                    <SelectItem key={department} value={department}>
-                      {department}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                onChange={(value) => setDepartmentFilter(value || "all")}
+                placeholder="Chọn phòng ban"
+                searchPlaceholder="Tìm kiếm phòng ban..."
+                emptyText="Không tìm thấy phòng ban"
+              />
             </div>
 
-            <ScrollArea className="h-75 pr-4">
+            <div ref={scrollViewportRef} className="max-h-75 overflow-y-auto">
               <div className="space-y-2">
                 {filteredManagers.map((manager) => {
                   const managerPos =
@@ -1132,19 +1217,19 @@ export const ManagerSelector = ({
                 {/* Observer anchor for infinite scroll loading */}
                 <div ref={observerRef} className="h-2 w-full bg-transparent" />
 
-                {loading && (
+                {(loading || (isPersonnelLoading && page > 0)) && (
                   <div className="flex justify-center py-4">
                     <Loader2 className="h-5 w-5 animate-spin text-slate-400" />
                   </div>
                 )}
 
-                {filteredManagers.length === 0 && !loading && (
+                {filteredManagers.length === 0 && !isPersonnelLoading && (
                   <div className="text-center py-8 text-muted-foreground text-sm">
                     Không tìm thấy quản lý nào
                   </div>
                 )}
               </div>
-            </ScrollArea>
+            </div>
           </div>
         </DialogContent>
       </Dialog>
