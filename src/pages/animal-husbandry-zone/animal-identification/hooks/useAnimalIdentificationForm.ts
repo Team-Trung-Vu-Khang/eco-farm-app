@@ -94,6 +94,9 @@ export const usePlantIdentificationForm = ({
             initialData.plantedDate || new Date().toISOString().split("T")[0],
           note: initialData.note || "",
           plotId: initialData.plotId || "",
+          regionId: initialData.regionId || "",
+          regionName: initialData.regionName || "",
+          areaName: initialData.areaName || "",
           coordinate: initialData.coordinate || { lat: 11.548, lng: 106.896 },
           isInvalidBoundary: false,
         },
@@ -108,6 +111,9 @@ export const usePlantIdentificationForm = ({
         plantedDate: item.plantedDate || new Date().toISOString().split("T")[0],
         note: item.note || "",
         plotId: item.plotId || "",
+        regionId: item.regionId || "",
+        regionName: item.regionName || "",
+        areaName: item.areaName || "",
         coordinate: item.coordinate || { lat: 11.548, lng: 106.896 },
         isInvalidBoundary: false,
       }));
@@ -325,7 +331,8 @@ export const usePlantIdentificationForm = ({
         const plot = scope.plot;
         const pId = String(plot.id);
         const plotData = geoDetailMap.plots[pId];
-        const aId = plot.area ? String(plot.area.id) : undefined;
+        const resolvedArea = plot.area ?? plotData?.area;
+        const aId = resolvedArea ? String(resolvedArea.id) : undefined;
         addUnit(
           pId,
           plot.name,
@@ -335,25 +342,26 @@ export const usePlantIdentificationForm = ({
           aId,
         );
 
-        if (plot.area) {
+        if (resolvedArea) {
           const areaData = geoDetailMap.areas[aId!];
-          const rId = plot.area.region
-            ? String(plot.area.region.id)
+          const resolvedRegion = resolvedArea.region ?? areaData?.region;
+          const rId = resolvedRegion
+            ? String(resolvedRegion.id)
             : undefined;
           addUnit(
             aId!,
-            plot.area.name,
+            resolvedArea.name,
             "Khu vực",
             2,
             boundaryToCoords(areaData?.boundary),
             rId,
           );
 
-          if (plot.area.region) {
+          if (resolvedRegion) {
             const regionData = geoDetailMap.regions[rId!];
             addUnit(
               rId!,
-              plot.area.region.name,
+              resolvedRegion.name,
               "Vùng chăn nuôi",
               3,
               boundaryToCoords(regionData?.boundary),
@@ -364,7 +372,8 @@ export const usePlantIdentificationForm = ({
         const area = scope.area;
         const aId = String(area.id);
         const areaData = geoDetailMap.areas[aId];
-        const rId = area.region ? String(area.region.id) : undefined;
+        const resolvedRegion = area.region ?? areaData?.region;
+        const rId = resolvedRegion ? String(resolvedRegion.id) : undefined;
         addUnit(
           aId,
           area.name,
@@ -386,11 +395,11 @@ export const usePlantIdentificationForm = ({
           );
         });
 
-        if (area.region) {
+        if (resolvedRegion) {
           const regionData = geoDetailMap.regions[rId!];
           addUnit(
             rId!,
-            area.region.name,
+            resolvedRegion.name,
             "Vùng chăn nuôi",
             3,
             boundaryToCoords(regionData?.boundary),
@@ -432,8 +441,31 @@ export const usePlantIdentificationForm = ({
         });
       }
     });
+
+    // An identification location contains the full parent region, whereas a
+    // cultivation-zone scope may only include the selected area. Preserve that
+    // authoritative parent so edit mode never renders a placeholder ("—").
+    const initialRegionId = initialData?.regionId;
+    const initialRegionName = initialData?.regionName;
+    const initialScopeId = initialData?.plotId;
+    if (initialRegionId && initialRegionName && initialScopeId) {
+      addUnit(
+        String(initialRegionId),
+        initialRegionName,
+        "Vùng chăn nuôi",
+        3,
+      );
+
+      const selectedInitialUnit = result.find(
+        (unit) => unit.id === String(initialScopeId),
+      );
+      if (selectedInitialUnit?.level === 2) {
+        selectedInitialUnit.parentId = String(initialRegionId);
+      }
+    }
+
     return result;
-  }, [selectedCultivationRegion, geoDetailMap]);
+  }, [selectedCultivationRegion, geoDetailMap, initialData]);
 
   const { areasByRegion, plotsByArea } = useMemo(() => {
     const scopes: any[] = selectedCultivationRegion?.scopes ?? [];
@@ -770,13 +802,18 @@ export const usePlantIdentificationForm = ({
     for (const s of scopes) {
       if (s.scopeType === "PLOT" && s.plot && String(s.plot.id) === targetId) {
         plotName = s.plot.name || "";
-        areaName = s.plot.area?.name || "";
-        regionName = s.plot.area?.region?.name || "";
+        const resolvedArea = s.plot.area ?? geoDetailMap.plots[targetId]?.area;
+        areaName = resolvedArea?.name || "";
+        regionName =
+          resolvedArea?.region?.name ||
+          geoDetailMap.areas[String(resolvedArea?.id ?? "")]?.region?.name ||
+          "";
         return { plotName, areaName, regionName, scopeType: "PLOT" as const };
       }
       if (s.scopeType === "AREA" && s.area && String(s.area.id) === targetId) {
         areaName = s.area.name || "";
-        regionName = s.area.region?.name || "";
+        regionName =
+          s.area.region?.name || geoDetailMap.areas[targetId]?.region?.name || "";
         return { plotName, areaName, regionName, scopeType: "AREA" as const };
       }
       if (

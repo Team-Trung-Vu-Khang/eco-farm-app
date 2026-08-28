@@ -1,4 +1,5 @@
 import { useFormContext, Controller } from "react-hook-form";
+import { useEffect, useState } from "react";
 import { Award, MapPin, ScrollText } from "lucide-react";
 import {
   Badge,
@@ -15,6 +16,7 @@ import {
   OrganizationSelector,
 } from "./index";
 import { useRegions } from "@/features/farm/hooks/useRegions";
+import { useDebounce } from "@/shared/hooks/useDebounce";
 import type { GeographicalSelection } from "./types";
 import type { FarmRegionResponse } from "@/features/farm/types/farm.type";
 
@@ -22,6 +24,7 @@ import type { FarmRegionResponse } from "@/features/farm/types/farm.type";
 function toRegionOptions(apiRegions: FarmRegionResponse[]) {
   return apiRegions.map((r) => ({
     id: r.id,
+    code: r.code,
     name: r.name ?? "",
     enterpriseId: (r.metadataJson?.enterpriseId as string) ?? "",
     subAreas: (r.areas ?? []).map((a) => ({
@@ -48,9 +51,43 @@ export const ZoneGeneralInfoStep = ({
 
   const selections = watch("selections") ?? [];
   const enterpriseId = watch("enterpriseId") ?? "";
+  const [regionSearch, setRegionSearch] = useState("");
+  const [regionPage, setRegionPage] = useState(0);
+  const [loadedRegions, setLoadedRegions] = useState<FarmRegionResponse[]>([]);
+  const debouncedRegionSearch = useDebounce(regionSearch, 300);
 
-  const { items: apiRegions } = useRegions({ params: { size: 100 } });
-  const regionOptions = toRegionOptions(apiRegions);
+  const {
+    items: apiRegions,
+    response: regionsResponse,
+    isFetching: isRegionFetching,
+  } = useRegions({
+    params: {
+      page: regionPage,
+      size: 20,
+      keyword: debouncedRegionSearch.trim() || undefined,
+    },
+  });
+
+  useEffect(() => {
+    setRegionPage(0);
+    setLoadedRegions([]);
+  }, [debouncedRegionSearch]);
+
+  useEffect(() => {
+    if (apiRegions.length === 0) return;
+
+    setLoadedRegions((previous) => {
+      const existingIds = new Set(previous.map((region) => region.id));
+      return [
+        ...previous,
+        ...apiRegions.filter((region) => !existingIds.has(region.id)),
+      ];
+    });
+  }, [apiRegions]);
+
+  const regionOptions = toRegionOptions(loadedRegions);
+  const isRegionSearching =
+    isRegionFetching || regionSearch.trim() !== debouncedRegionSearch.trim();
 
   const geoSelections: GeographicalSelection[] = selections;
 
@@ -153,6 +190,10 @@ export const ZoneGeneralInfoStep = ({
                 enterpriseId={enterpriseId}
                 existingSelections={geoSelections}
                 onConfirm={handleConfirmSelections}
+                onRegionSearchChange={setRegionSearch}
+                onReachEnd={() => setRegionPage((page) => page + 1)}
+                hasMoreRegions={!regionsResponse?.last}
+                isRegionSearching={isRegionSearching}
               />
 
               <div className="grid grid-cols-1 gap-4 mt-2">

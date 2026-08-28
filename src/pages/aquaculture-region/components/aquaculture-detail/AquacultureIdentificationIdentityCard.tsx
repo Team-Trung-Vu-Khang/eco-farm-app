@@ -24,7 +24,7 @@ export const PlantIdentificationIdentityCard = ({
                 {plant.code}
               </h2>
             </div>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-4 pt-2">
+            <div className="grid grid-cols-2 gap-4 pt-2">
               <div className="space-y-1">
                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
                   Ngày ghi nhận
@@ -36,15 +36,6 @@ export const PlantIdentificationIdentityCard = ({
                   Độ tuổi
                 </p>
                 <p className="text-sm font-semibold">{formattedAge}</p>
-              </div>
-              <div className="space-y-1">
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                  Vị trí GPS
-                </p>
-                <p className="text-sm font-mono">
-                  Kinh độ: {plant.coordinate.lat.toFixed(6)}, Vĩ độ:{" "}
-                  {plant.coordinate.lng.toFixed(6)}
-                </p>
               </div>
             </div>
             {plant.note && (

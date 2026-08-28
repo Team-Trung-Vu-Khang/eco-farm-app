@@ -820,13 +820,22 @@ export const useAquacultureIdentificationForm = ({
   };
 
   const handleComplete = () => {
+    const defaultScopeId = selectedScopeIds[0];
+    if (!defaultScopeId) {
+      throw new Error("Vui lòng chọn ít nhất một phạm vi nuôi trồng");
+    }
+
     const data = getValues("plants");
     const mapped = data.map((p) => {
+      // Step 2 does not ask for a per-item location. Each new entry therefore
+      // inherits the first scope selected in step 1 instead of sending 0.
+      const locationId = p.plotId || defaultScopeId;
       const { plotName, areaName, regionName, scopeType } = resolveLocationNames(
-        p.plotId,
+        locationId,
       );
       return {
         ...p,
+        plotId: locationId,
         plotName,
         areaName,
         regionName,

@@ -4,12 +4,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import {
-  MapPin,
-  Ruler,
-  Sprout,
-  User,
-} from "lucide-react";
+import { Ruler, Sprout, User } from "lucide-react";
 import type { Plant } from "../../../../region-chart/constants";
 
 type Props = {
@@ -24,9 +19,6 @@ type Props = {
   } | null;
   farmingMethod?: { name?: string } | null;
   irrigationMethod?: { name?: string } | null;
-  region?: { name?: string } | null;
-  area?: { name?: string } | null;
-  plot?: { name?: string } | null;
 };
 
 export const PlantIdentificationSidebar = ({
@@ -35,18 +27,15 @@ export const PlantIdentificationSidebar = ({
   manager,
   farmingMethod,
   irrigationMethod,
-  region,
-  area,
-  plot,
 }: Props) => {
   return (
     <div className="space-y-6">
       <Card className="border-none shadow-sm bg-white rounded-2xl overflow-hidden">
         <CardHeader className="border-b py-4">
-            <CardTitle className="text-sm font-semibold flex items-center gap-2">
-              <Sprout className="w-4 h-4 text-emerald-600" />
+          <CardTitle className="text-sm font-semibold flex items-center gap-2">
+            <Sprout className="w-4 h-4 text-emerald-600" />
             Thông số nuôi trồng
-            </CardTitle>
+          </CardTitle>
         </CardHeader>
         <CardContent className="p-0">
           <div className="divide-y divide-slate-50">
@@ -64,7 +53,7 @@ export const PlantIdentificationSidebar = ({
       {cultivationRegion && (
         <Card className="border-none shadow-sm bg-white rounded-2xl overflow-hidden">
           <CardHeader className="border-b py-4">
-              <CardTitle className="text-sm font-semibold flex items-center gap-2">
+            <CardTitle className="text-sm font-semibold flex items-center gap-2">
               <User className="w-4 h-4 text-primary" />
               Đơn vị quản lý & Kỹ thuật
             </CardTitle>
@@ -99,41 +88,6 @@ export const PlantIdentificationSidebar = ({
           </CardContent>
         </Card>
       )}
-
-      <Card className="border-none shadow-sm bg-indigo-50/50 rounded-2xl overflow-hidden border border-indigo-100">
-        <CardHeader className="py-4">
-          <CardTitle className="text-sm font-semibold text-indigo-900 flex items-center gap-2">
-            <MapPin className="w-4 h-4" />
-            Quản lý địa lý
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="p-4 space-y-4">
-          <div className="space-y-1">
-            <p className="text-[10px] font-bold text-indigo-400 uppercase tracking-wider">
-              Vùng nuôi trồng
-            </p>
-            <p className="text-sm font-bold text-indigo-900">
-              {region?.name || "N/A"}
-            </p>
-          </div>
-          <div className="space-y-1">
-            <p className="text-[10px] font-bold text-indigo-400 uppercase tracking-wider">
-              Khu vực
-            </p>
-            <p className="text-sm font-bold text-indigo-900">
-              {area?.name || "N/A"}
-            </p>
-          </div>
-          <div className="space-y-1">
-            <p className="text-[10px] font-bold text-indigo-400 uppercase tracking-wider">
-              Lô nuôi
-            </p>
-            <p className="text-sm font-bold text-indigo-900">
-              {plot?.name || "N/A"}
-            </p>
-          </div>
-        </CardContent>
-      </Card>
     </div>
   );
 };

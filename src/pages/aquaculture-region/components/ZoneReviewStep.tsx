@@ -1,11 +1,10 @@
 import { useFormContext } from "react-hook-form";
 import type { CultivationZoneFormValues } from "../data/cultivation-zone-form.schema";
-import { useCatalog } from "@/features/foundation/hooks/useCatalog";
 import { useRearingMethods } from "@/features/master-data/hooks/useRearingMethods";
 import { useMasterData, useFarmPersonnel } from "@/features/master-data";
 import { useSelectedWorkspaceId } from "@/features/workspace";
 import { CultivationRegionCreateConfirmationStep } from "./CultivationRegionCreateConfirmationStep";
-import { useMethodApplications } from "@/features/foundation";
+import { useMethodApplications, useProductionMethods } from "@/features/foundation";
 import { useMemo } from "react";
 
 export const ZoneReviewStep = () => {
@@ -13,8 +12,8 @@ export const ZoneReviewStep = () => {
   const formValues = watch();
 
   // Reference data for display
-  const { items: farmingMethods } = useCatalog("farming-methods", {
-    params: { size: 100 },
+  const { items: farmingMethods } = useProductionMethods({
+    params: { domainCode: "AQUACULTURE", size: 100, status: "active" },
   });
   const { items: rearingMethods } = useRearingMethods({
     params: { domainCode: "AQUACULTURE", size: 100 },

@@ -121,8 +121,8 @@ export const PlantCard = ({
       });
     } else if (area) {
       res.push({
-        id: "temp-reg",
-        name: "—",
+        id: plant.regionId || "temp-reg",
+        name: plant.regionName || "—",
         areas: [
           {
             id: area.id,

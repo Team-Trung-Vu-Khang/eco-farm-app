@@ -5,14 +5,10 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
+  Combobox,
   Input,
   Label,
   ScrollArea,
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
   Dialog,
   DialogContent,
   DialogHeader,
@@ -20,8 +16,8 @@ import {
   Button,
   cn,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { CheckCircle2, Leaf, Search, Sprout, ChevronRight } from "lucide-react";
-import { useState, useMemo } from "react";
+import { CheckCircle2, PawPrint, Search, ChevronRight } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 import {
   useProductionMethods,
   useMethodApplications,
@@ -82,7 +78,7 @@ export const VariantSelectorDialog = ({
       <DialogContent className="max-w-xl p-0 overflow-hidden rounded-2xl border-none shadow-2xl flex flex-col max-h-[90vh]">
         <DialogHeader className="p-6 bg-slate-50 border-b shrink-0">
           <DialogTitle className="flex items-center gap-2 text-slate-800">
-            <Sprout className="w-5 h-5 text-green-600" />
+            <PawPrint className="w-5 h-5 text-amber-600" />
             <span>Chọn giống vật nuôi cho {subjectName}</span>
           </DialogTitle>
           <p className="text-xs text-muted-foreground mt-1">
@@ -119,7 +115,7 @@ export const VariantSelectorDialog = ({
                   )}
                 >
                   <div className="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center shrink-0 border border-slate-200 overflow-hidden">
-                    <Leaf className="w-4 h-4 text-slate-400" />
+                    <PawPrint className="w-4 h-4 text-slate-400" />
                   </div>
                   <div className="flex flex-col flex-1 min-w-0">
                     <div
@@ -203,12 +199,42 @@ export const ZoneConfigurationStep = () => {
 
   const { items: irrigationSystems, loading: irLoading } = useIrrigationSystems(
     {
-      params: { size: 100 },
+      params: { domainCode: "LIVESTOCK", size: 100, status: "active" },
     },
   );
 
+  // The API query is the source of truth, but keep this guard because older
+  // deployments can return rearing methods from other domains in the result.
+  const livestockRearingMethods = useMemo(
+    () =>
+      irrigationSystems.filter((system) => {
+        const attributeDomainCode = (
+          system.attributes as { domainCode?: string } | undefined
+        )?.domainCode;
+        return (
+          system.domainCode === "LIVESTOCK" ||
+          attributeDomainCode === "LIVESTOCK"
+        );
+      }),
+    [irrigationSystems],
+  );
+
   const selectedFarmingMethodId = watch("farmingMethodId");
+  const selectedRearingMethodId = watch("rearingMethodId");
   const selectedSeedIds = watch("seedIds") ?? [];
+
+  useEffect(() => {
+    if (irLoading || !selectedRearingMethodId || selectedRearingMethodId <= 0) {
+      return;
+    }
+
+    const isValidLivestockMethod = livestockRearingMethods.some(
+      (method) => method.id === selectedRearingMethodId,
+    );
+    if (!isValidLivestockMethod) {
+      setValue("rearingMethodId", 0, { shouldDirty: true, shouldValidate: true });
+    }
+  }, [irLoading, livestockRearingMethods, selectedRearingMethodId, setValue]);
 
   const { items: methodApplications, loading: fmcLoading } =
     useMethodApplications({
@@ -267,7 +293,7 @@ export const ZoneConfigurationStep = () => {
           <CardHeader className="pb-3 border-b bg-linear-to-r from-green-50/50 to-white">
             <CardTitle className="flex items-center gap-2 text-base">
               <div className="w-8 h-8 rounded-lg bg-green-100 flex items-center justify-center">
-                <Sprout className="w-4 h-4 text-green-600" />
+                <PawPrint className="w-4 h-4 text-amber-600" />
               </div>
               <span>Phương pháp chăn nuôi</span>
             </CardTitle>
@@ -283,29 +309,26 @@ export const ZoneConfigurationStep = () => {
                     Phương pháp chăn nuôi{" "}
                     <span className="text-red-500">*</span>
                   </Label>
-                  <Select
+                  <Combobox
                     disabled={fmLoading}
+                    className="w-full"
+                    options={farmingMethods.map((method) => ({
+                      label: method.name ?? "",
+                      value: method.id.toString(),
+                    }))}
                     value={field.value > 0 ? field.value.toString() : ""}
-                    onValueChange={(val) => {
-                      field.onChange(parseInt(val, 10));
+                    onChange={(value) => {
+                      const methodId = parseInt(value, 10);
+                      if (Number.isNaN(methodId)) return;
+
+                      field.onChange(methodId);
                       // Reset seeds when farming method changes
                       setValue("seedIds", []);
                     }}
-                  >
-                    <SelectTrigger className="h-11 bg-white">
-                      <SelectValue placeholder="Chọn phương pháp..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {farmingMethods.map((method) => (
-                        <SelectItem
-                          key={method.id}
-                          value={method.id.toString()}
-                        >
-                          <span className="font-medium">{method.name}</span>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                    placeholder="Chọn phương pháp..."
+                    searchPlaceholder="Tìm kiếm phương pháp..."
+                    emptyText="Không tìm thấy phương pháp"
+                  />
                   {errors.farmingMethodId && (
                     <p className="text-xs font-medium text-red-500 mt-1">
                       {errors.farmingMethodId.message}
@@ -327,31 +350,26 @@ export const ZoneConfigurationStep = () => {
                   <Label className="text-sm font-medium">
                     Hệ thống cấp nước/chuồng trại{" "}
                   </Label>
-                  <Select
+                  <Combobox
                     disabled={irLoading}
+                    className="w-full"
+                    options={livestockRearingMethods.map((system) => ({
+                      label: system.name ?? "",
+                      value: system.id.toString(),
+                    }))}
                     value={
                       field?.value && field?.value > 0
                         ? field.value.toString()
                         : ""
                     }
-                    onValueChange={(val) => {
-                      field.onChange(parseInt(val, 10));
+                    onChange={(value) => {
+                      const systemId = parseInt(value, 10);
+                      if (!Number.isNaN(systemId)) field.onChange(systemId);
                     }}
-                  >
-                    <SelectTrigger className="h-11 bg-white">
-                      <SelectValue placeholder="Chọn hệ thống..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {irrigationSystems.map((system) => (
-                        <SelectItem
-                          key={system.id}
-                          value={system.id.toString()}
-                        >
-                          <span className="font-medium">{system.name}</span>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                    placeholder="Chọn hệ thống..."
+                    searchPlaceholder="Tìm kiếm hệ thống..."
+                    emptyText="Không tìm thấy hệ thống"
+                  />
                   {errors.rearingMethodId && (
                     <p className="text-xs font-medium text-red-500 mt-1">
                       {errors.rearingMethodId.message}
@@ -371,7 +389,7 @@ export const ZoneConfigurationStep = () => {
           <CardHeader className="pb-3 border-b bg-linear-to-r from-green-50/50 to-white">
             <CardTitle className="flex items-center gap-2 text-base">
               <div className="w-8 h-8 rounded-lg bg-green-100 flex items-center justify-center">
-                <Leaf className="w-4 h-4 text-green-600" />
+                <PawPrint className="w-4 h-4 text-amber-600" />
               </div>
               <span>Con giống / Vật nuôi</span>
               {selectedSeedIds.length > 0 && (
@@ -384,7 +402,7 @@ export const ZoneConfigurationStep = () => {
           <CardContent className="pt-6 flex-1 flex flex-col min-h-0">
             {!selectedFarmingMethodId || selectedFarmingMethodId <= 0 ? (
               <div className="flex-1 flex flex-col items-center justify-center border-2 border-dashed rounded-xl bg-slate-50 text-slate-400 gap-3 py-12">
-                <Sprout className="w-10 h-10 opacity-50" />
+                <PawPrint className="w-10 h-10 opacity-50 text-amber-500" />
                 <span className="text-sm text-center px-4">
                   Vui lòng chọn phương pháp chăn nuôi trước
                 </span>
@@ -426,7 +444,7 @@ export const ZoneConfigurationStep = () => {
                           >
                             <div className="flex items-center gap-3">
                               <div className="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center shrink-0 border border-slate-200 overflow-hidden">
-                                <Leaf className="w-4 h-4 text-slate-400" />
+                                <PawPrint className="w-4 h-4 text-slate-400" />
                               </div>
                               <div className="flex flex-col flex-1 min-w-0">
                                 <div className="text-sm font-semibold truncate text-slate-700">

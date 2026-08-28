@@ -2,42 +2,64 @@ import { useMemo } from "react";
 import { useLocation, useRoute } from "wouter";
 
 import { useCatalog } from "@/features/foundation/hooks/useCatalog";
+import { useCultivationZoneById } from "@/features/farm/hooks/useCultivationZones";
 import { useRegionById } from "@/features/farm/hooks/useRegions";
 import { useAddressOptions } from "@/features/master-data/hooks/useAddressOptions";
-import { RegionChartStatusBadge } from "../../components/RegionChartStatusBadge";
 
 export function useRegionBasicDetailPage() {
   const [, setLocation] = useLocation();
   const [match, params] = useRoute("/cultivation-region-identification/crop/detail/:id");
-  const regionId = match && params?.id ? parseInt(params.id, 10) : null;
+  // Route id is the Cultivation Zone ID (same convention as the edit page).
+  const zoneId = match && params?.id ? parseInt(params.id, 10) : null;
 
-  const { data: regionDataResponse, isLoading } = useRegionById(regionId || 0, {
-    enabled: !!regionId,
-  });
+  const { data: zoneData, isLoading: isZoneLoading } = useCultivationZoneById(
+    zoneId || 0,
+    { enabled: !!zoneId },
+  );
+
+  const regionId = useMemo(() => {
+    if (!zoneData) return 0;
+    const regionScope = zoneData.scopes?.find((s) => s.scopeType === "REGION");
+    // @ts-ignore
+    return regionScope?.region?.id || regionScope?.scopeId || 0;
+  }, [zoneData]);
+
+  const { data: regionDataResponse, isLoading: isRegionLoading } = useRegionById(
+    regionId,
+    { enabled: regionId > 0 },
+  );
+
+  const isLoading = isZoneLoading || (regionId > 0 && isRegionLoading);
 
   const { provinces, wards } = useAddressOptions(regionDataResponse?.province);
   const { items: lands } = useCatalog("soil-types");
   const { items: terrains } = useCatalog("terrain-features");
 
   const region = useMemo(() => {
-    if (!regionDataResponse) return undefined;
+    if (!zoneData) return undefined;
 
     return {
-      id: regionDataResponse.id,
-      code: regionDataResponse.code || "",
-      name: regionDataResponse.name || "",
-      area: regionDataResponse.acreage || 0,
-      provinceId: regionDataResponse.province || "",
-      wardId: regionDataResponse.ward || regionDataResponse.district || "",
-      address: regionDataResponse.address || "",
-      landType: regionDataResponse.soilType?.id?.toString() || "",
-      terrain: regionDataResponse.terrainFeature?.id?.toString() || "",
-      note: regionDataResponse.description || "",
-      status: regionDataResponse.status ?? "inactive",
-      createdAt: regionDataResponse.createdAt || "",
-      updatedAt: regionDataResponse.updatedAt || "",
+      id: zoneId || 0,
+      code: regionDataResponse?.code || zoneData.code || "",
+      name: regionDataResponse?.name || zoneData.name || "",
+      area:
+        regionDataResponse?.acreage ||
+        (zoneData.metadataJson?.area as number) ||
+        0,
+      provinceId: regionDataResponse?.province || "",
+      wardId: regionDataResponse?.ward || regionDataResponse?.district || "",
+      address:
+        regionDataResponse?.address ||
+        (zoneData.metadataJson?.address as string) ||
+        "",
+      landType: regionDataResponse?.soilType?.id?.toString() || "",
+      terrain: regionDataResponse?.terrainFeature?.id?.toString() || "",
+      note: regionDataResponse?.description || zoneData.notes || "",
+      status: regionDataResponse?.status ?? zoneData.status ?? "inactive",
+      createdAt: regionDataResponse?.createdAt || zoneData.createdAt || "",
+      updatedAt: regionDataResponse?.updatedAt || "",
     };
-  }, [regionDataResponse]);
+  }, [zoneData, zoneId, regionDataResponse]);
 
   const provinceName =
     provinces.find((item) => item.code === region?.provinceId)?.name ||

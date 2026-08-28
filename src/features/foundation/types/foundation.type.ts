@@ -93,9 +93,9 @@ export interface FoundationDocument {
 
 /** Body gửi lên API POST/PUT /production/subjects — flat theo schema Subject */
 export interface FoundationCropRequest {
-  domainCode?: string;
   code?: string;
   name?: string;
+  domainCode: "CROP" | "LIVESTOCK" | "AQUACULTURE"; // required
   subjectGroupId: number; // required
   description?: string;
   harvestMethod?: string;
@@ -331,8 +331,8 @@ export interface CropAssignmentView {
 }
 
 export interface FarmingMethodCropRequest {
+  domainCode: "CROP" | "LIVESTOCK" | "AQUACULTURE";
   code?: string;
-  domainCode?: "CROP" | "LIVESTOCK" | "AQUACULTURE";
   productionMethodId?: number;
   // Backward compatibility
   farmingMethodId?: number;
@@ -348,29 +348,32 @@ export interface FarmingMethodCropResponse {
   id: number;
   code: string;
   domainCode?: "CROP" | "LIVESTOCK" | "AQUACULTURE";
+  // Backward compatibility
   productionMethod?: {
     id: number;
-    code: string;
-    name: string;
-  } | null;
-  // Backward compatibility
+    code?: string;
+    name?: string;
+  };
   farmingMethodId?: number;
   farmingMethodCode?: string;
   farmingMethodName?: string;
   description?: string;
   displayOrder?: number;
   status: FoundationStatus;
-  subjectCount?: number;
   // Backward compatibility
   cropCount?: number;
+  subjectCount?: number;
+  subjects?: MethodApplicationSubject[];
   createdAt: string;
   updatedAt: string;
-  subjects?: SubjectAssignmentView[];
+  // subjects?: SubjectAssignmentView[];
   // Backward compatibility
   crops?: CropAssignmentView[];
 }
 
-export type FarmingMethodCropQueryParams = BaseQueryParams;
+export interface FarmingMethodCropQueryParams extends BaseQueryParams {
+  domainCode: "CROP" | "LIVESTOCK" | "AQUACULTURE";
+}
 
 // ─── Lifecycle Templates (Animal/Crop/Aquaculture Lifecycle) ──────────────────
 export interface LifecycleStage {

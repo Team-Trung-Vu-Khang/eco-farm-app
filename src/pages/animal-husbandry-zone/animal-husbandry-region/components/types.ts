@@ -22,6 +22,9 @@ export interface PlantEntry {
   plantedDate: string;
   note: string;
   plotId: string;
+  regionId?: string;
+  regionName?: string;
+  areaName?: string;
   coordinate: Coordinate;
   isInvalidBoundary?: boolean;
 }

@@ -101,12 +101,17 @@ export const mapFrontendPlantToApiRequest = (
   const zoneId = (p as any).cultivationRegionId
     ? Number((p as any).cultivationRegionId)
     : undefined;
+  const scopeId = Number(p.plotId);
+
+  if (!Number.isFinite(scopeId) || scopeId <= 0) {
+    throw new Error("Vui lòng chọn phạm vi nuôi trồng hợp lệ");
+  }
 
   return {
     ...(isUpdate ? { code: p.code || undefined } : {}),
     location: {
       scopeType,
-      scopeId: Number(p.plotId),
+      scopeId,
     },
     cultivationZoneId: zoneId,
     productionZoneId: zoneId,
