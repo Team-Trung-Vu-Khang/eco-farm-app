@@ -47,22 +47,15 @@ const RegionBasicDistributionLivestockCreateEditPage = () => {
   const { isEditMode, handleComplete, handleCancel, isSubmitting } =
     useRegionBasicLivestockCreateForm(reset);
 
-  const [name, cropIds, farmingMethodId, seedIds] = useWatch({
+  const [name, farmingMethodId] = useWatch({
     control,
-    name: ["name", "cropIds", "farmingMethodId", "seedIds"],
+    name: ["name", "farmingMethodId"],
   });
   const { errors } = useFormState({ control });
 
-  const step1Valid =
-    !!name &&
-    name.trim().length > 0 &&
-    Array.isArray(cropIds) &&
-    cropIds.length > 0 &&
-    !errors.name &&
-    !errors.cropIds;
+  const step1Valid = !!name && name.trim().length > 0 && !errors.name;
 
-  const step2Valid =
-    !!farmingMethodId && farmingMethodId > 0 && !!seedIds && seedIds.length > 0;
+  const step2Valid = !!farmingMethodId && farmingMethodId > 0;
 
   const steps = [
     {
