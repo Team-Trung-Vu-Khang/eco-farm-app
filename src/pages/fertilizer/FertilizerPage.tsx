@@ -1,9 +1,9 @@
+import { DeletionImpactDialog } from "@/components/DeletionImpactDialog";
 import PageWrapper from "@/components/PageWrapper";
 import { Button, DataTable } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { Plus } from "lucide-react";
 import { fertilizerColumns } from "./data/columns";
 import { useFertilizerPage } from "./hooks/useFertilizerPage";
-import { DeletionImpactDialog } from "@/components/DeletionImpactDialog";
 
 export default function FertilizerPage() {
   const {
@@ -66,24 +66,24 @@ export default function FertilizerPage() {
       <DataTable
         columns={fertilizerColumns(navigateToDetail)}
         data={fertilizers}
-        searchable
-        searchPlaceholder="Tìm kiếm phân bón..."
         pageSize={pageSize}
         currentIndex={currentIndex}
         totalElements={totalElements}
         totalPages={totalPages}
-        onSearch={(val) => {
-          setSearch(val);
-          setCurrentIndex(1);
-        }}
+        searchable
+        searchPlaceholder="Tìm kiếm phân bón..."
         onPageSize={(size) => {
           setPageSize(size);
           setCurrentIndex(1);
         }}
         onIndexChange={setCurrentIndex}
+        onSearch={(val) => {
+          setSearch(val);
+          setCurrentIndex(1);
+        }}
         onFilterChange={(key, val) => {
           if (key === "status") {
-            setStatus(val as any);
+            setStatus(val);
             setCurrentIndex(1);
           }
         }}
@@ -98,6 +98,7 @@ export default function FertilizerPage() {
             ],
           },
         ]}
+        manualFiltering
         onView={handleView}
         onEdit={handleEdit}
         onDelete={handleDelete}

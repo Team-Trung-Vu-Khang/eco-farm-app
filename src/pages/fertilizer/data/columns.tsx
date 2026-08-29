@@ -3,7 +3,7 @@ import { originOptions, applicationStageOptions } from "./constants";
 import { CodeBadge } from "@/components/CodeBadge";
 
 export const getFertilizerColumns = (
-  onView: (id: string) => void,
+  onView: (id: number) => void,
 ): Column<any>[] => [
   { key: "code", label: "Mã", render: (value) => <CodeBadge value={value} /> },
   { key: "sku", label: "Mã SKU", render: (value) => <CodeBadge value={value} /> },
@@ -16,7 +16,7 @@ export const getFertilizerColumns = (
           className="font-medium text-primary cursor-pointer hover:underline"
           onClick={() => onView(row.id)}
         >
-          {value}
+          {String(value ?? "")}
         </span>
         {(row.profile?.scientificName || row.scientificTechnicalName) && (
           <span className="block text-[11px] text-muted-foreground italic mt-0.5">
@@ -38,7 +38,9 @@ export const getFertilizerColumns = (
   {
     key: "registrationNumber",
     label: "Số đăng ký",
-    render: (val) => <span className="font-mono text-xs">{val || "—"}</span>,
+    render: (val) => (
+      <span className="font-mono text-xs">{(val as string) || "—"}</span>
+    ),
   },
   {
     key: "originId",
@@ -159,7 +161,8 @@ export const getFertilizerColumns = (
     render: (val) => {
       if (!val) return <span className="text-muted-foreground text-xs">—</span>;
       const num = Number(val);
-      if (isNaN(num)) return <span className="text-xs">{val}</span>;
+      if (isNaN(num))
+        return <span className="text-xs">{String(val)}</span>;
       return (
         <span className="text-xs font-semibold text-slate-700">
           {num.toLocaleString("vi-VN")} đ

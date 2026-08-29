@@ -172,7 +172,8 @@ export function useFarmSupplyListHook(
           title: "Thành công",
           description: "Đã xóa thành công vật tư.",
         });
-      } catch (e: any) {
+      } catch (e: unknown) {
+        const error = e instanceof Error ? e : new Error("Xóa không thành công");
         if (axios.isAxiosError(e) && e.response?.status === 409) {
           toast({
             title: "Không thể xóa",
@@ -183,7 +184,7 @@ export function useFarmSupplyListHook(
         } else {
           toast({
             title: "Lỗi",
-            description: e.message || "Xóa không thành công",
+            description: error.message || "Xóa không thành công",
             variant: "destructive",
           });
         }
