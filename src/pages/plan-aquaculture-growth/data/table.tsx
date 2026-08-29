@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import {
   Badge,
   Button,
@@ -22,7 +23,7 @@ import {
   Trash2,
   Workflow,
 } from "lucide-react";
-import type { Plan } from "../../../stores/useAquacultureGrowthPlanStore";
+import type { Plan } from "../types";
 import { getPlanStatusBadge } from "../utils/status";
 
 function formatDate(value?: string) {
@@ -50,7 +51,7 @@ function resolveLocationLabel(plan: Plan) {
     plan.cultivationRegion ||
     plan.zone ||
     plan.plot ||
-    (regionCount > 0 ? `${regionCount} khu nuôi trồng thủy sản` : "") ||
+    (regionCount > 0 ? `${regionCount} vùng trồng` : "") ||
     "Chưa xác định"
   );
 }
@@ -314,7 +315,7 @@ export function createWorkflowColumns({
   ];
 }
 
-export const aquacultureGrowthFilters = [
+export const planGrowthFilters = [
   {
     key: "status",
     label: "Trạng thái",
@@ -323,25 +324,6 @@ export const aquacultureGrowthFilters = [
       { label: "Bản nháp", value: "draft" },
       { label: "Đã hoàn thành", value: "completed" },
       { label: "Đã hủy", value: "cancelled" },
-    ],
-  },
-  {
-    key: "seasonName",
-    label: "Lứa nuôi",
-    options: [
-      { label: "Vụ Xuân 2025", value: "Vụ Xuân 2025" },
-      { label: "Vụ Hè 2025", value: "Vụ Hè 2025" },
-      { label: "Vụ Thu 2025", value: "Vụ Thu 2025" },
-      { label: "Vụ Đông 2025", value: "Vụ Đông 2025" },
-    ],
-  },
-  {
-    key: "crop",
-    label: "Vật nuôi",
-    options: [
-      { label: "Tôm thẻ", value: "Tôm thẻ" },
-      { label: "Cá tra", value: "Cá tra" },
-      { label: "Bò thịt", value: "Bò thịt" },
     ],
   },
 ];

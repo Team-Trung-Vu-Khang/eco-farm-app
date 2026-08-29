@@ -37,11 +37,7 @@ import { memo, useState } from "react";
 import usePersonnelStore from "../../../stores/usePersonnelStore";
 import type { GeographicalSelection } from "../types";
 import type { MaterialAllocation, TaskAllocation } from "../types";
-import {
-  resolveMaterialUnit,
-  type AquacultureSupplyCatalog,
-  type AquacultureSupplyType,
-} from "../hooks/useAquacultureSupplyCatalog";
+import type { AquacultureSupplyCatalog, AquacultureSupplyType } from "../hooks/useAquacultureSupplyCatalog";
 import { useTaskCategorySearch } from "@/features/task-category/hooks/useTaskCategory";
 import type { FarmWorkDurationUnit } from "@/features/farm-workflow/types/farm-workflow.type";
 
@@ -317,7 +313,7 @@ export const StageAllocation = memo(
                         </div>
                         <div className="flex items-center gap-3">
                           <span className="font-semibold text-slate-900 bg-white px-2 py-0.5 rounded border">
-                            {a.quantity} {resolveMaterialUnit(a, supplyCatalog)}
+                            {a.quantity} {a.unit}
                           </span>
                           <button
                             className="text-slate-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"

@@ -11,10 +11,7 @@ import type {
   FarmCultivationZoneScopeResponse,
 } from "@/features/farm/types/farm.type";
 import type { Region } from "@/pages/region-chart/constants";
-import {
-  initialAquacultureGrowthPlans,
-  initialAquacultureGrowthWorkflows,
-} from "@/stores/aquacultureGrowthWorkflowSeed";
+import { initialPlans, initialWorkflows } from "@/stores/planWorkflowSeed";
 import type { DiagramInfoRecord } from "../hooks/useAquacultureGrowthWorkflowDraftStore";
 import type {
   GeographicalSelection,
@@ -31,8 +28,8 @@ const planStatusMap: Record<string, Plan["status"]> = {
   CANCELLED: "cancelled",
 };
 
-let fallbackPlans: Plan[] = initialAquacultureGrowthPlans as Plan[];
-let fallbackWorkflows: Workflow[] = initialAquacultureGrowthWorkflows as Workflow[];
+let fallbackPlans: Plan[] = initialPlans as Plan[];
+let fallbackWorkflows: Workflow[] = initialWorkflows as Workflow[];
 
 export function mapScopeToSelection(
   scope: FarmWorkflowScopeResponse,
@@ -261,31 +258,69 @@ export function mapPlanResponseToPlan(plan: FarmPlanResponse): Plan {
     .map((selection) => String(selection.plotId));
 
   const stages = plan.stages || [];
-  const selectedStages = stages.map((stage) => stage.name);
+  const getSeasonStageId = (stage: FarmPlanResponse["stages"][number]) => {
+    // Depending on the backend version, the relation is returned either as
+    // `seasonStage.id` or as the flattened `seasonStageId`. Keep both forms
+    // so a freshly-created plan can hydrate its selected stages on edit.
+    const rawId =
+      stage.seasonStage?.id ??
+      (stage as FarmPlanResponse["stages"][number] & {
+        seasonStageId?: number | string | null;
+      }).seasonStageId;
+    const id = Number(rawId);
+    return Number.isFinite(id) ? id : undefined;
+  };
+  const getApiStageKey = (stage: FarmPlanResponse["stages"][number]) => {
+    const seasonStageId = getSeasonStageId(stage);
+    return seasonStageId != null
+      ? `api-stage-${seasonStageId}:${stage.name}`
+      : stage.name;
+  };
+  const selectedStages = stages.map(getApiStageKey);
   const seasonStageIds = stages
-    .map((stage) => stage.seasonStage?.id)
-    .filter((id): id is number => typeof id === "number");
+    .map(getSeasonStageId)
+    .filter((id): id is number => id != null);
   const seasonStageNames = stages
-    .filter((stage) => stage.seasonStage?.id != null)
+    .filter((stage) => getSeasonStageId(stage) != null)
     .map((stage) => stage.name);
+  const seenSupplyLineIds = new Set<number>();
   const materialAllocations = stages.flatMap((stage) =>
-    (stage.supplyLines || []).map((line) => ({
+    (stage.supplyLines || [])
+      .filter((line) => {
+        // A plan response can contain the same supply line more than once
+        // when a stage is expanded through multiple relations. The API line
+        // id is the source of truth, so only suppress an exact id duplicate;
+        // different lines with the same material remain visible.
+        if (line.id == null) return true;
+        if (seenSupplyLineIds.has(line.id)) return false;
+        seenSupplyLineIds.add(line.id);
+        return true;
+      })
+      .map((line) => ({
       id: line.id,
-      stageId: stage.name,
+      stageId: getApiStageKey(stage),
       materialCategory: line.supplyItem?.supplyType || "",
       materialType: line.supplyItem?.supplyType || "",
       materialName: line.supplyItem?.name || "",
       quantity: String(line.quantity),
-      unit: line.unitBase.name || "",
+      unit:
+        line.unitBase?.name ||
+        line.packagingVariant?.unitBase?.name ||
+        "",
       supplyItemId: line.supplyItem?.id,
-      unitBaseId: line.unitBase?.id,
-    })),
+      unitBaseId:
+        line.unitBase?.id ?? line.packagingVariant?.unitBase?.id,
+      unitOptions: [line.unitBase ?? line.packagingVariant?.unitBase]
+        .filter(Boolean)
+        .map((unit) => ({ id: unit.id, name: unit.name })),
+      })),
   );
   const taskAllocations = stages.flatMap((stage) =>
     (stage.workItems || []).map((item) => ({
       id: item.id,
-      stageId: stage.name,
+      stageId: getApiStageKey(stage),
       name: item.name,
+      taskCategoryName: item.taskCategory?.name,
       description: item.description || "",
       labor: item.headcount ? `${item.headcount} người` : "",
       duration:
@@ -301,6 +336,7 @@ export function mapPlanResponseToPlan(plan: FarmPlanResponse): Plan {
 
   return {
     id: plan.id,
+    domainCode: plan.domainCode,
     code: plan.code,
     name: plan.name,
     description: plan.description || "",
@@ -342,16 +378,16 @@ export function mapPlanResponseToPlan(plan: FarmPlanResponse): Plan {
 export function buildFarmPlanStagesRequest(
   formData: PlanFormData,
 ): FarmPlanStageRequest[] {
-  // The harvest resources step (StageAllocation's harvest branch in
-  // PlanAquacultureGrowthEditPage) tags every material/task it adds with
-  // stageId "Xuất bán" — this must match exactly, or the filter below
-  // finds nothing and silently sends empty supplyLines/workItems.
   const stageKeys =
     formData.purpose === "harvest" ? ["Xuất bán"] : formData.selectedStages;
 
-  return stageKeys.map((stageKey, index) => {
-    const stageName = stageKey.includes(":")
-      ? stageKey.split(":")[1]
+  return stageKeys.map((stageKey) => {
+    const separatorIndex = stageKey.indexOf(":");
+    const stagePrefix = separatorIndex >= 0
+      ? stageKey.slice(0, separatorIndex)
+      : "";
+    const stageName = separatorIndex >= 0
+      ? stageKey.slice(separatorIndex + 1)
       : stageKey;
 
     const supplyLines = formData.materialAllocations
@@ -378,10 +414,25 @@ export function buildFarmPlanStagesRequest(
         durationUnit: task.durationUnit,
       }));
 
+    const selectedCycleStage = formData.growthCycleSelections.find((selection) => {
+      if (selection.type !== "stage" || selection.stageId == null) return false;
+      if (stagePrefix.startsWith("api-stage-")) {
+        return String(selection.stageId) === stagePrefix.slice("api-stage-".length);
+      }
+      if (stageKey.includes(":")) {
+        const [cycleId, ...nameParts] = stageKey.split(":");
+        return (
+          selection.cycleId === cycleId &&
+          nameParts.join(":") === stageName
+        );
+      }
+      return selection.stageName === stageName;
+    });
+
     return {
       name: stageName,
-      ...(formData.seasonStageIds?.[index]
-        ? { seasonStageId: formData.seasonStageIds[index] }
+      ...(selectedCycleStage?.stageId
+        ? { seasonStageId: Number(selectedCycleStage.stageId) }
         : {}),
       supplyLines,
       workItems,
@@ -404,9 +455,7 @@ export function upsertFallbackPlan(plan: Plan) {
     return;
   }
 
-  fallbackPlans = fallbackPlans.map((item) =>
-    item.id === plan.id ? plan : item,
-  );
+  fallbackPlans = fallbackPlans.map((item) => (item.id === plan.id ? plan : item));
 }
 
 export function deleteFallbackPlan(id: number) {
@@ -448,9 +497,7 @@ export function upsertFallbackWorkflow(workflow: Workflow) {
 }
 
 export function deleteFallbackWorkflow(id: string) {
-  fallbackWorkflows = fallbackWorkflows.filter(
-    (workflow) => workflow.id !== id,
-  );
+  fallbackWorkflows = fallbackWorkflows.filter((workflow) => workflow.id !== id);
 }
 
 export function duplicateFallbackWorkflow(sourceId: string) {
@@ -519,10 +566,7 @@ export function mapCultivationZonesToRegionTree(
 
   function handleScope(scope: FarmCultivationZoneScopeResponse) {
     if (scope.scopeType === "REGION" && scope.region) {
-      ensureRegion(
-        scope.region.id,
-        scope.region.name || `Vùng #${scope.region.id}`,
-      );
+      ensureRegion(scope.region.id, scope.region.name || `Vùng #${scope.region.id}`);
       return;
     }
 

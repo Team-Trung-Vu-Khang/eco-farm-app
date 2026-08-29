@@ -10,12 +10,14 @@ import { ArrowLeft, Workflow } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Link, useParams } from "wouter";
 import { createPlanAquacultureGrowthColumns } from "./data/table";
-import { aquacultureGrowthFilters, UNASSIGNED_WORKFLOW_ID } from "./data/table";
+import { planGrowthFilters, UNASSIGNED_WORKFLOW_ID } from "./data/table";
 import { useAquacultureGrowthPage } from "./hooks/useAquacultureGrowthPage";
 import { mapPlanResponseToPlan } from "./utils/api-mappers";
 
 interface PlanAquacultureGrowthWorkflowPlansPageProps {
   basePath?: string;
+  domainCode?: "CROP" | "LIVESTOCK" | "AQUACULTURE";
+  planSearchPlaceholder?: string;
 }
 
 // Maps the (lowercase) Plan-domain status used by the filter UI to the
@@ -29,6 +31,8 @@ const PLAN_STATUS_TO_API: Record<string, FarmPlanStatus> = {
 
 export default function PlanAquacultureGrowthWorkflowPlansPage({
   basePath = "/plan-aquaculture-growth",
+  domainCode = "AQUACULTURE",
+  planSearchPlaceholder = "Tìm kiếm kế hoạch...",
 }: PlanAquacultureGrowthWorkflowPlansPageProps) {
   const params = useParams<{ workflowId: string }>();
   const workflowId = params.workflowId || "";
@@ -46,7 +50,7 @@ export default function PlanAquacultureGrowthWorkflowPlansPage({
     handleConfirmDelete,
     goToView,
     goToEdit,
-  } = useAquacultureGrowthPage(basePath, { includePlans: false });
+  } = useAquacultureGrowthPage(basePath, { includePlans: false, domainCode });
 
   const workflowDetailQuery = useFarmWorkflowById(workflowId, {
     enabled: !isUnassigned && !!workflowId,
@@ -86,11 +90,11 @@ export default function PlanAquacultureGrowthWorkflowPlansPage({
 
   const title = isUnassigned
     ? "Kế hoạch chưa gắn sơ đồ"
-    : workflowDetailQuery.data?.name || "Sơ đồ quy trình nuôi trồng thủy sản";
+    : workflowDetailQuery.data?.name || "Sơ đồ quy trình";
   const description = isUnassigned
     ? "Kế hoạch được tạo trước khi lưu sơ đồ quy trình hoặc chưa bấm Lưu quy trình."
     : workflowDetailQuery.data?.description ||
-      "Danh sách kế hoạch nuôi trồng thủy sản thuộc sơ đồ quy trình này";
+      "Danh sách kế hoạch thuộc sơ đồ quy trình này";
 
   return (
     <PageWrapper
@@ -125,8 +129,8 @@ export default function PlanAquacultureGrowthWorkflowPlansPage({
             setSearch(value);
             setCurrentIndex(1);
           }}
-          searchPlaceholder="Tìm kiếm kế hoạch..."
-          filters={aquacultureGrowthFilters}
+          searchPlaceholder={planSearchPlaceholder}
+          filters={planGrowthFilters}
           onFilterChange={(key, value) => {
             if (key === "status") {
               setStatus(value === "all" ? "" : value);

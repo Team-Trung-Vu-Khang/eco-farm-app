@@ -25,10 +25,20 @@ import { useAquacultureGrowthWorkflowDraftStore } from "./hooks/useAquacultureGr
 
 interface PlanAquacultureGrowthPageProps {
   basePath?: string;
+  domainCode?: "CROP" | "LIVESTOCK" | "AQUACULTURE";
+  title?: string;
+  description?: string;
+  searchPlaceholder?: string;
+  resetDraft?: () => void;
 }
 
 export default function PlanAquacultureGrowthPage({
   basePath = "/plan-aquaculture-growth",
+  domainCode = "AQUACULTURE",
+  title = "Quản lý nuôi trồng thủy sản",
+  description = "Lập và quản lý kế hoạch theo mùa vụ",
+  searchPlaceholder = "Tìm kiếm sơ đồ quy trình...",
+  resetDraft,
 }: PlanAquacultureGrowthPageProps) {
   const [, setLocation] = useLocation();
   const {
@@ -45,8 +55,8 @@ export default function PlanAquacultureGrowthPage({
     totalElements,
     totalPages,
     loading,
-  } = useAquacultureGrowthPage(basePath, { includePlans: false });
-  const resetWorkflowDraft = useAquacultureGrowthWorkflowDraftStore(
+  } = useAquacultureGrowthPage(basePath, { includePlans: false, domainCode });
+  const cropResetWorkflowDraft = useAquacultureGrowthWorkflowDraftStore(
     (state) => state.resetDraft,
   );
   const [workflowToClone, setWorkflowToClone] = useState<WorkflowRow | null>(
@@ -59,7 +69,7 @@ export default function PlanAquacultureGrowthPage({
   const handleCreatePlan = () => {
     // Start a clean canvas — otherwise a workflow opened earlier via
     // "Mở workflow" would still be sitting in the draft store.
-    resetWorkflowDraft();
+    (resetDraft ?? cropResetWorkflowDraft)();
     setLocation(`${basePath}/create/workflow`);
   };
 
@@ -106,8 +116,8 @@ export default function PlanAquacultureGrowthPage({
 
   return (
     <PageWrapper
-      title="Quản lý nuôi trồng thủy sản"
-      description="Lập và quản lý kế hoạch nuôi trồng thủy sản theo lứa nuôi"
+      title={title}
+      description={description}
       actions={
         <Button data-testid="add-plan" onClick={handleCreatePlan}>
           <Plus className="w-4 h-4 mr-2" />
@@ -133,7 +143,7 @@ export default function PlanAquacultureGrowthPage({
             setSearch(value);
             setCurrentIndex(1);
           }}
-          searchPlaceholder="Tìm kiếm sơ đồ quy trình nuôi trồng thủy sản..."
+          searchPlaceholder={searchPlaceholder}
           pageSize={pageSize}
           currentIndex={currentIndex}
           totalElements={totalElements}

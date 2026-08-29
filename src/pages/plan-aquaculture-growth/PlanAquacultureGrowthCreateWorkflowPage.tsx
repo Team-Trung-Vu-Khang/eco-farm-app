@@ -50,10 +50,8 @@ import type {
   FarmWorkflowScopeResponse,
 } from "@/features/farm-workflow/types/farm-workflow.type";
 import { useDialogBugWorkaround } from "../../shared/hooks/useDialogBugWorkaround";
-import useAquacultureGrowthPlanStore, {
-  type Plan,
-} from "../../stores/useAquacultureGrowthPlanStore";
-import useAquacultureGrowthWorkflowStore from "../../stores/useAquacultureGrowthWorkflowStore";
+import usePlanStore, { type Plan } from "../../stores/usePlanStore";
+import useWorkflowStore from "../../stores/useWorkflowStore";
 import {
   WorkflowCardNode,
   type WorkflowActionItem,
@@ -262,15 +260,15 @@ function getMaterialBreakdown(
   materialNames: string[],
   materialCategories: string[],
 ) {
-  const breakdown = { "Thuốc thủy sản": 0, "Thức ăn thủy sản": 0, "Vật tư khác": 0 };
+  const breakdown = { "Thuốc BVTV": 0, "Phân bón": 0, "Vật tư khác": 0 };
 
   materialNames.forEach((materialName, index) => {
     if (!materialName.trim()) return;
     const category = (materialCategories[index] || "").toLowerCase();
-    if (category.includes("thuốc") || category.includes("thủy sản")) {
-      breakdown["Thuốc thủy sản"] += 1;
-    } else if (category.includes("thức ăn") || category.includes("phân")) {
-      breakdown["Thức ăn thủy sản"] += 1;
+    if (category.includes("thuốc") || category.includes("bvtv")) {
+      breakdown["Thuốc BVTV"] += 1;
+    } else if (category.includes("phân")) {
+      breakdown["Phân bón"] += 1;
     } else {
       breakdown["Vật tư khác"] += 1;
     }
@@ -283,8 +281,7 @@ function getStageTags(stageNames: string[]) {
   const names = stageNames.map((name) => name.trim()).filter(Boolean);
 
   if (!names.length) return [];
-  if (names.length <= 2) return names;
-  return [names[0], names[1]];
+  return names;
 }
 
 function getRegionLabelsFromPlan(
@@ -297,7 +294,7 @@ function getRegionLabelsFromPlan(
   const summary = plan.selectionSummary?.length
     ? plan.selectionSummary
     : summarizePlanSelections(plan, regions);
-  if (!summary.length) return ["Chưa thiết lập khu vực nuôi trồng thủy sản"];
+  if (!summary.length) return ["Chưa thiết lập vùng nuôi trồng thủy sản"];
 
   return summary.map((group) => {
     const itemLabel = group.items.map((item) => item.name).join(", ");
@@ -310,7 +307,7 @@ function getRegionLabelsFromSelections(
   regions: ReturnType<typeof useRegionStore.getState>["regions"],
 ) {
   const summary = summarizeSelections(selections, regions || []);
-  if (!summary.length) return ["Chưa thiết lập khu vực nuôi trồng thủy sản"];
+  if (!summary.length) return ["Chưa thiết lập vùng nuôi trồng thủy sản"];
 
   return summary.map((group) => {
     const itemLabel = group.items.map((item) => item.name).join(", ");
@@ -433,24 +430,24 @@ function toDisplayNode(
       icon: ClipboardList,
       eyebrow: `Kế hoạch ${outlineCode}`,
       title: `${plan.name || "Kế hoạch mới"} (${duration})`,
-      subtitle: plan.seasonName || "Chưa chọn lứa nuôi",
+      subtitle: plan.seasonName || "Chưa chọn mùa vụ",
       status: statusMeta.nodeStatus,
       statusLabel: statusMeta.label,
       wide: true,
       targetTopHandleId: `${id}-target-top`,
       sourceBottomHandleId: `${id}-source-bottom`,
+      // Workflow cards should show only stages linked to a Season. Manual
+      // plan stages are still kept in the plan data and edit form, but do not
+      // belong in the workflow stage badges.
       tags: getStageTags(plan.seasonStageNames ?? []),
       regionLabels: getRegionLabelsFromPlan(plan, regions),
       summaries: [
         { label: "Nhân lực", value: String(laborCount) },
         {
-          label: "Thuốc thủy sản",
-          value: String(materialBreakdown["Thuốc thủy sản"]),
+          label: "Thuốc BVTV",
+          value: String(materialBreakdown["Thuốc BVTV"]),
         },
-        {
-          label: "Thức ăn",
-          value: String(materialBreakdown["Thức ăn thủy sản"]),
-        },
+        { label: "Phân bón", value: String(materialBreakdown["Phân bón"]) },
         {
           label: "Vật tư khác",
           value: String(materialBreakdown["Vật tư khác"]),
@@ -510,11 +507,11 @@ export default function PlanAquacultureGrowthCreateWorkflowPage() {
   const params = useParams<{ workflowId?: string }>();
   const { toast } = useToast();
   const { regions } = useRegionStore();
-  const plans = useAquacultureGrowthPlanStore((state) => state.plans);
-  const addPlan = useAquacultureGrowthPlanStore((state) => state.addPlan);
-  const updatePlan = useAquacultureGrowthPlanStore((state) => state.updatePlan);
-  const deletePlanLocal = useAquacultureGrowthPlanStore((state) => state.deletePlan);
-  const upsertWorkflow = useAquacultureGrowthWorkflowStore((state) => state.upsertWorkflow);
+  const plans = usePlanStore((state) => state.plans);
+  const addPlan = usePlanStore((state) => state.addPlan);
+  const updatePlan = usePlanStore((state) => state.updatePlan);
+  const deletePlanLocal = usePlanStore((state) => state.deletePlan);
+  const upsertWorkflow = useWorkflowStore((state) => state.upsertWorkflow);
   const { createPlan, deletePlan } = useFarmPlanMutations();
   const { updateWorkflow } = useFarmWorkflowMutations();
 
@@ -548,12 +545,14 @@ export default function PlanAquacultureGrowthCreateWorkflowPage() {
   const isRoutePersistedId = routeWorkflowId
     ? isPersistedWorkflowId(routeWorkflowId)
     : false;
-  const { data: workflowDetail, isLoading: isLoadingWorkflowDetail } =
-    useFarmWorkflowById(routeWorkflowId ?? "", {
-      enabled:
-        !!routeWorkflowId &&
-        isRoutePersistedId,
-    });
+  const {
+    data: workflowDetail,
+    isLoading: isLoadingWorkflowDetail,
+  } = useFarmWorkflowById(routeWorkflowId ?? "", {
+    enabled:
+      !!routeWorkflowId &&
+      isRoutePersistedId,
+  });
   const { items: workflowPlans, loading: isLoadingWorkflowPlans } =
     useFarmWorkflowPlans(routeWorkflowId ?? "", {
       enabled:
@@ -571,7 +570,7 @@ export default function PlanAquacultureGrowthCreateWorkflowPage() {
     if (!workflowId || workflowId === activeWorkflowId) return;
     if (isPersistedWorkflowId(workflowId)) return;
 
-    const saved = useAquacultureGrowthWorkflowStore.getState().getWorkflowById(workflowId);
+    const saved = useWorkflowStore.getState().getWorkflowById(workflowId);
     if (!saved) return;
 
     loadWorkflow({
@@ -605,11 +604,10 @@ export default function PlanAquacultureGrowthCreateWorkflowPage() {
     // `workflowPlans` would look like "no plans" and seed a spurious draft.
     if (isLoadingWorkflowPlans) return;
     const workflowId = String(workflowDetail.id);
-
     const applyWorkflow = (planNodePlans: Plan[]) => {
       // Upsert by id into the local plan store so the existing plan-node UI
       // (edit / allocate work, both keyed by plan id) keeps working off it.
-      useAquacultureGrowthPlanStore.setState((state) => ({
+      usePlanStore.setState((state) => ({
         plans: [
           ...state.plans.filter(
             (item) => !planNodePlans.some((plan) => plan.id === item.id),
@@ -745,7 +743,7 @@ export default function PlanAquacultureGrowthCreateWorkflowPage() {
         // freshly created backend plan can collide with one of them. A plain
         // append would leave both in the array and `.find()` would then
         // resolve to the stale seed entry instead of the real plan.
-        useAquacultureGrowthPlanStore.setState((state) => ({
+        usePlanStore.setState((state) => ({
           plans: [...state.plans.filter((item) => item.id !== plan.id), plan],
         }));
         attachPlanNode(plan.id, sourceNodeId);
@@ -760,7 +758,7 @@ export default function PlanAquacultureGrowthCreateWorkflowPage() {
     }
 
     addPlan(createEmptyPlanDraft(planName));
-    const created = useAquacultureGrowthPlanStore.getState().plans.at(-1);
+    const created = usePlanStore.getState().plans.at(-1);
     if (!created) return;
     attachPlanNode(created.id, sourceNodeId);
   };
@@ -808,7 +806,7 @@ export default function PlanAquacultureGrowthCreateWorkflowPage() {
             await Promise.all(
               planIds.map((planId) => deletePlan.mutateAsync(planId)),
             );
-            useAquacultureGrowthPlanStore.setState((state) => ({
+            usePlanStore.setState((state) => ({
               plans: state.plans.filter((item) => !planIds.includes(item.id)),
             }));
             removeNodeCascade(nodeId);
@@ -849,8 +847,8 @@ export default function PlanAquacultureGrowthCreateWorkflowPage() {
     if (!infoNodes.length) return;
 
     // Multiple info cards can exist in one draft, but only one drives the
-    // plan tree today (see useAquacultureGrowthForm's workflowInfo lookup) — so
-    // every plan in this draft gets linked to that same primary workflow.
+    // plan tree today (see useAquacultureGrowthForm's workflowInfo lookup) — so every
+    // plan in this draft gets linked to that same primary workflow.
     const primaryWorkflow = infoNodes.find((item) => item.isActive) ?? infoNodes[0];
 
     // Node positions (plan nodes + the info/workflow node itself) only ever
@@ -923,9 +921,8 @@ export default function PlanAquacultureGrowthCreateWorkflowPage() {
       title: "Đã lưu quy trình",
       description: "Sơ đồ quy trình nuôi trồng thủy sản đã được lưu lại.",
     });
-    // Already persisted to useAquacultureGrowthWorkflowStore above — clear the
-    // draft so a later bare "/create/workflow" visit doesn't reopen this
-    // canvas.
+    // Already persisted to useWorkflowStore above — clear the draft so a
+    // later bare "/create/workflow" visit doesn't reopen this canvas.
     resetDraft();
     setLocation("/plan-aquaculture-growth");
   };
@@ -1116,11 +1113,8 @@ export default function PlanAquacultureGrowthCreateWorkflowPage() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={createPlan.isPending || deletePlan.isPending}>
-              Hủy
-            </AlertDialogCancel>
+            <AlertDialogCancel>Hủy</AlertDialogCancel>
             <AlertDialogAction
-              disabled={createPlan.isPending || deletePlan.isPending}
               onClick={() => {
                 confirmAction?.onConfirm();
                 setConfirmAction(null);

@@ -1,16 +1,13 @@
 import { farmSupplyApi } from "@/features/farm-supply";
 import type {
+  DomainCode,
   SupplyItemResponse,
   SupplyType,
 } from "@/features/farm-supply/types";
 import { useQueries } from "@tanstack/react-query";
 import { useMemo } from "react";
-import type { MaterialAllocation } from "../types";
 
-// Aquaculture (AQUACULTURE domain) only has 3 supply categories on the backend —
-// unlike crop, which also has "fertilizer" — so it's excluded here rather
-// than queried and left permanently empty.
-export type AquacultureSupplyType = Exclude<SupplyType, "fertilizer">;
+export type AquacultureSupplyType = SupplyType;
 
 export type AquacultureSupplyTypeOption = {
   value: AquacultureSupplyType;
@@ -33,13 +30,14 @@ export type AquacultureSupplyCatalog = {
 };
 
 const AQUACULTURE_SUPPLY_TYPE_OPTIONS: AquacultureSupplyTypeOption[] = [
-  { value: "medicine", label: "Thuốc thủy sản" },
+  { value: "medicine", label: "Thuốc" },
   { value: "material", label: "Vật tư khác" },
   { value: "equipment", label: "Dụng cụ - Máy móc" },
 ];
 
 const DEFAULT_UNITS: Record<AquacultureSupplyType, string[]> = {
   medicine: ["chai", "gói", "lít", "ml", "can"],
+  fertilizer: ["kg", "bao", "tấn", "lít", "chai"],
   material: ["cái", "bộ", "cuộn", "thùng", "bao"],
   equipment: ["cái", "bộ", "đôi", "chiếc", "máy"],
 };
@@ -50,46 +48,13 @@ function getDefaultUnit(item: SupplyItemResponse, type: AquacultureSupplyType) {
   return DEFAULT_UNITS[type][0] || "cái";
 }
 
-// A material allocation loaded from the API can come back with an empty
-// `unit` string even though it has a real `unitBaseId` — e.g. the backend
-// didn't resolve/include the packaging variant's unit name on that supply
-// line. Re-derive the unit label from the catalog by matching supplyItemId +
-// unitBaseId instead of trusting the possibly-missing `unit` field.
-//
-// Search every supply type rather than narrowing by `allocation.materialType`
-// first: allocations loaded from the API store the raw SupplyType there
-// (e.g. "material"), but ones added client-side this session store the
-// display label (e.g. "Vật tư khác") — matching against just one of those
-// would silently miss the other.
-export function resolveMaterialUnit(
-  allocation: Pick<MaterialAllocation, "unit" | "supplyItemId" | "unitBaseId">,
-  catalog: AquacultureSupplyCatalog,
-): string {
-  if (allocation.unit) return allocation.unit;
-  if (allocation.supplyItemId == null || allocation.unitBaseId == null) {
-    return "";
-  }
-
-  for (const typeOption of catalog.typeOptions) {
-    const material = catalog.optionsByType[typeOption.value].find(
-      (option) => option.value === String(allocation.supplyItemId),
-    );
-    const variant = material?.item.packagingVariants?.find(
-      (item) => item.unitBase?.id === allocation.unitBaseId,
-    );
-    if (variant?.unitBase?.name) return variant.unitBase.name;
-  }
-
-  return "";
-}
-
-export function useAquacultureSupplyCatalog(): AquacultureSupplyCatalog {
+export function useAquacultureSupplyCatalog(domainCode: DomainCode = "AQUACULTURE"): AquacultureSupplyCatalog {
   const queries = useQueries({
     queries: AQUACULTURE_SUPPLY_TYPE_OPTIONS.map((typeOption) => ({
-      queryKey: ["plan-aquaculture-growth", "aquaculture-supply-catalog", typeOption.value],
+      queryKey: ["plan-aquaculture-growth", "supply-catalog", domainCode, typeOption.value],
       queryFn: () =>
         farmSupplyApi.list(typeOption.value, {
-          domainCode: "AQUACULTURE",
+          domainCode,
           status: "active",
           page: 0,
           size: 100,
@@ -113,6 +78,7 @@ export function useAquacultureSupplyCatalog(): AquacultureSupplyCatalog {
       },
       {
         medicine: [],
+        fertilizer: [],
         material: [],
         equipment: [],
       } as Record<AquacultureSupplyType, AquacultureSupplyOption[]>,
@@ -135,6 +101,7 @@ export function useAquacultureSupplyCatalog(): AquacultureSupplyCatalog {
       },
       {
         medicine: [],
+        fertilizer: [],
         material: [],
         equipment: [],
       } as Record<AquacultureSupplyType, string[]>,

@@ -40,14 +40,20 @@ import {
   type Node,
 } from "reactflow";
 import { useLocation, useParams } from "wouter";
-import useAquacultureGrowthPlanStore, { type Plan } from "../../stores/useAquacultureGrowthPlanStore";
 import { useAquacultureGrowthWorkflowDraftStore } from "./hooks/useAquacultureGrowthWorkflowDraftStore";
+import { useFarmPlanMutations } from "@/features/farm-workflow/hooks";
+import { useAquacultureGrowthPage } from "./hooks/useAquacultureGrowthPage";
 import type { Region } from "../region-chart/constants";
+import type { Plan } from "./types";
 import type {
   WorkflowCardNodeData,
   WorkflowNodeStatus,
 } from "./../growth-cycle/components/workflow/WorkflowCardNode";
 import { WorkflowCardNode } from "./../growth-cycle/components/workflow/WorkflowCardNode";
+import {
+  deleteFallbackPlan,
+  upsertFallbackPlan,
+} from "./utils/api-mappers";
 import { summarizePlanSelections } from "./utils/location";
 import { getPlanStatusBadge } from "./utils/status";
 
@@ -122,21 +128,12 @@ function countWorkers(tasks: Plan["taskAllocations"]) {
 function countMaterialsByCategory(materials: Plan["materialAllocations"]) {
   return materials.reduce(
     (acc, item) => {
-      const category = `${item.materialCategory || ""} ${item.materialType || ""} ${item.materialName || ""}`.toLowerCase();
-      if (
-        category.includes("thuốc") ||
-        category.includes("vaccine") ||
-        category.includes("thủy sản")
-      ) {
+      const category = (item.materialCategory || "").toLowerCase();
+      if (category.includes("thuốc") || category.includes("bvtv")) {
         acc.pesticide += 1;
         return acc;
       }
-      if (
-        category.includes("thức ăn") ||
-        category.includes("cám") ||
-        category.includes("premix") ||
-        category.includes("khoáng")
-      ) {
+      if (category.includes("phân")) {
         acc.fertilizer += 1;
         return acc;
       }
@@ -194,20 +191,20 @@ function createDemoWorkflowPlans(base: Plan) {
   const plan2 = clonePlan(base, {
     id: 2001,
     code: "KH-DEMO-002",
-    name: "Kế hoạch nuôi tăng trọng heo thịt Duroc",
+    name: "Kế hoạch nuôi trái sầu riêng Monthong ĐNB (Chống sượng, vô cơm)",
     description:
-      "Tối ưu khẩu phần cám, theo dõi tăng trọng và kiểm soát sức khỏe đàn trước xuất bán.",
-    seasonName: "Lứa heo thịt Đông Nam Bộ",
+      "Cung cấp dinh dưỡng phân kỳ theo tuổi trái, tỉa trái non sinh lý và bón Kali Sulphate để lên cơm vàng.",
+    seasonName: "Chính vụ Đông Nam Bộ",
     startDate: "2024-03-01",
     endDate: "2024-06-30",
     status: "active",
-    selectedStages: ["Nuôi tăng trọng", "Phòng bệnh"],
+    selectedStages: ["Nuôi trái", "Siết nước"],
     taskAllocations: [
       {
         id: 20011,
-        stageId: "Nuôi tăng trọng",
-        name: "Điều chỉnh khẩu phần cám",
-        description: "Tăng khẩu phần theo trọng lượng đàn và kiểm tra máng ăn",
+        stageId: "Nuôi trái",
+        name: "Cho ăn bổ sung khoáng",
+        description: "Cho ăn theo đợt để vật nuôi phát triển đều",
         labor: "3 người",
         duration: "7 ngày",
       },
@@ -215,10 +212,10 @@ function createDemoWorkflowPlans(base: Plan) {
     materialAllocations: [
       {
         id: 20012,
-        stageId: "Nuôi tăng trọng",
-        materialCategory: "Thức ăn",
-        materialType: "Thức ăn hỗn hợp",
-        materialName: "Cám heo thịt giai đoạn tăng trọng",
+        stageId: "Nuôi trái",
+        materialCategory: "Phân bón",
+        materialType: "Phân hữu cơ",
+        materialName: "Phân hữu cơ hoai mục",
         quantity: "2",
         unit: "bao",
       },
@@ -228,10 +225,10 @@ function createDemoWorkflowPlans(base: Plan) {
   const plan3 = clonePlan(base, {
     id: 2002,
     code: "KH-DEMO-003",
-    name: "Kế hoạch phòng bệnh hô hấp sau mưa",
+    name: "Kế hoạch phòng ngừa sâu bệnh giai đoạn sau mưa",
     description:
-      "Theo dõi biểu hiện hô hấp, xử lý ao nuôi và bổ sung điện giải sau biến động thời tiết.",
-    seasonName: "Lứa heo thịt Đông Nam Bộ",
+      "Theo dõi dịch hại, phun phòng ngừa và duy trì ẩm độ ổn định để tránh bùng phát bệnh.",
+    seasonName: "Chính vụ Đông Nam Bộ",
     startDate: "2024-07-01",
     endDate: "2024-08-15",
     status: "draft",
@@ -240,8 +237,8 @@ function createDemoWorkflowPlans(base: Plan) {
       {
         id: 20021,
         stageId: "Phòng ngừa",
-        name: "Sát trùng ao nuôi",
-        description: "Phun sát trùng định kỳ theo lịch thủy sản",
+        name: "Phun phòng bệnh",
+        description: "Phun định kỳ theo lịch",
         labor: "2 người",
         duration: "3 ngày",
       },
@@ -250,9 +247,9 @@ function createDemoWorkflowPlans(base: Plan) {
       {
         id: 20022,
         stageId: "Phòng ngừa",
-        materialCategory: "Thuốc thủy sản",
+        materialCategory: "Thuốc BTVT",
         materialType: "Thuốc phòng bệnh",
-        materialName: "Thuốc sát trùng ao nuôi",
+        materialName: "Thuốc phòng nấm sinh học",
         quantity: "1",
         unit: "lít",
       },
@@ -262,20 +259,20 @@ function createDemoWorkflowPlans(base: Plan) {
   const plan11 = clonePlan(base, {
     id: 2003,
     code: "KH-DEMO-011",
-    name: "Kế hoạch 1.1 - Ổn định đàn sau nhập",
+    name: "Kế hoạch 1.1 - Tăng trưởng cơi lá",
     description:
-      "Nhánh phụ cho giai đoạn thích nghi, tập trung giảm stress và ổn định sức khỏe đàn.",
-    seasonName: "Lứa heo thịt Đông Nam Bộ",
+      "Nhánh phụ cho giai đoạn tăng trưởng cơi lá, có thể tách riêng để xử lý dinh dưỡng.",
+    seasonName: "Chính vụ Đông Nam Bộ",
     startDate: "2024-03-15",
     endDate: "2024-05-10",
     status: "active",
-    selectedStages: ["Ổn định đàn", "Bổ sung điện giải"],
+    selectedStages: ["Cơi lá", "Dưỡng cây"],
     taskAllocations: [
       {
         id: 20031,
-        stageId: "Ổn định đàn",
-        name: "Theo dõi sức khỏe sau nhập",
-        description: "Kiểm tra ăn uống, thân nhiệt và biểu hiện bất thường",
+        stageId: "Cơi lá",
+        name: "Bón thúc cơi lá",
+        description: "Bón thúc định kỳ cho cơi lá mới",
         labor: "4 người",
         duration: "5 ngày",
       },
@@ -283,12 +280,12 @@ function createDemoWorkflowPlans(base: Plan) {
     materialAllocations: [
       {
         id: 20032,
-        stageId: "Bổ sung điện giải",
-        materialCategory: "Thuốc thủy sản",
-        materialType: "Điện giải",
-        materialName: "Điện giải - vitamin tổng hợp",
+        stageId: "Cơi lá",
+        materialCategory: "Phân bón lá",
+        materialType: "Dinh dưỡng",
+        materialName: "Amino acid",
         quantity: "2",
-        unit: "gói",
+        unit: "lít",
       },
     ],
   });
@@ -296,20 +293,20 @@ function createDemoWorkflowPlans(base: Plan) {
   const plan12 = clonePlan(base, {
     id: 2004,
     code: "KH-DEMO-012",
-    name: "Kế hoạch 1.2 - Chăm sóc đàn trước xuất bán",
+    name: "Kế hoạch 1.2 - Ổn định sau tỉa trái",
     description:
-      "Nhánh tiếp nối sau 1.1, tập trung vỗ béo, kiểm tra trọng lượng và chuẩn bị xuất bán.",
-    seasonName: "Lứa heo thịt Đông Nam Bộ",
+      "Nhánh tiếp nối sau 1.1, tập trung ổn định cây và chuyển sang nuôi trái.",
+    seasonName: "Chính vụ Đông Nam Bộ",
     startDate: "2024-05-15",
     endDate: "2024-07-20",
     status: "completed",
-    selectedStages: ["Vỗ béo", "Kiểm tra trọng lượng"],
+    selectedStages: ["Ổn định", "Nuôi trái"],
     taskAllocations: [
       {
         id: 20041,
-        stageId: "Kiểm tra trọng lượng",
-        name: "Cân kiểm tra cuối kỳ",
-        description: "Cân mẫu đàn để xác nhận điều kiện xuất bán",
+        stageId: "Ổn định",
+        name: "Tưới giữ ẩm",
+        description: "Giữ ẩm ổn định cho cây",
         labor: "2 người",
         duration: "4 ngày",
       },
@@ -317,10 +314,10 @@ function createDemoWorkflowPlans(base: Plan) {
     materialAllocations: [
       {
         id: 20042,
-        stageId: "Vỗ béo",
-        materialCategory: "Thức ăn",
-        materialType: "Thức ăn hỗn hợp",
-        materialName: "Cám hoàn thiện trước xuất bán",
+        stageId: "Ổn định",
+        materialCategory: "Phân bón",
+        materialType: "Dinh dưỡng",
+        materialName: "Kali Sulphate",
         quantity: "1",
         unit: "bao",
       },
@@ -388,11 +385,11 @@ function buildPlanNode(
       wide: true,
       targetTopHandleId: `plan-${plan.id}-target-top`,
       sourceBottomHandleId: `plan-${plan.id}-source-bottom`,
-      tags: (plan.seasonStageNames || []).slice(0, 3),
+      tags: (plan.selectedStages || []).slice(0, 3),
       summaries: [
         { label: "Nhân lực", value: countWorkers(plan.taskAllocations) },
-        { label: "Thuốc thủy sản", value: `${materialGroups.pesticide}` },
-        { label: "Thức ăn", value: `${materialGroups.fertilizer}` },
+        { label: "Thuốc BVTV", value: `${materialGroups.pesticide}` },
+        { label: "Phân Bón", value: `${materialGroups.fertilizer}` },
         { label: "Vật tư khác", value: `${materialGroups.other}` },
       ],
       description: plan.description || "Chưa có mô tả cho kế hoạch này.",
@@ -435,7 +432,8 @@ export default function PlanAquacultureGrowthWorkflowPage({
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const { regions } = useRegionStore();
-  const updatePlan = useAquacultureGrowthPlanStore((state) => state.updatePlan);
+  const { plans } = useAquacultureGrowthPage(basePath);
+  const { updatePlan, deletePlan } = useFarmPlanMutations();
   const resetWorkflowDraft = useAquacultureGrowthWorkflowDraftStore(
     (state) => state.resetDraft,
   );
@@ -447,7 +445,7 @@ export default function PlanAquacultureGrowthWorkflowPage({
   }, [basePath, resetWorkflowDraft, setLocation]);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
-  const [viewMode, setViewMode] = useState<WorkflowViewMode>("workflow");
+  const [viewMode] = useState<WorkflowViewMode>("workflow");
   const [editDraft, setEditDraft] = useState<{
     name: string;
     description: string;
@@ -457,8 +455,7 @@ export default function PlanAquacultureGrowthWorkflowPage({
     description: "",
     regionIds: [],
   });
-  const plan = useAquacultureGrowthPlanStore((state) => state.getPlanById(Number(params.id)));
-  const deletePlan = useAquacultureGrowthPlanStore((state) => state.deletePlan);
+  const plan = plans.find((item) => item.id === Number(params.id));
   const primaryRegionLabels = useMemo(
     () => (plan ? getRegionLabels(plan, regions || []) : []),
     [plan, regions],
@@ -477,7 +474,8 @@ export default function PlanAquacultureGrowthWorkflowPage({
 
   const handleConfirmDelete = () => {
     if (!plan) return;
-    deletePlan(plan.id);
+    void deletePlan.mutateAsync(plan.id);
+    deleteFallbackPlan(plan.id);
     toast({
       title: "Thành công",
       description: "Đã xóa kế hoạch",
@@ -494,7 +492,8 @@ export default function PlanAquacultureGrowthWorkflowPage({
     );
     const regionLabel = selectedRegions.map((region) => region.name).join(", ");
 
-    updatePlan(plan.id, {
+    upsertFallbackPlan({
+      ...plan,
       name: editDraft.name.trim() || plan.name,
       description: editDraft.description.trim(),
       selectedRegionIds: editDraft.regionIds,
@@ -503,6 +502,27 @@ export default function PlanAquacultureGrowthWorkflowPage({
       cultivationRegion: regionLabel || plan.cultivationRegion,
       zone: undefined,
       plot: undefined,
+    });
+    void updatePlan.mutateAsync({
+      id: plan.id,
+      payload: {
+        code: plan.code || null,
+        name: editDraft.name.trim() || plan.name,
+        description: editDraft.description.trim() || undefined,
+        scopeNote: plan.scopeNote || undefined,
+        purpose: "CULTIVATION",
+        durationDays: Math.max(
+          1,
+          Math.round(
+            (new Date(`${plan.endDate}T00:00:00`).getTime() -
+              new Date(`${plan.startDate}T00:00:00`).getTime()) /
+              86400000,
+          ) || 1,
+        ),
+        personnel: undefined,
+        stages: undefined,
+        status: plan.status === "draft" ? "DRAFT" : "IN_PROGRESS",
+      },
     });
 
     toast({

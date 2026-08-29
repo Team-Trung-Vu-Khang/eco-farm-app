@@ -1,8 +1,7 @@
 import { applyEdgeChanges, applyNodeChanges } from "reactflow";
 import type { Edge, EdgeChange, Node, NodeChange } from "reactflow";
 import { create } from "zustand";
-import type { Plan } from "@/stores/useAquacultureGrowthPlanStore";
-import type { GeographicalSelection } from "../types";
+import type { Plan, GeographicalSelection, GrowthCycleSelection } from "../types";
 
 export type WorkflowSetupKind = "plan" | "stage" | "detail";
 
@@ -45,6 +44,10 @@ export type DiagramInfoRecord = {
   plannedDurationYears: string;
   plannedDurationMonths: string;
   plannedDurationDays: string;
+  // Growth cycle (or a specific stage within one) applicable to the
+  // selected farming zone(s) — local-only, the backend workflow scope
+  // schema has no growth-cycle concept yet. At most one entry.
+  growthCycleSelections?: GrowthCycleSelection[];
   isActive: boolean;
   position: { x: number; y: number };
 };
@@ -167,7 +170,7 @@ export function placeNewNode(nodes: DraftNode[], parentId: string | undefined) {
   return { x: maxSiblingX + CHILD_GAP, y };
 }
 
-interface AquacultureGrowthWorkflowDraftState {
+interface PlanWorkflowDraftState {
   nodes: DraftNode[];
   edges: Edge[];
   infoNodes: DiagramInfoRecord[];
@@ -193,7 +196,7 @@ interface AquacultureGrowthWorkflowDraftState {
   resetDraft: () => void;
 }
 
-export const useAquacultureGrowthWorkflowDraftStore = create<AquacultureGrowthWorkflowDraftState>()((set, get) => ({
+export const useAquacultureGrowthWorkflowDraftStore = create<PlanWorkflowDraftState>()((set, get) => ({
   nodes: [],
   edges: [],
   infoNodes: [],
