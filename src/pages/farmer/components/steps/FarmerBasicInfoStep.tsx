@@ -292,7 +292,7 @@ export const FarmerBasicInfoStep = ({
           />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="taxCode" required>Mã số thuế</Label>
+          <Label htmlFor="taxCode">Mã số thuế</Label>
           <Controller
             control={control}
             name="taxCode"
@@ -319,7 +319,7 @@ export const FarmerBasicInfoStep = ({
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="space-y-2">
-          <Label htmlFor="taxAuthority" required>Cơ quan thuế</Label>
+          <Label htmlFor="taxAuthority">Cơ quan thuế</Label>
           <Controller
             control={control}
             name="taxAuthority"
@@ -343,7 +343,7 @@ export const FarmerBasicInfoStep = ({
           />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="issueDate" required>Ngày cấp</Label>
+          <Label htmlFor="issueDate">Ngày cấp</Label>
           <Controller
             control={control}
             name="issueDate"
@@ -370,7 +370,7 @@ export const FarmerBasicInfoStep = ({
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="space-y-2">
-          <Label htmlFor="classification" required>Phân loại</Label>
+          <Label htmlFor="classification">Phân loại</Label>
           <Controller
             control={control}
             name="classification"
@@ -411,7 +411,7 @@ export const FarmerBasicInfoStep = ({
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="space-y-2">
-          <Label htmlFor="representative" required>
+          <Label htmlFor="representative">
             Người đại diện pháp luật
           </Label>
           <Controller

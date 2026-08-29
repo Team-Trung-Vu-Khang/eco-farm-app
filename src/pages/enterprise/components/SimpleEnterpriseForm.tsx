@@ -4,12 +4,12 @@ import {
   CardContent,
   Input,
   Label,
+  MultiSelect,
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-  Switch,
   Textarea,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import AddressSearchInput from "@/components/AddressSearchInput";
@@ -40,6 +40,9 @@ export default function SimpleEnterpriseForm({
   const organizationTypesQuery = useMasterData("organization-types", {
     params: { status: "active", page: 0, size: 100 },
   });
+  const businessLinesQuery = useMasterData("business-lines", {
+    params: { status: "active", page: 0, size: 100 },
+  });
   const provincesQuery = useGeoProvinces({
     params: { status: "active", page: 0, size: 100 },
   });
@@ -55,7 +58,11 @@ export default function SimpleEnterpriseForm({
   const isValid = Boolean(
     formData.name.trim() &&
       formData.taxCode.trim() &&
+      formData.taxAddress.trim() &&
+      formData.taxAuthority.trim() &&
+      formData.issueDate.trim() &&
       formData.organizationTypeId !== "" &&
+      formData.classification.length > 0 &&
       formData.province.trim() &&
       formData.ward.trim() &&
       formData.address.trim(),
@@ -158,6 +165,45 @@ export default function SimpleEnterpriseForm({
               />
             </div>
             <div className="space-y-2">
+              <Label required>Địa chỉ thuế</Label>
+              <Input
+                value={formData.taxAddress}
+                onChange={(event) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    taxAddress: event.target.value,
+                  }))
+                }
+                placeholder="Nhập địa chỉ đăng ký thuế"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label required>Cơ quan thuế</Label>
+              <Input
+                value={formData.taxAuthority}
+                onChange={(event) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    taxAuthority: event.target.value,
+                  }))
+                }
+                placeholder="Nhập cơ quan quản lý thuế"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label required>Ngày cấp</Label>
+              <Input
+                type="date"
+                value={formData.issueDate}
+                onChange={(event) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    issueDate: event.target.value,
+                  }))
+                }
+              />
+            </div>
+            <div className="space-y-2">
               <Label required>Loại hình tổ chức</Label>
               <Select
                 value={String(formData.organizationTypeId || "")}
@@ -176,6 +222,20 @@ export default function SimpleEnterpriseForm({
                   ))}
                 </SelectContent>
               </Select>
+            </div>
+            <div className="space-y-2">
+              <Label required>Phân loại</Label>
+              <MultiSelect
+                options={businessLinesQuery.items.map((item) => ({
+                  value: String(item.id),
+                  label: item.name || item.code || String(item.id),
+                }))}
+                placeholder="Chọn phân loại..."
+                value={formData.classification}
+                onChange={(classification) =>
+                  setFormData((prev) => ({ ...prev, classification }))
+                }
+              />
             </div>
           </div>
 

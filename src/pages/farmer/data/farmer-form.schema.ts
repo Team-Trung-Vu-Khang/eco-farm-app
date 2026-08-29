@@ -77,27 +77,13 @@ export const farmerFormSchema = z.object({
   ),
   brandName: emptyText(),
   aliasName: emptyText(),
-  taxCode: z.preprocess(
-    (value) => (value === null ? "" : value),
-    z.string().trim().min(1, "Vui lòng nhập mã số thuế."),
-  ),
+  taxCode: emptyText(),
   taxAddress: emptyText(),
-  taxAuthority: z.preprocess(
-    (value) => (value === null ? "" : value),
-    z.string().trim().min(1, "Vui lòng nhập cơ quan thuế."),
-  ),
-  issueDate: z.preprocess(
-    (value) => (value === null ? "" : value),
-    z.string().trim().min(1, "Vui lòng chọn ngày cấp."),
-  ),
-  classification: z
-    .array(z.string())
-    .min(1, "Vui lòng chọn ít nhất một phân loại."),
+  taxAuthority: emptyText(),
+  issueDate: emptyText(),
+  classification: z.array(z.string()).default([]),
   foundedDate: emptyText(),
-  representative: z.preprocess(
-    (value) => (value === null ? "" : value),
-    z.string().trim().min(1, "Vui lòng nhập người đại diện pháp luật."),
-  ),
+  representative: emptyText(),
   website: emptyText(),
   phone: emptyText(),
   email: emptyText(),

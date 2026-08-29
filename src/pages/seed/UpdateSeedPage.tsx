@@ -7,14 +7,20 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import {
   Card,
   CardContent,
+  Button,
   Form,
   StepperForm,
   useToast,
   type Step,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import { ArrowLeft } from "lucide-react";
 import React, { useEffect } from "react";
 import { FormProvider, useForm, useWatch } from "react-hook-form";
 import { useLocation, useParams } from "wouter";
+import type {
+  FarmDocumentRequest,
+  FarmDocumentResponse,
+} from "@/features/farm/types/farm.type";
 import { SeedDetailsStep } from "./components/SeedDetailsStep";
 import { SeedDocumentationStep } from "./components/SeedDocumentationStep";
 import { SeedIdentityStep } from "./components/SeedIdentityStep";
@@ -22,6 +28,14 @@ import {
   createSeedSchema,
   type CreateSeedFormValues,
 } from "./schemas/createSeedSchema";
+
+type ExistingPdfDocument = Pick<
+  FarmDocumentResponse,
+  "id" | "fileUrl" | "fileName" | "mimeType" | "sizeBytes"
+> & {
+  name: string;
+  size: number;
+};
 
 export default function UpdateSeedPage() {
   const { id } = useParams();
@@ -107,8 +121,16 @@ export default function UpdateSeedPage() {
         contentType,
         editorContent: editorDoc?.content || "",
         pdfFile: pdfDoc
-          ? new File([], pdfDoc.name || "Tài liệu kỹ thuật.pdf")
-          : undefined, // Mock file just to trigger UI presence, actual upload check will handle it
+          ? ({
+              id: pdfDoc.id,
+              name: pdfDoc.fileName || pdfDoc.name || "Tài liệu kỹ thuật.pdf",
+              size: pdfDoc.sizeBytes || 0,
+              fileUrl: pdfDoc.fileUrl,
+              fileName: pdfDoc.fileName,
+              mimeType: pdfDoc.mimeType,
+              sizeBytes: pdfDoc.sizeBytes,
+            } satisfies ExistingPdfDocument)
+          : undefined,
       });
     }
   }, [isSuccess, seed, reset]);
@@ -146,23 +168,27 @@ export default function UpdateSeedPage() {
         }
       }
 
-      const documents: any[] = [];
+      const documents: FarmDocumentRequest[] = [];
       if (
         data.contentType === "pdf" &&
         data.pdfFile &&
         (data.pdfFile instanceof File ? data.pdfFile.size > 0 : true)
       ) {
-        let pdfUrl: string | undefined = seed?.documents?.find(
+        const existingPdf =
+          !(data.pdfFile instanceof File) && data.pdfFile
+            ? (data.pdfFile as ExistingPdfDocument)
+            : undefined;
+        const originalPdf = seed?.documents?.find(
           (doc) => doc.documentType === "pdf",
-        )?.fileUrl;
-        let pdfName: string | undefined = seed?.documents?.find(
-          (doc) => doc.documentType === "pdf",
-        )?.name;
-        let pdfSize: number | undefined = seed?.documents?.find(
-          (doc) => doc.documentType === "pdf",
-        )?.sizeBytes;
+        );
+        let pdfUrl: string | undefined = existingPdf?.fileUrl || originalPdf?.fileUrl;
+        let pdfName: string | undefined =
+          existingPdf?.fileName || existingPdf?.name || originalPdf?.fileName || originalPdf?.name;
+        let pdfSize: number | undefined = existingPdf?.sizeBytes ?? originalPdf?.sizeBytes;
+        let pdfDocumentId: number | undefined = existingPdf?.id;
 
         if (data.pdfFile instanceof File && data.pdfFile.size > 0) {
+          pdfDocumentId = undefined;
           if (uploadedFilesCache.current.has(data.pdfFile)) {
             const cached = uploadedFilesCache.current.get(data.pdfFile);
             pdfUrl = cached?.fileUrl;
@@ -182,6 +208,7 @@ export default function UpdateSeedPage() {
 
         if (pdfUrl) {
           documents.push({
+            id: pdfDocumentId,
             documentType: "pdf",
             name: pdfName || "Tài liệu kỹ thuật",
             fileUrl: pdfUrl,
@@ -192,11 +219,15 @@ export default function UpdateSeedPage() {
           });
         }
       } else if (data.contentType === "editor" && data.editorContent) {
+        const originalEditor = seed?.documents?.find(
+          (doc) => doc.documentType === "editor",
+        );
         const editorContent = await safeConvertLexicalToHtml(
           data.editorContent,
         );
         if (editorContent) {
           documents.push({
+            id: originalEditor?.id,
             documentType: "editor",
             name: "Hướng dẫn kỹ thuật",
             content: editorContent,
@@ -281,6 +312,17 @@ export default function UpdateSeedPage() {
     <PageWrapper
       title="Cập nhật hạt giống"
       description="Chỉnh sửa thông tin hạt giống trong hệ thống"
+      actions={[
+        <Button
+          key="back"
+          variant="outline"
+          onClick={() => setLocation(`/seed/${id}`)}
+          className="gap-2"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Quay lại
+        </Button>,
+      ]}
     >
       <FormProvider {...methods}>
         <Form {...methods}>
