@@ -206,7 +206,7 @@ export function useFarmSupplyListHook(
     setSearch,
     status,
     setStatus: (_status: string) =>
-      setStatus(_status === "all" ? undefined : status),
+      setStatus(_status === "all" ? undefined : (_status as MasterDataStatus)),
     currentIndex,
     setCurrentIndex,
     pageSize,

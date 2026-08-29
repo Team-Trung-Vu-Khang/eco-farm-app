@@ -1,4 +1,7 @@
-import { useState } from "react";
+import { farmSupplyApi } from "@/features/farm-supply";
+import { useMasterData } from "@/features/master-data";
+import { useDebounce } from "@/shared/hooks/useDebounce";
+import { useQuery } from "@tanstack/react-query";
 import {
   Badge,
   Button,
@@ -6,6 +9,7 @@ import {
   CardContent,
   Input,
   Label,
+  RemoteAutoCompleteSelect,
   Select,
   SelectContent,
   SelectItem,
@@ -19,113 +23,17 @@ import {
   FileText,
   Image as ImageIcon,
   Info,
+  Loader2,
   Package,
   Plus,
   Shield,
   Tags,
   Upload,
   X,
-  Loader2,
 } from "lucide-react";
-import type { PesticideDomain, PesticideFormData } from "../types";
-import { initialPesticidePurposes } from "../../pesticide-group/data/constants";
+import { useState } from "react";
 import { commonHashtags } from "../data/constants";
-import { useQuery } from "@tanstack/react-query";
-import { farmSupplyApi } from "@/features/farm-supply";
-
-interface GroupOption {
-  code: string;
-  name: string;
-  description?: string;
-}
-
-// Domain-specific group options (with name + description like the advanced form)
-const DOMAIN_GROUP_OPTIONS: Record<PesticideDomain, GroupOption[]> = {
-  cultivation: initialPesticidePurposes.map((p) => ({
-    code: p.code,
-    name: p.name,
-    description: p.description,
-  })),
-  animal: [
-    {
-      code: "ANTIBIOTIC",
-      name: "Kháng sinh",
-      description: "Điều trị nhiễm khuẩn, hô hấp, tiêu hóa",
-    },
-    {
-      code: "VACCINE",
-      name: "Vaccine",
-      description: "Phòng bệnh truyền nhiễm, tăng miễn dịch đàn",
-    },
-    {
-      code: "ANTIPARASITIC",
-      name: "Thuốc kháng ký sinh trùng",
-      description: "Trị giun sán, ve, bọ chét, ký sinh nội ngoại",
-    },
-    {
-      code: "PROBIOTIC_VET",
-      name: "Chế phẩm sinh học thú y",
-      description: "Vi sinh vật có lợi, enzyme, probiotic",
-    },
-    {
-      code: "ANTIFUNGAL_VET",
-      name: "Thuốc kháng nấm",
-      description: "Điều trị nấm da, nấm nội tạng",
-    },
-    {
-      code: "VITAMIN_MINERAL",
-      name: "Vitamin & khoáng chất",
-      description: "Bổ sung dinh dưỡng, tăng sức đề kháng",
-    },
-    {
-      code: "ANALGESIC_VET",
-      name: "Thuốc giảm đau / hạ sốt",
-      description: "Kiểm soát đau, hạ thân nhiệt",
-    },
-    {
-      code: "OTHER_VET",
-      name: "Các nhóm khác",
-      description: "Thuốc trợ tim, hormone, dịch truyền, v.v.",
-    },
-  ],
-  aquaculture: [
-    {
-      code: "WATER_TREATMENT",
-      name: "Thuốc xử lý nước",
-      description: "Cân bằng pH, độ kiềm, oxy hòa tan",
-    },
-    {
-      code: "ANTIFUNGAL_AQ",
-      name: "Thuốc kháng nấm thủy sản",
-      description: "Trị nấm trên tôm cá, ký sinh ngoại",
-    },
-    {
-      code: "DISINFECTANT_AQ",
-      name: "Hóa chất khử trùng ao",
-      description: "Sát khuẩn ao nuôi, diệt mầm bệnh",
-    },
-    {
-      code: "ENV_IMPROVER",
-      name: "Chất cải thiện môi trường",
-      description: "Xử lý bùn đáy, khí độc NH3, H2S",
-    },
-    {
-      code: "ANTIBACTERIAL_AQ",
-      name: "Thuốc kháng khuẩn thủy sản",
-      description: "Điều trị nhiễm khuẩn đường ruột, gan tụy",
-    },
-    {
-      code: "PROBIOTIC_AQ",
-      name: "Chế phẩm sinh học thủy sản",
-      description: "Probiotic, enzyme, vi sinh phân hủy hữu cơ",
-    },
-    {
-      code: "OTHER_AQ",
-      name: "Các nhóm khác",
-      description: "Khoáng, vitamin, chất tăng đề kháng thủy sản",
-    },
-  ],
-};
+import type { PesticideDomain, PesticideFormData } from "../types";
 
 const DOMAIN_LABELS: Record<
   PesticideDomain,
@@ -193,9 +101,9 @@ export default function SimplePesticideForm({
 }: SimplePesticideFormProps) {
   const isEdit = window.location.pathname.includes("/edit");
   const labels = DOMAIN_LABELS[domain];
-  const groupOptions = DOMAIN_GROUP_OPTIONS[domain];
   const isValid = Boolean(formData.name);
   const [paramHashtag, setParamHashtag] = useState("");
+  const [groupSearch, setGroupSearch] = useState("");
 
   const domainCode =
     domain === "cultivation"
@@ -204,6 +112,7 @@ export default function SimplePesticideForm({
         ? "LIVESTOCK"
         : "AQUACULTURE";
   const classification = domain === "cultivation" ? "target_group" : "usage";
+  const debouncedGroupSearch = useDebounce(groupSearch, 300);
 
   // Dynamic API Fetching
   const { data: packagingTypes } = useQuery({
@@ -218,17 +127,19 @@ export default function SimplePesticideForm({
     staleTime: 5 * 60 * 1000,
   });
 
-  const { data: apiGroups } = useQuery({
-    queryKey: ["medicine-groups", domainCode, classification],
-    queryFn: () =>
-      farmSupplyApi.getClassificationGroups("medicine").then((content) => {
-        return content.filter(
-          (g: any) =>
-            g.domainCode === domainCode && g.classification === classification,
-        );
-      }),
-    staleTime: 5 * 60 * 1000,
-  });
+  const { items: remoteGroups, loading: isLoadingGroups } = useMasterData(
+    "medicine-groups",
+    {
+      params: {
+        domainCode,
+        classification,
+        keyword: debouncedGroupSearch.trim() || undefined,
+        status: "active",
+        page: 0,
+        size: 20,
+      },
+    },
+  );
 
   const packagingList =
     packagingTypes && packagingTypes.length > 0
@@ -240,8 +151,10 @@ export default function SimplePesticideForm({
       ? baseUnits.map((u) => u.name)
       : MEASURE_UNIT_OPTIONS;
 
-  const groupList =
-    apiGroups && apiGroups.length > 0 ? apiGroups : groupOptions;
+  const groupOptions = remoteGroups.map((group) => ({
+    label: group.name,
+    value: group.name,
+  }));
 
   const onAddHashtag = () => {
     const tag = paramHashtag.trim();
@@ -335,30 +248,16 @@ export default function SimplePesticideForm({
             <Package className="w-4 h-4 text-slate-400" />
             {labels.groupLabel}
           </Label>
-          <Select
+          <RemoteAutoCompleteSelect
+            options={groupOptions}
             value={formData.group}
-            onValueChange={(v) => onFormFieldChange("group", v)}
-          >
-            <SelectTrigger className="text-left h-auto py-2">
-              <SelectValue
-                placeholder={`Chọn nhóm ${labels.item.toLowerCase()}...`}
-              />
-            </SelectTrigger>
-            <SelectContent>
-              {groupList.map((g: any) => (
-                <SelectItem key={g.id || g.code} value={g.name}>
-                  <div className="flex flex-col">
-                    <span className="font-medium">{g.name}</span>
-                    {g.description && (
-                      <span className="text-xs text-muted-foreground truncate max-w-[300px]">
-                        {g.description}
-                      </span>
-                    )}
-                  </div>
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+            onChange={(value) => onFormFieldChange("group", value)}
+            onSearch={setGroupSearch}
+            placeholder={`Chọn nhóm ${labels.item.toLowerCase()}...`}
+            searchPlaceholder="Tìm nhóm thuốc BVTV..."
+            emptyText="Không tìm thấy nhóm thuốc BVTV"
+            loading={isLoadingGroups}
+          />
         </div>
 
         <div className="space-y-2">
@@ -403,7 +302,7 @@ export default function SimplePesticideForm({
               <SelectTrigger className="text-left h-auto py-2">
                 <SelectValue placeholder="Quy cách" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="max-h-60 overflow-y-auto">
                 {packagingList.map((p) => (
                   <SelectItem key={p} value={p}>
                     {p}
@@ -429,7 +328,7 @@ export default function SimplePesticideForm({
               <SelectTrigger className="text-left h-auto py-2">
                 <SelectValue placeholder="Đơn vị" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="max-h-60 overflow-y-auto">
                 {unitList.map((u) => (
                   <SelectItem key={u} value={u}>
                     {u}

@@ -3,6 +3,7 @@ import {
   Button,
   Input,
   Label,
+  RemoteAutoCompleteSelect,
   Select,
   SelectContent,
   SelectItem,
@@ -21,9 +22,18 @@ import {
   X,
 } from "lucide-react";
 import { useMasterData } from "@/features/master-data";
+import { useDebounce } from "@/shared/hooks/useDebounce";
+import { useState } from "react";
 import { MOCK_MEDICINE_DATA } from "../../shared-medicine-group/data/mocks";
 import { commonHashtags } from "../data/constants";
 import type { PesticideDomain, PesticideFormData } from "../types";
+
+type MedicineGroupItem = {
+  id?: string | number;
+  code?: string;
+  name: string;
+  description?: string | null;
+};
 
 interface PesticideBasicInfoStepProps {
   domain?: PesticideDomain;
@@ -52,12 +62,16 @@ export default function PesticideBasicInfoStep({
   const isCultivation = domain === "cultivation" || !domain;
   const isAnimal = domain === "animal";
   const isAquaculture = domain === "aquaculture";
+  const [groupSearch, setGroupSearch] = useState("");
+  const debouncedGroupSearch = useDebounce(groupSearch, 300);
 
-  // Cultivation Master Data
-  const { items: loadedPesticideGroups } = useMasterData("medicine-groups", {
-    params: { domainCode: "CROP", classification: "target_group", size: 100 },
-    enabled: isCultivation,
-  });
+  const groupDomainCode = isCultivation
+    ? "CROP"
+    : isAnimal
+      ? "LIVESTOCK"
+      : "AQUACULTURE";
+  const groupClassification = isCultivation ? "target_group" : "usage";
+
   const { items: loadedPesticideOrigins } = useMasterData("medicine-groups", {
     params: { domainCode: "CROP", classification: "origin", size: 100 },
     enabled: isCultivation,
@@ -88,11 +102,6 @@ export default function PesticideBasicInfoStep({
     },
   );
 
-  // Animal Master Data
-  const { items: loadedLivestockFunctions } = useMasterData("medicine-groups", {
-    params: { domainCode: "LIVESTOCK", classification: "usage", size: 100 },
-    enabled: isAnimal,
-  });
   const { items: loadedLivestockAdministrationRoutes } = useMasterData(
     "medicine-groups",
     {
@@ -116,14 +125,6 @@ export default function PesticideBasicInfoStep({
     },
   );
 
-  // Aquaculture Master Data
-  const { items: loadedAquacultureFunctions } = useMasterData(
-    "medicine-groups",
-    {
-      params: { domainCode: "AQUACULTURE", classification: "usage", size: 100 },
-      enabled: isAquaculture,
-    },
-  );
   const { items: loadedAquacultureControlResidues } = useMasterData(
     "medicine-groups",
     {
@@ -135,15 +136,25 @@ export default function PesticideBasicInfoStep({
       enabled: isAquaculture,
     },
   );
+  const { items: remoteGroupItems, loading: isLoadingGroupItems } =
+    useMasterData("medicine-groups", {
+      params: {
+        domainCode: groupDomainCode,
+        classification: groupClassification,
+        keyword: debouncedGroupSearch.trim() || undefined,
+        status: "active",
+        page: 0,
+        size: 20,
+      },
+    });
 
-  const getItems = (loaded: any[], catalog: string) => {
+  const getItems = (loaded: MedicineGroupItem[] | undefined, catalog: string) => {
     if (loaded && loaded.length > 0) {
       return loaded;
     }
     return MOCK_MEDICINE_DATA[catalog] || [];
   };
 
-  const pesticideGroups = getItems(loadedPesticideGroups, "pesticide-groups");
   const pesticideOrigins = getItems(
     loadedPesticideOrigins,
     "pesticide-origins",
@@ -161,10 +172,6 @@ export default function PesticideBasicInfoStep({
     "pesticide-formulations",
   );
 
-  const livestockFunctions = getItems(
-    loadedLivestockFunctions,
-    "livestock-medicine-functions",
-  );
   const livestockAdministrationRoutes = getItems(
     loadedLivestockAdministrationRoutes,
     "livestock-medicine-administration-routes",
@@ -174,14 +181,15 @@ export default function PesticideBasicInfoStep({
     "livestock-medicine-control-levels",
   );
 
-  const aquacultureFunctions = getItems(
-    loadedAquacultureFunctions,
-    "aquaculture-medicine-functions",
-  );
   const aquacultureControlResidues = getItems(
     loadedAquacultureControlResidues,
     "aquaculture-medicine-control-residues",
   );
+  const groupOptions = remoteGroupItems.map((item) => ({
+    label: item.name,
+    value: item.name,
+  }));
+
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 animate-in fade-in slide-in-from-bottom-2 duration-500">
       <div className="lg:col-span-2 space-y-6">
@@ -251,33 +259,16 @@ export default function PesticideBasicInfoStep({
               {isCultivation ? "Công dụng thuốc" : "Công dụng"}{" "}
               <span className="text-red-500">*</span>
             </Label>
-            <Select
+            <RemoteAutoCompleteSelect
               value={formData.group}
-              onValueChange={(value) => onFormFieldChange("group", value)}
-            >
-              <SelectTrigger className="text-left h-auto py-2">
-                <SelectValue placeholder="Chọn loại thuốc từ danh mục..." />
-              </SelectTrigger>
-              <SelectContent>
-                {(isCultivation
-                  ? pesticideGroups
-                  : isAnimal
-                    ? livestockFunctions
-                    : aquacultureFunctions
-                ).map((item) => (
-                  <SelectItem key={item.id || item.code} value={item.name}>
-                    <div className="flex flex-col">
-                      <span className="font-medium">{item.name}</span>
-                      {item.description && (
-                        <span className="text-xs text-muted-foreground truncate max-w-[300px]">
-                          {item.description}
-                        </span>
-                      )}
-                    </div>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              options={groupOptions}
+              onChange={(value) => onFormFieldChange("group", value)}
+              onSearch={setGroupSearch}
+              placeholder="Chọn loại thuốc từ danh mục..."
+              searchPlaceholder="Tìm công dụng thuốc..."
+              emptyText="Không tìm thấy công dụng thuốc"
+              loading={isLoadingGroupItems}
+            />
           </div>
 
           <div className="space-y-2">
