@@ -32,6 +32,8 @@ export const regionBasicFormSchema = z.object({
   rearingMethodId: z.number().int().optional(),
   irrigationSystemId: z.number().int().optional(),
   seedIds: z.array(z.number().int()).optional(),
+  cropSeedToggles: z.record(z.boolean()).optional(),
+  varietyIds: z.array(z.number().int()).optional(),
 });
 
 export type RegionBasicFormValues = z.infer<typeof regionBasicFormSchema>;

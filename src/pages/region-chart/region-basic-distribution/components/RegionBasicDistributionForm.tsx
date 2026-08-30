@@ -61,7 +61,10 @@ export const RegionBasicDistributionForm: React.FC<
       title: "Cấu hình canh tác",
       description: "Thiết lập phương pháp & giống cây trồng",
       content: (
-        <ZoneConfigurationStep bypassSeedSelection={bypassSeedSelection} />
+        <ZoneConfigurationStep
+          bypassSeedSelection={bypassSeedSelection}
+          showSeedSelection={!isDialogMode}
+        />
       ),
       isValid: step2Valid,
     },

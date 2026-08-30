@@ -15,21 +15,19 @@ import {
   Button,
   cn,
   RemoteAutoCompleteSelect,
+  Checkbox,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import { CheckCircle2, Leaf, Search, Sprout } from "lucide-react";
+import { useState, useMemo, useEffect } from "react";
 import {
-  CheckCircle2,
-  Leaf,
-  Search,
-  Sprout,
-  ChevronRight,
-} from "lucide-react";
-import { useState, useMemo } from "react";
-import { useProductionMethods } from "@/features/foundation";
-import { useRearingMethods } from "@/features/master-data/hooks/useRearingMethods";
+  useProductionMethods,
+  useMethodApplications,
+  useCropVarieties,
+} from "@/features/foundation";
 import { useSeeds } from "@/features/farm/hooks/useSeeds";
-import type { FarmSeedResponse } from "@/features/farm/types/farm.type";
+import { useRearingMethods } from "@/features/master-data/hooks/useRearingMethods";
 import { useDebounce } from "@/shared/hooks/useDebounce";
-import type { CultivationZoneFormValues } from "../data/cultivation-zone-form.schema";
+
 type SubjectVariantOption = {
   id: number;
   code?: string;
@@ -40,42 +38,63 @@ type SeedSubjectGroup = {
   subjectId: number;
   subjectName?: string;
   subjectCode?: string;
-  variants: FarmSeedResponse[];
+  variants: SubjectVariantOption[];
 };
 
-interface VariantSelectorDialogProps {
+interface SeedSelectorDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  subjectName: string;
-  variants: SubjectVariantOption[];
-  selectedVariantIds: number[];
-  onConfirm: (selectedIds: number[]) => void;
+  varietyId: number;
+  varietyName: string;
+  selectedSeedIds: number[];
+  onConfirm: (seedIds: number[]) => void;
 }
 
-export const VariantSelectorDialog = ({
+export const SeedSelectorDialog = ({
   open,
   onOpenChange,
-  subjectName,
-  variants = [],
-  selectedVariantIds = [],
+  varietyId,
+  varietyName,
+  selectedSeedIds = [],
   onConfirm,
-}: VariantSelectorDialogProps) => {
+}: SeedSelectorDialogProps) => {
   const [searchTerm, setSearchTerm] = useState("");
   const debouncedSearch = useDebounce(searchTerm, 300);
-  const [tempSelectedIds, setTempSelectedIds] =
-    useState<number[]>(selectedVariantIds);
+  const [tempSelectedIds, setTempSelectedIds] = useState<number[]>([]);
 
-  const filteredVariants = useMemo(() => {
+  // Fetch seeds of this variety
+  const { items: seeds, loading } = useSeeds({
+    params: {
+      foundationSubjectVariantId: varietyId,
+      status: "active",
+      size: 100,
+    },
+    enabled: open && !!varietyId,
+  });
+
+  // Initialize tempSelectedIds with current selected seeds of this variety when dialog opens
+  useEffect(() => {
+    if (open && seeds.length > 0) {
+      const seedIdsOfVariety = seeds.map((s) => s.id);
+      const activeSeedIds = selectedSeedIds.filter((id) =>
+        seedIdsOfVariety.includes(id),
+      );
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setTempSelectedIds(activeSeedIds);
+    }
+  }, [open, seeds, selectedSeedIds]);
+
+  const filteredSeeds = useMemo(() => {
     const keyword = debouncedSearch.toLowerCase().trim();
-    if (!keyword) return variants;
-    return variants.filter(
-      (v) =>
-        v.name?.toLowerCase().includes(keyword) ||
-        v.code?.toLowerCase().includes(keyword),
+    if (!keyword) return seeds;
+    return seeds.filter(
+      (s) =>
+        s.name?.toLowerCase().includes(keyword) ||
+        s.code?.toLowerCase().includes(keyword),
     );
-  }, [variants, debouncedSearch]);
+  }, [seeds, debouncedSearch]);
 
-  const toggleVariant = (id: number) => {
+  const toggleSeed = (id: number) => {
     setTempSelectedIds((prev) =>
       prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
     );
@@ -95,11 +114,10 @@ export const VariantSelectorDialog = ({
         <DialogHeader className="p-6 bg-slate-50 border-b shrink-0">
           <DialogTitle className="flex items-center gap-2 text-slate-800">
             <Sprout className="w-5 h-5 text-green-600" />
-            <span>Chọn giống cây trồng cho {subjectName}</span>
+            <span>Chọn hạt giống cho giống {varietyName}</span>
           </DialogTitle>
           <p className="text-xs text-muted-foreground mt-1">
-            Chọn các giống phù hợp thuộc cây trồng này để đưa vào
-            phương án sản xuất.
+            Chọn các hạt giống cụ thể thuộc giống cây trồng này.
           </p>
         </DialogHeader>
 
@@ -107,7 +125,7 @@ export const VariantSelectorDialog = ({
           <div className="relative">
             <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground z-10" />
             <Input
-              placeholder="Tìm kiếm giống cây trồng..."
+              placeholder="Tìm kiếm hạt giống..."
               className="pl-10 bg-slate-50 border-slate-200 focus:bg-white transition-all rounded-lg"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
@@ -117,53 +135,59 @@ export const VariantSelectorDialog = ({
 
         <ScrollArea className="flex-1 overflow-y-auto min-h-0 h-80">
           <div className="p-6 space-y-2">
-            {filteredVariants.map((variant) => {
-              const isSelected = tempSelectedIds.includes(variant.id);
-              return (
-                <div
-                  key={variant.id}
-                  onClick={() => toggleVariant(variant.id)}
-                  className={cn(
-                    "flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-all bg-white",
-                    isSelected
-                      ? "bg-green-50/50 border-green-300 shadow-sm"
-                      : "border-slate-200 hover:border-green-200 hover:shadow-sm",
-                  )}
-                >
-                  <div className="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center shrink-0 border border-slate-200 overflow-hidden">
-                    <Leaf className="w-4 h-4 text-slate-400" />
-                  </div>
-                  <div className="flex flex-col flex-1 min-w-0">
-                    <div
-                      className={cn(
-                        "text-sm font-semibold truncate",
-                        isSelected ? "text-green-900" : "text-slate-700",
-                      )}
-                    >
-                      {variant.name}
-                    </div>
-                    <div className="text-xs text-muted-foreground mt-0.5 truncate">
-                      Mã giống: {variant.code || "---"}
-                    </div>
-                  </div>
+            {loading ? (
+              <div className="text-center py-10 text-muted-foreground text-sm italic">
+                Đang tải danh sách hạt giống...
+              </div>
+            ) : (
+              filteredSeeds.map((seed) => {
+                const isSelected = tempSelectedIds.includes(seed.id);
+                return (
                   <div
+                    key={seed.id}
+                    onClick={() => toggleSeed(seed.id)}
                     className={cn(
-                      "w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all shrink-0",
+                      "flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-all bg-white",
                       isSelected
-                        ? "bg-green-500 border-green-500"
-                        : "border-slate-300",
+                        ? "bg-green-50/50 border-green-300 shadow-sm"
+                        : "border-slate-200 hover:border-green-200 hover:shadow-sm",
                     )}
                   >
-                    {isSelected && (
-                      <CheckCircle2 className="w-4 h-4 text-white" />
-                    )}
+                    <div className="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center shrink-0 border border-slate-200 overflow-hidden">
+                      <Leaf className="w-4 h-4 text-slate-400" />
+                    </div>
+                    <div className="flex flex-col flex-1 min-w-0">
+                      <div
+                        className={cn(
+                          "text-sm font-semibold truncate",
+                          isSelected ? "text-green-900" : "text-slate-700",
+                        )}
+                      >
+                        {seed.name}
+                      </div>
+                      <div className="text-xs text-muted-foreground mt-0.5 truncate">
+                        Nhà cung cấp: {seed.supplier?.name || "---"}
+                      </div>
+                    </div>
+                    <div
+                      className={cn(
+                        "w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all shrink-0",
+                        isSelected
+                          ? "bg-green-500 border-green-500"
+                          : "border-slate-300",
+                      )}
+                    >
+                      {isSelected && (
+                        <CheckCircle2 className="w-4 h-4 text-white" />
+                      )}
+                    </div>
                   </div>
-                </div>
-              );
-            })}
-            {filteredVariants.length === 0 && (
+                );
+              })
+            )}
+            {!loading && filteredSeeds.length === 0 && (
               <div className="text-center py-10 text-muted-foreground text-sm italic">
-                Không tìm thấy giống phù hợp
+                Không tìm thấy hạt giống phù hợp
               </div>
             )}
           </div>
@@ -193,30 +217,273 @@ export const VariantSelectorDialog = ({
   );
 };
 
+interface VarietyItemProps {
+  varietyId: number;
+  varietyName: string;
+  showSeedSelection: boolean;
+  selectedSeedIds: number[];
+  onSelectSeeds: (seedIds: number[], allSeedsOfVariety: number[]) => void;
+  isChecked: boolean;
+  onToggle: (checked: boolean) => void;
+}
+
+export const VarietyItem = ({
+  varietyId,
+  varietyName,
+  showSeedSelection,
+  selectedSeedIds,
+  onSelectSeeds,
+  isChecked,
+  onToggle,
+}: VarietyItemProps) => {
+  const { items: seeds } = useSeeds({
+    params: {
+      foundationSubjectVariantId: varietyId,
+      status: "active",
+      size: 100,
+    },
+    enabled: isChecked && showSeedSelection,
+  });
+
+  const selectedSeedsForThisVariety = useMemo(() => {
+    return seeds.filter((s) => selectedSeedIds.includes(s.id));
+  }, [seeds, selectedSeedIds]);
+
+  const [dialogOpen, setDialogOpen] = useState(false);
+
+  const handleToggle = (checked: boolean) => {
+    onToggle(checked);
+    if (!checked) {
+      const seedIdsOfVariety = seeds.map((s) => s.id);
+      onSelectSeeds([], seedIdsOfVariety);
+    }
+  };
+
+  return (
+    <div className="space-y-2 border-t border-slate-100 py-3">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <Checkbox
+            checked={isChecked}
+            onCheckedChange={(c) => handleToggle(!!c)}
+          />
+          <span className="text-xs font-semibold text-slate-700">
+            {varietyName}
+          </span>
+        </div>
+        {isChecked && showSeedSelection && (
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => setDialogOpen(true)}
+            className="text-[11px] font-bold text-green-700 border-green-200 hover:bg-green-50 rounded-md py-0.5 px-2 h-7"
+          >
+            Chọn hạt giống
+          </Button>
+        )}
+      </div>
+
+      {isChecked && showSeedSelection && (
+        <div className="flex flex-wrap gap-2 pl-7 pt-1">
+          {selectedSeedsForThisVariety.length > 0 ? (
+            selectedSeedsForThisVariety.map((seed) => (
+              <Badge
+                key={seed.id}
+                variant="outline"
+                className="bg-white border-slate-200 text-slate-600 text-[10px] py-0.5 px-2 rounded flex items-center gap-1 shadow-xs cursor-pointer hover:border-green-300 transition-all"
+                onClick={() => setDialogOpen(true)}
+              >
+                <div className="w-1 h-1 rounded-full bg-green-500" />
+                <span>{seed.name}</span>
+              </Badge>
+            ))
+          ) : (
+            <span className="text-[11px] text-muted-foreground italic">
+              Chưa chọn hạt giống
+            </span>
+          )}
+        </div>
+      )}
+
+      {dialogOpen && (
+        <SeedSelectorDialog
+          open={dialogOpen}
+          onOpenChange={setDialogOpen}
+          varietyId={varietyId}
+          varietyName={varietyName}
+          selectedSeedIds={selectedSeedIds}
+          onConfirm={(newSeedIds) => {
+            const seedIdsOfVariety = seeds.map((s) => s.id);
+            onSelectSeeds(newSeedIds, seedIdsOfVariety);
+          }}
+        />
+      )}
+    </div>
+  );
+};
+
+interface CropCardProps {
+  cropId: number;
+  cropName: string;
+  showSeedSelection: boolean;
+  selectedVarietyIds: number[];
+  onToggleVariety: (varietyId: number, checked: boolean) => void;
+  selectedSeedIds: number[];
+  onSelectSeedsForVariety: (
+    varietyId: number,
+    seedIds: number[],
+    allSeedsOfVariety: number[],
+  ) => void;
+  onRemoveCrop: () => void;
+}
+
+export const CropCard = ({
+  cropId,
+  cropName,
+  showSeedSelection,
+  selectedVarietyIds,
+  onToggleVariety,
+  selectedSeedIds,
+  onSelectSeedsForVariety,
+  onRemoveCrop,
+}: CropCardProps) => {
+  const [varietySearch, setVarietySearch] = useState("");
+  const debouncedVarietySearch = useDebounce(varietySearch, 250);
+
+  const { items: varieties, loading } = useCropVarieties({
+    params: {
+      size: 100,
+      status: "active",
+      subjectId: cropId,
+      domainCode: "CROP",
+    },
+    enabled: !!cropId,
+  });
+
+  const filteredVarieties = useMemo(() => {
+    const kw = debouncedVarietySearch.toLowerCase().trim();
+    if (!kw) return varieties;
+    return varieties.filter(
+      (v) =>
+        v.name?.toLowerCase().includes(kw) ||
+        v.code?.toLowerCase().includes(kw),
+    );
+  }, [varieties, debouncedVarietySearch]);
+
+  return (
+    <Card className="border border-slate-200 shadow-xs rounded-xl overflow-hidden bg-white">
+      <div className="p-4 space-y-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-lg bg-green-50 flex items-center justify-center shrink-0 border border-green-100 overflow-hidden">
+              <Leaf className="w-4 h-4 text-green-600" />
+            </div>
+            <div className="flex flex-col min-w-0">
+              <span className="text-sm font-semibold truncate text-slate-700">
+                {cropName}
+              </span>
+              <span className="text-xs text-muted-foreground mt-0.5">
+                {varieties.length} giống cây trồng khả dụng
+              </span>
+            </div>
+          </div>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={onRemoveCrop}
+            className="text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg text-xs"
+          >
+            Xóa cây trồng
+          </Button>
+        </div>
+
+        {loading ? (
+          <div className="text-xs text-slate-400 italic">
+            Đang tải giống cây trồng...
+          </div>
+        ) : varieties.length > 0 ? (
+          <div className="space-y-3 pt-1">
+            {/* Search input */}
+            {varieties.length > 4 && (
+              <div className="relative">
+                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
+                <Input
+                  value={varietySearch}
+                  onChange={(e) => setVarietySearch(e.target.value)}
+                  placeholder="Tìm kiếm giống..."
+                  className="pl-7 h-8 text-xs border-slate-200 bg-slate-50/50 focus:bg-white"
+                />
+              </div>
+            )}
+
+            <div className="space-y-0">
+              {filteredVarieties.length > 0 ? (
+                filteredVarieties.map((variety) => (
+                  <VarietyItem
+                    key={variety.id}
+                    varietyId={variety.id}
+                    varietyName={variety.name}
+                    showSeedSelection={showSeedSelection}
+                    selectedSeedIds={selectedSeedIds}
+                    isChecked={selectedVarietyIds.includes(variety.id)}
+                    onToggle={(checked) => onToggleVariety(variety.id, checked)}
+                    onSelectSeeds={(newSeedIds, allSeedsOfVariety) =>
+                      onSelectSeedsForVariety(
+                        variety.id,
+                        newSeedIds,
+                        allSeedsOfVariety,
+                      )
+                    }
+                  />
+                ))
+              ) : (
+                <div className="text-xs text-slate-400 italic py-2">
+                  Không tìm thấy giống phù hợp
+                </div>
+              )}
+            </div>
+          </div>
+        ) : (
+          <div className="text-xs text-slate-400 italic">
+            Không có giống cây trồng nào khả dụng
+          </div>
+        )}
+      </div>
+    </Card>
+  );
+};
+
 interface ZoneConfigurationStepProps {
   bypassSeedSelection?: boolean;
+  showSeedSelection?: boolean;
 }
 
 export const ZoneConfigurationStep: React.FC<ZoneConfigurationStepProps> = ({
   bypassSeedSelection = false,
+  showSeedSelection = true,
 }) => {
   const {
     control,
     watch,
     setValue,
     formState: { errors },
-  } = useFormContext<CultivationZoneFormValues>();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  } = useFormContext<Record<string, any>>();
 
-  const [varietySearch, setVarietySearch] = useState("");
-  const debouncedVarietySearch = useDebounce(varietySearch, 500);
   const [farmingMethodSearch, setFarmingMethodSearch] = useState("");
   const [rearingMethodSearch, setRearingMethodSearch] = useState("");
+  const [cropSearch, setCropSearch] = useState("");
   const debouncedFarmingMethodSearch = useDebounce(farmingMethodSearch, 300);
   const debouncedRearingMethodSearch = useDebounce(rearingMethodSearch, 300);
+  const debouncedCropSearch = useDebounce(cropSearch, 300);
 
-  // Dialog State
-  const [activeSubject, setActiveSubject] =
-    useState<SeedSubjectGroup | null>(null);
+  const watchedVarietyIds = watch("varietyIds");
+  const selectedVarietyIds: number[] = useMemo(
+    () => watchedVarietyIds ?? [],
+    [watchedVarietyIds],
+  );
 
   // ─── Reference data ────────────────────────────────────────────────────
   const {
@@ -247,64 +514,161 @@ export const ZoneConfigurationStep: React.FC<ZoneConfigurationStepProps> = ({
   }, [rearingMethods]);
 
   const selectedFarmingMethodId = watch("farmingMethodId");
-  const selectedSeedIds = watch("seedIds") ?? [];
+  const watchedSeedIds = watch("seedIds");
+  const selectedSeedIds: number[] = useMemo(
+    () => watchedSeedIds ?? [],
+    [watchedSeedIds],
+  );
+  const watchedCropIds = watch("cropIds");
+  const selectedCropIds: string[] = useMemo(
+    () => watchedCropIds ?? [],
+    [watchedCropIds],
+  );
 
-  // Giống / Hạt giống áp dụng cho phương pháp canh tác đang chọn.
-  // API: GET /api/farm/subject-variants?productionMethodId=&domainCode=CROP&status=active
-  const { items: seedItems, loading: fmcLoading } = useSeeds({
-    params: {
-      productionMethodId: selectedFarmingMethodId,
-      domainCode: "CROP",
-      status: "active",
-      size: 100,
-    },
-    enabled: !!selectedFarmingMethodId && selectedFarmingMethodId > 0,
-  });
+  const { items: methodApplications, loading: fmcLoading } =
+    useMethodApplications({
+      params: {
+        domainCode: "CROP",
+        size: 100,
+        status: "active",
+      },
+      enabled: !!selectedFarmingMethodId && selectedFarmingMethodId > 0,
+    });
+
+  const activeMethodApps = useMemo(() => {
+    if (!selectedFarmingMethodId || selectedFarmingMethodId <= 0) return [];
+    return methodApplications.filter(
+      (item) => item.productionMethod?.id === selectedFarmingMethodId,
+    );
+  }, [methodApplications, selectedFarmingMethodId]);
 
   const subjects = useMemo<SeedSubjectGroup[]>(() => {
-    const groups = new Map<number, SeedSubjectGroup>();
-    seedItems.forEach((seed) => {
-      const subject = seed.productionSubject ?? seed.crop;
-      if (!subject?.id) return;
-      if (!groups.has(subject.id)) {
-        groups.set(subject.id, {
-          subjectId: subject.id,
-          subjectName: subject.name,
-          variants: [],
+    const mergedMap = new Map<number, SeedSubjectGroup>();
+
+    activeMethodApps.forEach((app) => {
+      (app.subjects ?? []).forEach((subj) => {
+        if (!subj.subjectId) return;
+        if (!mergedMap.has(subj.subjectId)) {
+          mergedMap.set(subj.subjectId, {
+            subjectId: subj.subjectId,
+            subjectName: subj.subjectName,
+            subjectCode: subj.subjectCode,
+            variants: [],
+          });
+        }
+
+        const currentGroup = mergedMap.get(subj.subjectId)!;
+        const variantMap = new Map<number, SubjectVariantOption>();
+        currentGroup.variants.forEach((v) => variantMap.set(v.id, v));
+        (subj.variants ?? []).forEach((v) => {
+          if (!v.id) return;
+          variantMap.set(v.id, {
+            id: v.id,
+            code: v.code,
+            name: v.name,
+          });
         });
-      }
-      groups.get(subject.id)!.variants.push(seed);
+        currentGroup.variants = Array.from(variantMap.values());
+      });
     });
-    return Array.from(groups.values());
-  }, [seedItems]);
 
-  const filteredSubjects = useMemo(() => {
-    const keyword = debouncedVarietySearch.toLowerCase().trim();
-    if (!keyword) return subjects;
-    return subjects.filter(
-      (s) =>
-        s.subjectName?.toLowerCase().includes(keyword) ||
-        s.subjectCode?.toLowerCase().includes(keyword),
+    return Array.from(mergedMap.values());
+  }, [activeMethodApps]);
+
+  const selectedCrops = useMemo(() => {
+    return subjects.filter((s) =>
+      selectedCropIds.includes(String(s.subjectId)),
     );
-  }, [subjects, debouncedVarietySearch]);
+  }, [subjects, selectedCropIds]);
 
-  const variants = useMemo(() => {
-    return activeSubject?.variants ?? [];
-  }, [activeSubject]);
-
-  const handleConfirmVariants = (selectedIds: number[]) => {
-    if (!activeSubject) return;
-
-    // Replace only variants belonging to the subject currently being edited.
-    const variantIds = activeSubject.variants?.map((v) => v.id) || [];
-
-    const otherSubjectVariantIds = selectedSeedIds.filter(
-      (id) => !variantIds.includes(id),
+  const availableCropOptions = useMemo(() => {
+    const list = subjects.filter(
+      (s) => !selectedCropIds.includes(String(s.subjectId)),
     );
+    const keyword = debouncedCropSearch.toLowerCase().trim();
+    const filtered = keyword
+      ? list.filter(
+          (s) =>
+            s.subjectName?.toLowerCase().includes(keyword) ||
+            s.subjectCode?.toLowerCase().includes(keyword),
+        )
+      : list;
 
-    const nextIds = [...otherSubjectVariantIds, ...selectedIds];
+    return filtered.map((s) => ({
+      label: s.subjectName || "",
+      value: String(s.subjectId),
+    }));
+  }, [subjects, selectedCropIds, debouncedCropSearch]);
 
-    setValue("seedIds", nextIds, {
+  const handleSelectCrop = (cropIdStr: string) => {
+    if (!cropIdStr) return;
+    if (selectedCropIds.includes(cropIdStr)) return;
+    const nextCropIds = [...selectedCropIds, cropIdStr];
+    setValue("cropIds", nextCropIds, {
+      shouldValidate: true,
+      shouldDirty: true,
+    });
+    setCropSearch("");
+  };
+
+  const handleRemoveCrop = (cropIdStr: string) => {
+    const nextCropIds = selectedCropIds.filter((id) => id !== cropIdStr);
+    setValue("cropIds", nextCropIds, {
+      shouldValidate: true,
+      shouldDirty: true,
+    });
+
+    const cropId = parseInt(cropIdStr, 10);
+    const cropGroup = subjects.find((s) => s.subjectId === cropId);
+    if (cropGroup) {
+      const varietyIdsOfCrop = cropGroup.variants.map((v) => v.id);
+      const nextVarietyIds = selectedVarietyIds.filter(
+        (id) => !varietyIdsOfCrop.includes(id),
+      );
+      setValue("varietyIds", nextVarietyIds, {
+        shouldValidate: true,
+        shouldDirty: true,
+      });
+
+      // Clear any seeds associated with the varieties of this crop
+      const nextSeedIds = selectedSeedIds.filter(
+        (id: number) => !varietyIdsOfCrop.includes(id),
+      );
+      setValue("seedIds", nextSeedIds, {
+        shouldValidate: true,
+        shouldDirty: true,
+      });
+    }
+  };
+
+  const handleToggleVariety = (varietyId: number, checked: boolean) => {
+    if (checked) {
+      const nextVarietyIds = [...selectedVarietyIds, varietyId];
+      setValue("varietyIds", nextVarietyIds, {
+        shouldValidate: true,
+        shouldDirty: true,
+      });
+    } else {
+      const nextVarietyIds = selectedVarietyIds.filter(
+        (id) => id !== varietyId,
+      );
+      setValue("varietyIds", nextVarietyIds, {
+        shouldValidate: true,
+        shouldDirty: true,
+      });
+    }
+  };
+
+  const handleSelectSeedsForVariety = (
+    varietyId: number,
+    newSeedIdsOfVariety: number[],
+    allSeedsOfVariety: number[],
+  ) => {
+    const otherSeedIds = selectedSeedIds.filter(
+      (id) => !allSeedsOfVariety.includes(id),
+    );
+    const nextSeedIds = [...otherSeedIds, ...newSeedIdsOfVariety];
+    setValue("seedIds", nextSeedIds, {
       shouldValidate: true,
       shouldDirty: true,
     });
@@ -312,25 +676,18 @@ export const ZoneConfigurationStep: React.FC<ZoneConfigurationStepProps> = ({
 
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
-      <div
-        className={cn(
-          "grid gap-6",
-          bypassSeedSelection
-            ? "grid-cols-1"
-            : "grid-cols-1 xl:grid-cols-2",
-        )}
-      >
-        {/* ── Farming Method & Irrigation System ── */}
-        <Card className="border-none shadow-md bg-white">
-          <CardHeader className="pb-3 border-b bg-linear-to-r from-green-50/50 to-white">
-            <CardTitle className="flex items-center gap-2 text-base">
-              <div className="w-8 h-8 rounded-lg bg-green-100 flex items-center justify-center">
-                <Sprout className="w-4 h-4 text-green-600" />
-              </div>
-              <span>Phương pháp canh tác</span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="pt-6 space-y-5">
+      {/* ── Farming Method & Irrigation System (Horizontal top card) ── */}
+      <Card className="border-none shadow-md bg-white">
+        <CardHeader className="pb-3 border-b bg-linear-to-r from-green-50/50 to-white">
+          <CardTitle className="flex items-center gap-2 text-base">
+            <div className="w-8 h-8 rounded-lg bg-green-100 flex items-center justify-center">
+              <Sprout className="w-4 h-4 text-green-600" />
+            </div>
+            <span>Phương pháp canh tác & tưới tiêu</span>
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="pt-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Farming Method */}
             <Controller
               control={control}
@@ -350,8 +707,10 @@ export const ZoneConfigurationStep: React.FC<ZoneConfigurationStepProps> = ({
                     onChange={(value) => {
                       if (!value) return;
                       field.onChange(Number(value));
-                      // Reset seeds when farming method changes
+                      // Reset seeds and crops when farming method changes
                       setValue("seedIds", []);
+                      setValue("cropIds", []);
+                      setValue("cropSeedToggles", {});
                     }}
                     onSearch={setFarmingMethodSearch}
                     placeholder="Chọn phương pháp..."
@@ -362,7 +721,7 @@ export const ZoneConfigurationStep: React.FC<ZoneConfigurationStepProps> = ({
                   />
                   {errors.farmingMethodId && (
                     <p className="text-xs font-medium text-red-500 mt-1">
-                      {errors.farmingMethodId.message}
+                      {errors.farmingMethodId.message as string}
                     </p>
                   )}
                   <p className="text-xs text-muted-foreground">
@@ -403,146 +762,92 @@ export const ZoneConfigurationStep: React.FC<ZoneConfigurationStepProps> = ({
                   />
                   {errors.rearingMethodId && (
                     <p className="text-xs font-medium text-red-500 mt-1">
-                      {errors.rearingMethodId.message}
+                      {errors?.rearingMethodId?.message as unknown as string}
                     </p>
                   )}
                 </div>
               )}
             />
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* ── Subject Selection ── */}
+      {!bypassSeedSelection && (
+        <Card className="border-none shadow-md bg-white flex flex-col">
+          <CardHeader className="pb-3 border-b bg-linear-to-r from-green-50/50 to-white">
+            <CardTitle className="flex items-center gap-2 text-base">
+              <div className="w-8 h-8 rounded-lg bg-green-100 flex items-center justify-center">
+                <Leaf className="w-4 h-4 text-green-600" />
+              </div>
+              <span>Giống / Hạt giống</span>
+              {/* {selectedSeedIds.length > 0 && (
+                <Badge variant="secondary" className="ml-auto text-xs">
+                  {selectedSeedIds.length} đã chọn
+                </Badge>
+              )} */}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="pt-6 flex-1 flex flex-col min-h-0 space-y-6">
+            {!selectedFarmingMethodId || selectedFarmingMethodId <= 0 ? (
+              <div className="flex-1 flex flex-col items-center justify-center border-2 border-dashed rounded-xl bg-slate-50 text-slate-400 gap-3 py-12">
+                <Sprout className="w-10 h-10 opacity-50" />
+                <span className="text-sm text-center px-4">
+                  Vui lòng chọn phương pháp canh tác trước
+                </span>
+              </div>
+            ) : (
+              <>
+                {/* Autocomplete crop selector */}
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium">Chọn cây trồng</Label>
+                  <RemoteAutoCompleteSelect
+                    options={availableCropOptions}
+                    value=""
+                    onChange={handleSelectCrop}
+                    onSearch={setCropSearch}
+                    placeholder="Tìm kiếm và chọn cây trồng..."
+                    loading={fmcLoading}
+                    emptyText="  Không tồn tại dữ liệu cây trồng  "
+                    clearable={false}
+                  />
+                </div>
+
+                {/* List of Crop Cards */}
+                {fmcLoading ? (
+                  <div className="flex items-center justify-center text-muted-foreground text-sm py-10">
+                    Đang tải...
+                  </div>
+                ) : selectedCrops.length > 0 ? (
+                  <div className="w-full grid grid-cols-1 md:grid-cols-2 gap-4 space-y-0">
+                    {selectedCrops.map((subject) => (
+                      <CropCard
+                        key={subject.subjectId}
+                        cropId={subject.subjectId}
+                        cropName={subject.subjectName || ""}
+                        showSeedSelection={showSeedSelection}
+                        selectedVarietyIds={selectedVarietyIds}
+                        onToggleVariety={handleToggleVariety}
+                        selectedSeedIds={selectedSeedIds}
+                        onSelectSeedsForVariety={handleSelectSeedsForVariety}
+                        onRemoveCrop={() =>
+                          handleRemoveCrop(String(subject.subjectId))
+                        }
+                      />
+                    ))}
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center justify-center border-2 border-dashed rounded-xl bg-slate-50 text-slate-400 gap-2 py-10">
+                    <Leaf className="w-8 h-8 opacity-40" />
+                    <span className="text-xs italic text-center px-4">
+                      Chưa chọn cây trồng nào
+                    </span>
+                  </div>
+                )}
+              </>
+            )}
           </CardContent>
         </Card>
-
-        {/* ── Subject Selection ── */}
-        {!bypassSeedSelection && (
-          <Card className="border-none shadow-md bg-white flex flex-col">
-            <CardHeader className="pb-3 border-b bg-linear-to-r from-green-50/50 to-white">
-              <CardTitle className="flex items-center gap-2 text-base">
-                <div className="w-8 h-8 rounded-lg bg-green-100 flex items-center justify-center">
-                  <Leaf className="w-4 h-4 text-green-600" />
-                </div>
-                <span>Giống / Hạt giống</span>
-                {selectedSeedIds.length > 0 && (
-                  <Badge variant="secondary" className="ml-auto text-xs">
-                    {selectedSeedIds.length} đã chọn
-                  </Badge>
-                )}
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="pt-6 flex-1 flex flex-col min-h-0">
-              {!selectedFarmingMethodId || selectedFarmingMethodId <= 0 ? (
-                <div className="flex-1 flex flex-col items-center justify-center border-2 border-dashed rounded-xl bg-slate-50 text-slate-400 gap-3 py-12">
-                  <Sprout className="w-10 h-10 opacity-50" />
-                  <span className="text-sm text-center px-4">
-                    Vui lòng chọn phương pháp canh tác trước
-                  </span>
-                </div>
-              ) : (
-                <>
-                  <div className="mb-4 relative">
-                    <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground z-10" />
-                    <Input
-                      value={varietySearch}
-                      placeholder="Tìm kiếm cây trồng..."
-                      onChange={(e) => setVarietySearch(e.target.value)}
-                      className="pl-10 bg-slate-50/50 border-slate-200 focus:bg-white transition-all rounded-lg"
-                    />
-                  </div>
-                  <ScrollArea className="flex-1 h-80">
-                    {fmcLoading ? (
-                      <div className="flex items-center justify-center text-muted-foreground text-sm py-10">
-                        Đang tải...
-                      </div>
-                    ) : filteredSubjects.length > 0 ? (
-                      <div className="w-full space-y-2">
-                        {filteredSubjects.map((subject) => {
-                          const subjectSelectedVariants =
-                            subject.variants?.filter((variant) =>
-                              selectedSeedIds.includes(variant.id),
-                            ) ?? [];
-                          const hasSelected =
-                            subjectSelectedVariants.length > 0;
-
-                          return (
-                            <div
-                              key={subject.subjectId}
-                              onClick={() => setActiveSubject(subject)}
-                              className={`flex flex-col p-4 rounded-xl border cursor-pointer transition-all ${
-                                hasSelected
-                                  ? "bg-green-50/30 border-green-300 shadow-sm"
-                                  : "bg-white border-slate-200 hover:border-green-200 hover:shadow-sm"
-                              }`}
-                            >
-                              <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center shrink-0 border border-slate-200 overflow-hidden">
-                                  <Leaf className="w-4 h-4 text-slate-400" />
-                                </div>
-                                <div className="flex flex-col flex-1 min-w-0">
-                                  <div className="text-sm font-semibold truncate text-slate-700">
-                                    {subject.subjectName}
-                                  </div>
-                                  <div className="text-xs text-muted-foreground mt-0.5">
-                                    {subject.variants.length} giống/hạt giống
-                                    khả dụng
-                                  </div>
-                                </div>
-                                <div className="shrink-0 flex items-center gap-2">
-                                  {hasSelected && (
-                                    <Badge
-                                      variant="secondary"
-                                      className="bg-green-100 text-green-800 border-none font-semibold text-xs animate-in scale-in duration-200"
-                                    >
-                                      {subjectSelectedVariants.length} giống
-                                    </Badge>
-                                  )}
-                                  <ChevronRight className="w-4 h-4 text-slate-400" />
-                                </div>
-                              </div>
-
-                              {hasSelected && (
-                                <div className="mt-3 pt-3 border-t border-slate-100 flex flex-wrap gap-2">
-                                  {subjectSelectedVariants.map((variant) => (
-                                    <Badge
-                                      key={variant.id}
-                                      variant="outline"
-                                      className="bg-white border-slate-200 text-slate-600 text-[11px] py-1 px-2.5 rounded-md flex items-center gap-1.5 shadow-xs"
-                                    >
-                                      <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
-                                      <span>{variant.name}</span>
-                                    </Badge>
-                                  ))}
-                                </div>
-                              )}
-                            </div>
-                          );
-                        })}
-                      </div>
-                    ) : (
-                      <div className="flex items-center justify-center text-muted-foreground text-sm italic py-10">
-                        Không có cây trồng phù hợp
-                      </div>
-                    )}
-                  </ScrollArea>
-                </>
-              )}
-            </CardContent>
-          </Card>
-        )}
-      </div>
-
-      {activeSubject && (
-        <VariantSelectorDialog
-          key={activeSubject.subjectId}
-          open={!!activeSubject}
-          onOpenChange={(open) => {
-            if (!open) setActiveSubject(null);
-          }}
-          subjectName={activeSubject.subjectName || ""}
-          variants={variants}
-          selectedVariantIds={selectedSeedIds.filter((id) =>
-            activeSubject.variants?.some((variant) => variant.id === id),
-          )}
-          onConfirm={handleConfirmVariants}
-        />
       )}
     </div>
   );

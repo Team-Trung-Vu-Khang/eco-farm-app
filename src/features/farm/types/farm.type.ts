@@ -327,6 +327,16 @@ export interface FarmCultivationZoneScopeResponse {
   plot?: PlotRef;
 }
 
+export interface FarmCultivationZoneSubjectVariantRequest {
+  variantId: number;
+  seedIds?: number[];
+}
+
+export interface FarmCultivationZoneSubjectRequest {
+  subjectId: number;
+  variants?: FarmCultivationZoneSubjectVariantRequest[];
+}
+
 export interface FarmCultivationZoneRequest {
   code?: string;
   name?: string;
@@ -338,6 +348,8 @@ export interface FarmCultivationZoneRequest {
   rearingMethodId?: number;
   irrigationSystemId?: number;
   seedIds?: number[];
+  /** 3-level subject hierarchy: crop → variety → seeds */
+  subjects?: FarmCultivationZoneSubjectRequest[];
   notes?: string;
   status?: FarmCultivationZoneStatus;
   displayOrder?: number;

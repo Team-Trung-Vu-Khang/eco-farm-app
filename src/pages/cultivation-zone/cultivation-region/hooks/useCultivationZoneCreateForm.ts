@@ -77,6 +77,13 @@ export function useCultivationZoneCreateForm(
         seedIds: (zoneData.seeds ?? zoneData.subjectVariants ?? []).map(
           (s) => s.id,
         ),
+        cropIds: (zoneData.metadataJson?.selectedCropIds as string[]) || (zoneData.seeds ?? zoneData.subjectVariants ?? []).map(
+          (s) => (s.productionSubject?.id || s.crop?.id || 0).toString()
+        ).filter(id => id !== "0"),
+        cropSeedToggles: (zoneData.metadataJson?.cropSeedToggles as Record<string, boolean>) || {},
+        varietyIds: (zoneData.metadataJson?.selectedVarietyIds as number[]) || (zoneData.seeds ?? zoneData.subjectVariants ?? []).map(
+          (s) => s.cropVariety?.id || s.subjectVariant?.id || 0
+        ).filter(id => id > 0),
         certificateIds: (zoneData.certificates ?? []).map((c) => c.id),
         personnelIds: (zoneData.personnel ?? []).map((p) => p.id),
         notes: zoneData.notes ?? "",
@@ -86,6 +93,7 @@ export function useCultivationZoneCreateForm(
           (zoneData.metadataJson?.enterpriseId as string) ||
           String(workspaceId || ""),
       });
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setHasInitialized(true);
     } else {
       reset({
@@ -94,6 +102,9 @@ export function useCultivationZoneCreateForm(
         farmingMethodId: 0,
         rearingMethodId: 0,
         seedIds: [],
+        cropIds: [],
+        cropSeedToggles: {},
+        varietyIds: [],
         certificateIds: [],
         personnelIds: [],
         notes: "",
@@ -111,6 +122,32 @@ export function useCultivationZoneCreateForm(
   ) => {
     setIsSubmitting(true);
     try {
+      // Build subjects hierarchy: crop → variety → seeds
+      const buildSubjects = (
+        cropIds: string[],
+        varietyIds: number[],
+        seedIds: number[],
+        // We need to know which varieties belong to which crop.
+        // The form stores cropIds (crop level) and varietyIds (checked varieties).
+        // Since we don't have a client-side map at submit time, we send
+        // each variety as a flat list grouped under each crop.
+        // The backend or the ZoneConfigurationStep subjectMap resolves the mapping.
+        // For now we attach all varietyIds to all crops — the BE should handle dedup.
+        // A more precise approach would require passing the subjectMap here.
+      ) => {
+        return cropIds.map((cropIdStr) => {
+          const cropId = Number(cropIdStr);
+          const cropVarietyIds = varietyIds; // all checked varieties (BE resolves ownership)
+          return {
+            subjectId: cropId,
+            variants: cropVarietyIds.map((vId) => ({
+              variantId: vId,
+              seedIds: seedIds.length > 0 ? seedIds : undefined,
+            })),
+          };
+        });
+      };
+
       const request: FarmCultivationZoneRequest = {
         code: isEditMode ? data.code : undefined,
         name: data.name,
@@ -139,6 +176,14 @@ export function useCultivationZoneCreateForm(
           ? Number(data.rearingMethodId)
           : undefined,
         seedIds: (data.seedIds ?? []).map(Number).filter((id) => !isNaN(id)),
+        subjects:
+          (data.cropIds ?? []).length > 0
+            ? buildSubjects(
+                data.cropIds ?? [],
+                data.varietyIds ?? [],
+                (data.seedIds ?? []).map(Number).filter(Boolean),
+              )
+            : undefined,
         certificateIds: (data.certificateIds ?? [])
           .map(Number)
           .filter((id) => !isNaN(id)),

@@ -53,7 +53,7 @@ export function useRegionBasicCreateForm(
   const regionId = useMemo(() => {
     if (!zoneData) return 0;
     const regionScope = zoneData.scopes?.find((s) => s.scopeType === "REGION");
-    // @ts-ignore
+    // @ts-expect-error regionScope type structure differs
     return regionScope?.region?.id || regionScope?.scopeId || 0;
   }, [zoneData]);
 
@@ -134,7 +134,10 @@ export function useRegionBasicCreateForm(
           farmingMethodId: zoneData?.productionMethod?.id || undefined,
           rearingMethodId: zoneData?.rearingMethod?.id || undefined,
           seedIds: zoneData?.subjectVariants?.map((s) => s.id) || [],
+          cropSeedToggles: (zoneData?.metadataJson?.cropSeedToggles as Record<string, boolean>) || {},
+          varietyIds: (zoneData?.metadataJson?.selectedVarietyIds as number[]) || zoneData?.subjectVariants?.map((s) => s.id) || [],
         });
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setHasInitialized(true);
       }
     } else {
@@ -161,6 +164,8 @@ export function useRegionBasicCreateForm(
         farmingMethodId: undefined,
         rearingMethodId: undefined,
         seedIds: [],
+        cropSeedToggles: {},
+        varietyIds: [],
       });
       setHasInitialized(true);
     }
@@ -228,7 +233,7 @@ export function useRegionBasicCreateForm(
         regionDataResponse.centerPoint?.longitude !== data.centerPoint?.lng ||
         JSON.stringify(
           (regionDataResponse.crops || [])
-            .map((c: any) => (c.cropId || c.crop?.id || 0).toString())
+            .map((c: RegionCropSource) => (c.cropId || c.crop?.id || 0).toString())
             .sort(),
         ) !== JSON.stringify([...(data.cropIds || [])].sort());
 
@@ -237,7 +242,9 @@ export function useRegionBasicCreateForm(
         zoneData.farmingMethod?.id !== data.farmingMethodId ||
         zoneData.rearingMethod?.id !== data.rearingMethodId ||
         JSON.stringify((zoneData.seeds || []).map((s) => s.id).sort()) !==
-          JSON.stringify([...(data.seedIds || [])].map(Number).sort());
+          JSON.stringify([...(data.seedIds || [])].map(Number).sort()) ||
+        JSON.stringify(zoneData.metadataJson?.cropSeedToggles) !==
+          JSON.stringify(data.cropSeedToggles);
 
       let savedRegionId = regionId;
 
@@ -247,12 +254,28 @@ export function useRegionBasicCreateForm(
         savedRegionId = createdRegion.id;
 
         // Create Cultivation Zone
+        // Build subjects hierarchy: crop → variety → seeds
+        const subjects =
+          (data.cropIds ?? []).length > 0
+            ? (data.cropIds ?? []).map((cropIdStr) => ({
+                subjectId: Number(cropIdStr),
+                variants: (data.varietyIds ?? []).map((vId) => ({
+                  variantId: vId,
+                  seedIds:
+                    (data.seedIds ?? []).length > 0
+                      ? (data.seedIds ?? []).map(Number).filter(Boolean)
+                      : undefined,
+                })),
+              }))
+            : undefined;
+
         const zoneRequest: FarmCultivationZoneRequest = {
           name: data.name,
           domainCode: "CROP",
           farmingMethodId: data.farmingMethodId || 0,
           rearingMethodId: data.rearingMethodId || undefined,
           seedIds: data.seedIds || [],
+          subjects,
           status: data.status,
           scopes: [
             {
@@ -284,6 +307,19 @@ export function useRegionBasicCreateForm(
             farmingMethodId: data.farmingMethodId || 0,
             rearingMethodId: data.rearingMethodId || undefined,
             seedIds: data.seedIds || [],
+            subjects:
+              (data.cropIds ?? []).length > 0
+                ? (data.cropIds ?? []).map((cropIdStr) => ({
+                    subjectId: Number(cropIdStr),
+                    variants: (data.varietyIds ?? []).map((vId) => ({
+                      variantId: vId,
+                      seedIds:
+                        (data.seedIds ?? []).length > 0
+                          ? (data.seedIds ?? []).map(Number).filter(Boolean)
+                          : undefined,
+                    })),
+                  }))
+                : undefined,
             status: data.status,
             scopes: [
               {

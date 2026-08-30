@@ -9,8 +9,8 @@ import { CheckCircle2, Droplets, Leaf, ScrollText, Sprout } from "lucide-react";
 import { Badge, Card } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import type { RegionBasicFormValues } from "../data/region-basic-form.schema";
 import { useMethodApplications } from "@/features/foundation";
-import { useSeeds } from "@/features/farm/hooks/useSeeds";
 import type { FarmSeedResponse } from "@/features/farm/types/farm.type";
+import { useSeeds } from "@/features/farm";
 
 interface RegionConfirmationStepProps {
   domainCode: "CROP" | "LIVESTOCK" | "AQUACULTURE";
@@ -70,58 +70,85 @@ export const RegionConfirmationStep = ({
       status: "active",
       size: 100,
     },
-    enabled: isCropDomain && !!selectedFarmingMethodId && selectedFarmingMethodId > 0,
+    enabled:
+      isCropDomain && !!selectedFarmingMethodId && selectedFarmingMethodId > 0,
   });
 
   // LIVESTOCK / AQUACULTURE zones still resolve seedIds against method-application variants.
   const { items: methodApplications } = useMethodApplications({
     params: { domainCode, size: 100, status: "active" },
-    enabled:
-      !isCropDomain && !!selectedFarmingMethodId && selectedFarmingMethodId > 0,
+    enabled: !!selectedFarmingMethodId && selectedFarmingMethodId > 0,
   });
 
+  const activeMethodApps = useMemo(() => {
+    if (!selectedFarmingMethodId) return [];
+    return methodApplications.filter(
+      (item) => item.productionMethod?.id === selectedFarmingMethodId,
+    );
+  }, [methodApplications, selectedFarmingMethodId]);
+
+  // Build subjectMap: cropId → { name, variants: { variantId → { name } } }
+  const subjectMap = useMemo(() => {
+    const map: Record<
+      number,
+      { name: string; variants: Record<number, { name: string; code: string }> }
+    > = {};
+    activeMethodApps.forEach((app) => {
+      (app.subjects ?? []).forEach((subj) => {
+        if (!subj.subjectId) return;
+        if (!map[subj.subjectId]) {
+          map[subj.subjectId] = { name: subj.subjectName || "", variants: {} };
+        }
+        (subj.variants ?? []).forEach((v) => {
+          if (!v.id) return;
+          map[subj.subjectId!].variants[v.id] = {
+            name: v.name || "",
+            code: v.code || "",
+          };
+        });
+      });
+    });
+    return map;
+  }, [activeMethodApps]);
+
+  const selectedCropIds: number[] = useMemo(
+    () => (formValues.cropIds ?? []).map(Number).filter(Boolean),
+    [formValues.cropIds],
+  );
+  const selectedVarietyIds: number[] = useMemo(
+    () => formValues.varietyIds ?? [],
+    [formValues.varietyIds],
+  );
+
+  // Build 3-level summary: crop → checked varieties
+  const cropSummary = useMemo(
+    () =>
+      selectedCropIds.map((cropId) => {
+        const subject = subjectMap[cropId];
+        const cropName = subject?.name || `Cây trồng #${cropId}`;
+        const variantsOfCrop = subject?.variants ?? {};
+        const checkedVarieties = selectedVarietyIds
+          .filter((vId) => variantsOfCrop[vId] !== undefined)
+          .map((vId) => ({
+            id: vId,
+            name: variantsOfCrop[vId]?.name || `Giống #${vId}`,
+          }));
+        return { cropId, cropName, checkedVarieties };
+      }),
+    [selectedCropIds, selectedVarietyIds, subjectMap],
+  );
+
+  // For non-CROP domains keep old variant display
   const activeMethodApp = useMemo(() => {
     return methodApplications.find(
       (item) => item.productionMethod?.id === selectedFarmingMethodId,
     );
   }, [methodApplications, selectedFarmingMethodId]);
 
-  // Selected details
-  const landTypeName =
-    lands.find((l) => String(l.id || l.code) === formValues.landType)?.name ||
-    formValues.landType;
-  const terrainName =
-    terrains.find((t) => String(t.id || t.code) === formValues.terrain)?.name ||
-    formValues.terrain;
-  const provinceName =
-    provinces.find((p) => p.id === formValues.provinceId)?.name || "";
-  const wardName = wards.find((w) => w.id === formValues.wardId)?.name || "";
-
-  // const selectedSubjects = useMemo(() => {
-  //   const ids = formValues.cropIds ?? [];
-  //   return subjects.filter((s) => ids.includes(String(s.id)));
-  // }, [subjects, formValues.cropIds]);
-
   const selectedVariants = useMemo(() => {
+    if (isCropDomain) return [];
     const selectedIds = (formValues.seedIds ?? []).map(Number);
     const list: Array<{ id: number; name: string; subjectName: string }> = [];
-
-    if (isCropDomain) {
-      // Prefer the freshly-fetched seed catalog; fall back to a caller-supplied
-      // list for consumers that still pass `allSeeds` directly.
-      const source = seedItems.length > 0 ? seedItems : allSeeds;
-      source.forEach((seed) => {
-        if (selectedIds.includes(Number(seed.id))) {
-          list.push({
-            id: seed.id,
-            name: seed.name || "",
-            subjectName: (seed.productionSubject ?? seed.crop)?.name || "",
-          });
-        }
-      });
-      return list;
-    }
-
     if (activeMethodApp) {
       activeMethodApp.subjects?.forEach((subject) => {
         subject.variants?.forEach((variant) => {
@@ -136,7 +163,18 @@ export const RegionConfirmationStep = ({
       });
     }
     return list;
-  }, [isCropDomain, seedItems, allSeeds, activeMethodApp, formValues.seedIds]);
+  }, [isCropDomain, activeMethodApp, formValues.seedIds]);
+
+  // Selected details
+  const landTypeName =
+    lands.find((l) => String(l.id || l.code) === formValues.landType)?.name ||
+    formValues.landType;
+  const terrainName =
+    terrains.find((t) => String(t.id || t.code) === formValues.terrain)?.name ||
+    formValues.terrain;
+  const provinceName =
+    provinces.find((p) => p.id === formValues.provinceId)?.name || "";
+  const wardName = wards.find((w) => w.id === formValues.wardId)?.name || "";
 
   // Labels customized based on domainCode
   const domainLabels = useMemo(() => {
@@ -355,35 +393,91 @@ export const RegionConfirmationStep = ({
             <div className="pt-4 border-t border-slate-100">
               <div className="text-[11px] text-muted-foreground uppercase tracking-wider font-bold mb-3 flex items-center gap-1.5">
                 <Leaf className="w-3.5 h-3.5 text-green-600" />
-                {domainLabels.seedTitle} ({selectedVariants.length})
+                {isCropDomain
+                  ? `Cây trồng & Giống (${cropSummary.length} cây trồng)`
+                  : `${domainLabels.seedTitle} (${selectedVariants.length})`}
               </div>
-              <div className="grid grid-cols-1 gap-2">
-                {selectedVariants.length > 0 ? (
-                  selectedVariants.map((variant) => (
-                    <div
-                      key={variant.id}
-                      className="flex items-center justify-between p-2.5 rounded-lg border border-slate-100 bg-white"
-                    >
-                      <div className="flex items-center gap-2">
-                        <div className="w-1.5 h-1.5 rounded-full bg-green-500" />
-                        <span className="font-semibold text-xs text-slate-800">
-                          {variant.name}
-                        </span>
-                      </div>
-                      <Badge
-                        variant="outline"
-                        className="text-[10px] text-slate-500 bg-slate-50 border-slate-200"
-                      >
-                        {variant.subjectName}
-                      </Badge>
-                    </div>
-                  ))
-                ) : (
+
+              {isCropDomain ? (
+                // 3-level: crop → variety
+                cropSummary.length === 0 ? (
                   <span className="text-muted-foreground italic text-xs">
-                    Chưa chọn con giống/hạt giống nào.
+                    Chưa chọn cây trồng nào.
                   </span>
-                )}
-              </div>
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    {cropSummary.map((crop) => (
+                      <div
+                        key={crop.cropId}
+                        className="rounded-lg border border-slate-200 overflow-hidden bg-white"
+                      >
+                        {/* Crop header */}
+                        <div className="flex items-center gap-2 px-3 py-2 bg-green-50/60 border-b border-slate-100">
+                          <div className="w-5 h-5 rounded bg-green-100 flex items-center justify-center shrink-0">
+                            <Leaf className="w-3 h-3 text-green-600" />
+                          </div>
+                          <span className="font-semibold text-xs text-slate-800">
+                            {crop.cropName}
+                          </span>
+                          <Badge
+                            variant="secondary"
+                            className="ml-auto text-[10px]"
+                          >
+                            {crop.checkedVarieties.length} giống
+                          </Badge>
+                        </div>
+                        {/* Varieties */}
+                        {crop.checkedVarieties.length === 0 ? (
+                          <div className="px-3 py-2 text-[11px] text-muted-foreground italic">
+                            Chưa chọn giống
+                          </div>
+                        ) : (
+                          <div className="px-3 py-1.5 flex flex-wrap gap-1.5">
+                            {crop.checkedVarieties.map((v) => (
+                              <Badge
+                                key={v.id}
+                                variant="outline"
+                                className="text-[11px] text-green-700 border-green-200 bg-green-50"
+                              >
+                                {v.name}
+                              </Badge>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )
+              ) : (
+                // Non-CROP: flat variant list
+                <div className="grid grid-cols-1 gap-2">
+                  {selectedVariants.length > 0 ? (
+                    selectedVariants.map((variant) => (
+                      <div
+                        key={variant.id}
+                        className="flex items-center justify-between p-2.5 rounded-lg border border-slate-100 bg-white"
+                      >
+                        <div className="flex items-center gap-2">
+                          <div className="w-1.5 h-1.5 rounded-full bg-green-500" />
+                          <span className="font-semibold text-xs text-slate-800">
+                            {variant.name}
+                          </span>
+                        </div>
+                        <Badge
+                          variant="outline"
+                          className="text-[10px] text-slate-500 bg-slate-50 border-slate-200"
+                        >
+                          {variant.subjectName}
+                        </Badge>
+                      </div>
+                    ))
+                  ) : (
+                    <span className="text-muted-foreground italic text-xs">
+                      Chưa chọn con giống/hạt giống nào.
+                    </span>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         </Card>
