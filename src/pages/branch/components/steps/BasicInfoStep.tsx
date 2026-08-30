@@ -10,9 +10,13 @@ import {
 import { useEffect } from "react";
 import { Controller, useFormContext } from "react-hook-form";
 
+import AddressSearchInput from "@/components/AddressSearchInput";
+import { AddressRemoteCombobox } from "@/components/AddressRemoteCombobox";
 import type { Enterprise } from "@/pages/enterprise/data/constants";
+import type { BranchFormData } from "../../types/types";
 import type { BranchFormInput } from "../../data/branch-form.schema";
 import { BranchEnterpriseSelector } from "./BranchEnterpriseSelector";
+import { BranchLocationMap } from "./BranchLocationMap";
 
 interface BasicInfoStepProps {
   enterprises: Enterprise[];
@@ -43,10 +47,43 @@ export function BasicInfoStep({
 
   const organizationId = watch("organizationId");
   const website = watch("website");
+  const address = watch("address");
+  const city = watch("city");
+  const district = watch("district");
+  const ward = watch("ward");
+  const latitude = watch("latitude");
+  const longitude = watch("longitude");
+  const taxCode = watch("taxCode");
+  const taxAddress = watch("taxAddress");
+  const code = watch("code");
+  const imageUrl = watch("imageUrl");
+  const status = watch("status");
+  const metadataJson = watch("metadataJson");
 
   const selectedEnterprise =
     enterprises.find((item) => item.id.toString() === organizationId) ||
     (enterprises.length === 1 ? enterprises[0] : undefined);
+  const locationFormData = {
+    code,
+    name: watch("name"),
+    enterpriseId: organizationId,
+    enterpriseName: selectedEnterprise?.name || "",
+    taxCode,
+    taxAddress,
+    website,
+    address,
+    city,
+    district,
+    ward,
+    imageUrl,
+    latitude,
+    longitude,
+    status: status === "inactive" ? "inactive" : "active",
+    contactInfos: [],
+    contacts: [],
+    bankAccounts: [],
+    metadataJson,
+  } as BranchFormData;
 
   useEffect(() => {
     if (organizationId || enterprises.length !== 1) return;
@@ -72,53 +109,30 @@ export function BasicInfoStep({
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">
-      <div className="space-y-2">
-        <Label htmlFor="organizationId" required>
+      <section className="space-y-3">
+        <div className="flex items-center gap-2 text-sm font-bold text-slate-800">
           Đơn vị sở hữu
-        </Label>
-        {enterprises.length === 1 ? (
-          <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-            <div className="text-sm font-semibold text-slate-900">
-              {selectedEnterprise?.name}
-            </div>
-            <div className="mt-1 text-xs text-muted-foreground">
-              {selectedEnterprise?.code}
-            </div>
-          </div>
-        ) : (
-          <Controller
-            control={control}
-            name="organizationId"
-            render={({ field }) => (
-              <div className="space-y-2">
-                <BranchEnterpriseSelector
-                  enterprises={enterprises}
-                  selectedId={field.value}
-                  onSelect={(value) => {
-                    clearErrors("organizationId");
-                    field.onChange(value);
-                  }}
-                  searchTerm={enterpriseSearchTerm}
-                  onSearch={onEnterpriseSearch}
-                  onLoadMore={onLoadMoreEnterprises}
-                  hasMore={hasMoreEnterprises}
-                  loading={enterprisesLoading}
-                />
-                {errors.organizationId ? (
-                  <p className="text-xs text-red-600">
-                    {errors.organizationId.message}
-                  </p>
-                ) : null}
-              </div>
-            )}
-          />
-        )}
-        {errors.organizationId && enterprises.length === 1 ? (
-          <p className="text-xs text-red-600">
-            {errors.organizationId.message}
-          </p>
+        </div>
+        <BranchEnterpriseSelector
+          enterprises={enterprises}
+          selectedId={organizationId}
+          onSelect={(value) => {
+            clearErrors("organizationId");
+            setValue("organizationId", value, {
+              shouldDirty: true,
+              shouldTouch: true,
+            });
+          }}
+          searchTerm={enterpriseSearchTerm}
+          onSearch={onEnterpriseSearch}
+          onLoadMore={onLoadMoreEnterprises}
+          hasMore={hasMoreEnterprises}
+          loading={enterprisesLoading}
+        />
+        {errors.organizationId ? (
+          <p className="text-xs text-red-600">{errors.organizationId.message}</p>
         ) : null}
-      </div>
+      </section>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="space-y-2">
@@ -230,6 +244,146 @@ export function BasicInfoStep({
             ) : null}
           </div>
         )}
+      </div>
+
+      <div className="border-t pt-6">
+        <div className="space-y-4">
+          <div className="flex items-center gap-2 text-sm font-bold text-slate-800">
+            Địa chỉ chi tiết
+          </div>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="city">Tỉnh / Thành phố</Label>
+              <Controller
+                control={control}
+                name="city"
+                render={({ field }) => (
+                  <AddressRemoteCombobox
+                    type="province"
+                    value={field.value ?? ""}
+                    onChange={(value) => {
+                      clearErrors("city");
+                      field.onChange(value);
+                      setValue("district", "", {
+                        shouldDirty: true,
+                        shouldTouch: true,
+                      });
+                      setValue("ward", "", {
+                        shouldDirty: true,
+                        shouldTouch: true,
+                      });
+                    }}
+                    placeholder="Chọn Tỉnh / Thành Phố"
+                    searchPlaceholder="Tìm tỉnh thành..."
+                  />
+                )}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="ward">Phường / Xã</Label>
+              <Controller
+                control={control}
+                name="ward"
+                render={({ field }) => (
+                  <AddressRemoteCombobox
+                    type="ward"
+                    value={field.value ?? ""}
+                    onChange={(value) => {
+                      clearErrors("ward");
+                      field.onChange(value);
+                      setValue("district", value, {
+                        shouldDirty: true,
+                        shouldTouch: true,
+                      });
+                    }}
+                    provinceCode={city}
+                    placeholder={
+                      city ? "Chọn Phường / Xã" : "Chọn Tỉnh / Thành Phố trước"
+                    }
+                    searchPlaceholder="Tìm phường xã..."
+                  />
+                )}
+              />
+            </div>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="address" required>
+              Địa chỉ chi tiết
+            </Label>
+            <Controller
+              control={control}
+              name="address"
+              render={({ field }) => (
+                <AddressSearchInput
+                  value={field.value ?? ""}
+                  onChange={(value) => {
+                    clearErrors("address");
+                    field.onChange(value);
+                  }}
+                  onSelectLocation={({ address: nextAddress, latitude, longitude }) => {
+                    clearErrors("address");
+                    field.onChange(nextAddress);
+                    setValue("latitude", latitude, {
+                      shouldDirty: true,
+                      shouldTouch: true,
+                    });
+                    setValue("longitude", longitude, {
+                      shouldDirty: true,
+                      shouldTouch: true,
+                    });
+                  }}
+                  latitude={latitude}
+                  longitude={longitude}
+                  placeholder="Số nhà, đường, thôn/xóm..."
+                />
+              )}
+            />
+          </div>
+        </div>
+      </div>
+
+      <div className="border-t pt-6">
+        <BranchLocationMap
+          formData={locationFormData}
+          updateFormData={(updates) => {
+            if (updates.address !== undefined) {
+              setValue("address", updates.address, {
+                shouldDirty: true,
+                shouldTouch: true,
+              });
+            }
+            if (updates.city !== undefined) {
+              setValue("city", updates.city, {
+                shouldDirty: true,
+                shouldTouch: true,
+              });
+            }
+            if (updates.district !== undefined) {
+              setValue("district", updates.district, {
+                shouldDirty: true,
+                shouldTouch: true,
+              });
+            }
+            if (updates.ward !== undefined) {
+              setValue("ward", updates.ward, {
+                shouldDirty: true,
+                shouldTouch: true,
+              });
+            }
+            if (updates.latitude !== undefined) {
+              setValue("latitude", updates.latitude, {
+                shouldDirty: true,
+                shouldTouch: true,
+              });
+            }
+            if (updates.longitude !== undefined) {
+              setValue("longitude", updates.longitude, {
+                shouldDirty: true,
+                shouldTouch: true,
+              });
+            }
+          }}
+        />
       </div>
     </div>
   );

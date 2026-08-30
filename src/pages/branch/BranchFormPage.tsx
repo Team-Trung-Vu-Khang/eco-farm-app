@@ -23,7 +23,6 @@ import { BankingStep } from "./components/steps/BankingStep";
 import { BasicInfoStep } from "./components/steps/BasicInfoStep";
 import { ConfirmStep } from "./components/steps/ConfirmStep";
 import { ContactInfoStep } from "./components/steps/ContactInfoStep";
-import { LocationStep } from "./components/steps/LocationStep";
 import { SimpleBranchForm } from "./components/SimpleBranchForm";
 import { useBranchForm } from "./hooks/useBranchForm";
 
@@ -76,13 +75,6 @@ export default function BranchFormPage() {
       title: "Liên hệ",
       content: (
         <ContactInfoStep formData={formData} updateFormData={updateFormData} />
-      ),
-    },
-    {
-      id: "location",
-      title: "Định vị",
-      content: (
-        <LocationStep formData={formData} updateFormData={updateFormData} />
       ),
     },
     {

@@ -10,6 +10,7 @@ import AddressSearchInput from "@/components/AddressSearchInput";
 import { Building2, FileText, MapPin } from "lucide-react";
 import type { Enterprise } from "@/pages/enterprise/data/constants";
 import { BranchEnterpriseSelector } from "./steps/BranchEnterpriseSelector";
+import { BranchLocationMap } from "./steps/BranchLocationMap";
 import type { BranchFormData } from "../types/types";
 
 interface SimpleBranchFormProps {
@@ -132,7 +133,19 @@ export function SimpleBranchForm({
             </div>
           </section>
 
-          <Button type="button" onClick={onComplete} disabled={!isValid || isSaving} className="h-12 w-full rounded-xl text-base font-bold">
+          <section className="space-y-4 border-t border-slate-100 pt-5">
+            <BranchLocationMap
+              formData={formData}
+              updateFormData={updateFormData}
+            />
+          </section>
+
+          <Button
+            type="button"
+            onClick={onComplete}
+            disabled={!isValid || isSaving}
+            className="h-12 w-full rounded-xl text-base font-bold"
+          >
             {isEdit ? "Cập nhật chi nhánh" : "Tạo mới chi nhánh"}
           </Button>
         </CardContent>
