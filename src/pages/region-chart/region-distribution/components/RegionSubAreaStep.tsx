@@ -1,3 +1,4 @@
+import { zodResolver } from "@hookform/resolvers/zod";
 import {
   Button,
   Card,
@@ -21,16 +22,13 @@ import {
   SelectValue,
   useToast,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import readXlsxFile from "read-excel-file";
 import booleanPointInPolygon from "@turf/boolean-point-in-polygon";
 import { point, polygon } from "@turf/helpers";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
-import { Maximize2, Plus, Trash2, X, Edit } from "lucide-react";
-import { useCallback, useEffect, useMemo, useState, useRef } from "react";
-import { useFormContext, useForm } from "react-hook-form";
-import { z } from "zod";
-import { zodResolver } from "@hookform/resolvers/zod";
+import { Edit, Maximize2, Plus, Trash2, X } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useForm, useFormContext } from "react-hook-form";
 import {
   MapContainer,
   Marker,
@@ -40,6 +38,8 @@ import {
   Tooltip,
   useMap,
 } from "react-leaflet";
+import readXlsxFile from "read-excel-file";
+import { z } from "zod";
 
 import type { SubArea } from "../../constants";
 import {
@@ -1353,7 +1353,7 @@ export const RegionSubAreaStep = ({
           toast({
             title: "Lỗi",
             description:
-              "File excel không có dữ liệu hoặc không đúng định dạng.",
+              "File excel chưa có thông tin hoặc không đúng định dạng.",
             variant: "destructive",
           });
           return;

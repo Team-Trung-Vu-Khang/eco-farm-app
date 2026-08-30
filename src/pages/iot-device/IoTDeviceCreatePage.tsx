@@ -20,7 +20,6 @@ import {
   cn,
   useToast,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { perceptionLayerOptions, networkLayerOptions } from "./data/constants";
 import {
   AlertCircle,
   ArrowLeft,
@@ -34,6 +33,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import readXlsxFile from "read-excel-file";
 import { useLocation, useParams } from "wouter";
 import useIoTDeviceStore from "../../stores/useIoTDeviceStore";
+import { networkLayerOptions, perceptionLayerOptions } from "./data/constants";
 import type { IoTDevice } from "./types";
 
 export default function IoTDeviceCreatePage() {
@@ -284,7 +284,7 @@ export default function IoTDeviceCreatePage() {
     if (validItems.length === 0) {
       toast({
         variant: "destructive",
-        title: "Không có dữ liệu hợp lệ",
+        title: "Chưa có thông tin hợp lệ",
         description: "Vui lòng kiểm tra lại file. Cần có ít nhất cột IMEI.",
       });
       return;

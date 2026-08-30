@@ -244,7 +244,7 @@ export function MasterPositionImportDialog({
                 Không có chức vụ mẫu nào khả dụng
               </p>
               <p className="text-xs mt-1 text-slate-400">
-                Tất cả chức vụ mẫu đã được nhập hoặc Chưa có thông tin.
+                Tất cả chức vụ mẫu đã được nhập hoặc chưa có thông tin.
               </p>
             </div>
           ) : (

@@ -1050,7 +1050,7 @@ export const AreaPlotsStep = ({
           toast({
             title: "Lỗi",
             description:
-              "File excel không có dữ liệu hoặc không đúng định dạng.",
+              "File excel chưa có thông tin hoặc không đúng định dạng.",
             variant: "destructive",
           });
           return;

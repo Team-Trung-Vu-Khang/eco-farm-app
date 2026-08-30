@@ -1,24 +1,24 @@
-import { useState, useRef } from "react";
+import type { Plant } from "@/pages/region-chart/constants";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
   Button,
   DataTable,
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
   useToast,
   type Column,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import {
-  Upload,
-  FileText,
   AlertCircle,
   CheckCircle2,
   Download,
+  FileText,
+  Upload,
 } from "lucide-react";
+import { useRef, useState } from "react";
 import readXlsxFile from "read-excel-file";
-import type { Plant } from "@/pages/region-chart/constants";
 
 interface ImportPlantDialogProps {
   open: boolean;
@@ -274,7 +274,7 @@ export function ImportPlantDialog({
     if (validItems.length === 0) {
       toast({
         variant: "destructive",
-        title: "Không có dữ liệu hợp lệ",
+        title: "Chưa có thông tin hợp lệ",
         description: "Vui lòng kiểm tra lại các dòng bị lỗi.",
       });
       return;

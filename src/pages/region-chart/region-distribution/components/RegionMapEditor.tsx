@@ -1,17 +1,18 @@
-import { useMemo, useCallback, useState, useRef, useEffect } from "react";
-import { useFormContext } from "react-hook-form";
-import readXlsxFile from "read-excel-file";
 import {
   Button,
   Card,
   CardContent,
   CardHeader,
   CardTitle,
-  useToast,
   Dialog,
   DialogContent,
+  useToast,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { Plus, X, Maximize2 } from "lucide-react";
+import L from "leaflet";
+import "leaflet/dist/leaflet.css";
+import { Maximize2, Plus, X } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useFormContext } from "react-hook-form";
 import {
   MapContainer,
   Marker,
@@ -20,8 +21,7 @@ import {
   Tooltip,
   useMap,
 } from "react-leaflet";
-import L from "leaflet";
-import "leaflet/dist/leaflet.css";
+import readXlsxFile from "read-excel-file";
 import { getBoundsFromPoints } from "../utils";
 
 interface RegionMapEditorProps {
@@ -429,7 +429,7 @@ export const RegionMapEditor = ({ markerIcon }: RegionMapEditorProps) => {
           toast({
             title: "Lỗi",
             description:
-              "File excel không có dữ liệu hoặc không đúng định dạng.",
+              "File excel chưa có thông tin hoặc không đúng định dạng.",
             variant: "destructive",
           });
           return;

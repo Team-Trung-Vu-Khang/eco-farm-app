@@ -1,4 +1,3 @@
-import { Database, Package } from "lucide-react";
 import {
   Badge,
   Card,
@@ -6,6 +5,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import { Database, Package } from "lucide-react";
 import type {
   ReportMaterialRow,
   ReportSourceRow,
@@ -17,7 +17,9 @@ export function ReportDetailTable({ rows }: { rows: ReportTableRow[] }) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-base">Dữ liệu chi tiết theo kế hoạch</CardTitle>
+        <CardTitle className="text-base">
+          Dữ liệu chi tiết theo kế hoạch
+        </CardTitle>
       </CardHeader>
       <CardContent>
         <div className="overflow-x-auto rounded-lg border">
@@ -41,7 +43,7 @@ export function ReportDetailTable({ rows }: { rows: ReportTableRow[] }) {
                     colSpan={8}
                     className="px-4 py-8 text-center text-muted-foreground"
                   >
-                    Không có dữ liệu phù hợp với kỳ và phạm vi đã chọn.
+                    Chưa có thông tin phù hợp với kỳ và phạm vi đã chọn.
                   </td>
                 </tr>
               ) : (

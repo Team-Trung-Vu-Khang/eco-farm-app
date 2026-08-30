@@ -35,13 +35,7 @@ export const GeographicalScopeModal = ({
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [tempIds, setTempIds] = useState<string[]>(selectedScopeIds);
-  const {
-    regions,
-    areas,
-    plots,
-    areasByRegion,
-    plotsByArea,
-  } = treeData;
+  const { regions, areas, plots, areasByRegion, plotsByArea } = treeData;
 
   const [expandedRegions, setExpandedRegions] = useState<string[]>(
     regions.map((r) => r.id),
@@ -113,8 +107,8 @@ export const GeographicalScopeModal = ({
               Chọn phạm vi địa lý
             </DialogTitle>
             <p className="text-xs text-muted-foreground mt-1">
-              Chọn một Vùng chăn nuôi, Khu vực hoặc Chuồng/Lô. Con giống ở bước 2 sẽ bị
-              giới hạn trong phạm vi đã chọn.
+              Chọn một Vùng chăn nuôi, Khu vực hoặc Chuồng/Lô. Con giống ở bước
+              2 sẽ bị giới hạn trong phạm vi đã chọn.
             </p>
           </DialogHeader>
 
@@ -406,7 +400,7 @@ export const GeographicalScopeModal = ({
                     <Search className="w-6 h-6 text-slate-300" />
                   </div>
                   <div className="text-slate-500 font-medium text-sm">
-                    Không có dữ liệu địa lý
+                    Chưa có thông tin địa lý
                   </div>
                 </div>
               )}

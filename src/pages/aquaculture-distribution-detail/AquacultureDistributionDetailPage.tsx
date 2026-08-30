@@ -308,7 +308,7 @@ const AquacultureDistributionDetailPage = () => {
     return (
       <PageWrapper title="Không tìm thấy" description="Bản ghi không tồn tại">
         <div className="text-sm text-muted-foreground">
-          Không có dữ liệu phân bổ thủy sản.
+          Chưa có thông tin phân bổ thủy sản.
         </div>
       </PageWrapper>
     );

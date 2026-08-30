@@ -165,7 +165,7 @@ export function ImportTeamDialog({
     if (validItems.length === 0) {
       toast({
         variant: "destructive",
-        title: "Không có dữ liệu hợp lệ",
+        title: "Chưa có thông tin hợp lệ",
         description: "Vui lòng kiểm tra lại các dòng bị lỗi.",
       });
       return;

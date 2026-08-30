@@ -1,35 +1,32 @@
-import { useMemo, useCallback, useState, useRef, useEffect } from "react";
-import { useFormContext } from "react-hook-form";
-import readXlsxFile from "read-excel-file";
+import { useAreas } from "@/features/farm/hooks/useAreas";
+import { useRegionById, useRegions } from "@/features/farm/hooks/useRegions";
 import {
   Button,
   Card,
   CardContent,
   CardHeader,
   CardTitle,
-  useToast,
   Dialog,
   DialogContent,
+  useToast,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { Plus, X, Maximize2 } from "lucide-react";
+import * as turf from "@turf/turf";
+import L from "leaflet";
+import "leaflet/dist/leaflet.css";
+import { Maximize2, Plus, X } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useFormContext } from "react-hook-form";
 import {
   MapContainer,
   Marker,
   Polygon,
   TileLayer,
-  useMapEvents,
-  useMap,
   Tooltip,
+  useMap,
+  useMapEvents,
 } from "react-leaflet";
-import L from "leaflet";
-import "leaflet/dist/leaflet.css";
+import readXlsxFile from "read-excel-file";
 import { getBoundsFromPoints } from "../utils/map";
-import * as turf from "@turf/turf";
-import {
-  useRegionById,
-  useRegions,
-} from "@/features/farm/hooks/useRegions";
-import { useAreas } from "@/features/farm/hooks/useAreas";
 
 interface AreaMapStepProps {
   markerIcon: L.Icon;
@@ -541,7 +538,7 @@ export const AreaMapStep = ({ markerIcon }: AreaMapStepProps) => {
           toast({
             title: "Lỗi",
             description:
-              "File excel không có dữ liệu hoặc không đúng định dạng.",
+              "File excel chưa có thông tin hoặc không đúng định dạng.",
             variant: "destructive",
           });
           return;

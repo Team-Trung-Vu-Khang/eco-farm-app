@@ -1,23 +1,21 @@
-import React from "react";
 import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  CardDescription,
   Badge,
   Button,
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
   DataTable,
   cn,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import {
-  ShoppingBag,
   ArrowUpRight,
-  TrendingUp,
-  TrendingDown,
   Calendar,
   CheckCircle2,
-  Clock,
+  ShoppingBag,
+  TrendingDown,
+  TrendingUp,
 } from "lucide-react";
 import {
   CartesianGrid,
@@ -57,9 +55,7 @@ export const StatisticsTab = ({ details }: StatisticsTabProps) => {
                     <div className="text-3xl font-black text-slate-900 tracking-tight">
                       {details.harvestStats.totalVolume.toLocaleString()}
                     </div>
-                    <span className="text-sm font-bold text-slate-400">
-                      kg
-                    </span>
+                    <span className="text-sm font-bold text-slate-400">kg</span>
                   </div>
                   <div className="mt-4 flex items-center gap-1.5 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
                     Toàn vùng chăn nuôi
@@ -91,9 +87,7 @@ export const StatisticsTab = ({ details }: StatisticsTabProps) => {
                     <div className="text-3xl font-black text-slate-900 tracking-tight">
                       {details.harvestStats.lastVolume.toLocaleString()}
                     </div>
-                    <span className="text-sm font-bold text-slate-400">
-                      kg
-                    </span>
+                    <span className="text-sm font-bold text-slate-400">kg</span>
                   </div>
                   <div className="mt-4 flex items-center gap-1.5 text-[11px] font-bold text-emerald-600 uppercase tracking-wider">
                     <CheckCircle2 className="w-3 h-3" />
@@ -129,15 +123,11 @@ export const StatisticsTab = ({ details }: StatisticsTabProps) => {
                     <div className="text-3xl font-black text-slate-900 tracking-tight">
                       {details.harvestStats.avgVolume.toLocaleString()}
                     </div>
-                    <span className="text-sm font-bold text-slate-400">
-                      kg
-                    </span>
+                    <span className="text-sm font-bold text-slate-400">kg</span>
                   </div>
                   <div className="mt-4 flex items-center gap-1.5 text-[11px] font-bold text-orange-600 uppercase tracking-wider">
                     <TrendingUp className="w-3 h-3" />
-                    {details.harvestStats.avgChange >= 0
-                      ? "Tăng"
-                      : "Giảm"}{" "}
+                    {details.harvestStats.avgChange >= 0 ? "Tăng" : "Giảm"}{" "}
                     {Math.abs(details.harvestStats.avgChange)}% so với trung
                     bình
                   </div>
@@ -304,9 +294,7 @@ export const StatisticsTab = ({ details }: StatisticsTabProps) => {
                           <div className="w-6 h-6 rounded-full bg-slate-100 flex items-center justify-center text-[10px] font-bold text-slate-500">
                             {val.charAt(0)}
                           </div>
-                          <span className="text-sm text-slate-600">
-                            {val}
-                          </span>
+                          <span className="text-sm text-slate-600">{val}</span>
                         </div>
                       ),
                     },
@@ -328,7 +316,7 @@ export const StatisticsTab = ({ details }: StatisticsTabProps) => {
         </>
       ) : (
         <div className="p-8 text-center text-muted-foreground bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200">
-          Không có dữ liệu thống kê
+          Chưa có thông tin thống kê
         </div>
       )}
     </div>

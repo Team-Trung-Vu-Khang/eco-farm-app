@@ -197,7 +197,7 @@ const AnimalDistributionDetailPage = () => {
     return (
       <PageWrapper title="Không tìm thấy" description="Bản ghi không tồn tại">
         <div className="text-sm text-muted-foreground">
-          Không có dữ liệu phân bổ.
+          Chưa có thông tin phân bổ.
         </div>
       </PageWrapper>
     );

@@ -1,31 +1,31 @@
-import { useState, useRef } from "react";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
+  useFarmDepartmentOptions,
+  useFarmPositionOptions,
+  useFarmTeams,
+  useMasterData,
+} from "@/features/master-data";
+import { useSelectedWorkspaceId } from "@/features/workspace";
+import { personnelFormSchema } from "@/pages/personnel/data/personnel-form.schema";
+import {
   Button,
   DataTable,
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
   useToast,
   type Column,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import {
-  Upload,
-  FileText,
   AlertCircle,
   CheckCircle2,
   Download,
+  FileText,
+  Upload,
 } from "lucide-react";
+import { useRef, useState } from "react";
 import readXlsxFile from "read-excel-file";
-import { useSelectedWorkspaceId } from "@/features/workspace";
-import {
-  useMasterData,
-  useFarmDepartmentOptions,
-  useFarmPositionOptions,
-  useFarmTeams,
-} from "@/features/master-data";
-import { personnelFormSchema } from "@/pages/personnel/data/personnel-form.schema";
 
 interface ImportPersonnelDialogProps {
   open: boolean;
@@ -410,7 +410,7 @@ export function ImportPersonnelDialog({
     if (validItems.length === 0) {
       toast({
         variant: "destructive",
-        title: "Không có dữ liệu hợp lệ",
+        title: "Chưa có thông tin hợp lệ",
         description: "Vui lòng kiểm tra lại các dòng bị lỗi.",
       });
       return;

@@ -1,16 +1,22 @@
-import { useMemo, useCallback, useState, useEffect, useRef } from "react";
-import { useFormContext } from "react-hook-form";
+import { useAreaById } from "@/features/farm/hooks/useAreas";
 import {
   Button,
   Card,
   CardContent,
   CardHeader,
   CardTitle,
-  useToast,
   Dialog,
   DialogContent,
+  useToast,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import booleanPointInPolygon from "@turf/boolean-point-in-polygon";
+import { point, polygon } from "@turf/helpers";
+import * as turf from "@turf/turf";
+import L from "leaflet";
+import "leaflet/dist/leaflet.css";
 import { Maximize2, Plus, X } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useFormContext } from "react-hook-form";
 import {
   MapContainer,
   Marker,
@@ -21,19 +27,15 @@ import {
   useMap,
   useMapEvents,
 } from "react-leaflet";
-import L from "leaflet";
-import "leaflet/dist/leaflet.css";
-import { useAreaById } from "@/features/farm/hooks/useAreas";
-import type { PlotFormValues } from "../data/plot-form.schema";
-import booleanPointInPolygon from "@turf/boolean-point-in-polygon";
-import { formatLatLng, getBoundsFromPoints, type PointWarning } from "../utils";
-import {
-  toTurfPolygonFromCoords,
-  getNearestPointOnPolygonBoundary,
-} from "../utils";
-import { point, polygon } from "@turf/helpers";
 import readXlsxFile from "read-excel-file";
-import * as turf from "@turf/turf";
+import type { PlotFormValues } from "../data/plot-form.schema";
+import {
+  formatLatLng,
+  getBoundsFromPoints,
+  getNearestPointOnPolygonBoundary,
+  toTurfPolygonFromCoords,
+  type PointWarning,
+} from "../utils";
 
 const isSegmentsIntersecting = (
   p1: L.LatLng,
@@ -896,7 +898,7 @@ export const PlotMapStep = ({
           toast({
             title: "Lỗi",
             description:
-              "File excel không có dữ liệu hoặc không đúng định dạng.",
+              "File excel chưa có thông tin hoặc không đúng định dạng.",
             variant: "destructive",
           });
           return;
