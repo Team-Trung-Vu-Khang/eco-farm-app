@@ -1,25 +1,21 @@
-import { useAddressOptions, useMasterData } from "@/features/master-data";
+import { AddressRemoteCombobox } from "@/components/AddressRemoteCombobox";
+import AddressSearchInput from "@/components/AddressSearchInput";
+import { useMasterData } from "@/features/master-data";
+import { fetchTaxPayerInfo } from "@/utils/tax";
 import {
   Button,
   Input,
   Label,
   MultiSelect,
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
   Textarea,
   useToast,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { Image, MapPin, Upload } from "lucide-react";
 import { useState } from "react";
 import { Controller, type Control, type FieldErrors } from "react-hook-form";
+import { getDefaultOrganizationImage } from "../../../enterprise/data/default-organization-images";
 import type { FarmerFormInput } from "../../data/farmer-form.schema";
 import type { FarmerFormData } from "../../types";
-import AddressSearchInput from "@/components/AddressSearchInput";
-import { getDefaultOrganizationImage } from "../../../enterprise/data/default-organization-images";
-import { fetchTaxPayerInfo } from "@/utils/tax";
 
 const asInputValue = (value: unknown) =>
   typeof value === "string" || typeof value === "number" ? String(value) : "";
@@ -87,10 +83,6 @@ export const FarmerBasicInfoStep = ({
         updateField("name", data.name);
       }
 
-      if (!formData?.taxAuthority?.trim() && data.taxDepartment) {
-        updateField("taxAuthority", data.taxDepartment);
-      }
-
       if (!formData.address.trim() && data.address) {
         updateField("address", data.address);
       }
@@ -105,8 +97,6 @@ export const FarmerBasicInfoStep = ({
       setIsCheckingTax(false);
     }
   };
-  const { provinces, wards, isLoadingProvinces, isLoadingWards } =
-    useAddressOptions(formData.province);
   const businessLinesQuery = useMasterData("business-lines", {
     params: {
       status: "active",
@@ -295,102 +285,27 @@ export const FarmerBasicInfoStep = ({
         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label htmlFor="taxAuthority">Cơ quan thuế</Label>
-          <Controller
-            control={control}
-            name="taxAuthority"
-            render={({ field, fieldState }) => (
-              <>
-                <Input
-                  id="taxAuthority"
-                  value={asInputValue(field.value)}
-                  onChange={field.onChange}
-                  onBlur={field.onBlur}
-                  ref={field.ref}
-                  name={field.name}
-                  placeholder="Cục thuế / Chi cục thuế..."
-                  aria-invalid={!!fieldState.error}
-                />
-                {fieldState.error ? (
-                  <p className="text-xs text-red-600">
-                    {fieldState.error.message}
-                  </p>
-                ) : null}
-              </>
-            )}
-          />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="issueDate">Ngày cấp</Label>
-          <Controller
-            control={control}
-            name="issueDate"
-            render={({ field, fieldState }) => (
-              <>
-                <Input
-                  id="issueDate"
-                  type="date"
-                  value={asInputValue(field.value)}
-                  onChange={field.onChange}
-                  onBlur={field.onBlur}
-                  ref={field.ref}
-                  name={field.name}
-                  aria-invalid={!!fieldState.error}
-                />
-                {fieldState.error ? (
-                  <p className="text-xs text-red-600">
-                    {fieldState.error.message}
-                  </p>
-                ) : null}
-              </>
-            )}
-          />
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label htmlFor="classification">Phân loại</Label>
-          <Controller
-            control={control}
-            name="classification"
-            render={({ field, fieldState }) => (
-              <>
-                <MultiSelect
-                  options={farmerClassificationOptions}
-                  placeholder="Chọn phân loại..."
-                  value={asMultiValue(field.value)}
-                  onChange={field.onChange}
-                />
-                {fieldState.error ? (
-                  <p className="text-xs text-red-600">
-                    {fieldState.error.message}
-                  </p>
-                ) : null}
-              </>
-            )}
-          />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="taxAddress">Địa chỉ thuế</Label>
-          <Controller
-            control={control}
-            name="taxAddress"
-            render={({ field }) => (
-              <Input
-                id="taxAddress"
-                value={asInputValue(field.value)}
+      <div className="space-y-2">
+        <Label htmlFor="classification">Lĩnh vực</Label>
+        <Controller
+          control={control}
+          name="classification"
+          render={({ field, fieldState }) => (
+            <>
+              <MultiSelect
+                options={farmerClassificationOptions}
+                placeholder="Chọn lĩnh vực..."
+                value={asMultiValue(field.value)}
                 onChange={field.onChange}
-                onBlur={field.onBlur}
-                ref={field.ref}
-                name={field.name}
-                placeholder="Địa chỉ đăng ký thuế"
               />
-            )}
-          />
-        </div>
+              {fieldState.error ? (
+                <p className="text-xs text-red-600">
+                  {fieldState.error.message}
+                </p>
+              ) : null}
+            </>
+          )}
+        />
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -452,32 +367,17 @@ export const FarmerBasicInfoStep = ({
               control={control}
               name="province"
               render={({ field }) => (
-                <Select
+                <AddressRemoteCombobox
+                  type="province"
                   value={asInputValue(field.value)}
-                  onValueChange={(val) => {
+                  onChange={(val) => {
                     field.onChange(val);
                     updateField("district", "");
                     updateField("ward", "");
                   }}
-                  disabled={isLoadingProvinces}
-                >
-                  <SelectTrigger aria-invalid={!!errors.province}>
-                    <SelectValue
-                      placeholder={
-                        isLoadingProvinces
-                          ? "Đang tải danh sách tỉnh/thành phố..."
-                          : "Chọn Tỉnh / Thành Phố"
-                      }
-                    />
-                  </SelectTrigger>
-                  <SelectContent className="max-h-80 overflow-y-auto">
-                    {provinces.map((province) => (
-                      <SelectItem key={province.code} value={province.code}>
-                        {province.fullName || province.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                  placeholder="Chọn Tỉnh / Thành Phố"
+                  searchPlaceholder="Tìm tỉnh thành..."
+                />
               )}
             />
             {errors.province?.message ? (
@@ -492,30 +392,18 @@ export const FarmerBasicInfoStep = ({
               control={control}
               name="ward"
               render={({ field }) => (
-                <Select
+                <AddressRemoteCombobox
+                  type="ward"
                   value={asInputValue(field.value)}
-                  onValueChange={field.onChange}
-                  disabled={!formData.province || isLoadingWards}
-                >
-                  <SelectTrigger aria-invalid={!!errors.ward}>
-                    <SelectValue
-                      placeholder={
-                        !formData.province
-                          ? "Chọn Tỉnh / Thành Phố trước"
-                          : isLoadingWards
-                            ? "Đang tải phường/xã..."
-                            : "Chọn Phường / Xã"
-                      }
-                    />
-                  </SelectTrigger>
-                  <SelectContent className="max-h-80 overflow-y-auto">
-                    {wards.map((ward) => (
-                      <SelectItem key={ward.code} value={ward.code}>
-                        {ward.fullName || ward.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                  onChange={field.onChange}
+                  provinceCode={formData.province}
+                  placeholder={
+                    formData.province
+                      ? "Chọn Phường / Xã"
+                      : "Chọn Tỉnh / Thành Phố trước"
+                  }
+                  searchPlaceholder="Tìm phường xã..."
+                />
               )}
             />
             {errors.ward?.message ? (

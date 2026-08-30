@@ -227,16 +227,6 @@ export function ConfirmStep({ formData }: ConfirmStepProps) {
                       </div>
                       <div>
                         <div className="text-xs text-muted-foreground mb-1 uppercase font-bold tracking-widest">
-                          Địa chỉ đăng ký thuế
-                        </div>
-                        <div className="font-medium text-base leading-relaxed">
-                          {formData.taxAddress || "-"}
-                        </div>
-                      </div>
-                    </div>
-                    <div className="space-y-6">
-                      <div>
-                        <div className="text-xs text-muted-foreground mb-1 uppercase font-bold tracking-widest">
                           Tên thương hiệu
                         </div>
                         <div className="font-medium text-base leading-relaxed">

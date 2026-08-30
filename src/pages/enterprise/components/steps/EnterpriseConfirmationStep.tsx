@@ -264,36 +264,6 @@ export function EnterpriseConfirmationStep() {
                           {formData.brandName || "-"}
                         </div>
                       </div>
-                      <div>
-                        <div className="text-xs text-muted-foreground mb-1 uppercase font-bold tracking-widest">
-                          Ngày cấp
-                        </div>
-                        <div className="font-medium text-base leading-relaxed">
-                          {formData.issueDate
-                            ? new Date(formData.issueDate).toLocaleDateString(
-                                "vi-VN",
-                              )
-                            : "-"}
-                        </div>
-                      </div>
-                    </div>
-                    <div className="space-y-6">
-                      <div>
-                        <div className="text-xs text-muted-foreground mb-1 uppercase font-bold tracking-widest">
-                          Cơ quan thuế
-                        </div>
-                        <div className="font-medium text-base leading-relaxed">
-                          {formData.taxAuthority || "-"}
-                        </div>
-                      </div>
-                      <div>
-                        <div className="text-xs text-muted-foreground mb-1 uppercase font-bold tracking-widest">
-                          Địa chỉ đăng ký thuế
-                        </div>
-                        <div className="font-medium text-base leading-relaxed">
-                          {formData.taxAddress || "-"}
-                        </div>
-                      </div>
                     </div>
                     <div className="col-span-1 md:col-span-2">
                       <div className="text-xs text-muted-foreground mb-1 uppercase font-bold tracking-widest">

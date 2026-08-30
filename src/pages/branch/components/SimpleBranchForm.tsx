@@ -79,20 +79,6 @@ export function SimpleBranchForm({
 
   return (
     <div className="mx-auto max-w-3xl space-y-6 pb-24">
-      <div className="flex items-center gap-4 rounded-2xl border border-blue-100 bg-blue-50 p-4 text-blue-900">
-        <div className="rounded-xl bg-white p-2 shadow-sm">
-          <Building2 className="h-6 w-6 text-blue-600" />
-        </div>
-        <div>
-          <h3 className="font-semibold">Chế độ đơn giản</h3>
-          <p className="text-sm text-blue-700">
-            {isEdit
-              ? "Cập nhật nhanh thông tin cần thiết của chi nhánh."
-              : "Nhập nhanh thông tin cần thiết để tạo chi nhánh."}
-          </p>
-        </div>
-      </div>
-
       <Card className="rounded-3xl border-slate-200 shadow-sm">
         <CardContent className="space-y-6 p-6">
           <section className="space-y-3">

@@ -1,27 +1,19 @@
-import {
-  useGeoProvinces,
-  useGeoWards,
-  useMasterData,
-} from "@/features/master-data";
+import { AddressRemoteCombobox } from "@/components/AddressRemoteCombobox";
+import AddressSearchInput from "@/components/AddressSearchInput";
+import { useMasterData } from "@/features/master-data";
+import { fetchTaxPayerInfo } from "@/utils/tax";
 import {
   Button,
   Input,
   Label,
   MultiSelect,
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
   Textarea,
   useToast,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { Image, MapPin, Upload } from "lucide-react";
 import { useState } from "react";
-import type { CooperativeFormData } from "../../types/types";
-import AddressSearchInput from "@/components/AddressSearchInput";
 import { getDefaultOrganizationImage } from "../../../enterprise/data/default-organization-images";
-import { fetchTaxPayerInfo } from "@/utils/tax";
+import type { CooperativeFormData } from "../../types/types";
 
 interface BasicInfoStepProps {
   formData: CooperativeFormData;
@@ -72,8 +64,6 @@ export function BasicInfoStep({
       }
       const updates: Partial<CooperativeFormData> = {};
       if (!formData.name.trim() && data.name) updates.name = data.name;
-      if (!formData.taxAuthority.trim() && data.taxDepartment)
-        updates.taxAuthority = data.taxDepartment;
       if (!formData.address.trim() && data.address)
         updates.address = data.address;
       setFormData({ ...formData, ...updates });
@@ -87,22 +77,6 @@ export function BasicInfoStep({
       setIsCheckingTax(false);
     }
   };
-  const provincesQuery = useGeoProvinces({
-    params: {
-      status: "active",
-      page: 0,
-      size: 100,
-    },
-  });
-  const wardsQuery = useGeoWards({
-    params: {
-      provinceCode: formData.province || "",
-      status: "active",
-      page: 0,
-      size: 100,
-    },
-    enabled: Boolean(formData.province),
-  });
   const businessLinesQuery = useMasterData("business-lines", {
     params: {
       status: "active",
@@ -227,69 +201,27 @@ export function BasicInfoStep({
         </div>
         <div className="space-y-2">
           <Label htmlFor="classification" required>
-            Phân loại
+            Lĩnh vực
           </Label>
           <MultiSelect
             options={classificationOptions}
-            placeholder="Chọn phân loại..."
+            placeholder="Chọn lĩnh vực..."
             value={formData.classification}
             onChange={(v) => setFormData({ ...formData, classification: v })}
           />
         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label htmlFor="aliasName">Tên gợi nhớ</Label>
-          <Input
-            id="aliasName"
-            value={formData.aliasName}
-            onChange={(e) =>
-              setFormData({ ...formData, aliasName: e.target.value })
-            }
-            placeholder="VD: EcoFarm..."
-          />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="taxAuthority" required>
-            Cơ quan thuế
-          </Label>
-          <Input
-            id="taxAuthority"
-            value={formData.taxAuthority}
-            onChange={(e) =>
-              setFormData({ ...formData, taxAuthority: e.target.value })
-            }
-            placeholder="Cục thuế / Chi cục thuế..."
-          />
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label htmlFor="taxAddress">Địa chỉ thuế</Label>
-          <Input
-            id="taxAddress"
-            value={formData.taxAddress}
-            onChange={(e) =>
-              setFormData({ ...formData, taxAddress: e.target.value })
-            }
-            placeholder="Địa chỉ đăng ký thuế"
-          />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="issueDate" required>
-            Ngày cấp
-          </Label>
-          <Input
-            id="issueDate"
-            type="date"
-            value={formData.issueDate}
-            onChange={(e) =>
-              setFormData({ ...formData, issueDate: e.target.value })
-            }
-          />
-        </div>
+      <div className="space-y-2">
+        <Label htmlFor="aliasName">Tên gợi nhớ</Label>
+        <Input
+          id="aliasName"
+          value={formData.aliasName}
+          onChange={(e) =>
+            setFormData({ ...formData, aliasName: e.target.value })
+          }
+          placeholder="VD: EcoFarm..."
+        />
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -329,45 +261,32 @@ export function BasicInfoStep({
             <Label htmlFor="province" required>
               Tỉnh / Thành phố
             </Label>
-            <Select
+            <AddressRemoteCombobox
+              type="province"
               value={formData.province}
-              onValueChange={(val) =>
+              onChange={(val) =>
                 setFormData({ ...formData, province: val, district: "" })
               }
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Chọn Tỉnh / Thành Phố" />
-              </SelectTrigger>
-              <SelectContent className="max-h-80 overflow-y-auto">
-                {provincesQuery.items.map((province) => (
-                  <SelectItem key={province.code} value={province.code}>
-                    {province.fullName || province.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              placeholder="Chọn Tỉnh / Thành Phố"
+              searchPlaceholder="Tìm tỉnh thành..."
+            />
           </div>
           <div className="space-y-2">
             <Label htmlFor="district" required>
               Phường / Xã
             </Label>
-            <Select
+            <AddressRemoteCombobox
+              type="ward"
               value={formData.district}
-              onValueChange={(val) =>
-                setFormData({ ...formData, district: val })
+              onChange={(val) => setFormData({ ...formData, district: val })}
+              provinceCode={formData.province}
+              placeholder={
+                formData.province
+                  ? "Chọn Phường / Xã"
+                  : "Chọn Tỉnh / Thành Phố trước"
               }
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Chọn Phường / Xã" />
-              </SelectTrigger>
-              <SelectContent className="max-h-80 overflow-y-auto">
-                {wardsQuery.items.map((district) => (
-                  <SelectItem key={district.code} value={district.code}>
-                    {district.fullName || district.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              searchPlaceholder="Tìm phường xã..."
+            />
           </div>
         </div>
 

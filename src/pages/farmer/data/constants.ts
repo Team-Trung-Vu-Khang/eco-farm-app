@@ -1,7 +1,7 @@
 export const farmerFilters = [
   {
     key: "classification",
-    label: "Phân loại",
+    label: "Lĩnh vực",
     options: [
       { label: "Sản xuất", value: "production" },
       { label: "Chế biến", value: "processing" },

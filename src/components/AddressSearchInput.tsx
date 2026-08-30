@@ -233,7 +233,7 @@ export default function AddressSearchInput({
         placeholder={placeholder}
       />
       {isSearching && (
-        <Loader2 className="absolute right-3 top-3 h-4 w-4 animate-spin text-slate-400" />
+        <Loader2 className="absolute right-8 top-3 h-4 w-4 animate-spin text-slate-400" />
       )}
       {results.length > 0 && (
         <div className="absolute z-50 mt-1 max-h-60 w-full overflow-y-auto rounded-md border bg-white p-1 shadow-lg">

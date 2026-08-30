@@ -1,15 +1,10 @@
-import { useGeoProvinces, useGeoWards } from "@/features/master-data";
+import { AddressRemoteCombobox } from "@/components/AddressRemoteCombobox";
 import {
   Button,
   Card,
   CardContent,
   Input,
   Label,
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
   Textarea,
   useToast,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
@@ -36,18 +31,6 @@ export default function SimpleCooperativeForm({
   isEdit = false,
 }: Props) {
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const provincesQuery = useGeoProvinces({
-    params: { status: "active", page: 0, size: 100 },
-  });
-  const wardsQuery = useGeoWards({
-    params: {
-      provinceCode: formData.province,
-      status: "active",
-      page: 0,
-      size: 100,
-    },
-    enabled: Boolean(formData.province),
-  });
   const update = (patch: Partial<CooperativeFormData>) =>
     setFormData({ ...formData, ...patch });
   const [isCheckingTax, setIsCheckingTax] = useState(false);
@@ -82,8 +65,6 @@ export default function SimpleCooperativeForm({
       }
       const updates: Partial<CooperativeFormData> = {};
       if (!formData.name.trim() && data.name) updates.name = data.name;
-      if (!formData.taxAuthority.trim() && data.taxDepartment)
-        updates.taxAuthority = data.taxDepartment;
       if (!formData.address.trim() && data.address)
         updates.address = data.address;
       setFormData({ ...formData, ...updates });
@@ -106,14 +87,6 @@ export default function SimpleCooperativeForm({
   );
   return (
     <div className="mx-auto max-w-3xl space-y-6 pb-24">
-      <div className="rounded-2xl border border-emerald-100 bg-emerald-50 p-4 text-emerald-900">
-        <h3 className="font-semibold">Chế độ đơn giản</h3>
-        <p className="text-sm text-emerald-700">
-          {isEdit
-            ? "Cập nhật nhanh các thông tin cần thiết của hợp tác xã."
-            : "Nhập nhanh các thông tin cần thiết để tạo hợp tác xã."}
-        </p>
-      </div>
       <Card className="rounded-3xl border-slate-200 shadow-sm">
         <CardContent className="space-y-6 p-6">
           <div className="flex flex-col gap-4 rounded-2xl border border-dashed border-slate-200 bg-slate-50/60 p-4 sm:flex-row sm:items-center">
@@ -199,42 +172,30 @@ export default function SimpleCooperativeForm({
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
                 <Label required>Tỉnh thành</Label>
-                <Select
+                <AddressRemoteCombobox
+                  type="province"
                   value={formData.province}
-                  onValueChange={(value) =>
+                  onChange={(value) =>
                     update({ province: value, district: "" })
                   }
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Chọn tỉnh thành" />
-                  </SelectTrigger>
-                  <SelectContent className="max-h-60 overflow-y-auto">
-                    {provincesQuery.items.map((item) => (
-                      <SelectItem key={item.code} value={item.code}>
-                        {item.fullName || item.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                  placeholder="Chọn tỉnh thành"
+                  searchPlaceholder="Tìm tỉnh thành..."
+                />
               </div>
               <div className="space-y-2">
                 <Label required>Phường xã</Label>
-                <Select
+                <AddressRemoteCombobox
+                  type="ward"
                   value={formData.district}
-                  onValueChange={(value) => update({ district: value })}
-                  disabled={!formData.province}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Chọn phường xã" />
-                  </SelectTrigger>
-                  <SelectContent className="max-h-60 overflow-y-auto">
-                    {wardsQuery.items.map((item) => (
-                      <SelectItem key={item.code} value={item.code}>
-                        {item.fullName || item.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                  onChange={(value) => update({ district: value })}
+                  provinceCode={formData.province}
+                  placeholder={
+                    formData.province
+                      ? "Chọn phường xã"
+                      : "Chọn tỉnh thành trước"
+                  }
+                  searchPlaceholder="Tìm phường xã..."
+                />
               </div>
             </div>
             <div className="space-y-2">

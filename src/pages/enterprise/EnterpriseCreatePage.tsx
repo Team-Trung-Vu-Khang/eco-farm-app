@@ -38,7 +38,6 @@ export default function EnterpriseCreatePage() {
     <EnterpriseFormContext.Provider value={formState}>
       <PageWrapper
         title="Tạo mới Doanh nghiệp"
-        description="Điền thông tin theo từng bước để tạo mới doanh nghiệp"
         actions={[
           <div className="flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-2 shadow-sm">
             <span className="text-xs font-bold text-slate-700">
