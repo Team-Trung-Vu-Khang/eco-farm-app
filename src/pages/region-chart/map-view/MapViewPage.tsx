@@ -1045,13 +1045,13 @@ const MapContent = () => {
     if (filterArea !== "all") {
       const area = findAreaById(filterArea);
       const center = area ? getScopeCenter(area) : null;
-      if (center) return { center, zoom: 16 };
+      if (center) return { center, zoom: 15 };
     }
 
     if (filterRegion !== "all") {
       const region = findRegionById(filterRegion);
       const center = region ? getScopeCenter(region) : null;
-      if (center) return { center, zoom: 14 };
+      if (center) return { center, zoom: 13 };
     }
 
     return { center: DEFAULT_CENTER, zoom: 15 };
@@ -1237,6 +1237,8 @@ const MapContent = () => {
             filterArea={filterArea}
             setFilterArea={(value) => {
               setFilterArea(value);
+              setSelectionTrail([]);
+              setIsEditingSoil(false);
               setSelectedAreaLabel(
                 value === "all"
                   ? undefined
