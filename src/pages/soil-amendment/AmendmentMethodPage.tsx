@@ -54,7 +54,7 @@ const AmendmentMethodPage = () => {
         />
         {data.length === 0 && (
           <div className="p-8 text-center text-slate-500">
-            <p>Không tìm thấy kết quả phù hợp cho bộ lọc hiện tại.</p>
+            <p>Chưa có thông tin phù hợp cho bộ lọc hiện tại.</p>
           </div>
         )}
       </div>

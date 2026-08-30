@@ -1,32 +1,32 @@
-import { useState, useMemo, useEffect } from "react";
 import {
+  AutoCompleteSelect,
+  Button,
   Card,
   CardContent,
   CardHeader,
   CardTitle,
   Dialog,
   DialogContent,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
-  Button,
-  AutoCompleteSelect,
   Label,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import {
-  FolderOpen,
-  ChevronRight,
   ChevronDown,
-  TrendingUp,
-  TrendingDown,
+  ChevronRight,
+  FolderOpen,
   Info,
-  ShieldAlert,
-  Wrench,
   Layers,
   Leaf,
   Search,
+  ShieldAlert,
   SlidersHorizontal,
+  TrendingDown,
+  TrendingUp,
+  Wrench,
 } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 import { mockTreeViewData, type TreeNode } from "../constants/mockReportData";
 
 export function MaterialConsumptionBlock() {
@@ -92,7 +92,7 @@ export function MaterialConsumptionBlock() {
     if (node.type === "plot") {
       const matchesStandard =
         selectedStandard === "all" || node.standard === selectedStandard;
-      
+
       const matchesStatus =
         selectedStatus === "all" || node.status === selectedStatus;
 
@@ -162,7 +162,13 @@ export function MaterialConsumptionBlock() {
     return mockTreeViewData
       .map(filterNode)
       .filter((n): n is TreeNode => n !== null);
-  }, [treeSearchQuery, selectedStandard, selectedStatus, selectedSize, selectedCompany]);
+  }, [
+    treeSearchQuery,
+    selectedStandard,
+    selectedStatus,
+    selectedSize,
+    selectedCompany,
+  ]);
 
   // Reset selectedNode if it is filtered out
   useEffect(() => {
@@ -256,49 +262,172 @@ export function MaterialConsumptionBlock() {
   };
 
   // Detailed 3-tier mapping: Sub-category -> Array of specific items with ratios
-  const subCategoryItemsMap: Record<string, { name: string; unit: string; ratio: number; trend: number; isIncrease: boolean }[]> = {
+  const subCategoryItemsMap: Record<
+    string,
+    {
+      name: string;
+      unit: string;
+      ratio: number;
+      trend: number;
+      isIncrease: boolean;
+    }[]
+  > = {
     "Thuốc trừ sâu sinh học": [
-      { name: "Nấm xanh Metarhizium", unit: "kg", ratio: 0.45, trend: 8, isIncrease: true },
-      { name: "Vi khuẩn Bacillus thuringiensis", unit: "kg", ratio: 0.55, trend: 5, isIncrease: false },
+      {
+        name: "Nấm xanh Metarhizium",
+        unit: "kg",
+        ratio: 0.45,
+        trend: 8,
+        isIncrease: true,
+      },
+      {
+        name: "Vi khuẩn Bacillus thuringiensis",
+        unit: "kg",
+        ratio: 0.55,
+        trend: 5,
+        isIncrease: false,
+      },
     ],
     "Thuốc diệt nấm bệnh": [
-      { name: "Nấm đối kháng Trichoderma", unit: "kg", ratio: 0.6, trend: 10, isIncrease: true },
-      { name: "Chế phẩm Đồng Bordeaux", unit: "kg", ratio: 0.4, trend: 3, isIncrease: true },
+      {
+        name: "Nấm đối kháng Trichoderma",
+        unit: "kg",
+        ratio: 0.6,
+        trend: 10,
+        isIncrease: true,
+      },
+      {
+        name: "Chế phẩm Đồng Bordeaux",
+        unit: "kg",
+        ratio: 0.4,
+        trend: 3,
+        isIncrease: true,
+      },
     ],
     "Thuốc trừ cỏ sinh học": [
-      { name: "Axit acetic nồng độ cao", unit: "kg", ratio: 1.0, trend: 12, isIncrease: true },
+      {
+        name: "Axit acetic nồng độ cao",
+        unit: "kg",
+        ratio: 1.0,
+        trend: 12,
+        isIncrease: true,
+      },
     ],
     "Phân bón hữu cơ vi sinh": [
-      { name: "Phân trùn quế cao cấp", unit: "kg", ratio: 0.57, trend: 15, isIncrease: true },
-      { name: "Phân chuồng hoai mục tinh chế", unit: "kg", ratio: 0.43, trend: 2, isIncrease: false },
+      {
+        name: "Phân trùn quế cao cấp",
+        unit: "kg",
+        ratio: 0.57,
+        trend: 15,
+        isIncrease: true,
+      },
+      {
+        name: "Phân chuồng hoai mục tinh chế",
+        unit: "kg",
+        ratio: 0.43,
+        trend: 2,
+        isIncrease: false,
+      },
     ],
     "Phân NPK cao cấp": [
-      { name: "NPK 16-16-8 Đầu Trâu", unit: "kg", ratio: 0.62, trend: 5, isIncrease: true },
-      { name: "NPK 15-15-15 nhập khẩu", unit: "kg", ratio: 0.38, trend: 8, isIncrease: false },
+      {
+        name: "NPK 16-16-8 Đầu Trâu",
+        unit: "kg",
+        ratio: 0.62,
+        trend: 5,
+        isIncrease: true,
+      },
+      {
+        name: "NPK 15-15-15 nhập khẩu",
+        unit: "kg",
+        ratio: 0.38,
+        trend: 8,
+        isIncrease: false,
+      },
     ],
     "Phân Lân & Kali": [
-      { name: "Lân nung chảy Văn Điển", unit: "kg", ratio: 0.64, trend: 2, isIncrease: true },
-      { name: "Kali clorua đỏ", unit: "kg", ratio: 0.36, trend: 4, isIncrease: true },
+      {
+        name: "Lân nung chảy Văn Điển",
+        unit: "kg",
+        ratio: 0.64,
+        trend: 2,
+        isIncrease: true,
+      },
+      {
+        name: "Kali clorua đỏ",
+        unit: "kg",
+        ratio: 0.36,
+        trend: 4,
+        isIncrease: true,
+      },
     ],
     "Máy cày & Máy phay đất": [
-      { name: "Máy cày Kubota L5018", unit: "ngày", ratio: 0.53, trend: 10, isIncrease: true },
-      { name: "Máy phay đất Yanmar", unit: "ngày", ratio: 0.47, trend: 5, isIncrease: true },
+      {
+        name: "Máy cày Kubota L5018",
+        unit: "ngày",
+        ratio: 0.53,
+        trend: 10,
+        isIncrease: true,
+      },
+      {
+        name: "Máy phay đất Yanmar",
+        unit: "ngày",
+        ratio: 0.47,
+        trend: 5,
+        isIncrease: true,
+      },
     ],
     "Hệ thống tưới tự động": [
-      { name: "Hệ thống tưới nhỏ giọt Israel", unit: "ngày", ratio: 0.58, trend: 2, isIncrease: true },
-      { name: "Hệ thống tưới phun sương", unit: "ngày", ratio: 0.42, trend: 1, isIncrease: true },
+      {
+        name: "Hệ thống tưới nhỏ giọt Israel",
+        unit: "ngày",
+        ratio: 0.58,
+        trend: 2,
+        isIncrease: true,
+      },
+      {
+        name: "Hệ thống tưới phun sương",
+        unit: "ngày",
+        ratio: 0.42,
+        trend: 1,
+        isIncrease: true,
+      },
     ],
     "Máy phun thuốc tự hành": [
-      { name: "Máy phun Drone DJI T40", unit: "ngày", ratio: 1.0, trend: 15, isIncrease: true },
+      {
+        name: "Máy phun Drone DJI T40",
+        unit: "ngày",
+        ratio: 1.0,
+        trend: 15,
+        isIncrease: true,
+      },
     ],
     "Màng phủ nông nghiệp": [
-      { name: "Màng phủ PE đen khổ 1.2m", unit: "cuộn", ratio: 1.0, trend: 3, isIncrease: false },
+      {
+        name: "Màng phủ PE đen khổ 1.2m",
+        unit: "cuộn",
+        ratio: 1.0,
+        trend: 3,
+        isIncrease: false,
+      },
     ],
     "Lưới chắn côn trùng": [
-      { name: "Lưới chắn 50 mesh trắng", unit: "tấm", ratio: 1.0, trend: 8, isIncrease: true },
+      {
+        name: "Lưới chắn 50 mesh trắng",
+        unit: "tấm",
+        ratio: 1.0,
+        trend: 8,
+        isIncrease: true,
+      },
     ],
     "Dây cột giàn leo": [
-      { name: "Dây se nông nghiệp tự phân hủy", unit: "cuộn", ratio: 1.0, trend: 5, isIncrease: true },
+      {
+        name: "Dây se nông nghiệp tự phân hủy",
+        unit: "cuộn",
+        ratio: 1.0,
+        trend: 5,
+        isIncrease: true,
+      },
     ],
   };
 
@@ -312,10 +441,12 @@ export function MaterialConsumptionBlock() {
       isIncrease: boolean;
       groups: { name: string; amount: number }[];
     },
-    unit: string
+    unit: string,
   ) => {
     const isBad = data.isIncrease;
-    const trendColor = isBad ? "text-rose-600 bg-rose-50" : "text-emerald-600 bg-emerald-50";
+    const trendColor = isBad
+      ? "text-rose-600 bg-rose-50"
+      : "text-emerald-600 bg-emerald-50";
 
     return (
       <Card className="border border-slate-100 shadow-xs bg-white rounded-xl">
@@ -359,7 +490,7 @@ export function MaterialConsumptionBlock() {
           {/* Loop over sub-categories */}
           {data.groups.map((group, groupIdx) => {
             const items = subCategoryItemsMap[group.name] || [];
-            
+
             return (
               <div key={groupIdx} className="space-y-2">
                 {/* Sub-category Header */}
@@ -377,22 +508,38 @@ export function MaterialConsumptionBlock() {
                   <table className="w-full text-left border-collapse text-xs">
                     <thead>
                       <tr className="bg-slate-50/50 border-b border-slate-100 text-slate-500 font-bold">
-                        <th className="p-2.5 font-semibold text-slate-500">Tên vật tư</th>
-                        <th className="p-2.5 font-semibold text-slate-500 w-20 text-center">Đơn vị</th>
-                        <th className="p-2.5 font-semibold text-slate-500 w-28 text-right">Số lượng</th>
-                        <th className="p-2.5 font-semibold text-slate-500 w-28 text-center">Biến động</th>
+                        <th className="p-2.5 font-semibold text-slate-500">
+                          Tên vật tư
+                        </th>
+                        <th className="p-2.5 font-semibold text-slate-500 w-20 text-center">
+                          Đơn vị
+                        </th>
+                        <th className="p-2.5 font-semibold text-slate-500 w-28 text-right">
+                          Số lượng
+                        </th>
+                        <th className="p-2.5 font-semibold text-slate-500 w-28 text-center">
+                          Biến động
+                        </th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-50 font-medium">
                       {items.map((item, itemIdx) => {
-                        const itemAmount = Math.max(1, Math.round(group.amount * item.ratio));
+                        const itemAmount = Math.max(
+                          1,
+                          Math.round(group.amount * item.ratio),
+                        );
                         const itemTrendColor = item.isIncrease
                           ? "text-rose-600 bg-rose-50/50"
                           : "text-emerald-600 bg-emerald-50/50";
-                        
+
                         return (
-                          <tr key={itemIdx} className="hover:bg-slate-50/30 transition-colors">
-                            <td className="p-2.5 text-slate-700 font-bold">{item.name}</td>
+                          <tr
+                            key={itemIdx}
+                            className="hover:bg-slate-50/30 transition-colors"
+                          >
+                            <td className="p-2.5 text-slate-700 font-bold">
+                              {item.name}
+                            </td>
                             <td className="p-2.5 text-slate-400 text-center uppercase font-bold text-[10px]">
                               {item.unit}
                             </td>
@@ -400,7 +547,9 @@ export function MaterialConsumptionBlock() {
                               {formatNumber(itemAmount)}
                             </td>
                             <td className="p-2.5 text-center">
-                              <span className={`inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-bold ${itemTrendColor}`}>
+                              <span
+                                className={`inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-bold ${itemTrendColor}`}
+                              >
                                 {item.isIncrease ? (
                                   <TrendingUp className="w-2.5 h-2.5" />
                                 ) : (
@@ -496,7 +645,10 @@ export function MaterialConsumptionBlock() {
             <button
               onClick={handleOpenDialog}
               className={`p-1.5 rounded-lg border transition-all hover:bg-slate-50 cursor-pointer h-8 w-8 flex items-center justify-center shrink-0 ${
-                selectedStandard !== "all" || selectedStatus !== "all" || selectedSize !== "all" || selectedCompany !== "all"
+                selectedStandard !== "all" ||
+                selectedStatus !== "all" ||
+                selectedSize !== "all" ||
+                selectedCompany !== "all"
                   ? "border-emerald-250 bg-emerald-55 text-emerald-600 font-bold"
                   : "border-slate-205 text-slate-500"
               }`}
@@ -519,7 +671,9 @@ export function MaterialConsumptionBlock() {
               <div className="space-y-4 py-4">
                 {/* Company Filter */}
                 <div className="space-y-1">
-                  <Label className="text-xs font-bold text-slate-600 block">Đơn vị / Công ty quản lý</Label>
+                  <Label className="text-xs font-bold text-slate-600 block">
+                    Đơn vị / Công ty quản lý
+                  </Label>
                   <AutoCompleteSelect
                     options={companyOptions}
                     value={draftCompany}
@@ -530,7 +684,9 @@ export function MaterialConsumptionBlock() {
 
                 {/* Standard Filter */}
                 <div className="space-y-1">
-                  <Label className="text-xs font-bold text-slate-600 block">Tiêu chuẩn canh tác</Label>
+                  <Label className="text-xs font-bold text-slate-600 block">
+                    Tiêu chuẩn canh tác
+                  </Label>
                   <AutoCompleteSelect
                     options={standardOptions}
                     value={draftStandard}
@@ -541,7 +697,9 @@ export function MaterialConsumptionBlock() {
 
                 {/* Status Filter */}
                 <div className="space-y-1">
-                  <Label className="text-xs font-bold text-slate-600 block">Trạng thái canh tác</Label>
+                  <Label className="text-xs font-bold text-slate-600 block">
+                    Trạng thái canh tác
+                  </Label>
                   <AutoCompleteSelect
                     options={statusOptions}
                     value={draftStatus}
@@ -552,7 +710,9 @@ export function MaterialConsumptionBlock() {
 
                 {/* Size Filter */}
                 <div className="space-y-1">
-                  <Label className="text-xs font-bold text-slate-600 block">Quy mô diện tích</Label>
+                  <Label className="text-xs font-bold text-slate-600 block">
+                    Quy mô diện tích
+                  </Label>
                   <AutoCompleteSelect
                     options={sizeOptions}
                     value={draftSize}
@@ -592,7 +752,7 @@ export function MaterialConsumptionBlock() {
           <div className="space-y-1">
             {filteredTreeData.length === 0 ? (
               <div className="text-xs text-slate-400 text-center py-4">
-                Không tìm thấy kết quả
+                Chưa có thông tin
               </div>
             ) : (
               filteredTreeData.map((node) => renderTreeNode(node))
@@ -626,25 +786,25 @@ export function MaterialConsumptionBlock() {
               "Thuốc BVTV canh tác",
               <ShieldAlert className="w-5 h-5 text-rose-500" />,
               cons.pesticide,
-              "kg"
+              "kg",
             )}
             {renderDetailCard(
               "Phân bón chất lượng cao",
               <Leaf className="w-5 h-5 text-emerald-500" />,
               cons.fertilizer,
-              "kg"
+              "kg",
             )}
             {renderDetailCard(
               "Máy móc & thiết bị",
               <Wrench className="w-5 h-5 text-amber-500" />,
               cons.equipment,
-              "ngày"
+              "ngày",
             )}
             {renderDetailCard(
               "Vật tư canh tác khác",
               <Layers className="w-5 h-5 text-sky-500" />,
               cons.other,
-              "cuộn/tấm"
+              "cuộn/tấm",
             )}
           </div>
         </div>

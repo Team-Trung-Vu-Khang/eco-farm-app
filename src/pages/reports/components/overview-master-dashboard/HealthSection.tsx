@@ -1,33 +1,33 @@
-import React, { useState, useMemo } from "react";
 import {
   Card,
   CardContent,
   CardHeader,
   CardTitle,
   Select,
-  SelectTrigger,
-  SelectValue,
   SelectContent,
   SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import {
-  ResponsiveContainer,
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-} from "recharts";
-import {
-  Sprout,
-  TrendingUp,
-  TrendingDown,
-  Search,
-  XCircle,
   Beef,
   Fish,
+  Search,
+  Sprout,
+  TrendingDown,
+  TrendingUp,
+  XCircle,
 } from "lucide-react";
+import React, { useMemo, useState } from "react";
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
 import {
   type TreeNode,
   mockTreeViewData,
@@ -51,14 +51,78 @@ const plotHealthMap: Record<
     cropName: string;
   }
 > = {
-  "p-1": { total: 10, good: 7, treating: 2, disease: 1, harvesting: 3, size: 4.5, cropName: "Sầu riêng Ri6" },
-  "p-2": { total: 8, good: 6, treating: 1, disease: 1, harvesting: 2, size: 3.2, cropName: "Xoài cát Hòa Lộc" },
-  "p-3": { total: 5, good: 4, treating: 1, disease: 0, harvesting: 0, size: 0.8, cropName: "Cà chua hữu cơ" },
-  "p-4": { total: 4, good: 3, treating: 0, disease: 1, harvesting: 0, size: 0.5, cropName: "Ớt chuông hữu cơ" },
-  "p-5": { total: 6, good: 5, treating: 1, disease: 0, harvesting: 2, size: 5.5, cropName: "Mít Thái" },
-  "p-6": { total: 6, good: 5, treating: 0, disease: 1, harvesting: 2, size: 2.8, cropName: "Mít Thái" },
-  "p-7": { total: 4, good: 3, treating: 0, disease: 1, harvesting: 1, size: 1.5, cropName: "Bưởi da xanh" },
-  "p-8": { total: 5, good: 5, treating: 0, disease: 0, harvesting: 1, size: 6.2, cropName: "Bưởi da xanh" },
+  "p-1": {
+    total: 10,
+    good: 7,
+    treating: 2,
+    disease: 1,
+    harvesting: 3,
+    size: 4.5,
+    cropName: "Sầu riêng Ri6",
+  },
+  "p-2": {
+    total: 8,
+    good: 6,
+    treating: 1,
+    disease: 1,
+    harvesting: 2,
+    size: 3.2,
+    cropName: "Xoài cát Hòa Lộc",
+  },
+  "p-3": {
+    total: 5,
+    good: 4,
+    treating: 1,
+    disease: 0,
+    harvesting: 0,
+    size: 0.8,
+    cropName: "Cà chua hữu cơ",
+  },
+  "p-4": {
+    total: 4,
+    good: 3,
+    treating: 0,
+    disease: 1,
+    harvesting: 0,
+    size: 0.5,
+    cropName: "Ớt chuông hữu cơ",
+  },
+  "p-5": {
+    total: 6,
+    good: 5,
+    treating: 1,
+    disease: 0,
+    harvesting: 2,
+    size: 5.5,
+    cropName: "Mít Thái",
+  },
+  "p-6": {
+    total: 6,
+    good: 5,
+    treating: 0,
+    disease: 1,
+    harvesting: 2,
+    size: 2.8,
+    cropName: "Mít Thái",
+  },
+  "p-7": {
+    total: 4,
+    good: 3,
+    treating: 0,
+    disease: 1,
+    harvesting: 1,
+    size: 1.5,
+    cropName: "Bưởi da xanh",
+  },
+  "p-8": {
+    total: 5,
+    good: 5,
+    treating: 0,
+    disease: 0,
+    harvesting: 1,
+    size: 6.2,
+    cropName: "Bưởi da xanh",
+  },
 };
 
 const plotNameMap: Record<string, string> = {
@@ -85,9 +149,33 @@ const plotHealthMapLivestock: Record<
     cropName: string;
   }
 > = {
-  "p-1": { total: 8, good: 6, treating: 1, disease: 1, harvesting: 0, size: 0, cropName: "Bò thịt Wagyu" },
-  "p-2": { total: 10, good: 8, treating: 2, disease: 0, harvesting: 0, size: 0, cropName: "Heo nái CP" },
-  "p-3": { total: 15, good: 12, treating: 2, disease: 1, harvesting: 0, size: 0, cropName: "Gà ta thả vườn" },
+  "p-1": {
+    total: 8,
+    good: 6,
+    treating: 1,
+    disease: 1,
+    harvesting: 0,
+    size: 0,
+    cropName: "Bò thịt Wagyu",
+  },
+  "p-2": {
+    total: 10,
+    good: 8,
+    treating: 2,
+    disease: 0,
+    harvesting: 0,
+    size: 0,
+    cropName: "Heo nái CP",
+  },
+  "p-3": {
+    total: 15,
+    good: 12,
+    treating: 2,
+    disease: 1,
+    harvesting: 0,
+    size: 0,
+    cropName: "Gà ta thả vườn",
+  },
 };
 
 const plotNameMapLivestock: Record<string, string> = {
@@ -109,9 +197,33 @@ const plotHealthMapAqua: Record<
     cropName: string;
   }
 > = {
-  "p-1": { total: 4, good: 3, treating: 1, disease: 0, harvesting: 2, size: 1.5, cropName: "Tôm thẻ chân trắng" },
-  "p-2": { total: 6, good: 5, treating: 0, disease: 1, harvesting: 3, size: 3.0, cropName: "Cá tra xuất khẩu" },
-  "p-3": { total: 3, good: 2, treating: 1, disease: 0, harvesting: 1, size: 1.2, cropName: "Cá chẽm thương phẩm" },
+  "p-1": {
+    total: 4,
+    good: 3,
+    treating: 1,
+    disease: 0,
+    harvesting: 2,
+    size: 1.5,
+    cropName: "Tôm thẻ chân trắng",
+  },
+  "p-2": {
+    total: 6,
+    good: 5,
+    treating: 0,
+    disease: 1,
+    harvesting: 3,
+    size: 3.0,
+    cropName: "Cá tra xuất khẩu",
+  },
+  "p-3": {
+    total: 3,
+    good: 2,
+    treating: 1,
+    disease: 0,
+    harvesting: 1,
+    size: 1.2,
+    cropName: "Cá chẽm thương phẩm",
+  },
 };
 
 const plotNameMapAqua: Record<string, string> = {
@@ -146,42 +258,102 @@ const cropItems: CropItem[] = [
     name: "Sầu riêng Ri6",
     area: 12.5,
     quantity: 3750,
-    harvest: { totalYield: 24500, trendYield: 15, isYieldUp: true, recentHarvest: 5200, trendRecent: 8, isRecentUp: true, remaining: 4.5, remainingQty: 1350, ratio: 36 },
+    harvest: {
+      totalYield: 24500,
+      trendYield: 15,
+      isYieldUp: true,
+      recentHarvest: 5200,
+      trendRecent: 8,
+      isRecentUp: true,
+      remaining: 4.5,
+      remainingQty: 1350,
+      ratio: 36,
+    },
   },
   {
     id: "crop-2",
     name: "Xoài cát Hòa Lộc",
     area: 8.2,
     quantity: 2460,
-    harvest: { totalYield: 18500, trendYield: -5, isYieldUp: false, recentHarvest: 3100, trendRecent: 12, isRecentUp: true, remaining: 2.1, remainingQty: 630, ratio: 25 },
+    harvest: {
+      totalYield: 18500,
+      trendYield: -5,
+      isYieldUp: false,
+      recentHarvest: 3100,
+      trendRecent: 12,
+      isRecentUp: true,
+      remaining: 2.1,
+      remainingQty: 630,
+      ratio: 25,
+    },
   },
   {
     id: "crop-3",
     name: "Mít Thái",
     area: 15.0,
     quantity: 4500,
-    harvest: { totalYield: 32000, trendYield: 10, isYieldUp: true, recentHarvest: 6400, trendRecent: -3, isRecentUp: false, remaining: 5.0, remainingQty: 1500, ratio: 33 },
+    harvest: {
+      totalYield: 32000,
+      trendYield: 10,
+      isYieldUp: true,
+      recentHarvest: 6400,
+      trendRecent: -3,
+      isRecentUp: false,
+      remaining: 5.0,
+      remainingQty: 1500,
+      ratio: 33,
+    },
   },
   {
     id: "crop-4",
     name: "Bưởi da xanh",
     area: 9.6,
     quantity: 2880,
-    harvest: { totalYield: 21000, trendYield: 12, isYieldUp: true, recentHarvest: 4100, trendRecent: 5, isRecentUp: true, remaining: 3.2, remainingQty: 960, ratio: 33 },
+    harvest: {
+      totalYield: 21000,
+      trendYield: 12,
+      isYieldUp: true,
+      recentHarvest: 4100,
+      trendRecent: 5,
+      isRecentUp: true,
+      remaining: 3.2,
+      remainingQty: 960,
+      ratio: 33,
+    },
   },
   {
     id: "crop-5",
     name: "Cà chua hữu cơ",
     area: 0.8,
     quantity: 240,
-    harvest: { totalYield: 4800, trendYield: 10, isYieldUp: true, recentHarvest: 1200, trendRecent: 6, isRecentUp: true, remaining: 0.3, remainingQty: 90, ratio: 37 },
+    harvest: {
+      totalYield: 4800,
+      trendYield: 10,
+      isYieldUp: true,
+      recentHarvest: 1200,
+      trendRecent: 6,
+      isRecentUp: true,
+      remaining: 0.3,
+      remainingQty: 90,
+      ratio: 37,
+    },
   },
   {
     id: "crop-6",
     name: "Ớt chuông hữu cơ",
     area: 0.5,
     quantity: 150,
-    harvest: { totalYield: 3200, trendYield: -2, isYieldUp: false, recentHarvest: 800, trendRecent: 4, isRecentUp: true, remaining: 0.2, remainingQty: 60, ratio: 40 },
+    harvest: {
+      totalYield: 3200,
+      trendYield: -2,
+      isYieldUp: false,
+      recentHarvest: 800,
+      trendRecent: 4,
+      isRecentUp: true,
+      remaining: 0.2,
+      remainingQty: 60,
+      ratio: 40,
+    },
   },
 ];
 
@@ -191,21 +363,51 @@ const livestockItems: CropItem[] = [
     name: "Bò thịt Wagyu",
     area: 0,
     quantity: 500,
-    harvest: { totalYield: 12000, trendYield: 10, isYieldUp: true, recentHarvest: 3000, trendRecent: 5, isRecentUp: true, remaining: 0, remainingQty: 150, ratio: 30 },
+    harvest: {
+      totalYield: 12000,
+      trendYield: 10,
+      isYieldUp: true,
+      recentHarvest: 3000,
+      trendRecent: 5,
+      isRecentUp: true,
+      remaining: 0,
+      remainingQty: 150,
+      ratio: 30,
+    },
   },
   {
     id: "live-2",
     name: "Heo nái CP",
     area: 0,
     quantity: 1200,
-    harvest: { totalYield: 45000, trendYield: 8, isYieldUp: true, recentHarvest: 15000, trendRecent: 12, isRecentUp: true, remaining: 0, remainingQty: 450, ratio: 37 },
+    harvest: {
+      totalYield: 45000,
+      trendYield: 8,
+      isYieldUp: true,
+      recentHarvest: 15000,
+      trendRecent: 12,
+      isRecentUp: true,
+      remaining: 0,
+      remainingQty: 450,
+      ratio: 37,
+    },
   },
   {
     id: "live-3",
     name: "Gà ta thả vườn",
     area: 0,
     quantity: 8500,
-    harvest: { totalYield: 18000, trendYield: -3, isYieldUp: false, recentHarvest: 4500, trendRecent: 8, isRecentUp: true, remaining: 0, remainingQty: 2500, ratio: 29 },
+    harvest: {
+      totalYield: 18000,
+      trendYield: -3,
+      isYieldUp: false,
+      recentHarvest: 4500,
+      trendRecent: 8,
+      isRecentUp: true,
+      remaining: 0,
+      remainingQty: 2500,
+      ratio: 29,
+    },
   },
 ];
 
@@ -215,21 +417,51 @@ const aquaItems: CropItem[] = [
     name: "Tôm thẻ chân trắng",
     area: 4.5,
     quantity: 250000,
-    harvest: { totalYield: 35000, trendYield: 15, isYieldUp: true, recentHarvest: 8000, trendRecent: 10, isRecentUp: true, remaining: 2.2, remainingQty: 120000, ratio: 48 },
+    harvest: {
+      totalYield: 35000,
+      trendYield: 15,
+      isYieldUp: true,
+      recentHarvest: 8000,
+      trendRecent: 10,
+      isRecentUp: true,
+      remaining: 2.2,
+      remainingQty: 120000,
+      ratio: 48,
+    },
   },
   {
     id: "aqua-2",
     name: "Cá tra xuất khẩu",
     area: 8.0,
     quantity: 150000,
-    harvest: { totalYield: 65000, trendYield: 5, isYieldUp: true, recentHarvest: 22000, trendRecent: -2, isRecentUp: false, remaining: 4.0, remainingQty: 60000, ratio: 50 },
+    harvest: {
+      totalYield: 65000,
+      trendYield: 5,
+      isYieldUp: true,
+      recentHarvest: 22000,
+      trendRecent: -2,
+      isRecentUp: false,
+      remaining: 4.0,
+      remainingQty: 60000,
+      ratio: 50,
+    },
   },
   {
     id: "aqua-3",
     name: "Cá chẽm thương phẩm",
     area: 3.5,
     quantity: 80000,
-    harvest: { totalYield: 28000, trendYield: 8, isYieldUp: true, recentHarvest: 9000, trendRecent: 5, isRecentUp: true, remaining: 1.5, remainingQty: 30000, ratio: 42 },
+    harvest: {
+      totalYield: 28000,
+      trendYield: 8,
+      isYieldUp: true,
+      recentHarvest: 9000,
+      trendRecent: 5,
+      isRecentUp: true,
+      remaining: 1.5,
+      remainingQty: 30000,
+      ratio: 42,
+    },
   },
 ];
 
@@ -343,7 +575,14 @@ export const HealthSection: React.FC<HealthSectionProps> = ({
         if (statusFilter === "harvesting") return crop.harvesting > 0;
         return true;
       });
-  }, [activeItems, activePlotHealthMap, activePlotNameMap, selectedLocation, searchQuery, statusFilter]);
+  }, [
+    activeItems,
+    activePlotHealthMap,
+    activePlotNameMap,
+    selectedLocation,
+    searchQuery,
+    statusFilter,
+  ]);
 
   const handleResetFilters = () => {
     setSearchQuery("");
@@ -427,10 +666,16 @@ export const HealthSection: React.FC<HealthSectionProps> = ({
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">Tất cả trạng thái</SelectItem>
-                    <SelectItem value="good">Lô/Chuồng đạt chuẩn (Tốt)</SelectItem>
-                    <SelectItem value="treating">Đang xử lý bệnh hại</SelectItem>
+                    <SelectItem value="good">
+                      Lô/Chuồng đạt chuẩn (Tốt)
+                    </SelectItem>
+                    <SelectItem value="treating">
+                      Đang xử lý bệnh hại
+                    </SelectItem>
                     <SelectItem value="disease">Chờ xử lý bệnh hại</SelectItem>
-                    <SelectItem value="harvesting">Đang thu hoạch/xuất bán</SelectItem>
+                    <SelectItem value="harvesting">
+                      Đang thu hoạch/xuất bán
+                    </SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -443,7 +688,7 @@ export const HealthSection: React.FC<HealthSectionProps> = ({
               <XCircle className="w-12 h-12 text-slate-300 animate-bounce" />
               <div className="space-y-1">
                 <p className="text-sm font-bold text-slate-700">
-                  Không tìm thấy kết quả
+                  Chưa có thông tin
                 </p>
                 <p className="text-xs text-slate-400 max-w-sm">
                   Vui lòng thử điều chỉnh lại bộ lọc hoặc từ khóa tìm kiếm.
@@ -506,7 +751,15 @@ export const HealthSection: React.FC<HealthSectionProps> = ({
                         </div>
                         {/* Smaller Chart Height (h-28) with Horizontal Scroll support */}
                         <div className="h-28 w-full bg-slate-50/30 rounded-lg p-2 border border-slate-100 overflow-x-auto scrollbar-thin">
-                          <div style={{ minWidth: crop.chartData.length * 80 > 350 ? `${crop.chartData.length * 80}px` : "100%", height: "100%" }}>
+                          <div
+                            style={{
+                              minWidth:
+                                crop.chartData.length * 80 > 350
+                                  ? `${crop.chartData.length * 80}px`
+                                  : "100%",
+                              height: "100%",
+                            }}
+                          >
                             <ResponsiveContainer width="100%" height="100%">
                               <BarChart
                                 data={crop.chartData}

@@ -1,6 +1,6 @@
-import { RemoteAutoCompleteSelect } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { useGeoProvinces, useGeoWards } from "@/features/master-data";
 import { useDebounce } from "@/shared/hooks/useDebounce";
+import { RemoteAutoCompleteSelect } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { useMemo, useState } from "react";
 
 type AddressRemoteComboboxType = "province" | "ward";
@@ -20,8 +20,7 @@ const getLabel = (item: {
   fullName?: string | null;
   name?: string | null;
   code: string;
-}) =>
-  item.fullName || item.name || item.code;
+}) => item.fullName || item.name || item.code;
 
 export function AddressRemoteCombobox({
   type,
@@ -31,7 +30,7 @@ export function AddressRemoteCombobox({
   disabled = false,
   placeholder,
   searchPlaceholder,
-  emptyText = "Không tìm thấy kết quả",
+  emptyText = "Chưa có thông tin",
 }: AddressRemoteComboboxProps) {
   const [searchValue, setSearchValue] = useState("");
   const debouncedSearch = useDebounce(searchValue.trim(), 300);
@@ -104,9 +103,11 @@ export function AddressRemoteCombobox({
         value,
         label: selectedItem ? getLabel(selectedItem) : value,
         keywords: selectedItem
-          ? [selectedItem.code, selectedItem.name, selectedItem.fullName].filter(
-              (keyword): keyword is string => Boolean(keyword),
-            )
+          ? [
+              selectedItem.code,
+              selectedItem.name,
+              selectedItem.fullName,
+            ].filter((keyword): keyword is string => Boolean(keyword))
           : [value],
       },
       ...mappedOptions,

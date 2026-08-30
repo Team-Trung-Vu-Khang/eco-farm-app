@@ -1,4 +1,3 @@
-import { useMemo, useState } from "react";
 import {
   Button,
   Checkbox,
@@ -12,6 +11,7 @@ import {
   SheetTitle,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { Search } from "lucide-react";
+import { useMemo, useState } from "react";
 import {
   type AreaNode,
   type FilterState,
@@ -242,7 +242,7 @@ export function FarmingFilterDrawer({
                   })}
                   {filteredRegions.length === 0 && (
                     <p className="text-sm text-muted-foreground text-center py-8">
-                      Không tìm thấy kết quả
+                      Chưa có thông tin
                     </p>
                   )}
                 </div>

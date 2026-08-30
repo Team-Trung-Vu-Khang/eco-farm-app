@@ -1,34 +1,32 @@
-import React, { useState, useMemo, useEffect } from "react";
 import {
+  AutoCompleteSelect,
+  Button,
   Card,
   CardContent,
   CardHeader,
   CardTitle,
   Dialog,
   DialogContent,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
-  Button,
-  AutoCompleteSelect,
   Label,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import {
-  FolderOpen,
-  ChevronRight,
   ChevronDown,
-  TrendingUp,
-  TrendingDown,
+  ChevronRight,
+  FolderOpen,
   Info,
-  ShieldAlert,
-  Wrench,
   Layers,
   Leaf,
   Search,
-  Activity,
-  Award,
+  ShieldAlert,
   SlidersHorizontal,
+  TrendingDown,
+  TrendingUp,
+  Wrench,
 } from "lucide-react";
+import React, { useEffect, useMemo, useState } from "react";
 
 interface TreeNode {
   id: string;
@@ -607,7 +605,7 @@ export const MaterialConsumptionReport: React.FC<
   useEffect(() => {
     if (treeData && treeData.length > 0) {
       setSelectedNode(treeData[0]);
-      
+
       const defaultOpen: Record<string, boolean> = {};
       defaultOpen[treeData[0].id] = true;
       if (treeData[0].children?.[0]) {
@@ -1097,7 +1095,7 @@ export const MaterialConsumptionReport: React.FC<
           <div className="space-y-1">
             {filteredTreeData.length === 0 ? (
               <div className="text-xs text-slate-400 text-center py-4">
-                Không tìm thấy kết quả
+                Chưa có thông tin
               </div>
             ) : (
               filteredTreeData.map((node) => renderTreeNode(node))
