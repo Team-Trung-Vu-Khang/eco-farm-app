@@ -45,7 +45,7 @@ export const RemoteSearchSelect: React.FC<RemoteSearchSelectProps> = ({
   allLabel = "Tất cả",
   hideAllOption = false,
   searchPlaceholder = "Tìm kiếm...",
-  emptyText = "Không tìm thấy kết quả",
+  emptyText = "Chưa có thông tin",
 }) => {
   const [open, setOpen] = useState(false);
 

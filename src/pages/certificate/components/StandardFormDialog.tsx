@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useFileUpload } from "@/features/storage";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   Badge,
@@ -9,18 +9,17 @@ import {
   Popover,
   PopoverContent,
   PopoverTrigger,
+  ScrollArea,
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-  ScrollArea,
   Textarea,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { Check, Eye, Plus, Search, Trash2, Upload, X } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useFieldArray, useForm } from "react-hook-form";
-import { useFileUpload } from "@/features/storage";
-import type { Certificate, CertificationOrganization } from "../types/types";
 import {
   STANDARD_DOCUMENT_TYPES,
   STANDARD_FORM_STATUSES,
@@ -29,6 +28,7 @@ import {
   type StandardFormInput,
   type StandardFormValues,
 } from "../data/standard-form.schema";
+import type { Certificate, CertificationOrganization } from "../types/types";
 
 interface StandardFormDialogProps {
   open: boolean;
@@ -673,7 +673,7 @@ export function StandardFormDialog({
                     ))
                   ) : (
                     <span className="text-xs text-slate-500">
-                      Click để mở popup chọn tổ chức.
+                      Nhấn để mở popup chọn tổ chức.
                     </span>
                   )}
                 </div>
