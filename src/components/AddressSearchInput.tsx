@@ -236,7 +236,7 @@ export default function AddressSearchInput({
         <Loader2 className="absolute right-8 top-3 h-4 w-4 animate-spin text-slate-400" />
       )}
       {results.length > 0 && (
-        <div className="absolute z-50 mt-1 max-h-60 w-full overflow-y-auto rounded-md border bg-white p-1 shadow-lg">
+        <div className="absolute z-[9999] mt-1 max-h-60 w-full overflow-y-auto rounded-md border bg-white p-1 shadow-lg">
           {results.map((result) => (
             <button
               key={result.place_id}

@@ -1,84 +1,17 @@
-import { useGeoProvinces, useGeoWards } from "@/features/master-data";
-import {
-  Button,
-  Input,
-  Label,
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-  useToast,
-} from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import AddressSearchInput from "@/components/AddressSearchInput";
+import { AddressRemoteCombobox } from "@/components/AddressRemoteCombobox";
+import { Button, Input, Label, useToast } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { MapPin } from "lucide-react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import {
-  MapContainer,
-  Marker,
-  TileLayer,
-  useMap,
-  useMapEvents,
-} from "react-leaflet";
+import { useCallback, useEffect } from "react";
+import { MapContainer, Marker, TileLayer, useMap, useMapEvents } from "react-leaflet";
 
 import defaultMarkerIconUrl from "leaflet/dist/images/marker-icon.png";
 import defaultMarkerIcon2xUrl from "leaflet/dist/images/marker-icon-2x.png";
 import defaultMarkerShadowUrl from "leaflet/dist/images/marker-shadow.png";
 
 import type { BranchFormData } from "../../types/types";
-
-interface AddressSuggestion {
-  id?: string;
-  lat: number;
-  lon: number;
-  display_name: string;
-  name?: string;
-  addressText?: string;
-  types?: string[];
-  address?: {
-    road?: string;
-    street?: string;
-    house_number?: string;
-    suburb?: string;
-    neighbourhood?: string;
-    quarter?: string;
-    city_district?: string;
-    county?: string;
-    town?: string;
-    city?: string;
-    province?: string;
-    state?: string;
-    ward?: string;
-    district?: string;
-  };
-}
-
-interface LatLngLike {
-  location?: unknown;
-  latLng?: unknown;
-  geometry?: {
-    location?: unknown;
-  };
-  lat?: unknown;
-  latitude?: unknown;
-  lng?: unknown;
-  lon?: unknown;
-  longitude?: unknown;
-  long?: unknown;
-}
-
-interface Map4DAutosuggestResponse {
-  code: string;
-  message?: string;
-  result: Array<{
-    id?: string | null;
-    name: string;
-    address: string;
-    location: { lng: number; lat: number };
-    types: string[];
-  }> | null;
-}
 
 interface LocationStepProps {
   formData: BranchFormData;
@@ -146,16 +79,7 @@ const DraggableLocationMarker = ({
 };
 
 export function LocationStep({ formData, updateFormData }: LocationStepProps) {
-  const MAP4D_ACCESS_KEY = import.meta.env.VITE_MAP4D_ACCESS_KEY;
   const { toast } = useToast();
-  const searchContainerRef = useRef<HTMLDivElement>(null);
-  const [searchAddress, setSearchAddress] = useState("");
-  const [isInputFocused, setIsInputFocused] = useState(false);
-  const [addressSuggestions, setAddressSuggestions] = useState<
-    AddressSuggestion[]
-  >([]);
-  const [showSuggestions, setShowSuggestions] = useState(false);
-  const skipNextSearchRef = useRef(false);
 
   const safeLatitude = Number.isFinite(formData.latitude)
     ? formData.latitude
@@ -164,118 +88,6 @@ export function LocationStep({ formData, updateFormData }: LocationStepProps) {
     ? formData.longitude
     : DEFAULT_CENTER[1];
   const center: [number, number] = [safeLatitude, safeLongitude];
-
-  const provincesQuery = useGeoProvinces({
-    params: {
-      page: 0,
-      size: 100,
-      status: "active",
-    },
-  });
-
-  const selectedProvince = useMemo(
-    () =>
-      provincesQuery.items.find(
-        (province) =>
-          province.code === formData.city ||
-          province.name === formData.city ||
-          province.fullName === formData.city,
-      ),
-    [formData.city, provincesQuery.items],
-  );
-
-  const wardsQuery = useGeoWards({
-    params: {
-      provinceCode: selectedProvince?.code || "",
-      page: 0,
-      size: 100,
-      status: "active",
-    },
-    enabled: Boolean(selectedProvince?.code),
-  });
-
-  const wardOptions = useMemo(() => {
-    return wardsQuery.items.map((ward) => ({
-      code: ward.code,
-      name: ward.fullName || ward.name,
-    }));
-  }, [wardsQuery.items]);
-
-  const selectedWard = useMemo(
-    () =>
-      wardOptions.find(
-        (ward) =>
-          ward.code === formData.ward ||
-          ward.name === formData.ward ||
-          ward.code === formData.district ||
-          ward.name === formData.district,
-      ),
-    [formData.district, formData.ward, wardOptions],
-  );
-
-  const toLatLngLike = (value: unknown): LatLngLike | undefined => {
-    if (!value || typeof value !== "object") {
-      return undefined;
-    }
-
-    return value as LatLngLike;
-  };
-
-  const extractLatLng = useCallback(
-    (source: unknown): { lat: number; lon: number } | null => {
-      const candidates: Array<LatLngLike | undefined> = [
-        toLatLngLike(toLatLngLike(source)?.location),
-        toLatLngLike(toLatLngLike(source)?.latLng),
-        toLatLngLike(toLatLngLike(source)?.geometry?.location),
-        toLatLngLike(source),
-      ];
-
-      for (const candidate of candidates) {
-        const latRaw = candidate?.lat ?? candidate?.latitude;
-        const lonRaw =
-          candidate?.lng ??
-          candidate?.lon ??
-          candidate?.longitude ??
-          candidate?.long;
-        const lat = Number(latRaw);
-        const lon = Number(lonRaw);
-        if (Number.isFinite(lat) && Number.isFinite(lon)) {
-          return { lat, lon };
-        }
-      }
-
-      return null;
-    },
-    [],
-  );
-
-  const normalizeMap4dSuggestion = useCallback(
-    (
-      item: NonNullable<Map4DAutosuggestResponse["result"]>[number],
-    ): AddressSuggestion | null => {
-      const point = extractLatLng(item.location);
-      if (!point) return null;
-
-      const name = item.name || "";
-      const addressText = item.address || "";
-      const displayName =
-        [name, addressText].filter(Boolean).join(" - ") || name || addressText;
-
-      return {
-        id: item.id || undefined,
-        lat: point.lat,
-        lon: point.lon,
-        display_name: displayName,
-        name,
-        addressText,
-        types: Array.isArray(item.types) ? item.types : [],
-        address: {
-          road: item.address,
-        },
-      };
-    },
-    [extractLatLng],
-  );
 
   const handlePickLocation = useCallback(
     (lat: number, lon: number) => {
@@ -286,101 +98,6 @@ export function LocationStep({ formData, updateFormData }: LocationStepProps) {
     },
     [updateFormData],
   );
-
-  const handleSearchAddress = useCallback(
-    async (query: string) => {
-      if (!query || query.length < 3) {
-        setAddressSuggestions([]);
-        setShowSuggestions(false);
-        return;
-      }
-      if (!MAP4D_ACCESS_KEY) {
-        setAddressSuggestions([]);
-        setShowSuggestions(false);
-        return;
-      }
-      try {
-        const params = new URLSearchParams({
-          key: MAP4D_ACCESS_KEY,
-          text: query,
-        });
-        const response = await fetch(
-          `https://api.map4d.vn/sdk/autosuggest?${params.toString()}`,
-        );
-        if (!response.ok) {
-          setAddressSuggestions([]);
-          setShowSuggestions(false);
-          return;
-        }
-        const data: Map4DAutosuggestResponse = await response.json();
-        if (data?.code !== "ok") {
-          setAddressSuggestions([]);
-          setShowSuggestions(false);
-          return;
-        }
-
-        const list = Array.isArray(data.result) ? data.result : [];
-        const suggestions: AddressSuggestion[] = list
-          .map(normalizeMap4dSuggestion)
-          .filter((item): item is AddressSuggestion => item !== null);
-
-        setAddressSuggestions(suggestions);
-        setShowSuggestions(suggestions.length > 0);
-      } catch (e) {
-        console.error(e);
-        setAddressSuggestions([]);
-        setShowSuggestions(false);
-        toast({
-          title: "Lỗi tìm kiếm",
-          description: "Không thể tìm địa chỉ lúc này.",
-          variant: "destructive",
-        });
-      }
-    },
-    [MAP4D_ACCESS_KEY, normalizeMap4dSuggestion, toast],
-  );
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (
-        searchContainerRef.current &&
-        !searchContainerRef.current.contains(event.target as Node)
-      ) {
-        setIsInputFocused(false);
-        setShowSuggestions(false);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
-
-  useEffect(() => {
-    const timer = window.setTimeout(() => {
-      if (skipNextSearchRef.current) {
-        skipNextSearchRef.current = false;
-        return;
-      }
-      if (searchAddress && isInputFocused) handleSearchAddress(searchAddress);
-    }, 400);
-    return () => window.clearTimeout(timer);
-  }, [searchAddress, isInputFocused, handleSearchAddress]);
-
-  useEffect(() => {
-    if (skipNextSearchRef.current) {
-      skipNextSearchRef.current = false;
-      return;
-    }
-
-    const current = [
-      formData.address,
-      formData.ward,
-      formData.district,
-      formData.city,
-    ]
-      .filter(Boolean)
-      .join(", ");
-    setSearchAddress(current);
-  }, [formData.address, formData.city, formData.district, formData.ward]);
 
   useEffect(() => {
     if (navigator.geolocation && !Number.isFinite(formData.latitude)) {
@@ -398,47 +115,6 @@ export function LocationStep({ formData, updateFormData }: LocationStepProps) {
       );
     }
   }, [formData.latitude, updateFormData]);
-
-  const handleSelectAddress = (suggestion: AddressSuggestion) => {
-    const address = suggestion.address || {};
-    const road = address.road || address.street || "";
-    const houseNumber = address.house_number || "";
-    const streetAddress = houseNumber ? `${houseNumber} ${road}` : road;
-
-    const selectedAddress =
-      suggestion.addressText ||
-      suggestion.name ||
-      suggestion.display_name ||
-      streetAddress;
-
-    updateFormData({
-      latitude: suggestion.lat,
-      longitude: suggestion.lon,
-      address: streetAddress || selectedAddress,
-      ward:
-        address.ward ||
-        address.suburb ||
-        address.neighbourhood ||
-        address.quarter ||
-        "",
-      district:
-        address.district ||
-        address.city_district ||
-        address.county ||
-        address.town ||
-        "",
-      city: address.city || address.province || address.state || "",
-    });
-
-    skipNextSearchRef.current = true;
-    setSearchAddress(selectedAddress);
-    setShowSuggestions(false);
-    setIsInputFocused(false);
-    toast({
-      title: "Thành công",
-      description: "Đã tìm thấy địa chỉ trên bản đồ",
-    });
-  };
 
   const handleGetCurrentLocation = () => {
     if (navigator.geolocation) {
@@ -465,52 +141,16 @@ export function LocationStep({ formData, updateFormData }: LocationStepProps) {
           <h3 className="font-semibold">Tìm kiếm địa chỉ trên bản đồ</h3>
         </div>
 
-        <div className="relative" ref={searchContainerRef}>
-          <Input
-            value={searchAddress}
-            onChange={(event) => {
-              setSearchAddress(event.target.value);
-              if (!event.target.value) setShowSuggestions(false);
-            }}
-            placeholder="Nhập địa chỉ để tìm kiếm..."
-            onFocus={() => {
-              setIsInputFocused(true);
-              if (addressSuggestions.length > 0) setShowSuggestions(true);
-            }}
-            onBlur={() => {
-              window.setTimeout(() => {
-                const container = searchContainerRef.current;
-                const activeEl = document.activeElement;
-                if (!container || !activeEl || !container.contains(activeEl)) {
-                  setIsInputFocused(false);
-                  setShowSuggestions(false);
-                }
-              }, 0);
-            }}
-          />
-
-          {showSuggestions && addressSuggestions.length > 0 && (
-            <div className="absolute z-[99999] mt-1 max-h-60 w-full overflow-y-auto rounded-lg border bg-white shadow-lg">
-              {addressSuggestions.map((suggestion, index) => (
-                <div
-                  key={index}
-                  className="cursor-pointer border-b px-4 py-3 transition-colors last:border-b-0 hover:bg-gray-100"
-                  onMouseDown={(event) => event.preventDefault()}
-                  onClick={() => handleSelectAddress(suggestion)}
-                >
-                  <div className="flex items-start gap-2">
-                    <MapPin className="mt-1 h-4 w-4 shrink-0 text-primary" />
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-medium text-gray-900">
-                        {suggestion.display_name}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
+        <AddressSearchInput
+          value={formData.address}
+          onChange={(address) => updateFormData({ address })}
+          onSelectLocation={({ address, latitude, longitude }) =>
+            updateFormData({ address, latitude, longitude })
+          }
+          latitude={formData.latitude}
+          longitude={formData.longitude}
+          placeholder="Tìm kiếm địa chỉ bằng Google Maps..."
+        />
 
         <div className="h-96 w-full overflow-hidden rounded-lg border">
           <MapContainer
@@ -530,7 +170,7 @@ export function LocationStep({ formData, updateFormData }: LocationStepProps) {
           </MapContainer>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div className="space-y-2">
             <Label>Vĩ độ</Label>
             <Input value={formData.latitude.toFixed(6)} disabled />
@@ -565,67 +205,37 @@ export function LocationStep({ formData, updateFormData }: LocationStepProps) {
               placeholder="Số nhà, tên đường"
             />
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="city">Tỉnh / Thành phố</Label>
-              <Select
-                value={selectedProvince?.code || ""}
-                onValueChange={(value) => {
-                  const province = provincesQuery.items.find(
-                    (item) => item.code === value,
-                  );
-                  updateFormData({
-                    city: province?.fullName || province?.name || value,
-                    ward: "",
-                  });
-                }}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Chọn Tỉnh / Thành phố" />
-                </SelectTrigger>
-                <SelectContent className="max-h-80 overflow-y-auto">
-                  {provincesQuery.items.map((province) => (
-                    <SelectItem key={province.code} value={province.code}>
-                      {province.fullName || province.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <AddressRemoteCombobox
+                type="province"
+                value={formData.city}
+                onChange={(value) =>
+                  updateFormData({ city: value, district: "", ward: "" })
+                }
+                placeholder="Chọn Tỉnh / Thành phố"
+                searchPlaceholder="Tìm tỉnh thành..."
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="ward">Phường / Xã</Label>
-              <Select
-                value={selectedWard?.code || ""}
-                onValueChange={(value) => {
-                  const ward = wardOptions.find((item) => item.code === value);
-                  updateFormData({
-                    ward: ward?.name || value,
-                    district: ward?.name || value,
-                  });
-                }}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Chọn Phường / Xã" />
-                </SelectTrigger>
-                <SelectContent className="max-h-80 overflow-y-auto">
-                  {wardOptions.map((ward) => (
-                    <SelectItem key={ward.code} value={ward.code}>
-                      {ward.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <AddressRemoteCombobox
+                type="ward"
+                value={formData.ward}
+                onChange={(value) =>
+                  updateFormData({ ward: value, district: value })
+                }
+                provinceCode={formData.city}
+                placeholder={
+                  formData.city
+                    ? "Chọn Phường / Xã"
+                    : "Chọn Tỉnh / Thành phố trước"
+                }
+                searchPlaceholder="Tìm phường xã..."
+              />
             </div>
           </div>
-          {selectedWard && (
-            <p className="text-xs text-muted-foreground">
-              Đã chọn:{" "}
-              {selectedProvince?.fullName ||
-                selectedProvince?.name ||
-                formData.city}
-              {selectedWard?.name ? `, ${selectedWard.name}` : ""}
-            </p>
-          )}
         </div>
       </div>
     </div>

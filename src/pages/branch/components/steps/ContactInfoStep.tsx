@@ -9,6 +9,10 @@ import {
   CardTitle,
   Input,
   Label,
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { Mail, Phone, Plus, Trash2, User, Users } from "lucide-react";
 import { useMemo, useState } from "react";
@@ -48,15 +52,16 @@ export function ContactInfoStep({
     setSelectedContactId(contact.id);
     setDraftContact({
       contactId: String(contact.id),
-      name: contact.fullName,
+      name: contact.fullName.trim(),
       phone: contact.phone,
       email: contact.email || "",
     });
   };
 
   const handleAddNewContactInfo = () => {
-    if (!draftContact.name && !draftContact.phone && !draftContact.email)
+    if (!draftContact.name.trim() || !draftContact.phone.trim()) {
       return;
+    }
 
     const nextContactInfos: ContactInfo[] = [
       ...formData.contactInfos,
@@ -106,93 +111,114 @@ export function ContactInfoStep({
             Thêm liên hệ mới
           </CardTitle>
           <CardDescription className="text-sm text-muted-foreground">
-            Chọn nhanh từ danh sách liên hệ có sẵn hoặc nhập mới bên dưới.
+            Chọn nhanh từ danh bạ hoặc nhập mới bên dưới.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
-          <div className="space-y-2">
-            <Label className="text-sm font-semibold">
-              Họ và tên <span className="text-red-500">*</span>
-            </Label>
-            <div className="flex gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setIsContactDialogOpen(true)}
-                className="h-11 flex-1 justify-between border-primary/20 bg-muted/20 text-left font-normal hover:border-primary/40 hover:bg-primary/5"
-              >
-                <span className="truncate">{selectedContactLabel}</span>
-                <User className="h-4 w-4 shrink-0 text-muted-foreground" />
-              </Button>
-              {(draftContact.name ||
-                draftContact.phone ||
-                draftContact.email) && (
-                <Button
-                  type="button"
-                  variant="ghost"
-                  onClick={() => {
-                    setDraftContact({ contactId: "", name: "", phone: "", email: "" });
+          <Tabs defaultValue="directory" className="w-full">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="directory">Liên hệ từ danh bạ</TabsTrigger>
+              <TabsTrigger value="new">Liên hệ mới</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="directory" className="mt-5 space-y-4">
+              <div className="space-y-2">
+                <Label className="text-sm font-semibold" required>
+                  Họ và tên
+                </Label>
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setIsContactDialogOpen(true)}
+                    className="h-11 flex-1 justify-between border-primary/20 bg-muted/20 text-left font-normal hover:border-primary/40 hover:bg-primary/5"
+                  >
+                    <span className="truncate">{selectedContactLabel}</span>
+                    <Users className="h-4 w-4 shrink-0 text-muted-foreground" />
+                  </Button>
+                  {(draftContact.name ||
+                    draftContact.phone ||
+                    draftContact.email) && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      onClick={() => {
+                        setDraftContact({
+                          contactId: "",
+                          name: "",
+                          phone: "",
+                          email: "",
+                        });
+                        setSelectedContactId(null);
+                      }}
+                      className="h-11 px-3 text-muted-foreground"
+                    >
+                      Xóa
+                    </Button>
+                  )}
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Chọn một liên hệ đã lưu từ danh bạ để tự điền tên, số điện
+                  thoại và email.
+                </p>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="new" className="mt-5 space-y-4">
+              <div className="space-y-2">
+                <Label className="text-sm font-semibold" required>
+                  Họ và tên
+                </Label>
+                <Input
+                  value={draftContact.name}
+                  onChange={(event) => {
                     setSelectedContactId(null);
+                    setDraftContact((prev) => ({
+                      ...prev,
+                      name: event.target.value,
+                    }));
                   }}
-                  className="h-11 px-3 text-muted-foreground"
-                >
-                  Xóa
-                </Button>
-              )}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Có thể chọn liên hệ từ danh sách đã lưu.
-            </p>
-          </div>
+                  placeholder="VD: Nguyễn Văn A"
+                />
+              </div>
 
-          <div className="space-y-2">
-            <Label>Hoặc nhập tên mới</Label>
-            <Input
-              value={draftContact.name}
-              onChange={(event) =>
-                setDraftContact((prev) => ({
-                  ...prev,
-                  name: event.target.value,
-                }))
-              }
-              placeholder="VD: Nguyễn Văn A"
-            />
-          </div>
-
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <div className="space-y-2">
-              <Label>
-                Số điện thoại <span className="text-red-500">*</span>
-              </Label>
-              <Input
-                value={draftContact.phone}
-                onChange={(event) =>
-                  setDraftContact((prev) => ({
-                    ...prev,
-                    phone: event.target.value,
-                  }))
-                }
-                placeholder="09xx xxx xxx"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>Email</Label>
-              <Input
-                type="email"
-                value={draftContact.email}
-                onChange={(event) =>
-                  setDraftContact((prev) => ({
-                    ...prev,
-                    email: event.target.value,
-                  }))
-                }
-                placeholder="email@example.com"
-              />
-            </div>
-          </div>
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <Label className="text-sm font-semibold" required>
+                    Số điện thoại
+                  </Label>
+                  <Input
+                    value={draftContact.phone}
+                    onChange={(event) =>
+                      setDraftContact((prev) => ({
+                        ...prev,
+                        phone: event.target.value,
+                      }))
+                    }
+                    placeholder="09xx xxx xxx"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Email</Label>
+                  <Input
+                    type="email"
+                    value={draftContact.email}
+                    onChange={(event) =>
+                      setDraftContact((prev) => ({
+                        ...prev,
+                        email: event.target.value,
+                      }))
+                    }
+                    placeholder="email@example.com"
+                  />
+                </div>
+              </div>
+            </TabsContent>
+          </Tabs>
 
           <Button
             onClick={handleAddNewContactInfo}
+            disabled={!draftContact.name.trim() || !draftContact.phone.trim()}
             className="w-full bg-primary hover:bg-primary/90"
           >
             <Plus className="mr-2 h-4 w-4" />

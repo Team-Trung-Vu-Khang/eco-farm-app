@@ -4,14 +4,9 @@ import {
   CardContent,
   Input,
   Label,
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import { AddressRemoteCombobox } from "@/components/AddressRemoteCombobox";
 import AddressSearchInput from "@/components/AddressSearchInput";
-import { useGeoProvinces, useGeoWards } from "@/features/master-data";
 import { Building2, FileText, MapPin } from "lucide-react";
 import type { Enterprise } from "@/pages/enterprise/data/constants";
 import { BranchEnterpriseSelector } from "./steps/BranchEnterpriseSelector";
@@ -44,33 +39,6 @@ export function SimpleBranchForm({
   isEdit = false,
   isSaving = false,
 }: SimpleBranchFormProps) {
-  const provincesQuery = useGeoProvinces({
-    params: { page: 0, size: 100, status: "active" },
-  });
-  const selectedProvince = provincesQuery.items.find(
-    (province) =>
-      province.code === formData.city ||
-      province.name === formData.city ||
-      province.fullName === formData.city,
-  );
-  const wardsQuery = useGeoWards({
-    params: {
-      provinceCode: selectedProvince?.code || "",
-      page: 0,
-      size: 100,
-      status: "active",
-    },
-    enabled: Boolean(selectedProvince?.code),
-  });
-  const selectedWard = wardsQuery.items.find(
-    (ward) =>
-      ward.code === formData.ward ||
-      ward.name === formData.ward ||
-      ward.fullName === formData.ward ||
-      ward.code === formData.district ||
-      ward.name === formData.district ||
-      ward.fullName === formData.district,
-  );
   const isValid = Boolean(
     formData.enterpriseId.trim() &&
       formData.name.trim() &&
@@ -103,24 +71,15 @@ export function SimpleBranchForm({
               <FileText className="h-4 w-4 text-emerald-600" />
               Thông tin chi nhánh
             </div>
-            <div className="space-y-2">
-              <Label required>Tên chi nhánh</Label>
-              <Input value={formData.name} onChange={(event) => updateFormData({ name: event.target.value })} placeholder="VD: Chi nhánh Hà Nội" />
-            </div>
-          </section>
-
-          <section className="space-y-4 border-t border-slate-100 pt-5">
-            <div className="flex items-center gap-2 text-sm font-bold text-slate-800">
-              <FileText className="h-4 w-4 text-emerald-600" />
-              Thông tin thuế
-            </div>
-            <div className="space-y-2">
-              <Label>Mã số thuế</Label>
-              <Input value={formData.taxCode} onChange={(event) => updateFormData({ taxCode: event.target.value })} placeholder="Nhập mã số thuế" />
-            </div>
-            <div className="space-y-2">
-              <Label>Địa chỉ thuế</Label>
-              <Input value={formData.taxAddress} onChange={(event) => updateFormData({ taxAddress: event.target.value })} placeholder="Địa chỉ đăng ký thuế" />
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-2">
+                <Label required>Tên chi nhánh</Label>
+                <Input value={formData.name} onChange={(event) => updateFormData({ name: event.target.value })} placeholder="VD: Chi nhánh Hà Nội" />
+              </div>
+              <div className="space-y-2">
+                <Label>Mã số thuế</Label>
+                <Input value={formData.taxCode} onChange={(event) => updateFormData({ taxCode: event.target.value })} placeholder="Nhập mã số thuế" />
+              </div>
             </div>
           </section>
 
@@ -132,28 +91,32 @@ export function SimpleBranchForm({
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
                 <Label>Tỉnh / Thành phố</Label>
-                <Select value={selectedProvince?.code || ""} onValueChange={(value) => {
-                  const province = provincesQuery.items.find((item) => item.code === value);
-                  updateFormData({ city: province?.fullName || province?.name || value, district: "", ward: "" });
-                }}>
-                  <SelectTrigger><SelectValue placeholder="Chọn tỉnh / thành phố" /></SelectTrigger>
-                  <SelectContent className="max-h-60 overflow-y-auto">
-                    {provincesQuery.items.map((province) => <SelectItem key={province.code} value={province.code}>{province.fullName || province.name}</SelectItem>)}
-                  </SelectContent>
-                </Select>
+                <AddressRemoteCombobox
+                  type="province"
+                  value={formData.city}
+                  onChange={(value) =>
+                    updateFormData({ city: value, district: "", ward: "" })
+                  }
+                  placeholder="Chọn Tỉnh / Thành Phố"
+                  searchPlaceholder="Tìm tỉnh thành..."
+                />
               </div>
               <div className="space-y-2">
                 <Label>Phường / Xã</Label>
-                <Select value={selectedWard?.code || ""} onValueChange={(value) => {
-                  const ward = wardsQuery.items.find((item) => item.code === value);
-                  const name = ward?.fullName || ward?.name || value;
-                  updateFormData({ ward: name, district: name });
-                }} disabled={!selectedProvince?.code}>
-                  <SelectTrigger><SelectValue placeholder="Chọn phường / xã" /></SelectTrigger>
-                  <SelectContent className="max-h-60 overflow-y-auto">
-                    {wardsQuery.items.map((ward) => <SelectItem key={ward.code} value={ward.code}>{ward.fullName || ward.name}</SelectItem>)}
-                  </SelectContent>
-                </Select>
+                <AddressRemoteCombobox
+                  type="ward"
+                  value={formData.ward}
+                  onChange={(value) =>
+                    updateFormData({ ward: value, district: value })
+                  }
+                  provinceCode={formData.city}
+                  placeholder={
+                    formData.city
+                      ? "Chọn Phường / Xã"
+                      : "Chọn Tỉnh / Thành Phố trước"
+                  }
+                  searchPlaceholder="Tìm phường xã..."
+                />
               </div>
             </div>
             <div className="space-y-2">

@@ -7,7 +7,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { FileText } from "lucide-react";
 import { useEffect } from "react";
 import { Controller, useFormContext } from "react-hook-form";
 
@@ -121,7 +120,7 @@ export function BasicInfoStep({
         ) : null}
       </div>
 
-      <div className="grid grid-cols-1 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label htmlFor="name" required>
             Tên chi nhánh
@@ -150,7 +149,31 @@ export function BasicInfoStep({
           ) : null}
         </div>
 
-        <div className="col-span-1 sm:col-span-2 space-y-2">
+        <div className="space-y-2">
+          <Label htmlFor="taxCode">Mã số thuế</Label>
+          <Controller
+            control={control}
+            name="taxCode"
+            render={({ field }) => (
+              <Input
+                id="taxCode"
+                value={field.value}
+                onChange={(event) => {
+                  clearErrors("taxCode");
+                  field.onChange(event.target.value);
+                }}
+                onBlur={field.onBlur}
+                ref={field.ref}
+                name={field.name}
+                placeholder="VD: 0123456789-001"
+              />
+            )}
+          />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 gap-4">
+        <div className="space-y-2">
           <Label htmlFor="website">Website</Label>
           <Controller
             control={control}
@@ -207,58 +230,6 @@ export function BasicInfoStep({
             ) : null}
           </div>
         )}
-      </div>
-
-      <div className="border-t pt-4">
-        <div className="mb-4 flex items-center gap-2">
-          <FileText className="h-5 w-5 text-primary" />
-          <h3 className="font-semibold">Thông tin thuế</h3>
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Label htmlFor="taxCode">Mã số thuế chi nhánh</Label>
-            <Controller
-              control={control}
-              name="taxCode"
-              render={({ field }) => (
-                <Input
-                  id="taxCode"
-                  value={field.value}
-                  onChange={(event) => {
-                    clearErrors("taxCode");
-                    field.onChange(event.target.value);
-                  }}
-                  onBlur={field.onBlur}
-                  ref={field.ref}
-                  name={field.name}
-                  placeholder="VD: 0123456789-001"
-                />
-              )}
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="taxAddress">Địa chỉ thuế</Label>
-            <Controller
-              control={control}
-              name="taxAddress"
-              render={({ field }) => (
-                <Input
-                  id="taxAddress"
-                  value={field.value}
-                  onChange={(event) => {
-                    clearErrors("taxAddress");
-                    field.onChange(event.target.value);
-                  }}
-                  onBlur={field.onBlur}
-                  ref={field.ref}
-                  name={field.name}
-                  placeholder="Địa chỉ đăng ký thuế"
-                />
-              )}
-            />
-          </div>
-        </div>
       </div>
     </div>
   );
