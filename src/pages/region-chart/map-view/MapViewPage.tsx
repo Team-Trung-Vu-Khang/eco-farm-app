@@ -11,7 +11,7 @@ import type {
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { ChevronLeft, ChevronRight, Maximize2, Minimize2 } from "lucide-react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   GeoJSON,
   LayerGroup,
@@ -24,12 +24,21 @@ import {
   useMapEvents,
 } from "react-leaflet";
 
-import areaData from "../../../assets/map/area.json";
-import plantData from "../../../assets/map/plant.json";
-import plotData from "../../../assets/map/plot.json";
-import zoneData from "../../../assets/map/zone.json";
-import { MOCK_AREAS, MOCK_REGIONS } from "../constants";
+import { useAreas } from "@/features/farm/hooks/useAreas";
+import { usePlantIdentifications } from "@/features/farm/hooks/usePlantIdentifications";
+import { usePlots } from "@/features/farm/hooks/usePlots";
+import {
+  useProductionHealthMetricByScope,
+  useUpsertProductionHealthMetric,
+} from "@/features/farm/hooks/useProductionHealthMetrics";
+import { useRegions } from "@/features/farm/hooks/useRegions";
+import type {
+  CoordinatePoint,
+  FarmCultivationZoneScopeType,
+} from "@/features/farm/types/farm.type";
+import { useDebounce } from "@/shared/hooks/useDebounce";
 import { MapLegend } from "./components/MapLegend";
+import type { RemoteSelectOption } from "./components/RemoteSearchSelect";
 import { SidebarDetail } from "./components/SidebarDetail";
 import { SidebarFilter } from "./components/SidebarFilter";
 import { SoilEditDialog } from "./components/SoilEditDialog";
@@ -42,14 +51,70 @@ import type {
 } from "./types/types";
 import {
   getCenterFromCoordinates,
-  getLocationInfo,
   getPolygonCenter,
   isPointInPolygon,
 } from "./utils/utils";
 
+// API caps page size at 100, so this is the largest single page we can request.
+const MAP_DATA_QUERY = { page: 0, size: 100 };
+
+const toBoundaryRing = (boundary?: CoordinatePoint[]): [number, number][] => {
+  const ring = (boundary || [])
+    .filter(
+      (point) =>
+        typeof point.latitude === "number" &&
+        typeof point.longitude === "number",
+    )
+    .map((point) => [point.longitude, point.latitude] as [number, number]);
+
+  if (ring.length < 3) return [];
+
+  const [firstLng, firstLat] = ring[0];
+  const [lastLng, lastLat] = ring[ring.length - 1];
+  if (firstLng !== lastLng || firstLat !== lastLat) {
+    ring.push([firstLng, firstLat]);
+  }
+  return ring;
+};
+
+const buildPolygonFeature = (
+  boundary: CoordinatePoint[] | undefined,
+  properties: GeoJsonProperties,
+): GeoFeature | null => {
+  const ring = toBoundaryRing(boundary);
+  if (!ring.length) return null;
+
+  return {
+    type: "Feature",
+    geometry: { type: "Polygon", coordinates: [ring] },
+    properties,
+  };
+};
+
+const buildPointFeature = (
+  latitude: number | undefined,
+  longitude: number | undefined,
+  properties: GeoJsonProperties,
+): GeoFeature | null => {
+  if (typeof latitude !== "number" || typeof longitude !== "number") {
+    return null;
+  }
+
+  return {
+    type: "Feature",
+    geometry: { type: "Point", coordinates: [longitude, latitude] },
+    properties,
+  };
+};
+
 const DEFAULT_CENTER: [number, number] = [11.558, 107.134];
 type GeoFeature = Feature<Geometry, GeoJsonProperties>;
 type GeoFeatureCollection = FeatureCollection<Geometry, GeoJsonProperties>;
+
+const SCOPE_TYPE_BY_LEVEL: Record<
+  "zone" | "area" | "plot",
+  FarmCultivationZoneScopeType
+> = { zone: "REGION", area: "AREA", plot: "PLOT" };
 
 const MapUpdater = ({
   center,
@@ -82,7 +147,6 @@ const createDefaultSoilData = (): Record<string, SoilData> => {
     potassium: 0,
     moisture: 0,
     organicMatter: 0,
-    ec: 0,
     temperature: 0,
     compaction: 0,
     lastTested: new Date().toISOString().split("T")[0],
@@ -158,6 +222,12 @@ const MapContent = () => {
 
   const [filterRegion, setFilterRegion] = useState("all");
   const [filterArea, setFilterArea] = useState("all");
+  const [selectedRegionLabel, setSelectedRegionLabel] = useState<string>();
+  const [selectedAreaLabel, setSelectedAreaLabel] = useState<string>();
+  const [regionSearch, setRegionSearch] = useState("");
+  const [areaSearch, setAreaSearch] = useState("");
+  const debouncedRegionSearch = useDebounce(regionSearch, 300);
+  const debouncedAreaSearch = useDebounce(areaSearch, 300);
   const [visibleLayers, setVisibleLayers] = useState({
     zone: true,
     area: false,
@@ -172,15 +242,171 @@ const MapContent = () => {
     createDefaultSoilData,
   );
   const [isEditingSoil, setIsEditingSoil] = useState(false);
-  const [tempSoil, setTempSoil] = useState<SoilData | null>(null);
 
-  const zoneFeatures = useMemo(() => getCollectionFeatures(zoneData), []);
-  const areaFeatures = useMemo(() => getCollectionFeatures(areaData), []);
-  const plotFeatures = useMemo(() => getCollectionFeatures(plotData), []);
+  const selectedRegionId =
+    filterRegion !== "all" && filterRegion ? Number(filterRegion) : undefined;
+
+  const { items: apiRegions } = useRegions({ params: MAP_DATA_QUERY });
+
+  // Area/plant layers are scoped to the selected region so switching "Vùng
+  // trồng" actually reloads the map data underneath it, not just the camera.
+  const { items: apiAreasRaw } = useAreas({
+    params: { ...MAP_DATA_QUERY, regionId: selectedRegionId },
+    enabled: selectedRegionId !== undefined,
+  });
+  const apiAreas = useMemo(
+    () => (selectedRegionId !== undefined ? apiAreasRaw : []),
+    [apiAreasRaw, selectedRegionId],
+  );
+
+  const { items: apiPlotsRaw } = usePlots({ params: MAP_DATA_QUERY });
+  const scopedAreaIds = useMemo(
+    () => new Set(apiAreas.map((area) => area.id)),
+    [apiAreas],
+  );
+  const apiPlots = useMemo(
+    () =>
+      selectedRegionId !== undefined
+        ? apiPlotsRaw.filter((plot) => {
+            const areaId = plot.area?.id ?? plot.productionArea?.id;
+            return areaId !== undefined && scopedAreaIds.has(areaId);
+          })
+        : [],
+    [apiPlotsRaw, scopedAreaIds, selectedRegionId],
+  );
+
+  const { items: apiPlantsRaw } = usePlantIdentifications({
+    params: { ...MAP_DATA_QUERY, regionId: selectedRegionId },
+    enabled: selectedRegionId !== undefined,
+  });
+  const apiPlants = useMemo(
+    () => (selectedRegionId !== undefined ? apiPlantsRaw : []),
+    [apiPlantsRaw, selectedRegionId],
+  );
+
+  // Separate, keyword-driven queries backing the region/area filter dropdowns —
+  // kept apart from the full apiRegions/apiAreas datasets above so typing a
+  // search term never hides polygons that are already drawn on the map.
+  const { items: regionSearchResults, isFetching: isRegionSearching } =
+    useRegions({
+      params: {
+        page: 0,
+        size: 20,
+        keyword: debouncedRegionSearch.trim() || undefined,
+      },
+    });
+
+  const { items: areaSearchResults, isFetching: isAreaSearching } = useAreas({
+    params: {
+      page: 0,
+      size: 20,
+      keyword: debouncedAreaSearch.trim() || undefined,
+      regionId: filterRegion !== "all" ? Number(filterRegion) : undefined,
+    },
+  });
+
+  const findRegionById = useCallback(
+    (id: string) =>
+      regionSearchResults.find((region) => region.id.toString() === id) ||
+      apiRegions.find((region) => region.id.toString() === id),
+    [regionSearchResults, apiRegions],
+  );
+
+  const findAreaById = useCallback(
+    (id: string) =>
+      areaSearchResults.find((area) => area.id.toString() === id) ||
+      apiAreas.find((area) => area.id.toString() === id),
+    [areaSearchResults, apiAreas],
+  );
+
+  const regionOptions: RemoteSelectOption[] = useMemo(
+    () =>
+      regionSearchResults.map((region) => ({
+        value: region.id.toString(),
+        label: region.name || region.code || `#${region.id}`,
+      })),
+    [regionSearchResults],
+  );
+
+  const areaOptions: RemoteSelectOption[] = useMemo(
+    () =>
+      areaSearchResults.map((area) => ({
+        value: area.id.toString(),
+        label: area.name || area.code || `#${area.id}`,
+      })),
+    [areaSearchResults],
+  );
+
+  // No "Tất cả" option for regions — default to the first one returned so
+  // the map always has a region (and its areas/plots/plants) loaded.
+  useEffect(() => {
+    if (filterRegion === "all" && regionSearchResults.length > 0) {
+      const [firstRegion] = regionSearchResults;
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setFilterRegion(firstRegion.id.toString());
+      setSelectedRegionLabel(
+        firstRegion.name || firstRegion.code || `#${firstRegion.id}`,
+      );
+    }
+  }, [filterRegion, regionSearchResults]);
+
+  const zoneFeatures = useMemo(
+    () =>
+      apiRegions
+        .filter(
+          (region) =>
+            selectedRegionId === undefined || region.id === selectedRegionId,
+        )
+        .map((region) =>
+          buildPolygonFeature(region.boundary, {
+            ...region,
+            area: region.acreage,
+          }),
+        )
+        .filter((feature): feature is GeoFeature => Boolean(feature)),
+    [apiRegions, selectedRegionId],
+  );
+
+  const areaFeatures = useMemo(
+    () =>
+      apiAreas
+        .map((area) =>
+          buildPolygonFeature(area.boundary, { ...area, area: area.acreage }),
+        )
+        .filter((feature): feature is GeoFeature => Boolean(feature)),
+    [apiAreas],
+  );
+
+  const plotFeatures = useMemo(
+    () =>
+      apiPlots
+        .map((plot) =>
+          buildPolygonFeature(plot.boundary, { ...plot, area: plot.acreage }),
+        )
+        .filter((feature): feature is GeoFeature => Boolean(feature)),
+    [apiPlots],
+  );
+
+  const plantFeaturesRaw = useMemo(
+    () =>
+      apiPlants
+        .map((plant, index) =>
+          buildPointFeature(plant.latitude, plant.longitude, {
+            ...plant,
+            name:
+              plant.cultivationZone?.name ||
+              plant.productionZone?.name ||
+              plant.code ||
+              `Cây trồng ${index + 1}`,
+          }),
+        )
+        .filter((feature): feature is GeoFeature => Boolean(feature)),
+    [apiPlants],
+  );
 
   const processedPlantData = useMemo(() => {
     const statuses = ["healthy", "diseased", "harvesting"];
-    const features = getCollectionFeatures(plantData).map((feature, index) => {
+    const features = plantFeaturesRaw.map((feature, index) => {
       const status = statuses[index % statuses.length];
       return {
         ...feature,
@@ -192,43 +418,110 @@ const MapContent = () => {
     });
 
     return {
-      ...plantData,
+      type: "FeatureCollection",
       features,
     } as GeoFeatureCollection;
-  }, []);
+  }, [plantFeaturesRaw]);
 
   const plantFeatures = useMemo(
     () => getCollectionFeatures(processedPlantData),
     [processedPlantData],
   );
 
+  const zoneCollection = useMemo(
+    () =>
+      ({
+        type: "FeatureCollection",
+        features: zoneFeatures,
+      }) as GeoFeatureCollection,
+    [zoneFeatures],
+  );
+  const areaCollection = useMemo(
+    () =>
+      ({
+        type: "FeatureCollection",
+        features: areaFeatures,
+      }) as GeoFeatureCollection,
+    [areaFeatures],
+  );
+  const plotCollection = useMemo(
+    () =>
+      ({
+        type: "FeatureCollection",
+        features: plotFeatures,
+      }) as GeoFeatureCollection,
+    [plotFeatures],
+  );
+
+  const findContainerFeature = useCallback(
+    (collection: GeoFeature[], lng: number, lat: number) =>
+      collection.find((feature) => {
+        if (feature.geometry?.type === "Polygon") {
+          return isPointInPolygon(
+            [lng, lat],
+            feature.geometry.coordinates[0] as unknown as [number, number][],
+          );
+        }
+        if (feature.geometry?.type === "MultiPolygon") {
+          return feature.geometry.coordinates.some((polygon) =>
+            isPointInPolygon(
+              [lng, lat],
+              polygon[0] as unknown as [number, number][],
+            ),
+          );
+        }
+        return false;
+      }),
+    [],
+  );
+
+  const getLocationInfo = useCallback(
+    (lng: number, lat: number) => {
+      const zone = findContainerFeature(zoneFeatures, lng, lat);
+      const area = findContainerFeature(areaFeatures, lng, lat);
+      const plot = findContainerFeature(plotFeatures, lng, lat);
+      return {
+        zoneName: zone ? getFeatureLabel(zone) : undefined,
+        areaName: area ? getFeatureLabel(area) : undefined,
+        plotName: plot ? getFeatureLabel(plot) : undefined,
+      };
+    },
+    [findContainerFeature, zoneFeatures, areaFeatures, plotFeatures],
+  );
+
   const handleEditSoil = () => {
-    const currentId = selectedEntity?.id || selectedEntity?.key;
-    setTempSoil(
-      soilData[currentId] || {
-        ph: 0,
-        nitrogen: 0,
-        phosphorus: 0,
-        potassium: 0,
-        moisture: 0,
-        organicMatter: 0,
-        ec: 0,
-        temperature: 0,
-        compaction: 0,
-        lastTested: new Date().toISOString().split("T")[0],
-      },
-    );
     setIsEditingSoil(true);
   };
 
-  const handleSaveSoil = () => {
+  const handleSaveSoil = (data: SoilData) => {
     const currentId = selectedEntity?.id || selectedEntity?.key;
-    if (!currentId || !tempSoil) return;
+    if (!currentId) return;
 
     setSoilData((prev) => ({
       ...prev,
-      [currentId]: tempSoil,
+      [currentId]: data,
     }));
+
+    if (healthMetricScope) {
+      upsertHealthMetric.mutate({
+        location: healthMetricScope,
+        totalCount: healthMetric?.totalCount ?? selectedEntity?.stats.total,
+        healthyCount:
+          healthMetric?.healthyCount ?? selectedEntity?.stats.healthy,
+        pestCount: healthMetric?.pestCount ?? selectedEntity?.stats.diseased,
+        harvestedCount:
+          healthMetric?.harvestedCount ?? selectedEntity?.stats.harvesting,
+        soilPh: data.ph,
+        soilTemperature: data.temperature,
+        soilMoisturePct: data.moisture,
+        soilCompaction: data.compaction,
+        nitrogen: data.nitrogen,
+        phosphorus: data.phosphorus,
+        potassium: data.potassium,
+        organicMatterPct: data.organicMatter,
+      });
+    }
+
     setIsEditingSoil(false);
   };
 
@@ -273,7 +566,6 @@ const MapContent = () => {
       potassium: 0,
       moisture: 0,
       organicMatter: 0,
-      ec: 0,
       temperature: 0,
       compaction: 0,
       lastTested: new Date().toISOString().split("T")[0],
@@ -474,6 +766,7 @@ const MapContent = () => {
     [
       areaFeatures,
       calculateStats,
+      getLocationInfo,
       plantFeatures,
       plotFeatures,
       soilData,
@@ -620,89 +913,149 @@ const MapContent = () => {
     }
   };
 
-  const handleSelectSoilCluster = (cluster: SoilClusterInfo) => {
-    if (!selectedEntity) return;
-
-    const clusterNode: SelectedEntity = {
-      id: cluster.key,
-      key: cluster.key,
-      level: "soil-cluster",
-      type: cluster.label,
-      properties: {
-        code: cluster.key,
-        name: cluster.label,
-        position: cluster.position,
-        deviceCount: cluster.deviceCount,
-      },
-      stats: {
-        total: cluster.deviceCount,
-        healthy: 0,
-        diseased: 0,
-        harvesting: 0,
-        types: {},
-      },
-      center: selectedEntity.center,
-      locationInfo: selectedEntity.locationInfo,
-      soilCluster: cluster,
-      children: [],
-      soilClusters: [cluster],
-      description: `${cluster.position} • ${cluster.deviceCount} thiết bị`,
-      lineage: [...(selectedEntity.lineage || []), cluster.label],
-    };
-
-    setSelectionTrail((prev) => [...prev, clusterNode]);
-    setIsSidebarVisible(true);
-    setIsDetailExpanded(true);
-    setIsSidebarCollapsed(false);
-  };
-
   const handleBack = () => {
     setSelectionTrail((prev) => prev.slice(0, -1));
   };
 
-  const handleCloseSidebar = () => {
-    setIsSidebarVisible(false);
-    setSelectionTrail([]);
-  };
+  // Re-seed the sidebar with the newly selected region's zone whenever
+  // "Vùng trồng" actually changes (not on incidental re-fetches), so the
+  // info panel always reflects what's currently picked in the filter.
+  const seededRegionIdRef = useRef<number | undefined>(undefined);
 
   useEffect(() => {
-    if (isSidebarVisible && !selectionTrail.length && zoneFeatures.length > 0) {
-      const firstZoneTrail = buildTrail("zone", 0);
-      if (firstZoneTrail.length) {
-        // Seed the sidebar with the first zone so the user lands on useful context.
-        // eslint-disable-next-line react-hooks/set-state-in-effect
-        setSelectionTrail(finalizeTrail(firstZoneTrail));
-      }
+    if (
+      selectedRegionId === undefined ||
+      seededRegionIdRef.current === selectedRegionId ||
+      zoneFeatures.length === 0
+    ) {
+      return;
     }
-  }, [
-    buildTrail,
-    finalizeTrail,
-    isSidebarVisible,
-    selectionTrail.length,
-    zoneFeatures.length,
-  ]);
+
+    seededRegionIdRef.current = selectedRegionId;
+    const firstZoneTrail = buildTrail("zone", 0);
+    if (firstZoneTrail.length) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setSelectionTrail(finalizeTrail(firstZoneTrail));
+      setIsSidebarCollapsed(false);
+      setIsDetailExpanded(true);
+    }
+  }, [buildTrail, finalizeTrail, selectedRegionId, zoneFeatures]);
 
   const selectedEntity = selectionTrail[selectionTrail.length - 1] || null;
 
+  const isHealthScopeLevel = (
+    node: SelectedEntity,
+  ): node is SelectedEntity & { level: "zone" | "area" | "plot" } =>
+    node.level === "zone" || node.level === "area" || node.level === "plot";
+
+  // "plant" and "soil-cluster" nodes have no scope type of their own, so
+  // health metrics are reported for the nearest region/area/plot ancestor
+  // in the drilldown trail instead. Cheap to recompute on every render, so
+  // this is left unmemoized rather than fighting the compiler over it.
+  const healthMetricScopeNode = selectedEntity
+    ? isHealthScopeLevel(selectedEntity)
+      ? selectedEntity
+      : selectionTrail.filter(isHealthScopeLevel).at(-1)
+    : undefined;
+
+  const healthMetricScopeId = Number(healthMetricScopeNode?.properties?.id);
+
+  const healthMetricScope =
+    healthMetricScopeNode && Number.isFinite(healthMetricScopeId)
+      ? {
+          scopeType: SCOPE_TYPE_BY_LEVEL[healthMetricScopeNode.level],
+          scopeId: healthMetricScopeId,
+        }
+      : null;
+
+  const { data: healthMetric, isFetching: isHealthMetricLoading } =
+    useProductionHealthMetricByScope({
+      params: healthMetricScope ?? undefined,
+      enabled: !!healthMetricScope,
+    });
+
+  const upsertHealthMetric = useUpsertProductionHealthMetric();
+
+  // The sidebar reads API metrics first, so the edit form must use the same
+  // source. Keep the local value as a fallback for fields not returned by API.
+  const dialogSoil = selectedEntity
+    ? (() => {
+        const currentId = selectedEntity.id || selectedEntity.key;
+        const localSoil = soilData[currentId];
+        return healthMetric
+          ? {
+              ph: healthMetric.soilPh ?? localSoil?.ph ?? 0,
+              moisture:
+                healthMetric.soilMoisturePct ?? localSoil?.moisture ?? 0,
+              nitrogen: healthMetric.nitrogen ?? localSoil?.nitrogen ?? 0,
+              phosphorus:
+                healthMetric.phosphorus ?? localSoil?.phosphorus ?? 0,
+              potassium: healthMetric.potassium ?? localSoil?.potassium ?? 0,
+              organicMatter:
+                healthMetric.organicMatterPct ?? localSoil?.organicMatter ?? 0,
+              temperature:
+                healthMetric.soilTemperature ?? localSoil?.temperature ?? 0,
+              compaction:
+                healthMetric.soilCompaction ?? localSoil?.compaction ?? 0,
+              lastTested:
+                healthMetric.computedAt ||
+                localSoil?.lastTested ||
+                new Date().toISOString().split("T")[0],
+            }
+          : (localSoil ?? null);
+      })()
+    : null;
+
+  const getScopeCenter = useCallback(
+    (scope: {
+      boundary?: CoordinatePoint[];
+      centerPoint?: CoordinatePoint;
+    }) => {
+      const boundaryCoords = (scope.boundary || [])
+        .filter(
+          (point) =>
+            typeof point.latitude === "number" &&
+            typeof point.longitude === "number",
+        )
+        .map((point) => ({
+          lat: point.latitude as number,
+          lng: point.longitude as number,
+        }));
+
+      if (boundaryCoords.length) {
+        return getCenterFromCoordinates(boundaryCoords);
+      }
+
+      if (
+        typeof scope.centerPoint?.latitude === "number" &&
+        typeof scope.centerPoint?.longitude === "number"
+      ) {
+        return [scope.centerPoint.latitude, scope.centerPoint.longitude] as [
+          number,
+          number,
+        ];
+      }
+
+      return null;
+    },
+    [],
+  );
+
   const mapViewport = useMemo(() => {
     if (filterArea !== "all") {
-      const area = MOCK_AREAS.find((a) => a.id.toString() === filterArea);
-      if (area?.coordinates.length) {
-        const center = getCenterFromCoordinates(area.coordinates);
-        if (center) return { center, zoom: 16 };
-      }
+      const area = findAreaById(filterArea);
+      const center = area ? getScopeCenter(area) : null;
+      if (center) return { center, zoom: 16 };
     }
 
     if (filterRegion !== "all") {
-      const region = MOCK_REGIONS.find((r) => r.id.toString() === filterRegion);
-      if (region?.coordinates.length) {
-        const center = getCenterFromCoordinates(region.coordinates);
-        if (center) return { center, zoom: 14 };
-      }
+      const region = findRegionById(filterRegion);
+      const center = region ? getScopeCenter(region) : null;
+      if (center) return { center, zoom: 14 };
     }
 
     return { center: DEFAULT_CENTER, zoom: 15 };
-  }, [filterArea, filterRegion]);
+  }, [filterArea, filterRegion, findAreaById, findRegionById, getScopeCenter]);
 
   const selectionViewport = useMemo(() => {
     if (!selectedEntity?.center) return null;
@@ -825,12 +1178,12 @@ const MapContent = () => {
               <SidebarDetail
                 selectedEntity={selectedEntity}
                 soilData={soilData}
+                healthMetric={healthMetric ?? null}
+                isHealthMetricLoading={isHealthMetricLoading}
                 canGoBack={selectionTrail.length > 1}
                 onBack={handleBack}
-                onClose={handleCloseSidebar}
                 onEditSoil={handleEditSoil}
                 onSelectChild={handleSelectChild}
-                onSelectSoilCluster={handleSelectSoilCluster}
                 isDetailExpanded={isDetailExpanded}
                 onToggleDetailExpanded={() =>
                   setIsDetailExpanded((prev) => !prev)
@@ -843,7 +1196,7 @@ const MapContent = () => {
         {selectedEntity && isSidebarVisible && (
           <button
             onClick={() => setIsSidebarCollapsed((prev) => !prev)}
-            className={`absolute top-[40dvh] z-[1100] ${isSidebarCollapsed ? "-translate-x-1/2" : ""} rounded-r-md border border-slate-200 bg-white px-1.5 py-4 text-slate-700 shadow-md transition-colors hover:bg-slate-50`}
+            className={`absolute top-[40dvh] z-[1000] ${isSidebarCollapsed ? "-translate-x-1/2" : ""} rounded-r-md border border-slate-200 bg-white px-1.5 py-4 text-slate-700 shadow-md transition-colors hover:bg-slate-50`}
             style={{ left: isSidebarCollapsed ? 16 : 380 }}
             title={
               isSidebarCollapsed
@@ -867,21 +1220,39 @@ const MapContent = () => {
         <div className="relative -z-0 flex-1 bg-slate-100">
           <SidebarFilter
             filterRegion={filterRegion}
-            setFilterRegion={setFilterRegion}
+            setFilterRegion={(value) => {
+              setFilterRegion(value);
+              setSelectionTrail([]);
+              setIsEditingSoil(false);
+              setSelectedRegionLabel(
+                value === "all"
+                  ? undefined
+                  : regionOptions.find((option) => option.value === value)
+                      ?.label,
+              );
+              setFilterArea("all");
+              setSelectedAreaLabel(undefined);
+              setAreaSearch("");
+            }}
             filterArea={filterArea}
-            setFilterArea={setFilterArea}
-            regionOptions={MOCK_REGIONS.map((region) => ({
-              value: region.id.toString(),
-              label: region.code,
-            }))}
-            areaOptions={MOCK_AREAS.filter(
-              (area) =>
-                filterRegion === "all" ||
-                area.regionId.toString() === filterRegion,
-            ).map((area) => ({
-              value: area.id.toString(),
-              label: area.code,
-            }))}
+            setFilterArea={(value) => {
+              setFilterArea(value);
+              setSelectedAreaLabel(
+                value === "all"
+                  ? undefined
+                  : areaOptions.find((option) => option.value === value)?.label,
+              );
+            }}
+            regionOptions={regionOptions}
+            areaOptions={areaOptions}
+            selectedRegionLabel={selectedRegionLabel}
+            selectedAreaLabel={selectedAreaLabel}
+            regionSearch={regionSearch}
+            onRegionSearchChange={setRegionSearch}
+            areaSearch={areaSearch}
+            onAreaSearchChange={setAreaSearch}
+            isRegionSearching={isRegionSearching}
+            isAreaSearching={isAreaSearching}
           />
 
           <MapContainer
@@ -895,8 +1266,8 @@ const MapContent = () => {
             <LayersControl position="topright">
               <LayersControl.BaseLayer checked name="Bản đồ chuẩn">
                 <TileLayer
-                  attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                  url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                  attribution="Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community"
+                  url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
                 />
               </LayersControl.BaseLayer>
               <LayersControl.BaseLayer name="Vệ tinh">
@@ -913,8 +1284,8 @@ const MapContent = () => {
                 <LayerGroup>
                   {visibleLayers.zone && (
                     <GeoJSON
-                      key="layer-zone"
-                      data={zoneData as GeoJsonObject}
+                      key={`layer-zone-${zoneFeatures.length}`}
+                      data={zoneCollection as GeoJsonObject}
                       style={zoneStyle}
                       onEachFeature={createFeatureHandler("zone", zoneFeatures)}
                     />
@@ -929,8 +1300,8 @@ const MapContent = () => {
                 <LayerGroup>
                   {visibleLayers.area && (
                     <GeoJSON
-                      key="layer-area"
-                      data={areaData as GeoJsonObject}
+                      key={`layer-area-${areaFeatures.length}`}
+                      data={areaCollection as GeoJsonObject}
                       style={areaStyle}
                       onEachFeature={createFeatureHandler("area", areaFeatures)}
                     />
@@ -945,8 +1316,8 @@ const MapContent = () => {
                 <LayerGroup>
                   {visibleLayers.plot && (
                     <GeoJSON
-                      key="layer-plot"
-                      data={plotData as GeoJsonObject}
+                      key={`layer-plot-${plotFeatures.length}`}
+                      data={plotCollection as GeoJsonObject}
                       style={plotStyle}
                       onEachFeature={createFeatureHandler("plot", plotFeatures)}
                     />
@@ -961,7 +1332,7 @@ const MapContent = () => {
                 <LayerGroup>
                   {visibleLayers.plant && (
                     <GeoJSON
-                      key="layer-plant"
+                      key={`layer-plant-${plantFeatures.length}`}
                       data={processedPlantData as GeoJsonObject}
                       pointToLayer={pointToLayer}
                       onEachFeature={createFeatureHandler(
@@ -1084,9 +1455,9 @@ const MapContent = () => {
       <SoilEditDialog
         isOpen={isEditingSoil}
         onOpenChange={setIsEditingSoil}
-        tempSoil={tempSoil}
-        setTempSoil={setTempSoil}
+        tempSoil={dialogSoil}
         onSave={handleSaveSoil}
+        isSaving={upsertHealthMetric.isPending}
       />
     </>
   );

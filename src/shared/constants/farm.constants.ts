@@ -7,4 +7,7 @@ export const FARM_ENDPOINTS = {
   plots: `${FARM_BASE_PATH}/production-units`,
   cultivationZones: `${FARM_BASE_PATH}/production-zones`,
   plantIdentifications: `${FARM_BASE_PATH}/production-identifications`,
+  plantIdentificationResolveLocation: `${FARM_BASE_PATH}/production-identifications/resolve-location`,
+  productionHealthMetrics: `${FARM_BASE_PATH}/production-health-metrics`,
+  productionHealthMetricsWorkspace: `${FARM_BASE_PATH}/production-health-metrics/workspace`,
 } as const;

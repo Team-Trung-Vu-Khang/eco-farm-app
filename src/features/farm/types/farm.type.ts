@@ -114,11 +114,21 @@ export interface RegionRef {
   name?: string;
 }
 
+export interface RegionProductionSubjectRef {
+  id?: number;
+  cropId?: number;
+  productionSubjectId?: number;
+  role?: "MAIN" | "SUB";
+  crop?: CatalogRef;
+  productionSubject?: CatalogRef;
+}
+
 export interface AreaRef {
   id: number;
   code?: string;
   name?: string;
   region?: RegionRef;
+  productionRegion?: RegionRef;
 }
 
 export interface FarmRegionRequest {
@@ -138,6 +148,7 @@ export interface FarmRegionRequest {
   displayOrder?: number;
   metadataJson?: Record<string, unknown>;
   crops?: { cropId: number; role: "MAIN" | "SUB" }[];
+  productionSubjectIds?: number[];
   areas?: FarmAreaRequest[];
   domainCode?: "CROP" | "LIVESTOCK" | "AQUACULTURE";
 }
@@ -163,11 +174,15 @@ export interface FarmRegionResponse {
   status?: FoundationStatus;
   displayOrder?: number;
   metadataJson?: Record<string, unknown>;
+  productionSubjects?: RegionProductionSubjectRef[];
   crops?: {
     cropId?: number;
     crop?: { id: number; name?: string };
+    productionSubjectId?: number;
+    productionSubject?: { id: number; code?: string; name?: string };
     role?: string;
   }[];
+  productionAreas?: FarmAreaResponse[];
   areas?: FarmAreaResponse[];
   domainCode?: "CROP" | "LIVESTOCK" | "AQUACULTURE";
   createdAt?: string;
@@ -202,6 +217,7 @@ export interface FarmAreaResponse {
   id: number;
   workspaceId?: number;
   region?: RegionRef;
+  productionRegion?: RegionRef;
   code?: string;
   name?: string;
   acreage?: number;
@@ -213,6 +229,7 @@ export interface FarmAreaResponse {
   displayOrder?: number;
   metadataJson?: Record<string, unknown>;
   plots?: FarmPlotResponse[];
+  productionUnits?: FarmPlotResponse[];
   createdAt?: string;
   updatedAt?: string;
 }
@@ -242,6 +259,7 @@ export interface FarmPlotResponse {
   id: number;
   workspaceId?: number;
   area?: AreaRef;
+  productionArea?: AreaRef;
   code?: string;
   name?: string;
   acreage?: number;
@@ -414,4 +432,61 @@ export interface PlantIdentificationQueryParams {
   domainCode?: "CROP" | "LIVESTOCK" | "AQUACULTURE";
   page?: number;
   size?: number;
+}
+
+// ─── Production Health Metrics ──────────────────────────────────────────────
+
+export interface FarmProductionHealthMetricRequest {
+  location: FarmCultivationZoneScopeRequest;
+  totalCount?: number;
+  healthyCount?: number;
+  pestCount?: number;
+  harvestedCount?: number;
+  soilPh?: number;
+  soilTemperature?: number;
+  soilMoisturePct?: number;
+  soilCompaction?: number;
+  nitrogen?: number;
+  phosphorus?: number;
+  potassium?: number;
+  organicMatterPct?: number;
+  metadataJson?: Record<string, unknown>;
+}
+
+export interface FarmProductionHealthMetricResponse {
+  id: number;
+  workspaceId?: number;
+  location?: FarmCultivationZoneScopeResponse;
+  totalCount?: number;
+  healthyCount?: number;
+  pestCount?: number;
+  harvestedCount?: number;
+  soilPh?: number;
+  soilTemperature?: number;
+  soilMoisturePct?: number;
+  soilCompaction?: number;
+  nitrogen?: number;
+  phosphorus?: number;
+  potassium?: number;
+  organicMatterPct?: number;
+  source?: string;
+  computedAt?: string;
+  metadataJson?: Record<string, unknown>;
+}
+
+export interface ProductionHealthMetricScopeQueryParams {
+  scopeType: FarmCultivationZoneScopeType;
+  scopeId: number;
+}
+
+export interface PlantIdentificationResolveLocationQueryParams {
+  latitude: number;
+  longitude: number;
+  scopeType: FarmCultivationZoneScopeType;
+  scopeId: number;
+}
+
+export interface FarmPlantIdentificationResolveLocationResponse {
+  resolvedToPlot: boolean;
+  location?: FarmCultivationZoneScopeResponse;
 }

@@ -18,9 +18,161 @@ import type {
   CultivationZoneQueryParams,
   FarmPlantIdentificationRequest,
   FarmPlantIdentificationResponse,
+  FarmPlantIdentificationResolveLocationResponse,
   PlantIdentificationQueryParams,
+  PlantIdentificationResolveLocationQueryParams,
+  FarmProductionHealthMetricRequest,
+  FarmProductionHealthMetricResponse,
+  ProductionHealthMetricScopeQueryParams,
 } from "../types/farm.type";
 import type { PageResponse } from "../../foundation/types/foundation.type";
+
+const normalizeRegionSubject = (item: any) => {
+  const productionSubject = item.productionSubject || item.crop;
+  const productionSubjectId =
+    item.productionSubjectId || item.cropId || productionSubject?.id || item.id;
+
+  return {
+    ...item,
+    cropId: item.cropId || productionSubjectId,
+    crop: item.crop || productionSubject,
+    productionSubjectId,
+    productionSubject: productionSubject || item.productionSubject,
+  };
+};
+
+const normalizePlot = (item: any) => {
+  const area = item.area || item.productionArea;
+
+  return {
+    ...item,
+    area: area
+      ? {
+          ...area,
+          region: area.region || area.productionRegion,
+          productionRegion: area.productionRegion || area.region,
+        }
+      : area,
+    productionArea: item.productionArea || area,
+  };
+};
+
+const normalizeArea = (item: any) => {
+  const region = item.region || item.productionRegion;
+  const plots = (item.plots || item.productionUnits || []).map(normalizePlot);
+
+  return {
+    ...item,
+    region: region
+      ? {
+          ...region,
+        }
+      : region,
+    productionRegion: item.productionRegion || region,
+    plots,
+    productionUnits: item.productionUnits || plots,
+  };
+};
+
+const normalizeRegion = (item: any) => {
+  const areas = (item.areas || item.productionAreas || []).map(normalizeArea);
+  const subjects = (item.crops || item.productionSubjects || []).map(
+    normalizeRegionSubject,
+  );
+
+  return {
+    ...item,
+    crops: subjects,
+    productionSubjects: item.productionSubjects || subjects,
+    areas,
+    productionAreas: item.productionAreas || areas,
+  };
+};
+
+const normalizePlantLocation = (location: any) => {
+  if (!location) return location;
+
+  const region = location.region;
+  const area = location.area
+    ? {
+        ...location.area,
+        region: location.area.region || location.area.productionRegion,
+      }
+    : location.area;
+  const plot = location.plot
+    ? {
+        ...location.plot,
+        area: location.plot.area
+          ? {
+              ...location.plot.area,
+              region:
+                location.plot.area.region ||
+                location.plot.area.productionRegion,
+            }
+          : location.plot.area,
+      }
+    : location.plot;
+
+  return {
+    ...location,
+    region: region ? { ...region } : region,
+    area,
+    plot,
+  };
+};
+
+const normalizePlantIdentification = (item: any) => {
+  const productionZone = item.productionZone || item.cultivationZone;
+
+  return {
+    ...item,
+    location: normalizePlantLocation(item.location),
+    productionZone,
+    cultivationZone: item.cultivationZone || productionZone,
+  };
+};
+
+const normalizePlantIdentificationResolveLocation = (
+  item: any,
+): FarmPlantIdentificationResolveLocationResponse => ({
+  ...item,
+  location: normalizePlantLocation(item.location),
+});
+
+const normalizeProductionHealthMetric = (item: any) => {
+  const location = item.location;
+  const area = location?.area
+    ? {
+        ...location.area,
+        region: location.area.region || location.area.productionRegion,
+      }
+    : location?.area;
+  const plot = location?.plot
+    ? {
+        ...location.plot,
+        area: location.plot.area
+          ? {
+              ...location.plot.area,
+              region:
+                location.plot.area.region ||
+                location.plot.area.productionRegion,
+            }
+          : location.plot.area,
+      }
+    : location?.plot;
+
+  return {
+    ...item,
+    location: location
+      ? {
+          ...location,
+          region: location.region ? { ...location.region } : location.region,
+          area,
+          plot,
+        }
+      : location,
+  };
+};
 
 // ─── Seed API ─────────────────────────────────────────────────────────────────
 
@@ -84,20 +236,15 @@ export const regionApi = {
       .get<PageResponse<any>>(FARM_ENDPOINTS.regions, { params })
       .then((r) => {
         if (r.data?.content) {
-          r.data.content = r.data.content.map((item: any) => ({
-            ...item,
-            provinceId: item.provinceId || item.province,
-            districtId: item.districtId || item.district,
-            note: item.note || item.description,
-            areas: item.areas || item.productionAreas?.map((area: any) => ({
-              ...area,
-              region: area.region || area.productionRegion,
-              plots: area.plots || area.productionUnits?.map((unit: any) => ({
-                ...unit,
-                area: unit.area || unit.productionArea
-              }))
-            }))
-          }));
+          r.data.content = r.data.content.map((item: any) => {
+            const normalized = normalizeRegion(item);
+            return {
+              ...normalized,
+              provinceId: normalized.provinceId || normalized.province,
+              districtId: normalized.districtId || normalized.district,
+              note: normalized.note || normalized.description,
+            };
+          });
         }
         return r.data as PageResponse<FarmRegionResponse>;
       }),
@@ -105,22 +252,15 @@ export const regionApi = {
   getById: (id: number) =>
     apiClient.get<any>(`${FARM_ENDPOINTS.regions}/${id}`).then((r) => {
       const item = r.data;
-      if (item) {
-        item.provinceId = item.provinceId || item.province;
-        item.districtId = item.districtId || item.district;
-        item.note = item.note || item.description;
-        if (item.productionAreas) {
-          item.areas = item.productionAreas.map((area: any) => ({
-            ...area,
-            region: area.region || area.productionRegion,
-            plots: area.plots || area.productionUnits?.map((unit: any) => ({
-              ...unit,
-              area: unit.area || unit.productionArea
-            }))
-          }));
-        }
-      }
-      return item as FarmRegionResponse;
+      if (!item) return item as FarmRegionResponse;
+
+      const normalized = normalizeRegion(item);
+      return {
+        ...normalized,
+        provinceId: normalized.provinceId || normalized.province,
+        districtId: normalized.districtId || normalized.district,
+        note: normalized.note || normalized.description,
+      } as FarmRegionResponse;
     }),
 
   create: (data: FarmRegionRequest) =>
@@ -142,11 +282,7 @@ export const regionApi = {
       >(`${FARM_ENDPOINTS.regions}/${regionId}/production-areas`, { params })
       .then((r) => {
         if (r.data?.content) {
-          r.data.content = r.data.content.map((item: any) => ({
-            ...item,
-            region: item.region || item.productionRegion,
-            plots: item.plots || item.productionUnits,
-          }));
+          r.data.content = r.data.content.map(normalizeArea);
         }
         return r.data as PageResponse<FarmAreaResponse>;
       }),
@@ -160,11 +296,7 @@ export const areaApi = {
       .get<PageResponse<any>>(FARM_ENDPOINTS.areas, { params })
       .then((r) => {
         if (r.data?.content) {
-          r.data.content = r.data.content.map((item: any) => ({
-            ...item,
-            region: item.region || item.productionRegion,
-            plots: item.plots || item.productionUnits,
-          }));
+          r.data.content = r.data.content.map(normalizeArea);
         }
         return r.data as PageResponse<FarmAreaResponse>;
       }),
@@ -172,11 +304,9 @@ export const areaApi = {
   getById: (id: number) =>
     apiClient.get<any>(`${FARM_ENDPOINTS.areas}/${id}`).then((r) => {
       const item = r.data;
-      if (item) {
-        item.region = item.region || item.productionRegion;
-        item.plots = item.plots || item.productionUnits;
-      }
-      return item as FarmAreaResponse;
+      if (!item) return item as FarmAreaResponse;
+
+      return normalizeArea(item) as FarmAreaResponse;
     }),
 
   create: (regionId: number, data: FarmAreaRequest) =>
@@ -201,10 +331,7 @@ export const areaApi = {
       >(`${FARM_ENDPOINTS.areas}/${areaId}/production-units`, { params })
       .then((r) => {
         if (r.data?.content) {
-          r.data.content = r.data.content.map((item: any) => ({
-            ...item,
-            area: item.area || item.productionArea,
-          }));
+          r.data.content = r.data.content.map(normalizePlot);
         }
         return r.data as PageResponse<FarmPlotResponse>;
       }),
@@ -217,20 +344,6 @@ export const areaApi = {
  * region is named `productionRegion`. Normalize that nested shape so screens
  * can consistently read `plot.area.region`.
  */
-const normalizePlot = (item: any) => {
-  const area = item.area || item.productionArea;
-
-  return {
-    ...item,
-    area: area
-      ? {
-          ...area,
-          region: area.region || area.productionRegion,
-        }
-      : area,
-  };
-};
-
 export const plotApi = {
   list: (params?: PlotQueryParams) =>
     apiClient
@@ -309,14 +422,19 @@ export const plantIdentificationApi = {
       .get<
         PageResponse<FarmPlantIdentificationResponse>
       >(FARM_ENDPOINTS.plantIdentifications, { params })
-      .then((r) => r.data),
+      .then((r) => {
+        if (r.data?.content) {
+          r.data.content = r.data.content.map(normalizePlantIdentification);
+        }
+        return r.data;
+      }),
 
   getById: (id: number) =>
     apiClient
       .get<FarmPlantIdentificationResponse>(
         `${FARM_ENDPOINTS.plantIdentifications}/${id}`,
       )
-      .then((r) => r.data),
+      .then((r) => normalizePlantIdentification(r.data)),
 
   create: (data: FarmPlantIdentificationRequest) =>
     apiClient
@@ -324,7 +442,7 @@ export const plantIdentificationApi = {
         FARM_ENDPOINTS.plantIdentifications,
         data,
       )
-      .then((r) => r.data),
+      .then((r) => normalizePlantIdentification(r.data)),
 
   update: (id: number, data: FarmPlantIdentificationRequest) =>
     apiClient
@@ -332,8 +450,45 @@ export const plantIdentificationApi = {
         `${FARM_ENDPOINTS.plantIdentifications}/${id}`,
         data,
       )
-      .then((r) => r.data),
+      .then((r) => normalizePlantIdentification(r.data)),
+
+  resolveLocation: (params: PlantIdentificationResolveLocationQueryParams) =>
+    apiClient
+      .get<FarmPlantIdentificationResolveLocationResponse>(
+        FARM_ENDPOINTS.plantIdentificationResolveLocation,
+        { params },
+      )
+      .then((r) => normalizePlantIdentificationResolveLocation(r.data)),
 
   delete: (id: number) =>
     apiClient.delete(`${FARM_ENDPOINTS.plantIdentifications}/${id}`),
+};
+
+// ─── Production Health Metrics API ──────────────────────────────────────────
+
+export const productionHealthMetricsApi = {
+  listWorkspace: () =>
+    apiClient
+      .get<FarmProductionHealthMetricResponse>(
+        FARM_ENDPOINTS.productionHealthMetricsWorkspace,
+      )
+      .then((r) => normalizeProductionHealthMetric(r.data)),
+
+  getByScope: (params: ProductionHealthMetricScopeQueryParams) =>
+    apiClient
+      .get<FarmProductionHealthMetricResponse>(
+        FARM_ENDPOINTS.productionHealthMetrics,
+        {
+          params,
+        },
+      )
+      .then((r) => normalizeProductionHealthMetric(r.data)),
+
+  upsert: (data: FarmProductionHealthMetricRequest) =>
+    apiClient
+      .post<FarmProductionHealthMetricResponse>(
+        FARM_ENDPOINTS.productionHealthMetrics,
+        data,
+      )
+      .then((r) => normalizeProductionHealthMetric(r.data)),
 };

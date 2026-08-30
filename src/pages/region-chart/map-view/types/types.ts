@@ -57,7 +57,6 @@ export interface SoilData {
   potassium: number;
   moisture: number;
   organicMatter: number;
-  ec: number;
   temperature: number;
   compaction: number;
   lastTested: string;

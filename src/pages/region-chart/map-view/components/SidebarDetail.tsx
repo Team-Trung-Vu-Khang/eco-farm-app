@@ -12,16 +12,18 @@ import {
   ChevronDown,
   ChevronUp,
   FlaskConical,
+  Loader2,
   MapPinned,
   Route,
   Share2,
 } from "lucide-react";
+import dayjs from "dayjs";
 import React from "react";
 
+import type { FarmProductionHealthMetricResponse } from "@/features/farm/types/farm.type";
 import type {
   DrilldownItem,
   SelectedEntity,
-  SoilClusterInfo,
   SoilData,
 } from "../types/types";
 import { buildGoogleMapsUrl } from "../utils/utils";
@@ -29,12 +31,12 @@ import { buildGoogleMapsUrl } from "../utils/utils";
 interface SidebarDetailProps {
   selectedEntity: SelectedEntity;
   soilData: Record<string, SoilData>;
+  healthMetric?: FarmProductionHealthMetricResponse | null;
+  isHealthMetricLoading?: boolean;
   canGoBack: boolean;
   onBack: () => void;
-  onClose: () => void;
   onEditSoil: () => void;
   onSelectChild: (item: DrilldownItem) => void;
-  onSelectSoilCluster: (cluster: SoilClusterInfo) => void;
   isDetailExpanded: boolean;
   onToggleDetailExpanded: () => void;
 }
@@ -46,7 +48,6 @@ const EMPTY_SOIL: SoilData = {
   potassium: 0,
   moisture: 0,
   organicMatter: 0,
-  ec: 0,
   temperature: 0,
   compaction: 0,
   lastTested: "Chưa có dữ liệu",
@@ -54,6 +55,11 @@ const EMPTY_SOIL: SoilData = {
 
 const FARM_BANNER_IMAGE =
   "https://images.unsplash.com/photo-1464226184884-fa280b87c399?w=1200&q=80&auto=format&fit=crop";
+
+const formatLastTested = (value: string) => {
+  const parsed = dayjs(value);
+  return parsed.isValid() ? parsed.format("DD/MM/YYYY HH:mm:ss") : value;
+};
 
 const getLevelLabel = (level: SelectedEntity["level"]) => {
   switch (level) {
@@ -79,9 +85,11 @@ const InfoLine = ({
   label: string;
   value: React.ReactNode;
 }) => (
-  <div className="flex items-start justify-between gap-4 py-1.5">
-    <span className="text-slate-500">{label}</span>
-    <span className="text-right font-medium text-slate-800">{value}</span>
+  <div className="flex flex-col gap-0.5 py-1.5">
+    <span className="text-[10px] uppercase tracking-wide text-slate-500">
+      {label}
+    </span>
+    <span className="font-medium text-slate-800">{value}</span>
   </div>
 );
 
@@ -116,17 +124,43 @@ const MetricCard = ({
 export const SidebarDetail: React.FC<SidebarDetailProps> = ({
   selectedEntity,
   soilData,
+  healthMetric,
+  isHealthMetricLoading,
   canGoBack,
   onBack,
-  onClose,
   onEditSoil,
   onSelectChild,
-  onSelectSoilCluster,
   isDetailExpanded,
   onToggleDetailExpanded,
 }) => {
   const currentId = selectedEntity.id || selectedEntity.key;
   const currentSoil = soilData[currentId] || EMPTY_SOIL;
+
+  // Real per-scope numbers from productionHealthMetricsApi when available;
+  // otherwise fall back to the local synthetic stats/soil state so the tab
+  // never goes blank for scopes the API has no metrics for yet.
+  const healthStats = healthMetric
+    ? {
+        total: healthMetric.totalCount ?? 0,
+        healthy: healthMetric.healthyCount ?? 0,
+        diseased: healthMetric.pestCount ?? 0,
+        harvesting: healthMetric.harvestedCount ?? 0,
+      }
+    : selectedEntity.stats;
+
+  const soilMetrics = healthMetric
+    ? {
+        ph: healthMetric.soilPh ?? 0,
+        moisture: healthMetric.soilMoisturePct ?? 0,
+        temperature: healthMetric.soilTemperature ?? 0,
+        compaction: healthMetric.soilCompaction ?? 0,
+        nitrogen: healthMetric.nitrogen ?? 0,
+        phosphorus: healthMetric.phosphorus ?? 0,
+        potassium: healthMetric.potassium ?? 0,
+        organicMatter: healthMetric.organicMatterPct ?? 0,
+        lastTested: healthMetric.computedAt || currentSoil.lastTested,
+      }
+    : currentSoil;
   const detailTitle =
     selectedEntity.properties?.name || selectedEntity.type || "Thông tin farm";
   const detailSubtitle =
@@ -152,6 +186,28 @@ export const SidebarDetail: React.FC<SidebarDetailProps> = ({
     FARM_BANNER_IMAGE;
   const detailMapsUrl = buildGoogleMapsUrl(selectedEntity);
   const soilCluster = selectedEntity.soilCluster;
+
+  // Zone/area entities carry soilType/terrainFeature but no elevation; plots
+  // carry elevation but no soilType/terrainFeature. Show whichever the API
+  // actually returned instead of a permanent "Độ cao: N/A".
+  const extraDetailFields: { label: string; value: string }[] = [];
+  const elevation =
+    selectedEntity.properties?.elevation ?? selectedEntity.properties?.altitude;
+  if (elevation) {
+    extraDetailFields.push({ label: "Độ cao", value: `${elevation} m` });
+  }
+  if (selectedEntity.properties?.soilType?.name) {
+    extraDetailFields.push({
+      label: "Loại đất",
+      value: selectedEntity.properties.soilType.name,
+    });
+  }
+  if (selectedEntity.properties?.terrainFeature?.name) {
+    extraDetailFields.push({
+      label: "Địa hình",
+      value: selectedEntity.properties.terrainFeature.name,
+    });
+  }
 
   const handleShare = async () => {
     const shareText = `${detailTitle} - ${detailAddress}`;
@@ -196,12 +252,6 @@ export const SidebarDetail: React.FC<SidebarDetailProps> = ({
               Quay lại
             </Button>
           )}
-          <button
-            onClick={onClose}
-            className="rounded-full px-2.5 py-1.5 text-sm text-slate-500 transition-colors hover:bg-slate-100"
-          >
-            Đóng
-          </button>
         </div>
       </div>
 
@@ -259,7 +309,7 @@ export const SidebarDetail: React.FC<SidebarDetailProps> = ({
 
             {isDetailExpanded && (
               <div className="px-4 py-4">
-                <div className="grid grid-cols-3 gap-2">
+                <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
                   <MetricCard
                     label="Mã số"
                     value={selectedEntity.properties?.code || "N/A"}
@@ -272,14 +322,13 @@ export const SidebarDetail: React.FC<SidebarDetailProps> = ({
                         : "N/A"
                     }
                   />
-                  <MetricCard
-                    label="Độ cao"
-                    value={
-                      selectedEntity.properties?.altitude
-                        ? `${selectedEntity.properties.altitude} m`
-                        : "N/A"
-                    }
-                  />
+                  {extraDetailFields.map((field) => (
+                    <MetricCard
+                      key={field.label}
+                      label={field.label}
+                      value={field.value}
+                    />
+                  ))}
                 </div>
 
                 <div className="mt-3 flex flex-wrap gap-2">
@@ -344,7 +393,7 @@ export const SidebarDetail: React.FC<SidebarDetailProps> = ({
                     </div>
                   </div>
 
-                  <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                  <div className="mt-3 flex flex-col gap-2">
                     <InfoLine label="Địa chỉ" value={detailAddress} />
                     <InfoLine
                       label="Khu vực hiện tại"
@@ -371,14 +420,17 @@ export const SidebarDetail: React.FC<SidebarDetailProps> = ({
                         ? `${selectedEntity.properties.area} ha`
                         : "N/A"}
                     </span>
-                    <span className="inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-700">
-                      <span className="text-[10px] uppercase tracking-wide text-slate-500">
-                        Độ cao
+                    {extraDetailFields.map((field) => (
+                      <span
+                        key={field.label}
+                        className="inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-700"
+                      >
+                        <span className="text-[10px] uppercase tracking-wide text-slate-500">
+                          {field.label}
+                        </span>
+                        {field.value}
                       </span>
-                      {selectedEntity.properties?.altitude
-                        ? `${selectedEntity.properties.altitude} m`
-                        : "N/A"}
-                    </span>
+                    ))}
                   </div>
 
                   <div className="mt-4 space-y-2">
@@ -419,13 +471,20 @@ export const SidebarDetail: React.FC<SidebarDetailProps> = ({
 
             <TabsContent value="health" className="m-0">
               <div className="space-y-4">
+                {isHealthMetricLoading && (
+                  <div className="flex items-center gap-2 text-xs text-slate-400">
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                    Đang tải chỉ số từ hệ thống...
+                  </div>
+                )}
+
                 <div className="grid grid-cols-2 gap-2 text-sm">
-                  <MetricCard label="Tổng" value={selectedEntity.stats.total} />
+                  <MetricCard label="Tổng" value={healthStats.total} />
                   <MetricCard
                     label={
                       selectedEntity.level === "plant" ? "Cây khỏe" : "Khỏe"
                     }
-                    value={selectedEntity.stats.healthy}
+                    value={healthStats.healthy}
                     tone="green"
                   />
                   <MetricCard
@@ -434,12 +493,12 @@ export const SidebarDetail: React.FC<SidebarDetailProps> = ({
                         ? "Sâu bệnh"
                         : "Bị sâu bệnh"
                     }
-                    value={selectedEntity.stats.diseased}
+                    value={healthStats.diseased}
                     tone="red"
                   />
                   <MetricCard
                     label="Thu hoạch"
-                    value={selectedEntity.stats.harvesting}
+                    value={healthStats.harvesting}
                     tone="amber"
                   />
                 </div>
@@ -514,96 +573,70 @@ export const SidebarDetail: React.FC<SidebarDetailProps> = ({
                       <div className="text-xs text-slate-500">
                         Lần đo cuối:{" "}
                         <span className="font-medium text-slate-700">
-                          {soilCluster.metrics.lastTested}
+                          {formatLastTested(soilCluster.metrics.lastTested)}
                         </span>
                       </div>
                     </div>
                   ) : (
-                    <div className="mt-4 grid grid-cols-2 gap-x-4 gap-y-3 text-sm">
-                      <div className="flex items-center justify-between">
-                        <span className="text-slate-500">Độ pH</span>
-                        <span className="font-semibold text-slate-900">
-                          {currentSoil.ph}
-                        </span>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-slate-500">Độ ẩm</span>
-                        <span className="font-semibold text-slate-900">
-                          {currentSoil.moisture}%
-                        </span>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-slate-500">Nhiệt độ</span>
-                        <span className="font-semibold text-slate-900">
-                          {currentSoil.temperature}°C
-                        </span>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-slate-500">Độ nén</span>
-                        <span className="font-semibold text-slate-900">
-                          {currentSoil.compaction}
-                        </span>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-slate-500">Nitrogen</span>
-                        <span className="font-semibold text-slate-800">
-                          {currentSoil.nitrogen}
-                        </span>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-slate-500">Phosphorus</span>
-                        <span className="font-semibold text-slate-800">
-                          {currentSoil.phosphorus}
-                        </span>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-slate-500">Potassium</span>
-                        <span className="font-semibold text-slate-800">
-                          {currentSoil.potassium}
-                        </span>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-slate-500">OM</span>
-                        <span className="font-semibold text-slate-800">
-                          {currentSoil.organicMatter}%
-                        </span>
-                      </div>
-                    </div>
-                  )}
-
-                  <div className="mt-4 border-t border-slate-200/70 pt-3">
-                    <div className="text-sm font-medium text-slate-700">
-                      Cụm thiết bị
-                    </div>
-                    <div className="mt-2 space-y-2">
-                      {selectedEntity.soilClusters?.length ? (
-                        selectedEntity.soilClusters.map((cluster) => (
-                          <button
-                            key={cluster.key}
-                            onClick={() => onSelectSoilCluster(cluster)}
-                            className="flex w-full items-center justify-between gap-3 rounded-2xl bg-slate-50 px-3 py-3 text-left transition-colors hover:bg-slate-100"
-                          >
-                            <div className="min-w-0">
-                              <div className="text-sm font-medium text-slate-900">
-                                {cluster.label}
-                              </div>
-                              <div className="text-xs text-slate-500">
-                                {cluster.position} • {cluster.deviceCount} thiết
-                                bị
-                              </div>
-                            </div>
-                            <span className="text-xs text-slate-500">
-                              {cluster.lastSynced}
-                            </span>
-                          </button>
-                        ))
-                      ) : (
-                        <div className="rounded-xl bg-slate-50/70 px-3 py-3 text-sm text-slate-500">
-                          Chưa có cụm thiết bị nào.
+                    <>
+                      <div className="mt-4 grid grid-cols-2 gap-x-4 gap-y-3 text-sm">
+                        <div className="flex items-center justify-between">
+                          <span className="text-slate-500">Độ pH</span>
+                          <span className="font-semibold text-slate-900">
+                            {soilMetrics.ph}
+                          </span>
                         </div>
-                      )}
-                    </div>
-                  </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-slate-500">Độ ẩm</span>
+                          <span className="font-semibold text-slate-900">
+                            {soilMetrics.moisture}%
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-slate-500">Nhiệt độ</span>
+                          <span className="font-semibold text-slate-900">
+                            {soilMetrics.temperature}°C
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-slate-500">Độ nén</span>
+                          <span className="font-semibold text-slate-900">
+                            {soilMetrics.compaction}
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-slate-500">Nitrogen</span>
+                          <span className="font-semibold text-slate-800">
+                            {soilMetrics.nitrogen}
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-slate-500">Phosphorus</span>
+                          <span className="font-semibold text-slate-800">
+                            {soilMetrics.phosphorus}
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-slate-500">Potassium</span>
+                          <span className="font-semibold text-slate-800">
+                            {soilMetrics.potassium}
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-slate-500">OM</span>
+                          <span className="font-semibold text-slate-800">
+                            {soilMetrics.organicMatter}%
+                          </span>
+                        </div>
+                      </div>
+                      <div className="mt-3 text-xs text-slate-500">
+                        Lần đo cuối:{" "}
+                        <span className="font-medium text-slate-700">
+                          {formatLastTested(soilMetrics.lastTested)}
+                        </span>
+                      </div>
+                    </>
+                  )}
                 </div>
               </div>
             </TabsContent>

@@ -1,25 +1,22 @@
-import {
-  Label,
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import { Label } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import React from "react";
-
-interface FilterOption {
-  value: string;
-  label: string;
-}
+import { RemoteSearchSelect, type RemoteSelectOption } from "./RemoteSearchSelect";
 
 interface SidebarFilterProps {
   filterRegion: string;
   setFilterRegion: (val: string) => void;
   filterArea: string;
   setFilterArea: (val: string) => void;
-  regionOptions: FilterOption[];
-  areaOptions: FilterOption[];
+  regionOptions: RemoteSelectOption[];
+  areaOptions: RemoteSelectOption[];
+  selectedRegionLabel?: string;
+  selectedAreaLabel?: string;
+  regionSearch: string;
+  onRegionSearchChange: (keyword: string) => void;
+  areaSearch: string;
+  onAreaSearchChange: (keyword: string) => void;
+  isRegionSearching?: boolean;
+  isAreaSearching?: boolean;
 }
 
 export const SidebarFilter: React.FC<SidebarFilterProps> = ({
@@ -29,6 +26,14 @@ export const SidebarFilter: React.FC<SidebarFilterProps> = ({
   setFilterArea,
   regionOptions,
   areaOptions,
+  selectedRegionLabel,
+  selectedAreaLabel,
+  regionSearch,
+  onRegionSearchChange,
+  areaSearch,
+  onAreaSearchChange,
+  isRegionSearching,
+  isAreaSearching,
 }) => {
   return (
     <div className="absolute left-16 top-3 z-[1000] w-[min(520px,calc(100%-5rem))]">
@@ -37,68 +42,38 @@ export const SidebarFilter: React.FC<SidebarFilterProps> = ({
           <Label className="text-[10px] uppercase tracking-wide text-slate-500">
             Vùng trồng
           </Label>
-          <Select
+          <RemoteSearchSelect
             value={filterRegion}
-            onValueChange={(value) => {
+            onChange={(value) => {
               setFilterRegion(value);
               setFilterArea("all");
             }}
-          >
-            <SelectTrigger className="w-full bg-white pr-2">
-              <span
-                style={{
-                  display: "block",
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
-                  whiteSpace: "nowrap",
-                  width: "100%",
-                  minWidth: 0,
-                  textAlign: "left",
-                }}
-              >
-                <SelectValue placeholder="Tất cả" />
-              </span>
-            </SelectTrigger>
-            <SelectContent className="z-[9999]">
-              <SelectItem value="all">Tất cả</SelectItem>
-              {regionOptions.map((region) => (
-                <SelectItem key={region.value} value={region.value}>
-                  {region.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+            options={regionOptions}
+            selectedLabel={selectedRegionLabel}
+            searchValue={regionSearch}
+            onSearchChange={onRegionSearchChange}
+            loading={isRegionSearching}
+            hideAllOption
+            searchPlaceholder="Tìm vùng trồng..."
+            emptyText="Không tìm thấy vùng trồng"
+          />
         </div>
 
         <div className="space-y-1">
           <Label className="text-[10px] uppercase tracking-wide text-slate-500">
             Khu vực
           </Label>
-          <Select value={filterArea} onValueChange={setFilterArea}>
-            <SelectTrigger className="w-full bg-white pr-2">
-              <span
-                style={{
-                  display: "block",
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
-                  whiteSpace: "nowrap",
-                  width: "100%",
-                  minWidth: 0,
-                  textAlign: "left",
-                }}
-              >
-                <SelectValue placeholder="Tất cả" />
-              </span>
-            </SelectTrigger>
-            <SelectContent className="z-[9999]">
-              <SelectItem value="all">Tất cả</SelectItem>
-              {areaOptions.map((area) => (
-                <SelectItem key={area.value} value={area.value}>
-                  {area.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <RemoteSearchSelect
+            value={filterArea}
+            onChange={setFilterArea}
+            options={areaOptions}
+            selectedLabel={selectedAreaLabel}
+            searchValue={areaSearch}
+            onSearchChange={onAreaSearchChange}
+            loading={isAreaSearching}
+            searchPlaceholder="Tìm khu vực..."
+            emptyText="Không tìm thấy khu vực"
+          />
         </div>
       </div>
     </div>
