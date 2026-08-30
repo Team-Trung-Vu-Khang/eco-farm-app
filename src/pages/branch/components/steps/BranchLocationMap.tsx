@@ -3,7 +3,7 @@ import { Button, Input, Label, useToast } from "@Team-Trung-Vu-Khang/eco-shared-
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { MapPin } from "lucide-react";
-import { useCallback, useEffect } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { MapContainer, Marker, TileLayer, useMap, useMapEvents } from "react-leaflet";
 
 import defaultMarkerIconUrl from "leaflet/dist/images/marker-icon.png";
@@ -15,6 +15,28 @@ import type { BranchFormData } from "../../types/types";
 interface BranchLocationMapProps {
   formData: BranchFormData;
   updateFormData: (updates: Partial<BranchFormData>) => void;
+}
+
+interface ReverseGeocodeAddress {
+  road?: string;
+  street?: string;
+  house_number?: string;
+  suburb?: string;
+  neighbourhood?: string;
+  quarter?: string;
+  city_district?: string;
+  county?: string;
+  town?: string;
+  city?: string;
+  province?: string;
+  state?: string;
+  ward?: string;
+  district?: string;
+}
+
+interface ReverseGeocodeResult {
+  display_name?: string;
+  address?: ReverseGeocodeAddress;
 }
 
 const defaultLeafletIcon = L.icon({
@@ -44,11 +66,11 @@ const MapCenterSync = ({ center }: { center: [number, number] }) => {
 const MapClickHandler = ({
   onPickLocation,
 }: {
-  onPickLocation: (lat: number, lon: number) => void;
+  onPickLocation: (lat: number, lon: number) => void | Promise<void>;
 }) => {
   useMapEvents({
     click(event) {
-      onPickLocation(event.latlng.lat, event.latlng.lng);
+      void onPickLocation(event.latlng.lat, event.latlng.lng);
     },
   });
 
@@ -60,7 +82,7 @@ const DraggableLocationMarker = ({
   onPickLocation,
 }: {
   position: [number, number];
-  onPickLocation: (lat: number, lon: number) => void;
+  onPickLocation: (lat: number, lon: number) => void | Promise<void>;
 }) => {
   return (
     <Marker
@@ -70,7 +92,7 @@ const DraggableLocationMarker = ({
         dragend: (event) => {
           const marker = event.target as L.Marker;
           const next = marker.getLatLng();
-          onPickLocation(next.lat, next.lng);
+          void onPickLocation(next.lat, next.lng);
         },
       }}
     />
@@ -82,6 +104,7 @@ export function BranchLocationMap({
   updateFormData,
 }: BranchLocationMapProps) {
   const { toast } = useToast();
+  const latestLocationRequestRef = useRef(0);
 
   const safeLatitude = Number.isFinite(formData.latitude)
     ? formData.latitude
@@ -91,24 +114,73 @@ export function BranchLocationMap({
     : DEFAULT_CENTER[1];
   const center: [number, number] = [safeLatitude, safeLongitude];
 
+  const reverseGeocode = useCallback(async (lat: number, lon: number) => {
+    const apiKey = import.meta.env.VITE_GEOCODE_API_KEY?.trim();
+    try {
+      const url = new URL("https://geocode.maps.co/reverse");
+      url.searchParams.set("lat", String(lat));
+      url.searchParams.set("lon", String(lon));
+      url.searchParams.set("format", "json");
+      if (apiKey) url.searchParams.set("api_key", apiKey);
+
+      const response = await fetch(url.toString());
+      if (!response.ok) return null;
+
+      const data = (await response.json()) as ReverseGeocodeResult;
+      const address = data.address ?? {};
+      const detailedAddress =
+        [
+          address.house_number,
+          address.road || address.street,
+          address.quarter || address.neighbourhood || address.suburb,
+        ]
+          .filter(Boolean)
+          .join(" ")
+          .trim() || data.display_name;
+
+      return {
+        address: detailedAddress || undefined,
+        ward:
+          address.ward ||
+          address.suburb ||
+          address.neighbourhood ||
+          address.quarter ||
+          "",
+        district:
+          address.district ||
+          address.city_district ||
+          address.county ||
+          address.town ||
+          "",
+        city: address.city || address.province || address.state || "",
+      };
+    } catch {
+      return null;
+    }
+  }, []);
+
   const handlePickLocation = useCallback(
-    (lat: number, lon: number) => {
+    async (lat: number, lon: number) => {
+      const requestId = ++latestLocationRequestRef.current;
       updateFormData({
         latitude: lat,
         longitude: lon,
       });
+
+      const resolved = await reverseGeocode(lat, lon);
+      if (!resolved) return;
+      if (requestId !== latestLocationRequestRef.current) return;
+
+      updateFormData(resolved);
     },
-    [updateFormData],
+    [reverseGeocode, updateFormData],
   );
 
   useEffect(() => {
     if (navigator.geolocation && !Number.isFinite(formData.latitude)) {
       navigator.geolocation.getCurrentPosition(
         (pos) => {
-          updateFormData({
-            latitude: pos.coords.latitude,
-            longitude: pos.coords.longitude,
-          });
+          void handlePickLocation(pos.coords.latitude, pos.coords.longitude);
         },
         () => {
           // Ignore geolocation errors and keep the default map position.
@@ -116,7 +188,7 @@ export function BranchLocationMap({
         { enableHighAccuracy: true, timeout: 10000 },
       );
     }
-  }, [formData.latitude, updateFormData]);
+  }, [formData.latitude, handlePickLocation]);
 
   const handleGetCurrentLocation = () => {
     if (navigator.geolocation) {
