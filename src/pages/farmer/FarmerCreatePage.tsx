@@ -63,7 +63,6 @@ export default function FarmerCreatePage() {
     {
       id: "basic",
       title: "Thông tin cơ bản",
-      description: "Tên, tên gợi nhớ và thông tin thuế",
       content: (
         <FarmerBasicInfoStep
           formData={formData}
@@ -80,7 +79,6 @@ export default function FarmerCreatePage() {
     {
       id: "contacts",
       title: "Người liên hệ",
-      description: "Danh sách người liên hệ",
       content: (
         <FarmerContactStep
           contacts={formData.contacts}
@@ -94,7 +92,6 @@ export default function FarmerCreatePage() {
     {
       id: "bank",
       title: "Ngân hàng",
-      description: "Tài khoản thanh toán",
       content: (
         <FarmerBankStep
           bankAccounts={formData.bankAccounts}
@@ -118,7 +115,6 @@ export default function FarmerCreatePage() {
     {
       id: "confirm",
       title: "Xác nhận",
-      description: "Kiểm tra thông tin",
       content: (
         <FarmerConfirmationStep formData={formData} />
       ),
@@ -128,7 +124,6 @@ export default function FarmerCreatePage() {
   return (
       <PageWrapper
       title={isEdit ? "Chỉnh sửa Nông hộ" : "Tạo mới Nông hộ"}
-      description="Điền thông tin theo từng bước để tạo mới nông hộ"
       actions={[
         <div className="flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-2 shadow-sm">
           <span className="text-xs font-bold text-slate-700">Thông tin chuyên sâu</span>

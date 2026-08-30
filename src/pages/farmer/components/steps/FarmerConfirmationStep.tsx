@@ -181,14 +181,6 @@ export const FarmerConfirmationStep = ({
                     </div>
                     <div>
                       <div className="text-xs text-muted-foreground mb-1 uppercase font-bold tracking-widest">
-                        Cơ quan thuế
-                      </div>
-                      <div className="font-medium text-base leading-relaxed">
-                        {formData.taxAuthority || "-"}
-                      </div>
-                    </div>
-                    <div>
-                      <div className="text-xs text-muted-foreground mb-1 uppercase font-bold tracking-widest">
                         Tên thương hiệu
                       </div>
                       <div className="font-medium text-base leading-relaxed">

@@ -5,6 +5,10 @@ import {
   CardContent,
   Input,
   Label,
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { Mail, Phone, Plus, Trash2, User, Users } from "lucide-react";
 import { useMemo, useState } from "react";
@@ -32,79 +36,91 @@ export const FarmerContactStep = ({
     if (!newContact.name && !newContact.phone) return "Chọn liên hệ...";
     return [newContact.name, newContact.phone].filter(Boolean).join(" - ");
   }, [newContact.name, newContact.phone]);
+  const canAddContact = Boolean(newContact.name.trim() && newContact.phone.trim());
 
   return (
     <div className="max-w-4xl mx-auto space-y-8">
       <Card className="overflow-hidden border-primary/20 shadow-lg">
         <CardContent className="space-y-6 p-6">
-          <div className="space-y-2">
-            <Label className="text-sm font-semibold">Họ và tên</Label>
-            <div className="flex gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setIsContactDialogOpen(true)}
-                className="h-11 flex-1 justify-between border-primary/20 bg-muted/20 text-left font-normal hover:border-primary/40 hover:bg-primary/5"
-              >
-                <span className="truncate">{selectedContactLabel}</span>
-                <Users className="h-4 w-4 shrink-0 text-muted-foreground" />
-              </Button>
-              {(newContact.name || newContact.phone || newContact.email) && (
+          <Tabs defaultValue="directory" className="w-full">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="directory">Liên hệ từ danh bạ</TabsTrigger>
+              <TabsTrigger value="new">Liên hệ mới</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="directory" className="mt-5 space-y-2">
+              <Label className="text-sm font-semibold" required>
+                Họ và tên
+              </Label>
+              <div className="flex gap-2">
                 <Button
                   type="button"
-                  variant="ghost"
-                  onClick={() =>
-                    setNewContact({ id: "", name: "", phone: "", email: "" })
-                  }
-                  className="h-11 px-3 text-muted-foreground"
+                  variant="outline"
+                  onClick={() => setIsContactDialogOpen(true)}
+                  className="h-11 flex-1 justify-between border-primary/20 bg-muted/20 text-left font-normal hover:border-primary/40 hover:bg-primary/5"
                 >
-                  Xóa
+                  <span className="truncate">{selectedContactLabel}</span>
+                  <Users className="h-4 w-4 shrink-0 text-muted-foreground" />
                 </Button>
-              )}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Có thể chọn liên hệ từ store Thông tin liên hệ.
-            </p>
-          </div>
+                {(newContact.name || newContact.phone || newContact.email) && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    onClick={() =>
+                      setNewContact({ id: "", name: "", phone: "", email: "" })
+                    }
+                    className="h-11 px-3 text-muted-foreground"
+                  >
+                    Xóa
+                  </Button>
+                )}
+              </div>
+            </TabsContent>
 
-          <div className="space-y-2">
-            <Label className="text-sm font-semibold">Hoặc nhập tên mới</Label>
-            <Input
-              value={newContact.name}
-              onChange={(e) =>
-                setNewContact({ ...newContact, name: e.target.value })
-              }
-              placeholder="VD: Nguyễn Văn A"
-            />
-          </div>
+            <TabsContent value="new" className="mt-5 space-y-4">
+              <div className="space-y-2">
+                <Label className="text-sm font-semibold" required>
+                  Họ và tên
+                </Label>
+                <Input
+                  value={newContact.name}
+                  onChange={(e) =>
+                    setNewContact({ ...newContact, id: "", name: e.target.value })
+                  }
+                  placeholder="VD: Nguyễn Văn A"
+                />
+              </div>
 
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-            <div className="space-y-2">
-              <Label className="text-sm font-semibold">
-                Số điện thoại <span className="text-red-500">*</span>
-              </Label>
-              <Input
-                value={newContact.phone}
-                onChange={(e) =>
-                  setNewContact({ ...newContact, phone: e.target.value })
-                }
-                placeholder="09xx xxx xxx"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label className="text-sm font-semibold">Email</Label>
-              <Input
-                type="email"
-                value={newContact.email}
-                onChange={(e) =>
-                  setNewContact({ ...newContact, email: e.target.value })
-                }
-                placeholder="email@example.com"
-              />
-            </div>
-          </div>
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <div className="space-y-2">
+                  <Label className="text-sm font-semibold" required>
+                    Số điện thoại
+                  </Label>
+                  <Input
+                    value={newContact.phone}
+                    onChange={(e) =>
+                      setNewContact({ ...newContact, phone: e.target.value })
+                    }
+                    placeholder="09xx xxx xxx"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-sm font-semibold">Email</Label>
+                  <Input
+                    type="email"
+                    value={newContact.email}
+                    onChange={(e) =>
+                      setNewContact({ ...newContact, email: e.target.value })
+                    }
+                    placeholder="email@example.com"
+                  />
+                </div>
+              </div>
+            </TabsContent>
+          </Tabs>
 
           <Button
+            disabled={!canAddContact}
             onClick={addContact}
             className="h-11 w-full bg-primary font-bold text-white hover:bg-primary/90"
           >

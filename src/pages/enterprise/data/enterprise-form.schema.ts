@@ -60,12 +60,12 @@ export const enterpriseFormSchema = z.object({
   brandName: nullableText.default(""),
   aliasName: nullableText.default(""),
   taxCode: z.string().trim().min(1, "Vui lòng nhập mã số thuế."),
-  taxAddress: z.string().trim().min(1, "Vui lòng nhập địa chỉ thuế."),
-  taxAuthority: z.string().trim().min(1, "Vui lòng nhập cơ quan thuế."),
-  issueDate: z.string().trim().min(1, "Vui lòng chọn ngày cấp."),
+  taxAddress: nullableText.default(""),
+  taxAuthority: nullableText.default(""),
+  issueDate: nullableText.default(""),
   classification: z
     .array(z.string())
-    .min(1, "Vui lòng chọn ít nhất một phân loại."),
+    .min(1, "Vui lòng chọn ít nhất một lĩnh vực."),
   foundedDate: nullableText.default(""),
   representative: nullableText.default(""),
   website: nullableText.default(""),

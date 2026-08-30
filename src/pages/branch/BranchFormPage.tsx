@@ -56,7 +56,6 @@ export default function BranchFormPage() {
     {
       id: "basic",
       title: "Thông tin cơ bản",
-      description: "Tên, mã, đơn vị",
       content: (
         <BasicInfoStep
           enterprises={enterprises}
@@ -75,7 +74,6 @@ export default function BranchFormPage() {
     {
       id: "contact-info",
       title: "Liên hệ",
-      description: "Điện thoại, email, website",
       content: (
         <ContactInfoStep formData={formData} updateFormData={updateFormData} />
       ),
@@ -83,7 +81,6 @@ export default function BranchFormPage() {
     {
       id: "location",
       title: "Định vị",
-      description: "Địa chỉ, bản đồ",
       content: (
         <LocationStep formData={formData} updateFormData={updateFormData} />
       ),
@@ -91,7 +88,6 @@ export default function BranchFormPage() {
     {
       id: "banking",
       title: "Ngân hàng",
-      description: "Tài khoản thanh toán",
       content: (
         <BankingStep formData={formData} updateFormData={updateFormData} />
       ),
@@ -99,7 +95,6 @@ export default function BranchFormPage() {
     {
       id: "confirm",
       title: "Xác nhận",
-      description: "Kiểm tra lại thông tin",
       content: (
         <ConfirmStep
           formData={formData}
@@ -112,7 +107,6 @@ export default function BranchFormPage() {
   return (
     <PageWrapper
       title={isEdit ? "Chỉnh sửa Chi nhánh" : "Tạo mới Chi nhánh"}
-      description="Điền thông tin theo từng bước để tạo hoặc cập nhật chi nhánh"
       actions={[
         <div
           key="mode"

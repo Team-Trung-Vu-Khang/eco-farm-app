@@ -736,9 +736,9 @@ export function useEnterpriseCreateForm() {
 
       if (businessLines.length !== values.classification.length) {
         toast({
-          title: "Không thể xác định phân loại",
+          title: "Không thể xác định lĩnh vực",
           description:
-            "Không tìm thấy ID phân loại từ dữ liệu danh mục. Vui lòng tải lại trang và thử lại.",
+            "Không tìm thấy ID lĩnh vực từ dữ liệu danh mục. Vui lòng tải lại trang và thử lại.",
           variant: "destructive",
         });
         return;
@@ -752,9 +752,6 @@ export function useEnterpriseCreateForm() {
         aliasName: values.aliasName.trim(),
         brandName: values.brandName.trim(),
         taxCode: values.taxCode.trim(),
-        taxAuthority: values.taxAuthority.trim(),
-        taxAddress: values.taxAddress.trim(),
-        issueDate: values.issueDate || undefined,
         businessLines,
         representative: values.representative.trim(),
         foundedDate: values.foundedDate || undefined,
@@ -868,34 +865,27 @@ export function useEnterpriseCreateForm() {
       {
         id: "basic",
         title: "Thông tin cơ bản",
-        description: "Tên, tên gợi nhớ và thông tin thuế",
         content: <EnterpriseBasicInfoStep />,
         isValid:
           formData.name.trim().length > 0 &&
           formData.taxCode.trim().length > 0 &&
-          formData.taxAuthority.trim().length > 0 &&
-          formData.issueDate.trim().length > 0 &&
-          formData.taxAddress.trim().length > 0 &&
           formData.classification.length > 0 &&
           formData.organizationTypeId !== "",
       },
       {
         id: "contacts",
         title: "Thông tin liên hệ",
-        description: "Danh sách liên hệ",
         content: <EnterpriseContactsStep />,
         isValid: formData.contacts.length > 0,
       },
       {
         id: "branches",
         title: "Chi nhánh",
-        description: "Quản lý chi nhánh",
         content: <EnterpriseBranchesStep />,
       },
       {
         id: "bank",
         title: "Ngân hàng",
-        description: "Tài khoản thanh toán",
         content: <EnterpriseBankAccountsStep />,
       },
     ];
@@ -907,10 +897,6 @@ export function useEnterpriseCreateForm() {
           formData.type === "cooperative"
             ? "Giấy chứng nhận đăng ký hợp tác xã (do cơ quan đăng ký kinh doanh cấp huyện cấp)."
             : "Giấy phép kinh doanh",
-        description:
-          formData.type === "cooperative"
-            ? "Giấy chứng nhận đăng ký hợp tác xã (do cơ quan đăng ký kinh doanh cấp huyện cấp)."
-            : "Tải lên hoặc kiểm tra các giấy tờ pháp lý liên quan đến doanh nghiệp.",
         content: (
           <EnterpriseDocumentsStep
             title={
@@ -932,7 +918,6 @@ export function useEnterpriseCreateForm() {
     nextSteps.push({
       id: "confirm",
       title: "Xác nhận",
-      description: "Kiểm tra thông tin",
       content: <EnterpriseConfirmationStep />,
     });
 
@@ -944,9 +929,6 @@ export function useEnterpriseCreateForm() {
     formData.classification.length,
     formData.name,
     formData.organizationTypeId,
-    formData.issueDate,
-    formData.taxAddress,
-    formData.taxAuthority,
     formData.taxCode,
     formData.type,
   ]);

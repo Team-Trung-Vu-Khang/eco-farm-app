@@ -822,9 +822,9 @@ export function useFarmerCreateForm() {
 
     if (businessLines.length !== values.classification.length) {
       toast({
-        title: "Không thể xác định phân loại",
+        title: "Không thể xác định lĩnh vực",
         description:
-          "Không tìm thấy ID phân loại từ dữ liệu danh mục. Vui lòng tải lại trang và thử lại.",
+          "Không tìm thấy ID lĩnh vực từ dữ liệu danh mục. Vui lòng tải lại trang và thử lại.",
         variant: "destructive",
       });
       return;
@@ -856,9 +856,6 @@ export function useFarmerCreateForm() {
       aliasName: values.aliasName?.trim(),
       brandName: values.brandName?.trim(),
       taxCode: values.taxCode.trim(),
-      taxAuthority: values.taxAuthority?.trim(),
-      taxAddress: values.taxAddress?.trim(),
-      issueDate: values.issueDate?.trim(),
       businessLines,
       representative: values.representative?.trim(),
       foundedDate: values.foundedDate?.trim(),

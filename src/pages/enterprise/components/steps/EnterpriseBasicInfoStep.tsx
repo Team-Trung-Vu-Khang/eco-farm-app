@@ -1,8 +1,5 @@
-import {
-  useGeoProvinces,
-  useGeoWards,
-  useMasterData,
-} from "@/features/master-data";
+import { useMasterData } from "@/features/master-data";
+import { AddressRemoteCombobox } from "@/components/AddressRemoteCombobox";
 import {
   Button,
   Input,
@@ -38,13 +35,6 @@ function EnterpriseBasicInfoStepContent() {
     },
   });
   const businessLinesQuery = useMasterData("business-lines", {
-    params: {
-      status: "active",
-      page: 0,
-      size: 100,
-    },
-  });
-  const provincesQuery = useGeoProvinces({
     params: {
       status: "active",
       page: 0,
@@ -101,10 +91,6 @@ function EnterpriseBasicInfoStepContent() {
           updates.name = data.name;
         }
 
-        if (!prev.taxAuthority.trim() && data.taxDepartment) {
-          updates.taxAuthority = data.taxDepartment;
-        }
-
         if (!prev.address.trim() && data.address) {
           updates.address = data.address;
         }
@@ -135,24 +121,6 @@ function EnterpriseBasicInfoStepContent() {
   };
   const displayImage =
     formData.image || getDefaultOrganizationImage(formData.type);
-  const wardsQuery = useGeoWards({
-    params: {
-      provinceCode: formData.province,
-      page: 0,
-      size: 100,
-    },
-    enabled: Boolean(formData.province),
-  });
-
-  const provinceOptions = provincesQuery.items.map((province) => ({
-    value: province.code,
-    label: province.fullName || province.name,
-  }));
-
-  const wardOptions = wardsQuery.items.map((ward) => ({
-    value: ward.code,
-    label: ward.fullName || ward.name,
-  }));
   const classificationOptions = businessLinesQuery.items.map((item) => ({
     value: String(item.id),
     label: item.name || item.code || String(item.id),
@@ -326,94 +294,7 @@ function EnterpriseBasicInfoStepContent() {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label htmlFor="taxAuthority" required>
-            Cơ quan thuế
-          </Label>
-          <Controller
-            control={control}
-            name="taxAuthority"
-            render={({ field, fieldState }) => (
-              <>
-                <Input
-                  id="taxAuthority"
-                  value={field.value || ""}
-                  onChange={(e) => field.onChange(e.target.value)}
-                  onBlur={field.onBlur}
-                  ref={field.ref}
-                  name={field.name}
-                  placeholder="Cục thuế / Chi cục thuế..."
-                  aria-invalid={!!fieldState.error}
-                />
-                {fieldState.error ? (
-                  <p className="text-xs text-red-600">
-                    {fieldState.error.message}
-                  </p>
-                ) : null}
-              </>
-            )}
-          />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="issueDate" required>
-            Ngày cấp
-          </Label>
-          <Controller
-            control={control}
-            name="issueDate"
-            render={({ field, fieldState }) => (
-              <>
-                <Input
-                  id="issueDate"
-                  type="date"
-                  value={field.value || ""}
-                  onChange={(e) => field.onChange(e.target.value)}
-                  onBlur={field.onBlur}
-                  ref={field.ref}
-                  name={field.name}
-                  aria-invalid={!!fieldState.error}
-                />
-                {fieldState.error ? (
-                  <p className="text-xs text-red-600">
-                    {fieldState.error.message}
-                  </p>
-                ) : null}
-              </>
-            )}
-          />
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label htmlFor="taxAddress" required>
-            Địa chỉ thuế
-          </Label>
-          <Controller
-            control={control}
-            name="taxAddress"
-            render={({ field, fieldState }) => (
-              <>
-                <Input
-                  id="taxAddress"
-                  value={field.value || ""}
-                  onChange={(e) => field.onChange(e.target.value)}
-                  onBlur={field.onBlur}
-                  ref={field.ref}
-                  name={field.name}
-                  placeholder="Địa chỉ đăng ký thuế"
-                  aria-invalid={!!fieldState.error}
-                />
-                {fieldState.error ? (
-                  <p className="text-xs text-red-600">
-                    {fieldState.error.message}
-                  </p>
-                ) : null}
-              </>
-            )}
-          />
-        </div>
-        <div className="space-y-2">
+        <div className="space-y-2 sm:col-span-2">
           <Label htmlFor="organizationTypeId" required>
             Loại hình tổ chức
           </Label>
@@ -451,7 +332,7 @@ function EnterpriseBasicInfoStepContent() {
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="space-y-2 sm:col-span-2">
           <Label htmlFor="classification" required>
-            Phân loại
+            Lĩnh vực
           </Label>
           <Controller
             control={control}
@@ -460,7 +341,7 @@ function EnterpriseBasicInfoStepContent() {
               <>
                 <MultiSelect
                   options={classificationOptions}
-                  placeholder="Chọn phân loại..."
+                  placeholder="Chọn lĩnh vực..."
                   value={field.value ?? []}
                   onChange={field.onChange}
                 />
@@ -558,9 +439,10 @@ function EnterpriseBasicInfoStepContent() {
               name="province"
               render={({ field, fieldState }) => (
                 <>
-                  <Select
+                  <AddressRemoteCombobox
+                    type="province"
                     value={field.value || ""}
-                    onValueChange={(val) => {
+                    onChange={(val) => {
                       field.onChange(val);
                       setFormData((prev) => ({
                         ...prev,
@@ -568,18 +450,9 @@ function EnterpriseBasicInfoStepContent() {
                         ward: "",
                       }));
                     }}
-                  >
-                    <SelectTrigger aria-invalid={!!fieldState.error}>
-                      <SelectValue placeholder="Chọn Tỉnh / Thành Phố" />
-                    </SelectTrigger>
-                    <SelectContent className="max-h-80 overflow-y-auto">
-                      {provinceOptions.map((province) => (
-                        <SelectItem key={province.value} value={province.value}>
-                          {province.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                    placeholder="Chọn Tỉnh / Thành Phố"
+                    searchPlaceholder="Tìm tỉnh thành..."
+                  />
                   {fieldState.error ? (
                     <p className="text-xs text-red-600">
                       {fieldState.error.message}
@@ -598,30 +471,18 @@ function EnterpriseBasicInfoStepContent() {
               name="ward"
               render={({ field, fieldState }) => (
                 <>
-                  <Select
+                  <AddressRemoteCombobox
+                    type="ward"
                     value={field.value || ""}
-                    onValueChange={(val) => field.onChange(val)}
-                    disabled={!formData.province || wardsQuery.loading}
-                  >
-                    <SelectTrigger aria-invalid={!!fieldState.error}>
-                      <SelectValue
-                        placeholder={
-                          formData.province
-                            ? wardsQuery.loading
-                              ? "Đang tải..."
-                              : "Chọn Phường / Xã"
-                            : "Chọn Tỉnh / Thành Phố trước"
-                        }
-                      />
-                    </SelectTrigger>
-                    <SelectContent className="max-h-80 overflow-y-auto">
-                      {wardOptions.map((ward) => (
-                        <SelectItem key={ward.value} value={ward.value}>
-                          {ward.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                    onChange={(val) => field.onChange(val)}
+                    provinceCode={formData.province}
+                    placeholder={
+                      formData.province
+                        ? "Chọn Phường / Xã"
+                        : "Chọn Tỉnh / Thành Phố trước"
+                    }
+                    searchPlaceholder="Tìm phường xã..."
+                  />
                   {fieldState.error ? (
                     <p className="text-xs text-red-600">
                       {fieldState.error.message}

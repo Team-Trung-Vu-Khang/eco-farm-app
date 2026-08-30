@@ -13,10 +13,11 @@ import {
   Textarea,
   useToast,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import { AddressRemoteCombobox } from "@/components/AddressRemoteCombobox";
 import AddressSearchInput from "@/components/AddressSearchInput";
-import { Building2, ImagePlus, MapPin, Upload } from "lucide-react";
+import { ImagePlus, MapPin, Upload } from "lucide-react";
 import { useRef, useState } from "react";
-import { useGeoProvinces, useGeoWards, useMasterData } from "@/features/master-data";
+import { useMasterData } from "@/features/master-data";
 import { useEnterpriseFormContext } from "../context/EnterpriseFormContext";
 import { getDefaultOrganizationImage } from "../data/default-organization-images";
 import { fetchTaxPayerInfo } from "@/utils/tax";
@@ -45,18 +46,6 @@ export default function SimpleEnterpriseForm({
   const businessLinesQuery = useMasterData("business-lines", {
     params: { status: "active", page: 0, size: 100 },
   });
-  const provincesQuery = useGeoProvinces({
-    params: { status: "active", page: 0, size: 100 },
-  });
-  const wardsQuery = useGeoWards({
-    params: {
-      provinceCode: formData.province,
-      page: 0,
-      size: 100,
-    },
-    enabled: Boolean(formData.province),
-  });
-
   const [isCheckingTax, setIsCheckingTax] = useState(false);
   const { toast } = useToast();
 
@@ -98,10 +87,6 @@ export default function SimpleEnterpriseForm({
           updates.name = data.name;
         }
 
-        if (!prev.taxAuthority.trim() && data.taxDepartment) {
-          updates.taxAuthority = data.taxDepartment;
-        }
-
         if (!prev.address.trim() && data.address) {
           updates.address = data.address;
         }
@@ -134,9 +119,6 @@ export default function SimpleEnterpriseForm({
   const isValid = Boolean(
     formData.name.trim() &&
       formData.taxCode.trim() &&
-      formData.taxAddress.trim() &&
-      formData.taxAuthority.trim() &&
-      formData.issueDate.trim() &&
       formData.organizationTypeId !== "" &&
       formData.classification.length > 0 &&
       formData.province.trim() &&
@@ -147,27 +129,10 @@ export default function SimpleEnterpriseForm({
 
   return (
     <div className="mx-auto max-w-3xl space-y-6 pb-24">
-      <div className="flex items-center gap-4 rounded-2xl border border-blue-100 bg-blue-50 p-4 text-blue-900">
-        <div className="rounded-xl bg-white p-2 shadow-sm">
-          <Building2 className="h-6 w-6 text-blue-600" />
-        </div>
-        <div>
-          <h3 className="font-semibold">Chế độ đơn giản</h3>
-          <p className="text-sm text-blue-700">
-            {isEditMode
-              ? "Cập nhật nhanh các thông tin cần thiết của doanh nghiệp."
-              : "Nhập nhanh các thông tin cần thiết để tạo doanh nghiệp."}
-          </p>
-        </div>
-      </div>
-
       <Card className="rounded-3xl border-slate-200 shadow-sm">
         <CardContent className="space-y-6 p-6">
           <div>
             <h2 className="text-lg font-bold text-slate-900">Doanh nghiệp</h2>
-            <p className="mt-1 text-sm text-slate-500">
-              Thông tin nhận diện và địa chỉ đăng ký của doanh nghiệp.
-            </p>
           </div>
 
           <div className="flex flex-col gap-4 rounded-2xl border border-dashed border-slate-200 bg-slate-50/60 p-4 sm:flex-row sm:items-center">
@@ -253,45 +218,6 @@ export default function SimpleEnterpriseForm({
               </div>
             </div>
             <div className="space-y-2">
-              <Label required>Địa chỉ thuế</Label>
-              <Input
-                value={formData.taxAddress}
-                onChange={(event) =>
-                  setFormData((prev) => ({
-                    ...prev,
-                    taxAddress: event.target.value,
-                  }))
-                }
-                placeholder="Nhập địa chỉ đăng ký thuế"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label required>Cơ quan thuế</Label>
-              <Input
-                value={formData.taxAuthority}
-                onChange={(event) =>
-                  setFormData((prev) => ({
-                    ...prev,
-                    taxAuthority: event.target.value,
-                  }))
-                }
-                placeholder="Nhập cơ quan quản lý thuế"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label required>Ngày cấp</Label>
-              <Input
-                type="date"
-                value={formData.issueDate}
-                onChange={(event) =>
-                  setFormData((prev) => ({
-                    ...prev,
-                    issueDate: event.target.value,
-                  }))
-                }
-              />
-            </div>
-            <div className="space-y-2">
               <Label required>Loại hình tổ chức</Label>
               <Select
                 value={String(formData.organizationTypeId || "")}
@@ -311,14 +237,14 @@ export default function SimpleEnterpriseForm({
                 </SelectContent>
               </Select>
             </div>
-            <div className="space-y-2">
-              <Label required>Phân loại</Label>
+            <div className="space-y-2 sm:col-span-2">
+              <Label required>Lĩnh vực</Label>
               <MultiSelect
                 options={businessLinesQuery.items.map((item) => ({
                   value: String(item.id),
                   label: item.name || item.code || String(item.id),
                 }))}
-                placeholder="Chọn phân loại..."
+                placeholder="Chọn lĩnh vực..."
                 value={formData.classification}
                 onChange={(classification) =>
                   setFormData((prev) => ({ ...prev, classification }))
@@ -335,44 +261,32 @@ export default function SimpleEnterpriseForm({
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
                 <Label required>Tỉnh thành</Label>
-                <Select
+                <AddressRemoteCombobox
+                  type="province"
                   value={formData.province || ""}
-                  onValueChange={(value) =>
+                  onChange={(value) =>
                     setFormData((prev) => ({ ...prev, province: value, ward: "" }))
                   }
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Chọn tỉnh thành" />
-                  </SelectTrigger>
-                  <SelectContent className="max-h-60 overflow-y-auto">
-                    {provincesQuery.items.map((item) => (
-                      <SelectItem key={item.code} value={item.code}>
-                        {item.fullName || item.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                  placeholder="Chọn tỉnh thành"
+                  searchPlaceholder="Tìm tỉnh thành..."
+                />
               </div>
               <div className="space-y-2">
                 <Label required>Phường xã</Label>
-                <Select
+                <AddressRemoteCombobox
+                  type="ward"
                   value={formData.ward || ""}
-                  onValueChange={(value) =>
+                  onChange={(value) =>
                     setFormData((prev) => ({ ...prev, ward: value }))
                   }
-                  disabled={!formData.province}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Chọn phường xã" />
-                  </SelectTrigger>
-                  <SelectContent className="max-h-60 overflow-y-auto">
-                    {wardsQuery.items.map((item) => (
-                      <SelectItem key={item.code} value={item.code}>
-                        {item.fullName || item.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                  provinceCode={formData.province}
+                  placeholder={
+                    formData.province
+                      ? "Chọn phường xã"
+                      : "Chọn tỉnh thành trước"
+                  }
+                  searchPlaceholder="Tìm phường xã..."
+                />
               </div>
             </div>
             <div className="space-y-2">

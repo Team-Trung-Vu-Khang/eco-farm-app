@@ -134,7 +134,6 @@ export default function CooperativeEditPage() {
     {
       id: "basic",
       title: "Thông tin cơ bản",
-      description: "Tên, thương hiệu, mã, thuế",
       content: (
         <BasicInfoStep
           formData={formData}
@@ -148,8 +147,6 @@ export default function CooperativeEditPage() {
       isValid:
         formData.name.trim().length > 0 &&
         formData.taxCode.trim().length > 0 &&
-        formData.taxAuthority.trim().length > 0 &&
-        formData.issueDate.trim().length > 0 &&
         formData.classification.length > 0 &&
         formData.representative.trim().length > 0 &&
         formData.province.trim().length > 0 &&
@@ -158,7 +155,6 @@ export default function CooperativeEditPage() {
     {
       id: "contact",
       title: "Thông tin liên hệ",
-      description: "Danh sách liên hệ",
       content: (
         <ContactInfoStep
           formData={formData}
@@ -173,7 +169,6 @@ export default function CooperativeEditPage() {
     {
       id: "branches",
       title: "Chi nhánh",
-      description: "Quản lý chi nhánh",
       content: (
         <BranchesStep
           formData={formData}
@@ -193,7 +188,6 @@ export default function CooperativeEditPage() {
     {
       id: "bank",
       title: "Ngân hàng",
-      description: "Tài khoản thanh toán",
       content: (
         <BankInfoStep
           bankAccounts={formData.bankAccounts}
@@ -219,7 +213,6 @@ export default function CooperativeEditPage() {
     {
       id: "documents",
       title: "Giấy chứng nhận đăng ký hợp tác xã",
-      description: "Do cơ quan đăng ký kinh doanh cấp huyện cấp",
       content: (
         <DocumentsStep
           formData={formData}
@@ -234,7 +227,6 @@ export default function CooperativeEditPage() {
     {
       id: "confirm",
       title: "Xác nhận",
-      description: "Kiểm tra thông tin",
       content: (
         <ConfirmStep formData={formData} />
       ),
@@ -268,7 +260,6 @@ export default function CooperativeEditPage() {
   return (
     <PageWrapper
       title={`Cập nhật Hợp tác xã`}
-      description="Cập nhật thông tin chi tiết"
       actions={
         <div className="flex items-center gap-3"><div className="flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-2 shadow-sm"><span className="text-xs font-bold text-slate-700">Thông tin chuyên sâu</span><Switch checked={!isSimpleMode} onCheckedChange={(checked) => setIsSimpleMode(!checked)} /></div><Link href="/cooperative">
           <button

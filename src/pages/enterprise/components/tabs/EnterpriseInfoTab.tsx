@@ -8,7 +8,7 @@ export function EnterpriseInfoTab({ data }: { data: any }) {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Info className="w-5 h-5 text-primary" />
-            Thông tin thuế & Pháp lý
+            Thông tin pháp lý
           </CardTitle>
         </CardHeader>
         <CardContent className="grid md:grid-cols-2 gap-6">
@@ -16,32 +16,6 @@ export function EnterpriseInfoTab({ data }: { data: any }) {
             <div>
               <div className="text-sm text-muted-foreground mb-1">Mã số thuế</div>
               <div className="font-medium text-base">{data.taxCode}</div>
-            </div>
-            <div>
-              <div className="text-sm text-muted-foreground mb-1">Ngày cấp</div>
-              <div className="font-medium text-base">
-                {data.issueDate
-                  ? new Date(data.issueDate).toLocaleDateString("vi-VN")
-                  : "---"}
-              </div>
-            </div>
-          </div>
-          <div className="space-y-4">
-            <div>
-              <div className="text-sm text-muted-foreground mb-1">
-                Cơ quan thuế
-              </div>
-              <div className="font-medium text-base">
-                {data.taxAuthority || "---"}
-              </div>
-            </div>
-            <div>
-              <div className="text-sm text-muted-foreground mb-1">
-                Địa chỉ đăng ký thuế
-              </div>
-              <div className="font-medium text-base">
-                {data.taxAddress || "---"}
-              </div>
             </div>
           </div>
         </CardContent>

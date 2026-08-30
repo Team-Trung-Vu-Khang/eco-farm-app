@@ -44,7 +44,6 @@ export default function EnterpriseEditPage() {
               ? "Hợp tác xã"
               : "Nông hộ"
         }`}
-        description="Cập nhật thông tin chi tiết"
         actions={[
           <div className="flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-2 shadow-sm">
             <span className="text-xs font-bold text-slate-700">

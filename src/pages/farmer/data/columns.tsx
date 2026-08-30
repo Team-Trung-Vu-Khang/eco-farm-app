@@ -49,7 +49,7 @@ export const farmerColumns: Column<Enterprise>[] = [
   { key: "name", label: "Tên nông hộ" },
   {
     key: "classification",
-    label: "Phân loại",
+    label: "Lĩnh vực",
     render: (value) => {
       const labels: Record<string, string> = {
         production: "Sản xuất",
