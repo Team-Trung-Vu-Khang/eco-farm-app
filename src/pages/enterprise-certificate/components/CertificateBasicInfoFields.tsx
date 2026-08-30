@@ -1,4 +1,7 @@
 import {
+  Avatar,
+  AvatarFallback,
+  AvatarImage,
   Input,
   Label,
   Select,
@@ -14,6 +17,14 @@ import type { EnterpriseCertificateFormValues } from "../data/enterprise-certifi
 interface BasicInfoProps {
   standards: Standard[];
 }
+
+const getStandardInitials = (name: string) =>
+  name
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase() ?? "")
+    .join("") || "ST";
 
 export function CertificateBasicInfoFields({ standards }: BasicInfoProps) {
   const {
@@ -115,10 +126,27 @@ export function CertificateBasicInfoFields({ standards }: BasicInfoProps) {
                 <SelectTrigger className="bg-white">
                   <SelectValue placeholder="Chọn loại tiêu chuẩn" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="z-[9999]">
                   {standards.map((standard) => (
-                    <SelectItem key={standard.code} value={standard.code}>
-                      {standard.name}
+                    <SelectItem
+                      key={standard.code}
+                      value={standard.code}
+                      className="py-2"
+                    >
+                      <span className="flex min-w-0 items-center gap-3">
+                        <Avatar className="h-7 w-7 shrink-0 rounded-md border border-slate-200">
+                          {standard.stampUrl ? (
+                            <AvatarImage
+                              src={standard.stampUrl}
+                              alt={standard.name}
+                            />
+                          ) : null}
+                          <AvatarFallback className="rounded-md bg-slate-100 text-[10px] font-semibold text-slate-600">
+                            {getStandardInitials(standard.name)}
+                          </AvatarFallback>
+                        </Avatar>
+                        <span className="truncate">{standard.name}</span>
+                      </span>
                     </SelectItem>
                   ))}
                 </SelectContent>

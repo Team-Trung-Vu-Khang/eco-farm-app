@@ -53,6 +53,7 @@ export const mapStandardRecordToOption = (
   name: record.name,
   organizations:
     record.issuers?.map((issuer) => issuer.name).filter(Boolean) ?? [],
+  stampUrl: record.stampUrl ?? "",
 });
 
 export const mapRegionRecordToArea = (record: FarmRegionResponse): Area => ({
