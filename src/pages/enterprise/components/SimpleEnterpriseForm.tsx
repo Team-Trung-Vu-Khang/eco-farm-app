@@ -11,13 +11,15 @@ import {
   SelectTrigger,
   SelectValue,
   Textarea,
+  useToast,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import AddressSearchInput from "@/components/AddressSearchInput";
 import { Building2, ImagePlus, MapPin, Upload } from "lucide-react";
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { useGeoProvinces, useGeoWards, useMasterData } from "@/features/master-data";
 import { useEnterpriseFormContext } from "../context/EnterpriseFormContext";
 import { getDefaultOrganizationImage } from "../data/default-organization-images";
+import { fetchTaxPayerInfo } from "@/utils/tax";
 
 interface SimpleEnterpriseFormProps {
   onComplete: () => void;
@@ -54,6 +56,80 @@ export default function SimpleEnterpriseForm({
     },
     enabled: Boolean(formData.province),
   });
+
+  const [isCheckingTax, setIsCheckingTax] = useState(false);
+  const { toast } = useToast();
+
+  const handleCheckTaxCode = async () => {
+    const taxCode = formData.taxCode.trim();
+    if (!taxCode) {
+      toast({
+        title: "Thông báo",
+        description: "Vui lòng nhập mã số thuế trước khi kiểm tra",
+      });
+      return;
+    }
+
+    setIsCheckingTax(true);
+    try {
+      const data = await fetchTaxPayerInfo(taxCode);
+      if (!data) {
+        toast({
+          title: "Thông báo",
+          description: "Mã số thuế không tìm thấy hoặc lỗi kết nối",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (data.success === false) {
+        toast({
+          title: "Thông báo",
+          description: data.message || "Mã số thuế không tìm thấy",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      setFormData((prev) => {
+        const updates: Partial<typeof prev> = {};
+
+        if (!prev.name.trim() && data.name) {
+          updates.name = data.name;
+        }
+
+        if (!prev.taxAuthority.trim() && data.taxDepartment) {
+          updates.taxAuthority = data.taxDepartment;
+        }
+
+        if (!prev.address.trim() && data.address) {
+          updates.address = data.address;
+        }
+
+        if (!prev.organizationTypeId && data.orgType) {
+          const matchedOrgType = organizationTypesQuery.items.find(
+            (item) =>
+              item.name.toLowerCase().includes(data.orgType!.toLowerCase()) ||
+              data.orgType!.toLowerCase().includes(item.name.toLowerCase())
+          );
+          if (matchedOrgType) {
+            updates.organizationTypeId = String(matchedOrgType.id);
+          }
+        }
+
+        return { ...prev, ...updates };
+      });
+
+      toast({
+        title: "Thành công",
+        description: "Đã tự động điền thông tin từ mã số thuế",
+      });
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setIsCheckingTax(false);
+    }
+  };
 
   const isValid = Boolean(
     formData.name.trim() &&
@@ -156,13 +232,25 @@ export default function SimpleEnterpriseForm({
             </div>
             <div className="space-y-2">
               <Label required>Mã số thuế</Label>
-              <Input
-                value={formData.taxCode}
-                onChange={(event) =>
-                  setFormData((prev) => ({ ...prev, taxCode: event.target.value }))
-                }
-                placeholder="Nhập mã số thuế"
-              />
+              <div className="flex gap-2">
+                <Input
+                  className="flex-1"
+                  value={formData.taxCode}
+                  onChange={(event) =>
+                    setFormData((prev) => ({ ...prev, taxCode: event.target.value }))
+                  }
+                  placeholder="Nhập mã số thuế"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={isCheckingTax}
+                  onClick={handleCheckTaxCode}
+                  className="shrink-0"
+                >
+                  {isCheckingTax ? "Đang kiểm tra..." : "Kiểm tra"}
+                </Button>
+              </div>
             </div>
             <div className="space-y-2">
               <Label required>Địa chỉ thuế</Label>

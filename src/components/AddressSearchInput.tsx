@@ -22,24 +22,42 @@ interface AddressSearchInputProps {
   placeholder?: string;
 }
 
+interface GoogleMapsPlace {
+  formatted_address?: string;
+  name?: string;
+  geometry?: {
+    location?: {
+      lat: () => number;
+      lng: () => number;
+    };
+  };
+}
+
+interface GoogleMapsAutocomplete {
+  addListener: (
+    eventName: string,
+    callback: () => void,
+  ) => { remove: () => void };
+  getPlace: () => GoogleMapsPlace;
+}
+
+interface GoogleMapsAutocompleteConstructor {
+  new (
+    input: HTMLInputElement,
+    options?: {
+      componentRestrictions?: { country: string | string[] };
+      fields?: string[];
+      types?: string[];
+    },
+  ): GoogleMapsAutocomplete;
+}
+
 declare global {
   interface Window {
     google?: {
       maps?: {
         places?: {
-          Autocomplete: new (
-            input: HTMLInputElement,
-            options?: Record<string, unknown>,
-          ) => {
-            addListener: (eventName: string, callback: () => void) => void;
-            getPlace: () => {
-              formatted_address?: string;
-              name?: string;
-              geometry?: {
-                location?: { lat: () => number; lng: () => number };
-              };
-            };
-          };
+          Autocomplete: GoogleMapsAutocompleteConstructor;
         };
       };
     };
@@ -80,7 +98,8 @@ export default function AddressSearchInput({
   const [results, setResults] = useState<SearchResult[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [googlePlacesUnavailable, setGooglePlacesUnavailable] = useState(false);
-  const selectedQueryRef = useRef("");
+  const selectedQueryRef = useRef(value);
+  const userTypedQueryRef = useRef(value);
   const inputWrapperRef = useRef<HTMLDivElement>(null);
   const onSelectLocationRef = useRef(onSelectLocation);
   const onChangeRef = useRef(onChange);
@@ -111,10 +130,18 @@ export default function AddressSearchInput({
         });
         listener = autocomplete.addListener("place_changed", () => {
           const place = autocomplete.getPlace();
-          const latitude = place.geometry?.location?.lat();
-          const longitude = place.geometry?.location?.lng();
+          const latFn = place.geometry?.location?.lat;
+          const lngFn = place.geometry?.location?.lng;
+          const latitude = typeof latFn === "function" ? latFn() : undefined;
+          const longitude = typeof lngFn === "function" ? lngFn() : undefined;
           const address = place.formatted_address || place.name;
-          if (!address || !Number.isFinite(latitude) || !Number.isFinite(longitude)) {
+          if (
+            !address ||
+            latitude === undefined ||
+            longitude === undefined ||
+            !Number.isFinite(latitude) ||
+            !Number.isFinite(longitude)
+          ) {
             return;
           }
 
@@ -135,11 +162,19 @@ export default function AddressSearchInput({
     };
   }, []);
 
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     if (
       import.meta.env.VITE_GOOGLE_MAPS_API_KEY?.trim() &&
       !googlePlacesUnavailable
     ) {
+      setResults([]);
+      return;
+    }
+    // If the value changed from an external source (autofill/prop update), skip searching
+    if (value !== userTypedQueryRef.current) {
+      userTypedQueryRef.current = value;
+      selectedQueryRef.current = value;
       setResults([]);
       return;
     }
@@ -170,6 +205,7 @@ export default function AddressSearchInput({
 
     return () => window.clearTimeout(timer);
   }, [value, googlePlacesUnavailable]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   const selectResult = (result: SearchResult) => {
     const latitude = Number(result.lat);
@@ -191,6 +227,7 @@ export default function AddressSearchInput({
         value={value}
         onChange={(event) => {
           selectedQueryRef.current = "";
+          userTypedQueryRef.current = event.target.value;
           onChange(event.target.value);
         }}
         placeholder={placeholder}

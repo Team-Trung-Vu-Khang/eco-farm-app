@@ -119,7 +119,7 @@ export function useAreaCreateForm(
           enterpriseId: data.enterpriseId,
           address: data.metadataJson?.address,
         },
-        boundary: data.isDetailed
+        boundary: data.coordinates?.length
           ? (data.coordinates || []).map((c) => ({
               latitude: c.lat,
               longitude: c.lng,
@@ -131,7 +131,7 @@ export function useAreaCreateForm(
               longitude: data.centerPoint.lng,
             }
           : undefined,
-        plots: data.isDetailed
+        plots: data.plots?.length
           ? (data.plots || []).map((sub) => {
               const plotId =
                 sub.id &&

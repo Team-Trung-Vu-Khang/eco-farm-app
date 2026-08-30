@@ -45,10 +45,10 @@ export function useRegionCreateForm(
           wardId: regionDataResponse.ward || regionDataResponse.district || "",
           address: regionDataResponse.address || "",
           cropIds:
-            regionDataResponse.crops
+            (regionDataResponse.crops
               ?.filter((c) => c.role === "MAIN")
               .map((c) => (c.cropId || c.crop?.id)?.toString())
-              .filter(Boolean) as string[] || [],
+              .filter(Boolean) as string[]) || [],
           landType: regionDataResponse.soilType?.id?.toString() || "",
           terrain: regionDataResponse.terrainFeature?.id?.toString() || "",
           note: regionDataResponse.description || "",
@@ -135,9 +135,12 @@ export function useRegionCreateForm(
           address: data.metadataJson?.address,
         },
         crops: data.cropIds?.length
-          ? data.cropIds.map((id) => ({ cropId: parseInt(id, 10), role: "MAIN" }))
+          ? data.cropIds.map((id) => ({
+              cropId: parseInt(id, 10),
+              role: "MAIN",
+            }))
           : undefined,
-        boundary: data.isDetailed
+        boundary: data.coordinates?.length
           ? (data.coordinates || []).map((c) => ({
               latitude: c.lat,
               longitude: c.lng,
@@ -149,14 +152,16 @@ export function useRegionCreateForm(
               longitude: data.centerPoint.lng,
             }
           : undefined,
-        areas: data.isDetailed
+        areas: data.subAreas?.length
           ? (data.subAreas || []).map((sub) => ({
               id: sub.id ? parseInt(sub.id, 10) : undefined,
               code: sub.code,
               name: sub.name,
               acreage: sub.area,
               soilTypeId: sub.landType ? parseInt(sub.landType, 10) : undefined,
-              terrainFeatureId: sub.terrain ? parseInt(sub.terrain, 10) : undefined,
+              terrainFeatureId: sub.terrain
+                ? parseInt(sub.terrain, 10)
+                : undefined,
               status: sub.status,
               metadataJson: {
                 enterpriseId: data.enterpriseId,

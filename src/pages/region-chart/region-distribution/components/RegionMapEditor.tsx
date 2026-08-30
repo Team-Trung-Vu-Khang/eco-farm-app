@@ -113,7 +113,7 @@ const MapLayout = ({
   const fileInputRef = useRef<HTMLInputElement>(null);
   return (
     <div className="flex flex-col md:flex-row flex-1 min-h-0 gap-4 p-4 w-full">
-      <div className="relative z-0 w-full flex-1 min-h-96 md:min-h-0 overflow-hidden rounded-lg border">
+      <div className="relative z-0 w-full flex-1 min-h-[500px] md:min-h-[600px] overflow-hidden rounded-lg border">
         <MapContainer
           center={[center.lat, center.lng]}
           zoom={14}

@@ -12,11 +12,13 @@ import {
   SelectTrigger,
   SelectValue,
   Textarea,
+  useToast,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { ImagePlus, MapPin, Upload } from "lucide-react";
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { getDefaultOrganizationImage } from "../../enterprise/data/default-organization-images";
 import type { FarmerFormData } from "../types";
+import { fetchTaxPayerInfo } from "@/utils/tax";
 
 interface SimpleFarmerFormProps {
   formData: FarmerFormData;
@@ -40,6 +42,63 @@ export default function SimpleFarmerForm({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { provinces, wards, isLoadingProvinces, isLoadingWards } =
     useAddressOptions(formData.province);
+
+  const [isCheckingTax, setIsCheckingTax] = useState(false);
+  const { toast } = useToast();
+
+  const handleCheckTaxCode = async () => {
+    const taxCode = formData.taxCode.trim();
+    if (!taxCode) {
+      toast({
+        title: "Thông báo",
+        description: "Vui lòng nhập mã số thuế trước khi kiểm tra",
+      });
+      return;
+    }
+
+    setIsCheckingTax(true);
+    try {
+      const data = await fetchTaxPayerInfo(taxCode);
+      if (!data) {
+        toast({
+          title: "Thông báo",
+          description: "Mã số thuế không tìm thấy hoặc lỗi kết nối",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (data.success === false) {
+        toast({
+          title: "Thông báo",
+          description: data.message || "Mã số thuế không tìm thấy",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (!formData.name.trim() && data.name) {
+        onChange("name", data.name);
+      }
+
+      if (!formData?.taxAuthority?.trim() && data.taxDepartment) {
+        onChange("taxAuthority", data.taxDepartment);
+      }
+
+      if (!formData.address.trim() && data.address) {
+        onChange("address", data.address);
+      }
+
+      toast({
+        title: "Thành công",
+        description: "Đã tự động điền thông tin từ mã số thuế",
+      });
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setIsCheckingTax(false);
+    }
+  };
   const isValid = Boolean(
     formData.name.trim() &&
     formData.province?.trim() &&
@@ -117,11 +176,23 @@ export default function SimpleFarmerForm({
             </div>
             <div className="space-y-2 sm:col-span-2">
               <Label>Mã số thuế</Label>
-              <Input
-                value={formData.taxCode}
-                onChange={(e) => onChange("taxCode", e.target.value)}
-                placeholder="Nhập mã số thuế"
-              />
+              <div className="flex gap-2">
+                <Input
+                  className="flex-1"
+                  value={formData.taxCode}
+                  onChange={(e) => onChange("taxCode", e.target.value)}
+                  placeholder="Nhập mã số thuế"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={isCheckingTax}
+                  onClick={handleCheckTaxCode}
+                  className="shrink-0"
+                >
+                  {isCheckingTax ? "Đang kiểm tra..." : "Kiểm tra"}
+                </Button>
+              </div>
             </div>
           </div>
           <div className="space-y-4 border-t border-slate-100 pt-5">

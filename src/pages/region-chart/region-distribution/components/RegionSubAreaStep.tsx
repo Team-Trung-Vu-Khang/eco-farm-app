@@ -481,8 +481,8 @@ const SubAreaLayout = ({
     .join("|");
 
   return (
-    <div className="grid h-auto lg:h-full w-full grid-cols-1 gap-6 p-4 lg:grid-cols-5 overflow-y-auto lg:overflow-hidden">
-      <div className="relative z-0 h-96 lg:h-full w-full lg:col-span-3 shrink-0 lg:shrink overflow-hidden rounded-lg border">
+    <div className="flex flex-col md:flex-row flex-1 min-h-0 gap-4 p-4 w-full">
+      <div className="relative z-0 w-full flex-1 min-h-[500px] md:min-h-[600px] overflow-hidden rounded-lg border">
         <MapContainer
           center={[center.lat, center.lng]}
           zoom={14}
@@ -609,7 +609,7 @@ const SubAreaLayout = ({
         </MapContainer>
       </div>
 
-      <div className="flex h-[500px] lg:h-full w-full lg:col-span-2 shrink-0 lg:shrink flex-col overflow-hidden rounded-lg border bg-slate-50">
+      <div className="flex h-[450px] md:h-full md:w-75 shrink-0 flex-col overflow-hidden rounded-lg border bg-slate-50">
         {!editingSubArea ? (
           <div className="flex h-full flex-col">
             <div className="flex items-center justify-between border-b bg-white p-4">

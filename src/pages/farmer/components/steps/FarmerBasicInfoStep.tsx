@@ -13,12 +13,13 @@ import {
   useToast,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { Image, MapPin, Upload } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import { Controller, type Control, type FieldErrors } from "react-hook-form";
 import type { FarmerFormInput } from "../../data/farmer-form.schema";
 import type { FarmerFormData } from "../../types";
 import AddressSearchInput from "@/components/AddressSearchInput";
 import { getDefaultOrganizationImage } from "../../../enterprise/data/default-organization-images";
+import { fetchTaxPayerInfo } from "@/utils/tax";
 
 const asInputValue = (value: unknown) =>
   typeof value === "string" || typeof value === "number" ? String(value) : "";
@@ -47,8 +48,63 @@ export const FarmerBasicInfoStep = ({
   handleDrag,
   processLogoImage,
 }: FarmerBasicInfoStepProps) => {
-  const MAP4D_ACCESS_KEY = import.meta.env.VITE_MAP4D_ACCESS_KEY;
   const { toast } = useToast();
+
+  const [isCheckingTax, setIsCheckingTax] = useState(false);
+
+  const handleCheckTaxCode = async (taxCodeVal?: string) => {
+    const taxCode = (taxCodeVal || formData.taxCode || "").trim();
+    if (!taxCode) {
+      toast({
+        title: "Thông báo",
+        description: "Vui lòng nhập mã số thuế trước khi kiểm tra",
+      });
+      return;
+    }
+
+    setIsCheckingTax(true);
+    try {
+      const data = await fetchTaxPayerInfo(taxCode);
+      if (!data) {
+        toast({
+          title: "Thông báo",
+          description: "Mã số thuế không tìm thấy hoặc lỗi kết nối",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (data.success === false) {
+        toast({
+          title: "Thông báo",
+          description: data.message || "Mã số thuế không tìm thấy",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (!formData.name.trim() && data.name) {
+        updateField("name", data.name);
+      }
+
+      if (!formData?.taxAuthority?.trim() && data.taxDepartment) {
+        updateField("taxAuthority", data.taxDepartment);
+      }
+
+      if (!formData.address.trim() && data.address) {
+        updateField("address", data.address);
+      }
+
+      toast({
+        title: "Thành công",
+        description: "Đã tự động điền thông tin từ mã số thuế",
+      });
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setIsCheckingTax(false);
+    }
+  };
   const { provinces, wards, isLoadingProvinces, isLoadingWards } =
     useAddressOptions(formData.province);
   const businessLinesQuery = useMasterData("business-lines", {
@@ -62,101 +118,6 @@ export const FarmerBasicInfoStep = ({
     value: String(item.id),
     label: item.name || item.code || String(item.id),
   }));
-  const [isFocused, setIsFocused] = useState(false);
-  const [showSuggestions, setShowSuggestions] = useState(false);
-  const [suggestions, setSuggestions] = useState<
-    Array<{ name: string; address: string; lat: number; lng: number }>
-  >([]);
-  const skipNextSearchRef = useRef(false);
-  const searchContainerRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const timer = window.setTimeout(async () => {
-      if (skipNextSearchRef.current) {
-        skipNextSearchRef.current = false;
-        return;
-      }
-      if (
-        !isFocused ||
-        !formData.address ||
-        formData.address.trim().length < 3 ||
-        !MAP4D_ACCESS_KEY
-      ) {
-        setSuggestions([]);
-        setShowSuggestions(false);
-        return;
-      }
-      try {
-        const params = new URLSearchParams({
-          key: MAP4D_ACCESS_KEY,
-          text: formData.address.trim(),
-        });
-        const res = await fetch(
-          `https://api.map4d.vn/sdk/autosuggest?${params.toString()}`,
-        );
-        if (!res.ok) return;
-        const data = (await res.json()) as {
-          result?: Array<{
-            name?: string;
-            address?: string;
-            location?: { lat?: number; lng?: number };
-          }>;
-        };
-        const next = (Array.isArray(data.result) ? data.result : [])
-          .map((item) => ({
-            name: item?.name || "",
-            address: item?.address || "",
-            lat: Number(item?.location?.lat),
-            lng: Number(item?.location?.lng),
-          }))
-          .filter(
-            (item) =>
-              item.address &&
-              Number.isFinite(item.lat) &&
-              Number.isFinite(item.lng),
-          );
-        setSuggestions(next);
-        setShowSuggestions(next.length > 0);
-      } catch {
-        setSuggestions([]);
-        setShowSuggestions(false);
-      }
-    }, 400);
-    return () => window.clearTimeout(timer);
-  }, [MAP4D_ACCESS_KEY, formData.address, isFocused]);
-
-  useEffect(() => {
-    const onClickOutside = (event: MouseEvent) => {
-      if (
-        searchContainerRef.current &&
-        !searchContainerRef.current.contains(event.target as Node)
-      ) {
-        setShowSuggestions(false);
-        setIsFocused(false);
-      }
-    };
-    document.addEventListener("mousedown", onClickOutside);
-    return () => document.removeEventListener("mousedown", onClickOutside);
-  }, []);
-
-  const handleSelectAddress = (item: {
-    name: string;
-    address: string;
-    lat: number;
-    lng: number;
-  }) => {
-    const selectedAddress = item.address || item.name;
-    skipNextSearchRef.current = true;
-    setShowSuggestions(false);
-    setIsFocused(false);
-    updateField("address", selectedAddress);
-    updateField("latitude", item.lat);
-    updateField("longitude", item.lng);
-    toast({
-      title: "Đã chọn địa chỉ",
-      description: "Đã lưu địa chỉ và tọa độ.",
-    });
-  };
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -298,18 +259,35 @@ export const FarmerBasicInfoStep = ({
             name="taxCode"
             render={({ field, fieldState }) => (
               <>
-                <Input
-                  id="taxCode"
-                  value={asInputValue(field.value)}
-                  onChange={field.onChange}
-                  onBlur={field.onBlur}
-                  ref={field.ref}
-                  name={field.name}
-                  placeholder="Nhập mã số thuế"
-                  aria-invalid={!!fieldState.error}
-                />
+                <div className="flex gap-2">
+                  <Input
+                    id="taxCode"
+                    className="flex-1"
+                    value={asInputValue(field.value)}
+                    onChange={field.onChange}
+                    onBlur={field.onBlur}
+                    ref={field.ref}
+                    name={field.name}
+                    placeholder="Nhập mã số thuế"
+                    aria-invalid={!!fieldState.error}
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    disabled={isCheckingTax}
+                    className="shrink-0"
+                    onClick={() =>
+                      !!field?.value &&
+                      handleCheckTaxCode(field?.value as unknown as string)
+                    }
+                  >
+                    {isCheckingTax ? "Đang kiểm tra..." : "Kiểm tra"}
+                  </Button>
+                </div>
                 {fieldState.error ? (
-                  <p className="text-xs text-red-600">{fieldState.error.message}</p>
+                  <p className="text-xs text-red-600">
+                    {fieldState.error.message}
+                  </p>
                 ) : null}
               </>
             )}
@@ -336,7 +314,9 @@ export const FarmerBasicInfoStep = ({
                   aria-invalid={!!fieldState.error}
                 />
                 {fieldState.error ? (
-                  <p className="text-xs text-red-600">{fieldState.error.message}</p>
+                  <p className="text-xs text-red-600">
+                    {fieldState.error.message}
+                  </p>
                 ) : null}
               </>
             )}
@@ -360,7 +340,9 @@ export const FarmerBasicInfoStep = ({
                   aria-invalid={!!fieldState.error}
                 />
                 {fieldState.error ? (
-                  <p className="text-xs text-red-600">{fieldState.error.message}</p>
+                  <p className="text-xs text-red-600">
+                    {fieldState.error.message}
+                  </p>
                 ) : null}
               </>
             )}
@@ -383,7 +365,9 @@ export const FarmerBasicInfoStep = ({
                   onChange={field.onChange}
                 />
                 {fieldState.error ? (
-                  <p className="text-xs text-red-600">{fieldState.error.message}</p>
+                  <p className="text-xs text-red-600">
+                    {fieldState.error.message}
+                  </p>
                 ) : null}
               </>
             )}
@@ -411,9 +395,7 @@ export const FarmerBasicInfoStep = ({
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="space-y-2">
-          <Label htmlFor="representative">
-            Người đại diện pháp luật
-          </Label>
+          <Label htmlFor="representative">Người đại diện pháp luật</Label>
           <Controller
             control={control}
             name="representative"

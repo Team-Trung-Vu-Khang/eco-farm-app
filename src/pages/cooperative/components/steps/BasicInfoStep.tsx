@@ -1,4 +1,8 @@
-import { useGeoProvinces, useGeoWards, useMasterData } from "@/features/master-data";
+import {
+  useGeoProvinces,
+  useGeoWards,
+  useMasterData,
+} from "@/features/master-data";
 import {
   Button,
   Input,
@@ -13,10 +17,11 @@ import {
   useToast,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { Image, MapPin, Upload } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import type { CooperativeFormData } from "../../types/types";
 import AddressSearchInput from "@/components/AddressSearchInput";
 import { getDefaultOrganizationImage } from "../../../enterprise/data/default-organization-images";
+import { fetchTaxPayerInfo } from "@/utils/tax";
 
 interface BasicInfoStepProps {
   formData: CooperativeFormData;
@@ -35,8 +40,53 @@ export function BasicInfoStep({
   handleImageUpload,
   handleLogoDrop,
 }: BasicInfoStepProps) {
-  const MAP4D_ACCESS_KEY = import.meta.env.VITE_MAP4D_ACCESS_KEY;
+  const [isCheckingTax, setIsCheckingTax] = useState(false);
   const { toast } = useToast();
+  const handleCheckTaxCode = async () => {
+    const taxCode = (formData.taxCode || "").trim();
+    if (!taxCode) {
+      toast({
+        title: "Thông báo",
+        description: "Vui lòng nhập mã số thuế trước khi kiểm tra",
+      });
+      return;
+    }
+    setIsCheckingTax(true);
+    try {
+      const data = await fetchTaxPayerInfo(taxCode);
+      if (!data) {
+        toast({
+          title: "Thông báo",
+          description: "Mã số thuế không tìm thấy hoặc lỗi kết nối",
+          variant: "destructive",
+        });
+        return;
+      }
+      if (data.success === false) {
+        toast({
+          title: "Thông báo",
+          description: data.message || "Mã số thuế không tìm thấy",
+          variant: "destructive",
+        });
+        return;
+      }
+      const updates: Partial<CooperativeFormData> = {};
+      if (!formData.name.trim() && data.name) updates.name = data.name;
+      if (!formData.taxAuthority.trim() && data.taxDepartment)
+        updates.taxAuthority = data.taxDepartment;
+      if (!formData.address.trim() && data.address)
+        updates.address = data.address;
+      setFormData({ ...formData, ...updates });
+      toast({
+        title: "Thành công",
+        description: "Đã tự động điền thông tin từ mã số thuế",
+      });
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setIsCheckingTax(false);
+    }
+  };
   const provincesQuery = useGeoProvinces({
     params: {
       status: "active",
@@ -64,106 +114,6 @@ export function BasicInfoStep({
     value: String(item.id),
     label: item.name || item.code || String(item.id),
   }));
-  const [addressQuery, setAddressQuery] = useState(formData.address || "");
-  const [isFocused, setIsFocused] = useState(false);
-  const [showSuggestions, setShowSuggestions] = useState(false);
-  const [suggestions, setSuggestions] = useState<
-    Array<{ name: string; address: string; lat: number; lng: number }>
-  >([]);
-  const skipNextSearchRef = useRef(false);
-  const searchContainerRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const timer = window.setTimeout(async () => {
-      if (skipNextSearchRef.current) {
-        skipNextSearchRef.current = false;
-        return;
-      }
-      if (
-        !isFocused ||
-        !addressQuery ||
-        addressQuery.trim().length < 3 ||
-        !MAP4D_ACCESS_KEY
-      ) {
-        setSuggestions([]);
-        setShowSuggestions(false);
-        return;
-      }
-      try {
-        const params = new URLSearchParams({
-          key: MAP4D_ACCESS_KEY,
-          text: addressQuery.trim(),
-        });
-        const res = await fetch(
-          `https://api.map4d.vn/sdk/autosuggest?${params.toString()}`,
-        );
-        if (!res.ok) return;
-        const data = (await res.json()) as {
-          result?: Array<{
-            name?: string;
-            address?: string;
-            location?: { lat?: number; lng?: number };
-          }>;
-        };
-        const next = (Array.isArray(data.result) ? data.result : [])
-          .map((item) => ({
-            name: item?.name || "",
-            address: item?.address || "",
-            lat: Number(item?.location?.lat),
-            lng: Number(item?.location?.lng),
-          }))
-          .filter(
-            (item) =>
-              item.address &&
-              Number.isFinite(item.lat) &&
-              Number.isFinite(item.lng),
-          );
-        setSuggestions(next);
-        setShowSuggestions(next.length > 0);
-      } catch {
-        setSuggestions([]);
-        setShowSuggestions(false);
-      }
-    }, 400);
-    return () => window.clearTimeout(timer);
-  }, [MAP4D_ACCESS_KEY, addressQuery, isFocused]);
-
-  useEffect(() => {
-    const onClickOutside = (event: MouseEvent) => {
-      if (
-        searchContainerRef.current &&
-        !searchContainerRef.current.contains(event.target as Node)
-      ) {
-        setShowSuggestions(false);
-        setIsFocused(false);
-      }
-    };
-    document.addEventListener("mousedown", onClickOutside);
-    return () => document.removeEventListener("mousedown", onClickOutside);
-  }, []);
-
-  const handleSelectAddress = (item: {
-    name: string;
-    address: string;
-    lat: number;
-    lng: number;
-  }) => {
-    const selectedAddress = item.address || item.name;
-    skipNextSearchRef.current = true;
-    setAddressQuery(selectedAddress);
-    setShowSuggestions(false);
-    setIsFocused(false);
-    setFormData({
-      ...formData,
-      address: selectedAddress,
-      latitude: item.lat,
-      longitude: item.lng,
-    });
-    toast({
-      title: "Đã chọn địa chỉ",
-      description: "Đã lưu địa chỉ và tọa độ.",
-    });
-  };
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">
@@ -181,7 +131,9 @@ export function BasicInfoStep({
             {formData.image || getDefaultOrganizationImage("cooperative") ? (
               <>
                 <img
-                  src={formData.image || getDefaultOrganizationImage("cooperative")}
+                  src={
+                    formData.image || getDefaultOrganizationImage("cooperative")
+                  }
                   alt="Preview"
                   className="w-full h-full object-cover"
                 />
@@ -223,7 +175,9 @@ export function BasicInfoStep({
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="space-y-2">
-          <Label htmlFor="name" required>Tên hợp tác xã</Label>
+          <Label htmlFor="name" required>
+            Tên hợp tác xã
+          </Label>
           <Input
             id="name"
             value={formData.name}
@@ -247,18 +201,34 @@ export function BasicInfoStep({
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="space-y-2">
-          <Label htmlFor="taxCode" required>Mã số thuế</Label>
-          <Input
-            id="taxCode"
-            value={formData.taxCode}
-            onChange={(e) =>
-              setFormData({ ...formData, taxCode: e.target.value })
-            }
-            placeholder="Nhập mã số thuế"
-          />
+          <Label htmlFor="taxCode" required>
+            Mã số thuế
+          </Label>
+          <div className="flex gap-2">
+            <Input
+              id="taxCode"
+              className="flex-1"
+              value={formData.taxCode}
+              onChange={(e) =>
+                setFormData({ ...formData, taxCode: e.target.value })
+              }
+              placeholder="Nhập mã số thuế"
+            />
+            <Button
+              type="button"
+              variant="outline"
+              disabled={isCheckingTax}
+              onClick={handleCheckTaxCode}
+              className="shrink-0"
+            >
+              {isCheckingTax ? "Đang kiểm tra..." : "Kiểm tra"}
+            </Button>
+          </div>
         </div>
         <div className="space-y-2">
-          <Label htmlFor="classification" required>Phân loại</Label>
+          <Label htmlFor="classification" required>
+            Phân loại
+          </Label>
           <MultiSelect
             options={classificationOptions}
             placeholder="Chọn phân loại..."
@@ -281,7 +251,9 @@ export function BasicInfoStep({
           />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="taxAuthority" required>Cơ quan thuế</Label>
+          <Label htmlFor="taxAuthority" required>
+            Cơ quan thuế
+          </Label>
           <Input
             id="taxAuthority"
             value={formData.taxAuthority}
@@ -306,7 +278,9 @@ export function BasicInfoStep({
           />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="issueDate" required>Ngày cấp</Label>
+          <Label htmlFor="issueDate" required>
+            Ngày cấp
+          </Label>
           <Input
             id="issueDate"
             type="date"
@@ -352,7 +326,9 @@ export function BasicInfoStep({
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="space-y-2">
-            <Label htmlFor="province" required>Tỉnh / Thành phố</Label>
+            <Label htmlFor="province" required>
+              Tỉnh / Thành phố
+            </Label>
             <Select
               value={formData.province}
               onValueChange={(val) =>
@@ -372,7 +348,9 @@ export function BasicInfoStep({
             </Select>
           </div>
           <div className="space-y-2">
-            <Label htmlFor="district" required>Phường / Xã</Label>
+            <Label htmlFor="district" required>
+              Phường / Xã
+            </Label>
             <Select
               value={formData.district}
               onValueChange={(val) =>
