@@ -80,6 +80,27 @@ export function useRegionBasicCreateForm(
           regionDataResponse?.crops ||
           [];
 
+        // Build varietyLabels and varietyCropMap
+        const varietyLabels: Record<string, string> = {};
+        const varietyCropMap: Record<string, string> = {};
+
+        if (zoneData) {
+          (zoneData.productionSubjectVariants ?? []).forEach((v) => {
+            if (!v.id) return;
+            varietyLabels[String(v.id)] = v.name || "";
+            const cId = v.productionSubject?.id || v.crop?.id;
+            if (cId) varietyCropMap[String(v.id)] = String(cId);
+          });
+
+          (zoneData.subjectVariants ?? []).forEach((s) => {
+            const vId = s.cropVariety?.id || s.subjectVariant?.id || s.id;
+            if (!vId) return;
+            varietyLabels[String(vId)] = s.cropVariety?.name || s.subjectVariant?.name || s.name || "";
+            const cId = s.productionSubject?.id || s.crop?.id || s.productionSubjectId;
+            if (cId) varietyCropMap[String(vId)] = String(cId);
+          });
+        }
+
         reset({
           id: regionDataResponse?.id || undefined,
           code: regionDataResponse?.code,
@@ -133,9 +154,20 @@ export function useRegionBasicCreateForm(
               | "archived") ?? "active",
           farmingMethodId: zoneData?.productionMethod?.id || undefined,
           rearingMethodId: zoneData?.rearingMethod?.id || undefined,
-          seedIds: zoneData?.subjectVariants?.map((s) => s.id) || [],
-          cropSeedToggles: (zoneData?.metadataJson?.cropSeedToggles as Record<string, boolean>) || {},
-          varietyIds: (zoneData?.metadataJson?.selectedVarietyIds as number[]) || zoneData?.subjectVariants?.map((s) => s.id) || [],
+          // subjectVariants = owner seeds; load into seedIds
+          seedIds: (zoneData?.subjectVariants ?? []).map((s) => s.id),
+          cropSeedToggles:
+            (zoneData?.metadataJson?.cropSeedToggles as Record<string, boolean>) || {},
+          // varietyIds: prefer productionSubjectVariants (Foundation), fallback subjectVariants
+          varietyIds:
+            (zoneData?.productionSubjectVariants ?? []).length > 0
+              ? (zoneData?.productionSubjectVariants ?? []).map((v) => v.id)
+              : (zoneData?.subjectVariants ?? []).map(
+                  (s) => s.cropVariety?.id || s.subjectVariant?.id || 0,
+                ).filter((id) => id > 0),
+          useSpecificSeeds: (zoneData?.subjectVariants ?? []).length > 0,
+          varietyLabels,
+          varietyCropMap,
         });
         // eslint-disable-next-line react-hooks/set-state-in-effect
         setHasInitialized(true);
@@ -166,6 +198,7 @@ export function useRegionBasicCreateForm(
         seedIds: [],
         cropSeedToggles: {},
         varietyIds: [],
+        useSpecificSeeds: false,
       });
       setHasInitialized(true);
     }
@@ -181,6 +214,12 @@ export function useRegionBasicCreateForm(
   const handleComplete = async (data: RegionBasicFormValues) => {
     setIsSubmitting(true);
     try {
+      // Build variant payload — mutually exclusive per API spec
+      const buildVariantPayload = (useSpecific: boolean, sIds: number[], vIds: number[]) => {
+        if (useSpecific) return { subjectVariantIds: sIds };
+        return { productionSubjectVariantIds: vIds };
+      };
+
       const regionRequest: FarmRegionRequest = {
         code: data.code || undefined,
         name: data.name,
@@ -254,28 +293,16 @@ export function useRegionBasicCreateForm(
         savedRegionId = createdRegion.id;
 
         // Create Cultivation Zone
-        // Build subjects hierarchy: crop → variety → seeds
-        const subjects =
-          (data.cropIds ?? []).length > 0
-            ? (data.cropIds ?? []).map((cropIdStr) => ({
-                subjectId: Number(cropIdStr),
-                variants: (data.varietyIds ?? []).map((vId) => ({
-                  variantId: vId,
-                  seedIds:
-                    (data.seedIds ?? []).length > 0
-                      ? (data.seedIds ?? []).map(Number).filter(Boolean)
-                      : undefined,
-                })),
-              }))
-            : undefined;
-
         const zoneRequest: FarmCultivationZoneRequest = {
           name: data.name,
           domainCode: "CROP",
-          farmingMethodId: data.farmingMethodId || 0,
+          productionMethodId: data.farmingMethodId || 0,
           rearingMethodId: data.rearingMethodId || undefined,
-          seedIds: data.seedIds || [],
-          subjects,
+          ...buildVariantPayload(
+            !!data.useSpecificSeeds,
+            (data.seedIds ?? []).map(Number).filter(Boolean),
+            (data.varietyIds ?? []).filter((id) => id > 0),
+          ),
           status: data.status,
           scopes: [
             {
@@ -304,22 +331,13 @@ export function useRegionBasicCreateForm(
           const zoneRequest: FarmCultivationZoneRequest = {
             name: data.name,
             domainCode: "CROP",
-            farmingMethodId: data.farmingMethodId || 0,
+            productionMethodId: data.farmingMethodId || 0,
             rearingMethodId: data.rearingMethodId || undefined,
-            seedIds: data.seedIds || [],
-            subjects:
-              (data.cropIds ?? []).length > 0
-                ? (data.cropIds ?? []).map((cropIdStr) => ({
-                    subjectId: Number(cropIdStr),
-                    variants: (data.varietyIds ?? []).map((vId) => ({
-                      variantId: vId,
-                      seedIds:
-                        (data.seedIds ?? []).length > 0
-                          ? (data.seedIds ?? []).map(Number).filter(Boolean)
-                          : undefined,
-                    })),
-                  }))
-                : undefined,
+            ...buildVariantPayload(
+              !!data.useSpecificSeeds,
+              (data.seedIds ?? []).map(Number).filter(Boolean),
+              (data.varietyIds ?? []).filter((id) => id > 0),
+            ),
             status: data.status,
             scopes: [
               {

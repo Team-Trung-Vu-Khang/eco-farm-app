@@ -34,6 +34,11 @@ export const regionBasicFormSchema = z.object({
   seedIds: z.array(z.number().int()).optional(),
   cropSeedToggles: z.record(z.boolean()).optional(),
   varietyIds: z.array(z.number().int()).optional(),
+  useSpecificSeeds: z.boolean().optional(),
+  isSeedSelectionValid: z.boolean().optional(),
+  varietyCropMap: z.record(z.string()).optional(),
+  varietySeedMap: z.record(z.array(z.number())).optional(),
+  seedLabels: z.record(z.string()).optional(),
 });
 
 export type RegionBasicFormValues = z.infer<typeof regionBasicFormSchema>;

@@ -325,64 +325,106 @@ export const useCultivationRegionDetail = (id?: string | null) => {
       areaData.rearingMethod ||
       irrigationSystems.find((m) => String(m.id) === area.irrigationMethodId);
 
-    // Group selected seeds by their crop variety to build the technicalConfig crops list
-    const commonCrops =
-      areaData.subjectVariants && areaData.subjectVariants.length > 0
-        ? areaData.subjectVariants.map((sv: any) => {
-            return {
+    // Group selected varieties/seeds to build the technicalConfig crops list
+    // Priority: productionSubjectVariants (Foundation) > subjectVariants (owner seeds) > seeds (legacy)
+    const commonCrops: Array<{
+      id: string;
+      varietyName: string;
+      varietyCode: string;
+      crop: string;
+      illustration: string;
+      seedType: string;
+      selectedSeeds: Array<{
+        id: string;
+        varietyName: string;
+        origin?: string;
+      }>;
+    }> =
+      areaData.productionSubjectVariants &&
+      areaData.productionSubjectVariants.length > 0
+        ? // New API: Foundation varieties (productionSubjectVariants)
+          areaData.productionSubjectVariants.map((psv: any) => ({
+            id: String(psv.id),
+            varietyName: psv.name ?? "",
+            varietyCode: psv.code ?? "",
+            crop: "", // Foundation variants don't carry crop name directly
+            illustration: "",
+            seedType: "Giống Foundation",
+            selectedSeeds: [],
+          }))
+        : areaData.subjectVariants && areaData.subjectVariants.length > 0
+          ? // Owner seeds path (subjectVariants)
+            areaData.subjectVariants.map((sv: any) => ({
               id: String(sv.id),
-              varietyName: sv.subjectVariantName ?? "",
-              varietyCode: sv.subjectVariantCode ?? "",
+              varietyName: sv.subjectVariantName ?? sv.name ?? "",
+              varietyCode: sv.subjectVariantCode ?? sv.code ?? "",
               crop: sv.productionSubjectName ?? "Khác",
-              illustration: "", // we don't have illustration url from subjectVariants, but we can display a default or leave empty
+              illustration: "",
               seedType: "Hạt giống",
               selectedSeeds: [],
-            };
-          })
-        : Array.from(
-            new Map(
-              (areaData.seeds ?? [])
-                .map((s) => allSeeds.find((fs) => fs.id === s.id))
-                .filter(
-                  (fs): fs is NonNullable<typeof fs> =>
-                    !!fs && !!fs.cropVariety?.id,
-                )
-                .map((fs) => {
-                  const cropVarietyId = String(fs.cropVariety!.id);
-                  // Get all seeds in this variety
-                  const selectedSeedsForVariety = (areaData.seeds ?? [])
-                    .map((seed) =>
-                      allSeeds.find((fsSeed) => fsSeed.id === seed.id),
-                    )
-                    .filter(
-                      (fsSeed): fsSeed is NonNullable<typeof fsSeed> =>
-                        !!fsSeed &&
-                        fsSeed.cropVariety?.id === fs.cropVariety!.id,
-                    )
-                    .map((fsSeed) => ({
-                      id: String(fsSeed.id),
-                      varietyName:
-                        fsSeed.cropVariety?.name ??
-                        fsSeed.supplier?.name ??
-                        "Hạt giống",
-                      origin: fsSeed.origin || "Việt Nam",
-                    }));
+            }))
+          : // Legacy seeds array fallback — group by productionSubject (cây trồng)
+            Array.from(
+              new Map(
+                (areaData.seeds ?? [])
+                  .map((s: any) => allSeeds.find((fs) => fs.id === s.id))
+                  .filter(
+                    (fs): fs is NonNullable<typeof fs> =>
+                      !!fs && !!(fs.subjectVariant?.id ?? fs.cropVariety?.id),
+                  )
+                  .map((fs) => {
+                    // Support both new field (subjectVariant) and old field (cropVariety)
+                    const variantId = String(
+                      fs.subjectVariant?.id ?? fs.cropVariety?.id,
+                    );
+                    const variantName =
+                      fs.subjectVariant?.name ?? fs.cropVariety?.name ?? "";
+                    const variantCode =
+                      fs.subjectVariant?.code ?? fs.cropVariety?.code ?? "";
+                    const cropName =
+                      (fs as any).productionSubject?.name ??
+                      (fs as any).crop?.name ??
+                      "Khác";
 
-                  return [
-                    cropVarietyId,
-                    {
-                      id: cropVarietyId,
-                      varietyName: fs.cropVariety!.name ?? "",
-                      varietyCode: fs.cropVariety!.code ?? "",
-                      crop: fs.crop?.name ?? "Khác",
-                      illustration: fs.imageUrl || "",
-                      seedType: "Hạt giống lai", // Fallback description
-                      selectedSeeds: selectedSeedsForVariety,
-                    },
-                  ];
-                }),
-            ).values(),
-          );
+                    const selectedSeedsForVariety = (areaData.seeds ?? [])
+                      .map((seed: any) =>
+                        allSeeds.find((fsSeed) => fsSeed.id === seed.id),
+                      )
+                      .filter(
+                        (fsSeed): fsSeed is NonNullable<typeof fsSeed> => {
+                          const fVariantId =
+                            fsSeed?.subjectVariant?.id ??
+                            fsSeed?.cropVariety?.id;
+                          const thisVariantId =
+                            fs.subjectVariant?.id ?? fs.cropVariety?.id;
+                          return !!fsSeed && fVariantId === thisVariantId;
+                        },
+                      )
+                      .map((fsSeed) => ({
+                        id: String(fsSeed.id),
+                        varietyName:
+                          fsSeed.name ??
+                          fsSeed.subjectVariant?.name ??
+                          fsSeed.cropVariety?.name ??
+                          "Hạt giống",
+                        origin: fsSeed.origin || "Việt Nam",
+                      }));
+
+                    return [
+                      variantId,
+                      {
+                        id: variantId,
+                        varietyName: variantName,
+                        varietyCode: variantCode,
+                        crop: cropName,
+                        illustration: (fs as any).imageUrl || "",
+                        seedType: "Hạt giống",
+                        selectedSeeds: selectedSeedsForVariety,
+                      },
+                    ];
+                  }),
+              ).values(),
+            );
 
     // Mock region-level stats
     const regionStats = {

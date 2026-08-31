@@ -28,60 +28,29 @@ export const columns: Column<FarmingMethodCropRow>[] = [
   },
   {
     key: "relatedCrops",
-    label: "Cây trồng - Giống",
-    render: (value: RelatedCrop[]) => (
-      <div className="min-w-0 space-y-2">
-        {value.map((group) => {
-          const visibleVarieties = group.varieties.slice(0, 3);
-          const hiddenCount = Math.max(group.varieties.length - 3, 0);
-
-          return (
-            <div
+    label: "Cây trồng áp dụng",
+    render: (value: RelatedCrop[]) => {
+      const activeCrops = value.filter((g) => g.cropId > 0);
+      if (activeCrops.length === 0) {
+        return (
+          <span className="text-xs italic text-slate-400">Chưa liên kết</span>
+        );
+      }
+      return (
+        <div className="flex flex-wrap gap-1.5 max-w-[350px]">
+          {activeCrops.map((group) => (
+            <Badge
               key={`${group.cropGroup}-${group.crop}`}
-              className="rounded-xl border border-slate-200 bg-slate-50 p-3"
+              variant="outline"
+              className="border-emerald-200 bg-emerald-50 text-emerald-700 text-xs font-semibold px-2 py-0.5"
+              title={group.cropGroup || undefined}
             >
-              <div className="flex flex-col gap-1.5">
-                {group.cropGroup && (
-                  <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">
-                    {group.cropGroup}
-                  </span>
-                )}
-                <div className="flex flex-wrap items-center gap-2">
-                  <Badge
-                    variant="outline"
-                    className="border-emerald-200 bg-emerald-50 text-emerald-700"
-                  >
-                    {group.crop}
-                  </Badge>
-                  <span className="whitespace-nowrap text-xs text-slate-500">
-                    {group.varieties.length} giống
-                  </span>
-                </div>
-              </div>
-              <div className="mt-2 flex flex-wrap gap-2">
-                {visibleVarieties.map((variety) => (
-                  <Badge
-                    key={`${group.crop}-${variety}`}
-                    variant="secondary"
-                    className="max-w-full bg-white text-slate-700 hover:bg-white"
-                  >
-                    <span className="max-w-[10rem] truncate">{variety}</span>
-                  </Badge>
-                ))}
-                {hiddenCount > 0 && (
-                  <Badge
-                    variant="outline"
-                    className="border-slate-200 bg-white text-slate-500"
-                  >
-                    +{hiddenCount}
-                  </Badge>
-                )}
-              </div>
-            </div>
-          );
-        })}
-      </div>
-    ),
+              {group.crop}
+            </Badge>
+          ))}
+        </div>
+      );
+    },
   },
   {
     key: "description",

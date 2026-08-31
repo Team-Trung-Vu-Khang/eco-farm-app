@@ -100,19 +100,24 @@ const CultivationRegionCreatePage = () => {
     isSubmitting: isSubmittingBasic,
   } = useRegionBasicCreateForm(resetBasic);
 
-  // Validation for step 2 — farmingMethodId required, seedIds optional
-  const [detailedFarmingMethodId] = useWatch({
+  // Validation for step 2 — farmingMethodId required, seeds validation check
+  const [detailedFarmingMethodId, detailedIsSeedSelectionValid] = useWatch({
     control: detailedForm.control,
-    name: ["farmingMethodId", "seedIds"],
+    name: ["farmingMethodId", "isSeedSelectionValid"],
   });
-  const [basicFarmingMethodId] = useWatch({
+  const [basicFarmingMethodId, basicIsSeedSelectionValid] = useWatch({
     control: controlBasic,
-    name: ["farmingMethodId", "seedIds"],
+    name: ["farmingMethodId", "isSeedSelectionValid"],
   });
   const detailedStep2Valid =
-    !!detailedFarmingMethodId && detailedFarmingMethodId > 0;
+    !!detailedFarmingMethodId &&
+    detailedFarmingMethodId > 0 &&
+    detailedIsSeedSelectionValid !== false;
 
-  const basicStep2Valid = !!basicFarmingMethodId && basicFarmingMethodId > 0;
+  const basicStep2Valid =
+    !!basicFarmingMethodId &&
+    basicFarmingMethodId > 0 &&
+    basicIsSeedSelectionValid !== false;
 
   // ─── Mode Switching Logic ────────────────────────────────────────────────
   const [isDetailMode, setIsDetailMode] = useState(true);

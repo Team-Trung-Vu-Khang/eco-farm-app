@@ -120,22 +120,61 @@ export const RegionConfirmationStep = ({
     [formValues.varietyIds],
   );
 
+  const selectedVarietyLabels: Record<string, string> = useMemo(
+    () => (formValues.varietyLabels ?? {}) as Record<string, string>,
+    [formValues.varietyLabels],
+  );
+
+  const varietyCropMap: Record<string, string> = useMemo(
+    () => (formValues.varietyCropMap ?? {}) as Record<string, string>,
+    [formValues.varietyCropMap],
+  );
+
+  const varietySeedMap: Record<string, number[]> = useMemo(
+    () => (formValues.varietySeedMap ?? {}) as Record<string, number[]>,
+    [formValues.varietySeedMap],
+  );
+
+  const seedLabels: Record<string, string> = useMemo(
+    () => (formValues.seedLabels ?? {}) as Record<string, string>,
+    [formValues.seedLabels],
+  );
+
   // Build 3-level summary: crop → checked varieties
   const cropSummary = useMemo(
     () =>
       selectedCropIds.map((cropId) => {
         const subject = subjectMap[cropId];
         const cropName = subject?.name || `Cây trồng #${cropId}`;
-        const variantsOfCrop = subject?.variants ?? {};
         const checkedVarieties = selectedVarietyIds
-          .filter((vId) => variantsOfCrop[vId] !== undefined)
-          .map((vId) => ({
-            id: vId,
-            name: variantsOfCrop[vId]?.name || `Giống #${vId}`,
-          }));
+          .filter((vId) => {
+            const mappedCropId = varietyCropMap[String(vId)];
+            return String(mappedCropId) === String(cropId);
+          })
+          .map((vId) => {
+            const seedIdsOfVariety = varietySeedMap[String(vId)] ?? [];
+            const seedsOfVariety = seedIdsOfVariety.map((sId) => ({
+              id: sId,
+              name: seedLabels[String(sId)] || `Hạt giống #${sId}`,
+            }));
+
+            return {
+              id: vId,
+              name: selectedVarietyLabels[String(vId)] || `Giống #${vId}`,
+              seeds: seedsOfVariety,
+            };
+          });
         return { cropId, cropName, checkedVarieties };
       }),
-    [selectedCropIds, selectedVarietyIds, subjectMap],
+    [
+      selectedCropIds,
+      selectedVarietyIds,
+      subjectMap,
+      selectedVarietyLabels,
+      varietyCropMap,
+      varietySeedMap,
+      seedLabels,
+    ],
   );
 
   // For non-CROP domains keep old variant display
@@ -432,15 +471,31 @@ export const RegionConfirmationStep = ({
                             Chưa chọn giống
                           </div>
                         ) : (
-                          <div className="px-3 py-1.5 flex flex-wrap gap-1.5">
-                            {crop.checkedVarieties.map((v) => (
-                              <Badge
-                                key={v.id}
-                                variant="outline"
-                                className="text-[11px] text-green-700 border-green-200 bg-green-50"
-                              >
-                                {v.name}
-                              </Badge>
+                          <div className="px-3 py-2 flex flex-col gap-2">
+                            {crop.checkedVarieties.map((v: any) => (
+                              <div key={v.id} className="flex flex-col gap-1">
+                                <div className="flex items-center">
+                                  <Badge
+                                    variant="outline"
+                                    className="text-[11px] text-green-700 border-green-200 bg-green-50 font-semibold"
+                                  >
+                                    {v.name}
+                                  </Badge>
+                                </div>
+                                {v.seeds && v.seeds.length > 0 && (
+                                  <div className="flex flex-wrap gap-1 pl-2">
+                                    {v.seeds.map((seed: any) => (
+                                      <Badge
+                                        key={seed.id}
+                                        variant="outline"
+                                        className="text-[10px] text-slate-500 border-slate-200 bg-slate-50 font-normal py-0.5 px-1.5"
+                                      >
+                                        Hạt giống: {seed.name}
+                                      </Badge>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
                             ))}
                           </div>
                         )}

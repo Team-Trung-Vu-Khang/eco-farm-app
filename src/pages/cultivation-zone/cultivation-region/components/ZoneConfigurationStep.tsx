@@ -18,7 +18,7 @@ import {
   Checkbox,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { CheckCircle2, Leaf, Search, Sprout } from "lucide-react";
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import {
   useProductionMethods,
   useMethodApplications,
@@ -47,7 +47,7 @@ interface SeedSelectorDialogProps {
   varietyId: number;
   varietyName: string;
   selectedSeedIds: number[];
-  onConfirm: (seedIds: number[]) => void;
+  onConfirm: (seedIds: number[], seedIdNameMap: Record<number, string>) => void;
 }
 
 export const SeedSelectorDialog = ({
@@ -201,10 +201,16 @@ export const SeedSelectorDialog = ({
           >
             Hủy
           </Button>
-          <Button
+           <Button
             type="button"
             onClick={() => {
-              onConfirm(tempSelectedIds);
+              const idNameMap: Record<number, string> = {};
+              seeds.forEach((s) => {
+                if (tempSelectedIds.includes(s.id)) {
+                  idNameMap[s.id] = s.name || "";
+                }
+              });
+              onConfirm(tempSelectedIds, idNameMap);
               onOpenChange(false);
             }}
             className="bg-green-600 hover:bg-green-700 text-white font-semibold"
@@ -221,20 +227,28 @@ interface VarietyItemProps {
   varietyId: number;
   varietyName: string;
   showSeedSelection: boolean;
+  useSpecificSeeds: boolean;
   selectedSeedIds: number[];
-  onSelectSeeds: (seedIds: number[], allSeedsOfVariety: number[]) => void;
+  onSelectSeeds: (
+    seedIds: number[],
+    allSeedsOfVariety: number[],
+    seedIdNameMap: Record<number, string>,
+  ) => void;
   isChecked: boolean;
   onToggle: (checked: boolean) => void;
+  onValidityChange: (varietyId: number, isValid: boolean) => void;
 }
 
 export const VarietyItem = ({
   varietyId,
   varietyName,
   showSeedSelection,
+  useSpecificSeeds,
   selectedSeedIds,
   onSelectSeeds,
   isChecked,
   onToggle,
+  onValidityChange,
 }: VarietyItemProps) => {
   const { items: seeds } = useSeeds({
     params: {
@@ -242,12 +256,33 @@ export const VarietyItem = ({
       status: "active",
       size: 100,
     },
-    enabled: isChecked && showSeedSelection,
+    enabled: isChecked && showSeedSelection && useSpecificSeeds,
   });
 
   const selectedSeedsForThisVariety = useMemo(() => {
     return seeds.filter((s) => selectedSeedIds.includes(s.id));
   }, [seeds, selectedSeedIds]);
+
+  const isValid = useMemo(() => {
+    return (
+      !isChecked ||
+      !showSeedSelection ||
+      !useSpecificSeeds ||
+      selectedSeedsForThisVariety.length > 0
+    );
+  }, [
+    isChecked,
+    showSeedSelection,
+    useSpecificSeeds,
+    selectedSeedsForThisVariety,
+  ]);
+
+  useEffect(() => {
+    onValidityChange(varietyId, isValid);
+    return () => {
+      onValidityChange(varietyId, true);
+    };
+  }, [varietyId, isValid, onValidityChange]);
 
   const [dialogOpen, setDialogOpen] = useState(false);
 
@@ -255,7 +290,7 @@ export const VarietyItem = ({
     onToggle(checked);
     if (!checked) {
       const seedIdsOfVariety = seeds.map((s) => s.id);
-      onSelectSeeds([], seedIdsOfVariety);
+      onSelectSeeds([], seedIdsOfVariety, {});
     }
   };
 
@@ -271,7 +306,7 @@ export const VarietyItem = ({
             {varietyName}
           </span>
         </div>
-        {isChecked && showSeedSelection && (
+        {isChecked && showSeedSelection && useSpecificSeeds && (
           <Button
             type="button"
             variant="outline"
@@ -284,7 +319,7 @@ export const VarietyItem = ({
         )}
       </div>
 
-      {isChecked && showSeedSelection && (
+      {isChecked && showSeedSelection && useSpecificSeeds && (
         <div className="flex flex-wrap gap-2 pl-7 pt-1">
           {selectedSeedsForThisVariety.length > 0 ? (
             selectedSeedsForThisVariety.map((seed) => (
@@ -299,8 +334,8 @@ export const VarietyItem = ({
               </Badge>
             ))
           ) : (
-            <span className="text-[11px] text-muted-foreground italic">
-              Chưa chọn hạt giống
+            <span className="text-[11px] text-red-500 italic font-semibold flex items-center gap-1">
+              ⚠️ Bắt buộc chọn hạt giống cụ thể
             </span>
           )}
         </div>
@@ -313,9 +348,9 @@ export const VarietyItem = ({
           varietyId={varietyId}
           varietyName={varietyName}
           selectedSeedIds={selectedSeedIds}
-          onConfirm={(newSeedIds) => {
+          onConfirm={(newSeedIds, idNameMap) => {
             const seedIdsOfVariety = seeds.map((s) => s.id);
-            onSelectSeeds(newSeedIds, seedIdsOfVariety);
+            onSelectSeeds(newSeedIds, seedIdsOfVariety, idNameMap);
           }}
         />
       )}
@@ -327,14 +362,22 @@ interface CropCardProps {
   cropId: number;
   cropName: string;
   showSeedSelection: boolean;
+  useSpecificSeeds: boolean;
   selectedVarietyIds: number[];
-  onToggleVariety: (varietyId: number, checked: boolean) => void;
+  onToggleVariety: (
+    varietyId: number,
+    varietyName: string,
+    checked: boolean,
+    cropId: number,
+  ) => void;
   selectedSeedIds: number[];
   onSelectSeedsForVariety: (
     varietyId: number,
     seedIds: number[],
     allSeedsOfVariety: number[],
+    seedIdNameMap: Record<number, string>,
   ) => void;
+  onVarietyValidityChange: (varietyId: number, isValid: boolean) => void;
   onRemoveCrop: () => void;
 }
 
@@ -342,10 +385,12 @@ export const CropCard = ({
   cropId,
   cropName,
   showSeedSelection,
+  useSpecificSeeds,
   selectedVarietyIds,
   onToggleVariety,
   selectedSeedIds,
   onSelectSeedsForVariety,
+  onVarietyValidityChange,
   onRemoveCrop,
 }: CropCardProps) => {
   const [varietySearch, setVarietySearch] = useState("");
@@ -426,16 +471,21 @@ export const CropCard = ({
                     varietyId={variety.id}
                     varietyName={variety.name}
                     showSeedSelection={showSeedSelection}
+                    useSpecificSeeds={useSpecificSeeds}
                     selectedSeedIds={selectedSeedIds}
                     isChecked={selectedVarietyIds.includes(variety.id)}
-                    onToggle={(checked) => onToggleVariety(variety.id, checked)}
-                    onSelectSeeds={(newSeedIds, allSeedsOfVariety) =>
+                    onToggle={(checked) =>
+                      onToggleVariety(variety.id, variety.name, checked, cropId)
+                    }
+                    onSelectSeeds={(newSeedIds, allSeedsOfVariety, idNameMap) =>
                       onSelectSeedsForVariety(
                         variety.id,
                         newSeedIds,
                         allSeedsOfVariety,
+                        idNameMap,
                       )
                     }
+                    onValidityChange={onVarietyValidityChange}
                   />
                 ))
               ) : (
@@ -480,10 +530,33 @@ export const ZoneConfigurationStep: React.FC<ZoneConfigurationStepProps> = ({
   const debouncedCropSearch = useDebounce(cropSearch, 300);
 
   const watchedVarietyIds = watch("varietyIds");
+  const useSpecificSeeds = watch("useSpecificSeeds") ?? false;
   const selectedVarietyIds: number[] = useMemo(
     () => watchedVarietyIds ?? [],
     [watchedVarietyIds],
   );
+
+  const [invalidVarieties, setInvalidVarieties] = useState<
+    Record<number, boolean>
+  >({});
+
+  const handleVarietyValidityChange = useCallback(
+    (varietyId: number, isValid: boolean) => {
+      setInvalidVarieties((prev) => {
+        if (prev[varietyId] === !isValid) return prev;
+        return { ...prev, [varietyId]: !isValid };
+      });
+    },
+    [],
+  );
+
+  const hasInvalidVarieties = useMemo(() => {
+    return Object.values(invalidVarieties).some((invalid) => invalid);
+  }, [invalidVarieties]);
+
+  useEffect(() => {
+    setValue("isSeedSelectionValid", !hasInvalidVarieties);
+  }, [hasInvalidVarieties, setValue]);
 
   // ─── Reference data ────────────────────────────────────────────────────
   const {
@@ -638,16 +711,56 @@ export const ZoneConfigurationStep: React.FC<ZoneConfigurationStepProps> = ({
         shouldValidate: true,
         shouldDirty: true,
       });
+
+      // Clean up labels, crop mapping, seed map, and seed labels
+      const nextLabels = { ...selectedVarietyLabels };
+      const nextCropMap = { ...watch("varietyCropMap") };
+      const nextVarietySeedMap = { ...watch("varietySeedMap") };
+      const nextSeedLabels = { ...watch("seedLabels") };
+
+      varietyIdsOfCrop.forEach((vId) => {
+        delete nextLabels[String(vId)];
+        delete nextCropMap[String(vId)];
+        const seedIdsOfVariety = nextVarietySeedMap[String(vId)] || [];
+        seedIdsOfVariety.forEach((sId: number) => {
+          delete nextSeedLabels[String(sId)];
+        });
+        delete nextVarietySeedMap[String(vId)];
+      });
+      setValue("varietyLabels", nextLabels, { shouldDirty: true });
+      setValue("varietyCropMap", nextCropMap, { shouldDirty: true });
+      setValue("varietySeedMap", nextVarietySeedMap, { shouldDirty: true });
+      setValue("seedLabels", nextSeedLabels, { shouldDirty: true });
     }
   };
 
-  const handleToggleVariety = (varietyId: number, checked: boolean) => {
+  const watchedVarietyLabels = watch("varietyLabels");
+  const selectedVarietyLabels: Record<string, string> = useMemo(
+    () => watchedVarietyLabels ?? {},
+    [watchedVarietyLabels],
+  );
+
+  const handleToggleVariety = (
+    varietyId: number,
+    varietyName: string,
+    checked: boolean,
+    cropId: number,
+  ) => {
     if (checked) {
       const nextVarietyIds = [...selectedVarietyIds, varietyId];
       setValue("varietyIds", nextVarietyIds, {
         shouldValidate: true,
         shouldDirty: true,
       });
+      // Store name for display in confirmation step
+      setValue(
+        "varietyLabels",
+        { ...selectedVarietyLabels, [String(varietyId)]: varietyName },
+        { shouldDirty: true },
+      );
+      // Store crop mapping
+      const nextCropMap = { ...watch("varietyCropMap"), [String(varietyId)]: String(cropId) };
+      setValue("varietyCropMap", nextCropMap, { shouldDirty: true });
     } else {
       const nextVarietyIds = selectedVarietyIds.filter(
         (id) => id !== varietyId,
@@ -656,6 +769,24 @@ export const ZoneConfigurationStep: React.FC<ZoneConfigurationStepProps> = ({
         shouldValidate: true,
         shouldDirty: true,
       });
+      // Remove label, crop mapping, seed map and seed labels
+      const nextLabels = { ...selectedVarietyLabels };
+      delete nextLabels[String(varietyId)];
+      setValue("varietyLabels", nextLabels, { shouldDirty: true });
+
+      const nextCropMap = { ...watch("varietyCropMap") };
+      delete nextCropMap[String(varietyId)];
+      setValue("varietyCropMap", nextCropMap, { shouldDirty: true });
+
+      const nextVarietySeedMap = { ...watch("varietySeedMap") };
+      const nextSeedLabels = { ...watch("seedLabels") };
+      const seedIdsOfVariety = nextVarietySeedMap[String(varietyId)] || [];
+      seedIdsOfVariety.forEach((sId: number) => {
+        delete nextSeedLabels[String(sId)];
+      });
+      delete nextVarietySeedMap[String(varietyId)];
+      setValue("varietySeedMap", nextVarietySeedMap, { shouldDirty: true });
+      setValue("seedLabels", nextSeedLabels, { shouldDirty: true });
     }
   };
 
@@ -663,6 +794,7 @@ export const ZoneConfigurationStep: React.FC<ZoneConfigurationStepProps> = ({
     varietyId: number,
     newSeedIdsOfVariety: number[],
     allSeedsOfVariety: number[],
+    idNameMap: Record<number, string>,
   ) => {
     const otherSeedIds = selectedSeedIds.filter(
       (id) => !allSeedsOfVariety.includes(id),
@@ -672,6 +804,25 @@ export const ZoneConfigurationStep: React.FC<ZoneConfigurationStepProps> = ({
       shouldValidate: true,
       shouldDirty: true,
     });
+
+    // Update varietySeedMap
+    const watchedVarietySeedMap = watch("varietySeedMap") || {};
+    const nextVarietySeedMap = {
+      ...watchedVarietySeedMap,
+      [String(varietyId)]: newSeedIdsOfVariety,
+    };
+    setValue("varietySeedMap", nextVarietySeedMap, { shouldDirty: true });
+
+    // Update seedLabels
+    const watchedSeedLabels = watch("seedLabels") || {};
+    const nextSeedLabels = { ...watchedSeedLabels, ...idNameMap };
+    // Clear labels of unselected seeds for this variety
+    allSeedsOfVariety.forEach((id) => {
+      if (!newSeedIdsOfVariety.includes(id)) {
+        delete nextSeedLabels[String(id)];
+      }
+    });
+    setValue("seedLabels", nextSeedLabels, { shouldDirty: true });
   };
 
   return (
@@ -781,11 +932,6 @@ export const ZoneConfigurationStep: React.FC<ZoneConfigurationStepProps> = ({
                 <Leaf className="w-4 h-4 text-green-600" />
               </div>
               <span>Giống / Hạt giống</span>
-              {/* {selectedSeedIds.length > 0 && (
-                <Badge variant="secondary" className="ml-auto text-xs">
-                  {selectedSeedIds.length} đã chọn
-                </Badge>
-              )} */}
             </CardTitle>
           </CardHeader>
           <CardContent className="pt-6 flex-1 flex flex-col min-h-0 space-y-6">
@@ -798,19 +944,52 @@ export const ZoneConfigurationStep: React.FC<ZoneConfigurationStepProps> = ({
               </div>
             ) : (
               <>
-                {/* Autocomplete crop selector */}
-                <div className="space-y-2">
-                  <Label className="text-sm font-medium">Chọn cây trồng</Label>
-                  <RemoteAutoCompleteSelect
-                    options={availableCropOptions}
-                    value=""
-                    onChange={handleSelectCrop}
-                    onSearch={setCropSearch}
-                    placeholder="Tìm kiếm và chọn cây trồng..."
-                    loading={fmcLoading}
-                    emptyText="  Không tồn tại dữ liệu cây trồng  "
-                    clearable={false}
-                  />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
+                  {/* Autocomplete crop selector */}
+                  <div
+                    className={cn(
+                      "space-y-2",
+                      !showSeedSelection && "md:col-span-2",
+                    )}
+                  >
+                    <Label className="text-sm font-medium">
+                      Chọn cây trồng
+                    </Label>
+                    <RemoteAutoCompleteSelect
+                      options={availableCropOptions}
+                      value=""
+                      onChange={handleSelectCrop}
+                      onSearch={setCropSearch}
+                      placeholder="Tìm kiếm và chọn cây trồng..."
+                      loading={fmcLoading}
+                      emptyText="  Không tồn tại dữ liệu cây trồng  "
+                      clearable={false}
+                    />
+                  </div>
+
+                  {showSeedSelection && (
+                    <div className="flex items-center gap-2.5 bg-slate-50 px-4 rounded-xl border border-slate-200 h-[42px] select-none">
+                      <Checkbox
+                        id="useSpecificSeeds"
+                        checked={useSpecificSeeds}
+                        onCheckedChange={(checked) => {
+                          setValue("useSpecificSeeds", !!checked, {
+                            shouldDirty: true,
+                          });
+                          // Clear selected seeds if we turn it off
+                          if (!checked) {
+                            setValue("seedIds", []);
+                          }
+                        }}
+                      />
+                      <label
+                        htmlFor="useSpecificSeeds"
+                        className="text-xs font-semibold text-slate-700 cursor-pointer select-none"
+                      >
+                        Chọn hạt giống cụ thể (Nếu tắt: chỉ gán giống cơ bản)
+                      </label>
+                    </div>
+                  )}
                 </div>
 
                 {/* List of Crop Cards */}
@@ -826,10 +1005,12 @@ export const ZoneConfigurationStep: React.FC<ZoneConfigurationStepProps> = ({
                         cropId={subject.subjectId}
                         cropName={subject.subjectName || ""}
                         showSeedSelection={showSeedSelection}
+                        useSpecificSeeds={useSpecificSeeds}
                         selectedVarietyIds={selectedVarietyIds}
                         onToggleVariety={handleToggleVariety}
                         selectedSeedIds={selectedSeedIds}
                         onSelectSeedsForVariety={handleSelectSeedsForVariety}
+                        onVarietyValidityChange={handleVarietyValidityChange}
                         onRemoveCrop={() =>
                           handleRemoveCrop(String(subject.subjectId))
                         }

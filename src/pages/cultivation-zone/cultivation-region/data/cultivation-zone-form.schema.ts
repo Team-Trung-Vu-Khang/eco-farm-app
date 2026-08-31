@@ -39,6 +39,13 @@ export const cultivationZoneFormSchema = z.object({
   cropIds: z.array(z.string()).optional(),
   cropSeedToggles: z.record(z.boolean()).optional(),
   varietyIds: z.array(z.number().int().positive()).optional(),
+  /** Map varietyId → tên giống, lưu khi user chọn để hiển thị ở bước xác nhận */
+  varietyLabels: z.record(z.string()).optional(),
+  useSpecificSeeds: z.boolean().optional(),
+  isSeedSelectionValid: z.boolean().optional(),
+  varietyCropMap: z.record(z.string()).optional(),
+  varietySeedMap: z.record(z.array(z.number())).optional(),
+  seedLabels: z.record(z.string()).optional(),
 
   /** Chứng nhận — tuỳ chọn */
   certificateIds: z.array(z.number().int().positive()).optional(),

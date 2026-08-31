@@ -123,17 +123,12 @@ export function useFarmingMethodCropPage() {
     setLinkDialogOpen(true);
   };
 
-  const handleConfirmLink = (value: RelatedCropForm) => {
+  const handleConfirmLink = (values: RelatedCropForm[]) => {
     setFormData((current) => {
-      const next = [...current.relatedCrops];
-
-      if (editingLinkIndex === null) {
-        next.push(value);
-      } else {
-        next[editingLinkIndex] = value;
-      }
-
-      return { ...current, relatedCrops: next };
+      return {
+        ...current,
+        relatedCrops: values.length > 0 ? values : [emptyRelatedCropForm()],
+      };
     });
 
     setLinkDialogOpen(false);

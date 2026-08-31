@@ -14,8 +14,7 @@ type VarietySummary = {
   id: number;
   name: string;
   code: string;
-  /** All farm seed IDs selected across all varieties */
-  seedIds: number[];
+  seeds?: Array<{ id: number; name: string }>;
 };
 
 type CropSummaryItem = {
@@ -277,19 +276,32 @@ export const CultivationRegionCreateConfirmationStep = ({
                           {crop.checkedVarieties.map((variety) => (
                             <div
                               key={variety.id}
-                              className="px-4 py-2.5 flex flex-col sm:flex-row sm:items-start gap-2"
+                              className="px-4 py-2.5 flex flex-col gap-1.5"
                             >
                               <div className="flex items-center gap-2 min-w-40">
                                 <div className="w-1.5 h-1.5 rounded-full bg-green-400 shrink-0" />
-                                <span className="text-sm font-medium text-slate-700">
+                                <span className="text-sm font-semibold text-slate-700">
                                   {variety.name}
                                 </span>
                                 {variety.code && (
-                                  <span className="text-xs text-muted-foreground">
+                                  <span className="text-xs text-muted-foreground font-normal">
                                     ({variety.code})
                                   </span>
                                 )}
                               </div>
+                              {variety.seeds && variety.seeds.length > 0 && (
+                                <div className="flex flex-wrap gap-1.5 pl-3.5 mt-0.5">
+                                  {variety.seeds.map((seed: any) => (
+                                    <Badge
+                                      key={seed.id}
+                                      variant="outline"
+                                      className="bg-slate-50 border-slate-200 text-slate-500 text-[10px] py-0.5 px-2 rounded font-normal shadow-2xs"
+                                    >
+                                      Hạt giống: {seed.name}
+                                    </Badge>
+                                  ))}
+                                </div>
+                              )}
                             </div>
                           ))}
                         </div>

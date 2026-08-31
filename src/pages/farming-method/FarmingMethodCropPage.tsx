@@ -1,3 +1,4 @@
+import { useState, useMemo } from "react";
 import PageWrapper from "@/components/PageWrapper";
 import {
   Button,
@@ -13,7 +14,7 @@ import {
   SelectValue,
   Textarea,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { Plus, X } from "lucide-react";
+import { Plus, X, Search } from "lucide-react";
 import { useDialogBugWorkaround } from "../../shared/hooks/useDialogBugWorkaround";
 
 import { CropVarietySelectorDialog } from "./components/CropVarietySelectorDialog";
@@ -63,6 +64,22 @@ export default function FarmingMethodCropPage() {
     handleConfirmDelete,
     handleFilterChange,
   } = useFarmingMethodCropPage();
+
+  const [cropFilterSearch, setCropFilterSearch] = useState("");
+
+  const filteredRelatedCropsWithIndex = useMemo(() => {
+    const list = (formData.relatedCrops || []).map((item, index) => ({
+      item,
+      index,
+    }));
+    const keyword = cropFilterSearch.toLowerCase().trim();
+    if (!keyword) return list;
+    return list.filter(
+      ({ item }) =>
+        item.crop?.toLowerCase().includes(keyword) ||
+        item.cropGroup?.toLowerCase().includes(keyword),
+    );
+  }, [formData.relatedCrops, cropFilterSearch]);
 
   useDialogBugWorkaround([formOpen, deleteOpen, linkDialogOpen]);
 
@@ -209,10 +226,10 @@ export default function FarmingMethodCropPage() {
             <div className="flex items-center justify-between">
               <div>
                 <Label className="text-sm font-medium">
-                  Cấu hình Cây trồng - Giống áp dụng
+                  Cấu hình Cây trồng áp dụng
                 </Label>
                 <p className="text-xs text-slate-500">
-                  Thêm các nhóm cây trồng và giống tương ứng cho phương thức này
+                  Thêm các cây trồng cho phương thức này
                 </p>
               </div>
               <Button
@@ -227,8 +244,21 @@ export default function FarmingMethodCropPage() {
               </Button>
             </div>
 
-            <div className="rounded-xl border border-slate-200 bg-slate-50/50">
-              {formData.relatedCrops.map((item, index) => (
+            {/* Search Input when items > 5 */}
+            {formData.relatedCrops.filter((c) => c.cropId > 0).length > 5 && (
+              <div className="relative mb-2">
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  value={cropFilterSearch}
+                  onChange={(e) => setCropFilterSearch(e.target.value)}
+                  placeholder="Tìm cây trồng trong danh sách liên kết..."
+                  className="pl-9 bg-slate-50 h-9 rounded-lg"
+                />
+              </div>
+            )}
+
+            <div className="rounded-xl border border-slate-200 bg-slate-50/50 max-h-[300px] overflow-y-auto">
+              {filteredRelatedCropsWithIndex.map(({ item, index }) => (
                 <div
                   key={index}
                   className="group flex items-start gap-4 border-b border-slate-100 p-4 transition-colors last:border-0 hover:bg-white"
@@ -247,13 +277,10 @@ export default function FarmingMethodCropPage() {
                             {item.cropGroup}
                           </span>
                         </div>
-                        <p className="text-sm text-slate-600 line-clamp-2">
-                          {item.varieties}
-                        </p>
                       </>
                     ) : (
                       <div className="py-1 text-sm italic text-slate-400">
-                        Chưa chọn cây trồng & giống
+                        Chưa chọn cây trồng
                       </div>
                     )}
                   </div>
@@ -286,9 +313,11 @@ export default function FarmingMethodCropPage() {
                   </div>
                 </div>
               ))}
-              {formData.relatedCrops.length === 0 && (
+              {filteredRelatedCropsWithIndex.length === 0 && (
                 <div className="py-8 text-center text-sm text-slate-500">
-                  Chưa có cây trồng nào được liên kết
+                  {formData.relatedCrops.length === 0
+                    ? "Chưa có cây trồng nào được liên kết"
+                    : "Không tìm thấy cây trồng phù hợp"}
                 </div>
               )}
             </div>
@@ -299,7 +328,7 @@ export default function FarmingMethodCropPage() {
       <div onClick={(e) => e.stopPropagation()}>
         <CropVarietySelectorDialog
           open={linkDialogOpen}
-          initialValue={linkDraft}
+          initialValues={formData.relatedCrops.filter((c) => c.cropId > 0)}
           onConfirm={handleConfirmLink}
           onOpenChange={setLinkDialogOpen}
         />

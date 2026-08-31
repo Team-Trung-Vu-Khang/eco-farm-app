@@ -141,32 +141,69 @@ export const ZoneReviewStep = () => {
       name: s.name ?? "",
     }));
 
-  // Build 3-level crop data for the confirmation step
+  const selectedVarietyLabels: Record<string, string> = useMemo(
+    () => (formValues.varietyLabels ?? {}) as Record<string, string>,
+    [formValues.varietyLabels],
+  );
+
+  const varietyCropMap: Record<string, string> = useMemo(
+    () => (formValues.varietyCropMap ?? {}) as Record<string, string>,
+    [formValues.varietyCropMap],
+  );
+
+  const varietySeedMap: Record<string, number[]> = useMemo(
+    () => (formValues.varietySeedMap ?? {}) as Record<string, number[]>,
+    [formValues.varietySeedMap],
+  );
+
+  const seedLabels: Record<string, string> = useMemo(
+    () => (formValues.seedLabels ?? {}) as Record<string, string>,
+    [formValues.seedLabels],
+  );
+
+  // Build 3-level crop data — names come from varietyLabels (set at selection time)
   const cropSummary = useMemo(
     () =>
       selectedCropIds.map((cropId) => {
         const subject = subjectMap[cropId];
         const cropName = subject?.name || `Cây trồng #${cropId}`;
         const cropCode = subject?.code || "";
-        const variantsOfCrop = subject?.variants ?? {};
 
-        // Checked varieties that belong to this crop
         const checkedVarieties = selectedVarietyIds
-          .filter((vId) => variantsOfCrop[vId] !== undefined)
+          .filter((vId) => {
+            const mappedCropId = varietyCropMap[String(vId)];
+            return String(mappedCropId) === String(cropId);
+          })
           .map((vId) => {
-            const variety = variantsOfCrop[vId];
+            const seedIdsOfVariety = varietySeedMap[String(vId)] ?? [];
+            const seedsOfVariety = seedIdsOfVariety.map((sId) => ({
+              id: sId,
+              name: seedLabels[String(sId)] || `Hạt giống #${sId}`,
+            }));
+
             return {
               id: vId,
-              name: variety?.name || `Giống #${vId}`,
-              code: variety?.code || "",
-              // Actual farm seed IDs selected for this variety
-              seedIds: selectedSeedIds,
+              // Prefer label stored at selection time; fallback to subjectMap then ID
+              name:
+                selectedVarietyLabels[String(vId)] ||
+                subject?.variants?.[vId]?.name ||
+                `Giống #${vId}`,
+              code: subject?.variants?.[vId]?.code || "",
+              seeds: seedsOfVariety,
             };
           });
 
         return { cropId, cropName, cropCode, checkedVarieties };
       }),
-    [selectedCropIds, selectedVarietyIds, selectedSeedIds, subjectMap],
+    [
+      selectedCropIds,
+      selectedVarietyIds,
+      subjectMap,
+      selectedVarietyLabels,
+      varietyCropMap,
+      varietySeedMap,
+      seedLabels,
+    ],
   );
 
   const isEdit = !!formValues.id;

@@ -327,16 +327,6 @@ export interface FarmCultivationZoneScopeResponse {
   plot?: PlotRef;
 }
 
-export interface FarmCultivationZoneSubjectVariantRequest {
-  variantId: number;
-  seedIds?: number[];
-}
-
-export interface FarmCultivationZoneSubjectRequest {
-  subjectId: number;
-  variants?: FarmCultivationZoneSubjectVariantRequest[];
-}
-
 export interface FarmCultivationZoneRequest {
   code?: string;
   name?: string;
@@ -344,12 +334,22 @@ export interface FarmCultivationZoneRequest {
   scopes?: FarmCultivationZoneScopeRequest[];
   certificateIds?: number[];
   personnelIds?: number[];
-  farmingMethodId: number;
+  /** Phương pháp canh tác (API mới: productionMethodId thay cho farmingMethodId) */
+  productionMethodId: number;
   rearingMethodId?: number;
   irrigationSystemId?: number;
-  seedIds?: number[];
-  /** 3-level subject hierarchy: crop → variety → seeds */
-  subjects?: FarmCultivationZoneSubjectRequest[];
+  /**
+   * Giống Foundation (productionSubjectVariant IDs).
+   * Gửi khi user chọn giống từ danh mục foundation, KHÔNG có hạt giống owner.
+   * Loại trừ lẫn nhau với subjectVariantIds.
+   */
+  productionSubjectVariantIds?: number[];
+  /**
+   * Hạt giống / con giống owner (subjectVariant IDs từ /api/farm/seeds).
+   * Gửi khi user chọn hạt giống đã đăng ký của farm.
+   * Loại trừ lẫn nhau với productionSubjectVariantIds.
+   */
+  subjectVariantIds?: number[];
   notes?: string;
   status?: FarmCultivationZoneStatus;
   displayOrder?: number;
@@ -370,6 +370,13 @@ export interface FarmCultivationZoneResponse {
   irrigationSystem?: CatalogRef;
   seeds?: SeedRef[];
   notes?: string;
+  /** Giống Foundation đang được gán (khi không dùng hạt giống owner) */
+  productionSubjectVariants?: Array<{
+    id: number;
+    code?: string;
+    name?: string;
+  }>;
+  /** Hạt giống / con giống owner đang được gán */
   subjectVariants?: SubjectVariantRef[];
   status?: FarmCultivationZoneStatus;
   displayOrder?: number;

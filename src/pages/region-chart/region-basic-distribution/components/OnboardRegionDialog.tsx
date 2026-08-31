@@ -107,9 +107,11 @@ export const OnboardRegionDialog: React.FC<OnboardRegionDialogProps> = ({
       const zoneRequest: FarmCultivationZoneRequest = {
         name: data.name,
         domainCode: "CROP",
-        farmingMethodId: data.farmingMethodId || 0,
+        productionMethodId: data.farmingMethodId || 0,
         rearingMethodId: data.rearingMethodId || undefined,
-        seedIds: data.seedIds || [],
+        // Onboard has no owner seeds — always Foundation varieties
+        productionSubjectVariantIds:
+          (data.varietyIds ?? []).length > 0 ? data.varietyIds : [],
         status: data.status,
         scopes: [
           {
