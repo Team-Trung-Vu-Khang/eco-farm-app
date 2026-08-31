@@ -29,11 +29,7 @@ import {
   Loader2,
 } from "lucide-react";
 import type { FertilizerFormData } from "../types/types";
-import {
-  originOptions,
-  packagingUnitOptions,
-  commonHashtags,
-} from "../data/constants";
+import { originOptions, commonHashtags } from "../data/constants";
 import { useQuery } from "@tanstack/react-query";
 import { farmSupplyApi } from "@/features/farm-supply";
 
@@ -70,7 +66,10 @@ const PACKAGING_OPTIONS = [
 
 interface SimpleFertilizerFormProps {
   formData: FertilizerFormData;
-  updateField: (field: keyof FertilizerFormData, value: any) => void;
+  updateField: (
+    field: keyof FertilizerFormData,
+    value: FertilizerFormData[keyof FertilizerFormData],
+  ) => void;
   handleComplete: () => void;
   goBack: () => void;
   completeLabel?: string;
@@ -114,7 +113,10 @@ export default function SimpleFertilizerForm({
       ? baseUnits.map((u) => u.name)
       : MEASURE_UNIT_OPTIONS;
 
-  const isValid = Boolean(formData.name);
+  const hasSimplePackagingRule = Boolean(
+    formData.packaging && formData.quantity && formData.unit,
+  );
+  const isValid = Boolean(formData.name) && hasSimplePackagingRule;
   const [paramHashtag, setParamHashtag] = useState("");
 
   const onAddHashtag = () => {
@@ -272,7 +274,7 @@ export default function SimpleFertilizerForm({
       <div className="space-y-2">
         <Label className="flex items-center gap-1.5">
           <Package className="w-4 h-4 text-slate-400" />
-          Quy cách đóng gói
+          Quy cách đóng gói <span className="text-red-500">*</span>
         </Label>
         <div className="flex gap-3">
           <div className="w-32">
@@ -327,7 +329,7 @@ export default function SimpleFertilizerForm({
         </div>
         <p className="text-xs text-muted-foreground">
           VD: Bao 50 kg, Túi 25 kg, Can 10 L… Bổ sung thêm quy cách chi tiết ở
-          chế độ chuyên sâu.
+          chế độ chuyên sâu. Cần có đủ 3 thông tin để lưu.
         </p>
       </div>
 

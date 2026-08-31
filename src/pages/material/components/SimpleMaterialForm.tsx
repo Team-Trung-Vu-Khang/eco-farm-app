@@ -26,11 +26,49 @@ import {
   Loader2,
 } from "lucide-react";
 import type { MaterialFormData } from "../types/types";
-import { commonHashtags, materialGroups } from "../data/constants";
+import { commonHashtags, materialGroups, packagingSpecsPresets } from "../data/constants";
+
+const MEASURE_UNIT_OPTIONS = [
+  "cái",
+  "cuộn",
+  "mét",
+  "kg",
+  "g",
+  "bộ",
+  "thùng",
+  "bao",
+  "hộp",
+  "lọ",
+  "kiện",
+  "gói",
+  "can",
+  "lít",
+  "ml",
+  "tấn",
+  "mm",
+];
+
+const PACKAGING_OPTIONS = [
+  "Bao",
+  "Bì",
+  "Hộp",
+  "Thùng",
+  "Túi",
+  "Chai",
+  "Lọ",
+  "Gói",
+  "Can",
+  "Cuộn",
+  "Kiện",
+  "Khay",
+];
 
 interface SimpleMaterialFormProps {
   formData: MaterialFormData;
-  updateField: (field: keyof MaterialFormData, value: any) => void;
+  updateField: <K extends keyof MaterialFormData>(
+    field: K,
+    value: MaterialFormData[K],
+  ) => void;
   handleComplete: () => void;
   goBack: () => void;
   completeLabel?: string;
@@ -46,8 +84,33 @@ export default function SimpleMaterialForm({
   loading,
 }: SimpleMaterialFormProps) {
   const isEdit = window.location.pathname.includes("/edit");
-  const isValid = Boolean(formData.name);
+  const isValid =
+    Boolean(formData.name) && Boolean(formData.packagingSpecs?.length);
   const [paramHashtag, setParamHashtag] = useState("");
+  const [quantity, setQuantity] = useState("");
+  const [unit, setUnit] = useState("");
+  const [packaging, setPackaging] = useState("");
+
+  const packagingSpecsArr = formData.packagingSpecs || [];
+
+  const addPackagingSpec = () => {
+    const trimmedQty = quantity.trim();
+    if (!trimmedQty || !unit || !packaging) return;
+    const spec = `${packaging} ${trimmedQty} ${unit}`;
+    if (!packagingSpecsArr.includes(spec)) {
+      updateField("packagingSpecs", [...packagingSpecsArr, spec]);
+    }
+    setQuantity("");
+    setUnit("");
+    setPackaging("");
+  };
+
+  const removePackagingSpec = (value: string) => {
+    updateField(
+      "packagingSpecs",
+      packagingSpecsArr.filter((v) => v !== value),
+    );
+  };
 
   const onAddHashtag = () => {
     const tag = paramHashtag.trim();
@@ -286,6 +349,140 @@ export default function SimpleMaterialForm({
                 </Badge>
               ))}
           </div>
+        </div>
+      </div>
+
+      {/* ── Bao bì quy cách ── */}
+      <div className="space-y-4 rounded-xl border bg-white p-6 shadow-sm">
+        <h3 className="flex items-center gap-2 text-lg font-semibold">
+          <Tags className="h-5 w-5 text-primary" />
+          Bao bì quy cách
+        </h3>
+
+        <div className="space-y-3">
+          <Label required>Nhập quy cách đóng gói</Label>
+          <p className="text-xs text-muted-foreground -mt-1">
+            Bắt buộc có ít nhất một quy cách gồm loại bao bì, số lượng và đơn
+            vị.
+          </p>
+
+          <div className="flex gap-2 items-end">
+            <div className="w-32 space-y-1">
+              <Label className="text-xs text-muted-foreground">
+                Quy cách chứa
+              </Label>
+              <Select value={packaging} onValueChange={setPackaging}>
+                <SelectTrigger className="text-left h-auto py-2">
+                  <SelectValue placeholder="Chọn..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {PACKAGING_OPTIONS.map((item) => (
+                    <SelectItem key={item} value={item}>
+                      {item}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="flex-1 space-y-1">
+              <Label className="text-xs text-muted-foreground">Giá trị</Label>
+              <Input
+                type="number"
+                value={quantity}
+                onChange={(e) => setQuantity(e.target.value)}
+                placeholder="VD: 500, 25"
+                min={0}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    addPackagingSpec();
+                  }
+                }}
+              />
+            </div>
+
+            <div className="w-28 space-y-1">
+              <Label className="text-xs text-muted-foreground">Đơn vị</Label>
+              <Select value={unit} onValueChange={setUnit}>
+                <SelectTrigger className="text-left h-auto py-2">
+                  <SelectValue placeholder="Chọn..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {MEASURE_UNIT_OPTIONS.map((item) => (
+                    <SelectItem key={item} value={item}>
+                      {item}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <Button
+              type="button"
+              onClick={addPackagingSpec}
+              disabled={!quantity.trim() || !unit || !packaging}
+              className="mb-0 shrink-0"
+            >
+              <Plus className="w-4 h-4 mr-1" />
+              Thêm
+            </Button>
+          </div>
+
+          <div className="space-y-1 pt-2">
+            <p className="text-xs text-muted-foreground">Gợi ý phổ biến:</p>
+            <div className="flex flex-wrap gap-1.5">
+              {packagingSpecsPresets.map((preset) => {
+                const isSelected = packagingSpecsArr.includes(preset);
+                return (
+                  <button
+                    key={preset}
+                    type="button"
+                    onClick={() => {
+                      if (!isSelected) {
+                        updateField("packagingSpecs", [
+                          ...packagingSpecsArr,
+                          preset,
+                        ]);
+                      } else {
+                        removePackagingSpec(preset);
+                      }
+                    }}
+                    className={`px-2.5 py-1 rounded-md border text-xs font-medium transition-all ${
+                      isSelected
+                        ? "bg-primary/10 border-primary text-primary"
+                        : "bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100"
+                    }`}
+                  >
+                    {preset}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {packagingSpecsArr.length > 0 && (
+            <div className="bg-slate-50 rounded-xl border p-3 mt-2">
+              <p className="text-xs font-medium text-muted-foreground mb-2">
+                Đã thêm ({packagingSpecsArr.length} quy cách):
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {packagingSpecsArr.map((tag) => (
+                  <Badge
+                    key={tag}
+                    variant="secondary"
+                    className="text-sm px-3 py-1 flex items-center gap-1.5"
+                  >
+                    {tag}
+                    <X
+                      className="w-3.5 h-3.5 cursor-pointer hover:text-destructive"
+                      onClick={() => removePackagingSpec(tag)}
+                    />
+                  </Badge>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </div>
 

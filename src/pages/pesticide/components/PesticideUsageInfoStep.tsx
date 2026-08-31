@@ -1,3 +1,5 @@
+import { farmSupplyApi } from "@/features/farm-supply";
+import { useQuery } from "@tanstack/react-query";
 import {
   Input,
   Label,
@@ -16,8 +18,6 @@ import {
   targetEntitiesCultivation,
 } from "../data/constants";
 import type { PesticideDomain, PesticideFormData } from "../types";
-import { useQuery } from "@tanstack/react-query";
-import { farmSupplyApi } from "@/features/farm-supply";
 
 interface PesticideUsageInfoStepProps {
   formData: PesticideFormData;
@@ -26,6 +26,10 @@ interface PesticideUsageInfoStepProps {
     field: K,
     value: PesticideFormData[K],
   ) => void;
+}
+
+interface TargetSubjectItem {
+  name: string;
 }
 
 function getTargetOptionsByDomain(domain?: PesticideDomain) {
@@ -65,7 +69,10 @@ export default function PesticideUsageInfoStep({
 
   const targetOptions =
     apiSubjects && apiSubjects.length > 0
-      ? apiSubjects.map((s: any) => ({ label: s.name, value: s.name }))
+      ? (apiSubjects as TargetSubjectItem[]).map((s) => ({
+          label: s.name,
+          value: s.name,
+        }))
       : getTargetOptionsByDomain(domain);
 
   return (

@@ -101,7 +101,10 @@ export default function SimplePesticideForm({
 }: SimplePesticideFormProps) {
   const isEdit = window.location.pathname.includes("/edit");
   const labels = DOMAIN_LABELS[domain];
-  const isValid = Boolean(formData.name);
+  const hasBasicPackagingRule = Boolean(
+    formData.packaging && formData.quantity && formData.unit,
+  );
+  const isValid = Boolean(formData.name) && hasBasicPackagingRule;
   const [paramHashtag, setParamHashtag] = useState("");
   const [groupSearch, setGroupSearch] = useState("");
 
@@ -291,7 +294,7 @@ export default function SimplePesticideForm({
       <div className="space-y-2">
         <Label className="flex items-center gap-1.5">
           <Package className="w-4 h-4 text-slate-400" />
-          Quy cách đóng gói
+          Quy cách đóng gói <span className="text-red-500">*</span>
         </Label>
         <div className="flex gap-3">
           <div className="w-32">
@@ -340,7 +343,7 @@ export default function SimplePesticideForm({
         </div>
         <p className="text-xs text-muted-foreground">
           VD: Chai 500 ml, Bao 25 kg, Vỉ 10 viên… Bổ sung thêm quy cách chi tiết
-          ở chế độ chuyên sâu.
+          ở chế độ chuyên sâu. Cần có ít nhất 1 quy cách để lưu.
         </p>
       </div>
 

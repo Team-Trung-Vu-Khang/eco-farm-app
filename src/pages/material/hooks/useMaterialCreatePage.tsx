@@ -107,6 +107,16 @@ export function useMaterialCreatePage() {
   };
 
   const handleConfirmSubmit = async () => {
+    const hasPackagingSpecs = (formData.packagingSpecs || []).length > 0;
+    if (!hasPackagingSpecs) {
+      toast({
+        title: "Thiếu thông tin",
+        description: "Vui lòng thêm ít nhất một quy cách bao bì trước khi lưu.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setSubmitting(true);
     try {
       const uploadedImageUrl = await uploadImage(
@@ -235,7 +245,7 @@ export function useMaterialCreatePage() {
           onFormFieldChange={updateField}
         />
       ),
-      isValid: true,
+      isValid: (formData.packagingSpecs || []).length > 0,
     },
     {
       id: "confirm",

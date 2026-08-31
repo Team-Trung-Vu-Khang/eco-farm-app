@@ -243,13 +243,14 @@ export default function MaterialSuppliersStep({
       <div className="bg-white p-6 rounded-xl shadow-sm border space-y-6">
         <h3 className="font-semibold text-lg flex items-center gap-2">
           <Package className="w-5 h-5 text-primary" />
-          Bao bì quy cách
+          Bao bì quy cách *
         </h3>
 
         <div className="space-y-3">
-          <Label>Nhập quy cách đóng gói</Label>
+          <Label required>Nhập quy cách đóng gói</Label>
           <p className="text-xs text-muted-foreground -mt-1">
-            Nhập số lượng rồi chọn đơn vị. Có thể thêm nhiều quy cách.
+            Bắt buộc thêm ít nhất một quy cách gồm loại bao bì, số lượng và
+            đơn vị.
           </p>
 
           {/* Input row */}

@@ -28,6 +28,13 @@ export default function PesticideSubmitConfirmDialog({
   onConfirm,
   loading = false,
 }: PesticideSubmitConfirmDialogProps) {
+  const packagingSpecs =
+    formData.packagingSpecs.length > 0
+      ? formData.packagingSpecs
+      : formData.packaging && formData.quantity && formData.unit
+        ? [`${formData.packaging} ${formData.quantity} ${formData.unit}`]
+        : [];
+
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
       <AlertDialogContent>
@@ -52,11 +59,26 @@ export default function PesticideSubmitConfirmDialog({
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Nhóm:</span>
-                <span className="font-medium">{formData.group}</span>
+                <span className="font-medium">{formData.group || "Chưa chọn"}</span>
               </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Nguồn gốc:</span>
-                <span className="font-medium">{formData.origin}</span>
+              <div className="space-y-1">
+                <span className="text-muted-foreground block">
+                  Quy cách đóng gói:
+                </span>
+                <div className="flex flex-wrap gap-1.5">
+                  {packagingSpecs.length > 0 ? (
+                    packagingSpecs.map((item) => (
+                      <span
+                        key={item}
+                        className="rounded-full bg-white px-2.5 py-1 text-xs font-medium text-slate-700 border border-slate-200"
+                      >
+                        {item}
+                      </span>
+                    ))
+                  ) : (
+                    <span className="font-medium text-slate-500">Chưa chọn</span>
+                  )}
+                </div>
               </div>
             </div>
           </AlertDialogDescription>

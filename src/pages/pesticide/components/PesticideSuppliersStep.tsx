@@ -8,7 +8,6 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-  Textarea,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { Building2, DollarSign, Package, Plus, X, Search } from "lucide-react";
 import { useState } from "react";
@@ -248,9 +247,11 @@ export default function PesticideSuppliersStep({
 
         {/* Bao bì quy cách – nhập số + chọn đơn vị */}
         <div className="space-y-3">
-          <Label>Bao bì quy cách</Label>
+          <Label>
+            Bao bì quy cách <span className="text-red-500">*</span>
+          </Label>
           <p className="text-xs text-muted-foreground -mt-1">
-            Nhập số lượng rồi chọn đơn vị. Có thể thêm nhiều quy cách.
+            Nhập đủ 3 thông tin rồi bấm Thêm. Cần có ít nhất 1 quy cách để lưu.
           </p>
 
           {/* Input row */}

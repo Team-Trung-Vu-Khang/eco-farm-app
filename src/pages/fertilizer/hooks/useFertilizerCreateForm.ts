@@ -151,6 +151,22 @@ export function useFertilizerCreateForm() {
   };
 
   const handleConfirmSubmit = async (isDetailMode?: boolean) => {
+    const hasSimplePackagingRule = Boolean(
+      formData.packaging && formData.quantity && formData.unit,
+    );
+    const hasAdvancedPackagingRule = (formData.packagingSpecs || []).length > 0;
+
+    if (isDetailMode ? !hasAdvancedPackagingRule : !hasSimplePackagingRule) {
+      toast({
+        title: "Thiếu thông tin",
+        description: isDetailMode
+          ? "Vui lòng thêm ít nhất một quy cách đóng gói."
+          : "Vui lòng nhập đủ quy cách, giá trị và đơn vị đóng gói.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setSubmitting(true);
     try {
       const firstAidHtml = await safeConvertLexicalToHtml(formData.firstAid);

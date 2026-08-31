@@ -19,7 +19,10 @@ import { farmSupplyApi } from "@/features/farm-supply";
 
 interface FertilizerSuppliersStepProps {
   formData: FertilizerFormData;
-  updateField: (field: keyof FertilizerFormData, value: any) => void;
+  updateField: (
+    field: keyof FertilizerFormData,
+    value: FertilizerFormData[keyof FertilizerFormData],
+  ) => void;
 }
 
 const MEASURE_UNIT_OPTIONS = [
@@ -232,9 +235,11 @@ export const FertilizerSuppliersStep = ({
 
         {/* Bao bì quy cách – nhập số + chọn đơn vị */}
         <div className="space-y-3">
-          <Label>Bao bì quy cách</Label>
+          <Label>
+            Bao bì quy cách <span className="text-red-500">*</span>
+          </Label>
           <p className="text-xs text-muted-foreground -mt-1">
-            Nhập số lượng rồi chọn đơn vị. Có thể thêm nhiều quy cách.
+            Nhập đủ 3 thông tin rồi bấm Thêm. Cần có ít nhất 1 quy cách để lưu.
           </p>
 
           <div className="flex gap-2 items-end">

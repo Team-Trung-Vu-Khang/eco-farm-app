@@ -9,6 +9,7 @@ import {
   AlertDialogTitle,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { Loader2 } from "lucide-react";
+import { getMaterialGroupLabel } from "../data/constants";
 import type { MaterialFormData } from "../types/types";
 
 interface MaterialSubmitConfirmDialogProps {
@@ -51,8 +52,33 @@ export default function MaterialSubmitConfirmDialog({
                 <span className="font-medium">{formData.name}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-muted-foreground">Loại:</span>
-                <span className="font-medium">{formData.type}</span>
+                <span className="text-muted-foreground">Mức độ công nghệ:</span>
+                <span className="font-medium">
+                  {getMaterialGroupLabel(formData.technologyLevelId) || "Chưa chọn"}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Giai đoạn áp dụng:</span>
+                <span className="font-medium">
+                  {getMaterialGroupLabel(formData.valueChainId) || "Chưa chọn"}
+                </span>
+              </div>
+              <div className="space-y-1">
+                <span className="text-muted-foreground block">Quy cách đóng gói:</span>
+                <div className="flex flex-wrap gap-1.5">
+                  {(formData.packagingSpecs || []).length > 0 ? (
+                    formData.packagingSpecs.map((item) => (
+                      <span
+                        key={item}
+                        className="rounded-full bg-white px-2.5 py-1 text-xs font-medium text-slate-700 border border-slate-200"
+                      >
+                        {item}
+                      </span>
+                    ))
+                  ) : (
+                    <span className="font-medium text-slate-500">Chưa chọn</span>
+                  )}
+                </div>
               </div>
             </div>
           </AlertDialogDescription>
