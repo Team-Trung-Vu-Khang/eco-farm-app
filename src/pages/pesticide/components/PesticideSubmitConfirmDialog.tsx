@@ -3,7 +3,6 @@ import {
   AlertDialogAction,
   AlertDialogCancel,
   AlertDialogContent,
-  AlertDialogDescription,
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
@@ -42,8 +41,8 @@ export default function PesticideSubmitConfirmDialog({
           <AlertDialogTitle>
             {isEdit ? "Xác nhận cập nhật" : "Xác nhận thêm mới"}
           </AlertDialogTitle>
-          <AlertDialogDescription className="space-y-3">
-            <p>
+          <div className="space-y-3">
+            <p className="text-sm text-muted-foreground">
               {isEdit
                 ? "Bạn có chắc chắn muốn cập nhật thông tin thuốc BVTV này?"
                 : "Bạn có chắc chắn muốn thêm thuốc BVTV mới vào hệ thống?"}
@@ -81,7 +80,7 @@ export default function PesticideSubmitConfirmDialog({
                 </div>
               </div>
             </div>
-          </AlertDialogDescription>
+          </div>
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel disabled={loading}>Hủy bỏ</AlertDialogCancel>

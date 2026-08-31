@@ -70,9 +70,25 @@ export const pesticideColumns = (
     key: "form",
     label: "Dạng bào chế",
     render: (_, row) => {
-      const val = row.classifications?.find(
-        (c: any) => c.classification === "dosage_form",
-      )?.group?.name;
+      let val =
+        row.metadataJson && typeof row.metadataJson === "object"
+          ? row.metadataJson?.dosageForm
+          : undefined;
+
+      if (!val && row.metadataJson && typeof row.metadataJson === "string") {
+        try {
+          val = JSON.parse(row.metadataJson)?.dosageForm;
+        } catch {
+          // ignore malformed metadata
+        }
+      }
+
+      if (!val) {
+        val = row.classifications?.find(
+          (c: any) => c.classification === "dosage_form",
+        )?.group?.name;
+      }
+
       return val || <span className="text-muted-foreground text-xs">—</span>;
     },
   },
@@ -90,7 +106,7 @@ export const pesticideColumns = (
               ? JSON.parse(row.metadataJson)
               : row.metadataJson;
           val = meta?.toxicityLevel;
-        } catch (e) {
+        } catch {
           // ignore
         }
       }
