@@ -79,6 +79,7 @@ import {
   mapPlanResponseToPlan,
   mapWorkflowResponseToInfoRecord,
 } from "./utils/api-mappers";
+import { getMaterialSummaryItems } from "../plan-growth/utils/material-summary";
 import { summarizePlanSelections, summarizeSelections } from "./utils/location";
 
 // Local draft-only nodes carry a `workflow-<timestamp>-<rand>` id; only
@@ -258,27 +259,6 @@ function getPlanActionDisabled(status: PlanDisplayStatus) {
   };
 }
 
-function getMaterialBreakdown(
-  materialNames: string[],
-  materialCategories: string[],
-) {
-  const breakdown = { "Thuốc thú y": 0, "Thức ăn chăn nuôi": 0, "Vật tư khác": 0 };
-
-  materialNames.forEach((materialName, index) => {
-    if (!materialName.trim()) return;
-    const category = (materialCategories[index] || "").toLowerCase();
-    if (category.includes("thuốc") || category.includes("thú y")) {
-      breakdown["Thuốc thú y"] += 1;
-    } else if (category.includes("thức ăn") || category.includes("phân")) {
-      breakdown["Thức ăn chăn nuôi"] += 1;
-    } else {
-      breakdown["Vật tư khác"] += 1;
-    }
-  });
-
-  return breakdown;
-}
-
 function getStageTags(stageNames: string[]) {
   const names = stageNames.map((name) => name.trim()).filter(Boolean);
 
@@ -386,15 +366,9 @@ function toDisplayNode(
   const laborCount = plan.taskAllocations.filter((task) =>
     task.labor.trim(),
   ).length;
-  const materialNames = plan.materialAllocations.map(
-    (material) => material.materialName,
-  );
-  const materialCategories = plan.materialAllocations.map(
-    (material) => material.materialCategory,
-  );
-  const materialBreakdown = getMaterialBreakdown(
-    materialNames,
-    materialCategories,
+  const materialSummaries = getMaterialSummaryItems(
+    plan.materialAllocations,
+    "LIVESTOCK",
   );
 
   const status = getPlanDisplayStatus(plan);
@@ -443,18 +417,10 @@ function toDisplayNode(
       regionLabels: getRegionLabelsFromPlan(plan, regions),
       summaries: [
         { label: "Nhân lực", value: String(laborCount) },
-        {
-          label: "Thuốc thú y",
-          value: String(materialBreakdown["Thuốc thú y"]),
-        },
-        {
-          label: "Thức ăn",
-          value: String(materialBreakdown["Thức ăn chăn nuôi"]),
-        },
-        {
-          label: "Vật tư khác",
-          value: String(materialBreakdown["Vật tư khác"]),
-        },
+        ...materialSummaries.map((item) => ({
+          label: item.label,
+          value: String(item.value),
+        })),
       ],
       description: plan.description || "Chưa có mô tả cho kế hoạch này.",
       actions,

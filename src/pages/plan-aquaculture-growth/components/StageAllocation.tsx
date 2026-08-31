@@ -18,6 +18,7 @@ import {
   TabsContent,
   TabsList,
   TabsTrigger,
+  RemoteAutoCompleteSelect,
   cn,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import {
@@ -35,11 +36,19 @@ import {
 } from "lucide-react";
 import { memo, useState } from "react";
 import usePersonnelStore from "../../../stores/usePersonnelStore";
+import type { SupplyItemResponse } from "@/features/farm-supply/types";
 import type { GeographicalSelection } from "../types";
 import type { MaterialAllocation, TaskAllocation } from "../types";
 import type { AquacultureSupplyCatalog, AquacultureSupplyType } from "../hooks/useAquacultureSupplyCatalog";
 import { useTaskCategorySearch } from "@/features/task-category/hooks/useTaskCategory";
 import type { FarmWorkDurationUnit } from "@/features/farm-workflow/types/farm-workflow.type";
+import {
+  getSupplyTypeOptions,
+  isEquipmentSupplyType,
+  mapSupplyItemToOption,
+  useRemoteSupplySearch,
+} from "@/shared/hooks/useRemoteSupplySearch";
+import { isEquipmentAllocation } from "../../plan-growth/utils/material-allocations";
 
 const DURATION_UNIT_OPTIONS: { value: string; label: string; api: FarmWorkDurationUnit }[] = [
   { value: "phút", label: "Phút", api: "MINUTE" },
@@ -83,7 +92,12 @@ export const StageAllocation = memo(
       name: "",
       qty: "",
       unitBaseId: "",
-      type: "medicine" as AquacultureSupplyType,
+      selectedMaterial: null as SupplyItemResponse | null,
+      searchValue: "",
+      type:
+        getSupplyTypeOptions("AQUACULTURE")[1]?.value ||
+        getSupplyTypeOptions("AQUACULTURE")[0]?.value ||
+        "medicine",
     });
 
     const specificPersonnel = isDetail;
@@ -115,35 +129,57 @@ export const StageAllocation = memo(
     const selectedTypeOption = supplyCatalog.typeOptions.find(
       (option) => option.value === newItem.type,
     );
-    const selectedMaterial = supplyCatalog.optionsByType[newItem.type].find(
-      (option) => option.value === newItem.name,
+    const { items: searchedMaterials, isFetching } = useRemoteSupplySearch(
+      "AQUACULTURE",
+      newItem.type,
+      newItem.searchValue,
     );
-    const packagingVariantOptions = selectedMaterial?.item.packagingVariants || [];
+    const selectedMaterial = newItem.selectedMaterial;
+    const materialOptions = searchedMaterials.map(mapSupplyItemToOption);
+    if (
+      selectedMaterial &&
+      !materialOptions.some((option) => option.value === String(selectedMaterial.id))
+    ) {
+      materialOptions.unshift(mapSupplyItemToOption(selectedMaterial));
+    }
+    const packagingVariantOptions =
+      !isEquipmentSupplyType(newItem.type)
+        ? selectedMaterial?.packagingVariants || []
+        : [];
     const selectedPackagingVariant = packagingVariantOptions.find(
       (variant) => String(variant.unitBase?.id) === newItem.unitBaseId,
     );
+    const selectedEquipmentUnitBase =
+      selectedMaterial?.packagingVariants?.[0]?.unitBase;
     const maxPackagingQuantity = selectedPackagingVariant?.quantity;
     const exceedsPackagingQuantity =
       maxPackagingQuantity != null &&
       Number(newItem.qty) > maxPackagingQuantity;
 
     const handleAddMaterial = () => {
-      if (!selectedMaterial || !newItem.qty || !selectedPackagingVariant?.unitBase)
+      if (!selectedMaterial || !newItem.qty) return;
+      if (!isEquipmentSupplyType(newItem.type) && !selectedPackagingVariant?.unitBase)
         return;
       onAddMaterial({
         stageId: stageName,
         materialCategory: selectedTypeOption?.label || newItem.type,
         materialType: selectedTypeOption?.label || newItem.type,
-        materialName: selectedMaterial.label,
+        materialName: selectedMaterial.name,
         quantity: newItem.qty,
-        unit: selectedPackagingVariant.unitBase.name || selectedMaterial.unit,
-        supplyItemId: selectedMaterial.item.id,
-        unitBaseId: selectedPackagingVariant.unitBase.id,
+        unit: isEquipmentSupplyType(newItem.type)
+          ? "Cái / Chiếc"
+          : selectedPackagingVariant?.unitBase?.name || "",
+        supplyItemId: selectedMaterial.id,
+        unitBaseId: isEquipmentSupplyType(newItem.type)
+          ? 6
+          : selectedPackagingVariant?.unitBase?.id,
       });
       setNewItem({
         name: "",
         qty: "",
         unitBaseId: "",
+        selectedMaterial: null,
+        searchValue: "",
         type: newItem.type,
       });
     };
@@ -313,7 +349,7 @@ export const StageAllocation = memo(
                         </div>
                         <div className="flex items-center gap-3">
                           <span className="font-semibold text-slate-900 bg-white px-2 py-0.5 rounded border">
-                            {a.quantity} {a.unit}
+                            {a.unit ? `${a.quantity} ${a.unit}` : a.quantity}
                           </span>
                           <button
                             className="text-slate-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
@@ -363,44 +399,44 @@ export const StageAllocation = memo(
                       </div>
 
                       <div className="col-span-8">
-                        <Combobox
-                          options={supplyCatalog.optionsByType[newItem.type].map(
-                            (opt) => ({
-                              value: opt.value,
-                              label: opt.label,
-                            }),
-                          )}
+                        <RemoteAutoCompleteSelect
+                          options={materialOptions}
                           value={newItem.name}
                           onChange={(v) => {
-                            const item =
-                              supplyCatalog.optionsByType[newItem.type].find(
-                                (i) => i.value === v,
-                              );
-                            const firstVariant = item?.item.packagingVariants?.[0];
+                            const item = materialOptions.find(
+                              (option) => option.value === v,
+                            )?.item;
+                            const firstVariant = item?.packagingVariants?.[0];
                             setNewItem({
                               ...newItem,
                               name: v,
+                              selectedMaterial: item ?? null,
                               unitBaseId: firstVariant?.unitBase?.id
                                 ? String(firstVariant.unitBase.id)
                                 : "",
                             });
                           }}
+                          onSearch={(value) =>
+                            setNewItem((prev) => ({
+                              ...prev,
+                              searchValue: value,
+                            }))
+                          }
                           placeholder="Chọn vật tư cụ thể..."
                           searchPlaceholder="Tìm vật tư..."
                           emptyText={
-                            supplyCatalog.isLoading
+                            isFetching
                               ? "Đang tải danh sách vật tư..."
                               : "Không tìm thấy vật tư."
                           }
-                          disabled={supplyCatalog.isLoading}
-                          className="h-9 text-xs w-full bg-slate-50/50"
+                          loading={isFetching}
                         />
                       </div>
                     </div>
 
                     {/* Row 2: Configuration (Quantity, Unit & Add Button) */}
                     <div className="grid grid-cols-12 gap-2">
-                      <div className="col-span-5">
+                      <div className={isEquipmentSupplyType(newItem.type) ? "col-span-9" : "col-span-5"}>
                         <Input
                           placeholder="Số lượng"
                           type="number"
@@ -411,31 +447,33 @@ export const StageAllocation = memo(
                           }
                         />
                       </div>
-                      <div className="col-span-4">
-                        <Select
-                          value={newItem.unitBaseId}
-                          onValueChange={(v) =>
-                            setNewItem({ ...newItem, unitBaseId: v })
-                          }
-                          disabled={packagingVariantOptions.length === 0}
-                        >
-                          <SelectTrigger className="h-9 text-xs px-2 w-full bg-white">
-                            <SelectValue placeholder="Đơn vị..." />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {packagingVariantOptions.map((variant) => (
-                              <SelectItem
-                                key={variant.unitBase?.id ?? variant.unitBase?.name}
-                                value={String(variant.unitBase?.id)}
-                              >
-                                {variant.unitBase?.name ||
-                                  variant.packagingType?.name ||
-                                  ""}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
+                      {!isEquipmentSupplyType(newItem.type) && (
+                        <div className="col-span-4">
+                          <Select
+                            value={newItem.unitBaseId}
+                            onValueChange={(v) =>
+                              setNewItem({ ...newItem, unitBaseId: v })
+                            }
+                            disabled={packagingVariantOptions.length === 0}
+                          >
+                            <SelectTrigger className="h-9 text-xs px-2 w-full bg-white">
+                              <SelectValue placeholder="Đơn vị..." />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {packagingVariantOptions.map((variant) => (
+                                <SelectItem
+                                  key={variant.unitBase?.id ?? variant.unitBase?.name}
+                                  value={String(variant.unitBase?.id)}
+                                >
+                                  {variant.unitBase?.name ||
+                                    variant.packagingType?.name ||
+                                    ""}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      )}
                       <div className="col-span-3">
                         <Button
                           size="sm"

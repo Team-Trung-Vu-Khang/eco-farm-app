@@ -23,6 +23,7 @@ import type {
   SelectionSummaryGroup,
   Workflow,
 } from "../types";
+import { groupMaterialAllocations } from "../../plan-growth/utils/material-allocations";
 
 const planStatusMap: Record<string, Plan["status"]> = {
   DRAFT: "draft",
@@ -272,6 +273,7 @@ export function mapPlanResponseToPlan(plan: FarmPlanResponse): Plan {
     (stage.supplyLines || []).map((line) => ({
       id: line.id,
       stageId: stage.name,
+      supplyType: line.supplyItem?.supplyType || undefined,
       materialCategory: line.supplyItem?.supplyType || "",
       materialType: line.supplyItem?.supplyType || "",
       materialName: line.supplyItem?.name || "",
@@ -354,18 +356,35 @@ export function buildFarmPlanStagesRequest(
       ? stageKey.split(":")[1]
       : stageKey;
 
-    const supplyLines = formData.materialAllocations
-      .filter(
-        (material) =>
-          material.stageId === stageKey &&
+    const supplyLines = groupMaterialAllocations(formData.materialAllocations)
+      .map((material) => {
+        const isEquipment =
+          [material.materialCategory, material.materialType].some(
+            (value) =>
+              typeof value === "string" &&
+              /equipment|dụng cụ\s*-\s*máy móc/i.test(value),
+          );
+        const unitBaseId = isEquipment ? 6 : material.unitBaseId;
+
+        return material.stageId === stageKey &&
           material.supplyItemId != null &&
-          material.unitBaseId != null,
-      )
-      .map((material) => ({
-        supplyItemId: material.supplyItemId as number,
-        unitBaseId: material.unitBaseId as number,
-        quantity: Number(material.quantity) || 0,
-      }));
+          unitBaseId != null
+          ? {
+              supplyItemId: material.supplyItemId as number,
+              unitBaseId,
+              quantity: Number(material.quantity) || 0,
+            }
+          : null;
+      })
+      .filter(
+        (
+          item,
+        ): item is {
+          supplyItemId: number;
+          unitBaseId: number;
+          quantity: number;
+        } => item !== null,
+      );
 
     const workItems = formData.taskAllocations
       .filter((task) => task.stageId === stageKey)

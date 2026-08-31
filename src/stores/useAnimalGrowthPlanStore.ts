@@ -62,6 +62,10 @@ export interface Plan {
   growthCycleId: string;
   regimenId?: string;
   selectedStages: string[];
+  /** Season-stage IDs returned by the plan API, kept for edit hydration. */
+  seasonStageIds?: number[];
+  /** Names of only the API stages linked to a Season, for workflow display. */
+  seasonStageNames?: string[];
   materialAllocations: MaterialAllocation[];
   taskAllocations: TaskAllocation[];
   status: "draft" | "active" | "completed" | "cancelled";

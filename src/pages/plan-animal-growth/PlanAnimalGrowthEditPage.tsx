@@ -1086,7 +1086,10 @@ export default function PlanAnimalGrowthEditPage({
                         const stage = availableGrowthCycleStages.find(
                           (item) => item.key === stageKey,
                         );
-                        const name = stage?.name || stageKey;
+                        const name =
+                          stage?.name ||
+                          stageKey.split(":").slice(1).join(":") ||
+                          stageKey;
                         return (
                           <div
                             key={stageKey}

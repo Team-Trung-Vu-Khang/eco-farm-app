@@ -36,6 +36,7 @@ import {
   mapWorkflowScopesToSelections,
   upsertFallbackPlan,
 } from "../utils/api-mappers";
+import { groupMaterialAllocations } from "../utils/material-allocations";
 import {
   calculateSelectedArea,
   deriveSelectionState,
@@ -459,8 +460,9 @@ export function usePlanForm(
           growthCycleSelections: plan.growthCycleSelections || [],
           regimenId: plan.regimenId || "",
           selectedStages: plan.selectedStages || [],
-          materialAllocations:
+          materialAllocations: groupMaterialAllocations(
             (plan.materialAllocations as MaterialAllocation[]) || [],
+          ),
           taskAllocations: (plan.taskAllocations as TaskAllocation[]) || [],
           status: plan.status,
         }
@@ -497,8 +499,9 @@ export function usePlanForm(
       growthCycleSelections: plan.growthCycleSelections || [],
       regimenId: plan.regimenId || "",
       selectedStages: plan.selectedStages || [],
-      materialAllocations:
+      materialAllocations: groupMaterialAllocations(
         (plan.materialAllocations as MaterialAllocation[]) || [],
+      ),
       taskAllocations: (plan.taskAllocations as TaskAllocation[]) || [],
       status: plan.status,
     });
@@ -807,10 +810,10 @@ export function usePlanForm(
     (item: Omit<MaterialAllocation, "id">) => {
       setFormData((prev) => ({
         ...prev,
-        materialAllocations: [
+        materialAllocations: groupMaterialAllocations([
           ...prev.materialAllocations,
           { id: Date.now(), ...item },
-        ],
+        ]),
       }));
     },
     [],

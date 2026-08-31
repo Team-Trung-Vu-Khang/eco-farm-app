@@ -73,6 +73,11 @@ export default function PlanGrowthPage({
     setLocation(`${basePath}/create/workflow`);
   };
 
+  const createLabel =
+    domainCode === "CROP"
+      ? "Khởi tạo vụ mùa"
+      : "Khởi tạo vụ nuôi";
+
   const workflowRows = useMemo<WorkflowRow[]>(
     () =>
       workflows.map((workflow) => ({
@@ -121,7 +126,7 @@ export default function PlanGrowthPage({
       actions={
         <Button data-testid="add-plan" onClick={handleCreatePlan}>
           <Plus className="w-4 h-4 mr-2" />
-          Khởi tạo quy trình
+          {createLabel}
         </Button>
       }
     >

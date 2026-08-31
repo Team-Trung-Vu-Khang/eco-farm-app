@@ -436,20 +436,14 @@ export function WorkflowCardNode({ data }: NodeProps<WorkflowCardNodeData>) {
           {data.summaries?.length ? (
             <div
               className={[
-                "mt-5 grid gap-x-5 gap-y-3",
-                data.summaries.length >= 4
-                  ? "grid-cols-2 lg:grid-cols-4"
-                  : data.summaries.length === 3
-                    ? "grid-cols-3"
-                    : data.summaries.length === 2
-                      ? "grid-cols-2"
-                      : "grid-cols-1",
+                "mt-5 grid grid-cols-5 gap-x-3 gap-y-3",
+                "min-w-0",
               ].join(" ")}
             >
               {data.summaries.map((summary) => (
                 <div
                   key={`${data.title}-${summary.label}`}
-                  className={posterSummaryClass}
+                  className={[posterSummaryClass, "min-w-0"].join(" ")}
                 >
                   <p className={posterSummaryLabelClass}>{summary.label}</p>
                   <p className={posterSummaryValueClass}>{summary.value}</p>

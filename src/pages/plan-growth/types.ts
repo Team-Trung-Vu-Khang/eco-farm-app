@@ -1,6 +1,9 @@
+import type { SupplyType } from "@/features/farm-supply/types";
+
 export interface MaterialAllocation {
   id: number;
   stageId: string;
+  supplyType?: SupplyType;
   materialCategory: string;
   materialType: string;
   materialName: string;

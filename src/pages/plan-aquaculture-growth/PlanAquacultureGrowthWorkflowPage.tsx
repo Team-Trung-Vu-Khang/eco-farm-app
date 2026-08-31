@@ -54,6 +54,7 @@ import {
   deleteFallbackPlan,
   upsertFallbackPlan,
 } from "./utils/api-mappers";
+import { getMaterialSummaryItems } from "../plan-growth/utils/material-summary";
 import { summarizePlanSelections } from "./utils/location";
 import { getPlanStatusBadge } from "./utils/status";
 
@@ -123,25 +124,6 @@ function countWorkers(tasks: Plan["taskAllocations"]) {
   }, 0);
 
   return total > 0 ? `${total} người` : "Chưa phân bổ";
-}
-
-function countMaterialsByCategory(materials: Plan["materialAllocations"]) {
-  return materials.reduce(
-    (acc, item) => {
-      const category = (item.materialCategory || "").toLowerCase();
-      if (category.includes("thuốc") || category.includes("bvtv")) {
-        acc.pesticide += 1;
-        return acc;
-      }
-      if (category.includes("phân")) {
-        acc.fertilizer += 1;
-        return acc;
-      }
-      acc.other += 1;
-      return acc;
-    },
-    { pesticide: 0, fertilizer: 0, other: 0 },
-  );
 }
 
 function getRegionLabels(plan: Plan, regions: Region[]) {
@@ -366,7 +348,10 @@ function buildPlanNode(
 ): Node<WorkflowCardNodeData> {
   const interactive = options?.interactive ?? true;
   const showFooterAction = options?.showFooterAction ?? true;
-  const materialGroups = countMaterialsByCategory(plan.materialAllocations);
+  const materialSummaries = getMaterialSummaryItems(
+    plan.materialAllocations,
+    "AQUACULTURE",
+  );
   const canManage =
     interactive && plan.status !== "completed" && plan.status !== "cancelled";
   return {
@@ -388,9 +373,10 @@ function buildPlanNode(
       tags: (plan.selectedStages || []).slice(0, 3),
       summaries: [
         { label: "Nhân lực", value: countWorkers(plan.taskAllocations) },
-        { label: "Thuốc BVTV", value: `${materialGroups.pesticide}` },
-        { label: "Phân Bón", value: `${materialGroups.fertilizer}` },
-        { label: "Vật tư khác", value: `${materialGroups.other}` },
+        ...materialSummaries.map((item) => ({
+          label: item.label,
+          value: String(item.value),
+        })),
       ],
       description: plan.description || "Chưa có mô tả cho kế hoạch này.",
       regionLabels,
