@@ -1,18 +1,24 @@
-import { useMemo } from "react";
+import { useState, useMemo } from "react";
 import PageWrapper from "@/components/PageWrapper";
 import {
   Badge,
   Button,
   DataTable,
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
   type Column,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { Clock3, ClipboardList, Plus, RefreshCw } from "lucide-react";
+import {
+  CalendarDays,
+  Camera,
+  ClipboardList,
+  Clock,
+  Image as ImageIcon,
+  ImageOff,
+  Link2,
+  Plus,
+  RefreshCw,
+  Zap,
+} from "lucide-react";
 import { useLocation } from "wouter";
-import usePersonnelStore from "@/stores/usePersonnelStore";
 
 interface MaterialAllocationRecord {
   id: number;
@@ -21,42 +27,42 @@ interface MaterialAllocationRecord {
   materialName: string;
   quantity: string;
   unit: string;
-  actualQuantity?: string;
 }
 
 interface HistoryRecord {
   id: number;
+  origin: "PLANNED" | "AD_HOC";
   regimenId: string;
   regimenName: string;
-  seasonName: string;
-  planName: string;
-  regionName: string;
+  startDate: string;
+  endDate: string;
   description: string;
-  workDescription: string;
-  completionPercent: number;
   imageCount: number;
   stages: string[];
   materialAllocations: MaterialAllocationRecord[];
-  assignedPersonnelIds: number[];
-  assignedAt: string;
-  updatedAt: string;
-  dueDate: string;
+  createdAt: string;
+  status: "ongoing" | "completed" | "draft";
 }
 
+// Mock data based on HistoryCreatePage fields
 const MOCK_HISTORY: HistoryRecord[] = [
   {
     id: 1,
+    origin: "PLANNED",
     regimenId: "1",
     regimenName: "QT001 - Quy trình canh tác Lúa hữu cơ 2024",
-    seasonName: "Vụ Đông Xuân 2024",
-    planName: "Kế hoạch làm đất và gieo sạ",
-    regionName: "Vùng canh tác A1",
+    startDate: "2024-03-01",
+    endDate: "2024-08-15",
     description:
-      "Cập nhật tiến độ canh tác hữu cơ, bổ sung phân bón và ghi nhận ảnh hiện trường.",
-    workDescription: "Làm đất, gieo sạ và bón phân đợt 1.",
-    completionPercent: 80,
+      "Vụ Đông Xuân 2024, áp dụng kỹ thuật canh tác hữu cơ không thuốc hóa học.",
     imageCount: 5,
-    stages: ["Làm đất", "Gieo sạ", "Bón phân đợt 1", "Bón phân đợt 2"],
+    stages: [
+      "Làm đất",
+      "Gieo sạ",
+      "Bón phân đợt 1",
+      "Bón phân đợt 2",
+      "Thu hoạch",
+    ],
     materialAllocations: [
       {
         id: 1,
@@ -64,7 +70,6 @@ const MOCK_HISTORY: HistoryRecord[] = [
         materialType: "Phân bón",
         materialName: "Phân hữu cơ vi sinh",
         quantity: "200",
-        actualQuantity: "195",
         unit: "kg",
       },
       {
@@ -73,98 +78,72 @@ const MOCK_HISTORY: HistoryRecord[] = [
         materialType: "Phân bón",
         materialName: "Ure",
         quantity: "50",
-        actualQuantity: "48",
         unit: "kg",
       },
     ],
-    assignedPersonnelIds: [1, 7],
-    assignedAt: "2024-03-18T08:00:00Z",
-    updatedAt: "2024-03-20T15:30:00Z",
-    dueDate: "2024-03-25T23:59:59Z",
+    createdAt: "2024-03-01T08:00:00Z",
+    status: "completed",
   },
   {
     id: 2,
+    origin: "AD_HOC",
     regimenId: "2",
-    regimenName: "QT002 - Quy trình rau màu an toàn",
-    seasonName: "Vụ Hè Thu 2024",
-    planName: "Kế hoạch chăm sóc luống rau",
-    regionName: "Khu sản xuất B2",
-    description: "Bổ sung vật tư, theo dõi tưới tiêu và ghi ảnh cập nhật.",
-    workDescription: "Kiểm tra luống, dặm cây và tưới bổ sung.",
-    completionPercent: 45,
+    regimenName:
+      "QT002 - Quy trình rau màu an toàn (Phun thuốc bọ trĩ phát sinh)",
+    startDate: "2024-09-01",
+    endDate: "2024-11-30",
+    description: "Xử lý phát sinh bọ trĩ bộc phát trên diện rộng mùa mưa.",
     imageCount: 3,
-    stages: ["Làm luống", "Gieo hạt", "Chăm sóc"],
+    stages: ["Chăm sóc", "Phun thuốc BVTV"],
     materialAllocations: [
       {
         id: 3,
-        stageId: "Làm luống",
-        materialType: "Vật tư khác",
-        materialName: "Màng phủ đất",
-        quantity: "50",
-        actualQuantity: "50",
-        unit: "m",
-      },
-    ],
-    assignedPersonnelIds: [1, 3],
-    assignedAt: "2024-09-01T07:30:00Z",
-    updatedAt: "2024-09-02T10:15:00Z",
-    dueDate: "2024-09-08T23:59:59Z",
-  },
-  {
-    id: 3,
-    regimenId: "3",
-    regimenName: "QT003 - Quy trình chăm sóc cây ăn trái",
-    seasonName: "Vụ Thu Đông 2024",
-    planName: "Kế hoạch phục hồi sau mưa",
-    regionName: "Vùng canh tác C3",
-    description: "Nhật ký đang quá hạn, cần xử lý và cập nhật lại hiện trạng.",
-    workDescription: "Tỉa cành, vệ sinh vườn và bổ sung dinh dưỡng.",
-    completionPercent: 20,
-    imageCount: 0,
-    stages: ["Tỉa cành", "Bón phân"],
-    materialAllocations: [
-      {
-        id: 4,
-        stageId: "Bón phân",
-        materialType: "Phân bón",
-        materialName: "Kali Sulphate",
-        quantity: "25",
-        actualQuantity: "20",
-        unit: "kg",
-      },
-    ],
-    assignedPersonnelIds: [1],
-    assignedAt: "2024-10-01T07:30:00Z",
-    updatedAt: "2024-10-03T11:45:00Z",
-    dueDate: "2024-09-28T23:59:59Z",
-  },
-  {
-    id: 4,
-    regimenId: "4",
-    regimenName: "QT004 - Quy trình phun phòng bệnh",
-    seasonName: "Vụ Mùa 2024",
-    planName: "Kế hoạch phòng bệnh giai đoạn mưa",
-    regionName: "Khu sản xuất D4",
-    description: "Bản ghi cập nhật mới nhất về kiểm tra sâu bệnh.",
-    workDescription: "Khảo sát vườn, phun phòng và ghi nhận ảnh.",
-    completionPercent: 60,
-    imageCount: 2,
-    stages: ["Khảo sát", "Phun phòng"],
-    materialAllocations: [
-      {
-        id: 5,
-        stageId: "Phun phòng",
+        stageId: "Phun thuốc BVTV",
         materialType: "Thuốc BVTV",
-        materialName: "Thuốc phòng nấm sinh học",
-        quantity: "1",
-        actualQuantity: "1",
+        materialName: "Thuốc sinh học Bt",
+        quantity: "10",
         unit: "lít",
       },
     ],
-    assignedPersonnelIds: [1, 5],
-    assignedAt: "2024-10-10T06:15:00Z",
-    updatedAt: "2024-10-30T09:00:00Z",
-    dueDate: "2024-11-05T23:59:59Z",
+    createdAt: "2024-09-01T07:30:00Z",
+    status: "ongoing",
+  },
+  {
+    id: 3,
+    origin: "AD_HOC",
+    regimenId: "3",
+    regimenName: "QT003 - Quy trình chăm sóc cây ăn trái (Sửa đường ống rò rỉ)",
+    startDate: "2025-01-15",
+    endDate: "",
+    description: "Sửa chữa hệ thống ống tưới nhỏ giọt bị vỡ khu C1.",
+    imageCount: 2,
+    stages: ["Bảo trì hệ thống"],
+    materialAllocations: [],
+    createdAt: "2025-01-15T09:00:00Z",
+    status: "completed",
+  },
+  {
+    id: 4,
+    origin: "PLANNED",
+    regimenId: "2",
+    regimenName: "QT002 - Quy trình rau màu an toàn",
+    startDate: "2024-10-01",
+    endDate: "2024-10-15",
+    description: "Bón phân đợt 3 theo đúng lộ trình quy trình kỹ thuật.",
+    imageCount: 1,
+    stages: ["Bón phân đợt 3"],
+    materialAllocations: [
+      {
+        id: 4,
+        stageId: "Bón phân đợt 3",
+        materialType: "Phân bón",
+        materialName: "Phân NPK 20-20-15",
+        quantity: "100",
+        unit: "kg",
+      },
+    ],
+    createdAt: "2024-10-01T08:00:00Z",
+    status: "completed",
   },
 ];
 
@@ -178,275 +157,314 @@ function formatDate(dateStr: string) {
   });
 }
 
-function formatDateTime(dateStr: string) {
-  if (!dateStr) return "—";
-  const d = new Date(dateStr);
-  return d.toLocaleString("vi-VN", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-}
-
-function isOverdue(record: HistoryRecord) {
-  return new Date(record.dueDate).getTime() < Date.now();
-}
-
-function sortByDateDesc<T extends { assignedAt: string }>(items: T[]) {
-  return [...items].sort(
-    (a, b) => new Date(b.assignedAt).getTime() - new Date(a.assignedAt).getTime(),
-  );
-}
-
-function sortByUpdatedDesc<T extends { updatedAt: string }>(items: T[]) {
-  return [...items].sort(
-    (a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime(),
-  );
-}
-
-function sortByDueAsc(items: HistoryRecord[]) {
-  return [...items].sort(
-    (a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime(),
-  );
-}
-
 const historyColumns: Column<HistoryRecord>[] = [
   {
     key: "regimenName",
-    label: "Nhật ký",
-    width: "360px",
+    label: "Quy trình / Vụ mùa",
     render: (value, row) => (
-      <div className="min-w-[360px] space-y-4 py-4 pr-4">
-        <div className="flex flex-wrap items-center gap-2">
+      <div className="flex items-start gap-2.5 min-w-[220px]">
+        <div
+          className={`h-8 w-8 rounded-lg flex items-center justify-center shrink-0 mt-0.5 ${
+            row.origin === "AD_HOC"
+              ? "bg-amber-100 text-amber-600"
+              : "bg-green-100 text-green-600"
+          }`}
+        >
+          {row.origin === "AD_HOC" ? (
+            <Zap className="h-4 w-4" />
+          ) : (
+            <ClipboardList className="h-4 w-4" />
+          )}
+        </div>
+        <div>
+          <p className="font-semibold text-slate-800 text-[13px] leading-snug">
+            {String(value)}
+          </p>
+          {row.description && (
+            <p className="text-xs text-slate-400 mt-0.5 line-clamp-1 max-w-xs">
+              {row.description}
+            </p>
+          )}
+        </div>
+      </div>
+    ),
+  },
+  {
+    key: "origin",
+    label: "Phân loại",
+    render: (value) => {
+      if (value === "AD_HOC") {
+        return (
           <Badge
             variant="outline"
-            className="border-green-200 bg-green-50 text-green-700 text-[10px]"
+            className="bg-amber-50 text-amber-700 border-amber-200 text-[10px] font-bold flex items-center gap-1 w-fit"
           >
-            {String(value)}
+            <Zap className="h-2.5 w-2.5" />
+            Phát sinh
           </Badge>
-          <span className="text-[11px] font-semibold text-slate-400">
-            {formatDateTime(row.assignedAt)}
-          </span>
-        </div>
-        <p className="text-base font-semibold leading-6 text-slate-900">
-          {row.planName}
-        </p>
-        <p className="text-sm leading-6 text-slate-500">{row.description}</p>
-        <div className="flex flex-wrap gap-2">
-          <Badge variant="outline" className="border-slate-200 bg-slate-50 text-slate-600 text-[10px]">
-            {row.imageCount} ảnh
-          </Badge>
-          <Badge variant="outline" className={isOverdue(row) ? "border-orange-200 bg-orange-50 text-orange-700 text-[10px]" : "border-slate-200 bg-slate-50 text-slate-600 text-[10px]"}>
-            {isOverdue(row) ? "Đã quá hạn" : "Đang được giao"}
-          </Badge>
-        </div>
-      </div>
-    ),
+        );
+      }
+      return (
+        <Badge
+          variant="outline"
+          className="bg-blue-50 text-blue-700 border-blue-200 text-[10px] font-bold flex items-center gap-1 w-fit"
+        >
+          <CalendarDays className="h-2.5 w-2.5" />
+          Theo kế hoạch
+        </Badge>
+      );
+    },
   },
   {
-    key: "seasonName",
-    label: "Thông tin cập nhật",
-    width: "300px",
+    key: "startDate",
+    label: "Thời gian",
     render: (_value, row) => (
-      <div className="min-w-[300px] space-y-4 py-4 pr-4 text-sm">
-        <div className="rounded-xl border border-slate-100 bg-slate-50/60 px-3 py-3">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400">
-            Vụ mùa
-          </p>
-          <p className="mt-1 font-semibold text-slate-900">{row.seasonName}</p>
-        </div>
-        <div className="rounded-xl border border-slate-100 bg-slate-50/60 px-3 py-3">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400">
-            Kế hoạch
-          </p>
-          <p className="mt-1 font-semibold text-slate-900">{row.planName}</p>
-        </div>
-        <div className="rounded-xl border border-slate-100 bg-slate-50/60 px-3 py-3">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400">
-            Vùng canh tác
-          </p>
-          <p className="mt-1 font-semibold text-slate-900">{row.regionName}</p>
-        </div>
-      </div>
-    ),
-  },
-  {
-    key: "completionPercent",
-    label: "Công việc",
-    width: "320px",
-    render: (value, row) => (
-      <div className="min-w-[320px] space-y-4 py-4 pr-4">
-        <div className="flex items-center gap-2">
-          <div className="h-2 flex-1 overflow-hidden rounded-full bg-slate-100">
-            <div
-              className="h-full rounded-full bg-emerald-500"
-              style={{ width: `${Number(value)}%` }}
-            />
-          </div>
-          <span className="text-sm font-bold text-slate-900 whitespace-nowrap">
-            {String(value)}%
-          </span>
-        </div>
-        <p className="text-sm leading-6 text-slate-600">{row.workDescription}</p>
-        <div className="rounded-xl border border-slate-100 bg-slate-50/70 px-3 py-3">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400">
-            Cập nhật gần nhất
-          </p>
-          <p className="mt-1 text-sm font-semibold text-slate-900">
-            {formatDate(row.updatedAt)}
-          </p>
-        </div>
-      </div>
-    ),
-  },
-  {
-    key: "materialAllocations",
-    label: "Vật tư",
-    width: "360px",
-    render: (_value, row) => (
-      <div className="min-w-[360px] space-y-4 py-4 pr-4">
-        {row.materialAllocations.length > 0 ? (
-          row.materialAllocations.map((item) => (
-            <div
-              key={item.id}
-              className="rounded-xl border border-slate-100 bg-slate-50 px-3 py-4 text-sm"
-            >
-              <div className="font-semibold leading-6 text-slate-900">
-                {item.materialName}
-              </div>
-              <div className="mt-1 text-xs text-slate-500">
-                {item.materialType}
-              </div>
-              <div className="mt-2 inline-flex rounded-full border border-slate-200 bg-white px-2.5 py-1 text-xs font-semibold text-slate-700">
-                {item.actualQuantity || item.quantity} {item.unit}
-              </div>
-            </div>
-          ))
-        ) : (
-          <p className="text-sm italic text-slate-400">Chưa ghi nhận vật tư.</p>
+      <div className="flex items-center gap-1.5 text-xs text-slate-600 whitespace-nowrap">
+        <CalendarDays className="h-3.5 w-3.5 text-slate-400 shrink-0" />
+        <span className="font-medium">{formatDate(row.startDate)}</span>
+        {row.endDate && (
+          <>
+            <span className="text-slate-300">→</span>
+            <span className="font-medium">{formatDate(row.endDate)}</span>
+          </>
         )}
       </div>
     ),
   },
+  {
+    key: "stages",
+    label: "Hạng mục",
+    render: (value) => {
+      const stages = value as string[];
+      if (!stages || stages.length === 0)
+        return <span className="text-xs text-slate-300 italic">Chưa có</span>;
+      return (
+        <div className="flex flex-wrap gap-1">
+          {stages.slice(0, 2).map((s) => (
+            <span
+              key={s}
+              className="inline-block rounded-md bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-600"
+            >
+              {s}
+            </span>
+          ))}
+          {stages.length > 2 && (
+            <span className="inline-block rounded-md bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-500">
+              +{stages.length - 2}
+            </span>
+          )}
+        </div>
+      );
+    },
+  },
+  {
+    key: "materialAllocations",
+    label: "Vật tư",
+    render: (value) => {
+      const allocations = value as MaterialAllocationRecord[];
+      return (
+        <div className="flex items-center gap-1 text-xs text-slate-600">
+          <Link2 className="h-3.5 w-3.5 text-slate-400" />
+          <span className="font-semibold">{allocations?.length ?? 0}</span>
+          <span className="text-slate-400">loại</span>
+        </div>
+      );
+    },
+  },
+  {
+    key: "imageCount",
+    label: "Ảnh",
+    render: (value) => (
+      <div className="flex items-center gap-1 text-xs text-slate-600">
+        <ImageIcon className="h-3.5 w-3.5 text-slate-400" />
+        <span className="font-semibold">{String(value)}</span>
+        <span className="text-slate-400">ảnh</span>
+      </div>
+    ),
+  },
+  {
+    key: "status",
+    label: "Trạng thái",
+    render: (value) => {
+      const map: Record<string, { label: string; className: string }> = {
+        completed: {
+          label: "Hoàn thành",
+          className: "bg-green-50 text-green-700 border-green-200",
+        },
+        ongoing: {
+          label: "Đang thực hiện",
+          className: "bg-blue-50 text-blue-700 border-blue-200",
+        },
+        draft: {
+          label: "Nháp",
+          className: "bg-slate-50 text-slate-600 border-slate-200",
+        },
+      };
+      const info = map[String(value)] ?? map["draft"];
+      return (
+        <Badge
+          variant="outline"
+          className={`text-[10px] font-bold ${info.className}`}
+        >
+          {info.label}
+        </Badge>
+      );
+    },
+  },
 ];
-
-function HistoryTable({ records }: { records: HistoryRecord[] }) {
-  return (
-    <DataTable
-      columns={historyColumns}
-      data={records}
-      searchable
-      searchPlaceholder="Tìm kiếm nhật ký..."
-      selectable={false}
-    />
-  );
-}
 
 export function HistoryPage() {
   const [, setLocation] = useLocation();
-  const personnel = usePersonnelStore((state) => state.personnel);
 
-  const currentPersonnelId = useMemo(() => {
-    if (typeof window !== "undefined") {
-      const stored = Number(window.localStorage.getItem("history-current-personnel-id"));
-      if (Number.isFinite(stored) && stored > 0) return stored;
+  const stats = useMemo(() => {
+    const total = MOCK_HISTORY.length;
+    const withEvidence = MOCK_HISTORY.filter((r) => r.imageCount > 0).length;
+    const withoutEvidence = total - withEvidence;
+
+    // Tần suất cập nhật / tháng: số bản ghi / số tháng kể từ bản đầu tiên
+    let frequencyPerMonth: string = "—";
+    if (total > 0) {
+      const dates = MOCK_HISTORY.map((r) => new Date(r.createdAt).getTime());
+      const earliest = Math.min(...dates);
+      const latest = Math.max(...dates);
+      const diffMonths =
+        (new Date(latest).getFullYear() - new Date(earliest).getFullYear()) *
+          12 +
+        (new Date(latest).getMonth() - new Date(earliest).getMonth());
+      frequencyPerMonth =
+        diffMonths === 0
+          ? `${total} lần`
+          : `${(total / (diffMonths + 1)).toFixed(1)} lần`;
     }
-    return personnel.find((item) => item.status === "active")?.id ?? personnel[0]?.id ?? 0;
-  }, [personnel]);
 
-  const visibleRecords = useMemo(
-    () =>
-      MOCK_HISTORY.filter((record) =>
-        record.assignedPersonnelIds.includes(currentPersonnelId),
-      ),
-    [currentPersonnelId],
-  );
+    // Thời gian cập nhật mới nhất
+    let latestUpdate: string = "—";
+    if (total > 0) {
+      const dates = MOCK_HISTORY.map((r) => new Date(r.createdAt).getTime());
+      const latestDate = new Date(Math.max(...dates));
+      latestUpdate = latestDate.toLocaleDateString("vi-VN", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+      });
+    }
 
-  const assignedSorted = useMemo(() => sortByDateDesc(visibleRecords), [visibleRecords]);
-  const updatedSorted = useMemo(() => sortByUpdatedDesc(visibleRecords), [visibleRecords]);
-  const overdueSorted = useMemo(() => sortByDueAsc(visibleRecords.filter(isOverdue)), [visibleRecords]);
+    return {
+      total,
+      withEvidence,
+      withoutEvidence,
+      frequencyPerMonth,
+      latestUpdate,
+    };
+  }, []);
 
-  const stats = useMemo(
-    () => ({
-      total: visibleRecords.length,
-      overdue: overdueSorted.length,
-      updated: updatedSorted.length,
-      assigned: assignedSorted.length,
-    }),
-    [assignedSorted.length, overdueSorted.length, updatedSorted.length, visibleRecords.length],
-  );
+  const handleView = (row: HistoryRecord) => {
+    setLocation(`/history/${row.id}`);
+  };
+
+  const handleEdit = (row: HistoryRecord) => {
+    setLocation(`/history/${row.id}/edit`);
+  };
 
   return (
     <PageWrapper
-      title="Nhật ký theo kế hoạch"
-      description="Chỉ hiển thị các nhật ký được giao cho bạn"
+      title="Nhật ký canh tác"
+      description="Danh sách toàn bộ nhật ký vụ mùa đã được ghi nhận"
       actions={
         <Button
           className="h-10 rounded-lg px-4 text-sm font-bold bg-green-600 hover:bg-green-700 text-white gap-2"
-          onClick={() => setLocation("/history/create")}
+          onClick={() => setLocation("/diary/incident")}
         >
           <Plus className="h-4 w-4" />
           Thêm nhật ký
         </Button>
       }
     >
-      <div className="grid grid-cols-1 gap-4 mb-6 sm:grid-cols-3">
-        <div className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm">
-          <p className="text-xs font-semibold uppercase tracking-wide text-slate-400 mb-1">
-            Được giao
-          </p>
-          <div className="flex items-center justify-between">
-            <p className="text-3xl font-extrabold text-slate-900">{stats.assigned}</p>
-            <ClipboardList className="h-5 w-5 text-green-600" />
+      {/* Stat Blocks */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+        {/* Block 1: Tổng số lần cập nhật */}
+        <div className="rounded-2xl border border-slate-100 bg-white shadow-sm p-5">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wide text-slate-400 mb-1">
+                Tổng lần cập nhật
+              </p>
+              <p className="text-3xl font-extrabold text-slate-800 leading-none">
+                {stats.total}
+              </p>
+            </div>
+            <div className="h-10 w-10 rounded-xl bg-green-100 text-green-600 flex items-center justify-center shrink-0">
+              <ClipboardList className="h-5 w-5" />
+            </div>
+          </div>
+          <div className="mt-4 flex items-center gap-4">
+            <div className="flex items-center gap-1.5 text-xs text-slate-600">
+              <Camera className="h-3.5 w-3.5 text-green-500" />
+              <span className="font-bold text-green-600">
+                {stats.withEvidence}
+              </span>
+              <span className="text-slate-400">có bằng chứng</span>
+            </div>
+            <div className="w-px h-4 bg-slate-100" />
+            <div className="flex items-center gap-1.5 text-xs text-slate-600">
+              <ImageOff className="h-3.5 w-3.5 text-slate-400" />
+              <span className="font-bold text-slate-600">
+                {stats.withoutEvidence}
+              </span>
+              <span className="text-slate-400">không bằng chứng</span>
+            </div>
           </div>
         </div>
-        <div className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm">
-          <p className="text-xs font-semibold uppercase tracking-wide text-slate-400 mb-1">
-            Vừa cập nhật
-          </p>
-          <div className="flex items-center justify-between">
-            <p className="text-3xl font-extrabold text-slate-900">{stats.updated}</p>
-            <RefreshCw className="h-5 w-5 text-blue-600" />
+
+        {/* Block 2: Tần suất cập nhật */}
+        <div className="rounded-2xl border border-slate-100 bg-white shadow-sm p-5">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wide text-slate-400 mb-1">
+                Số lần trong tháng
+              </p>
+              <p className="text-3xl font-extrabold text-slate-800 leading-none">
+                3
+              </p>
+            </div>
+            <div className="h-10 w-10 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center shrink-0">
+              <RefreshCw className="h-5 w-5" />
+            </div>
           </div>
+          <p className="mt-4 text-xs text-slate-400">
+            Thông tin cập nhật mới nhất trong tháng
+          </p>
         </div>
-        <div className="rounded-2xl border border-orange-200 bg-orange-50/60 p-5 shadow-sm">
-          <p className="text-xs font-semibold uppercase tracking-wide text-orange-500 mb-1">
-            Quá hạn
-          </p>
-          <div className="flex items-center justify-between">
-            <p className="text-3xl font-extrabold text-orange-700">{stats.overdue}</p>
-            <Clock3 className="h-5 w-5 text-orange-600" />
+
+        {/* Block 3: Cập nhật mới nhất */}
+        <div className="rounded-2xl border border-slate-100 bg-white shadow-sm p-5">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wide text-slate-400 mb-1">
+                Cập nhật mới nhất
+              </p>
+              <p className="text-2xl font-extrabold text-slate-800 leading-none">
+                {stats.latestUpdate}
+              </p>
+            </div>
+            <div className="h-10 w-10 rounded-xl bg-amber-100 text-amber-600 flex items-center justify-center shrink-0">
+              <Clock className="h-5 w-5" />
+            </div>
           </div>
+          <p className="mt-4 text-xs text-slate-400">
+            Nhật ký gần nhất được ghi nhận vào ngày này
+          </p>
         </div>
       </div>
 
-      <Tabs defaultValue="assigned" className="w-full">
-        <TabsList className="grid w-full grid-cols-3 bg-slate-100 p-1 rounded-xl">
-          <TabsTrigger value="assigned" className="gap-2">
-            Được giao mới nhất
-          </TabsTrigger>
-          <TabsTrigger value="updated" className="gap-2">
-            Vừa mới cập nhật
-          </TabsTrigger>
-          <TabsTrigger value="overdue" className="gap-2 text-orange-700 data-[state=active]:bg-orange-100 data-[state=active]:text-orange-700">
-            Đã quá hạn
-          </TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="assigned" className="mt-5">
-          <HistoryTable records={assignedSorted} />
-        </TabsContent>
-
-        <TabsContent value="updated" className="mt-5">
-          <HistoryTable records={updatedSorted} />
-        </TabsContent>
-
-        <TabsContent value="overdue" className="mt-5">
-          <HistoryTable records={overdueSorted} />
-        </TabsContent>
-      </Tabs>
+      <DataTable<HistoryRecord>
+        columns={historyColumns}
+        data={MOCK_HISTORY}
+        searchable
+        searchPlaceholder="Tìm kiếm nhật ký..."
+        onView={handleView}
+        onEdit={handleEdit}
+      />
     </PageWrapper>
   );
 }

@@ -35,14 +35,14 @@ import {
   Trash2,
   Upload,
   X,
+  MapPin,
 } from "lucide-react";
+import { HarvestGeographicalSelectorDialog } from "./components/HarvestGeographicalSelectorDialog";
+import { GeographicalSelectionCard } from "./components/GeographicalSelectionCard";
 import { useLocation } from "wouter";
 import { useFarmWorkflows } from "@/features/farm-workflow/hooks";
 import type { FarmWorkflowScopeResponse } from "@/features/farm-workflow/types/farm-workflow.type";
-import type {
-  DomainCode,
-  SupplyType,
-} from "@/features/farm-supply/types";
+import type { DomainCode, SupplyType } from "@/features/farm-supply/types";
 import {
   getSupplyTypeOptions,
   isEquipmentSupplyType,
@@ -81,7 +81,6 @@ interface HistoryFormData {
   startDate: string;
   endDate: string;
   description: string;
-  completionPercent: string;
   images: File[];
   selectedStages: string[];
   materialAllocations: MaterialAllocation[];
@@ -132,8 +131,8 @@ function getWorkflowLabel(domainCode?: DomainCode) {
 }
 
 function getWorkflowSubtitle(domainCode?: DomainCode) {
-  if (domainCode === "LIVESTOCK") return "Chăn nuôi";
-  if (domainCode === "AQUACULTURE") return "Nuôi trồng thủy sản";
+  if (domainCode === "LIVESTOCK" || domainCode === "AQUACULTURE")
+    return "Chăn nuôi và nuôi trồng thủy sản";
   return "Vùng trồng";
 }
 
@@ -171,7 +170,9 @@ function mapWorkflowScopeToHarvestOption(
     return {
       label: `${scope.area.name || `Khu #${scope.area.id}`}`,
       value: `area-${scope.area.id}`,
-      keywords: [scope.area.code, scope.area.name, region.name].filter(Boolean) as string[],
+      keywords: [scope.area.code, scope.area.name, region.name].filter(
+        Boolean,
+      ) as string[],
     };
   }
 
@@ -180,7 +181,12 @@ function mapWorkflowScopeToHarvestOption(
     return {
       label: `${scope.plot.name || `Lô #${scope.plot.id}`}`,
       value: `plot-${scope.plot.id}`,
-      keywords: [scope.plot.code, scope.plot.name, area?.name, region.name].filter(Boolean) as string[],
+      keywords: [
+        scope.plot.code,
+        scope.plot.name,
+        area?.name,
+        region.name,
+      ].filter(Boolean) as string[],
     };
   }
 
@@ -190,7 +196,10 @@ function mapWorkflowScopeToHarvestOption(
   };
 }
 
-function createHarvestDetail(targetId: string, targetLabel: string): HarvestDetail {
+function createHarvestDetail(
+  targetId: string,
+  targetLabel: string,
+): HarvestDetail {
   return {
     id: `harvest-${targetId}`,
     targetId,
@@ -226,7 +235,9 @@ function StageMaterialPicker({
   });
 
   const typeOptions = getSupplyTypeOptions(domainCode);
-  const selectedTypeOption = typeOptions.find((option) => option.value === newItem.type);
+  const selectedTypeOption = typeOptions.find(
+    (option) => option.value === newItem.type,
+  );
   const { items: searchedMaterials, isFetching } = useRemoteSupplySearch(
     domainCode,
     newItem.type,
@@ -310,7 +321,13 @@ function StageMaterialPicker({
             value={newItem.type}
             onValueChange={(v) => {
               const type = v as SupplyType;
-              setNewItem({ ...newItem, type, name: "", unitBaseId: "", searchValue: "" });
+              setNewItem({
+                ...newItem,
+                type,
+                name: "",
+                unitBaseId: "",
+                searchValue: "",
+              });
             }}
           >
             <SelectTrigger className="w-full h-9 text-xs bg-white border-slate-200">
@@ -346,7 +363,11 @@ function StageMaterialPicker({
             }
             placeholder="Chọn vật tư..."
             searchPlaceholder="Tìm vật tư..."
-            emptyText={isFetching ? "Đang tải danh sách vật tư..." : "Không tìm thấy vật tư."}
+            emptyText={
+              isFetching
+                ? "Đang tải danh sách vật tư..."
+                : "Không tìm thấy vật tư."
+            }
             loading={isFetching}
             disabled={isFetching}
           />
@@ -367,7 +388,9 @@ function StageMaterialPicker({
             disabled={isEquipment || packagingVariantOptions.length === 0}
           >
             <SelectTrigger className="h-9 text-xs w-full bg-white border-slate-200">
-              <SelectValue placeholder={isEquipment ? "Cái / Chiếc" : "Đơn vị..."} />
+              <SelectValue
+                placeholder={isEquipment ? "Cái / Chiếc" : "Đơn vị..."}
+              />
             </SelectTrigger>
             <SelectContent>
               {packagingVariantOptions.length > 0 ? (
@@ -376,7 +399,9 @@ function StageMaterialPicker({
                     key={variant.unitBase?.id ?? variant.unitBase?.name}
                     value={String(variant.unitBase?.id)}
                   >
-                    {variant.unitBase?.name || variant.packagingType?.name || ""}
+                    {variant.unitBase?.name ||
+                      variant.packagingType?.name ||
+                      ""}
                   </SelectItem>
                 ))
               ) : isEquipment ? (
@@ -408,7 +433,7 @@ export function HistoryCreatePage() {
 
   const [formData, setFormData] = useState<HistoryFormData>({
     regimenId: "",
-    workType: "cultivation",
+    workType: "",
     harvestScope: "region",
     harvestTargets: [],
     harvestDetails: [],
@@ -416,11 +441,15 @@ export function HistoryCreatePage() {
     startDate: "",
     endDate: "",
     description: "",
-    completionPercent: "",
     images: [],
     selectedStages: [],
     materialAllocations: [],
   });
+
+  const [geoDialogOpen, setGeoDialogOpen] = useState(false);
+  const [activeDetailIdForGeo, setActiveDetailIdForGeo] = useState<
+    string | null
+  >(null);
 
   const [newStage, setNewStage] = useState("");
   const [isDragging, setIsDragging] = useState(false);
@@ -431,15 +460,19 @@ export function HistoryCreatePage() {
   });
   const workflows = workflowsQuery.items || [];
   const selectedWorkflow = useMemo(
-    () => workflows.find((workflow) => String(workflow.id) === formData.regimenId),
+    () =>
+      workflows.find((workflow) => String(workflow.id) === formData.regimenId),
     [formData.regimenId, workflows],
   );
   const workflowDomainCode = selectedWorkflow?.domainCode ?? "CROP";
   const harvestTargetOptions = useMemo(() => {
-    const scopes = (selectedWorkflow?.scopes || []) as FarmWorkflowScopeResponse[];
-    return scopes
-      .map(mapWorkflowScopeToHarvestOption)
-      .filter(Boolean) as { label: string; value: string; keywords?: string[] }[];
+    const scopes = (selectedWorkflow?.scopes ||
+      []) as FarmWorkflowScopeResponse[];
+    return scopes.map(mapWorkflowScopeToHarvestOption).filter(Boolean) as {
+      label: string;
+      value: string;
+      keywords?: string[];
+    }[];
   }, [selectedWorkflow]);
 
   const syncHarvestDetails = (nextTargets: string[]) => {
@@ -448,7 +481,9 @@ export function HistoryCreatePage() {
     );
 
     setFormData((prev) => {
-      const current = new Map(prev.harvestDetails.map((item) => [item.targetId, item]));
+      const current = new Map(
+        prev.harvestDetails.map((item) => [item.targetId, item]),
+      );
       const nextDetails = nextTargets.map((targetId) => {
         const existing = current.get(targetId);
         const option = optionByValue.get(targetId);
@@ -456,7 +491,8 @@ export function HistoryCreatePage() {
           return {
             ...existing,
             targetLabel: option?.label || existing.targetLabel,
-            codeName: existing.codeName || option?.label || existing.targetLabel,
+            codeName:
+              existing.codeName || option?.label || existing.targetLabel,
           };
         }
         return createHarvestDetail(targetId, option?.label || targetId);
@@ -553,7 +589,10 @@ export function HistoryCreatePage() {
     if (e.target.files?.length) {
       setFormData((prev) => ({
         ...prev,
-        harvestFiles: [...prev.harvestFiles, ...Array.from(e.target.files || [])],
+        harvestFiles: [
+          ...prev.harvestFiles,
+          ...Array.from(e.target.files || []),
+        ],
       }));
     }
     e.target.value = "";
@@ -582,6 +621,14 @@ export function HistoryCreatePage() {
       });
       return;
     }
+    if (!formData.workType) {
+      toast({
+        title: "Thiếu thông tin",
+        description: "Vui lòng chọn loại công việc.",
+        variant: "destructive",
+      });
+      return;
+    }
     if (!formData.startDate) {
       toast({
         title: "Thiếu thông tin",
@@ -595,7 +642,7 @@ export function HistoryCreatePage() {
       title: "Thành công",
       description: "Nhật ký đã được khởi tạo thành công.",
     });
-    setLocation("/reports"); // Trở về dashboard/reports
+    setLocation("/history");
   };
 
   return (
@@ -603,7 +650,7 @@ export function HistoryCreatePage() {
       title="Cập nhật nhật ký canh tác"
       description="Thêm nhật ký canh tác"
       actions={
-        <Button variant="outline" onClick={() => setLocation("/reports")}>
+        <Button variant="outline" onClick={() => setLocation("/history")}>
           <ChevronLeft className="mr-2 h-4 w-4" />
           Quay lại
         </Button>
@@ -631,7 +678,9 @@ export function HistoryCreatePage() {
                     }
                   >
                     <SelectTrigger className="h-11 bg-white border-slate-200">
-                      <SelectValue placeholder={`Chọn ${getWorkflowLabel(workflowDomainCode).toLowerCase()}...`} />
+                      <SelectValue
+                        placeholder={`Chọn ${getWorkflowLabel(workflowDomainCode).toLowerCase()}...`}
+                      />
                     </SelectTrigger>
                     <SelectContent>
                       {workflows.map((workflow) => (
@@ -702,7 +751,9 @@ export function HistoryCreatePage() {
                         >
                           <div
                             className={`w-10 h-10 rounded-xl flex items-center justify-center transition-transform group-hover:scale-110 ${
-                              isActive ? option.iconClass : "bg-slate-50 text-slate-400"
+                              isActive
+                                ? option.iconClass
+                                : "bg-slate-50 text-slate-400"
                             }`}
                           >
                             <option.icon className="w-5 h-5" />
@@ -789,7 +840,8 @@ export function HistoryCreatePage() {
                           Đối tượng thu hoạch
                         </p>
                         <p className="text-xs text-slate-500">
-                          Chọn theo vùng canh tác hoặc cây canh tác, rồi nhập chi tiết cho từng mục.
+                          Chọn theo vùng canh tác hoặc cây canh tác, rồi nhập
+                          chi tiết cho từng mục.
                         </p>
                       </div>
 
@@ -832,19 +884,35 @@ export function HistoryCreatePage() {
                         </button>
                       </div>
 
-                      <MultiSelect
-                        options={harvestTargetOptions}
-                        value={formData.harvestTargets}
-                        onChange={syncHarvestDetails}
-                        placeholder={`Chọn ${getHarvestLabel(formData.harvestScope).toLowerCase()}`}
-                        searchPlaceholder={`Tìm ${getHarvestLabel(formData.harvestScope).toLowerCase()}`}
-                        emptyText={
-                          harvestTargetOptions.length > 0
-                            ? "Không tìm thấy mục phù hợp."
-                            : "Chưa có dữ liệu từ quy trình đã chọn."
-                        }
-                        clearable
-                      />
+                      {formData.harvestScope === "region" ? (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => setGeoDialogOpen(true)}
+                          className="w-full h-11 border-2 border-dashed border-orange-200 bg-orange-50/40 hover:bg-orange-50 hover:border-orange-400 text-orange-700 font-bold gap-2 transition-all rounded-xl shadow-sm cursor-pointer text-xs justify-center"
+                        >
+                          <MapPin className="w-4 h-4 text-orange-500" />
+                          <span>
+                            {formData.harvestDetails.length > 0
+                              ? `Đã chọn ${formData.harvestDetails.length} đơn vị địa lý (Bấm để thay đổi / chọn thêm)`
+                              : "Chọn các vùng / khu vực / lô địa lý thu hoạch..."}
+                          </span>
+                        </Button>
+                      ) : (
+                        <MultiSelect
+                          options={harvestTargetOptions}
+                          value={formData.harvestTargets}
+                          onChange={syncHarvestDetails}
+                          placeholder={`Chọn ${getHarvestLabel(formData.harvestScope).toLowerCase()}`}
+                          searchPlaceholder={`Tìm ${getHarvestLabel(formData.harvestScope).toLowerCase()}`}
+                          emptyText={
+                            harvestTargetOptions.length > 0
+                              ? "Không tìm thấy mục phù hợp."
+                              : "Chưa có dữ liệu từ quy trình đã chọn."
+                          }
+                          clearable
+                        />
+                      )}
 
                       <div className="rounded-2xl border border-dashed border-orange-200 bg-orange-50/30 p-4">
                         <input
@@ -861,7 +929,8 @@ export function HistoryCreatePage() {
                               Upload danh sách thu hoạch
                             </p>
                             <p className="text-xs text-slate-500">
-                              Mã tên/vùng canh tác hoặc mã cây, sản lượng, đơn vị cơ bản.
+                              Mã tên/vùng canh tác hoặc mã cây, sản lượng, đơn
+                              vị cơ bản.
                             </p>
                           </div>
                           <Button
@@ -905,10 +974,14 @@ export function HistoryCreatePage() {
                             Chi tiết thu hoạch
                           </p>
                           <p className="text-xs text-slate-500">
-                            Nhập mã, sản lượng và đơn vị cơ bản cho từng mục đã chọn.
+                            Nhập mã, sản lượng và đơn vị cơ bản cho từng mục đã
+                            chọn.
                           </p>
                         </div>
-                        <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-200">
+                        <Badge
+                          variant="outline"
+                          className="bg-orange-50 text-orange-700 border-orange-200"
+                        >
                           {formData.harvestTargets.length} mục
                         </Badge>
                       </div>
@@ -918,67 +991,70 @@ export function HistoryCreatePage() {
                           {formData.harvestDetails.map((detail, index) => (
                             <div
                               key={detail.id}
-                              className="rounded-2xl border border-orange-100 bg-white p-4 shadow-sm"
+                              className="rounded-2xl border border-orange-100 bg-white p-4 shadow-sm space-y-3"
                             >
-                              <div className="mb-3 flex items-center justify-between gap-2">
+                              <div className="flex items-center justify-between gap-2">
                                 <div>
                                   <p className="text-sm font-semibold text-slate-900">
                                     {detail.targetLabel}
                                   </p>
                                   <p className="text-[11px] text-slate-500">
-                                    {getHarvestLabel(formData.harvestScope)} #{index + 1}
+                                    {getHarvestLabel(formData.harvestScope)} #
+                                    {index + 1}
                                   </p>
                                 </div>
                                 <button
                                   type="button"
                                   onClick={() =>
                                     syncHarvestDetails(
-                                      formData.harvestTargets.filter((id) => id !== detail.targetId),
+                                      formData.harvestTargets.filter(
+                                        (id) => id !== detail.targetId,
+                                      ),
                                     )
                                   }
-                                  className="text-slate-300 hover:text-red-500"
+                                  className="p-1 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                                  title="Xóa mục này"
                                 >
-                                  <X className="h-4 w-4" />
+                                  <Trash2 className="h-4 w-4" />
                                 </button>
                               </div>
 
-                              <div className="grid gap-3 md:grid-cols-12">
-                                <div className="space-y-1.5 md:col-span-5">
-                                  <Label className="text-xs font-semibold text-slate-500">
-                                    Mã tên/vùng canh tác hoặc Mã cây
-                                  </Label>
-                                  <Input
-                                    className="h-10 bg-white border-slate-200 text-sm"
-                                    value={detail.codeName}
-                                    onChange={(e) => {
-                                      const next = e.target.value;
-                                      setFormData((prev) => ({
-                                        ...prev,
-                                        harvestDetails: prev.harvestDetails.map((item) =>
-                                          item.id === detail.id
-                                            ? { ...item, codeName: next }
-                                            : item,
-                                        ),
-                                      }));
-                                    }}
-                                  />
-                                </div>
-                                <div className="space-y-1.5 md:col-span-3">
+                              {formData.harvestScope === "region" ? (
+                                /* UI sau khi chọn vùng địa lý (kiểu SelectionCard phân cấp) */
+                                <GeographicalSelectionCard
+                                  codeName={detail.codeName}
+                                  onChangeLocation={() =>
+                                    setGeoDialogOpen(true)
+                                  }
+                                  onRemove={() =>
+                                    syncHarvestDetails(
+                                      formData.harvestTargets.filter(
+                                        (id) => id !== detail.targetId,
+                                      ),
+                                    )
+                                  }
+                                />
+                              ) : null}
+
+                              <div className="grid grid-cols-12 gap-3">
+                                <div className="space-y-1.5 md:col-span-8">
                                   <Label className="text-xs font-semibold text-slate-500">
                                     Sản lượng
                                   </Label>
                                   <Input
                                     type="number"
+                                    placeholder="Nhập sản lượng..."
                                     className="h-10 bg-white border-slate-200 text-sm"
                                     value={detail.quantity}
                                     onChange={(e) => {
                                       const next = e.target.value;
                                       setFormData((prev) => ({
                                         ...prev,
-                                        harvestDetails: prev.harvestDetails.map((item) =>
-                                          item.id === detail.id
-                                            ? { ...item, quantity: next }
-                                            : item,
+                                        harvestDetails: prev.harvestDetails.map(
+                                          (item) =>
+                                            item.id === detail.id
+                                              ? { ...item, quantity: next }
+                                              : item,
                                         ),
                                       }));
                                     }}
@@ -993,10 +1069,11 @@ export function HistoryCreatePage() {
                                     onValueChange={(value) => {
                                       setFormData((prev) => ({
                                         ...prev,
-                                        harvestDetails: prev.harvestDetails.map((item) =>
-                                          item.id === detail.id
-                                            ? { ...item, unitBase: value }
-                                            : item,
+                                        harvestDetails: prev.harvestDetails.map(
+                                          (item) =>
+                                            item.id === detail.id
+                                              ? { ...item, unitBase: value }
+                                              : item,
                                         ),
                                       }));
                                     }}
@@ -1006,7 +1083,10 @@ export function HistoryCreatePage() {
                                     </SelectTrigger>
                                     <SelectContent>
                                       {getHarvestUnitOptions().map((unit) => (
-                                        <SelectItem key={unit.value} value={unit.value}>
+                                        <SelectItem
+                                          key={unit.value}
+                                          value={unit.value}
+                                        >
                                           {unit.label}
                                         </SelectItem>
                                       ))}
@@ -1027,7 +1107,6 @@ export function HistoryCreatePage() {
                 </CardContent>
               </Card>
             )}
-
           </div>
 
           {/* Cột phải: Hạng mục & Cấp phát vật tư */}
@@ -1104,24 +1183,6 @@ export function HistoryCreatePage() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="pt-6 space-y-4">
-                <div className="space-y-2">
-                  <Label required>% hoàn thành</Label>
-                  <Input
-                    type="number"
-                    min="0"
-                    max="100"
-                    placeholder="Chọn % hoàn thành"
-                    className="h-11 bg-white border-slate-200"
-                    value={formData.completionPercent}
-                    onChange={(e) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        completionPercent: e.target.value,
-                      }))
-                    }
-                  />
-                </div>
-
                 <div
                   onClick={() => fileInputRef.current?.click()}
                   onDrop={handleDrop}
@@ -1147,7 +1208,9 @@ export function HistoryCreatePage() {
                   <div className="h-10 w-10 rounded-full bg-green-100 text-green-600 flex items-center justify-center mb-3">
                     <Upload className="h-5 w-5" />
                   </div>
-                  <p className="text-sm font-semibold text-slate-800">Kéo thả hình ảnh vào đây</p>
+                  <p className="text-sm font-semibold text-slate-800">
+                    Kéo thả hình ảnh vào đây
+                  </p>
                   <p className="text-xs text-slate-400 mt-1">
                     Hoặc click để chọn file từ máy tính
                   </p>
@@ -1233,25 +1296,74 @@ export function HistoryCreatePage() {
           </div>
         </div>
 
-        {/* Nút hành động */}
-        <div className="flex justify-end gap-3 pt-6 border-t border-slate-100">
+        {/* Nút hành động (Sticky Footer) */}
+        <div className="fixed left-0 right-0 bottom-0 z-30 bg-white/95 backdrop-blur-md border-t border-slate-200 shadow-lg px-6 py-4 flex items-center justify-end gap-3 rounded-b-2xl">
           <Button
             variant="outline"
             type="button"
-            className="h-11 px-6 rounded-lg text-sm"
-            onClick={() => setLocation("/reports")}
+            className="h-11 px-6 rounded-xl text-sm font-semibold"
+            onClick={() => setLocation("/history")}
           >
             Hủy bỏ
           </Button>
           <Button
             type="button"
-            className="h-11 px-8 rounded-lg text-sm bg-green-600 hover:bg-green-700 text-white font-bold"
+            className="h-11 px-8 rounded-xl text-sm bg-green-600 hover:bg-green-700 text-white font-bold shadow-md shadow-green-600/20"
             onClick={handleSubmitForm}
           >
             Lưu nhật ký
           </Button>
         </div>
       </div>
+
+      {/* Dialog chọn các vùng địa lý thu hoạch (Multi-select) */}
+      <HarvestGeographicalSelectorDialog
+        open={geoDialogOpen}
+        onOpenChange={setGeoDialogOpen}
+        selectedItems={formData.harvestDetails
+          .filter((d) => d.codeName)
+          .map((d) => ({
+            id: d.targetId,
+            codeName: d.codeName,
+            label: d.targetLabel,
+            type: d.codeName.includes(" › ")
+              ? d.codeName.split(" › ").length >= 3
+                ? "plot"
+                : "area"
+              : "region",
+          }))}
+        onConfirmSelections={(selectedGeoItems) => {
+          const currentMap = new Map(
+            formData.harvestDetails.map((d) => [d.targetId, d]),
+          );
+
+          const nextTargets = selectedGeoItems.map((item) => item.id);
+          const nextDetails = selectedGeoItems.map((item) => {
+            const existing = currentMap.get(item.id);
+            if (existing) {
+              return {
+                ...existing,
+                codeName: item.codeName,
+                targetLabel: item.label,
+              };
+            }
+            return {
+              id: `h-geo-${item.id}`,
+              targetId: item.id,
+              targetLabel: item.label,
+              codeName: item.codeName,
+              quantity: "",
+              unitBase: "kg",
+            };
+          });
+
+          setFormData((prev) => ({
+            ...prev,
+            harvestTargets: nextTargets,
+            harvestDetails: nextDetails,
+          }));
+        }}
+      />
     </PageWrapper>
   );
 }

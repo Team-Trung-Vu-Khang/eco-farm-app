@@ -16,6 +16,7 @@ import {
   cn,
   RemoteAutoCompleteSelect,
   Checkbox,
+  Switch,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { CheckCircle2, Leaf, Search, Sprout } from "lucide-react";
 import { useState, useMemo, useEffect, useCallback } from "react";
@@ -201,7 +202,7 @@ export const SeedSelectorDialog = ({
           >
             Hủy
           </Button>
-           <Button
+          <Button
             type="button"
             onClick={() => {
               const idNameMap: Record<number, string> = {};
@@ -759,7 +760,10 @@ export const ZoneConfigurationStep: React.FC<ZoneConfigurationStepProps> = ({
         { shouldDirty: true },
       );
       // Store crop mapping
-      const nextCropMap = { ...watch("varietyCropMap"), [String(varietyId)]: String(cropId) };
+      const nextCropMap = {
+        ...watch("varietyCropMap"),
+        [String(varietyId)]: String(cropId),
+      };
       setValue("varietyCropMap", nextCropMap, { shouldDirty: true });
     } else {
       const nextVarietyIds = selectedVarietyIds.filter(
@@ -927,12 +931,103 @@ export const ZoneConfigurationStep: React.FC<ZoneConfigurationStepProps> = ({
       {!bypassSeedSelection && (
         <Card className="border-none shadow-md bg-white flex flex-col">
           <CardHeader className="pb-3 border-b bg-linear-to-r from-green-50/50 to-white">
-            <CardTitle className="flex items-center gap-2 text-base">
-              <div className="w-8 h-8 rounded-lg bg-green-100 flex items-center justify-center">
-                <Leaf className="w-4 h-4 text-green-600" />
-              </div>
-              <span>Giống / Hạt giống</span>
-            </CardTitle>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <CardTitle className="flex items-center gap-2 text-base">
+                <div className="w-8 h-8 rounded-lg bg-green-100 flex items-center justify-center">
+                  <Leaf className="w-4 h-4 text-green-600" />
+                </div>
+                <Controller
+                  control={control}
+                  name="useSpecificSeeds"
+                  render={({ field }) => (
+                    <span>
+                      <span>
+                        {showSeedSelection
+                          ? field.value
+                            ? "Giống cây trồng"
+                            : "Hạt giống"
+                          : "Giống cây trồng"}
+                      </span>
+                    </span>
+                  )}
+                />
+              </CardTitle>
+
+              {showSeedSelection && (
+                <div className="flex items-center gap-3 bg-white/90 backdrop-blur-xs border border-slate-200/80 rounded-full px-3.5 py-1.5 shadow-2xs">
+                  {/* Option 1: Giống cơ bản */}
+                  <div
+                    className="flex items-center gap-1.5 cursor-pointer select-none"
+                    onClick={() => {
+                      setValue("useSpecificSeeds", false, {
+                        shouldDirty: true,
+                      });
+                      setValue("seedIds", []);
+                    }}
+                  >
+                    <Leaf
+                      className={cn(
+                        "w-3.5 h-3.5 transition-colors",
+                        !useSpecificSeeds
+                          ? "text-emerald-600"
+                          : "text-slate-400",
+                      )}
+                    />
+                    <span
+                      className={cn(
+                        "text-xs font-semibold transition-colors",
+                        !useSpecificSeeds
+                          ? "text-emerald-700 font-bold"
+                          : "text-slate-500 hover:text-slate-700",
+                      )}
+                    >
+                      Giống cơ bản
+                    </span>
+                  </div>
+
+                  {/* Switch */}
+                  <Switch
+                    checked={useSpecificSeeds}
+                    className="data-[state=checked]:bg-emerald-600 data-[state=unchecked]:bg-slate-300"
+                    onCheckedChange={(checked) => {
+                      setValue("useSpecificSeeds", checked, {
+                        shouldDirty: true,
+                      });
+                      if (!checked) {
+                        setValue("seedIds", []);
+                      }
+                    }}
+                  />
+
+                  {/* Option 2: Hạt giống cụ thể */}
+                  <div
+                    className="flex items-center gap-1.5 cursor-pointer select-none"
+                    onClick={() => {
+                      setValue("useSpecificSeeds", true, { shouldDirty: true });
+                    }}
+                  >
+                    <span
+                      className={cn(
+                        "text-xs font-semibold transition-colors",
+                        useSpecificSeeds
+                          ? "text-emerald-700 font-bold"
+                          : "text-slate-500 hover:text-slate-700",
+                      )}
+                    >
+                      Hạt giống cụ thể
+                    </span>
+                    <Sprout
+                      className={cn(
+                        "w-3.5 h-3.5 transition-colors",
+                        useSpecificSeeds
+                          ? "text-emerald-600"
+                          : "text-slate-400",
+                      )}
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
           </CardHeader>
           <CardContent className="pt-6 flex-1 flex flex-col min-h-0 space-y-6">
             {!selectedFarmingMethodId || selectedFarmingMethodId <= 0 ? (
@@ -944,52 +1039,19 @@ export const ZoneConfigurationStep: React.FC<ZoneConfigurationStepProps> = ({
               </div>
             ) : (
               <>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
-                  {/* Autocomplete crop selector */}
-                  <div
-                    className={cn(
-                      "space-y-2",
-                      !showSeedSelection && "md:col-span-2",
-                    )}
-                  >
-                    <Label className="text-sm font-medium">
-                      Chọn cây trồng
-                    </Label>
-                    <RemoteAutoCompleteSelect
-                      options={availableCropOptions}
-                      value=""
-                      onChange={handleSelectCrop}
-                      onSearch={setCropSearch}
-                      placeholder="Tìm kiếm và chọn cây trồng..."
-                      loading={fmcLoading}
-                      emptyText="  Không tồn tại dữ liệu cây trồng  "
-                      clearable={false}
-                    />
-                  </div>
-
-                  {showSeedSelection && (
-                    <div className="flex items-center gap-2.5 bg-slate-50 px-4 rounded-xl border border-slate-200 h-[42px] select-none">
-                      <Checkbox
-                        id="useSpecificSeeds"
-                        checked={useSpecificSeeds}
-                        onCheckedChange={(checked) => {
-                          setValue("useSpecificSeeds", !!checked, {
-                            shouldDirty: true,
-                          });
-                          // Clear selected seeds if we turn it off
-                          if (!checked) {
-                            setValue("seedIds", []);
-                          }
-                        }}
-                      />
-                      <label
-                        htmlFor="useSpecificSeeds"
-                        className="text-xs font-semibold text-slate-700 cursor-pointer select-none"
-                      >
-                        Chọn hạt giống cụ thể (Nếu tắt: chỉ gán giống cơ bản)
-                      </label>
-                    </div>
-                  )}
+                {/* Autocomplete crop selector */}
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium">Chọn cây trồng</Label>
+                  <RemoteAutoCompleteSelect
+                    options={availableCropOptions}
+                    value=""
+                    onChange={handleSelectCrop}
+                    onSearch={setCropSearch}
+                    placeholder="Tìm kiếm và chọn cây trồng..."
+                    loading={fmcLoading}
+                    emptyText="  Không tồn tại dữ liệu cây trồng  "
+                    clearable={false}
+                  />
                 </div>
 
                 {/* List of Crop Cards */}
