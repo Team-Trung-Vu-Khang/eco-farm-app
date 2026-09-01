@@ -1014,7 +1014,7 @@ export const ZoneConfigurationStep: React.FC<ZoneConfigurationStepProps> = ({
                           : "text-slate-500 hover:text-slate-700",
                       )}
                     >
-                      Hạt giống cụ thể
+                      Hạt giống cây trồng
                     </span>
                     <Sprout
                       className={cn(
