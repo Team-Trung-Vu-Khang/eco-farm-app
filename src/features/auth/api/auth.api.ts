@@ -42,6 +42,17 @@ export const authApi = {
     )}?callback_url=${encodeURIComponent(callbackUrl)}`;
   },
   startLogin(provider: AuthProvider) {
+    const currentPath =
+      window.location.pathname +
+      window.location.search +
+      window.location.hash;
+    if (
+      currentPath &&
+      currentPath !== "/" &&
+      !currentPath.startsWith(AUTH_PATHS.callback)
+    ) {
+      sessionStorage.setItem("redirect_path", currentPath);
+    }
     window.location.replace(this.buildLoginUrl(provider));
   },
   getCallbackToken() {

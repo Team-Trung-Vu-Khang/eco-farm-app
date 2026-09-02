@@ -1,5 +1,5 @@
-import React, { useRef, useMemo, useState } from "react";
 import PageWrapper from "@/components/PageWrapper";
+import type { FarmTaskResponse, FarmTaskStatus } from "@/features/farm-task";
 import {
   Badge,
   Button,
@@ -10,6 +10,7 @@ import {
   Input,
   Label,
   MultiSelect,
+  RemoteAutoCompleteSelect,
   Select,
   SelectContent,
   SelectItem,
@@ -20,25 +21,28 @@ import {
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import {
   Apple,
-  CalendarDays,
+  Bug,
+  Calendar,
   ChevronLeft,
   ClipboardList,
-  FileText,
+  ExternalLink,
   Image as ImageIcon,
+  Layers,
   Link2,
-  PackageOpen,
-  RefreshCw,
-  Upload,
-  User,
-  X,
   MapPin,
+  PackageOpen,
   Plus,
-  Trash2,
+  RefreshCw,
+  Sprout,
+  Upload,
+  Wrench,
+  X,
 } from "lucide-react";
-import { HarvestGeographicalSelectorDialog } from "./components/HarvestGeographicalSelectorDialog";
-import { GeographicalSelectionCard } from "./components/GeographicalSelectionCard";
+import React, { useMemo, useRef, useState } from "react";
 import { useLocation, useParams } from "wouter";
-import type { FarmTaskResponse, FarmTaskStatus } from "@/features/farm-task";
+import { z } from "zod";
+import { GeographicalSelectionCard } from "./components/GeographicalSelectionCard";
+import { HarvestGeographicalSelectorDialog } from "./components/HarvestGeographicalSelectorDialog";
 
 // ─── Shared Types ─────────────────────────────────────────────────────────────
 
@@ -70,280 +74,87 @@ interface LogFormData {
   supplyActuals: ActualSupply[];
 }
 
-// ─── Mock Tasks ───────────────────────────────────────────────────────────────
+const WORK_TYPE_OPTIONS = [
+  {
+    value: "cultivation",
+    label: "Canh tác",
+    icon: Layers,
+    activeClass: "border-blue-500 bg-blue-50/50 text-blue-700",
+    iconClass: "bg-blue-500 text-white",
+  },
+  {
+    value: "facility-upgrade",
+    label: "Nâng cấp CSVC",
+    icon: Wrench,
+    activeClass: "border-slate-500 bg-slate-50/80 text-slate-700",
+    iconClass: "bg-slate-700 text-white",
+  },
+  {
+    value: "treatment",
+    label: "Điều trị",
+    icon: Bug,
+    activeClass: "border-red-500 bg-red-50/50 text-red-700",
+    iconClass: "bg-red-500 text-white",
+  },
+  {
+    value: "amendment",
+    label: "Cải tạo đất",
+    icon: Sprout,
+    activeClass: "border-green-500 bg-green-50/50 text-green-700",
+    iconClass: "bg-green-500 text-white",
+  },
+  {
+    value: "harvest",
+    label: "Thu hoạch",
+    icon: Apple,
+    activeClass: "border-orange-500 bg-orange-50/50 text-orange-700",
+    iconClass: "bg-orange-500 text-white",
+  },
+] as const;
 
-const MOCK_TASKS: FarmTaskResponse[] = [
-  {
-    id: 1,
-    code: "CV-0001",
-    name: "Kiểm tra sức khỏe cây trồng đợt 1",
-    origin: "PLANNED",
-    parent: null,
-    domainCode: "CROP",
-    workflow: { id: 10, code: "QT001", name: "QT001 - Lúa hữu cơ 2024" },
-    plan: { id: 20, code: "KH-LUA-01", name: "Kế hoạch Vụ Đông Xuân 2024" },
-    scopeType: "PLOT",
-    region: { id: 1, code: "VCA", name: "Vùng Canh Tác A" },
-    area: { id: 11, code: "KHU-A1", name: "Khu A1" },
-    plot: { id: 101, code: "LO-01", name: "Lô 01" },
-    sourceWorkItem: null,
-    taskCategory: { id: 1, code: "CAT-CANH-TAC", name: "Canh tác" },
-    priority: "HIGH",
-    note: "Kiểm tra sâu bệnh và tình trạng sinh trưởng.",
-    personnel: [
-      { id: 3, fullName: "Lê Văn Cường", role: "ASSIGNEE" },
-      { id: 4, fullName: "Phạm Thị Dung", role: "SUPERVISOR" },
-    ],
-    startDate: "2024-03-10",
-    endDate: "2024-03-15",
-    durationDays: 5,
-    spawnedChildCount: null,
-    recurrence: { repeatMode: "NONE", repeatDates: null },
-    supplyLines: [
-      {
-        id: 1,
-        supplyItem: { id: 201, code: "VT-001", name: "Phân hữu cơ vi sinh" },
-        unitBase: { id: 1, code: "KG", name: "kg" },
-        quantity: 200,
-        displayOrder: 1,
-      },
-      {
-        id: 2,
-        supplyItem: { id: 202, code: "VT-002", name: "Thuốc BVTV sinh học" },
-        unitBase: { id: 2, code: "LT", name: "lít" },
-        quantity: 5,
-        displayOrder: 2,
-      },
-    ],
-    status: "DOING",
-    createdAt: "2024-03-08T07:00:00Z",
-    updatedAt: "2024-03-12T09:30:00Z",
-  },
-  {
-    id: 2,
-    code: "CV-0002",
-    name: "Bón phân đợt 2 — Vụ rau màu Hè Thu",
-    origin: "PLANNED",
-    parent: null,
-    domainCode: "CROP",
-    workflow: { id: 11, code: "QT002", name: "QT002 - Rau màu an toàn" },
-    plan: { id: 21, code: "KH-RAU-02", name: "Kế hoạch Hè Thu 2024" },
-    scopeType: "AREA",
-    region: { id: 2, code: "VCB", name: "Vùng Canh Tác B" },
-    area: { id: 12, code: "KHU-B2", name: "Khu B2" },
-    plot: null,
-    sourceWorkItem: null,
-    taskCategory: { id: 2, code: "CAT-BON-PHAN", name: "Bón phân" },
-    priority: "MEDIUM",
-    note: "Bón phân NPK theo liều lượng quy định.",
-    personnel: [{ id: 5, fullName: "Hoàng Văn Em", role: "ASSIGNEE" }],
-    startDate: "2024-09-05",
-    endDate: "2024-09-07",
-    durationDays: 2,
-    spawnedChildCount: null,
-    recurrence: { repeatMode: "NONE", repeatDates: null },
-    supplyLines: [
-      {
-        id: 3,
-        supplyItem: { id: 203, code: "VT-003", name: "Phân NPK 20-20-15" },
-        unitBase: { id: 1, code: "KG", name: "kg" },
-        quantity: 150,
-        displayOrder: 1,
-      },
-    ],
-    status: "TODO",
-    createdAt: "2024-09-01T08:00:00Z",
-    updatedAt: "2024-09-01T08:00:00Z",
-  },
-  {
-    id: 3,
-    code: "CV-0003",
-    name: "Thu hoạch lúa Đông Xuân — Lô 01 & Lô 02",
-    origin: "PLANNED",
-    parent: null,
-    domainCode: "CROP",
-    workflow: { id: 10, code: "QT001", name: "QT001 - Lúa hữu cơ 2024" },
-    plan: { id: 20, code: "KH-LUA-01", name: "Kế hoạch Vụ Đông Xuân 2024" },
-    scopeType: "REGION",
-    region: { id: 1, code: "VCA", name: "Vùng Canh Tác A" },
-    area: null,
-    plot: null,
-    sourceWorkItem: null,
-    taskCategory: { id: 3, code: "CAT-THU-HOACH", name: "Thu hoạch" },
-    priority: "HIGH",
-    note: "Thu hoạch theo đợt, ưu tiên lô có sản lượng cao nhất.",
-    personnel: [
-      { id: 7, fullName: "Đặng Văn Giang", role: "ASSIGNEE" },
-      { id: 8, fullName: "Bùi Thị Hạnh", role: "ASSIGNEE" },
-      { id: 3, fullName: "Lê Văn Cường", role: "SUPERVISOR" },
-    ],
-    startDate: "2024-08-20",
-    endDate: "2024-08-25",
-    durationDays: 5,
-    spawnedChildCount: null,
-    recurrence: { repeatMode: "NONE", repeatDates: null },
-    supplyLines: [],
-    status: "DONE",
-    createdAt: "2024-08-15T06:30:00Z",
-    updatedAt: "2024-08-25T16:00:00Z",
-  },
-  {
-    id: 4,
-    code: "CV-0004",
-    name: "Phun thuốc trừ sâu đợt 1 — Khu C",
-    origin: "PLANNED",
-    parent: null,
-    domainCode: "CROP",
-    workflow: { id: 12, code: "QT003", name: "QT003 - Cây ăn trái GAP" },
-    plan: { id: 22, code: "KH-CAT-01", name: "Kế hoạch Chăm sóc Q1/2025" },
-    scopeType: "AREA",
-    region: { id: 3, code: "VCC", name: "Vùng Canh Tác C" },
-    area: { id: 13, code: "KHU-C1", name: "Khu C1" },
-    plot: null,
-    sourceWorkItem: null,
-    taskCategory: { id: 4, code: "CAT-PHUN-THUOC", name: "Phun thuốc BVTV" },
-    priority: "HIGH",
-    note: "Phun thuốc sinh học theo lịch định kỳ.",
-    personnel: [
-      { id: 9, fullName: "Đỗ Văn Hùng", role: "ASSIGNEE" },
-      { id: 11, fullName: "Ngô Văn Minh", role: "SUPERVISOR" },
-    ],
-    startDate: "2025-01-10",
-    endDate: "2025-01-12",
-    durationDays: 2,
-    spawnedChildCount: null,
-    recurrence: { repeatMode: "NONE", repeatDates: null },
-    supplyLines: [
-      {
-        id: 4,
-        supplyItem: {
-          id: 204,
-          code: "VT-004",
-          name: "Thuốc trừ sâu sinh học Bt",
-        },
-        unitBase: { id: 2, code: "LT", name: "lít" },
-        quantity: 10,
-        displayOrder: 1,
-      },
-      {
-        id: 5,
-        supplyItem: { id: 205, code: "VT-005", name: "Bình phun áp suất" },
-        unitBase: { id: 3, code: "CAI", name: "cái" },
-        quantity: 2,
-        displayOrder: 2,
-      },
-    ],
-    status: "TODO",
-    createdAt: "2025-01-05T09:00:00Z",
-    updatedAt: "2025-01-05T09:00:00Z",
-  },
-  {
-    id: 5,
-    code: "CV-0005",
-    name: "Cải tạo đất sau vụ — Khu A1",
-    origin: "PLANNED",
-    parent: null,
-    domainCode: "CROP",
-    workflow: { id: 10, code: "QT001", name: "QT001 - Lúa hữu cơ 2024" },
-    plan: { id: 23, code: "KH-CAI-TAO-01", name: "Kế hoạch Cải tạo đất Q3" },
-    scopeType: "AREA",
-    region: { id: 1, code: "VCA", name: "Vùng Canh Tác A" },
-    area: { id: 11, code: "KHU-A1", name: "Khu A1" },
-    plot: null,
-    sourceWorkItem: null,
-    taskCategory: { id: 5, code: "CAT-CAI-TAO", name: "Cải tạo đất" },
-    priority: "LOW",
-    note: "Cày bừa, bón vôi và cải tạo cơ cấu đất.",
-    personnel: [{ id: 15, fullName: "Nguyễn Văn Sơn", role: "ASSIGNEE" }],
-    startDate: "2024-07-01",
-    endDate: "2024-07-05",
-    durationDays: 4,
-    spawnedChildCount: null,
-    recurrence: { repeatMode: "NONE", repeatDates: null },
-    supplyLines: [
-      {
-        id: 6,
-        supplyItem: { id: 206, code: "VT-006", name: "Vôi bột nông nghiệp" },
-        unitBase: { id: 1, code: "KG", name: "kg" },
-        quantity: 500,
-        displayOrder: 1,
-      },
-    ],
-    status: "DONE",
-    createdAt: "2024-06-25T08:00:00Z",
-    updatedAt: "2024-07-05T17:00:00Z",
-  },
-  {
-    id: 6,
-    code: "CV-0006",
-    name: "Tưới nước bổ sung — Vụ Hè Thu (QUÁ HẠN)",
-    origin: "PLANNED",
-    parent: null,
-    domainCode: "CROP",
-    workflow: { id: 11, code: "QT002", name: "QT002 - Rau màu an toàn" },
-    plan: { id: 21, code: "KH-RAU-02", name: "Kế hoạch Hè Thu 2024" },
-    scopeType: "PLOT",
-    region: { id: 2, code: "VCB", name: "Vùng Canh Tác B" },
-    area: { id: 12, code: "KHU-B2", name: "Khu B2" },
-    plot: { id: 102, code: "LO-02", name: "Lô 02" },
-    sourceWorkItem: null,
-    taskCategory: { id: 6, code: "CAT-TUOI-NUOC", name: "Tưới nước" },
-    priority: "MEDIUM",
-    note: "Tưới bổ sung do thiếu mưa kéo dài.",
-    personnel: [
-      { id: 6, fullName: "Vũ Thị Phương", role: "ASSIGNEE" },
-      { id: 4, fullName: "Phạm Thị Dung", role: "SUPERVISOR" },
-    ],
-    startDate: "2024-08-01",
-    endDate: "2024-08-05",
-    durationDays: 4,
-    spawnedChildCount: null,
-    recurrence: { repeatMode: "NONE", repeatDates: null },
-    supplyLines: [],
-    status: "TODO",
-    createdAt: "2024-07-28T10:00:00Z",
-    updatedAt: "2024-07-28T10:00:00Z",
-  },
-  {
-    id: 7,
-    code: "CV-0007",
-    name: "Lấy mẫu đất kiểm tra dinh dưỡng — Vùng C",
-    origin: "PLANNED",
-    parent: null,
-    domainCode: "CROP",
-    workflow: { id: 12, code: "QT003", name: "QT003 - Cây ăn trái GAP" },
-    plan: { id: 22, code: "KH-CAT-01", name: "Kế hoạch Chăm sóc Q1/2025" },
-    scopeType: "REGION",
-    region: { id: 3, code: "VCC", name: "Vùng Canh Tác C" },
-    area: null,
-    plot: null,
-    sourceWorkItem: null,
-    taskCategory: { id: 7, code: "CAT-LAY-MAU", name: "Lấy mẫu đất" },
-    priority: "LOW",
-    note: null,
-    personnel: [
-      { id: 13, fullName: "Lý Văn Phúc", role: "ASSIGNEE" },
-      { id: 14, fullName: "Mai Thị Quyên", role: "ASSIGNEE" },
-    ],
-    startDate: "2025-02-01",
-    endDate: "2025-02-03",
-    durationDays: 2,
-    spawnedChildCount: null,
-    recurrence: { repeatMode: "NONE", repeatDates: null },
-    supplyLines: [
-      {
-        id: 7,
-        supplyItem: { id: 207, code: "VT-007", name: "Túi lấy mẫu đất" },
-        unitBase: { id: 3, code: "CAI", name: "cái" },
-        quantity: 20,
-        displayOrder: 1,
-      },
-    ],
-    status: "TODO",
-    createdAt: "2025-01-25T11:00:00Z",
-    updatedAt: "2025-01-25T11:00:00Z",
-  },
-];
+function getWorkflowLabel(domainCode?: string) {
+  if (domainCode === "LIVESTOCK") return "Vụ nuôi";
+  if (domainCode === "AQUACULTURE") return "Vụ nuôi thủy sản";
+  return "Vụ mùa";
+}
+
+function getWorkflowSubtitle(domainCode?: string) {
+  if (domainCode === "LIVESTOCK" || domainCode === "AQUACULTURE")
+    return "Chăn nuôi và nuôi trồng thủy sản";
+  return "Vùng trồng";
+}
+
+function getWorkTypeFromTask(task: FarmTaskResponse): string {
+  const catName = (task.taskCategory?.name ?? "").toLowerCase();
+  const catCode = (task.taskCategory?.code ?? "").toLowerCase();
+  if (
+    catName.includes("harvest") ||
+    catName.includes("thu hoạch") ||
+    catCode.includes("thu-hoach")
+  )
+    return "harvest";
+  if (
+    catName.includes("điều trị") ||
+    catName.includes("treatment") ||
+    catCode.includes("dieu-tri")
+  )
+    return "treatment";
+  if (
+    catName.includes("cải tạo") ||
+    catName.includes("amendment") ||
+    catCode.includes("cai-tao")
+  )
+    return "amendment";
+  if (
+    catName.includes("nâng cấp") ||
+    catName.includes("facility") ||
+    catCode.includes("facility")
+  )
+    return "facility-upgrade";
+  return "cultivation";
+}
+
+import { MOCK_TASKS } from "./mock/history.mock";
 
 const MOCK_HARVEST_OPTIONS = [
   {
@@ -421,74 +232,265 @@ function isHarvestTask(task: FarmTaskResponse): boolean {
 
 // ─── Info Block ───────────────────────────────────────────────────────────────
 
-function InfoBlock({ task }: { task: FarmTaskResponse }) {
+function InfoBlock({
+  task,
+  formData,
+  setFormData,
+}: {
+  task: FarmTaskResponse;
+  formData: LogFormData;
+  setFormData: React.Dispatch<React.SetStateAction<LogFormData>>;
+}) {
+  const domainCode = task.domainCode ?? "CROP";
+  const workType = getWorkTypeFromTask(task);
+
   return (
     <Card className="border-none shadow-sm bg-white">
       <CardHeader className="pb-3 border-b border-slate-100">
         <CardTitle className="text-base font-bold flex items-center gap-2">
           <ClipboardList className="w-4 h-4 text-green-600" />
-          Thông tin công việc
+          Thông tin cập nhật
         </CardTitle>
       </CardHeader>
-      <CardContent className="pt-5 space-y-4">
-        {/* 3 mini info blocks */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          <div className="rounded-xl border border-slate-100 bg-slate-50/70 p-3">
-            <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1">
-              Vụ mùa
-            </p>
-            <p className="text-sm font-bold text-slate-900 truncate">
-              {task.workflow?.name || "—"}
-            </p>
+      <CardContent className="pt-6 space-y-4">
+        {/* Vụ mùa / Quy trình */}
+        <div className="space-y-2">
+          <Label required>{getWorkflowLabel(domainCode)}</Label>
+          <RemoteAutoCompleteSelect
+            options={[
+              {
+                label: task.workflow?.name || "Chưa chọn",
+                value: String(task.workflow?.id || "1"),
+              },
+            ]}
+            value={String(task.workflow?.id || "1")}
+            onChange={() => {}}
+            onSearch={(_query) => {
+              // API search callback placeholder for future backend API integration
+            }}
+            placeholder={task.workflow?.name || "Chưa chọn"}
+            searchPlaceholder={`Tìm ${getWorkflowLabel(domainCode).toLowerCase()}...`}
+            disabled
+          />
+          <p className="text-xs text-slate-500">
+            {getWorkflowSubtitle(domainCode)} đang được áp dụng cho nhật ký này.
+          </p>
+        </div>
+
+        {/* Kế hoạch & Công việc Comboboxes */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label required>Kế hoạch</Label>
+            <RemoteAutoCompleteSelect
+              options={[
+                {
+                  label: task.plan
+                    ? `${task.plan.code} - ${task.plan.name}`
+                    : "Chưa có kế hoạch",
+                  value: String(task.plan?.id || "20"),
+                },
+              ]}
+              value={String(task.plan?.id || "20")}
+              onChange={() => {}}
+              onSearch={(_query) => {}}
+              placeholder={
+                task.plan
+                  ? `${task.plan.code} - ${task.plan.name}`
+                  : "Chưa có kế hoạch"
+              }
+              searchPlaceholder="Tìm kế hoạch..."
+              disabled
+            />
           </div>
-          <div className="rounded-xl border border-slate-100 bg-slate-50/70 p-3">
-            <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1">
-              Kế hoạch
-            </p>
-            <p className="text-sm font-bold text-slate-900 truncate">
-              {task.plan ? `${task.plan.code} - ${task.plan.name}` : "—"}
-            </p>
-          </div>
-          <div className="rounded-xl border border-slate-100 bg-slate-50/70 p-3">
-            <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1">
-              Vùng canh tác
-            </p>
-            <p className="text-sm font-bold text-slate-900 truncate">
-              {getScopeDisplay(task)}
-            </p>
+          <div className="space-y-2">
+            <Label required>Công việc</Label>
+            <RemoteAutoCompleteSelect
+              options={[
+                {
+                  label: task.code ? `${task.code} - ${task.name}` : task.name,
+                  value: String(task.id),
+                },
+              ]}
+              value={String(task.id)}
+              onChange={() => {}}
+              onSearch={(_query) => {}}
+              placeholder={
+                task.code ? `${task.code} - ${task.name}` : task.name
+              }
+              searchPlaceholder="Tìm công việc..."
+              disabled
+            />
           </div>
         </div>
 
-        {/* Meta rows */}
-        <div className="space-y-2.5">
-          <div className="flex items-center gap-2 text-xs text-slate-600">
-            <CalendarDays className="h-3.5 w-3.5 text-slate-400 shrink-0" />
-            <span>
-              {formatDate(task.startDate)} → {formatDate(task.endDate)}
-            </span>
-            {task.durationDays ? (
-              <span className="text-slate-400">({task.durationDays} ngày)</span>
-            ) : null}
+        {/* 3 mini cards block */}
+        <div className="grid gap-3 md:grid-cols-3">
+          {/* Card 1: Vụ mùa */}
+          {task.workflow ? (
+            <a
+              href={`/plan-growth/create/workflow/${task.workflow.id}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="group block rounded-2xl border border-slate-100 bg-slate-50/80 p-3 transition-all hover:border-slate-300 hover:bg-slate-100/80 hover:shadow-xs cursor-pointer"
+            >
+              <div className="flex items-center justify-between">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400">
+                  {getWorkflowLabel(domainCode)}
+                </p>
+                <ExternalLink className="h-3.5 w-3.5 text-slate-400 group-hover:text-green-600 transition-colors" />
+              </div>
+              <p className="mt-1 text-sm font-semibold text-slate-900 truncate group-hover:text-green-700">
+                {task.workflow.name}
+              </p>
+            </a>
+          ) : (
+            <div className="rounded-2xl border border-slate-100 bg-slate-50/80 p-3">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400">
+                {getWorkflowLabel(domainCode)}
+              </p>
+              <p className="mt-1 text-sm font-semibold text-slate-900 truncate">
+                Chưa chọn
+              </p>
+            </div>
+          )}
+
+          {/* Card 2: Kế hoạch */}
+          {task.plan ? (
+            <a
+              href={`/plan-growth/${task.plan.id}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="group block rounded-2xl border border-slate-100 bg-slate-50/80 p-3 transition-all hover:border-slate-300 hover:bg-slate-100/80 hover:shadow-xs cursor-pointer"
+            >
+              <div className="flex items-center justify-between">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400">
+                  Kế hoạch
+                </p>
+                <ExternalLink className="h-3.5 w-3.5 text-slate-400 group-hover:text-green-600 transition-colors" />
+              </div>
+              <p className="mt-1 text-sm font-semibold text-slate-900 truncate group-hover:text-green-700">
+                {`${task.plan.code} - ${task.plan.name}`}
+              </p>
+            </a>
+          ) : (
+            <div className="rounded-2xl border border-slate-100 bg-slate-50/80 p-3">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400">
+                Kế hoạch
+              </p>
+              <p className="mt-1 text-sm font-semibold text-slate-900 truncate">
+                Chưa có kế hoạch
+              </p>
+            </div>
+          )}
+
+          {/* Card 3: Công việc */}
+          {task ? (
+            <a
+              href={`/diary/plan/${task.id}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="group block rounded-2xl border border-slate-100 bg-slate-50/80 p-3 transition-all hover:border-slate-300 hover:bg-slate-100/80 hover:shadow-xs cursor-pointer"
+            >
+              <div className="flex items-center justify-between">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400">
+                  Công việc
+                </p>
+                <ExternalLink className="h-3.5 w-3.5 text-slate-400 group-hover:text-green-600 transition-colors" />
+              </div>
+              <p className="mt-1 text-sm font-semibold text-slate-900 truncate group-hover:text-green-700">
+                {task.code ? `${task.code} - ${task.name}` : task.name}
+              </p>
+            </a>
+          ) : (
+            <div className="rounded-2xl border border-slate-100 bg-slate-50/80 p-3">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400">
+                Công việc
+              </p>
+              <p className="mt-1 text-sm font-semibold text-slate-900 truncate">
+                —
+              </p>
+            </div>
+          )}
+        </div>
+
+        {/* Loại công việc */}
+        <div className="space-y-3">
+          <Label required>Loại công việc</Label>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+            {WORK_TYPE_OPTIONS.map((option) => {
+              const isActive = workType === option.value;
+              return (
+                <button
+                  key={option.value}
+                  type="button"
+                  disabled
+                  className={`cursor-not-allowed rounded-2xl border-2 px-3 py-4 transition-all flex flex-col items-center text-center gap-1.5 group ${
+                    isActive
+                      ? option.activeClass
+                      : "border-slate-100 bg-white opacity-40 text-slate-400"
+                  }`}
+                >
+                  <div
+                    className={`w-10 h-10 rounded-xl flex items-center justify-center transition-transform ${
+                      isActive ? option.iconClass : "bg-slate-50 text-slate-400"
+                    }`}
+                  >
+                    <option.icon className="w-5 h-5" />
+                  </div>
+                  <span className="text-[11px] font-black uppercase tracking-tight">
+                    {option.label}
+                  </span>
+                </button>
+              );
+            })}
           </div>
-          {task.personnel.length > 0 && (
-            <div className="flex items-center gap-2 text-xs text-slate-600">
-              <User className="h-3.5 w-3.5 text-slate-400 shrink-0" />
-              <span>
-                {task.personnel.map((p) => p.fullName || `#${p.id}`).join(", ")}
-              </span>
+        </div>
+
+        {/* Ngày bắt đầu & kết thúc */}
+        <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label required>Ngày bắt đầu</Label>
+            <div className="relative">
+              <Input
+                type="date"
+                disabled
+                clearable={false}
+                className="h-11 bg-slate-50 border-slate-200 pl-10 cursor-not-allowed text-slate-700 font-medium"
+                value={task.startDate || ""}
+              />
+              <Calendar className="absolute left-3.5 top-3.5 h-4 w-4 text-slate-400 pointer-events-none" />
             </div>
-          )}
-          {task.taskCategory && (
-            <div className="flex items-center gap-2 text-xs text-slate-600">
-              <FileText className="h-3.5 w-3.5 text-slate-400 shrink-0" />
-              <span>Danh mục: {task.taskCategory.name}</span>
+          </div>
+          <div className="space-y-2">
+            <Label>Ngày kết thúc</Label>
+            <div className="relative">
+              <Input
+                type="date"
+                disabled
+                clearable={false}
+                className="h-11 bg-slate-50 border-slate-200 pl-10 cursor-not-allowed text-slate-700 font-medium"
+                value={task.endDate || ""}
+              />
+              <Calendar className="absolute left-3.5 top-3.5 h-4 w-4 text-slate-400 pointer-events-none" />
             </div>
-          )}
-          {task.note && (
-            <div className="rounded-xl bg-slate-50 border border-slate-100 p-3 text-xs text-slate-600 leading-relaxed">
-              {task.note}
-            </div>
-          )}
+          </div>
+        </div>
+
+        {/* Mô tả chi tiết */}
+        <div className="space-y-2">
+          <Label>Mô tả chi tiết</Label>
+          <Textarea
+            placeholder="Nhập mô tả hoặc ghi chú..."
+            rows={4}
+            className="bg-white border-slate-200 focus:ring-green-500/20"
+            value={formData.description}
+            onChange={(e) =>
+              setFormData((prev) => ({
+                ...prev,
+                description: e.target.value,
+              }))
+            }
+          />
         </div>
       </CardContent>
     </Card>
@@ -835,6 +837,20 @@ function HarvestBlock({
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
+const logFormSchema = z.object({
+  completionPercent: z
+    .string()
+    .min(1, "Vui lòng nhập % hoàn thành")
+    .refine(
+      (val) => {
+        const num = Number(val);
+        return !isNaN(num) && num >= 0 && num <= 100;
+      },
+      { message: "% Hoàn thành phải nằm trong khoảng từ 0 đến 100" },
+    ),
+  status: z.string().min(1, "Vui lòng chọn trạng thái"),
+});
+
 export default function PlanDiaryDetailPage() {
   const [, setLocation] = useLocation();
   const { taskId } = useParams<{ taskId: string }>();
@@ -842,6 +858,7 @@ export default function PlanDiaryDetailPage() {
   const imageInputRef = useRef<HTMLInputElement>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   const [geoDialogOpen, setGeoDialogOpen] = useState(false);
   const [activeDetailIdForGeo, setActiveDetailIdForGeo] = useState<
@@ -890,10 +907,24 @@ export default function PlanDiaryDetailPage() {
     "";
 
   const handleSubmit = async () => {
-    if (!formData.description && !formData.completionPercent) {
+    setErrors({});
+    const validationResult = logFormSchema.safeParse({
+      completionPercent: formData.completionPercent,
+      status: formData.status,
+    });
+
+    if (!validationResult.success) {
+      const formattedErrors: Record<string, string> = {};
+      validationResult.error.issues.forEach((issue) => {
+        if (issue.path[0]) {
+          formattedErrors[String(issue.path[0])] = issue.message;
+        }
+      });
+      setErrors(formattedErrors);
       toast({
-        title: "Thiếu thông tin",
-        description: "Vui lòng nhập % hoàn thành hoặc mô tả tiến độ.",
+        title: "Thông tin chưa hợp lệ",
+        description:
+          "Vui lòng kiểm tra lại thông tin % hoàn thành hoặc các trường lỗi.",
         variant: "destructive",
       });
       return;
@@ -932,7 +963,11 @@ export default function PlanDiaryDetailPage() {
           {/* ── Cột trái ── */}
           <div className="lg:col-span-7 space-y-6">
             {/* Block 1 — Info */}
-            <InfoBlock task={task} />
+            <InfoBlock
+              task={task}
+              formData={formData}
+              setFormData={setFormData}
+            />
 
             {/* Block 2 — Harvest (conditional) */}
             {showHarvest && (
@@ -969,19 +1004,34 @@ export default function PlanDiaryDetailPage() {
                         min={0}
                         max={100}
                         placeholder="0–100"
-                        className="h-11 bg-white border-slate-200 pr-8"
+                        className={`h-11 bg-white border-slate-200 pr-8 ${
+                          errors.completionPercent
+                            ? "border-red-500 focus:ring-red-500/20"
+                            : ""
+                        }`}
                         value={formData.completionPercent}
-                        onChange={(e) =>
+                        onChange={(e) => {
                           setFormData((prev) => ({
                             ...prev,
                             completionPercent: e.target.value,
-                          }))
-                        }
+                          }));
+                          if (errors.completionPercent) {
+                            setErrors((prev) => ({
+                              ...prev,
+                              completionPercent: "",
+                            }));
+                          }
+                        }}
                       />
                       <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 pointer-events-none">
                         %
                       </span>
                     </div>
+                    {errors.completionPercent && (
+                      <p className="text-xs font-medium text-red-500 mt-1">
+                        {errors.completionPercent}
+                      </p>
+                    )}
                   </div>
                   <div className="space-y-1.5">
                     <Label>Trạng thái</Label>

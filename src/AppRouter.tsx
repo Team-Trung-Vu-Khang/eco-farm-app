@@ -13,6 +13,7 @@ const HistoryCreatePage = lazy(
 const HistoryPage = lazy(() => import("./pages/history/HistoryPage"));
 const PlanDiaryPage = lazy(() => import("./pages/history/PlanDiaryPage"));
 const PlanDiaryDetailPage = lazy(() => import("./pages/history/PlanDiaryDetailPage"));
+const UpdateHistoryPage = lazy(() => import("./pages/history/UpdateHistoryPage"));
 const TerrainPage = lazy(() => import("./pages/terrain/TerrainPage"));
 
 const EnterprisePage = lazy(() => import("./pages/enterprise/EnterprisePage"));
@@ -2001,6 +2002,7 @@ function Router() {
         <Route path="/diary/incident" component={HistoryCreatePage} />
         <Route path="/diary/plan/:taskId" component={PlanDiaryDetailPage} />
         <Route path="/diary/plan" component={PlanDiaryPage} />
+        <Route path="/diary/update" component={UpdateHistoryPage} />
 
         <Route component={NotFoundPage} />
       </Switch>

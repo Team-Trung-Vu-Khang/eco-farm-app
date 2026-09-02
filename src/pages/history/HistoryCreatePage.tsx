@@ -1,6 +1,9 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
 import PageWrapper from "@/components/PageWrapper";
+import type { DomainCode } from "@/features/farm-supply/types";
+import { useFarmWorkflows } from "@/features/farm-workflow/hooks";
+import type { FarmWorkflowScopeResponse } from "@/features/farm-workflow/types/farm-workflow.type";
 import {
+  Badge,
   Button,
   Card,
   CardContent,
@@ -8,47 +11,46 @@ import {
   CardTitle,
   Input,
   Label,
+  MultiSelect,
+  RemoteAutoCompleteSelect,
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
+  Switch,
   Textarea,
-  Badge,
-  MultiSelect,
-  RemoteAutoCompleteSelect,
   useToast,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import {
+  Apple,
+  Bug,
   Calendar,
   ChevronLeft,
-  Layers,
   ClipboardList,
+  ExternalLink,
   FileText,
   Image as ImageIcon,
+  Layers,
   Link2,
-  Plus,
+  MapPin,
   Sprout,
-  Bug,
-  Wrench,
-  Apple,
   Trash2,
   Upload,
+  Wrench,
   X,
-  MapPin,
 } from "lucide-react";
-import { HarvestGeographicalSelectorDialog } from "./components/HarvestGeographicalSelectorDialog";
-import { GeographicalSelectionCard } from "./components/GeographicalSelectionCard";
+import React, { useMemo, useRef, useState } from "react";
 import { useLocation } from "wouter";
-import { useFarmWorkflows } from "@/features/farm-workflow/hooks";
-import type { FarmWorkflowScopeResponse } from "@/features/farm-workflow/types/farm-workflow.type";
-import type { DomainCode, SupplyType } from "@/features/farm-supply/types";
+import { z } from "zod";
+import { GeographicalSelectionCard } from "./components/GeographicalSelectionCard";
+import { HarvestGeographicalSelectorDialog } from "./components/HarvestGeographicalSelectorDialog";
+import { StageMaterialPicker } from "./components/StageMaterialPicker";
 import {
-  getSupplyTypeOptions,
-  isEquipmentSupplyType,
-  mapSupplyItemToOption,
-  useRemoteSupplySearch,
-} from "@/shared/hooks/useRemoteSupplySearch";
+  MOCK_PLANS,
+  MOCK_TASKS_LIST,
+  MOCK_WORKFLOWS,
+} from "./mock/history.mock";
 
 interface MaterialAllocation {
   id: number;
@@ -58,8 +60,9 @@ interface MaterialAllocation {
   quantity: string;
   actualQuantity?: string;
   unit: string;
-  supplyItemId: number;
+  supplyItemId?: number;
   unitBaseId?: number;
+  isPlanned?: boolean;
 }
 
 interface HarvestDetail {
@@ -210,220 +213,33 @@ function createHarvestDetail(
   };
 }
 
-function StageMaterialPicker({
-  stageKey,
-  allocations,
-  onAddMaterial,
-  onRemoveMaterial,
-  domainCode,
-}: {
-  stageKey: string;
-  allocations: MaterialAllocation[];
-  onAddMaterial: (item: Omit<MaterialAllocation, "id">) => void;
-  onRemoveMaterial: (id: number) => void;
-  domainCode: DomainCode;
-}) {
-  const [newItem, setNewItem] = useState({
-    name: "",
-    qty: "",
-    unitBaseId: "",
-    type:
-      getSupplyTypeOptions(domainCode)[1]?.value ||
-      getSupplyTypeOptions(domainCode)[0]?.value ||
-      "material",
-    searchValue: "",
+const historyFormSchema = z
+  .object({
+    regimenId: z.string().min(1, "Vui lòng chọn vụ mùa / vụ nuôi"),
+    workType: z.string().min(1, "Vui lòng chọn loại công việc"),
+    startDate: z.string().min(1, "Vui lòng chọn ngày bắt đầu"),
+    isPlannedMode: z.boolean(),
+    planId: z.string().optional(),
+    taskId: z.string().optional(),
+  })
+  .superRefine((data, ctx) => {
+    if (data.isPlannedMode) {
+      if (!data.planId) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Vui lòng chọn kế hoạch",
+          path: ["planId"],
+        });
+      }
+      if (!data.taskId) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Vui lòng chọn công việc",
+          path: ["taskId"],
+        });
+      }
+    }
   });
-
-  const typeOptions = getSupplyTypeOptions(domainCode);
-  const selectedTypeOption = typeOptions.find(
-    (option) => option.value === newItem.type,
-  );
-  const { items: searchedMaterials, isFetching } = useRemoteSupplySearch(
-    domainCode,
-    newItem.type,
-    newItem.searchValue,
-  );
-  const selectedMaterial = searchedMaterials.find(
-    (item) => String(item.id) === newItem.name,
-  );
-  const materialOptions = searchedMaterials.map(mapSupplyItemToOption);
-  const packagingVariantOptions = selectedMaterial?.packagingVariants || [];
-  const selectedPackagingVariant = packagingVariantOptions.find(
-    (variant) => String(variant.unitBase?.id) === newItem.unitBaseId,
-  );
-  const isEquipment = newItem.type === "equipment";
-  const selectedUnitBaseId = isEquipment
-    ? Number(newItem.unitBaseId || 6)
-    : selectedPackagingVariant?.unitBase?.id;
-  const selectedUnitLabel = isEquipment
-    ? selectedPackagingVariant?.unitBase?.name || "Cái / Chiếc"
-    : selectedPackagingVariant?.unitBase?.name ||
-      selectedMaterial?.packagingVariants?.[0]?.unitBase?.name ||
-      "";
-
-  const handleAdd = () => {
-    if (
-      !selectedMaterial ||
-      !newItem.qty ||
-      (!isEquipment && !selectedPackagingVariant?.unitBase)
-    )
-      return;
-    onAddMaterial({
-      stageId: stageKey,
-      materialType: selectedTypeOption?.label || newItem.type,
-      materialName: selectedMaterial.name,
-      quantity: newItem.qty,
-      unit: selectedUnitLabel,
-      supplyItemId: selectedMaterial.id,
-      unitBaseId: selectedUnitBaseId,
-    });
-    setNewItem({
-      name: "",
-      qty: "",
-      unitBaseId: "",
-      type: newItem.type,
-      searchValue: "",
-    });
-  };
-
-  return (
-    <div className="space-y-3">
-      {allocations.length > 0 && (
-        <div className="space-y-1.5">
-          {allocations.map((a) => (
-            <div
-              key={a.id}
-              className="flex items-center justify-between bg-slate-50 rounded-lg border border-slate-100 px-3 py-1.5 text-xs"
-            >
-              <span className="font-medium text-slate-700">
-                {a.materialName} ({a.materialType})
-              </span>
-              <div className="flex items-center gap-2">
-                <span className="text-[10px] font-semibold text-slate-600 bg-white px-2 py-0.5 rounded border">
-                  {a.actualQuantity || a.quantity} {a.unit}
-                </span>
-                <button
-                  type="button"
-                  className="text-slate-300 hover:text-red-500 transition-colors"
-                  onClick={() => onRemoveMaterial(a.id)}
-                >
-                  <X className="w-3.5 h-3.5" />
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-
-      <div className="grid grid-cols-12 gap-2">
-        <div className="col-span-3">
-          <Select
-            value={newItem.type}
-            onValueChange={(v) => {
-              const type = v as SupplyType;
-              setNewItem({
-                ...newItem,
-                type,
-                name: "",
-                unitBaseId: "",
-                searchValue: "",
-              });
-            }}
-          >
-            <SelectTrigger className="w-full h-9 text-xs bg-white border-slate-200">
-              <SelectValue placeholder="Loại..." />
-            </SelectTrigger>
-            <SelectContent>
-              {getSupplyTypeOptions(domainCode).map((type) => (
-                <SelectItem key={type.value} value={type.value}>
-                  {type.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="col-span-9">
-          <RemoteAutoCompleteSelect
-            options={materialOptions}
-            value={newItem.name}
-            onChange={(v) => {
-              const item = searchedMaterials.find((i) => String(i.id) === v);
-              const firstVariant = item?.packagingVariants?.[0];
-              setNewItem({
-                ...newItem,
-                name: v,
-                unitBaseId: firstVariant?.unitBase?.id
-                  ? String(firstVariant.unitBase.id)
-                  : "",
-                searchValue: item?.name || newItem.searchValue,
-              });
-            }}
-            onSearch={(value) =>
-              setNewItem((prev) => ({ ...prev, searchValue: value }))
-            }
-            placeholder="Chọn vật tư..."
-            searchPlaceholder="Tìm vật tư..."
-            emptyText={
-              isFetching
-                ? "Đang tải danh sách vật tư..."
-                : "Không tìm thấy vật tư."
-            }
-            loading={isFetching}
-            disabled={isFetching}
-          />
-        </div>
-        <div className="col-span-6">
-          <Input
-            placeholder="Số lượng"
-            type="number"
-            className="h-9 text-xs bg-white border-slate-200"
-            value={newItem.qty}
-            onChange={(e) => setNewItem({ ...newItem, qty: e.target.value })}
-          />
-        </div>
-        <div className="col-span-4">
-          <Select
-            value={newItem.unitBaseId}
-            onValueChange={(v) => setNewItem({ ...newItem, unitBaseId: v })}
-            disabled={isEquipment || packagingVariantOptions.length === 0}
-          >
-            <SelectTrigger className="h-9 text-xs w-full bg-white border-slate-200">
-              <SelectValue
-                placeholder={isEquipment ? "Cái / Chiếc" : "Đơn vị..."}
-              />
-            </SelectTrigger>
-            <SelectContent>
-              {packagingVariantOptions.length > 0 ? (
-                packagingVariantOptions.map((variant) => (
-                  <SelectItem
-                    key={variant.unitBase?.id ?? variant.unitBase?.name}
-                    value={String(variant.unitBase?.id)}
-                  >
-                    {variant.unitBase?.name ||
-                      variant.packagingType?.name ||
-                      ""}
-                  </SelectItem>
-                ))
-              ) : isEquipment ? (
-                <SelectItem value="6">Cái / Chiếc</SelectItem>
-              ) : null}
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="col-span-2">
-          <Button
-            type="button"
-            size="sm"
-            className="h-9 w-full p-0 bg-slate-900 hover:bg-slate-800 font-bold text-xs"
-            onClick={handleAdd}
-          >
-            <Plus className="w-3.5 h-3.5" />
-          </Button>
-        </div>
-      </div>
-    </div>
-  );
-}
 
 export function HistoryCreatePage() {
   const [, setLocation] = useLocation();
@@ -446,25 +262,93 @@ export function HistoryCreatePage() {
     materialAllocations: [],
   });
 
+  const [errors, setErrors] = useState<Record<string, string>>({});
   const [geoDialogOpen, setGeoDialogOpen] = useState(false);
   const [activeDetailIdForGeo, setActiveDetailIdForGeo] = useState<
     string | null
   >(null);
 
+  const [workflowSearchQuery, setWorkflowSearchQuery] = useState("");
+  const [planSearchQuery, setPlanSearchQuery] = useState("");
+  const [taskSearchQuery, setTaskSearchQuery] = useState("");
+
+  const [isPlannedMode, setIsPlannedMode] = useState(false);
+  const [selectedPlanId, setSelectedPlanId] = useState("");
+  const [selectedTaskId, setSelectedTaskId] = useState("");
+
   const [newStage, setNewStage] = useState("");
   const [isDragging, setIsDragging] = useState(false);
 
-  // Load workflows
+  // Load workflows with mock fallback
   const workflowsQuery = useFarmWorkflows({
     params: { page: 0, size: 100 },
   });
-  const workflows = workflowsQuery.items || [];
+  const apiWorkflows = workflowsQuery.items || [];
+  const workflows = useMemo(() => {
+    return apiWorkflows.length > 0 ? apiWorkflows : MOCK_WORKFLOWS;
+  }, [apiWorkflows]);
+
   const selectedWorkflow = useMemo(
     () =>
       workflows.find((workflow) => String(workflow.id) === formData.regimenId),
     [formData.regimenId, workflows],
   );
   const workflowDomainCode = selectedWorkflow?.domainCode ?? "CROP";
+
+  const workflowOptions = useMemo(
+    () =>
+      workflows.map((w) => ({
+        label: w.code ? `${w.code} - ${w.name}` : w.name,
+        value: String(w.id),
+        keywords: [w.code, w.name].filter(Boolean) as string[],
+      })),
+    [workflows],
+  );
+
+  const availablePlans = useMemo(() => {
+    if (!formData.regimenId) return MOCK_PLANS;
+    return MOCK_PLANS.filter(
+      (p) => String(p.workflowId) === String(formData.regimenId),
+    );
+  }, [formData.regimenId]);
+
+  const planOptions = useMemo(
+    () =>
+      availablePlans.map((p) => ({
+        label: p.code ? `${p.code} - ${p.name}` : p.name,
+        value: String(p.id),
+        keywords: [p.code, p.name],
+      })),
+    [availablePlans],
+  );
+
+  const selectedPlan = useMemo(
+    () => MOCK_PLANS.find((p) => String(p.id) === String(selectedPlanId)),
+    [selectedPlanId],
+  );
+
+  const availableTasks = useMemo(() => {
+    if (!selectedPlanId) return MOCK_TASKS_LIST;
+    return MOCK_TASKS_LIST.filter(
+      (t) => String(t.planId) === String(selectedPlanId),
+    );
+  }, [selectedPlanId]);
+
+  const taskOptions = useMemo(
+    () =>
+      availableTasks.map((t) => ({
+        label: t.code ? `${t.code} - ${t.name}` : t.name,
+        value: String(t.id),
+        keywords: [t.code, t.name],
+      })),
+    [availableTasks],
+  );
+
+  const selectedTask = useMemo(
+    () => MOCK_TASKS_LIST.find((t) => String(t.id) === String(selectedTaskId)),
+    [selectedTaskId],
+  );
+
   const harvestTargetOptions = useMemo(() => {
     const scopes = (selectedWorkflow?.scopes ||
       []) as FarmWorkflowScopeResponse[];
@@ -506,6 +390,8 @@ export function HistoryCreatePage() {
     });
   };
 
+  const [plannedStages, setPlannedStages] = useState<string[]>([]);
+
   const addStage = () => {
     const trimmed = newStage.trim();
     if (!trimmed) return;
@@ -525,6 +411,9 @@ export function HistoryCreatePage() {
   };
 
   const removeStage = (stage: string) => {
+    if (isPlannedMode && plannedStages.includes(stage)) {
+      return;
+    }
     setFormData((prev) => ({
       ...prev,
       selectedStages: prev.selectedStages.filter((s) => s !== stage),
@@ -548,6 +437,15 @@ export function HistoryCreatePage() {
     setFormData((prev) => ({
       ...prev,
       materialAllocations: prev.materialAllocations.filter((m) => m.id !== id),
+    }));
+  };
+
+  const handleUpdateActualQuantity = (id: number, val: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      materialAllocations: prev.materialAllocations.map((m) =>
+        m.id === id ? { ...m, actualQuantity: val } : m,
+      ),
     }));
   };
 
@@ -613,26 +511,27 @@ export function HistoryCreatePage() {
   };
 
   const handleSubmitForm = () => {
-    if (!formData.regimenId) {
-      toast({
-        title: "Thiếu thông tin",
-        description: "Vui lòng chọn vụ mùa/vụ nuôi.",
-        variant: "destructive",
+    setErrors({});
+    const validationResult = historyFormSchema.safeParse({
+      regimenId: formData.regimenId,
+      workType: formData.workType,
+      startDate: formData.startDate,
+      isPlannedMode,
+      planId: selectedPlanId,
+      taskId: selectedTaskId,
+    });
+
+    if (!validationResult.success) {
+      const formattedErrors: Record<string, string> = {};
+      validationResult.error.issues.forEach((issue) => {
+        if (issue.path[0]) {
+          formattedErrors[String(issue.path[0])] = issue.message;
+        }
       });
-      return;
-    }
-    if (!formData.workType) {
+      setErrors(formattedErrors);
       toast({
-        title: "Thiếu thông tin",
-        description: "Vui lòng chọn loại công việc.",
-        variant: "destructive",
-      });
-      return;
-    }
-    if (!formData.startDate) {
-      toast({
-        title: "Thiếu thông tin",
-        description: "Vui lòng chọn ngày bắt đầu.",
+        title: "Thông tin chưa hợp lệ",
+        description: "Vui lòng kiểm tra và nhập đầy đủ các trường bị lỗi.",
         variant: "destructive",
       });
       return;
@@ -650,10 +549,30 @@ export function HistoryCreatePage() {
       title="Cập nhật nhật ký canh tác"
       description="Thêm nhật ký canh tác"
       actions={
-        <Button variant="outline" onClick={() => setLocation("/history")}>
-          <ChevronLeft className="mr-2 h-4 w-4" />
-          Quay lại
-        </Button>
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2.5 rounded-xl border border-slate-200 bg-white px-3.5 py-1.5 shadow-xs">
+            <span className="text-xs font-bold text-slate-700">
+              Kế hoạch{" "}
+              {getWorkflowLabel(workflowDomainCode as DomainCode).toLowerCase()}
+            </span>
+            <Switch
+              checked={isPlannedMode}
+              onCheckedChange={(checked) => {
+                setIsPlannedMode(checked);
+                setErrors({});
+                if (!checked) {
+                  setSelectedPlanId("");
+                  setSelectedTaskId("");
+                  setPlannedStages([]);
+                }
+              }}
+            />
+          </div>
+          <Button variant="outline" onClick={() => setLocation("/history")}>
+            <ChevronLeft className="mr-2 h-4 w-4" />
+            Quay lại
+          </Button>
+        </div>
       }
     >
       <div className="mx-auto w-full max-w-[1600px] space-y-6 pb-12">
@@ -668,64 +587,212 @@ export function HistoryCreatePage() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="pt-6 space-y-4">
-                {/* Vụ mùa / Quy trình */}
+                {/* Vụ mùa / Quy trình Combobox với Search */}
                 <div className="space-y-2">
                   <Label required>{getWorkflowLabel(workflowDomainCode)}</Label>
-                  <Select
+                  <RemoteAutoCompleteSelect
+                    options={workflowOptions}
                     value={formData.regimenId}
-                    onValueChange={(val) =>
-                      setFormData((prev) => ({ ...prev, regimenId: val }))
-                    }
-                  >
-                    <SelectTrigger className="h-11 bg-white border-slate-200">
-                      <SelectValue
-                        placeholder={`Chọn ${getWorkflowLabel(workflowDomainCode).toLowerCase()}...`}
-                      />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {workflows.map((workflow) => (
-                        <SelectItem
-                          key={workflow.id}
-                          value={String(workflow.id)}
-                        >
-                          {workflow.code
-                            ? `${workflow.code} - ${workflow.name}`
-                            : workflow.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                    onChange={(val) => {
+                      setFormData((prev) => ({ ...prev, regimenId: val }));
+                      setSelectedPlanId("");
+                      setSelectedTaskId("");
+                      if (errors.regimenId) {
+                        setErrors((prev) => ({ ...prev, regimenId: "" }));
+                      }
+                    }}
+                    onSearch={(query) => {
+                      setWorkflowSearchQuery(query);
+                    }}
+                    placeholder={`Chọn ${getWorkflowLabel(workflowDomainCode).toLowerCase()}...`}
+                    searchPlaceholder={`Tìm ${getWorkflowLabel(workflowDomainCode).toLowerCase()}...`}
+                    emptyText="Không tìm thấy mục phù hợp."
+                  />
+                  {errors.regimenId && (
+                    <p className="text-xs font-medium text-red-500 mt-1">
+                      {errors.regimenId}
+                    </p>
+                  )}
                   <p className="text-xs text-slate-500">
                     {getWorkflowSubtitle(workflowDomainCode)} đang được áp dụng
                     cho nhật ký này.
                   </p>
                 </div>
 
+                {/* Khi bật Mode theo Kế hoạch -> Hiển thị Combobox chọn Kế hoạch & Công việc */}
+                {isPlannedMode && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label required>Kế hoạch</Label>
+                      <RemoteAutoCompleteSelect
+                        options={planOptions}
+                        value={selectedPlanId}
+                        onChange={(val) => {
+                          setSelectedPlanId(val);
+                          setSelectedTaskId("");
+                          if (errors.planId) {
+                            setErrors((prev) => ({ ...prev, planId: "" }));
+                          }
+                        }}
+                        onSearch={(query) => {
+                          setPlanSearchQuery(query);
+                        }}
+                        placeholder="Chọn kế hoạch..."
+                        searchPlaceholder="Tìm kế hoạch..."
+                        emptyText="Không tìm thấy kế hoạch."
+                      />
+                      {errors.planId && (
+                        <p className="text-xs font-medium text-red-500 mt-1">
+                          {errors.planId}
+                        </p>
+                      )}
+                    </div>
+                    <div className="space-y-2">
+                      <Label required>Công việc</Label>
+                      <RemoteAutoCompleteSelect
+                        options={taskOptions}
+                        value={selectedTaskId}
+                        onChange={(val) => {
+                          setSelectedTaskId(val);
+                          const taskItem = MOCK_TASKS_LIST.find(
+                            (t) => String(t.id) === String(val),
+                          );
+                          if (taskItem) {
+                            const plannedAllocations: MaterialAllocation[] = (
+                              taskItem.supplyLines || []
+                            ).map((s, idx) => ({
+                              id: Date.now() + idx,
+                              stageId: taskItem.name,
+                              materialType: "Kế hoạch",
+                              materialName: s.name,
+                              quantity: s.plannedQty,
+                              actualQuantity: s.actualQty || s.plannedQty,
+                              unit: s.unit,
+                              isPlanned: true,
+                            }));
+
+                            setPlannedStages([taskItem.name]);
+
+                            setFormData((prev) => ({
+                              ...prev,
+                              workType: taskItem.workType,
+                              startDate: taskItem.startDate,
+                              endDate: taskItem.endDate,
+                              selectedStages: [taskItem.name],
+                              materialAllocations: plannedAllocations,
+                            }));
+                          }
+                          if (errors.taskId) {
+                            setErrors((prev) => ({ ...prev, taskId: "" }));
+                          }
+                        }}
+                        onSearch={(query) => {
+                          setTaskSearchQuery(query);
+                        }}
+                        placeholder="Chọn công việc..."
+                        searchPlaceholder="Tìm công việc..."
+                        emptyText="Không tìm thấy công việc."
+                        disabled={!selectedPlanId}
+                      />
+                      {errors.taskId && (
+                        <p className="text-xs font-medium text-red-500 mt-1">
+                          {errors.taskId}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* 3 mini cards block */}
                 <div className="grid gap-3 md:grid-cols-3">
-                  <div className="rounded-2xl border border-slate-100 bg-slate-50/80 p-3">
-                    <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400">
-                      {getWorkflowLabel(workflowDomainCode)}
-                    </p>
-                    <p className="mt-1 text-sm font-semibold text-slate-900">
-                      {selectedWorkflow?.name || "Chưa chọn"}
-                    </p>
-                  </div>
-                  <div className="rounded-2xl border border-slate-100 bg-slate-50/80 p-3">
-                    <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400">
-                      Kế hoạch
-                    </p>
-                    <p className="mt-1 text-sm font-semibold text-slate-900">
-                      {selectedWorkflow?.code || "Chưa có mã"}
-                    </p>
-                  </div>
-                  <div className="rounded-2xl border border-slate-100 bg-slate-50/80 p-3">
-                    <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400">
-                      {getWorkflowSubtitle(workflowDomainCode)}
-                    </p>
-                    <p className="mt-1 text-sm font-semibold text-slate-900">
-                      Chưa chọn
-                    </p>
-                  </div>
+                  {/* Card 1: Vụ mùa */}
+                  {selectedWorkflow ? (
+                    <a
+                      href={`/plan-growth/create/workflow/${selectedWorkflow.id}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="group block rounded-2xl border border-slate-100 bg-slate-50/80 p-3 transition-all hover:border-slate-300 hover:bg-slate-100/80 hover:shadow-xs cursor-pointer"
+                    >
+                      <div className="flex items-center justify-between">
+                        <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400">
+                          {getWorkflowLabel(workflowDomainCode)}
+                        </p>
+                        <ExternalLink className="h-3.5 w-3.5 text-slate-400 group-hover:text-green-600 transition-colors" />
+                      </div>
+                      <p className="mt-1 text-sm font-semibold text-slate-900 truncate group-hover:text-green-700">
+                        {selectedWorkflow.name}
+                      </p>
+                    </a>
+                  ) : (
+                    <div className="rounded-2xl border border-slate-100 bg-slate-50/80 p-3">
+                      <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400">
+                        {getWorkflowLabel(workflowDomainCode)}
+                      </p>
+                      <p className="mt-1 text-sm font-semibold text-slate-900 truncate">
+                        Chưa chọn
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Card 2: Kế hoạch */}
+                  {selectedPlan ? (
+                    <a
+                      href={`/plan-growth/${selectedPlan.id}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="group block rounded-2xl border border-slate-100 bg-slate-50/80 p-3 transition-all hover:border-slate-300 hover:bg-slate-100/80 hover:shadow-xs cursor-pointer"
+                    >
+                      <div className="flex items-center justify-between">
+                        <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400">
+                          Kế hoạch
+                        </p>
+                        <ExternalLink className="h-3.5 w-3.5 text-slate-400 group-hover:text-green-600 transition-colors" />
+                      </div>
+                      <p className="mt-1 text-sm font-semibold text-slate-900 truncate group-hover:text-green-700">
+                        {`${selectedPlan.code} - ${selectedPlan.name}`}
+                      </p>
+                    </a>
+                  ) : (
+                    <div className="rounded-2xl border border-slate-100 bg-slate-50/80 p-3">
+                      <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400">
+                        Kế hoạch
+                      </p>
+                      <p className="mt-1 text-sm font-semibold text-slate-900 truncate">
+                        {isPlannedMode
+                          ? "Chưa chọn"
+                          : "Phát sinh (Không thuộc KH)"}
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Card 3: Công việc */}
+                  {selectedTask ? (
+                    <a
+                      href={`/diary/plan/${selectedTask.id}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="group block rounded-2xl border border-slate-100 bg-slate-50/80 p-3 transition-all hover:border-slate-300 hover:bg-slate-100/80 hover:shadow-xs cursor-pointer"
+                    >
+                      <div className="flex items-center justify-between">
+                        <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400">
+                          Công việc
+                        </p>
+                        <ExternalLink className="h-3.5 w-3.5 text-slate-400 group-hover:text-green-600 transition-colors" />
+                      </div>
+                      <p className="mt-1 text-sm font-semibold text-slate-900 truncate group-hover:text-green-700">
+                        {`${selectedTask.code} - ${selectedTask.name}`}
+                      </p>
+                    </a>
+                  ) : (
+                    <div className="rounded-2xl border border-slate-100 bg-slate-50/80 p-3">
+                      <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400">
+                        Công việc
+                      </p>
+                      <p className="mt-1 text-sm font-semibold text-slate-900 truncate">
+                        {isPlannedMode ? "Chưa chọn" : "Công việc phát sinh"}
+                      </p>
+                    </div>
+                  )}
                 </div>
 
                 <div className="space-y-3">
@@ -737,20 +804,32 @@ export function HistoryCreatePage() {
                         <button
                           key={option.value}
                           type="button"
-                          onClick={() =>
+                          disabled={isPlannedMode}
+                          onClick={() => {
+                            if (isPlannedMode) return;
                             setFormData((prev) => ({
                               ...prev,
                               workType: option.value,
-                            }))
-                          }
-                          className={`cursor-pointer rounded-2xl border-2 px-3 py-4 transition-all flex flex-col items-center text-center gap-1.5 group ${
-                            isActive
-                              ? option.activeClass
-                              : "border-slate-100 bg-white hover:border-slate-200 hover:shadow-sm text-slate-500"
+                            }));
+                            if (errors.workType) {
+                              setErrors((prev) => ({ ...prev, workType: "" }));
+                            }
+                          }}
+                          className={`rounded-2xl border-2 px-3 py-4 transition-all flex flex-col items-center text-center gap-1.5 group ${
+                            isPlannedMode
+                              ? isActive
+                                ? option.activeClass +
+                                  " cursor-not-allowed opacity-90"
+                                : "border-slate-100 bg-white opacity-40 text-slate-400 cursor-not-allowed"
+                              : isActive
+                                ? option.activeClass + " cursor-pointer"
+                                : "border-slate-100 bg-white hover:border-slate-200 hover:shadow-sm text-slate-500 cursor-pointer"
                           }`}
                         >
                           <div
-                            className={`w-10 h-10 rounded-xl flex items-center justify-center transition-transform group-hover:scale-110 ${
+                            className={`w-10 h-10 rounded-xl flex items-center justify-center transition-transform ${
+                              !isPlannedMode && "group-hover:scale-110"
+                            } ${
                               isActive
                                 ? option.iconClass
                                 : "bg-slate-50 text-slate-400"
@@ -765,6 +844,11 @@ export function HistoryCreatePage() {
                       );
                     })}
                   </div>
+                  {errors.workType && (
+                    <p className="text-xs font-medium text-red-500 mt-1">
+                      {errors.workType}
+                    </p>
+                  )}
                 </div>
 
                 {/* Ngày bắt đầu & kết thúc */}
@@ -774,31 +858,57 @@ export function HistoryCreatePage() {
                     <div className="relative">
                       <Input
                         type="date"
-                        className="h-11 bg-white border-slate-200 pl-10"
+                        disabled={isPlannedMode}
+                        clearable={false}
+                        className={`h-11 border-slate-200 pl-10 ${
+                          isPlannedMode
+                            ? "bg-slate-50 cursor-not-allowed text-slate-700 font-medium opacity-90"
+                            : "bg-white"
+                        } ${
+                          errors.startDate
+                            ? "border-red-500 focus:ring-red-500/20"
+                            : ""
+                        }`}
                         value={formData.startDate}
-                        onChange={(e) =>
+                        onChange={(e) => {
+                          if (isPlannedMode) return;
                           setFormData((prev) => ({
                             ...prev,
                             startDate: e.target.value,
-                          }))
-                        }
+                          }));
+                          if (errors.startDate) {
+                            setErrors((prev) => ({ ...prev, startDate: "" }));
+                          }
+                        }}
                       />
                       <Calendar className="absolute left-3.5 top-3.5 h-4 w-4 text-slate-400 pointer-events-none" />
                     </div>
+                    {errors.startDate && (
+                      <p className="text-xs font-medium text-red-500 mt-1">
+                        {errors.startDate}
+                      </p>
+                    )}
                   </div>
                   <div className="space-y-2">
                     <Label>Ngày kết thúc</Label>
                     <div className="relative">
                       <Input
                         type="date"
-                        className="h-11 bg-white border-slate-200 pl-10"
+                        disabled={isPlannedMode}
+                        clearable={false}
+                        className={`h-11 border-slate-200 pl-10 ${
+                          isPlannedMode
+                            ? "bg-slate-50 cursor-not-allowed text-slate-700 font-medium opacity-90"
+                            : "bg-white"
+                        }`}
                         value={formData.endDate}
-                        onChange={(e) =>
+                        onChange={(e) => {
+                          if (isPlannedMode) return;
                           setFormData((prev) => ({
                             ...prev,
                             endDate: e.target.value,
-                          }))
-                        }
+                          }));
+                        }}
                       />
                       <Calendar className="absolute left-3.5 top-3.5 h-4 w-4 text-slate-400 pointer-events-none" />
                     </div>
@@ -1151,24 +1261,35 @@ export function HistoryCreatePage() {
 
                 {formData.selectedStages.length > 0 && (
                   <div className="grid gap-2">
-                    {formData.selectedStages.map((stage, index) => (
-                      <div
-                        key={stage}
-                        className="flex items-center gap-3 rounded-xl border border-slate-150 bg-slate-50/50 px-3 py-2.5 text-xs font-semibold text-slate-700 shadow-2xs"
-                      >
-                        <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-lg bg-white border text-[10px] text-slate-400 font-bold">
-                          {index + 1}
-                        </span>
-                        <span className="flex-1 truncate">{stage}</span>
-                        <button
-                          type="button"
-                          onClick={() => removeStage(stage)}
-                          className="h-6 w-6 text-slate-300 hover:text-red-500 transition-colors flex items-center justify-center rounded-md hover:bg-red-50"
+                    {formData.selectedStages.map((stage, index) => {
+                      const isPlannedStage =
+                        isPlannedMode && plannedStages.includes(stage);
+                      return (
+                        <div
+                          key={stage}
+                          className="flex items-center gap-3 rounded-xl border border-slate-150 bg-slate-50/50 px-3 py-2.5 text-xs font-semibold text-slate-700 shadow-2xs"
                         >
-                          <X className="h-3.5 w-3.5" />
-                        </button>
-                      </div>
-                    ))}
+                          <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-lg bg-white border text-[10px] text-slate-400 font-bold">
+                            {index + 1}
+                          </span>
+                          <span className="flex-1 truncate">{stage}</span>
+                          {isPlannedStage ? (
+                            <span className="text-[10px] font-medium text-amber-600 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-md shrink-0">
+                              Kế hoạch
+                            </span>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => removeStage(stage)}
+                              className="h-6 w-6 text-slate-300 hover:text-red-500 transition-colors flex items-center justify-center rounded-md hover:bg-red-50"
+                              title="Xóa hạng mục này"
+                            >
+                              <X className="h-3.5 w-3.5" />
+                            </button>
+                          )}
+                        </div>
+                      );
+                    })}
                   </div>
                 )}
               </CardContent>
@@ -1284,6 +1405,7 @@ export function HistoryCreatePage() {
                             allocations={stageAllocations}
                             onAddMaterial={handleAddMaterial}
                             onRemoveMaterial={handleRemoveMaterial}
+                            onUpdateActualQuantity={handleUpdateActualQuantity}
                             domainCode={workflowDomainCode}
                           />
                         </div>

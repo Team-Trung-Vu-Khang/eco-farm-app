@@ -18,13 +18,39 @@ export function AuthWrapper({ children }: { children: ReactNode }) {
       }
 
       authApi.setToken(tokenFromUrl);
-      window.location.replace("/enterprise");
+
+      const searchParams = new URLSearchParams(window.location.search);
+      const redirectParam =
+        searchParams.get("redirect") || searchParams.get("redirect_url");
+      const savedRedirectPath = sessionStorage.getItem("redirect_path");
+      sessionStorage.removeItem("redirect_path");
+
+      const targetPath =
+        redirectParam ||
+        (savedRedirectPath &&
+        savedRedirectPath !== "/" &&
+        !savedRedirectPath.startsWith(AUTH_PATHS.callback)
+          ? savedRedirectPath
+          : "/enterprise");
+
+      window.location.replace(targetPath);
       return;
     }
 
     const token = authApi.getToken();
 
     if (!token) {
+      const currentPath =
+        window.location.pathname +
+        window.location.search +
+        window.location.hash;
+      if (
+        currentPath &&
+        currentPath !== "/" &&
+        !currentPath.startsWith(AUTH_PATHS.callback)
+      ) {
+        sessionStorage.setItem("redirect_path", currentPath);
+      }
       authApi.startLogin(authApi.getDefaultProvider());
       return;
     }
