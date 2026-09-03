@@ -1199,7 +1199,7 @@ export default function TaskCreatePage() {
                 {formData.mode === "phat-sinh" && (
                   <div className="space-y-2 pt-2 border-slate-100">
                     <Label className="text-sm font-bold text-slate-700">
-                      Quy trình *
+                      Vụ mùa / Vụ nuôi *
                     </Label>
                     <Select
                       value={formData.regimenId}
@@ -1208,7 +1208,7 @@ export default function TaskCreatePage() {
                       }
                     >
                       <SelectTrigger className="h-12">
-                        <SelectValue placeholder="Chọn quy trình..." />
+                        <SelectValue placeholder="Chọn vụ mùa / vụ nuôi..." />
                       </SelectTrigger>
                       <SelectContent className="max-h-80">
                         {workflowOptions.map((workflow) => (
@@ -1224,7 +1224,7 @@ export default function TaskCreatePage() {
                       </SelectContent>
                     </Select>
                     <p className="text-[11px] font-medium text-slate-400">
-                      Chọn quy trình bắt buộc cho công việc phát sinh.
+                      Chọn vụ mùa hoặc vụ nuôi bắt buộc cho công việc phát sinh.
                     </p>
                   </div>
                 )}
@@ -1234,7 +1234,7 @@ export default function TaskCreatePage() {
                     <div className="space-y-4">
                       <div className="space-y-2">
                         <Label className="text-sm font-bold text-slate-700">
-                          Quy trình *
+                          Vụ mùa / Vụ nuôi *
                         </Label>
                         <Select
                           value={formData.regimenId}
@@ -1242,7 +1242,9 @@ export default function TaskCreatePage() {
                           onValueChange={handleWorkflowChange}
                         >
                           <SelectTrigger className="h-12 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-500 disabled:opacity-80">
-                            <SelectValue placeholder="Chọn quy trình..." />
+                            <SelectValue
+                              placeholder="Chọn vụ mùa / vụ nuôi..."
+                            />
                           </SelectTrigger>
                           <SelectContent className="max-h-80 overflow-hidden p-0">
                             <div
@@ -1260,7 +1262,7 @@ export default function TaskCreatePage() {
                                   onPointerDown={(event) =>
                                     event.stopPropagation()
                                   }
-                                  placeholder="Tìm quy trình..."
+                                  placeholder="Tìm vụ mùa / vụ nuôi..."
                                   className="h-9 pl-8 text-sm"
                                 />
                               </div>
@@ -1278,15 +1280,15 @@ export default function TaskCreatePage() {
                               ))}
                               {workflowOptions.length === 0 && (
                                 <div className="p-4 text-center text-xs text-slate-400 italic">
-                                  Không tìm thấy quy trình phù hợp
+                                  Không tìm thấy vụ mùa / vụ nuôi phù hợp
                                 </div>
                               )}
                             </div>
                           </SelectContent>
                         </Select>
                         <p className="text-[11px] font-medium text-slate-400">
-                          Chọn quy trình trước để lọc danh sách kế hoạch triển
-                          khai.
+                          Chọn vụ mùa / vụ nuôi trước để lọc danh sách kế hoạch
+                          triển khai.
                         </p>
                       </div>
                       <div className="space-y-2">
@@ -1363,7 +1365,7 @@ export default function TaskCreatePage() {
                                 <div className="p-4 text-center text-xs text-slate-400 italic">
                                   {formData.regimenId
                                     ? "Không tìm thấy kế hoạch phù hợp"
-                                    : "Hãy chọn quy trình trước"}
+                                    : "Hãy chọn vụ mùa / vụ nuôi trước"}
                                 </div>
                               )}
                             </div>
@@ -1371,7 +1373,7 @@ export default function TaskCreatePage() {
                         </Select>
                         {!formData.regimenId && (
                           <p className="text-[11px] font-medium text-slate-400">
-                            Kế hoạch sẽ được lọc theo quy trình đã chọn.
+                            Kế hoạch sẽ được lọc theo vụ mùa / vụ nuôi đã chọn.
                           </p>
                         )}
                         {presetPlanId && (

@@ -1523,7 +1523,7 @@ export default function TaskEditPage() {
                   <div className="space-y-6 animation-fade-in border-t pt-6 mt-6 border-slate-100">
                     <div className="space-y-2">
                       <Label className="text-sm font-bold text-slate-700">
-                        Quy trình *
+                        Vụ mùa / Vụ nuôi *
                       </Label>
                       <Select
                         value={formData.regimenId}
@@ -1535,7 +1535,7 @@ export default function TaskEditPage() {
                         }
                       >
                         <SelectTrigger className="h-12">
-                          <SelectValue placeholder="Chọn quy trình..." />
+                          <SelectValue placeholder="Chọn vụ mùa / vụ nuôi..." />
                         </SelectTrigger>
                         <SelectContent className="max-h-80">
                           {workflowsQuery.items.map((workflow) => (

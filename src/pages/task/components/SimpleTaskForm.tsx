@@ -61,6 +61,7 @@ const PRIORITY_OPTIONS = [
   },
 ] as const;
 
+
 interface SimpleTaskFormProps {
   formData: TaskCreateFormData;
   setFormData: Dispatch<SetStateAction<TaskCreateFormData>>;
@@ -239,7 +240,7 @@ export default function SimpleTaskForm({
       </div>
 
       <div className="space-y-2">
-        <Label required>Quy trình</Label>
+        <Label required>Vụ mùa / Vụ nuôi</Label>
         <Select
           value={formData.regimenId}
           onValueChange={(value) =>
@@ -247,7 +248,7 @@ export default function SimpleTaskForm({
           }
         >
           <SelectTrigger>
-            <SelectValue placeholder="Chọn quy trình..." />
+            <SelectValue placeholder="Chọn vụ mùa / vụ nuôi..." />
           </SelectTrigger>
           <SelectContent>
             {workflows.map((workflow) => (
@@ -296,7 +297,7 @@ export default function SimpleTaskForm({
         </Select>
         {!formData.regimenId && (
           <p className="text-[11px] font-medium text-slate-400">
-            Chọn quy trình trước để tải kế hoạch.
+            Chọn vụ mùa / vụ nuôi trước để tải kế hoạch.
           </p>
         )}
       </div>
