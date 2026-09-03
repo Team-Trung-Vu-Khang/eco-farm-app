@@ -1215,7 +1215,7 @@ export default function TaskEditPage() {
               <CardContent className="space-y-4">
                 <div className="space-y-3">
                   <Label className="text-sm font-bold text-slate-700">
-                    Loại công việc *
+                    Nhóm công việc *
                   </Label>
                   <div
                     className={cn(
@@ -1243,7 +1243,7 @@ export default function TaskEditPage() {
                               : "text-slate-400",
                           )}
                         >
-                          Hạng mục dự kiến
+                          Dự kiến
                         </p>
                         <p className="text-[10px] text-slate-400 font-medium">
                           Từ một kế hoạch có sẵn

@@ -1087,7 +1087,7 @@ export default function TaskCreatePage() {
               <CardContent className="space-y-4">
                 <div className="space-y-3">
                   <Label className="text-sm font-bold text-slate-700">
-                    Loại công việc *
+                    Nhóm công việc *
                   </Label>
                   <div className="flex items-center justify-between gap-4 rounded-2xl border-2 border-slate-100 bg-white p-4">
                     <div className="flex items-center gap-3">
@@ -1110,7 +1110,7 @@ export default function TaskCreatePage() {
                               : "text-slate-400",
                           )}
                         >
-                          Hạng mục dự kiến
+                          Dự kiến
                         </p>
                         <p className="text-[10px] text-slate-400 font-medium">
                           Từ một kế hoạch có sẵn
