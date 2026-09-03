@@ -278,7 +278,7 @@ export function HistoryFormContent({
     harvestDetails: [],
     harvestFiles: [],
     startDate: new Date().toISOString().split("T")[0],
-    endDate: "",
+    endDate: new Date().toISOString().split("T")[0],
     completionPercentage: 60,
     description: "",
     images: [],
@@ -400,7 +400,7 @@ export function HistoryFormContent({
         regimenId: workflowId,
         workType: resolvedWorkType,
         startDate: taskItem.startDate,
-        endDate: taskItem.endDate,
+        endDate: taskItem.endDate || new Date().toISOString().split("T")[0],
         completionPercentage: taskItem.lastCompletionPercentage ?? 60,
         selectedStages: [taskItem.name],
         materialAllocations: plannedAllocations,
@@ -468,6 +468,28 @@ export function HistoryFormContent({
     () => MOCK_TASKS_LIST.find((t) => String(t.id) === String(selectedTaskId)),
     [selectedTaskId],
   );
+
+  const previousPercentage = useMemo(() => {
+    if (!selectedTask) return 60;
+    return selectedTask.lastCompletionPercentage ?? 60;
+  }, [selectedTask]);
+
+  const currentPercentage = formData.completionPercentage ?? previousPercentage;
+
+  const sliderTrackBackground = useMemo(() => {
+    const prev = Math.min(100, Math.max(0, previousPercentage));
+    const curr = Math.min(100, Math.max(0, currentPercentage));
+
+    if (curr === prev) {
+      return `linear-gradient(to right, #3b82f6 0%, #3b82f6 ${prev}%, #e2e8f0 ${prev}%, #e2e8f0 100%)`;
+    }
+
+    if (curr < prev) {
+      return `linear-gradient(to right, #3b82f6 0%, #3b82f6 ${curr}%, #ef4444 ${curr}%, #ef4444 ${prev}%, #e2e8f0 ${prev}%, #e2e8f0 100%)`;
+    }
+
+    return `linear-gradient(to right, #3b82f6 0%, #3b82f6 ${prev}%, #22c55e ${prev}%, #22c55e ${curr}%, #e2e8f0 ${curr}%, #e2e8f0 100%)`;
+  }, [previousPercentage, currentPercentage]);
 
   const harvestTargetOptions = useMemo(() => {
     const scopes = ((selectedWorkflow as any)?.scopes ||
@@ -636,15 +658,9 @@ export function HistoryFormContent({
       actions={
         <div className="flex items-center gap-3">
           {allowModeToggle && (
-            <div className="flex items-center gap-3 bg-slate-50 p-1.5 rounded-xl border border-slate-200/80 shrink-0">
-              <span
-                className={`text-xs font-extrabold px-3 py-1.5 rounded-lg transition-all ${
-                  !isPlannedMode
-                    ? "bg-white text-slate-900 shadow-2xs"
-                    : "text-slate-500"
-                }`}
-              >
-                Phát sinh
+            <div className="flex items-center gap-2 bg-slate-100 px-1.5 py-1 rounded-lg border border-slate-200/80 shrink-0">
+              <span className="text-xs font-extrabold px-2 py-1 rounded-md transition-all">
+                Kế hoạch vụ mùa
               </span>
               <Switch
                 checked={isPlannedMode}
@@ -654,18 +670,13 @@ export function HistoryFormContent({
                     setSelectedPlanId("");
                     setSelectedTaskId("");
                     setPlannedStages([]);
+                    setFormData((prev) => ({
+                      ...prev,
+                      endDate: new Date().toISOString().split("T")[0],
+                    }));
                   }
                 }}
               />
-              <span
-                className={`text-xs font-extrabold px-3 py-1.5 rounded-lg transition-all ${
-                  isPlannedMode
-                    ? "bg-green-600 text-white shadow-2xs"
-                    : "text-slate-500"
-                }`}
-              >
-                Theo kế hoạch
-              </span>
             </div>
           )}
           <Button
@@ -800,7 +811,9 @@ export function HistoryFormContent({
                                 ...prev,
                                 workType: resolvedWorkType,
                                 startDate: taskItem.startDate,
-                                endDate: taskItem.endDate,
+                                endDate:
+                                  taskItem.endDate ||
+                                  new Date().toISOString().split("T")[0],
                                 completionPercentage:
                                   taskItem.lastCompletionPercentage ?? 60,
                                 selectedStages: [taskItem.name],
@@ -898,53 +911,75 @@ export function HistoryFormContent({
                   )}
                 </div>
 
-                {/* Mức độ hoàn thành công việc (Slide bar - Chỉ hiển thị khi Theo kế hoạch và đã chọn công việc) */}
+                {/* Mức độ hoàn thành công việc (Slide bar 2 màu hợp nhất) */}
                 {isPlannedMode && (
                   <div
-                    className={`space-y-2.5 rounded-2xl border border-slate-200/90 bg-slate-50/60 p-4 shadow-2xs transition-all ${
+                    className={`space-y-3.5 rounded-2xl border border-slate-200/90 bg-white p-4.5 shadow-2xs transition-all ${
                       !selectedTaskId ? "opacity-50 pointer-events-none" : ""
                     }`}
                   >
-                    <div className="flex items-center justify-between font-bold text-xs">
-                      <span className="flex items-center gap-1.5 text-slate-800">
-                        <CheckCircle2 className="w-4 h-4 text-green-600" />
-                        Mức độ hoàn thành công việc đợt này
-                      </span>
+                    {/* Header */}
+                    <div className="flex items-center justify-between gap-2.5">
                       <div className="flex items-center gap-2">
-                        <span className="text-xs font-extrabold text-green-700 bg-green-100 px-2.5 py-0.5 rounded-lg shadow-2xs">
-                          {formData.completionPercentage ?? 60}%
-                        </span>
-                        {100 - (formData.completionPercentage ?? 60) > 0 && (
-                          <span className="text-xs font-semibold text-slate-400">
-                            (Còn lại:{" "}
-                            {100 - (formData.completionPercentage ?? 60)}%)
-                          </span>
-                        )}
+                        <div
+                          className={`h-8 w-8 rounded-xl flex items-center justify-center font-bold shrink-0 ${
+                            currentPercentage < previousPercentage
+                              ? "bg-red-100 text-red-700"
+                              : "bg-green-100 text-green-700"
+                          }`}
+                        >
+                          <CheckCircle2 className="w-4 h-4" />
+                        </div>
+                        <div>
+                          <h4 className="text-xs font-extrabold text-slate-900 uppercase tracking-wider">
+                            Mức độ hoàn thành công việc
+                          </h4>
+                          <p className="text-[11px] text-slate-500">
+                            Kéo thanh trượt để cập nhật tiến độ công việc đợt
+                            này
+                          </p>
+                        </div>
                       </div>
+
+                      {/* Hiển thị badge cảnh báo khi kéo giảm */}
+                      {currentPercentage < previousPercentage && (
+                        <span className="text-[11px] font-extrabold text-red-700 bg-red-50 border border-red-200 px-2.5 py-1 rounded-lg">
+                          Giảm -{previousPercentage - currentPercentage}% so với
+                          trước đó
+                        </span>
+                      )}
                     </div>
 
+                    {/* Dual-Color Range Input */}
                     <div className="space-y-1 pt-1">
-                      <input
-                        type="range"
-                        min={0}
-                        max={100}
-                        step={5}
-                        disabled={!selectedTaskId}
-                        value={formData.completionPercentage ?? 60}
-                        onChange={(e) => {
-                          if (!selectedTaskId) return;
-                          const val = Number(e.target.value);
-                          setFormData((prev) => ({
-                            ...prev,
-                            completionPercentage: val,
-                          }));
-                        }}
-                        className={`w-full h-2.5 bg-slate-200 rounded-lg appearance-none accent-green-600 focus:outline-none ${
-                          !selectedTaskId
-                            ? "cursor-not-allowed"
-                            : "cursor-pointer"
-                        }`}
-                      />
+                      <div className="relative flex items-center">
+                        <input
+                          type="range"
+                          min={0}
+                          max={100}
+                          step={5}
+                          disabled={!selectedTaskId}
+                          value={currentPercentage}
+                          onChange={(e) => {
+                            if (!selectedTaskId) return;
+                            const val = Number(e.target.value);
+                            setFormData((prev) => ({
+                              ...prev,
+                              completionPercentage: val,
+                            }));
+                          }}
+                          style={{
+                            background: sliderTrackBackground,
+                          }}
+                          className={`w-full h-3 rounded-lg appearance-none accent-green-600 focus:outline-none ${
+                            !selectedTaskId
+                              ? "cursor-not-allowed"
+                              : "cursor-pointer"
+                          }`}
+                        />
+                      </div>
+
+                      {/* Tỉ lệ mốc % */}
                       <div className="flex justify-between text-[10px] text-slate-400 font-bold px-1">
                         <span>0%</span>
                         <span>25%</span>
@@ -953,34 +988,60 @@ export function HistoryFormContent({
                         <span>100%</span>
                       </div>
                     </div>
+
+                    {/* Legend chú thích màu sắc */}
+                    <div className="flex flex-wrap items-center gap-4 pt-1 text-[11px] text-slate-600 border-t border-slate-100">
+                      {currentPercentage < previousPercentage ? (
+                        <>
+                          <div className="flex items-center gap-1.5 font-bold text-blue-700">
+                            <span className="w-2.5 h-2.5 rounded-full bg-blue-500"></span>
+                            <span>Mức cập nhật mới ({currentPercentage}%)</span>
+                          </div>
+                          <div className="flex items-center gap-1.5 font-extrabold text-red-600">
+                            <span className="w-2.5 h-2.5 rounded-full bg-red-500"></span>
+                            <span>
+                              Khoảng giảm (-
+                              {previousPercentage - currentPercentage}%)
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-1.5 font-medium text-slate-500">
+                            <span className="w-2.5 h-2.5 rounded-full bg-slate-300"></span>
+                            <span>
+                              Chưa hoàn thành (
+                              {Math.max(0, 100 - currentPercentage)}%)
+                            </span>
+                          </div>
+                        </>
+                      ) : (
+                        <>
+                          <div className="flex items-center gap-1.5 font-medium">
+                            <span className="w-2.5 h-2.5 rounded-full bg-blue-500"></span>
+                            <span>
+                              Tiến độ trước đó ({previousPercentage}%)
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-1.5 font-medium">
+                            <span className="w-2.5 h-2.5 rounded-full bg-green-500"></span>
+                            <span>
+                              Cập nhật thêm đợt này (
+                              {currentPercentage - previousPercentage}%)
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-1.5 font-medium">
+                            <span className="w-2.5 h-2.5 rounded-full bg-slate-300"></span>
+                            <span>
+                              Chưa hoàn thành (
+                              {Math.max(0, 100 - currentPercentage)}%)
+                            </span>
+                          </div>
+                        </>
+                      )}
+                    </div>
                   </div>
                 )}
 
-                {/* Ngày cập nhật, Ngày bắt đầu & kết thúc */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  {/* Ngày cập nhật hiện tại (Mặc định hôm nay) */}
-                  <div className="space-y-2">
-                    <Label required>Ngày cập nhật thông tin</Label>
-                    <div className="relative">
-                      <Input
-                        type="date"
-                        clearable={false}
-                        className="h-11 border-slate-200 pl-10 bg-white font-medium text-slate-800"
-                        value={
-                          formData.startDate ||
-                          new Date().toISOString().split("T")[0]
-                        }
-                        onChange={(e) => {
-                          setFormData((prev) => ({
-                            ...prev,
-                            startDate: e.target.value,
-                          }));
-                        }}
-                      />
-                      <Calendar className="absolute left-3.5 top-3.5 h-4 w-4 text-green-600 pointer-events-none" />
-                    </div>
-                  </div>
-
+                {/* Ngày bắt đầu & Thời gian kết thúc thực tế */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label required>Ngày bắt đầu</Label>
                     <div className="relative">
@@ -1018,20 +1079,14 @@ export function HistoryFormContent({
                     )}
                   </div>
                   <div className="space-y-2">
-                    <Label>Ngày kết thúc</Label>
+                    <Label>Thời gian kết thúc thực tế</Label>
                     <div className="relative">
                       <Input
                         type="date"
-                        disabled={isPlannedMode}
                         clearable={false}
-                        className={`h-11 border-slate-200 pl-10 ${
-                          isPlannedMode
-                            ? "bg-slate-50 cursor-not-allowed text-slate-700 font-medium opacity-90"
-                            : "bg-white"
-                        }`}
+                        className="h-11 border-slate-200 pl-10 bg-white font-medium text-slate-800"
                         value={formData.endDate}
                         onChange={(e) => {
-                          if (isPlannedMode) return;
                           setFormData((prev) => ({
                             ...prev,
                             endDate: e.target.value,

@@ -129,39 +129,17 @@ export function PlannedTaskDetailCard({
           </p>
         </div> */}
 
-        {/* Mức độ hoàn thành & Tiến độ */}
-        <div className="rounded-xl border border-slate-200/80 bg-white p-3.5 shadow-2xs space-y-2.5">
-          <div className="flex items-center justify-between font-bold">
-            <span className="text-slate-700 flex items-center gap-1.5">
-              <CheckCircle2 className="w-4 h-4 text-green-600" />
-              Mức độ hoàn thành gần nhất
-            </span>
-            <span className="text-sm text-green-700 font-extrabold">
-              {completion}%
-            </span>
+        {/* Thông số cập nhật nhật ký trước đó */}
+        <div className="rounded-xl border border-slate-200/80 bg-slate-50/60 p-3 flex items-center justify-between text-[11px] font-semibold text-slate-600">
+          <div className="flex items-center gap-1.5">
+            <History className="w-3.5 h-3.5 text-blue-500" />
+            <span>Lịch sử cập nhật trước đó:</span>
+            <span className="font-bold text-slate-800">{updatedCount} đợt</span>
           </div>
-
-          {/* Progress Bar */}
-          <div className="w-full h-2.5 bg-slate-100 rounded-full overflow-hidden flex">
-            <div
-              className="h-full bg-gradient-to-r from-green-500 to-emerald-600 rounded-full transition-all duration-500"
-              style={{ width: `${completion}%` }}
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-2 pt-1 border-t border-slate-100 text-[11px]">
-            <div className="flex items-center gap-1.5 text-slate-600">
-              <History className="w-3.5 h-3.5 text-blue-500" />
-              <span>Số lần đã cập nhật:</span>
-              <span className="font-bold text-slate-800">
-                {updatedCount} lần
-              </span>
-            </div>
-            <div className="flex items-center justify-end gap-1.5 text-slate-600">
-              <Clock className="w-3.5 h-3.5 text-amber-500" />
-              <span>Còn lại chưa hoàn thành:</span>
-              <span className="font-bold text-amber-700">{remaining}%</span>
-            </div>
+          <div className="flex items-center gap-1.5">
+            <CheckCircle2 className="w-3.5 h-3.5 text-green-600" />
+            <span>Tiến độ hiện tại:</span>
+            <span className="font-bold text-green-700">{completion}%</span>
           </div>
         </div>
 
