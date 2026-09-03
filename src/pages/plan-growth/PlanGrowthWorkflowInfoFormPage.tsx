@@ -633,7 +633,7 @@ export default function PlanGrowthWorkflowInfoFormPage() {
               {selections.length > 0 && (
                 <div className="space-y-2">
                   <label className="text-xs text-muted-foreground font-black uppercase tracking-widest">
-                    Chu kỳ sinh trưởng
+                    Giai đoạn sinh trưởng
                   </label>
                   <GrowthCycleSelector
                     growthCycles={growthCycles}
@@ -660,7 +660,7 @@ export default function PlanGrowthWorkflowInfoFormPage() {
                     <div className="mt-4 p-4 rounded-xl bg-white/50 border border-emerald-100/50 space-y-3">
                       <div className="text-[10px] font-bold text-emerald-800/60 uppercase tracking-widest flex items-center gap-2">
                         <Sprout className="w-3 h-3" />
-                        Chu kỳ sinh trưởng đã chọn
+                        Giai đoạn sinh trưởng đã chọn
                       </div>
                       <div className="space-y-3">
                         {growthCycleSummary.map((group) => (

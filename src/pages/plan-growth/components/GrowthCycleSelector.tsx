@@ -224,7 +224,7 @@ const GrowthCycleSelector = ({
             <p className="text-xs text-muted-foreground mt-1">
               {isLocked
                 ? "Chọn 1 hoặc nhiều giai đoạn, từ 1 hoặc nhiều chu kỳ, áp dụng cho kế hoạch này"
-                : "Chọn 1 hoặc nhiều Chu kỳ sinh trưởng"}
+                : "Chọn 1 hoặc nhiều Giai đoạn sinh trưởng"}
             </p>
           </DialogHeader>
 

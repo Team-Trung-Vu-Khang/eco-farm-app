@@ -642,7 +642,7 @@ export default function SimplePlanForm({
       </div>
 
       <div className="space-y-2">
-        <Label>Mục đích kế hoạch</Label>
+        <Label>Nhóm công việc</Label>
         <Textarea
           value={formData.description}
           onChange={(e) =>
@@ -781,7 +781,7 @@ export default function SimplePlanForm({
       {isWorkflowContext && (
         <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <Label>Chu kỳ sinh trưởng</Label>
+            <Label>Giai đoạn sinh trưởng</Label>
             <span className="text-[10px] text-emerald-700 bg-emerald-100 px-2 py-1 rounded-full font-semibold">
               {inheritedCycles.length === 0
                 ? "Chưa thiết lập ở quy trình"
@@ -890,7 +890,7 @@ export default function SimplePlanForm({
       <div className="flex items-start justify-between gap-4">
         <div>
           <h3 className="text-base font-bold text-slate-900">
-            Danh sách hạng mục
+            Danh sách hạng mục dự kiến
           </h3>
           <p className="mt-1 text-xs text-slate-500">
             {isCultivation

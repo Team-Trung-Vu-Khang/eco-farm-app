@@ -457,7 +457,7 @@ export default function PlanAnimalGrowthWorkflowInfoFormPage() {
               {selections.length > 0 && (
                 <div className="order-5 space-y-2">
                   <label className="text-xs text-muted-foreground font-black uppercase tracking-widest">
-                    Chu kỳ sinh trưởng
+                    Giai đoạn sinh trưởng
                   </label>
                   <GrowthCycleSelector
                     growthCycles={growthCycles}

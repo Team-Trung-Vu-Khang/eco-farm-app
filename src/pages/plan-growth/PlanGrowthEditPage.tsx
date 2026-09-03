@@ -351,7 +351,7 @@ export default function PlanGrowthEditPage({
   const purposeSelector = (
     <div className="space-y-4">
       <Label className="text-base font-bold text-slate-800">
-        Mục đích kế hoạch
+        Nhóm công việc
       </Label>
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
         {purposeOptions.map((type) => (
@@ -626,7 +626,7 @@ export default function PlanGrowthEditPage({
                   {isWorkflowContext && (
                     <div className="space-y-2">
                       <label className="text-xs text-muted-foreground font-black uppercase tracking-widest">
-                        Chu kỳ sinh trưởng
+                        Giai đoạn sinh trưởng
                       </label>
 
                       {inheritedCycles.length > 0 ? (
@@ -851,7 +851,7 @@ export default function PlanGrowthEditPage({
               <div className="flex items-start justify-between gap-4">
                 <div>
                   <h3 className="text-base font-bold text-slate-900">
-                    Danh sách hạng mục
+                    Danh sách hạng mục dự kiến
                   </h3>
                   <p className="mt-1 text-xs text-slate-500">
                     {isCultivation
