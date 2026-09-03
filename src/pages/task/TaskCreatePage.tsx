@@ -71,6 +71,7 @@ import { useTaskCategorySearch } from "../../features/task-category/hooks/useTas
 import { useSelectedWorkspaceId } from "../../features/workspace";
 import usePersonnelStore from "../../stores/usePersonnelStore";
 import useRegionStore from "../../stores/useRegionStore";
+import { useCropSupplyCatalog } from "../plan-growth/hooks/useCropSupplyCatalog";
 import {
   mapPlanResponseToPlan,
   mapWorkflowScopesToSelections,
@@ -83,7 +84,6 @@ import type {
   TaskAllocation,
 } from "../plan/types";
 import { getRepeatDatesText, isRepeatDateAllowed } from "../plan/utils/task";
-import { useCropSupplyCatalog } from "../plan-growth/hooks/useCropSupplyCatalog";
 import SimpleTaskForm from "./components/SimpleTaskForm";
 
 type TaskObjectiveType =
@@ -444,8 +444,7 @@ export default function TaskCreatePage() {
   const selectedPlanMaterialAllocations =
     selectedPlan?.materialAllocations || [];
   // AD_HOC can optionally use a selected plan as its resource template.
-  const usePlanResources =
-    formData.mode === "plan" || Boolean(formData.planId);
+  const usePlanResources = formData.mode === "plan" || Boolean(formData.planId);
   const resolvedSelectedStages =
     formData.selectedStages.length > 0
       ? formData.selectedStages
@@ -503,16 +502,17 @@ export default function TaskCreatePage() {
       if (!region) return;
 
       const regionKey = String(region.id);
-      const regionEntry: GeographicalTreeRegion =
-        groupedRegions.get(regionKey) ?? {
-          id: regionKey,
-          name: region.name || `Vùng #${region.id}`,
-          enterpriseId:
-            (selectedPlanResponse as any)?.enterpriseId ||
-            selectedEnterpriseId ||
-            undefined,
-          subAreas: [],
-        };
+      const regionEntry: GeographicalTreeRegion = groupedRegions.get(
+        regionKey,
+      ) ?? {
+        id: regionKey,
+        name: region.name || `Vùng #${region.id}`,
+        enterpriseId:
+          (selectedPlanResponse as any)?.enterpriseId ||
+          selectedEnterpriseId ||
+          undefined,
+        subAreas: [],
+      };
 
       if (scope.scopeType === "REGION") {
         groupedRegions.set(regionKey, {
@@ -743,7 +743,8 @@ export default function TaskCreatePage() {
             item.sourceWorkItemId != null &&
             task.sourceWorkItemId === item.sourceWorkItemId;
           const sameName =
-            Boolean(item.name?.trim()) && task.name?.trim() === item.name.trim();
+            Boolean(item.name?.trim()) &&
+            task.name?.trim() === item.name.trim();
           return sameStage && (sameSource || sameName);
         });
 
@@ -941,9 +942,11 @@ export default function TaskCreatePage() {
               candidate.materialName === material.materialName &&
               candidate.stageId === material.stageId,
           );
-          const supplyItemId = material.supplyItemId ?? planMaterial?.supplyItemId;
+          const supplyItemId =
+            material.supplyItemId ?? planMaterial?.supplyItemId;
           const unitBaseId = material.unitBaseId ?? planMaterial?.unitBaseId;
-          return typeof supplyItemId === "number" && typeof unitBaseId === "number"
+          return typeof supplyItemId === "number" &&
+            typeof unitBaseId === "number"
             ? {
                 supplyItemId,
                 unitBaseId,
@@ -952,7 +955,9 @@ export default function TaskCreatePage() {
             : null;
         })
         .filter(
-          (line): line is {
+          (
+            line,
+          ): line is {
             supplyItemId: number;
             unitBaseId: number;
             quantity: number;
@@ -979,12 +984,10 @@ export default function TaskCreatePage() {
         scopeType,
         scopeId,
         sourceWorkItemId,
-          taskCategoryId:
-            origin === "PLANNED"
-              ? null
-              : (stageTask?.taskCategoryId ??
-                planTask?.taskCategoryId ??
-                null),
+        taskCategoryId:
+          origin === "PLANNED"
+            ? null
+            : (stageTask?.taskCategoryId ?? planTask?.taskCategoryId ?? null),
         name:
           isSimpleMode || !stageName
             ? formData.name
@@ -1121,7 +1124,7 @@ export default function TaskCreatePage() {
                     <Switch
                       checked={formData.mode === "phat-sinh"}
                       className="data-[state=checked]:bg-amber-500 data-[state=unchecked]:bg-blue-500"
-                        onCheckedChange={(checked) => {
+                      onCheckedChange={(checked) => {
                         setFormData({
                           ...formData,
                           mode: checked ? "phat-sinh" : "plan",
@@ -1346,7 +1349,7 @@ export default function TaskCreatePage() {
                                     event.stopPropagation()
                                   }
                                   placeholder="Tìm theo tên hoặc mã kế hoạch..."
-                                  className="h-9 pl-8 text-sm"
+                                  className="h-9 pl-10 text-sm"
                                 />
                               </div>
                             </div>
@@ -1528,13 +1531,13 @@ export default function TaskCreatePage() {
                             (p) => String(p.id) === val,
                           );
                           const plan = p as any;
-                          const planMaterials = (plan?.materialAllocations || []).map(
-                            (material: any) => ({
-                              ...material,
-                              id: Date.now() + Math.random(),
-                              stageId: "Công việc phát sinh",
-                            }),
-                          );
+                          const planMaterials = (
+                            plan?.materialAllocations || []
+                          ).map((material: any) => ({
+                            ...material,
+                            id: Date.now() + Math.random(),
+                            stageId: "Công việc phát sinh",
+                          }));
                           const planTasks = (plan?.taskAllocations || []).map(
                             (task: any) => ({
                               ...task,
@@ -1552,11 +1555,15 @@ export default function TaskCreatePage() {
                             materials: planMaterials,
                             tasks: planTasks,
                             assignedTo: planPersonnel
-                              .filter((person: any) => person.role === "EXECUTOR")
+                              .filter(
+                                (person: any) => person.role === "EXECUTOR",
+                              )
                               .map((person: any) => person.fullName)
                               .filter(Boolean),
                             supervisors: planPersonnel
-                              .filter((person: any) => person.role === "MANAGER")
+                              .filter(
+                                (person: any) => person.role === "MANAGER",
+                              )
                               .map((person: any) => person.fullName)
                               .filter(Boolean),
                             qualityInspectors: planPersonnel
@@ -1593,7 +1600,7 @@ export default function TaskCreatePage() {
                                   event.stopPropagation()
                                 }
                                 placeholder="Tìm theo tên hoặc mã kế hoạch..."
-                                className="h-9 pl-8 text-sm"
+                                className="h-9 pl-10 text-sm"
                               />
                             </div>
                           </div>
@@ -1865,7 +1872,7 @@ export default function TaskCreatePage() {
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
                         <Input
                           placeholder="Tìm theo tên hoặc mã..."
-                          className="pl-9 h-9 text-sm"
+                          className="pl-10 h-9 text-sm"
                           value={searchSupervisor}
                           onChange={(e) => setSearchSupervisor(e.target.value)}
                         />
@@ -1963,7 +1970,7 @@ export default function TaskCreatePage() {
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
                         <Input
                           placeholder="Tìm theo tên hoặc mã..."
-                          className="pl-9 h-9 text-sm"
+                          className="pl-10 h-9 text-sm"
                           value={searchInspector}
                           onChange={(e) => setSearchInspector(e.target.value)}
                         />
