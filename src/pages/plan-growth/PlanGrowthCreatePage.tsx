@@ -164,7 +164,7 @@ export default function PlanGrowthCreatePage({
   const purposeSelector = (
     <div className="space-y-4">
       <Label className="text-base font-bold text-slate-800">
-        Mục đích kế hoạch
+        Nhóm công việc
       </Label>
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
         {purposeOptions.map((type) => (

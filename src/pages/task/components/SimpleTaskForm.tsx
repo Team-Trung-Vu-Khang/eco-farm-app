@@ -163,7 +163,7 @@ export default function SimpleTaskForm({
       </div>
 
       <div className="space-y-2">
-        <Label required>Loại công việc</Label>
+        <Label required>Nhóm công việc</Label>
         <div className="flex items-center justify-between gap-4 rounded-2xl border-2 border-slate-100 bg-white p-4">
           <div className="flex items-center gap-3">
             <div
@@ -183,7 +183,7 @@ export default function SimpleTaskForm({
                   formData.mode === "plan" ? "text-blue-700" : "text-slate-400",
                 )}
               >
-                Hạng mục dự kiến
+                Dự kiến
               </p>
               <p className="text-[10px] font-medium text-slate-400">
                 Từ một kế hoạch có sẵn
