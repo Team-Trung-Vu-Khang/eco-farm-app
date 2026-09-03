@@ -1,19 +1,12 @@
-import { useMemo } from "react";
 import {
   Badge,
   Button,
   DataTable,
   type Column,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import {
-  CheckCircle2,
-  Clock,
-  Eye,
-  Link2,
-  PackageOpen,
-  RefreshCw,
-  Zap,
-} from "lucide-react";
+import { Clock, Eye, Link2, PackageOpen, Zap } from "lucide-react";
+import { useMemo } from "react";
+import { useLocation } from "wouter";
 import type { TaskHistoryItem } from "../mock/history.mock";
 
 function formatDate(isoString: string) {
@@ -31,46 +24,15 @@ function formatDate(isoString: string) {
   return `${timeStr} ${dateStr}`;
 }
 
-function getStatusBadge(status: string) {
-  if (status === "COMPLETED") {
-    return (
-      <Badge
-        variant="outline"
-        className="bg-emerald-50 text-emerald-700 border-emerald-200 font-semibold gap-1 text-[11px]"
-      >
-        <CheckCircle2 className="w-3 h-3 text-emerald-600" />
-        Hoàn thành
-      </Badge>
-    );
-  }
-  if (status === "DOING") {
-    return (
-      <Badge
-        variant="outline"
-        className="bg-blue-50 text-blue-700 border-blue-200 font-semibold gap-1 text-[11px]"
-      >
-        <RefreshCw className="w-3 h-3 text-blue-600 animate-spin" />
-        Đang thực hiện
-      </Badge>
-    );
-  }
-  return (
-    <Badge
-      variant="outline"
-      className="bg-slate-50 text-slate-600 border-slate-200 font-semibold text-[11px]"
-    >
-      Chưa thực hiện
-    </Badge>
-  );
-}
-
 export function UpdateHistoryTable({
   data,
   onOpenDetail,
 }: {
   data: TaskHistoryItem[];
-  onOpenDetail: (task: TaskHistoryItem) => void;
+  onOpenDetail?: (task: TaskHistoryItem) => void;
 }) {
+  const [, setLocation] = useLocation();
+
   const columns = useMemo<Column<TaskHistoryItem>[]>(
     () => [
       {
@@ -134,11 +96,16 @@ export function UpdateHistoryTable({
             <div className="space-y-1.5 py-1 max-w-[420px]">
               <div className="flex items-center gap-2">
                 {log.completionPercent !== undefined && (
-                  <span className="text-[11px] font-black text-green-700 bg-green-50 border border-green-200 px-2 py-0.5 rounded-md">
+                  <span
+                    className={`text-[11px] font-black px-2 py-0.5 rounded-md border ${
+                      log.completionPercent === 100
+                        ? "text-green-700 bg-green-50 border-green-200"
+                        : "text-amber-700 bg-amber-50 border-amber-200"
+                    }`}
+                  >
                     {log.completionPercent}%
                   </span>
                 )}
-                {getStatusBadge(log.status)}
                 <span className="text-[11px] text-slate-500 font-medium truncate">
                   Bởi {log.updaterName}
                 </span>
@@ -183,9 +150,10 @@ export function UpdateHistoryTable({
                 variant="outline"
                 onClick={(e) => {
                   e.stopPropagation();
-                  onOpenDetail(row);
+                  setLocation(`/diary/update/${row.id}`);
+                  if (onOpenDetail) onOpenDetail(row);
                 }}
-                className="h-8 px-3 rounded-lg text-xs font-bold gap-1.5 border-slate-200 text-slate-700 hover:bg-slate-100 hover:text-slate-900 transition-all shadow-2xs"
+                className="h-8 px-3 rounded-lg text-xs font-bold gap-1.5 border-slate-200 text-slate-700 hover:bg-slate-100 hover:text-slate-900 transition-all shadow-2xs cursor-pointer"
               >
                 <Eye className="h-3.5 w-3.5 text-green-600" />
                 Xem chi tiết
@@ -196,14 +164,14 @@ export function UpdateHistoryTable({
         },
       },
     ],
-    [onOpenDetail],
+    [setLocation, onOpenDetail],
   );
 
   return (
     <DataTable
       columns={columns}
       data={data}
-      searchable
+      searchable={false}
       searchPlaceholder="Tìm kiếm công việc theo tên, mã..."
     />
   );

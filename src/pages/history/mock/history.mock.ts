@@ -7,6 +7,11 @@ export interface MockWorkflowItem {
   code: string;
   name: string;
   domainCode: string;
+  scopeType?: "REGION" | "AREA" | "PLOT";
+  scopeName?: string;
+  boundary?: [number, number][];
+  centerPoint?: [number, number];
+  scopes?: any[];
 }
 
 export interface MockPlanItem {
@@ -14,6 +19,7 @@ export interface MockPlanItem {
   workflowId: string;
   code: string;
   name: string;
+  objective?: string;
 }
 
 export interface MockTaskSupplyLine {
@@ -32,6 +38,21 @@ export interface MockTaskItem {
   workType: string;
   startDate: string;
   endDate: string;
+  taskCategory?: "Dự kiến" | "Phát sinh";
+  lastCompletionPercentage?: number;
+  updatedCount?: number;
+  remainingPercentage?: number;
+  priority?: string;
+  description?: string;
+  objective?: string;
+  manager?: {
+    name: string;
+    role: string;
+  };
+  inspector?: {
+    name: string;
+    role: string;
+  };
   supplyLines?: MockTaskSupplyLine[];
 }
 
@@ -41,38 +62,73 @@ export const MOCK_WORKFLOWS: MockWorkflowItem[] = [
   {
     id: "38",
     code: "WKF-0000035",
-    name: "WKF-0000035 - Tên sơ đồ",
+    name: "WKF-0000035 - Sơ đồ Canh tác Lúa Hữu cơ Vùng A",
     domainCode: "CROP",
+    scopeType: "REGION",
+    scopeName: "Vùng Canh tác Lúa A",
+    boundary: [
+      [10.762622, 106.660172],
+      [10.763522, 106.662172],
+      [10.761522, 106.663172],
+      [10.760622, 106.661172],
+    ],
+    centerPoint: [10.762072, 106.661672],
   },
   {
     id: "33",
     code: "WKF-0000033",
-    name: "WKF-0000033 - Sơ đồ A",
+    name: "WKF-0000033 - Sơ đồ Rau màu VietGAP Khu B1",
     domainCode: "CROP",
+    scopeType: "AREA",
+    scopeName: "Khu B1 (Rau ăn lá VietGAP)",
+    centerPoint: [11.532, 106.885],
   },
   {
     id: "10",
     code: "QT001",
-    name: "QT001 - Lúa hữu cơ 2024",
+    name: "QT001 - Lúa hữu cơ Đông Xuân 2024",
     domainCode: "CROP",
+    scopeType: "REGION",
+    scopeName: "Vùng Trồng Cây Ăn Quả Miền Tây",
+    boundary: [
+      [10.375, 105.432],
+      [10.378, 105.438],
+      [10.372, 105.441],
+      [10.369, 105.435],
+    ],
+    centerPoint: [10.3735, 105.4365],
   },
   {
     id: "11",
     code: "QT002",
-    name: "QT002 - Rau màu an toàn",
+    name: "QT002 - Quy trình Rau an toàn Lô 06",
     domainCode: "CROP",
+    scopeType: "PLOT",
+    scopeName: "Lô 06 — Luống cải ngọt",
+    centerPoint: [10.823, 106.629],
   },
   {
     id: "12",
     code: "QT003",
-    name: "QT003 - Cây ăn trái GAP",
+    name: "QT003 - Cây ăn trái GAP Vùng C",
     domainCode: "CROP",
+    scopeType: "REGION",
+    scopeName: "Vùng Canh Tác Cây Ăn Trái C",
+    boundary: [
+      [11.231, 107.012],
+      [11.235, 107.018],
+      [11.228, 107.022],
+    ],
+    centerPoint: [11.231, 107.017],
   },
   {
     id: "13",
     code: "QT004",
-    name: "QT004 - Nuôi tôm thẻ chân trắng",
+    name: "QT004 - Nuôi tôm thẻ chân trắng Ao 1",
     domainCode: "AQUACULTURE",
+    scopeType: "AREA",
+    scopeName: "Khu Nuôi Thủy Sản Ao Tôm 1",
+    centerPoint: [9.601, 105.972],
   },
 ];
 
@@ -81,49 +137,57 @@ export const MOCK_PLANS: MockPlanItem[] = [
     id: "3801",
     workflowId: "38",
     code: "PLN-3801",
-    name: "Kế hoạch Canh tác Vụ 1 - Tên sơ đồ",
+    name: "Kế hoạch Canh tác Vụ 1 - Sơ đồ 35",
+    objective: "Tăng năng suất lúa hữu cơ & Cải tạo độ phì nhiêu đất",
   },
   {
     id: "3802",
     workflowId: "38",
     code: "PLN-3802",
-    name: "Kế hoạch Thu hoạch & Bảo quản - Tên sơ đồ",
+    name: "Kế hoạch Thu hoạch & Bảo quản - Sơ đồ 35",
+    objective: "Thu hoạch đúng độ chín & Tối ưu hóa chuỗi bảo quản lạnh",
   },
   {
     id: "3301",
     workflowId: "33",
     code: "PLN-3301",
-    name: "Kế hoạch Canh tác - Sơ đồ A",
+    name: "Kế hoạch Canh tác Rau VietGAP - Sơ đồ A",
+    objective: "Đảm bảo tiêu chuẩn VietGAP & Kiểm soát dư lượng",
   },
   {
     id: "3302",
     workflowId: "33",
     code: "PLN-3302",
-    name: "Kế hoạch Chăm sóc Cây trồng mới kiểm thử",
+    name: "Kế hoạch Chăm sóc Cây trồng kiểm thử",
+    objective: "Thử nghiệm phân bón vi sinh thế hệ mới",
   },
   {
     id: "20",
     workflowId: "10",
     code: "KH-LUA-01",
     name: "Kế hoạch Vụ Đông Xuân 2024",
+    objective: "Sản xuất lúa chất lượng cao xuất khẩu",
   },
   {
     id: "21",
     workflowId: "11",
     code: "KH-RAU-02",
     name: "Kế hoạch Hè Thu 2024",
+    objective: "Cung cấp rau sạch cho chuỗi siêu thị",
   },
   {
     id: "22",
     workflowId: "12",
-    code: "KH-CAT-01",
-    name: "Kế hoạch Chăm sóc Q1/2025",
+    code: "KH-RAU-03",
+    name: "Kế hoạch Phun thuốc BVTV Vụ Đông",
+    objective: "Kiểm soát sâu bệnh hại cây trồng",
   },
   {
     id: "23",
     workflowId: "13",
     code: "KH-TOM-01",
-    name: "Kế hoạch Nuôi tôm Vụ 1/2024",
+    name: "Kế hoạch Nuôi tôm nước lợ 2024",
+    objective: "Nuôi tôm thẻ chân trắng năng suất cao",
   },
 ];
 
@@ -136,6 +200,21 @@ export const MOCK_TASKS_LIST: MockTaskItem[] = [
     workType: "amendment",
     startDate: "2026-09-05",
     endDate: "2026-09-10",
+    taskCategory: "Dự kiến",
+    lastCompletionPercentage: 60,
+    updatedCount: 3,
+    remainingPercentage: 40,
+    priority: "Quan trọng",
+    objective: "Tăng năng suất lúa hữu cơ & Cải tạo độ phì nhiêu đất",
+    description: "Tiến hành cày xới đất sâu 20cm, bón lót phân NPK 20-20-15 kết hợp vôi bột nâng pH cho đất trước khi gieo sạ đợt 1.",
+    manager: {
+      name: "Nguyễn Văn Hùng",
+      role: "Kỹ sư Canh tác Trưởng",
+    },
+    inspector: {
+      name: "Trần Thị Mai",
+      role: "Chuyên viên Kiểm định Chất lượng",
+    },
     supplyLines: [
       {
         id: 1,
@@ -161,6 +240,21 @@ export const MOCK_TASKS_LIST: MockTaskItem[] = [
     workType: "treatment",
     startDate: "2026-09-15",
     endDate: "2026-09-18",
+    taskCategory: "Dự kiến",
+    lastCompletionPercentage: 30,
+    updatedCount: 1,
+    remainingPercentage: 70,
+    priority: "Bình thường",
+    objective: "Tăng năng suất lúa hữu cơ & Cải tạo độ phì nhiêu đất",
+    description: "Phun phòng ngừa rầy nâu và bệnh đạo ôn lá bằng chế phẩm sinh học vi sinh.",
+    manager: {
+      name: "Lê Hoàng Nam",
+      role: "Quản lý Bảo vệ Thực vật",
+    },
+    inspector: {
+      name: "Phạm Văn Minh",
+      role: "Kiểm định viên ISO",
+    },
     supplyLines: [
       {
         id: 3,
@@ -179,6 +273,30 @@ export const MOCK_TASKS_LIST: MockTaskItem[] = [
     workType: "harvest",
     startDate: "2026-10-01",
     endDate: "2026-10-05",
+    taskCategory: "Dự kiến",
+    lastCompletionPercentage: 0,
+    updatedCount: 0,
+    remainingPercentage: 100,
+    priority: "Quan trọng",
+    objective: "Thu hoạch đúng độ chín & Tối ưu hóa chuỗi bảo quản lạnh",
+    description: "Hái nông sản đạt chuẩn độ chín 85%, đóng thùng xốp vận chuyển về kho mát.",
+    manager: {
+      name: "Nguyễn Văn Hùng",
+      role: "Kỹ sư Canh tác Trưởng",
+    },
+    inspector: {
+      name: "Trần Thị Mai",
+      role: "Chuyên viên Kiểm định Chất lượng",
+    },
+    supplyLines: [
+      {
+        id: 5,
+        name: "Thùng xốp bảo quản",
+        plannedQty: "100",
+        actualQty: "100",
+        unit: "Cái",
+      },
+    ],
   },
   {
     id: "10331",
@@ -188,6 +306,22 @@ export const MOCK_TASKS_LIST: MockTaskItem[] = [
     workType: "cultivation",
     startDate: "2026-09-02",
     endDate: "2026-09-06",
+    supplyLines: [
+      {
+        id: 6,
+        name: "Ống tưới nhỏ giọt PE 16mm",
+        plannedQty: "200",
+        actualQty: "200",
+        unit: "mét",
+      },
+      {
+        id: 7,
+        name: "Đầu béc tưới phun bù áp 8L/h",
+        plannedQty: "50",
+        actualQty: "50",
+        unit: "Cái",
+      },
+    ],
   },
   {
     id: "10332",
@@ -197,6 +331,15 @@ export const MOCK_TASKS_LIST: MockTaskItem[] = [
     workType: "treatment",
     startDate: "2026-09-08",
     endDate: "2026-09-12",
+    supplyLines: [
+      {
+        id: 8,
+        name: "Chế phẩm sinh học Trichoderma",
+        plannedQty: "10",
+        actualQty: "10",
+        unit: "kg",
+      },
+    ],
   },
   {
     id: "10333",
@@ -206,6 +349,15 @@ export const MOCK_TASKS_LIST: MockTaskItem[] = [
     workType: "amendment",
     startDate: "2026-09-15",
     endDate: "2026-09-20",
+    supplyLines: [
+      {
+        id: 9,
+        name: "Phân trùn trùng hữu cơ",
+        plannedQty: "300",
+        actualQty: "300",
+        unit: "kg",
+      },
+    ],
   },
   {
     id: "101",
@@ -226,16 +378,79 @@ export const MOCK_TASKS_LIST: MockTaskItem[] = [
     ],
   },
   {
+    id: "1",
+    planId: "20",
+    code: "CV-0001",
+    name: "Kiểm tra sức khỏe cây trồng đợt 1",
+    workType: "cultivation",
+    startDate: "2024-03-10",
+    endDate: "2024-03-15",
+    supplyLines: [
+      {
+        id: 4,
+        name: "Phân hữu cơ vi sinh",
+        plannedQty: "200",
+        actualQty: "200",
+        unit: "kg",
+      },
+    ],
+  },
+  {
     id: "103",
     planId: "20",
     code: "CV-0003",
-    name: "Thu hoạch lúa Đông Xuân",
+    name: "Thu hoạch lúa Đông Xuân — Lô 01 & Lô 02",
     workType: "harvest",
     startDate: "2024-08-20",
     endDate: "2024-08-25",
+    supplyLines: [
+      {
+        id: 10,
+        name: "Bao PP đóng gói 50kg",
+        plannedQty: "500",
+        actualQty: "500",
+        unit: "Cái",
+      },
+    ],
+  },
+  {
+    id: "3",
+    planId: "20",
+    code: "CV-0003",
+    name: "Thu hoạch lúa Đông Xuân — Lô 01 & Lô 02",
+    workType: "harvest",
+    startDate: "2024-08-20",
+    endDate: "2024-08-25",
+    supplyLines: [
+      {
+        id: 10,
+        name: "Bao PP đóng gói 50kg",
+        plannedQty: "500",
+        actualQty: "500",
+        unit: "Cái",
+      },
+    ],
   },
   {
     id: "102",
+    planId: "21",
+    code: "CV-0002",
+    name: "Bón phân đợt 2 — Vụ rau màu Hè Thu",
+    workType: "cultivation",
+    startDate: "2024-09-05",
+    endDate: "2024-09-07",
+    supplyLines: [
+      {
+        id: 5,
+        name: "Phân NPK 20-20-15",
+        plannedQty: "150",
+        actualQty: "150",
+        unit: "kg",
+      },
+    ],
+  },
+  {
+    id: "2",
     planId: "21",
     code: "CV-0002",
     name: "Bón phân đợt 2 — Vụ rau màu Hè Thu",
@@ -262,7 +477,25 @@ export const MOCK_TASKS_LIST: MockTaskItem[] = [
     endDate: "2025-01-12",
   },
   {
+    id: "4",
+    planId: "22",
+    code: "CV-0004",
+    name: "Phun thuốc trừ sâu đợt 1 — Khu C",
+    workType: "treatment",
+    startDate: "2025-01-10",
+    endDate: "2025-01-12",
+  },
+  {
     id: "105",
+    planId: "23",
+    code: "CV-0005",
+    name: "Cho tôm ăn và kiểm tra chất lượng nước",
+    workType: "cultivation",
+    startDate: "2024-04-01",
+    endDate: "2024-04-05",
+  },
+  {
+    id: "5",
     planId: "23",
     code: "CV-0005",
     name: "Cho tôm ăn và kiểm tra chất lượng nước",
@@ -730,6 +963,13 @@ export interface SupplyActualRecord {
   unit: string;
 }
 
+export interface HarvestRecord {
+  id: string | number;
+  targetLabel: string;
+  quantity: string;
+  unit: string;
+}
+
 export interface UpdateLogEntry {
   id: string | number;
   updatedAt: string;
@@ -739,6 +979,7 @@ export interface UpdateLogEntry {
   status: "DOING" | "COMPLETED" | "TODO";
   note: string;
   supplies?: SupplyActualRecord[];
+  harvestDetails?: HarvestRecord[];
   images?: string[];
 }
 
@@ -747,6 +988,7 @@ export interface TaskHistoryItem {
   taskCode: string;
   taskName: string;
   origin: "PLANNED" | "AD_HOC";
+  workflowCode?: string;
   workflowName?: string;
   workflowId?: number | string;
   planCode?: string;
@@ -763,6 +1005,7 @@ export const MOCK_UPDATE_HISTORY: TaskHistoryItem[] = [
     taskCode: "CV-3801",
     taskName: "Bón phân lót và làm đất - Sơ đồ 35",
     origin: "PLANNED",
+    workflowCode: "WKF-0000035",
     workflowName: "WKF-0000035 - Tên sơ đồ",
     workflowId: 38,
     planCode: "PLN-3801",
@@ -819,6 +1062,10 @@ export const MOCK_UPDATE_HISTORY: TaskHistoryItem[] = [
             unit: "kg",
           },
         ],
+        images: [
+          "https://images.unsplash.com/photo-1592982537447-7440770cbfc9?auto=format&fit=crop&w=400&q=80",
+          "https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=400&q=80",
+        ],
       },
       {
         id: "upd-3801-2",
@@ -836,6 +1083,9 @@ export const MOCK_UPDATE_HISTORY: TaskHistoryItem[] = [
             actualQty: "50",
             unit: "kg",
           },
+        ],
+        images: [
+          "https://images.unsplash.com/photo-1595974482597-4b8da8879bc5?auto=format&fit=crop&w=400&q=80",
         ],
       },
       {
@@ -909,10 +1159,97 @@ export const MOCK_UPDATE_HISTORY: TaskHistoryItem[] = [
     ],
   },
   {
+    id: 104,
+    taskCode: "CV-3802-TH",
+    taskName: "Thu hoạch lúa ST25 hữu cơ đợt 1",
+    origin: "PLANNED",
+    workflowCode: "WKF-0000035",
+    workflowName: "WKF-0000035 - Sơ đồ 35",
+    workflowId: 38,
+    planCode: "PLN-3801",
+    planName: "Kế hoạch Canh tác Vụ 1 - Tên sơ đồ",
+    planId: 3801,
+    taskCategoryName: "Thu hoạch",
+    latestUpdate: {
+      id: "upd-harvest-1",
+      updatedAt: "2026-09-02T14:30:00Z",
+      updaterName: "Trần Văn Bình",
+      updaterRole: "Đội trưởng thu hoạch",
+      completionPercent: 100,
+      status: "COMPLETED",
+      note: "Đã hoàn thành gặt và tuốt lúa đợt 1 tại Vùng Canh Tác Lúa A (Lô A1, A2). Chất lượng hạt lúa vàng đều, độ ẩm đạt tiêu chuẩn.",
+      harvestDetails: [
+        {
+          id: "h-3802-1",
+          targetLabel: "Vùng Canh Tác Lúa A - Lô A1",
+          quantity: "1500",
+          unit: "kg",
+        },
+        {
+          id: "h-3802-2",
+          targetLabel: "Vùng Canh Tác Lúa A - Lô A2",
+          quantity: "1250",
+          unit: "kg",
+        },
+      ],
+      images: [
+        "https://images.unsplash.com/photo-1586771107445-d3ca888129ff?auto=format&fit=crop&w=400&q=80",
+        "https://images.unsplash.com/photo-1595974482597-4b8da8879bc5?auto=format&fit=crop&w=400&q=80",
+      ],
+    },
+    historyLogs: [
+      {
+        id: "upd-harvest-1",
+        updatedAt: "2026-09-02T14:30:00Z",
+        updaterName: "Trần Văn Bình",
+        updaterRole: "Đội trưởng thu hoạch",
+        completionPercent: 100,
+        status: "COMPLETED",
+        note: "Đã hoàn thành gặt và tuốt lúa đợt 1 tại Vùng Canh Tác Lúa A (Lô A1, A2). Chất lượng hạt lúa vàng đều, độ ẩm đạt tiêu chuẩn.",
+        harvestDetails: [
+          {
+            id: "h-3802-1",
+            targetLabel: "Vùng Canh Tác Lúa A - Lô A1",
+            quantity: "1500",
+            unit: "kg",
+          },
+          {
+            id: "h-3802-2",
+            targetLabel: "Vùng Canh Tác Lúa A - Lô A2",
+            quantity: "1250",
+            unit: "kg",
+          },
+        ],
+        images: [
+          "https://images.unsplash.com/photo-1586771107445-d3ca888129ff?auto=format&fit=crop&w=400&q=80",
+          "https://images.unsplash.com/photo-1595974482597-4b8da8879bc5?auto=format&fit=crop&w=400&q=80",
+        ],
+      },
+      {
+        id: "upd-harvest-0",
+        updatedAt: "2026-09-01T09:00:00Z",
+        updaterName: "Hoàng Văn Em",
+        updaterRole: "Kỹ thuật viên",
+        completionPercent: 40,
+        status: "DOING",
+        note: "Huy động máy gặt đập liên hợp và nhân công tập kết bao chứa lúa tại khu vựa kho bãi.",
+        harvestDetails: [
+          {
+            id: "h-3802-0",
+            targetLabel: "Vùng Canh Tác Lúa A - Lô A1",
+            quantity: "500",
+            unit: "kg",
+          },
+        ],
+      },
+    ],
+  },
+  {
     id: 103,
     taskCode: "CV-3301",
     taskName: "Kiểm thử tưới nước tự động - Sơ đồ A",
     origin: "PLANNED",
+    workflowCode: "WKF-0000033",
     workflowName: "WKF-0000033 - Sơ đồ A",
     workflowId: 33,
     planCode: "PLN-3301",

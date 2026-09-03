@@ -108,188 +108,217 @@ export function StageMaterialPicker({
     });
   };
 
+  const stageAllocations = allocations.filter((a) => a.stageId === stageKey);
+
   return (
-    <div className="space-y-3">
-      {allocations.length > 0 && (
-        <div className="space-y-2.5">
-          {allocations.map((a) => (
+    <div className="space-y-4">
+      {stageAllocations.length > 0 && (
+        <div className="space-y-3">
+          {stageAllocations.map((a) => (
             <div
               key={a.id}
-              className="rounded-2xl border border-slate-100 bg-slate-50/50 p-3.5 space-y-2.5 transition-all"
+              className="rounded-2xl border border-slate-200/90 bg-slate-50/50 p-4 space-y-3 transition-all"
             >
               <div className="flex items-center justify-between gap-2">
-                <div className="flex items-center gap-2.5 min-w-0">
-                  <div
-                    className={`h-7 w-7 rounded-xl flex items-center justify-center shrink-0 ${
-                      a.isPlanned
-                        ? "bg-amber-100 text-amber-700"
-                        : "bg-blue-100 text-blue-700"
-                    }`}
-                  >
-                    <Link2 className="h-3.5 w-3.5" />
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="h-8 w-8 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center shrink-0">
+                    <Link2 className="h-4 w-4" />
                   </div>
-                  <span className="font-bold text-sm text-slate-850 truncate">
+                  <span className="font-bold text-sm text-slate-900 truncate">
                     {a.materialName}
                   </span>
                 </div>
 
                 <div className="flex items-center gap-2 shrink-0">
-                  {a.isPlanned && a.quantity && (
-                    <span className="text-xs font-medium text-slate-400">
+                  {a.quantity && (
+                    <span className="text-xs font-semibold text-slate-400">
                       KH: {a.quantity} {a.unit}
                     </span>
-                  )}
-                  {!a.isPlanned && (
-                    <button
-                      type="button"
-                      onClick={() => onRemoveMaterial(a.id)}
-                      className="text-slate-400 hover:text-red-500 p-1 rounded-lg hover:bg-red-50 transition-colors"
-                      title="Xóa vật tư này"
-                    >
-                      <X className="h-4 w-4" />
-                    </button>
                   )}
                 </div>
               </div>
 
               <div className="flex items-center gap-3 pt-1">
-                <span className="text-xs font-medium text-slate-600 shrink-0">
-                  Thực tế ({a.unit || "đơn vị"}):
+                <span className="text-xs font-semibold text-slate-600 shrink-0">
+                  Thực tế ({a.unit || "kg"}):
                 </span>
-                <Input
-                  type="number"
-                  min={0}
-                  placeholder="0"
-                  className="h-10 text-sm bg-white border-slate-200 focus:border-green-500 focus:ring-green-500/20 flex-1 font-semibold text-slate-800"
-                  value={a.actualQuantity ?? ""}
-                  onChange={(e) =>
-                    onUpdateActualQuantity?.(a.id, e.target.value)
-                  }
-                />
+                <div className="relative flex-1 flex items-center gap-2">
+                  <Input
+                    type="number"
+                    min={0}
+                    placeholder="0"
+                    className="h-10 text-sm bg-white border-slate-200 focus:border-green-500 focus:ring-green-500/20 rounded-xl font-bold text-slate-900"
+                    value={a.actualQuantity ?? ""}
+                    onChange={(e) =>
+                      onUpdateActualQuantity?.(a.id, e.target.value)
+                    }
+                  />
+                  <button
+                    type="button"
+                    onClick={() => onRemoveMaterial(a.id)}
+                    className="text-slate-400 hover:text-red-500 p-1.5 rounded-lg hover:bg-red-50 transition-colors shrink-0"
+                    title="Xóa vật tư này"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
               </div>
             </div>
           ))}
         </div>
       )}
 
-      <div className="grid grid-cols-12 gap-2">
-        <div className="col-span-3">
-          <Select
-            value={newItem.type}
-            onValueChange={(v) => {
-              const type = v as SupplyType;
-              setNewItem({
-                ...newItem,
-                type,
-                name: "",
-                unitBaseId: "",
-                searchValue: "",
-              });
-            }}
-          >
-            <SelectTrigger className="w-full h-9 text-xs bg-white border-slate-200">
-              <SelectValue placeholder="Loại..." />
-            </SelectTrigger>
-            <SelectContent>
-              {getSupplyTypeOptions(domainCode).map((type) => (
-                <SelectItem key={type.value} value={type.value}>
-                  {type.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
-        <div className="col-span-4">
-          <Select
-            value={newItem.name}
-            onValueChange={(val) => {
-              const item = searchedMaterials.find((m) => String(m.id) === val);
-              setNewItem({
-                ...newItem,
-                name: val,
-                unitBaseId:
-                  newItem.type === "equipment"
-                    ? "6"
-                    : String(item?.packagingVariants?.[0]?.unitBase?.id ?? ""),
-              });
-            }}
-          >
-            <SelectTrigger className="w-full h-9 text-xs bg-white border-slate-200">
-              <SelectValue
-                placeholder={
-                  isFetching
-                    ? "Đang tải..."
-                    : `Chọn ${selectedTypeOption?.label.toLowerCase() || "vật tư"}...`
-                }
-              />
-            </SelectTrigger>
-            <SelectContent>
-              {materialOptions.length > 0 ? (
-                materialOptions.map((item) => (
-                  <SelectItem key={item.value} value={item.value}>
-                    {item.label}
+      {/* Form thêm vật tư (Layout 2x2 thông thoáng) */}
+      <div className="space-y-3 pt-3 border-t border-slate-100">
+        <div className="grid grid-cols-2 gap-2.5">
+          {/* Row 1, Col 1: Loại vật tư */}
+          <div className="space-y-1">
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+              Loại vật tư
+            </span>
+            <Select
+              value={newItem.type}
+              onValueChange={(v) => {
+                const type = v as SupplyType;
+                setNewItem({
+                  ...newItem,
+                  type,
+                  name: "",
+                  unitBaseId: "",
+                  searchValue: "",
+                });
+              }}
+            >
+              <SelectTrigger className="w-full h-10 text-xs bg-white border-slate-200 rounded-xl font-medium">
+                <SelectValue placeholder="Loại vật tư..." />
+              </SelectTrigger>
+              <SelectContent>
+                {getSupplyTypeOptions(domainCode).map((type) => (
+                  <SelectItem key={type.value} value={type.value}>
+                    {type.label}
                   </SelectItem>
-                ))
-              ) : (
-                <div className="px-2 py-1.5 text-xs text-slate-400">
-                  {isFetching
-                    ? "Đang tìm kiếm..."
-                    : "Không tìm thấy kết quả phù hợp."}
-                </div>
-              )}
-            </SelectContent>
-          </Select>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Row 1, Col 2: Tên vật tư */}
+          <div className="space-y-1">
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+              Tên vật tư
+            </span>
+            <Select
+              value={newItem.name}
+              onValueChange={(val) => {
+                const item = searchedMaterials.find((m) => String(m.id) === val);
+                setNewItem({
+                  ...newItem,
+                  name: val,
+                  unitBaseId:
+                    newItem.type === "equipment"
+                      ? "6"
+                      : String(item?.packagingVariants?.[0]?.unitBase?.id ?? ""),
+                });
+              }}
+            >
+              <SelectTrigger className="w-full h-10 text-xs bg-white border-slate-200 rounded-xl font-medium">
+                <SelectValue
+                  placeholder={
+                    isFetching
+                      ? "Đang tải..."
+                      : `Chọn ${selectedTypeOption?.label.toLowerCase() || "vật tư"}...`
+                  }
+                />
+              </SelectTrigger>
+              <SelectContent>
+                {materialOptions.length > 0 ? (
+                  materialOptions.map((item) => (
+                    <SelectItem key={item.value} value={item.value}>
+                      {item.label}
+                    </SelectItem>
+                  ))
+                ) : (
+                  <div className="px-2 py-1.5 text-xs text-slate-400">
+                    {isFetching
+                      ? "Đang tìm kiếm..."
+                      : "Không tìm thấy kết quả phù hợp."}
+                  </div>
+                )}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Row 2, Col 1: Số lượng */}
+          <div className="space-y-1">
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+              Số lượng
+            </span>
+            <Input
+              type="number"
+              min={0}
+              placeholder="Nhập số lượng..."
+              className="h-10 text-xs bg-white border-slate-200 rounded-xl font-medium"
+              value={newItem.qty}
+              onChange={(e) => setNewItem({ ...newItem, qty: e.target.value })}
+            />
+          </div>
+
+          {/* Row 2, Col 2: Đơn vị */}
+          <div className="space-y-1">
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+              Đơn vị tính
+            </span>
+            <Select
+              disabled={!newItem.name}
+              value={newItem.unitBaseId}
+              onValueChange={(val) => setNewItem({ ...newItem, unitBaseId: val })}
+            >
+              <SelectTrigger
+                className={`w-full h-10 text-xs rounded-xl font-medium ${
+                  !newItem.name
+                    ? "bg-slate-50 opacity-60 cursor-not-allowed border-slate-200"
+                    : "bg-white border-slate-200"
+                }`}
+              >
+                <SelectValue
+                  placeholder={
+                    !newItem.name
+                      ? "Chưa chọn vật tư"
+                      : isEquipment
+                        ? "Cái / Chiếc"
+                        : "Chọn đơn vị..."
+                  }
+                />
+              </SelectTrigger>
+              <SelectContent>
+                {packagingVariantOptions.length > 0 ? (
+                  packagingVariantOptions.map((variant) => (
+                    <SelectItem
+                      key={variant.unitBase?.id ?? variant.unitBase?.name}
+                      value={String(variant.unitBase?.id)}
+                    >
+                      {variant.unitBase?.name ||
+                        variant.packagingType?.name ||
+                        ""}
+                    </SelectItem>
+                  ))
+                ) : isEquipment ? (
+                  <SelectItem value="6">Cái / Chiếc</SelectItem>
+                ) : null}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
 
-        <div className="col-span-3">
-          <Input
-            type="number"
-            placeholder="Số lượng"
-            className="h-9 text-xs bg-white border-slate-200"
-            value={newItem.qty}
-            onChange={(e) => setNewItem({ ...newItem, qty: e.target.value })}
-          />
-        </div>
-
-        <div className="col-span-2">
-          <Select
-            value={newItem.unitBaseId}
-            onValueChange={(val) => setNewItem({ ...newItem, unitBaseId: val })}
-          >
-            <SelectTrigger className="w-full h-9 text-xs bg-white border-slate-200">
-              <SelectValue
-                placeholder={isEquipment ? "Cái / Chiếc" : "Đơn vị..."}
-              />
-            </SelectTrigger>
-            <SelectContent>
-              {packagingVariantOptions.length > 0 ? (
-                packagingVariantOptions.map((variant) => (
-                  <SelectItem
-                    key={variant.unitBase?.id ?? variant.unitBase?.name}
-                    value={String(variant.unitBase?.id)}
-                  >
-                    {variant.unitBase?.name ||
-                      variant.packagingType?.name ||
-                      ""}
-                  </SelectItem>
-                ))
-              ) : isEquipment ? (
-                <SelectItem value="6">Cái / Chiếc</SelectItem>
-              ) : null}
-            </SelectContent>
-          </Select>
-        </div>
+        <Button
+          type="button"
+          className="h-10 w-full bg-slate-900 hover:bg-slate-800 font-bold text-xs gap-1.5 text-white rounded-xl shadow-2xs mt-1"
+          onClick={handleAdd}
+        >
+          <Plus className="w-4 h-4" />
+          Thêm vật tư
+        </Button>
       </div>
-      <Button
-        type="button"
-        size="sm"
-        className="h-9 w-full bg-slate-900 hover:bg-slate-800 font-bold text-xs gap-1"
-        onClick={handleAdd}
-      >
-        <Plus className="w-3.5 h-3.5" />
-        Thêm vật tư
-      </Button>
     </div>
   );
 }

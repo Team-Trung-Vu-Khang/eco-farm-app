@@ -3,9 +3,9 @@ import { MOCK_DIARY_ENTRIES } from "../data/mock-diary-entries";
 import type { DiaryWorkType } from "../types";
 
 export interface DiaryAdvancedFilters {
-  workflowIds: number[];
-  planIds: number[];
-  workTypes: DiaryWorkType[];
+  workflowIds: (string | number)[];
+  planIds: (string | number)[];
+  workTypes: (DiaryWorkType | string)[];
   fromDate: string;
   toDate: string;
 }
@@ -42,12 +42,13 @@ export function useDiaryLookupPage() {
   }, []);
 
   const planOptions = useMemo(() => {
-    const map = new Map<number, { id: string; name: string }>();
+    const map = new Map<number, { id: string; name: string; workflowId?: string }>();
     MOCK_DIARY_ENTRIES.forEach((entry) => {
       if (!map.has(entry.plan.id)) {
         map.set(entry.plan.id, {
           id: String(entry.plan.id),
           name: `${entry.plan.code} - ${entry.plan.name}`,
+          workflowId: String(entry.workflow.id),
         });
       }
     });

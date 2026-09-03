@@ -39,7 +39,7 @@ export function GeographicalSelectionCard({
       <div className="p-4">
         {/* Top Header */}
         <div className="flex items-start gap-3">
-          <div className="p-2.5 rounded-xl bg-orange-500 text-white shrink-0 shadow-xs">
+          <div className="p-2.5 rounded-xl bg-green-600 text-white shrink-0 shadow-xs">
             <MapPin className="w-5 h-5" />
           </div>
 
@@ -47,7 +47,7 @@ export function GeographicalSelectionCard({
             <div className="flex items-center justify-between mb-1">
               <Badge
                 variant="outline"
-                className="text-[10px] uppercase font-bold tracking-wider py-0 px-2 h-5 border-orange-200 text-orange-700 bg-orange-50"
+                className="text-[10px] uppercase font-bold tracking-wider py-0 px-2 h-5 border-green-200 text-green-700 bg-green-50"
               >
                 {primaryType}
               </Badge>
@@ -56,7 +56,7 @@ export function GeographicalSelectionCard({
                   type="button"
                   variant="ghost"
                   size="sm"
-                  className="h-7 px-2.5 text-xs text-orange-600 font-bold hover:bg-orange-50 rounded-lg"
+                  className="h-7 px-2.5 text-xs text-green-600 font-bold hover:bg-green-50 rounded-lg"
                   onClick={onChangeLocation}
                 >
                   Thay đổi
@@ -89,7 +89,7 @@ export function GeographicalSelectionCard({
           <button
             type="button"
             onClick={() => setIsExpanded(!isExpanded)}
-            className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest text-slate-400 hover:text-orange-600 transition-colors mb-2"
+            className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest text-slate-400 hover:text-green-600 transition-colors mb-2"
           >
             {isExpanded ? (
               <ChevronDown className="w-3 h-3" />
@@ -103,8 +103,8 @@ export function GeographicalSelectionCard({
             <div className="mt-4 relative space-y-4">
               {/* Level 1: Vùng trồng (Cấp 1 - Gốc) */}
               <div className="flex items-center gap-3 relative z-10 pl-2">
-                <div className="w-8 h-8 rounded-lg bg-orange-50 border border-orange-200 flex items-center justify-center shrink-0 shadow-xs">
-                  <MapPin className="w-4 h-4 text-orange-600" />
+                <div className="w-8 h-8 rounded-lg bg-green-50 border border-green-200 flex items-center justify-center shrink-0 shadow-xs">
+                  <MapPin className="w-4 h-4 text-green-600" />
                 </div>
                 <div className="min-w-0 flex-1">
                   <div className="text-[10px] text-slate-400 font-bold uppercase tracking-wider leading-none mb-1">
@@ -115,7 +115,7 @@ export function GeographicalSelectionCard({
                   </div>
                 </div>
                 {!areaName && !plotName && (
-                  <Badge className="ml-auto bg-orange-100 text-orange-700 border-none text-[10px] font-bold">
+                  <Badge className="ml-auto bg-green-100 text-green-700 border-none text-[10px] font-bold">
                     Đã chọn vùng
                   </Badge>
                 )}
@@ -129,11 +129,11 @@ export function GeographicalSelectionCard({
                   <div className="absolute left-6 -top-4 w-px h-8 bg-slate-200" />
 
                   <div className="flex items-center gap-3 relative z-10 pl-4 py-1">
-                    <div className="w-8 h-8 rounded-lg bg-amber-50 border border-amber-200 flex items-center justify-center shrink-0 shadow-xs">
-                      <Layers className="w-4 h-4 text-amber-600" />
+                    <div className="w-8 h-8 rounded-lg bg-green-50 border border-green-200 flex items-center justify-center shrink-0 shadow-xs">
+                      <Layers className="w-4 h-4 text-green-600" />
                     </div>
                     <div className="min-w-0 flex-1">
-                      <div className="text-[10px] text-amber-600/70 font-bold uppercase tracking-wider leading-none mb-1">
+                      <div className="text-[10px] text-green-600/70 font-bold uppercase tracking-wider leading-none mb-1">
                         Khu vực
                       </div>
                       <div className="text-xs font-bold text-slate-800 truncate">
@@ -141,7 +141,7 @@ export function GeographicalSelectionCard({
                       </div>
                     </div>
                     {!plotName && (
-                      <Badge className="ml-auto bg-amber-100 text-amber-700 border-none text-[10px] font-bold">
+                      <Badge className="ml-auto bg-green-100 text-green-700 border-none text-[10px] font-bold">
                         Đã chọn khu
                       </Badge>
                     )}
@@ -157,18 +157,18 @@ export function GeographicalSelectionCard({
                   <div className="absolute left-12 -top-4 w-px h-8 bg-slate-200" />
 
                   <div className="flex items-center gap-3 relative z-10 pl-4 py-1">
-                    <div className="w-8 h-8 rounded-lg bg-emerald-50 border border-emerald-200 flex items-center justify-center shrink-0 shadow-xs">
-                      <MapPin className="w-4 h-4 text-emerald-600" />
+                    <div className="w-8 h-8 rounded-lg bg-green-50 border border-green-200 flex items-center justify-center shrink-0 shadow-xs">
+                      <MapPin className="w-4 h-4 text-green-600" />
                     </div>
                     <div className="min-w-0 flex-1">
-                      <div className="text-[10px] text-emerald-600/70 font-bold uppercase tracking-wider leading-none mb-1">
+                      <div className="text-[10px] text-green-600/70 font-bold uppercase tracking-wider leading-none mb-1">
                         Lô đất
                       </div>
                       <div className="text-xs font-bold text-slate-800 truncate">
                         {plotName}
                       </div>
                     </div>
-                    <Badge className="ml-auto bg-emerald-100 text-emerald-700 border-none text-[10px] font-bold">
+                    <Badge className="ml-auto bg-green-100 text-green-700 border-none text-[10px] font-bold">
                       Đã chọn lô
                     </Badge>
                   </div>
