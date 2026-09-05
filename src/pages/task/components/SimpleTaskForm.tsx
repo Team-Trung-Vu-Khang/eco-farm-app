@@ -77,6 +77,7 @@ interface SimpleTaskFormProps {
   handleComplete: () => void;
   goBack: () => void;
   completeLabel?: string;
+  lockPlanSelection?: boolean;
 }
 
 export default function SimpleTaskForm({
@@ -87,6 +88,7 @@ export default function SimpleTaskForm({
   handleComplete,
   goBack,
   completeLabel = "Hoàn tất & Khởi tạo",
+  lockPlanSelection = false,
 }: SimpleTaskFormProps) {
   const mainSubtask = formData.tasks[0];
   const isRepeating = Boolean(mainSubtask?.isRepeating);
@@ -243,11 +245,12 @@ export default function SimpleTaskForm({
         <Label required>Vụ mùa / Vụ nuôi</Label>
         <Select
           value={formData.regimenId}
+          disabled={lockPlanSelection}
           onValueChange={(value) =>
             setFormData((prev) => ({ ...prev, regimenId: value }))
           }
         >
-          <SelectTrigger>
+          <SelectTrigger className="disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-500 disabled:opacity-80">
             <SelectValue placeholder="Chọn vụ mùa / vụ nuôi..." />
           </SelectTrigger>
           <SelectContent>
@@ -271,7 +274,7 @@ export default function SimpleTaskForm({
         </Label>
         <Select
           value={formData.planId}
-          disabled={!formData.regimenId || plans.length === 0}
+          disabled={lockPlanSelection || !formData.regimenId || plans.length === 0}
           onValueChange={(value) => {
             const selectedPlan = plans.find(
               (plan) => String(plan.id) === value,
@@ -284,7 +287,7 @@ export default function SimpleTaskForm({
             }));
           }}
         >
-          <SelectTrigger>
+          <SelectTrigger className="disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-500 disabled:opacity-80">
             <SelectValue placeholder="Chọn kế hoạch triển khai..." />
           </SelectTrigger>
           <SelectContent>
@@ -298,6 +301,11 @@ export default function SimpleTaskForm({
         {!formData.regimenId && (
           <p className="text-[11px] font-medium text-slate-400">
             Chọn vụ mùa / vụ nuôi trước để tải kế hoạch.
+          </p>
+        )}
+        {lockPlanSelection && (
+          <p className="text-[11px] font-medium text-slate-400">
+            Kế hoạch đã được cố định từ liên kết phân bổ công việc.
           </p>
         )}
       </div>

@@ -45,6 +45,11 @@ import {
   parseLocalISODate,
 } from "../utils/task";
 
+function getStageDisplayName(stageName: string) {
+  const [, displayName] = stageName.match(/^api-stage-\d+:(.+)$/) || [];
+  return displayName || stageName;
+}
+
 export const TaskStageAllocation = memo(
   ({
     stageName,
@@ -91,6 +96,8 @@ export const TaskStageAllocation = memo(
     availableMaterialsOnly?: boolean;
     showTaskPicker?: boolean;
   }) => {
+    const displayStageName = getStageDisplayName(stageName);
+
     // When the user clicks "Thêm" for the stage, we add a blank task
     const handleAddBlankTask = () => {
       onAddTask({
@@ -108,7 +115,9 @@ export const TaskStageAllocation = memo(
         {/* Header */}
         <div className="bg-slate-900 px-5 py-4 flex justify-between items-center text-white">
           <div className="flex items-center gap-3">
-            <h4 className="font-black text-lg">Giai đoạn {stageName}</h4>
+            <h4 className="font-black text-lg">
+              Giai đoạn {displayStageName}
+            </h4>
             {cycleName && (
               <Badge className="bg-white/20 text-white border-none font-bold">
                 {cycleName}
@@ -427,7 +436,7 @@ const TaskBlock = ({
                       selectedTask?.geographicalSelections || [],
                   });
                 }}
-                placeholder="Danh sách công việc trong kế hoạch"
+                placeholder="Danh sách hạng mục công việc trong kế hoạch"
                 searchPlaceholder="Tìm kiếm công việc..."
                 className="w-full font-bold bg-slate-50 border-slate-200"
               />

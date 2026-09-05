@@ -36,7 +36,7 @@ export const taskColumns: Column<Task>[] = [
   { key: "code", label: "Mã", render: (value) => <CodeBadge value={value} /> },
   { key: "name", label: "Tên công việc" },
   { key: "plan", label: "Kế hoạch" },
-  { key: "stage", label: "Giai đoạn" },
+  { key: "stage", label: "Hạng mục công việc" },
   {
     key: "assignedTo",
     label: "Phân công",

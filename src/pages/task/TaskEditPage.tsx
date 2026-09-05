@@ -2736,7 +2736,7 @@ export default function TaskEditPage() {
                       sub: "danh mục",
                     },
                     {
-                      label: "Giai đoạn",
+                      label: "Hạng mục công việc",
                       value: formData.selectedStages.length || "—",
                       sub: "áp dụng",
                     },

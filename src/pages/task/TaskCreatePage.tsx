@@ -256,6 +256,13 @@ export default function TaskCreatePage() {
   const presetPlanQuery = useFarmPlanById(presetPlanId || "0", {
     enabled: !!presetPlanId,
   });
+  const mappedPresetPlan = useMemo(
+    () =>
+      presetPlanQuery.data
+        ? mapPlanResponseToPlan(presetPlanQuery.data)
+        : undefined,
+    [presetPlanQuery.data],
+  );
   const workflowsQuery = useFarmWorkflows({
     params: { page: 0, size: MAX_API_PAGE_SIZE },
   });
@@ -288,7 +295,7 @@ export default function TaskCreatePage() {
 
   useEffect(() => {
     const presetPlan = presetPlanQuery.data;
-    if (!presetPlan || !presetPlanId) return;
+    if (!presetPlan || !mappedPresetPlan || !presetPlanId) return;
 
     // The form needs to hydrate from the preset plan once the query returns.
     // This is a one-time sync from URL state into local form state.
@@ -300,13 +307,11 @@ export default function TaskCreatePage() {
       regimenId: String(presetPlan.workflow.id),
       planId: String(presetPlan.id),
       planName: presetPlan.name,
-      selectedStages: (presetPlan.stages || [])
-        .map((stage) => stage.name)
-        .filter(Boolean),
+      selectedStages: mappedPresetPlan.selectedStages,
     }));
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setSelections(mapWorkflowScopesToSelections(presetPlan.scopes || []));
-  }, [presetPlanId, presetPlanQuery.data]);
+  }, [mappedPresetPlan, presetPlanId, presetPlanQuery.data]);
 
   const [isSimpleMode, setIsSimpleMode] = useState(true);
 
@@ -434,12 +439,18 @@ export default function TaskCreatePage() {
     formData.mode === "phat-sinh"
       ? allPlanQuery.items
       : workflowPlanQuery.items;
-  const selectedPlanResponse = selectedPlanSource.find(
-    (plan) => String(plan.id) === formData.planId,
-  );
-  const selectedPlan = selectedPlanSource
-    .map(mapPlanResponseToPlan)
-    .find((p) => String(p.id) === formData.planId);
+  const selectedPlanResponse =
+    selectedPlanSource.find((plan) => String(plan.id) === formData.planId) ||
+    (presetPlanQuery.data && String(presetPlanQuery.data.id) === formData.planId
+      ? presetPlanQuery.data
+      : undefined);
+  const selectedPlan =
+    selectedPlanSource
+      .map(mapPlanResponseToPlan)
+      .find((p) => String(p.id) === formData.planId) ||
+    (mappedPresetPlan && String(mappedPresetPlan.id) === formData.planId
+      ? mappedPresetPlan
+      : undefined);
   const selectedPlanTaskAllocations = selectedPlan?.taskAllocations || [];
   const selectedPlanMaterialAllocations =
     selectedPlan?.materialAllocations || [];
@@ -825,10 +836,12 @@ export default function TaskCreatePage() {
       });
       return;
     }
-    const stageNames =
-      isSimpleMode || resolvedSelectedStages.length === 0
-        ? [""]
-        : resolvedSelectedStages;
+    const taskRequestEntries = isSimpleMode
+      ? [{ stageName: "", task: formData.tasks[0] }]
+      : formData.tasks.map((task) => ({
+          stageName: task.stageId || "",
+          task,
+        }));
 
     const invalidRepeatDate = formData.tasks
       .filter((task) => task.isRepeating && (task.repeatDates?.length || 0) > 0)
@@ -858,158 +871,165 @@ export default function TaskCreatePage() {
       return;
     }
 
-    const requests: FarmTaskRequest[] = stageNames.map((stageName, index) => {
-      const stageTask =
-        formData.tasks.find((task) => task.stageId === stageName) ||
-        formData.tasks[0];
-      const scopeSelection =
-        stageTask?.geographicalSelections?.[0] ||
-        selections[0] ||
-        fallbackSelection;
-
-      const scopeType =
-        scopeSelection?.type === "region"
-          ? "REGION"
-          : scopeSelection?.type === "area"
-            ? "AREA"
-            : scopeSelection?.type === "plot"
-              ? "PLOT"
-              : null;
-      const scopeId =
-        scopeSelection?.type === "region"
-          ? toFiniteNumber(scopeSelection.regionId)
-          : scopeSelection?.type === "area"
-            ? toFiniteNumber(scopeSelection.areaId)
-            : scopeSelection?.type === "plot"
-              ? toFiniteNumber(scopeSelection.plotId)
-              : null;
-
-      const planTask =
-        selectedPlanTaskAllocations.find(
-          (task: any) => task.name && task.name === stageTask?.name,
-        ) ||
-        selectedPlanTaskAllocations.find(
+    const requests: FarmTaskRequest[] = taskRequestEntries.map(
+      ({ stageName, task: stageTask }, index) => {
+        const stageTaskPosition = taskRequestEntries
+          .slice(0, index)
+          .filter((entry) => entry.stageName === stageName).length;
+        const stagePlanTasks = selectedPlanTaskAllocations.filter(
           (task: any) => task.stageId === stageName,
-        ) ||
-        selectedPlanTaskAllocations[index];
-      const sourceWorkItemId = isPlannedMode
-        ? toFiniteNumber(
-            (stageTask as TaskAllocation & { sourceWorkItemId?: number })
-              ?.sourceWorkItemId ?? planTask?.id,
-          )
-        : null;
-
-      // "Chọn nhân sự" per task block encodes assigned names into
-      // `labor` as "N người: A, B" rather than formData.assignedTo — mirror
-      // TaskStageAllocation's parsing so those picks actually get submitted.
-      const executorNames = stageTask?.labor?.includes(":")
-        ? stageTask.labor.split(":")[1].trim().split(", ").filter(Boolean)
-        : formData.assignedTo;
-
-      const personnelRequests = [
-        ...formData.supervisors
-          .map((name) => personnel.find((item) => item.fullName === name)?.id)
-          .filter((id): id is number => typeof id === "number")
-          .map((personnelId) => ({
-            personnelId,
-            role: "MANAGER" as const,
-          })),
-        ...formData.qualityInspectors
-          .map((name) => personnel.find((item) => item.fullName === name)?.id)
-          .filter((id): id is number => typeof id === "number")
-          .map((personnelId) => ({
-            personnelId,
-            role: "QUALITY_INSPECTOR" as const,
-          })),
-        ...executorNames
-          .map((name) => personnel.find((item) => item.fullName === name)?.id)
-          .filter((id): id is number => typeof id === "number")
-          .map((personnelId) => ({
-            personnelId,
-            role: "EXECUTOR" as const,
-          })),
-      ];
-
-      const stageMaterials = isSimpleMode
-        ? formData.materials
-        : formData.materials.filter(
-            (material) => material.stageId === stageName,
-          );
-      const supplyLines = stageMaterials
-        .map((material) => {
-          const planMaterial = selectedPlanMaterialAllocations.find(
-            (candidate: any) =>
-              candidate.materialName === material.materialName &&
-              candidate.stageId === material.stageId,
-          );
-          const supplyItemId =
-            material.supplyItemId ?? planMaterial?.supplyItemId;
-          const unitBaseId = material.unitBaseId ?? planMaterial?.unitBaseId;
-          return typeof supplyItemId === "number" &&
-            typeof unitBaseId === "number"
-            ? {
-                supplyItemId,
-                unitBaseId,
-                quantity: Number(material.quantity) || 0,
-              }
-            : null;
-        })
-        .filter(
-          (
-            line,
-          ): line is {
-            supplyItemId: number;
-            unitBaseId: number;
-            quantity: number;
-          } => line !== null,
         );
+        const scopeSelection =
+          stageTask?.geographicalSelections?.[0] ||
+          selections[0] ||
+          fallbackSelection;
 
-      const repeatSource =
-        stageTask?.isRepeating && (stageTask.repeatDates?.length || 0) > 0
-          ? (stageTask.repeatDates ?? [])
-          : formData.tasks[0]?.isRepeating &&
-              (formData.tasks[0].repeatDates?.length || 0) > 0
-            ? (formData.tasks[0].repeatDates ?? [])
-            : [];
+        const scopeType =
+          scopeSelection?.type === "region"
+            ? "REGION"
+            : scopeSelection?.type === "area"
+              ? "AREA"
+              : scopeSelection?.type === "plot"
+                ? "PLOT"
+                : null;
+        const scopeId =
+          scopeSelection?.type === "region"
+            ? toFiniteNumber(scopeSelection.regionId)
+            : scopeSelection?.type === "area"
+              ? toFiniteNumber(scopeSelection.areaId)
+              : scopeSelection?.type === "plot"
+                ? toFiniteNumber(scopeSelection.plotId)
+                : null;
 
-      const origin = isPlannedMode ? "PLANNED" : "AD_HOC";
+        const planTask =
+          selectedPlanTaskAllocations.find((task: any) =>
+            stageTask?.sourceWorkItemId != null
+              ? task.id === stageTask.sourceWorkItemId
+              : false,
+          ) ||
+          stagePlanTasks.find(
+            (task: any) => task.name && task.name === stageTask?.name,
+          ) ||
+          stagePlanTasks[stageTaskPosition] ||
+          selectedPlanTaskAllocations[index];
+        const sourceWorkItemId = isPlannedMode
+          ? toFiniteNumber(
+              (stageTask as TaskAllocation & { sourceWorkItemId?: number })
+                ?.sourceWorkItemId ?? planTask?.id,
+            )
+          : null;
 
-      return {
-        origin,
-        // A reference plan can also be attached to an AD_HOC task.
-        planId: toFiniteNumber(formData.planId),
-        workflowId: isPlannedMode
-          ? undefined
-          : toFiniteNumber(formData.regimenId),
-        scopeType,
-        scopeId,
-        sourceWorkItemId,
-        taskCategoryId:
-          origin === "PLANNED"
-            ? null
-            : (stageTask?.taskCategoryId ?? planTask?.taskCategoryId ?? null),
-        name:
-          isSimpleMode || !stageName
-            ? formData.name
-            : `${formData.name} - ${stageName}`,
-        priority: mapPriorityToApi(formData.priority),
-        note: formData.description || null,
-        personnel: personnelRequests,
-        startDate: formData.startDate,
-        endDate: formData.endDate,
-        recurrence: repeatSource.length
-          ? {
-              repeatMode: "SPECIFIC_DATES" as const,
-              repeatDates: repeatSource,
-            }
-          : {
-              repeatMode: "NONE" as const,
-              repeatDates: null,
-            },
-        supplyLines,
-        status: null,
-      };
-    });
+        // "Chọn nhân sự" per task block encodes assigned names into
+        // `labor` as "N người: A, B" rather than formData.assignedTo — mirror
+        // TaskStageAllocation's parsing so those picks actually get submitted.
+        const executorNames = stageTask?.labor?.includes(":")
+          ? stageTask.labor.split(":")[1].trim().split(", ").filter(Boolean)
+          : formData.assignedTo;
+
+        const personnelRequests = [
+          ...formData.supervisors
+            .map((name) => personnel.find((item) => item.fullName === name)?.id)
+            .filter((id): id is number => typeof id === "number")
+            .map((personnelId) => ({
+              personnelId,
+              role: "MANAGER" as const,
+            })),
+          ...formData.qualityInspectors
+            .map((name) => personnel.find((item) => item.fullName === name)?.id)
+            .filter((id): id is number => typeof id === "number")
+            .map((personnelId) => ({
+              personnelId,
+              role: "QUALITY_INSPECTOR" as const,
+            })),
+          ...executorNames
+            .map((name) => personnel.find((item) => item.fullName === name)?.id)
+            .filter((id): id is number => typeof id === "number")
+            .map((personnelId) => ({
+              personnelId,
+              role: "EXECUTOR" as const,
+            })),
+        ];
+
+        const stageMaterials = isSimpleMode
+          ? formData.materials
+          : formData.materials.filter(
+              (material) =>
+                material.taskId === stageTask?.id ||
+                (!material.taskId && material.stageId === stageName),
+            );
+        const supplyLines = stageMaterials
+          .map((material) => {
+            const planMaterial = selectedPlanMaterialAllocations.find(
+              (candidate: any) =>
+                candidate.materialName === material.materialName &&
+                candidate.stageId === material.stageId,
+            );
+            const supplyItemId =
+              material.supplyItemId ?? planMaterial?.supplyItemId;
+            const unitBaseId = material.unitBaseId ?? planMaterial?.unitBaseId;
+            return typeof supplyItemId === "number" &&
+              typeof unitBaseId === "number"
+              ? {
+                  supplyItemId,
+                  unitBaseId,
+                  quantity: Number(material.quantity) || 0,
+                }
+              : null;
+          })
+          .filter(
+            (
+              line,
+            ): line is {
+              supplyItemId: number;
+              unitBaseId: number;
+              quantity: number;
+            } => line !== null,
+          );
+
+        const repeatSource =
+          stageTask?.isRepeating && (stageTask.repeatDates?.length || 0) > 0
+            ? (stageTask.repeatDates ?? [])
+            : formData.tasks[0]?.isRepeating &&
+                (formData.tasks[0].repeatDates?.length || 0) > 0
+              ? (formData.tasks[0].repeatDates ?? [])
+              : [];
+
+        const origin = isPlannedMode ? "PLANNED" : "AD_HOC";
+
+        return {
+          origin,
+          // A reference plan can also be attached to an AD_HOC task.
+          planId: toFiniteNumber(formData.planId),
+          workflowId: isPlannedMode
+            ? undefined
+            : toFiniteNumber(formData.regimenId),
+          scopeType,
+          scopeId,
+          sourceWorkItemId,
+          taskCategoryId:
+            origin === "PLANNED"
+              ? null
+              : (stageTask?.taskCategoryId ?? planTask?.taskCategoryId ?? null),
+          name: formData.name,
+          priority: mapPriorityToApi(formData.priority),
+          note: formData.description || null,
+          personnel: personnelRequests,
+          startDate: formData.startDate,
+          endDate: formData.endDate,
+          recurrence: repeatSource.length
+            ? {
+                repeatMode: "SPECIFIC_DATES" as const,
+                repeatDates: repeatSource,
+              }
+            : {
+                repeatMode: "NONE" as const,
+                repeatDates: null,
+              },
+          supplyLines,
+          status: null,
+        };
+      },
+    );
 
     Promise.all(
       requests.map((payload) => createTaskMutation.createFarmTask(payload)),
@@ -1089,8 +1109,8 @@ export default function TaskCreatePage() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-3">
-                  <Label className="text-sm font-bold text-slate-700">
-                    Nhóm công việc *
+                  <Label className="text-sm font-bold text-slate-700" required>
+                    Nhóm công việc
                   </Label>
                   <div className="flex items-center justify-between gap-4 rounded-2xl border-2 border-slate-100 bg-white p-4">
                     <div className="flex items-center gap-3">
@@ -1182,10 +1202,10 @@ export default function TaskCreatePage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label className="text-sm font-bold text-slate-700">
+                  <Label className="text-sm font-bold text-slate-700" required>
                     {formData.mode === "phat-sinh"
-                      ? "Công việc phát sinh *"
-                      : "Hạng mục công việc triển khai *"}
+                      ? "Công việc phát sinh"
+                      : "Công việc"}
                   </Label>
                   <Input
                     value={formData.name}
@@ -1198,8 +1218,11 @@ export default function TaskCreatePage() {
 
                 {formData.mode === "phat-sinh" && (
                   <div className="space-y-2 pt-2 border-slate-100">
-                    <Label className="text-sm font-bold text-slate-700">
-                      Vụ mùa / Vụ nuôi *
+                    <Label
+                      className="text-sm font-bold text-slate-700"
+                      required
+                    >
+                      Vụ mùa / Vụ nuôi
                     </Label>
                     <Select
                       value={formData.regimenId}
@@ -1233,8 +1256,11 @@ export default function TaskCreatePage() {
                   <div className="space-y-6 animation-fade-in pt-2 border-slate-100">
                     <div className="space-y-4">
                       <div className="space-y-2">
-                        <Label className="text-sm font-bold text-slate-700">
-                          Vụ mùa / Vụ nuôi *
+                        <Label
+                          className="text-sm font-bold text-slate-700"
+                          required
+                        >
+                          Vụ mùa / Vụ nuôi
                         </Label>
                         <Select
                           value={formData.regimenId}
@@ -1387,9 +1413,11 @@ export default function TaskCreatePage() {
                           <div className="space-y-3 rounded-2xl border border-emerald-100 bg-emerald-50/30 p-4">
                             <div className="flex items-center justify-between gap-3">
                               <div>
-                                <Label className="text-sm font-bold text-slate-700">
+                                <Label
+                                  className="text-sm font-bold text-slate-700"
+                                  required
+                                >
                                   Vùng canh tác từ kế hoạch
-                                  <span className="text-red-500"> *</span>
                                 </Label>
                                 <p className="mt-1 text-[11px] font-medium text-slate-400">
                                   Chỉ chọn được vùng/khu/lô thuộc kế hoạch triển
@@ -1625,9 +1653,11 @@ export default function TaskCreatePage() {
                         <div className="space-y-3 rounded-2xl border border-emerald-100 bg-emerald-50/30 p-4">
                           <div className="flex items-center justify-between gap-3">
                             <div>
-                              <Label className="text-sm font-bold text-slate-700">
+                              <Label
+                                className="text-sm font-bold text-slate-700"
+                                required
+                              >
                                 Vùng canh tác từ kế hoạch
-                                <span className="text-red-500"> *</span>
                               </Label>
                               <p className="mt-1 text-[11px] font-medium text-slate-400">
                                 Chỉ chọn được vùng/khu/lô thuộc kế hoạch triển
@@ -2065,8 +2095,11 @@ export default function TaskCreatePage() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-3">
-                  <Label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-                    Độ ưu tiên *
+                  <Label
+                    className="text-[11px] font-bold text-slate-500 uppercase tracking-wider"
+                    required
+                  >
+                    Độ ưu tiên
                   </Label>
                   <div className="grid grid-cols-3 gap-2">
                     {[
@@ -2709,7 +2742,7 @@ export default function TaskCreatePage() {
                       sub: "danh mục",
                     },
                     {
-                      label: "Giai đoạn",
+                      label: "Hạng mục công việc",
                       value: resolvedSelectedStages.length || "—",
                       sub: "áp dụng",
                     },
@@ -2831,6 +2864,7 @@ export default function TaskCreatePage() {
             handleComplete={handleComplete}
             goBack={() => setLocation("/task")}
             completeLabel="Hoàn tất & Khởi tạo"
+            lockPlanSelection={!!presetPlanId}
           />
         ) : (
           <StepperForm
