@@ -10,17 +10,17 @@ export interface CatalogRef {
 }
 
 export interface PackagingVariantRequest {
-  packagingTypeId: number;
-  unitBaseId: number;
-  quantity: number;
+  packagingTypeId?: number | null;
+  unitBaseId?: number | null;
+  quantity?: number | null;
   displayOrder?: number;
 }
 
 export interface PackagingVariantResponse {
-  packagingType: CatalogRef;
-  unitBase: CatalogRef;
-  quantity: number;
-  displayOrder: number;
+  packagingType?: CatalogRef | null;
+  unitBase?: CatalogRef | null;
+  quantity?: number | null;
+  displayOrder?: number;
 }
 
 export interface CertificateRequest {

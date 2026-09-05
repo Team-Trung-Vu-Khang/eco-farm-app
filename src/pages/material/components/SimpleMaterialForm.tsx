@@ -26,7 +26,11 @@ import {
   Loader2,
 } from "lucide-react";
 import type { MaterialFormData } from "../types/types";
-import { commonHashtags, materialGroups, packagingSpecsPresets } from "../data/constants";
+import {
+  commonHashtags,
+  materialGroups,
+  packagingSpecsPresets,
+} from "../data/constants";
 
 const MEASURE_UNIT_OPTIONS = [
   "cái",
@@ -87,6 +91,7 @@ export default function SimpleMaterialForm({
   const isValid =
     Boolean(formData.name) && Boolean(formData.packagingSpecs?.length);
   const [paramHashtag, setParamHashtag] = useState("");
+  const [configMode, setConfigMode] = useState<"SPEC" | "BASE_UNIT">("SPEC");
   const [quantity, setQuantity] = useState("");
   const [unit, setUnit] = useState("");
   const [packaging, setPackaging] = useState("");
@@ -94,9 +99,15 @@ export default function SimpleMaterialForm({
   const packagingSpecsArr = formData.packagingSpecs || [];
 
   const addPackagingSpec = () => {
-    const trimmedQty = quantity.trim();
-    if (!trimmedQty || !unit || !packaging) return;
-    const spec = `${packaging} ${trimmedQty} ${unit}`;
+    let spec = "";
+    if (configMode === "SPEC") {
+      const trimmedQty = quantity.trim();
+      if (!packaging || !trimmedQty || !unit) return;
+      spec = `${packaging} ${trimmedQty} ${unit}`;
+    } else {
+      if (!unit) return;
+      spec = `${unit}`;
+    }
     if (!packagingSpecsArr.includes(spec)) {
       updateField("packagingSpecs", [...packagingSpecsArr, spec]);
     }
@@ -352,76 +363,131 @@ export default function SimpleMaterialForm({
         </div>
       </div>
 
-      {/* ── Bao bì quy cách ── */}
+      {/* ── Cấu hình Đơn vị Vật tư ── */}
       <div className="space-y-4 rounded-xl border bg-white p-6 shadow-sm">
         <h3 className="flex items-center gap-2 text-lg font-semibold">
           <Tags className="h-5 w-5 text-primary" />
-          Bao bì quy cách
+          Cấu hình Đơn vị Vật tư *
         </h3>
 
-        <div className="space-y-3">
-          <Label required>Nhập quy cách đóng gói</Label>
-          <p className="text-xs text-muted-foreground -mt-1">
-            Bắt buộc có ít nhất một quy cách gồm loại bao bì, số lượng và đơn
-            vị.
-          </p>
+        {/* Mode switch on separate line */}
+        <div className="space-y-4">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-xs font-semibold text-slate-500">
+              Chế độ cấu hình:
+            </span>
+            <div className="inline-flex items-center p-1 bg-slate-100 rounded-xl text-xs font-medium">
+              <button
+                type="button"
+                onClick={() => setConfigMode("SPEC")}
+                className={`px-3 py-1.5 rounded-lg transition-all ${
+                  configMode === "SPEC"
+                    ? "bg-white text-primary shadow-xs font-bold"
+                    : "text-slate-600 hover:text-slate-900"
+                }`}
+              >
+                Quy cách đầy đủ (Chai 500ml, Bao 25kg...)
+              </button>
+              <button
+                type="button"
+                onClick={() => setConfigMode("BASE_UNIT")}
+                className={`px-3 py-1.5 rounded-lg transition-all ${
+                  configMode === "BASE_UNIT"
+                    ? "bg-white text-primary shadow-xs font-bold"
+                    : "text-slate-600 hover:text-slate-900"
+                }`}
+              >
+                Không rõ quy cách (Chỉ chọn đơn vị cơ bản kg, l...)
+              </button>
+            </div>
+          </div>
 
           <div className="flex gap-2 items-end">
-            <div className="w-32 space-y-1">
-              <Label className="text-xs text-muted-foreground">
-                Quy cách chứa
-              </Label>
-              <Select value={packaging} onValueChange={setPackaging}>
-                <SelectTrigger className="text-left h-auto py-2">
-                  <SelectValue placeholder="Chọn..." />
-                </SelectTrigger>
-                <SelectContent>
-                  {PACKAGING_OPTIONS.map((item) => (
-                    <SelectItem key={item} value={item}>
-                      {item}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            {configMode === "SPEC" ? (
+              <>
+                <div className="flex-1 space-y-1 min-w-[130px]">
+                  <Label className="text-xs text-muted-foreground">
+                    Loại đóng gói
+                  </Label>
+                  <Select value={packaging} onValueChange={setPackaging}>
+                    <SelectTrigger className="text-left h-auto py-2">
+                      <SelectValue placeholder="Loại (Chai, Bao...)" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {PACKAGING_OPTIONS.map((item) => (
+                        <SelectItem key={item} value={item}>
+                          {item}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
 
-            <div className="flex-1 space-y-1">
-              <Label className="text-xs text-muted-foreground">Giá trị</Label>
-              <Input
-                type="number"
-                value={quantity}
-                onChange={(e) => setQuantity(e.target.value)}
-                placeholder="VD: 500, 25"
-                min={0}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    e.preventDefault();
-                    addPackagingSpec();
-                  }
-                }}
-              />
-            </div>
+                <div className="w-28 space-y-1">
+                  <Label className="text-xs text-muted-foreground">
+                    Số lượng
+                  </Label>
+                  <Input
+                    type="number"
+                    value={quantity}
+                    onChange={(e) => setQuantity(e.target.value)}
+                    placeholder="VD: 500, 25"
+                    min={1}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        addPackagingSpec();
+                      }
+                    }}
+                  />
+                </div>
 
-            <div className="w-28 space-y-1">
-              <Label className="text-xs text-muted-foreground">Đơn vị</Label>
-              <Select value={unit} onValueChange={setUnit}>
-                <SelectTrigger className="text-left h-auto py-2">
-                  <SelectValue placeholder="Chọn..." />
-                </SelectTrigger>
-                <SelectContent>
-                  {MEASURE_UNIT_OPTIONS.map((item) => (
-                    <SelectItem key={item} value={item}>
-                      {item}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+                <div className="flex-1 space-y-1 min-w-[120px]">
+                  <Label className="text-xs text-muted-foreground">
+                    Đơn vị cơ sở
+                  </Label>
+                  <Select value={unit} onValueChange={setUnit}>
+                    <SelectTrigger className="text-left h-auto py-2">
+                      <SelectValue placeholder="Đơn vị (ml, kg...)" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {MEASURE_UNIT_OPTIONS.map((item) => (
+                        <SelectItem key={item} value={item}>
+                          {item}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </>
+            ) : (
+              <div className="flex-1 space-y-1">
+                <Label className="text-xs text-muted-foreground">
+                  Đơn vị cơ sở
+                </Label>
+                <Select value={unit} onValueChange={setUnit}>
+                  <SelectTrigger className="text-left h-auto py-2">
+                    <SelectValue placeholder="Chọn đơn vị cơ sở (kg, lít, ml, viên...)" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {MEASURE_UNIT_OPTIONS.map((item) => (
+                      <SelectItem key={item} value={item}>
+                        {item}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
 
             <Button
               type="button"
               onClick={addPackagingSpec}
-              disabled={!quantity.trim() || !unit || !packaging}
+              disabled={
+                configMode === "SPEC"
+                  ? !packaging || !quantity.trim() || !unit
+                  : !unit
+              }
               className="mb-0 shrink-0"
             >
               <Plus className="w-4 h-4 mr-1" />

@@ -1,4 +1,5 @@
 import PageWrapper from "@/components/PageWrapper";
+import { formatPackagingVariantText } from "@/features/farm-supply";
 import { useFarmSupplyDetailHook } from "@/features/farm-supply/hooks/useFarmSupplyDetailHook";
 import {
   Badge,
@@ -461,22 +462,30 @@ const AqPesticideDetailPage = () => {
             </CardContent>
           </Card>
 
-          {item.packagingSpecs && item.packagingSpecs.length > 0 && (
+          {((item.packagingVariants && item.packagingVariants.length > 0) ||
+            (item.packagingSpecs && item.packagingSpecs.length > 0)) && (
             <Card>
               <CardHeader className="pb-3 border-b bg-teal-50/50">
                 <CardTitle className="text-base flex items-center gap-2">
                   <Package className="w-4 h-4 text-slate-500" />
-                  Quy cách đóng gói
+                  Cấu hình Đơn vị / Quy cách đóng gói
                 </CardTitle>
               </CardHeader>
               <CardContent className="pt-4">
                 <div className="flex flex-wrap gap-1.5">
-                  {item.packagingSpecs.map((spec) => (
-                    <Badge key={spec} variant="outline" className="text-xs">
-                      <Package className="w-3 h-3 mr-1" />
-                      {spec}
-                    </Badge>
-                  ))}
+                  {item.packagingVariants && item.packagingVariants.length > 0
+                    ? item.packagingVariants.map((v, idx) => (
+                        <Badge key={idx} variant="outline" className="text-xs">
+                          <Package className="w-3 h-3 mr-1" />
+                          {formatPackagingVariantText(v)}
+                        </Badge>
+                      ))
+                    : item.packagingSpecs?.map((spec) => (
+                        <Badge key={spec} variant="outline" className="text-xs">
+                          <Package className="w-3 h-3 mr-1" />
+                          {spec}
+                        </Badge>
+                      ))}
                 </div>
               </CardContent>
             </Card>

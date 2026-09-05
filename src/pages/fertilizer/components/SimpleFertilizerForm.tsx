@@ -113,9 +113,11 @@ export default function SimpleFertilizerForm({
       ? baseUnits.map((u) => u.name)
       : MEASURE_UNIT_OPTIONS;
 
-  const hasSimplePackagingRule = Boolean(
-    formData.packaging && formData.quantity && formData.unit,
-  );
+  const [configMode, setConfigMode] = useState<"SPEC" | "BASE_UNIT">("SPEC");
+  const hasSimplePackagingRule =
+    configMode === "SPEC"
+      ? Boolean(formData.packaging && formData.quantity)
+      : Boolean(formData.unit && formData.quantity);
   const isValid = Boolean(formData.name) && hasSimplePackagingRule;
   const [paramHashtag, setParamHashtag] = useState("");
 
@@ -270,66 +272,117 @@ export default function SimpleFertilizerForm({
         />
       </div>
 
-      {/* ── Quy cách đóng gói ── */}
-      <div className="space-y-2">
-        <Label className="flex items-center gap-1.5">
+      {/* ── Cấu hình Đơn vị Vật tư ── */}
+      <div className="space-y-3">
+        <Label className="flex items-center gap-1.5 font-semibold">
           <Package className="w-4 h-4 text-slate-400" />
-          Quy cách đóng gói <span className="text-red-500">*</span>
+          Cấu hình Đơn vị Vật tư <span className="text-red-500">*</span>
         </Label>
-        <div className="flex gap-3">
-          <div className="w-32">
-            <Select
-              value={formData.packaging || formData.physicalForm}
-              onValueChange={(v) => {
-                updateField("packaging", v);
-                updateField("physicalForm", v);
-              }}
-            >
-              <SelectTrigger className="text-left h-auto py-2">
-                <SelectValue placeholder="Quy cách" />
-              </SelectTrigger>
-              <SelectContent>
-                {packagingList.map((p) => (
-                  <SelectItem key={p} value={p}>
-                    {p}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="flex-1">
-            <Input
-              type="number"
-              min={0}
-              placeholder="Giá trị (VD: 50)"
-              value={formData.quantity || formData.nutrientContent}
-              onChange={(e) => {
-                updateField("quantity", e.target.value);
-                updateField("nutrientContent", e.target.value);
-              }}
-            />
-          </div>
-          <div className="w-28">
-            <Select
-              value={formData.unit}
-              onValueChange={(v) => updateField("unit", v)}
-            >
-              <SelectTrigger className="text-left h-auto py-2">
-                <SelectValue placeholder="Đơn vị" />
-              </SelectTrigger>
-              <SelectContent>
-                {unitList.map((u) => (
-                  <SelectItem key={u} value={u}>
-                    {u}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+
+        {/* Mode switch */}
+        <div className="flex flex-wrap items-center p-1 bg-slate-100 rounded-xl text-xs font-medium w-fit max-w-full gap-1">
+          <button
+            type="button"
+            onClick={() => setConfigMode("SPEC")}
+            className={`px-3 py-1.5 rounded-lg transition-all ${
+              configMode === "SPEC"
+                ? "bg-white text-primary shadow-xs font-bold"
+                : "text-slate-600 hover:text-slate-900"
+            }`}
+          >
+            Quy cách đầy đủ (Chai 500ml, Bao 25kg...)
+          </button>
+          <button
+            type="button"
+            onClick={() => setConfigMode("BASE_UNIT")}
+            className={`px-3 py-1.5 rounded-lg transition-all ${
+              configMode === "BASE_UNIT"
+                ? "bg-white text-primary shadow-xs font-bold"
+                : "text-slate-600 hover:text-slate-900"
+            }`}
+          >
+            Không rõ quy cách (Chỉ chọn đơn vị cơ bản kg, l...)
+          </button>
+        </div>
+
+        <div className="flex gap-2 items-center">
+          {configMode === "SPEC" ? (
+            <>
+              <div className="flex-1 min-w-[130px]">
+                <Select
+                  value={formData.packaging || formData.physicalForm}
+                  onValueChange={(v) => {
+                    updateField("packaging", v);
+                    updateField("physicalForm", v);
+                  }}
+                >
+                  <SelectTrigger className="text-left h-auto py-2">
+                    <SelectValue placeholder="Loại (Chai, Bao...)" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {packagingList.map((p) => (
+                      <SelectItem key={p} value={p}>
+                        {p}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="w-28">
+                <Input
+                  type="number"
+                  min={1}
+                  placeholder="Số lượng"
+                  value={formData.quantity}
+                  onChange={(e) => {
+                    updateField("quantity", e.target.value);
+                  }}
+                />
+              </div>
+
+              <div className="flex-1 min-w-[120px]">
+                <Select
+                  value={formData.unit}
+                  onValueChange={(v) => updateField("unit", v)}
+                >
+                  <SelectTrigger className="text-left h-auto py-2">
+                    <SelectValue placeholder="Đơn vị (ml, kg...)" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {unitList.map((u) => (
+                      <SelectItem key={u} value={u}>
+                        {u}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </>
+          ) : (
+            <div className="flex-1">
+              <Select
+                value={formData.unit}
+                onValueChange={(v) => updateField("unit", v)}
+              >
+                <SelectTrigger className="text-left h-auto py-2">
+                  <SelectValue placeholder="Chọn đơn vị cơ sở (kg, lít, ml, viên...)" />
+                </SelectTrigger>
+                <SelectContent>
+                  {unitList.map((u) => (
+                    <SelectItem key={u} value={u}>
+                      {u}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
         </div>
         <p className="text-xs text-muted-foreground">
-          VD: Bao 50 kg, Túi 25 kg, Can 10 L… Bổ sung thêm quy cách chi tiết ở
-          chế độ chuyên sâu. Cần có đủ 3 thông tin để lưu.
+          {configMode === "SPEC"
+            ? "VD: Chai 500 ml, Bao 25 kg... Nhập loại đóng gói, số lượng và đơn vị."
+            : "VD: kg, Lít, ml... Chọn đơn vị cơ bản khi không rõ quy cách đóng gói."}
         </p>
       </div>
 

@@ -1,6 +1,10 @@
 import PageWrapper from "@/components/PageWrapper";
 import { useFarmSupplyDetailHook } from "@/features/farm-supply/hooks/useFarmSupplyDetailHook";
 import {
+  formatPackagingVariantText,
+  isBaseUnitOnlyVariant,
+} from "@/features/farm-supply";
+import {
   Badge,
   Button,
   Card,
@@ -15,6 +19,8 @@ import {
   Edit,
   Image as ImageIcon,
   Info,
+  Package,
+  Tag,
   Tags,
 } from "lucide-react";
 import { useLocation, useRoute } from "wouter";
@@ -238,21 +244,52 @@ const MaterialDetailPage = () => {
                   </div>
                 )}
 
-                {item.packagingSpecs && item.packagingSpecs.length > 0 && (
+                {((item.packagingVariants &&
+                  item.packagingVariants.length > 0) ||
+                  (item.packagingSpecs && item.packagingSpecs.length > 0)) && (
                   <div className="border-t pt-4">
-                    <span className="text-muted-foreground block text-xs mb-1.5">
-                      Quy cách đóng gói vật tư:
+                    <span className="text-muted-foreground block text-xs font-semibold mb-2">
+                      Cấu hình Đơn vị / Quy cách đóng gói:
                     </span>
-                    <div className="flex flex-wrap gap-1.5">
-                      {item.packagingSpecs.map((tag) => (
-                        <Badge
-                          key={tag}
-                          variant="secondary"
-                          className="text-xs"
-                        >
-                          {tag}
-                        </Badge>
-                      ))}
+                    <div className="flex flex-wrap gap-2">
+                      {item.packagingVariants &&
+                      item.packagingVariants.length > 0
+                        ? item.packagingVariants.map((v, idx) => {
+                            const isBaseUnitOnly = isBaseUnitOnlyVariant(v);
+                            return (
+                              <Badge
+                                key={idx}
+                                variant={
+                                  isBaseUnitOnly ? "outline" : "secondary"
+                                }
+                                className={`text-xs px-2.5 py-1 flex items-center gap-1.5 ${
+                                  isBaseUnitOnly
+                                    ? "bg-blue-50/70 border-blue-200 text-blue-800"
+                                    : "bg-slate-100 border-slate-200 text-slate-800"
+                                }`}
+                              >
+                                {isBaseUnitOnly ? (
+                                  <Tag className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+                                ) : (
+                                  <Package className="w-3.5 h-3.5 text-primary shrink-0" />
+                                )}
+                                <span>
+                                  {isBaseUnitOnly ? "Đơn vị cơ bản: " : ""}
+                                  {formatPackagingVariantText(v)}
+                                </span>
+                              </Badge>
+                            );
+                          })
+                        : item.packagingSpecs?.map((tag) => (
+                            <Badge
+                              key={tag}
+                              variant="secondary"
+                              className="text-xs px-2.5 py-1 flex items-center gap-1.5"
+                            >
+                              <Package className="w-3.5 h-3.5 text-slate-500 shrink-0" />
+                              {tag}
+                            </Badge>
+                          ))}
                     </div>
                   </div>
                 )}

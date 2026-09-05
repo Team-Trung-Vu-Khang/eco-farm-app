@@ -1,6 +1,7 @@
 import { Badge, type Column } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { originOptions, applicationStageOptions } from "./constants";
 import { CodeBadge } from "@/components/CodeBadge";
+import { formatPackagingVariantText } from "@/features/farm-supply";
 
 export const getFertilizerColumns = (
   onView: (id: number) => void,
@@ -109,18 +110,13 @@ export const getFertilizerColumns = (
   },
   {
     key: "packagingVariants",
-    label: "Đóng gói",
+    label: "Đóng gói / Đơn vị",
     render: (_, row) => {
       const specs =
-        row.packagingVariants?.map((pv: any) => {
-          const type = pv.packagingType?.name || pv.packagingType?.code || "";
-          const unit = pv.unitBase?.name || pv.unitBase?.code || "";
-          const qty = Number(pv.quantity);
-          return `${type} ${qty} ${unit}`.trim();
-        }) || [];
+        row.packagingVariants?.map((pv: any) => formatPackagingVariantText(pv)).filter(Boolean) || [];
       return specs.length > 0 ? (
         <span
-          className="text-xs block max-w-[150px] truncate"
+          className="text-xs block max-w-[180px] truncate"
           title={specs.join(", ")}
         >
           {specs.join(", ")}

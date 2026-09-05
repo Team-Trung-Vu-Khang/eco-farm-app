@@ -82,6 +82,7 @@ export default function PesticideSuppliersStep({
   const unitList =
     baseUnits && baseUnits.length > 0 ? baseUnits.map((u) => u.name) : MEASURE_UNIT_OPTIONS;
 
+  const [configMode, setConfigMode] = useState<"SPEC" | "BASE_UNIT">("SPEC");
   const [quantity, setQuantity] = useState("");
   const [unit, setUnit] = useState("");
   const [packaging, setPackaging] = useState("");
@@ -90,9 +91,15 @@ export default function PesticideSuppliersStep({
   >(null);
 
   const addPackagingSpec = () => {
-    const trimmedVal = quantity.trim();
-    if (!trimmedVal || !unit || !packaging) return;
-    const spec = `${packaging} ${trimmedVal} ${unit}`;
+    let spec = "";
+    if (configMode === "SPEC") {
+      const trimmedVal = quantity.trim();
+      if (!packaging || !trimmedVal || !unit) return;
+      spec = `${packaging} ${trimmedVal} ${unit}`;
+    } else {
+      if (!unit) return;
+      spec = `${unit}`;
+    }
     if (!formData.packagingSpecs.includes(spec)) {
       onFormFieldChange("packagingSpecs", [...formData.packagingSpecs, spec]);
     }
@@ -245,69 +252,127 @@ export default function PesticideSuppliersStep({
           </p>
         </div>
 
-        {/* Bao bì quy cách – nhập số + chọn đơn vị */}
-        <div className="space-y-3">
-          <Label>
-            Bao bì quy cách <span className="text-red-500">*</span>
+        {/* Cấu hình Đơn vị Vật tư */}
+        <div className="space-y-4">
+          <Label className="text-base font-semibold">
+            Cấu hình Đơn vị Vật tư <span className="text-red-500">*</span>
           </Label>
-          <p className="text-xs text-muted-foreground -mt-1">
-            Nhập đủ 3 thông tin rồi bấm Thêm. Cần có ít nhất 1 quy cách để lưu.
-          </p>
 
-          {/* Input row */}
+          {/* Mode switch on separate line */}
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-xs font-semibold text-slate-500">Chế độ cấu hình:</span>
+            <div className="inline-flex items-center p-1 bg-slate-100 rounded-xl text-xs font-medium">
+              <button
+                type="button"
+                onClick={() => setConfigMode("SPEC")}
+                className={`px-3 py-1.5 rounded-lg transition-all ${
+                  configMode === "SPEC"
+                    ? "bg-white text-primary shadow-xs font-bold"
+                    : "text-slate-600 hover:text-slate-900"
+                }`}
+              >
+                Quy cách đầy đủ (Chai 500ml, Bao 25kg...)
+              </button>
+              <button
+                type="button"
+                onClick={() => setConfigMode("BASE_UNIT")}
+                className={`px-3 py-1.5 rounded-lg transition-all ${
+                  configMode === "BASE_UNIT"
+                    ? "bg-white text-primary shadow-xs font-bold"
+                    : "text-slate-600 hover:text-slate-900"
+                }`}
+              >
+                Không rõ quy cách (Chỉ chọn đơn vị cơ bản kg, l...)
+              </button>
+            </div>
+          </div>
+
           <div className="flex gap-2 items-end">
-            <div className="w-32 space-y-1">
-              <Label className="text-xs text-muted-foreground">
-                Quy cách chứa
-              </Label>
-              <Select value={packaging} onValueChange={setPackaging}>
-                <SelectTrigger className="text-left h-auto py-2">
-                  <SelectValue placeholder="Chọn..." />
-                </SelectTrigger>
-                <SelectContent>
-                  {packagingList.map((p) => (
-                    <SelectItem key={p} value={p}>
-                      {p}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="flex-1 space-y-1">
-              <Label className="text-xs text-muted-foreground">Giá trị</Label>
-              <Input
-                type="number"
-                value={quantity}
-                onChange={(e) => setQuantity(e.target.value)}
-                placeholder="VD: 500, 25"
-                min={0}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    e.preventDefault();
-                    addPackagingSpec();
-                  }
-                }}
-              />
-            </div>
-            <div className="w-28 space-y-1">
-              <Label className="text-xs text-muted-foreground">Đơn vị</Label>
-              <Select value={unit} onValueChange={setUnit}>
-                <SelectTrigger className="text-left h-auto py-2">
-                  <SelectValue placeholder="Chọn..." />
-                </SelectTrigger>
-                <SelectContent>
-                  {unitList.map((u) => (
-                    <SelectItem key={u} value={u}>
-                      {u}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            {configMode === "SPEC" ? (
+              <>
+                <div className="flex-1 space-y-1 min-w-[130px]">
+                  <Label className="text-xs text-muted-foreground">
+                    Loại đóng gói
+                  </Label>
+                  <Select value={packaging} onValueChange={setPackaging}>
+                    <SelectTrigger className="text-left h-auto py-2">
+                      <SelectValue placeholder="Loại (Chai, Bao...)" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {packagingList.map((p) => (
+                        <SelectItem key={p} value={p}>
+                          {p}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="w-28 space-y-1">
+                  <Label className="text-xs text-muted-foreground">
+                    Số lượng
+                  </Label>
+                  <Input
+                    type="number"
+                    value={quantity}
+                    onChange={(e) => setQuantity(e.target.value)}
+                    placeholder="VD: 500, 25"
+                    min={1}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        addPackagingSpec();
+                      }
+                    }}
+                  />
+                </div>
+
+                <div className="flex-1 space-y-1 min-w-[120px]">
+                  <Label className="text-xs text-muted-foreground">
+                    Đơn vị cơ sở
+                  </Label>
+                  <Select value={unit} onValueChange={setUnit}>
+                    <SelectTrigger className="text-left h-auto py-2">
+                      <SelectValue placeholder="Đơn vị (ml, kg...)" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {unitList.map((u) => (
+                        <SelectItem key={u} value={u}>
+                          {u}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </>
+            ) : (
+              <div className="flex-1 space-y-1">
+                <Label className="text-xs text-muted-foreground">
+                  Đơn vị cơ sở
+                </Label>
+                <Select value={unit} onValueChange={setUnit}>
+                  <SelectTrigger className="text-left h-auto py-2">
+                    <SelectValue placeholder="Chọn đơn vị cơ sở (kg, lít, ml, viên...)" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {unitList.map((u) => (
+                      <SelectItem key={u} value={u}>
+                        {u}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
             <Button
               type="button"
               onClick={addPackagingSpec}
-              disabled={!quantity.trim() || !unit || !packaging}
+              disabled={
+                configMode === "SPEC"
+                  ? !packaging || !quantity.trim() || !unit
+                  : !unit
+              }
               className="mb-0 shrink-0"
             >
               <Plus className="w-4 h-4 mr-1" />

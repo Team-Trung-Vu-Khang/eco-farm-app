@@ -1,3 +1,4 @@
+import { formatPackagingVariantText, isBaseUnitOnlyVariant } from "@/features/farm-supply";
 import {
   Badge,
   Button,
@@ -15,6 +16,7 @@ import {
   TimerReset,
   Cpu,
   Package,
+  Tag,
   Wrench,
 } from "lucide-react";
 import type { Equipment } from "../../types";
@@ -152,13 +154,41 @@ export const InfoTab = ({ item }: { item: Equipment }) => {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 border-t pt-4">
             <DetailRow label="Giá tham khảo trên thị trường" value={item.referencePrice} />
-            {packagingSpecsArr.length > 0 && (
+            {((item.packagingVariants && item.packagingVariants.length > 0) || packagingSpecsArr.length > 0) && (
               <div>
-                <span className="text-muted-foreground block text-xs mb-1.5">Quy cách bao bì máy:</span>
-                <div className="flex flex-wrap gap-1.5">
-                  {packagingSpecsArr.map((tag) => (
-                    <Badge key={tag} variant="secondary" className="text-xs">{tag}</Badge>
-                  ))}
+                <span className="text-muted-foreground block text-xs font-semibold mb-1.5">Cấu hình Đơn vị / Quy cách:</span>
+                <div className="flex flex-wrap gap-2">
+                  {item.packagingVariants && item.packagingVariants.length > 0
+                    ? item.packagingVariants.map((v, idx) => {
+                        const isBaseUnitOnly = isBaseUnitOnlyVariant(v);
+                        return (
+                          <Badge
+                            key={idx}
+                            variant={isBaseUnitOnly ? "outline" : "secondary"}
+                            className={`text-xs px-2.5 py-1 flex items-center gap-1.5 ${
+                              isBaseUnitOnly
+                                ? "bg-blue-50/70 border-blue-200 text-blue-800"
+                                : "bg-slate-100 border-slate-200 text-slate-800"
+                            }`}
+                          >
+                            {isBaseUnitOnly ? (
+                              <Tag className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+                            ) : (
+                              <Package className="w-3.5 h-3.5 text-primary shrink-0" />
+                            )}
+                            <span>
+                              {isBaseUnitOnly ? "Đơn vị cơ bản: " : ""}
+                              {formatPackagingVariantText(v)}
+                            </span>
+                          </Badge>
+                        );
+                      })
+                    : packagingSpecsArr.map((tag) => (
+                        <Badge key={tag} variant="secondary" className="text-xs px-2.5 py-1 flex items-center gap-1.5">
+                          <Package className="w-3.5 h-3.5 text-slate-500 shrink-0" />
+                          {tag}
+                        </Badge>
+                      ))}
                 </div>
               </div>
             )}

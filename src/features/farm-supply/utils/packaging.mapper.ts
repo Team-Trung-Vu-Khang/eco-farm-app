@@ -1,3 +1,5 @@
+import { formatPackagingVariantText } from "./supplyFormatUtils";
+
 export function parsePackagingSpecs(
   specs: string[],
   packagingTypes: { id: number; name: string }[],
@@ -6,55 +8,86 @@ export function parsePackagingSpecs(
   if (!specs || specs.length === 0) return [];
 
   return specs.map((spec, idx) => {
-    const parts = spec.trim().split(/\s+/);
-    let packagingTypeName = parts[0] || "Chai";
-    let quantityStr = parts[1] || "1";
-    let unitBaseName = parts[2] || "l";
+    const raw = spec.trim();
+    const parts = raw.split(/\s+/);
 
-    // Find numeric index to handle spaces in packaging type or unit base names
+    // Find numeric index
     const numIdx = parts.findIndex((p) => {
       const val = parseFloat(p);
       return !isNaN(val) && isFinite(val);
     });
 
+    let quantity: number | null = null;
+    let packagingTypeName: string | null = null;
+    let unitBaseName: string | null = null;
+
     if (numIdx !== -1) {
-      packagingTypeName = parts.slice(0, numIdx).join(" ") || "Chai";
-      quantityStr = parts[numIdx];
-      unitBaseName = parts.slice(numIdx + 1).join(" ") || "l";
-    }
+      quantity = parseFloat(parts[numIdx]);
+      if (isNaN(quantity) || !isFinite(quantity)) quantity = null;
 
-    const qty = parseFloat(quantityStr) || 1;
+      const beforeStr = parts.slice(0, numIdx).join(" ").trim();
+      const afterStr = parts.slice(numIdx + 1).join(" ").trim();
 
-    let pkgType = packagingTypes.find(
-      (t) => t.name.toLowerCase() === packagingTypeName.toLowerCase()
-    );
-    if (!pkgType && packagingTypes.length > 0) {
-      // Try partial match
-      pkgType = packagingTypes.find((t) =>
-        t.name.toLowerCase().includes(packagingTypeName.toLowerCase())
+      if (beforeStr && afterStr) {
+        packagingTypeName = beforeStr;
+        unitBaseName = afterStr;
+      } else if (beforeStr) {
+        packagingTypeName = beforeStr;
+      } else if (afterStr) {
+        const matchedUnit = baseUnits.find(
+          (u) => u.name.toLowerCase() === afterStr.toLowerCase()
+        );
+        if (matchedUnit) {
+          unitBaseName = afterStr;
+        } else {
+          packagingTypeName = afterStr;
+        }
+      }
+    } else {
+      // No number -> check if raw string matches a base unit (Base Unit Only mode)
+      const matchedUnit = baseUnits.find(
+        (u) => u.name.toLowerCase() === raw.toLowerCase()
       );
-      if (!pkgType) {
-        pkgType = packagingTypes[0];
+      if (matchedUnit) {
+        unitBaseName = raw;
+      } else {
+        packagingTypeName = raw;
       }
     }
 
-    let unit = baseUnits.find(
-      (u) => u.name.toLowerCase() === unitBaseName.toLowerCase()
-    );
-    if (!unit && baseUnits.length > 0) {
-      // Try partial match
-      unit = baseUnits.find((u) =>
-        u.name.toLowerCase().includes(unitBaseName.toLowerCase())
+    let pkgType = packagingTypeName
+      ? packagingTypes.find(
+          (t) => t.name.toLowerCase() === packagingTypeName!.toLowerCase()
+        ) ||
+        packagingTypes.find((t) =>
+          t.name.toLowerCase().includes(packagingTypeName!.toLowerCase())
+        )
+      : null;
+
+    let unit = unitBaseName
+      ? baseUnits.find(
+          (u) => u.name.toLowerCase() === unitBaseName!.toLowerCase()
+        ) ||
+        baseUnits.find((u) =>
+          u.name.toLowerCase().includes(unitBaseName!.toLowerCase())
+        )
+      : null;
+
+    // Fallback: If pkgType not found, check if packagingTypeName actually matches a base unit
+    if (!pkgType && packagingTypeName && !unit) {
+      const matchedBaseUnit = baseUnits.find(
+        (u) => u.name.toLowerCase() === packagingTypeName!.toLowerCase()
       );
-      if (!unit) {
-        unit = baseUnits[0];
+      if (matchedBaseUnit) {
+        unit = matchedBaseUnit;
+        pkgType = null;
       }
     }
 
     return {
-      packagingTypeId: pkgType?.id ?? 1,
-      unitBaseId: unit?.id ?? 1,
-      quantity: qty,
+      packagingTypeId: pkgType ? pkgType.id : null,
+      unitBaseId: unit ? unit.id : null,
+      quantity: quantity,
       displayOrder: idx,
     };
   });
@@ -62,12 +95,8 @@ export function parsePackagingSpecs(
 
 // Convert packagingVariants array from API back to string specs list for the frontend form states
 export function formatPackagingSpecs(
-  variants: { quantity: number; packagingType?: { name: string }; unitBase?: { name: string } }[]
+  variants: { quantity?: number | null; packagingType?: { name: string } | null; unitBase?: { name: string } | null }[]
 ): string[] {
-  if (!variants) return [];
-  return variants.map((v) => {
-    const pkg = v.packagingType?.name || "Chai";
-    const unit = v.unitBase?.name || "l";
-    return `${pkg} ${v.quantity} ${unit}`;
-  });
+  if (!variants || variants.length === 0) return [];
+  return variants.map((v) => formatPackagingVariantText(v));
 }

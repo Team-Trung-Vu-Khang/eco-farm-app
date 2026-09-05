@@ -96,15 +96,27 @@ export const MOCK_CROP_TREES: MockCropTreeItem[] = [
   },
 ];
 
+export interface SelectedTreeItem {
+  id: string;
+  codeName?: string;
+  label?: string;
+  treeCode?: string;
+  regionName?: string;
+}
+
 interface HarvestTreeSelectorDialogProps {
-  selectedTreeIds: string[];
-  onConfirm: (selectedTrees: MockCropTreeItem[]) => void;
+  selectedTreeIds?: string[];
+  selectedItems?: SelectedTreeItem[];
+  onConfirm?: (selectedTrees: MockCropTreeItem[]) => void;
+  onConfirmSelections?: (selectedTrees: MockCropTreeItem[]) => void;
   customTrigger?: React.ReactNode;
 }
 
 export function HarvestTreeSelectorDialog({
   selectedTreeIds,
+  selectedItems,
   onConfirm,
+  onConfirmSelections,
   customTrigger,
 }: HarvestTreeSelectorDialogProps) {
   const [isOpen, setIsOpen] = useState(false);
@@ -112,6 +124,16 @@ export function HarvestTreeSelectorDialog({
   const [filterPlantedDate, setFilterPlantedDate] = useState<string>("");
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [tempSelectedIds, setTempSelectedIds] = useState<string[]>([]);
+
+  const effectiveSelectedIds = useMemo(() => {
+    if (selectedTreeIds && Array.isArray(selectedTreeIds)) {
+      return selectedTreeIds;
+    }
+    if (selectedItems && Array.isArray(selectedItems)) {
+      return selectedItems.map((item) => item.id);
+    }
+    return [];
+  }, [selectedTreeIds, selectedItems]);
 
   const filteredTrees = useMemo(() => {
     return MOCK_CROP_TREES.filter((tree) => {
@@ -156,7 +178,7 @@ export function HarvestTreeSelectorDialog({
   };
 
   const handleOpen = () => {
-    setTempSelectedIds(selectedTreeIds);
+    setTempSelectedIds(effectiveSelectedIds);
     setIsOpen(true);
   };
 
@@ -164,7 +186,8 @@ export function HarvestTreeSelectorDialog({
     const selectedTrees = MOCK_CROP_TREES.filter((t) =>
       tempSelectedIds.includes(t.id),
     );
-    onConfirm(selectedTrees);
+    onConfirm?.(selectedTrees);
+    onConfirmSelections?.(selectedTrees);
     setIsOpen(false);
   };
 
@@ -181,8 +204,8 @@ export function HarvestTreeSelectorDialog({
         >
           <Sprout className="w-4 h-4 text-green-600" />
           <span>
-            {selectedTreeIds.length > 0
-              ? `Đã chọn ${selectedTreeIds.length} cây trồng (Nhấn để thay đổi)`
+            {effectiveSelectedIds.length > 0
+              ? `Đã chọn ${effectiveSelectedIds.length} cây trồng (Nhấn để thay đổi)`
               : "Chọn danh sách cây trồng thu hoạch..."}
           </span>
         </Button>
