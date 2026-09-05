@@ -24,15 +24,18 @@ import {
   MOCK_WORKFLOWS,
 } from "./mock/history.mock";
 
-export default function UpdateHistoryPage() {
+export interface UpdateHistoryPageProps {
+  scope?: "PLANNED" | "AD_HOC";
+}
+
+export default function UpdateHistoryPage({
+  scope,
+}: UpdateHistoryPageProps = {}) {
   const [, setLocation] = useLocation();
-  const [activeTab, setActiveTab] = useState<"ALL" | "PLANNED" | "AD_HOC">(
-    "ALL",
-  );
 
   // Search & Advanced Filter States
   const [searchQuery, setSearchQuery] = useState("");
-  const [isAdvancedSearchOpen, setIsAdvancedSearchOpen] = useState(false);
+  const [isAdvancedSearchOpen, setIsAdvancedSearchOpen] = useState(true);
 
   const [draftFilters, setDraftFilters] = useState<DiaryAdvancedFilters>({
     workflowIds: [],
@@ -129,9 +132,9 @@ export default function UpdateHistoryPage() {
   // Filtered dataset
   const filteredData = useMemo(() => {
     return MOCK_UPDATE_HISTORY.filter((item) => {
-      // 1. Filter by active tab (ALL / PLANNED / AD_HOC)
-      if (activeTab === "PLANNED" && item.origin !== "PLANNED") return false;
-      if (activeTab === "AD_HOC" && item.origin !== "AD_HOC") return false;
+      // 1. Filter by scope (PLANNED / AD_HOC)
+      if (scope === "PLANNED" && item.origin !== "PLANNED") return false;
+      if (scope === "AD_HOC" && item.origin !== "AD_HOC") return false;
 
       // 2. Filter by search query
       if (searchQuery.trim()) {
@@ -213,36 +216,37 @@ export default function UpdateHistoryPage() {
 
       return true;
     });
-  }, [activeTab, searchQuery, appliedFilters]);
+  }, [scope, searchQuery, appliedFilters]);
 
   // Statistics summary
   const stats = useMemo(() => {
-    const total = MOCK_UPDATE_HISTORY.length;
-    const planned = MOCK_UPDATE_HISTORY.filter(
-      (i) => i.origin === "PLANNED",
-    ).length;
-    const adhoc = MOCK_UPDATE_HISTORY.filter(
-      (i) => i.origin === "AD_HOC",
-    ).length;
+    const list = MOCK_UPDATE_HISTORY.filter((item) => {
+      if (scope === "PLANNED") return item.origin === "PLANNED";
+      if (scope === "AD_HOC") return item.origin === "AD_HOC";
+      return true;
+    });
+    const total = list.length;
+    const planned = list.filter((i) => i.origin === "PLANNED").length;
+    const adhoc = list.filter((i) => i.origin === "AD_HOC").length;
     return { total, planned, adhoc };
-  }, []);
+  }, [scope]);
+
+  const pageTitle =
+    scope === "PLANNED"
+      ? "Lịch sử cập nhật (Theo kế hoạch)"
+      : scope === "AD_HOC"
+        ? "Lịch sử cập nhật (Thường nhật)"
+        : "Lịch sử cập nhật nhật ký";
+
+  const pageDescription =
+    scope === "PLANNED"
+      ? "Danh sách các công việc theo kế hoạch có thao tác cập nhật nhật ký mới nhất"
+      : scope === "AD_HOC"
+        ? "Danh sách các công việc thường nhật có thao tác cập nhật nhật ký mới nhất"
+        : "Danh sách các công việc có thao tác cập nhật nhật ký mới nhất";
 
   return (
-    <PageWrapper
-      title="Lịch sử cập nhật nhật ký"
-      description="Danh sách các công việc có thao tác cập nhật nhật ký mới nhất"
-      actions={
-        <div className="flex items-center gap-3">
-          {/* <Button
-            className="h-10 px-4 text-sm font-bold bg-green-600 hover:bg-green-700 text-white gap-2 shadow-md shadow-green-600/20"
-            onClick={() => setLocation("/diary/incident")}
-          >
-            <Plus className="h-4 w-4" />
-            Tạo nhật ký mới
-          </Button> */}
-        </div>
-      }
-    >
+    <PageWrapper title={pageTitle} description={pageDescription}>
       <div className="space-y-6 pb-12">
         {/* Stat Blocks */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
@@ -360,7 +364,7 @@ export default function UpdateHistoryPage() {
             </div>
           </div>
 
-          {/* DiaryAdvancedFilterPanel Component */}
+          {/* DiaryAdvancedFilterPanel Component - Open by default */}
           <DiaryAdvancedFilterPanel
             isOpen={isAdvancedSearchOpen}
             filters={draftFilters}
@@ -369,7 +373,6 @@ export default function UpdateHistoryPage() {
             onReset={resetFilters}
             onApply={() => {
               applyFilters();
-              setIsAdvancedSearchOpen(false);
             }}
             resultCount={filteredData.length}
             workflowOptions={workflowOptions}
@@ -411,43 +414,6 @@ export default function UpdateHistoryPage() {
               </div>
             </div>
           )}
-        </div>
-
-        {/* ── Tabs Filter ── */}
-        <div className="flex gap-2 flex-wrap mb-4">
-          {[
-            { key: "ALL", label: `Tất cả (${stats.total})`, icon: History },
-            {
-              key: "PLANNED",
-              label: `Theo kế hoạch (${stats.planned})`,
-              icon: Link2,
-            },
-            {
-              key: "AD_HOC",
-              label: `Thường nhật (${stats.adhoc})`,
-              icon: Zap,
-            },
-          ].map((tab) => {
-            const Icon = tab.icon;
-            const isActive = activeTab === tab.key;
-            return (
-              <button
-                key={tab.key}
-                type="button"
-                onClick={() =>
-                  setActiveTab(tab.key as "ALL" | "PLANNED" | "AD_HOC")
-                }
-                className={`inline-flex items-center gap-1.5 rounded-full border px-4 py-1.5 text-sm font-semibold transition-all cursor-pointer ${
-                  isActive
-                    ? "border-green-400 bg-green-50 text-green-700 shadow-sm"
-                    : "border-slate-200 bg-white text-slate-600 hover:border-slate-300"
-                }`}
-              >
-                <Icon className="h-3.5 w-3.5" />
-                {tab.label}
-              </button>
-            );
-          })}
         </div>
 
         {/* Main Table */}

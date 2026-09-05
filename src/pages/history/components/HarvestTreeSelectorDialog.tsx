@@ -200,7 +200,7 @@ export function HarvestTreeSelectorDialog({
           type="button"
           onClick={handleOpen}
           variant="outline"
-          className="w-full h-11 border-dashed border-green-300 bg-green-50/50 hover:bg-green-100/60 text-green-700 font-bold gap-2 rounded-xl cursor-pointer"
+          className="w-full h-11 border-dashed border-green-300 bg-green-50/50 hover:bg-green-100/60 text-green-700 font-bold gap-2 rounded-lg cursor-pointer"
         >
           <Sprout className="w-4 h-4 text-green-600" />
           <span>
@@ -212,7 +212,7 @@ export function HarvestTreeSelectorDialog({
       )}
 
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
-        <DialogContent className="max-w-2xl p-0 overflow-hidden rounded-xl border-none shadow-2xl flex flex-col h-[580px]">
+        <DialogContent className="max-w-2xl p-0 overflow-hidden rounded-lg border-none shadow-2xl flex flex-col h-[580px]">
           <DialogHeader className="p-4 px-5 bg-slate-50 border-b shrink-0 flex flex-row items-center justify-between">
             <div>
               <DialogTitle className="flex items-center gap-2 text-base font-extrabold text-slate-900">
@@ -242,7 +242,7 @@ export function HarvestTreeSelectorDialog({
                     placeholder="Nhập tên Vùng trồng..."
                     value={regionQuery}
                     onChange={(e) => setRegionQuery(e.target.value)}
-                    className="pl-9 h-9 text-xs bg-slate-50 border-slate-200 rounded-xl"
+                    className="pl-9 h-9 text-xs bg-slate-50 border-slate-200 rounded-lg"
                   />
                 </div>
               </div>
@@ -256,7 +256,7 @@ export function HarvestTreeSelectorDialog({
                   type="date"
                   value={filterPlantedDate}
                   onChange={(e) => setFilterPlantedDate(e.target.value)}
-                  className="h-9 text-xs bg-slate-50 border-slate-200 rounded-xl"
+                  className="h-9 text-xs bg-slate-50 border-slate-200 rounded-lg"
                 />
               </div>
             </div>
@@ -269,14 +269,14 @@ export function HarvestTreeSelectorDialog({
                   placeholder="Tìm theo Mã cây, Tên cây, Tên lô..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-9 h-9 text-xs bg-slate-50 border-slate-200 rounded-xl"
+                  className="pl-9 h-9 text-xs bg-slate-50 border-slate-200 rounded-lg"
                 />
               </div>
               <Button
                 type="button"
                 variant="outline"
                 onClick={handleSelectAll}
-                className="h-9 px-3 text-xs font-bold shrink-0 border-slate-200 rounded-xl"
+                className="h-9 px-3 text-xs font-bold shrink-0 border-slate-200 rounded-lg"
               >
                 Chọn tất cả ({filteredTrees.length})
               </Button>
@@ -293,7 +293,7 @@ export function HarvestTreeSelectorDialog({
                     <div
                       key={tree.id}
                       onClick={() => toggleSelectTree(tree.id)}
-                      className={`flex items-center justify-between p-3 rounded-xl border transition-all cursor-pointer ${
+                      className={`flex items-center justify-between p-3 rounded-lg border transition-all cursor-pointer ${
                         isChecked
                           ? "bg-green-50/80 border-green-300 shadow-2xs"
                           : "bg-white border-slate-150 hover:border-slate-300 hover:bg-slate-50/50"
@@ -350,13 +350,13 @@ export function HarvestTreeSelectorDialog({
             <Button
               variant="outline"
               onClick={() => setIsOpen(false)}
-              className="rounded-xl h-10 px-5 text-xs font-bold"
+              className="rounded-lg h-10 px-5 text-xs font-bold"
             >
               Hủy
             </Button>
             <Button
               onClick={handleSave}
-              className="rounded-xl h-10 px-6 text-xs font-bold bg-green-600 hover:bg-green-700 text-white"
+              className="rounded-lg h-10 px-6 text-xs font-bold bg-green-600 hover:bg-green-700 text-white"
             >
               Xác nhận ({tempSelectedIds.length} cây)
             </Button>

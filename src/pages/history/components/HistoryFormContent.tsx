@@ -24,7 +24,6 @@ import {
 import {
   Apple,
   Bug,
-  Calendar,
   CheckCircle2,
   ChevronLeft,
   ClipboardList,
@@ -46,11 +45,49 @@ import {
   type MockTaskItem,
 } from "../mock/history.mock";
 import { GeographicalSelectionCard } from "./GeographicalSelectionCard";
-import { HarvestGeographicalSelectorDialog } from "./HarvestGeographicalSelectorDialog";
+import { GeographicalSelector } from "@/pages/cultivation-zone/cultivation-region/components/SharedSelectors";
+import type { GeographicalSelection } from "@/pages/cultivation-zone/cultivation-region/components/types";
+import { useRegions } from "@/features/farm/hooks/useRegions";
+import type { FarmRegionResponse } from "@/features/farm/types/farm.type";
+
+function toRegionOptions(apiRegions: FarmRegionResponse[]) {
+  return apiRegions.map((r) => ({
+    id: r.id,
+    code: r.code,
+    name: r.name ?? "",
+    enterpriseId: (r.metadataJson?.enterpriseId as string) ?? "",
+    subAreas: (r.areas ?? []).map((a) => ({
+      id: a.id,
+      name: a.name ?? "",
+      plots: [],
+    })),
+  }));
+}
 import { HarvestTreeSelectorDialog } from "./HarvestTreeSelectorDialog";
 import { PlannedTaskDetailCard } from "./PlannedTaskDetailCard";
-import { WorkAllocationCard } from "./WorkAllocationCard";
+import { WorkAllocationCard, type WorkTaskDetail } from "./WorkAllocationCard";
 import { WorkflowScopeMapModal } from "./WorkflowScopeMapModal";
+
+interface RawSupplyLineItem {
+  id: number;
+  supplyItem?: { name: string };
+  name?: string;
+  quantity?: number;
+  plannedQty?: number | string;
+  actualQty?: number | string;
+  unitBase?: { name: string };
+  unit?: string;
+}
+
+function mapSupplyLineItem(s: RawSupplyLineItem) {
+  return {
+    id: s.id,
+    name: s.supplyItem?.name || s.name || `Vật tư #${s.id}`,
+    plannedQty: String(s.quantity ?? s.plannedQty ?? 0),
+    actualQty: String(s.quantity ?? s.actualQty ?? 0),
+    unit: s.unitBase?.name || s.unit || "kg",
+  };
+}
 
 export interface MaterialAllocation {
   id: number;
@@ -269,6 +306,7 @@ export function HistoryFormContent({
     useState<boolean>(isPlannedModeDefault);
   const [selectedPlanId, setSelectedPlanId] = useState<string>(initialPlanId);
   const [selectedTaskId, setSelectedTaskId] = useState<string>(initialTaskId);
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   const [formData, setFormData] = useState<HistoryFormData>({
     regimenId: initialWorkflowId,
@@ -286,9 +324,101 @@ export function HistoryFormContent({
     materialAllocations: [],
   });
 
-  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [workTaskDetails, setWorkTaskDetails] = useState<
+    Record<string, WorkTaskDetail>
+  >({});
+  const [initialTaskDetails, setInitialTaskDetails] = useState<
+    Record<string, WorkTaskDetail>
+  >({});
+  const initialTaskDetailsRef = useRef<Record<string, WorkTaskDetail>>({});
+  const initialAllocationsRef = useRef<MaterialAllocation[]>([]);
+
+  const handleUpdateWorkTaskDetail = (
+    stageName: string,
+    updates: Partial<WorkTaskDetail>,
+  ) => {
+    setWorkTaskDetails((prev) => {
+      const existing = prev[stageName] || {
+        id: stageName,
+        stageName,
+        progress: 100,
+        endDate: new Date().toISOString().split("T")[0],
+      };
+      return {
+        ...prev,
+        [stageName]: {
+          ...existing,
+          ...updates,
+          isDirty: true,
+        },
+      };
+    });
+  };
   const [isDragging, setIsDragging] = useState(false);
-  const [geoDialogOpen, setGeoDialogOpen] = useState(false);
+  const { items: apiRegions, isFetching: isRegionSearching } = useRegions({
+    params: { size: 100 },
+  });
+  const regionOptions = useMemo(
+    () => toRegionOptions(apiRegions),
+    [apiRegions],
+  );
+
+  const existingGeoSelections = useMemo<GeographicalSelection[]>(() => {
+    if (formData.harvestScope !== "region") return [];
+    return formData.harvestDetails.map((detail) => {
+      const parts = detail.codeName ? detail.codeName.split(" › ") : [];
+      const type: "region" | "area" | "plot" =
+        parts.length >= 3 ? "plot" : parts.length === 2 ? "area" : "region";
+      return {
+        id: detail.targetId,
+        type,
+        regionId: detail.targetId,
+        name: detail.targetLabel,
+        regionName: parts[0] ?? detail.targetLabel,
+        areaName: parts[1],
+      };
+    });
+  }, [formData.harvestDetails, formData.harvestScope]);
+
+  const handleConfirmGeoSelections = (
+    newSelections: GeographicalSelection[],
+  ) => {
+    const currentMap = new Map(
+      formData.harvestDetails.map((d) => [d.targetId, d]),
+    );
+
+    const nextTargets = newSelections.map((sel) => sel.id);
+    const nextDetails = newSelections.map((sel) => {
+      const existing = currentMap.get(sel.id);
+      const label =
+        sel.name || sel.areaName || sel.regionName || "Vị trí địa lý";
+      const codeName =
+        [sel.regionName, sel.areaName, sel.name].filter(Boolean).join(" › ") ||
+        label;
+
+      if (existing) {
+        return {
+          ...existing,
+          targetLabel: label,
+          codeName,
+        };
+      }
+      return {
+        id: `h-geo-${sel.id}`,
+        targetId: sel.id,
+        targetLabel: label,
+        codeName,
+        quantity: "",
+        unitBase: "kg",
+      };
+    });
+
+    setFormData((prev) => ({
+      ...prev,
+      harvestTargets: nextTargets,
+      harvestDetails: nextDetails,
+    }));
+  };
 
   const [, setWorkflowSearchQuery] = useState("");
   const [, setPlanSearchQuery] = useState("");
@@ -328,7 +458,9 @@ export function HistoryFormContent({
         );
         if (mockTaskObj) {
           const planId = String(
-            mockTaskObj.plan?.id ?? (mockTaskObj as any).planId ?? "20",
+            mockTaskObj.plan?.id ??
+              (mockTaskObj as unknown as { planId?: string }).planId ??
+              "20",
           );
           taskItem = {
             id: String(mockTaskObj.id),
@@ -348,13 +480,7 @@ export function HistoryFormContent({
             endDate: mockTaskObj.endDate,
             objective: mockTaskObj.note || mockTaskObj.plan?.name,
             description: mockTaskObj.note,
-            supplyLines: (mockTaskObj.supplyLines || []).map((s: any) => ({
-              id: s.id,
-              name: s.supplyItem?.name || s.name || `Vật tư #${s.id}`,
-              plannedQty: String(s.quantity ?? s.plannedQty ?? 0),
-              actualQty: String(s.quantity ?? s.actualQty ?? 0),
-              unit: s.unitBase?.name || s.unit || "kg",
-            })),
+            supplyLines: (mockTaskObj.supplyLines || []).map(mapSupplyLineItem),
           };
         }
       }
@@ -393,6 +519,29 @@ export function HistoryFormContent({
         taskItem.name.toLowerCase().includes("harvest");
 
       const resolvedWorkType = isHarvestTask ? "harvest" : taskItem.workType;
+
+      const initTaskProgress = taskItem.lastCompletionPercentage ?? 100;
+      const defaultTaskDetails: Record<string, WorkTaskDetail> = {
+        [taskItem.name]: {
+          id: taskItem.name,
+          stageName: taskItem.name,
+          progress: initTaskProgress,
+          priority:
+            (taskItem.priority as WorkTaskDetail["priority"]) || "MEDIUM",
+          startDate: taskItem.startDate,
+          endDate: taskItem.endDate,
+          description: taskItem.description || "",
+          isDirty: false,
+        },
+      };
+      setWorkTaskDetails(defaultTaskDetails);
+      setInitialTaskDetails(defaultTaskDetails);
+      initialTaskDetailsRef.current = JSON.parse(
+        JSON.stringify(defaultTaskDetails),
+      );
+      initialAllocationsRef.current = JSON.parse(
+        JSON.stringify(plannedAllocations),
+      );
 
       setPlannedStages([taskItem.name]);
       setFormData((prev) => ({
@@ -470,11 +619,29 @@ export function HistoryFormContent({
   );
 
   const previousPercentage = useMemo(() => {
-    if (!selectedTask) return 60;
-    return selectedTask.lastCompletionPercentage ?? 60;
-  }, [selectedTask]);
+    const stages = formData.selectedStages;
+    if (stages.length === 0) return 100;
+    const sum = stages.reduce((acc, stage) => {
+      const initDetail = initialTaskDetails[stage];
+      const initP =
+        typeof initDetail?.progress === "number"
+          ? initDetail.progress
+          : (selectedTask?.lastCompletionPercentage ?? 100);
+      return acc + initP;
+    }, 0);
+    return Math.round(sum / stages.length);
+  }, [formData.selectedStages, initialTaskDetails, selectedTask]);
 
-  const currentPercentage = formData.completionPercentage ?? previousPercentage;
+  const currentPercentage = useMemo(() => {
+    const stages = formData.selectedStages;
+    if (stages.length === 0) return 100;
+    const sum = stages.reduce((acc, stage) => {
+      const detail = workTaskDetails[stage];
+      const p = typeof detail?.progress === "number" ? detail.progress : 100;
+      return acc + p;
+    }, 0);
+    return Math.round(sum / stages.length);
+  }, [formData.selectedStages, workTaskDetails]);
 
   const sliderTrackBackground = useMemo(() => {
     const prev = Math.min(100, Math.max(0, previousPercentage));
@@ -492,7 +659,7 @@ export function HistoryFormContent({
   }, [previousPercentage, currentPercentage]);
 
   const harvestTargetOptions = useMemo(() => {
-    const scopes = ((selectedWorkflow as any)?.scopes ||
+    const scopes = (selectedWorkflow?.scopes ||
       []) as FarmWorkflowScopeResponse[];
     return scopes.map(mapWorkflowScopeToHarvestOption).filter(Boolean) as {
       label: string;
@@ -644,9 +811,41 @@ export function HistoryFormContent({
       return;
     }
 
+    const getModifiedTasks = () => {
+      return Object.values(workTaskDetails).filter((task) => {
+        if (task.isDirty) return true;
+        const initObj = initialTaskDetailsRef.current[task.stageName];
+        if (!initObj) return true;
+        return (
+          initObj.progress !== task.progress || initObj.endDate !== task.endDate
+        );
+      });
+    };
+
+    const getModifiedAllocations = () => {
+      return formData.materialAllocations.filter((alloc) => {
+        if (alloc.isDirty) return true;
+        const initAlloc = initialAllocationsRef.current.find(
+          (i) => i.id === alloc.id,
+        );
+        if (!initAlloc) return true;
+        return (
+          initAlloc.actualQuantity !== alloc.actualQuantity ||
+          initAlloc.quantity !== alloc.quantity ||
+          initAlloc.unit !== alloc.unit
+        );
+      });
+    };
+
+    const modifiedTasks = getModifiedTasks();
+    const modifiedAllocations = getModifiedAllocations();
+
+    console.log("Dirty Checking - Tasks to submit:", modifiedTasks);
+    console.log("Dirty Checking - Allocations to submit:", modifiedAllocations);
+
     toast({
       title: "Thành công",
-      description: "Đã lưu thông tin nhật ký nông hộ thành công!",
+      description: `Đã lưu nhật ký! (${modifiedTasks.length} công việc và ${modifiedAllocations.length} vật tư có thay đổi)`,
     });
     setLocation(backUrl);
   };
@@ -657,7 +856,7 @@ export function HistoryFormContent({
       description="Ghi nhận hoạt động sản xuất, cập nhật tiến độ công việc và cấp phát vật tư"
       actions={
         <div className="flex items-center gap-3">
-          {allowModeToggle && (
+          {/* {allowModeToggle && (
             <div className="flex items-center gap-2 bg-slate-100 px-1.5 py-1 rounded-lg border border-slate-200/80 shrink-0">
               <span className="text-xs font-extrabold px-2 py-1 rounded-md transition-all">
                 Kế hoạch vụ mùa
@@ -670,6 +869,7 @@ export function HistoryFormContent({
                     setSelectedPlanId("");
                     setSelectedTaskId("");
                     setPlannedStages([]);
+                    setErrors((prev) => ({ ...prev, planId: "", taskId: "" }));
                     setFormData((prev) => ({
                       ...prev,
                       endDate: new Date().toISOString().split("T")[0],
@@ -678,7 +878,7 @@ export function HistoryFormContent({
                 }}
               />
             </div>
-          )}
+          )} */}
           <Button
             variant="outline"
             className="h-10 rounded-lg px-4 text-sm gap-2"
@@ -690,856 +890,772 @@ export function HistoryFormContent({
         </div>
       }
     >
-      <div className="mx-auto w-full max-w-[1600px] pb-24">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-          {/* Cột trái: Thông tin chính */}
-          <div className="lg:col-span-7 space-y-6">
-            <Card className="border-none bg-white shadow-sm">
-              <CardHeader className="border-b border-slate-100 pb-3">
-                <CardTitle className="flex items-center gap-2 text-base font-bold">
-                  <ClipboardList className="h-4 w-4 text-green-600" />
-                  Thông tin cập nhật
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4 pt-6">
-                {/* Chọn Vụ mùa / Quy trình */}
-                <div className="space-y-2">
-                  <Label required>{getWorkflowLabel(workflowDomainCode)}</Label>
-                  <RemoteAutoCompleteSelect
-                    options={workflowOptions}
-                    value={formData.regimenId}
-                    onChange={(val) => {
-                      setFormData((prev) => ({ ...prev, regimenId: val }));
-                      setSelectedPlanId("");
-                      setSelectedTaskId("");
-                      if (errors.regimenId) {
-                        setErrors((prev) => ({ ...prev, regimenId: "" }));
-                      }
-                    }}
-                    onSearch={(query) => {
-                      setWorkflowSearchQuery(query);
-                    }}
-                    placeholder={`Chọn ${getWorkflowLabel(workflowDomainCode).toLowerCase()}...`}
-                    searchPlaceholder={`Tìm ${getWorkflowLabel(workflowDomainCode).toLowerCase()}...`}
-                    emptyText="Không tìm thấy mục phù hợp."
-                    disabled={!allowModeToggle}
-                  />
-                  {errors.regimenId && (
-                    <p className="text-xs font-medium text-red-500 mt-1">
-                      {errors.regimenId}
-                    </p>
-                  )}
-                  <p className="text-xs text-slate-500">
-                    {getWorkflowSubtitle(workflowDomainCode)} đang được áp dụng
-                    cho nhật ký này.
+      <div className="mx-auto w-full max-w-5xl pb-24 space-y-6">
+        {/* Block 1: Thông tin chung & Nhật ký */}
+        <div className="space-y-6">
+          <Card className="border-none bg-white shadow-sm">
+            <CardHeader className="border-b border-slate-100 pb-3">
+              <CardTitle className="flex items-center gap-2 text-base font-bold">
+                <ClipboardList className="h-4 w-4 text-green-600" />
+                Thông tin cập nhật
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4 pt-6">
+              {/* Chọn Vụ mùa / Quy trình */}
+              <div className="space-y-2">
+                <Label required>{getWorkflowLabel(workflowDomainCode)}</Label>
+                <RemoteAutoCompleteSelect
+                  options={workflowOptions}
+                  value={formData.regimenId}
+                  onChange={(val) => {
+                    setFormData((prev) => ({ ...prev, regimenId: val }));
+                    setSelectedPlanId("");
+                    setSelectedTaskId("");
+                    if (errors.regimenId) {
+                      setErrors((prev) => ({ ...prev, regimenId: "" }));
+                    }
+                  }}
+                  onSearch={(query) => {
+                    setWorkflowSearchQuery(query);
+                  }}
+                  placeholder={`Chọn ${getWorkflowLabel(workflowDomainCode).toLowerCase()}...`}
+                  searchPlaceholder={`Tìm ${getWorkflowLabel(workflowDomainCode).toLowerCase()}...`}
+                  emptyText="Không tìm thấy mục phù hợp."
+                  disabled={!allowModeToggle}
+                />
+                {errors.regimenId && (
+                  <p className="text-xs font-medium text-red-500 mt-1">
+                    {errors.regimenId}
                   </p>
+                )}
+                <p className="text-xs text-slate-500">
+                  {getWorkflowSubtitle(workflowDomainCode)} đang được áp dụng
+                  cho nhật ký này.
+                </p>
 
-                  {/* Bản đồ phạm vi Mùa vụ */}
-                  {selectedWorkflow && (
-                    <WorkflowScopeMapModal workflow={selectedWorkflow} />
-                  )}
-                </div>
+                {/* Bản đồ phạm vi Mùa vụ */}
+                {selectedWorkflow && (
+                  <WorkflowScopeMapModal workflow={selectedWorkflow} />
+                )}
+              </div>
 
-                {/* Chế độ Theo kế hoạch -> Combobox chọn Kế hoạch & Hạng mục dự kiến */}
-                {isPlannedMode && (
-                  <div className="space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label required>Kế hoạch</Label>
-                        <RemoteAutoCompleteSelect
-                          options={planOptions}
-                          value={selectedPlanId}
-                          onChange={(val) => {
-                            setSelectedPlanId(val);
-                            setSelectedTaskId("");
-                            if (errors.planId) {
-                              setErrors((prev) => ({ ...prev, planId: "" }));
-                            }
-                          }}
-                          onSearch={(query) => {
-                            setPlanSearchQuery(query);
-                          }}
-                          placeholder="Chọn kế hoạch..."
-                          searchPlaceholder="Tìm kế hoạch..."
-                          emptyText="Không tìm thấy kế hoạch."
-                          disabled={!allowModeToggle || !formData.regimenId}
-                        />
-                        {errors.planId && (
-                          <p className="text-xs font-medium text-red-500 mt-1">
-                            {errors.planId}
-                          </p>
-                        )}
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label required>Hạng mục dự kiến</Label>
-                        <RemoteAutoCompleteSelect
-                          options={taskOptions}
-                          value={selectedTaskId}
-                          onChange={(val) => {
-                            setSelectedTaskId(val);
-                            const taskItem = MOCK_TASKS_LIST.find(
-                              (t) => String(t.id) === String(val),
-                            );
-                            if (taskItem) {
-                              const plannedAllocations: MaterialAllocation[] = (
-                                taskItem.supplyLines || []
-                              ).map((s, idx) => ({
-                                id: Date.now() + idx,
-                                stageId: taskItem.name,
-                                materialType: "Kế hoạch",
-                                materialName: s.name,
-                                quantity: s.plannedQty,
-                                actualQuantity: s.actualQty || s.plannedQty,
-                                unit: s.unit,
-                                isPlanned: true,
-                              }));
-
-                              const isHarvestTask =
-                                taskItem.workType === "harvest" ||
-                                taskItem.name
-                                  .toLowerCase()
-                                  .includes("thu hoạch") ||
-                                taskItem.name.toLowerCase().includes("harvest");
-
-                              const resolvedWorkType = isHarvestTask
-                                ? "harvest"
-                                : taskItem.workType;
-
-                              setPlannedStages([taskItem.name]);
-                              setFormData((prev) => ({
-                                ...prev,
-                                workType: resolvedWorkType,
-                                startDate: taskItem.startDate,
-                                endDate:
-                                  taskItem.endDate ||
-                                  new Date().toISOString().split("T")[0],
-                                completionPercentage:
-                                  taskItem.lastCompletionPercentage ?? 60,
-                                selectedStages: [taskItem.name],
-                                materialAllocations: plannedAllocations,
-                                harvestDetails: prev.harvestDetails,
-                              }));
-                            }
-                            if (errors.taskId) {
-                              setErrors((prev) => ({ ...prev, taskId: "" }));
-                            }
-                          }}
-                          onSearch={(query) => {
-                            setTaskSearchQuery(query);
-                          }}
-                          placeholder="Chọn công việc..."
-                          searchPlaceholder="Tìm công việc..."
-                          emptyText="Không tìm thấy công việc."
-                          disabled={
-                            !allowModeToggle ||
-                            !formData.regimenId ||
-                            !selectedPlanId
+              {/* Chế độ Theo kế hoạch -> Combobox chọn Kế hoạch & Hạng mục dự kiến */}
+              {isPlannedMode && (
+                <div className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label required>Kế hoạch</Label>
+                      <RemoteAutoCompleteSelect
+                        options={planOptions}
+                        value={selectedPlanId}
+                        onChange={(val) => {
+                          setSelectedPlanId(val);
+                          setSelectedTaskId("");
+                          if (errors.planId) {
+                            setErrors((prev) => ({ ...prev, planId: "" }));
                           }
-                        />
-                        {errors.taskId && (
-                          <p className="text-xs font-medium text-red-500 mt-1">
-                            {errors.taskId}
-                          </p>
-                        )}
-                      </div>
+                        }}
+                        onSearch={(query) => {
+                          setPlanSearchQuery(query);
+                        }}
+                        placeholder="Chọn kế hoạch..."
+                        searchPlaceholder="Tìm kế hoạch..."
+                        emptyText="Không tìm thấy kế hoạch."
+                        disabled={!allowModeToggle || !formData.regimenId}
+                      />
+                      {errors.planId && (
+                        <p className="text-xs font-medium text-red-500 mt-1">
+                          {errors.planId}
+                        </p>
+                      )}
                     </div>
 
-                    {/* Card chi tiết thông tin công việc dự kiến đã chọn */}
-                    {selectedTask && (
-                      <PlannedTaskDetailCard
-                        task={selectedTask}
-                        planObjective={selectedPlan?.objective}
-                      />
-                    )}
-                  </div>
-                )}
+                    <div className="space-y-2">
+                      <Label required>Hạng mục dự kiến</Label>
+                      <RemoteAutoCompleteSelect
+                        options={taskOptions}
+                        value={selectedTaskId}
+                        onChange={(val) => {
+                          setSelectedTaskId(val);
+                          const taskItem = MOCK_TASKS_LIST.find(
+                            (t) => String(t.id) === String(val),
+                          );
+                          if (taskItem) {
+                            const plannedAllocations: MaterialAllocation[] = (
+                              taskItem.supplyLines || []
+                            ).map((s, idx) => ({
+                              id: Date.now() + idx,
+                              stageId: taskItem.name,
+                              materialType: "Kế hoạch",
+                              materialName: s.name,
+                              quantity: s.plannedQty,
+                              actualQuantity: s.actualQty || s.plannedQty,
+                              unit: s.unit,
+                              isPlanned: true,
+                            }));
 
-                {/* Chọn Loại công việc */}
-                <div className="space-y-3">
-                  <Label required>Loại công việc</Label>
-                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
-                    {WORK_TYPE_OPTIONS.map((option) => {
-                      const isActive = formData.workType === option.value;
-                      return (
-                        <button
-                          key={option.value}
-                          type="button"
-                          disabled={isPlannedMode}
-                          onClick={() => {
-                            if (isPlannedMode) return;
+                            const isHarvestTask =
+                              taskItem.workType === "harvest" ||
+                              taskItem.name
+                                .toLowerCase()
+                                .includes("thu hoạch") ||
+                              taskItem.name.toLowerCase().includes("harvest");
+
+                            const resolvedWorkType = isHarvestTask
+                              ? "harvest"
+                              : taskItem.workType;
+
+                            const initTaskProgress =
+                              taskItem.lastCompletionPercentage ?? 100;
+                            const defaultTaskDetails: Record<
+                              string,
+                              WorkTaskDetail
+                            > = {
+                              [taskItem.name]: {
+                                id: taskItem.name,
+                                stageName: taskItem.name,
+                                progress: initTaskProgress,
+                                priority:
+                                  (taskItem.priority as WorkTaskDetail["priority"]) ||
+                                  "MEDIUM",
+                                startDate: taskItem.startDate,
+                                endDate: taskItem.endDate,
+                                description: taskItem.description || "",
+                                isDirty: false,
+                              },
+                            };
+                            setWorkTaskDetails(defaultTaskDetails);
+                            setInitialTaskDetails(defaultTaskDetails);
+                            initialTaskDetailsRef.current = JSON.parse(
+                              JSON.stringify(defaultTaskDetails),
+                            );
+                            initialAllocationsRef.current = JSON.parse(
+                              JSON.stringify(plannedAllocations),
+                            );
+
+                            setPlannedStages([taskItem.name]);
                             setFormData((prev) => ({
                               ...prev,
-                              workType: option.value,
+                              workType: resolvedWorkType,
+                              startDate: taskItem.startDate,
+                              endDate:
+                                taskItem.endDate ||
+                                new Date().toISOString().split("T")[0],
+                              completionPercentage: initTaskProgress,
+                              selectedStages: [taskItem.name],
+                              materialAllocations: plannedAllocations,
+                              harvestDetails: prev.harvestDetails,
                             }));
-                            if (errors.workType) {
-                              setErrors((prev) => ({ ...prev, workType: "" }));
-                            }
-                          }}
-                          className={`rounded-2xl border-2 px-3 py-4 transition-all flex flex-col items-center text-center gap-1.5 group ${
-                            isPlannedMode
-                              ? "cursor-not-allowed"
-                              : "cursor-pointer"
-                          } ${
-                            isActive
-                              ? option.activeClass
-                              : isPlannedMode
-                                ? "border-slate-100 bg-slate-50/50 opacity-50 text-slate-400"
-                                : "border-slate-100 bg-white hover:border-slate-200 text-slate-600"
-                          }`}
-                        >
-                          <div
-                            className={`w-10 h-10 rounded-xl flex items-center justify-center transition-transform group-hover:scale-105 ${
-                              isActive
-                                ? option.iconClass
-                                : "bg-slate-100 text-slate-600"
-                            }`}
-                          >
-                            <option.icon className="w-5 h-5" />
-                          </div>
-                          <span className="text-[11px] font-black uppercase tracking-tight">
-                            {option.label}
-                          </span>
-                        </button>
-                      );
-                    })}
+                          }
+                          if (errors.taskId) {
+                            setErrors((prev) => ({ ...prev, taskId: "" }));
+                          }
+                        }}
+                        onSearch={(query) => {
+                          setTaskSearchQuery(query);
+                        }}
+                        placeholder="Chọn công việc..."
+                        searchPlaceholder="Tìm công việc..."
+                        emptyText="Không tìm thấy công việc."
+                        disabled={
+                          !allowModeToggle ||
+                          !formData.regimenId ||
+                          !selectedPlanId
+                        }
+                      />
+                      {errors.taskId && (
+                        <p className="text-xs font-medium text-red-500 mt-1">
+                          {errors.taskId}
+                        </p>
+                      )}
+                    </div>
                   </div>
-                  {errors.workType && (
-                    <p className="text-xs font-medium text-red-500 mt-1">
-                      {errors.workType}
-                    </p>
+
+                  {/* Card chi tiết thông tin công việc dự kiến đã chọn */}
+                  {selectedTask && (
+                    <PlannedTaskDetailCard
+                      task={selectedTask}
+                      planObjective={selectedPlan?.objective}
+                    />
                   )}
                 </div>
+              )}
 
-                {/* Mức độ hoàn thành công việc (Slide bar 2 màu hợp nhất) */}
-                {isPlannedMode && (
-                  <div
-                    className={`space-y-3.5 rounded-2xl border border-slate-200/90 bg-white p-4.5 shadow-2xs transition-all ${
-                      !selectedTaskId ? "opacity-50 pointer-events-none" : ""
-                    }`}
-                  >
-                    {/* Header */}
-                    <div className="flex items-center justify-between gap-2.5">
-                      <div className="flex items-center gap-2">
-                        <div
-                          className={`h-8 w-8 rounded-xl flex items-center justify-center font-bold shrink-0 ${
-                            currentPercentage < previousPercentage
-                              ? "bg-red-100 text-red-700"
-                              : "bg-green-100 text-green-700"
-                          }`}
-                        >
-                          <CheckCircle2 className="w-4 h-4" />
-                        </div>
-                        <div>
-                          <h4 className="text-xs font-extrabold text-slate-900 uppercase tracking-wider">
-                            Mức độ hoàn thành công việc
-                          </h4>
-                          <p className="text-[11px] text-slate-500">
-                            Kéo thanh trượt để cập nhật tiến độ công việc đợt
-                            này
-                          </p>
-                        </div>
-                      </div>
-
-                      {/* Hiển thị badge cảnh báo khi kéo giảm */}
-                      {currentPercentage < previousPercentage && (
-                        <span className="text-[11px] font-extrabold text-red-700 bg-red-50 border border-red-200 px-2.5 py-1 rounded-lg">
-                          Giảm -{previousPercentage - currentPercentage}% so với
-                          trước đó
-                        </span>
-                      )}
-                    </div>
-
-                    {/* Dual-Color Range Input */}
-                    <div className="space-y-1 pt-1">
-                      <div className="relative flex items-center">
-                        <input
-                          type="range"
-                          min={0}
-                          max={100}
-                          step={5}
-                          disabled={!selectedTaskId}
-                          value={currentPercentage}
-                          onChange={(e) => {
-                            if (!selectedTaskId) return;
-                            const val = Number(e.target.value);
-                            setFormData((prev) => ({
-                              ...prev,
-                              completionPercentage: val,
-                            }));
-                          }}
-                          style={{
-                            background: sliderTrackBackground,
-                          }}
-                          className={`w-full h-3 rounded-lg appearance-none accent-green-600 focus:outline-none ${
-                            !selectedTaskId
-                              ? "cursor-not-allowed"
-                              : "cursor-pointer"
-                          }`}
-                        />
-                      </div>
-
-                      {/* Tỉ lệ mốc % */}
-                      <div className="flex justify-between text-[10px] text-slate-400 font-bold px-1">
-                        <span>0%</span>
-                        <span>25%</span>
-                        <span>50%</span>
-                        <span>75%</span>
-                        <span>100%</span>
-                      </div>
-                    </div>
-
-                    {/* Legend chú thích màu sắc */}
-                    <div className="flex flex-wrap items-center gap-4 pt-1 text-[11px] text-slate-600 border-t border-slate-100">
-                      {currentPercentage < previousPercentage ? (
-                        <>
-                          <div className="flex items-center gap-1.5 font-bold text-blue-700">
-                            <span className="w-2.5 h-2.5 rounded-full bg-blue-500"></span>
-                            <span>Mức cập nhật mới ({currentPercentage}%)</span>
-                          </div>
-                          <div className="flex items-center gap-1.5 font-extrabold text-red-600">
-                            <span className="w-2.5 h-2.5 rounded-full bg-red-500"></span>
-                            <span>
-                              Khoảng giảm (-
-                              {previousPercentage - currentPercentage}%)
-                            </span>
-                          </div>
-                          <div className="flex items-center gap-1.5 font-medium text-slate-500">
-                            <span className="w-2.5 h-2.5 rounded-full bg-slate-300"></span>
-                            <span>
-                              Chưa hoàn thành (
-                              {Math.max(0, 100 - currentPercentage)}%)
-                            </span>
-                          </div>
-                        </>
-                      ) : (
-                        <>
-                          <div className="flex items-center gap-1.5 font-medium">
-                            <span className="w-2.5 h-2.5 rounded-full bg-blue-500"></span>
-                            <span>
-                              Tiến độ trước đó ({previousPercentage}%)
-                            </span>
-                          </div>
-                          <div className="flex items-center gap-1.5 font-medium">
-                            <span className="w-2.5 h-2.5 rounded-full bg-green-500"></span>
-                            <span>
-                              Cập nhật thêm đợt này (
-                              {currentPercentage - previousPercentage}%)
-                            </span>
-                          </div>
-                          <div className="flex items-center gap-1.5 font-medium">
-                            <span className="w-2.5 h-2.5 rounded-full bg-slate-300"></span>
-                            <span>
-                              Chưa hoàn thành (
-                              {Math.max(0, 100 - currentPercentage)}%)
-                            </span>
-                          </div>
-                        </>
-                      )}
-                    </div>
-                  </div>
-                )}
-
-                {/* Ngày bắt đầu & Thời gian kết thúc thực tế */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label required>Ngày bắt đầu</Label>
-                    <div className="relative">
-                      <Input
-                        type="date"
+              {/* Chọn Loại công việc */}
+              <div className="space-y-3">
+                <Label required>Loại công việc</Label>
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+                  {WORK_TYPE_OPTIONS.map((option) => {
+                    const isActive = formData.workType === option.value;
+                    return (
+                      <button
+                        key={option.value}
+                        type="button"
                         disabled={isPlannedMode}
-                        clearable={false}
-                        className={`h-11 border-slate-200 pl-10 ${
-                          isPlannedMode
-                            ? "bg-slate-50 cursor-not-allowed text-slate-700 font-medium opacity-90"
-                            : "bg-white"
-                        } ${
-                          errors.startDate
-                            ? "border-red-500 focus:ring-red-500/20"
-                            : ""
-                        }`}
-                        value={formData.startDate}
-                        onChange={(e) => {
+                        onClick={() => {
                           if (isPlannedMode) return;
                           setFormData((prev) => ({
                             ...prev,
-                            startDate: e.target.value,
+                            workType: option.value,
                           }));
-                          if (errors.startDate) {
-                            setErrors((prev) => ({ ...prev, startDate: "" }));
+                          if (errors.workType) {
+                            setErrors((prev) => ({ ...prev, workType: "" }));
                           }
                         }}
-                      />
-                      <Calendar className="absolute left-3.5 top-3.5 h-4 w-4 text-slate-400 pointer-events-none" />
+                        className={`rounded-2xl border-2 px-3 py-4 transition-all flex flex-col items-center text-center gap-1.5 group ${
+                          isPlannedMode
+                            ? "cursor-not-allowed"
+                            : "cursor-pointer"
+                        } ${
+                          isActive
+                            ? option.activeClass
+                            : isPlannedMode
+                              ? "border-slate-100 bg-slate-50/50 opacity-50 text-slate-400"
+                              : "border-slate-100 bg-white hover:border-slate-200 text-slate-600"
+                        }`}
+                      >
+                        <div
+                          className={`w-10 h-10 rounded-xl flex items-center justify-center transition-transform group-hover:scale-105 ${
+                            isActive
+                              ? option.iconClass
+                              : "bg-slate-100 text-slate-600"
+                          }`}
+                        >
+                          <option.icon className="w-5 h-5" />
+                        </div>
+                        <span className="text-[11px] font-black uppercase tracking-tight">
+                          {option.label}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+                {errors.workType && (
+                  <p className="text-xs font-medium text-red-500 mt-1">
+                    {errors.workType}
+                  </p>
+                )}
+              </div>
+
+              {/* Mức độ hoàn thành công việc (Slide bar 2 màu hợp nhất) */}
+              {isPlannedMode && (
+                <div
+                  className={`space-y-3.5 rounded-2xl border border-slate-200/90 bg-white p-4.5 shadow-2xs transition-all ${
+                    !selectedTaskId ? "opacity-50 pointer-events-none" : ""
+                  }`}
+                >
+                  {/* Header */}
+                  <div className="flex items-center justify-between gap-2.5">
+                    <div className="flex items-center gap-2">
+                      <div
+                        className={`h-8 w-8 rounded-xl flex items-center justify-center font-bold shrink-0 ${
+                          currentPercentage < previousPercentage
+                            ? "bg-red-100 text-red-700"
+                            : "bg-green-100 text-green-700"
+                        }`}
+                      >
+                        <CheckCircle2 className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <h4 className="text-xs font-extrabold text-slate-900 uppercase tracking-wider">
+                          Mức độ hoàn thành công việc
+                        </h4>
+                        <p className="text-[11px] text-slate-500">
+                          Tự động tính toán theo tiến độ các công việc thuộc
+                          hạng mục
+                        </p>
+                      </div>
                     </div>
-                    {errors.startDate && (
-                      <p className="text-xs font-medium text-red-500 mt-1">
-                        {errors.startDate}
-                      </p>
+
+                    {/* Hiển thị badge cảnh báo khi kéo giảm */}
+                    {currentPercentage < previousPercentage && (
+                      <span className="text-[11px] font-extrabold text-red-700 bg-red-50 border border-red-200 px-2.5 py-1 rounded-lg">
+                        Giảm -{previousPercentage - currentPercentage}% so với
+                        trước đó
+                      </span>
                     )}
                   </div>
-                  <div className="space-y-2">
-                    <Label>Thời gian kết thúc thực tế</Label>
-                    <div className="relative">
-                      <Input
-                        type="date"
-                        clearable={false}
-                        className="h-11 border-slate-200 pl-10 bg-white font-medium text-slate-800"
-                        value={formData.endDate}
-                        onChange={(e) => {
+
+                  {/* Dual-Color Range Input (Read-only / Calculated from tasks) */}
+                  <div className="space-y-1 pt-1">
+                    <div className="relative flex items-center">
+                      <input
+                        type="range"
+                        min={0}
+                        max={100}
+                        step={1}
+                        disabled={true}
+                        value={currentPercentage}
+                        readOnly
+                        style={{
+                          background: sliderTrackBackground,
+                        }}
+                        className="w-full h-3 rounded-lg appearance-none accent-green-600 focus:outline-none cursor-not-allowed pointer-events-none"
+                      />
+                    </div>
+
+                    {/* Tỉ lệ mốc % */}
+                    <div className="flex justify-between text-[10px] text-slate-400 font-bold px-1">
+                      <span>0%</span>
+                      <span>25%</span>
+                      <span>50%</span>
+                      <span>75%</span>
+                      <span>100%</span>
+                    </div>
+                  </div>
+
+                  {/* Legend chú thích màu sắc */}
+                  <div className="flex flex-wrap items-center gap-4 pt-1 text-[11px] text-slate-600 border-t border-slate-100">
+                    {currentPercentage < previousPercentage ? (
+                      <>
+                        <div className="flex items-center gap-1.5 font-bold text-blue-700">
+                          <span className="w-2.5 h-2.5 rounded-full bg-blue-500"></span>
+                          <span>Mức cập nhật mới ({currentPercentage}%)</span>
+                        </div>
+                        <div className="flex items-center gap-1.5 font-extrabold text-red-600">
+                          <span className="w-2.5 h-2.5 rounded-full bg-red-500"></span>
+                          <span>
+                            Khoảng giảm (-
+                            {previousPercentage - currentPercentage}%)
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-1.5 font-medium text-slate-500">
+                          <span className="w-2.5 h-2.5 rounded-full bg-slate-300"></span>
+                          <span>
+                            Chưa hoàn thành (
+                            {Math.max(0, 100 - currentPercentage)}%)
+                          </span>
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <div className="flex items-center gap-1.5 font-medium">
+                          <span className="w-2.5 h-2.5 rounded-full bg-blue-500"></span>
+                          <span>Tiến độ trước đó ({previousPercentage}%)</span>
+                        </div>
+                        <div className="flex items-center gap-1.5 font-medium">
+                          <span className="w-2.5 h-2.5 rounded-full bg-green-500"></span>
+                          <span>
+                            Cập nhật thêm đợt này (
+                            {currentPercentage - previousPercentage}%)
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-1.5 font-medium">
+                          <span className="w-2.5 h-2.5 rounded-full bg-slate-300"></span>
+                          <span>
+                            Chưa hoàn thành (
+                            {Math.max(0, 100 - currentPercentage)}%)
+                          </span>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Mô tả */}
+              <div className="space-y-2">
+                <Label>Mô tả chi tiết lần cập nhật</Label>
+                <Textarea
+                  placeholder="Nhập mô tả hoặc ghi chú lần cập nhật..."
+                  rows={4}
+                  className="bg-white border-slate-200 focus:ring-green-500/20"
+                  value={formData.description}
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      description: e.target.value,
+                    }))
+                  }
+                />
+              </div>
+
+              {/* Upload hình ảnh đợt cập nhật */}
+              <div className="space-y-2 pt-1">
+                <Label>Hình ảnh / Chứng từ đợt cập nhật (nếu có)</Label>
+                <div
+                  onDragOver={(e) => {
+                    e.preventDefault();
+                    setIsDragging(true);
+                  }}
+                  onDragLeave={() => setIsDragging(false)}
+                  onDrop={handleDrop}
+                  onClick={() => fileInputRef.current?.click()}
+                  className={`rounded-2xl border-2 border-dashed p-4 text-center transition-all cursor-pointer ${
+                    isDragging
+                      ? "border-green-500 bg-green-50/50"
+                      : "border-slate-200 bg-slate-50/50 hover:border-green-300 hover:bg-white"
+                  }`}
+                >
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    className="hidden"
+                    onChange={handleFileInputChange}
+                  />
+                  <div className="flex flex-col items-center gap-2">
+                    <div className="w-9 h-9 rounded-full bg-white shadow-2xs border border-slate-200 flex items-center justify-center text-green-600">
+                      <Upload className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <p className="text-xs font-bold text-slate-800">
+                        Kéo thả hình ảnh hoặc{" "}
+                        <span className="text-green-600 underline">
+                          tải lên từ thiết bị
+                        </span>
+                      </p>
+                      <p className="text-[10px] text-slate-400 mt-0.5">
+                        Hỗ trợ định dạng PNG, JPG, JPEG (Tối đa 10MB)
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Danh sách ảnh đã chọn */}
+                {formData.images.length > 0 && (
+                  <div className="grid grid-cols-4 gap-2.5 pt-2">
+                    {formData.images.map((file, idx) => (
+                      <div
+                        key={`${file.name}-${idx}`}
+                        className="group relative h-20 rounded-xl overflow-hidden border border-slate-200 bg-white shadow-2xs"
+                      >
+                        <img
+                          src={URL.createObjectURL(file)}
+                          alt={file.name}
+                          className="h-full w-full object-cover"
+                        />
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            removeImage(idx);
+                          }}
+                          className="absolute top-1 right-1 h-5 w-5 rounded-full bg-slate-900/80 text-white flex items-center justify-center hover:bg-red-600 transition-colors"
+                          title="Xóa ảnh này"
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Block Thu hoạch (Nếu chọn loại công việc Thu hoạch) */}
+          {formData.workType === "harvest" && (
+            <Card className="border-none bg-white shadow-sm">
+              <CardHeader className="border-b border-slate-100 pb-3">
+                <CardTitle className="flex items-center gap-2 text-base font-bold">
+                  <Apple className="h-4 w-4 text-green-600" />
+                  Thu hoạch
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="pt-6">
+                <div className="space-y-8">
+                  <div className="space-y-4">
+                    <div className="space-y-1">
+                      <p className="text-sm font-semibold text-slate-900">
+                        Đối tượng thu hoạch
+                      </p>
+                      <p className="text-xs text-slate-500">
+                        Chọn theo vùng canh tác hoặc cây canh tác, rồi nhập chi
+                        tiết cho từng mục.
+                      </p>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2">
+                      <button
+                        type="button"
+                        onClick={() => {
                           setFormData((prev) => ({
                             ...prev,
-                            endDate: e.target.value,
+                            harvestScope: "region",
+                            harvestTargets: [],
+                            harvestDetails: [],
+                          }));
+                        }}
+                        className={`h-11 rounded-xl border px-3 text-xs font-extrabold transition-all cursor-pointer ${
+                          formData.harvestScope === "region"
+                            ? "border-green-600 bg-green-50/60 text-green-700 shadow-2xs"
+                            : "border-slate-200 bg-white text-slate-600 hover:border-slate-300"
+                        }`}
+                      >
+                        Vùng canh tác
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setFormData((prev) => ({
+                            ...prev,
+                            harvestScope: "crop",
+                            harvestTargets: [],
+                            harvestDetails: [],
+                          }));
+                        }}
+                        className={`h-11 rounded-xl border px-3 text-xs font-extrabold transition-all cursor-pointer ${
+                          formData.harvestScope === "crop"
+                            ? "border-green-600 bg-green-50/60 text-green-700 shadow-2xs"
+                            : "border-slate-200 bg-white text-slate-600 hover:border-slate-300"
+                        }`}
+                      >
+                        Cây canh tác
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="space-y-4">
+                    {formData.harvestScope === "region" ? (
+                      <GeographicalSelector
+                        regions={regionOptions}
+                        existingSelections={existingGeoSelections}
+                        onConfirm={handleConfirmGeoSelections}
+                        isRegionSearching={isRegionSearching}
+                        customTrigger={
+                          <Button
+                            type="button"
+                            variant="outline"
+                            className="w-full h-11 border-2 border-dashed border-green-200 bg-green-50/40 hover:bg-green-50 hover:border-green-400 text-green-700 font-bold gap-2 transition-all rounded-xl shadow-2xs cursor-pointer text-xs justify-center"
+                          >
+                            <Layers className="w-4 h-4 text-green-600" />
+                            <span>
+                              {formData.harvestDetails.length > 0
+                                ? `Đã chọn ${formData.harvestDetails.length} đơn vị địa lý (Bấm để chọn lại)`
+                                : "Chọn các vùng / khu vực / lô địa lý thu hoạch..."}
+                            </span>
+                          </Button>
+                        }
+                      />
+                    ) : (
+                      <HarvestTreeSelectorDialog
+                        selectedItems={formData.harvestDetails
+                          .filter((d) => d.codeName)
+                          .map((d) => ({
+                            id: d.targetId,
+                            codeName: d.codeName,
+                            label: d.targetLabel,
+                            treeCode: d.codeName,
+                            regionName: "Vùng trồng #1",
+                          }))}
+                        onConfirmSelections={(trees) => {
+                          const currentMap = new Map(
+                            formData.harvestDetails.map((d) => [d.targetId, d]),
+                          );
+                          const nextTargets = trees.map((t) => t.id);
+                          const nextDetails = trees.map((t) => {
+                            const existing = currentMap.get(t.id);
+                            if (existing) {
+                              return {
+                                ...existing,
+                                codeName: t.treeCode,
+                                targetLabel: t.label,
+                              };
+                            }
+                            return {
+                              id: `h-tree-${t.id}`,
+                              targetId: t.id,
+                              targetLabel: t.label,
+                              codeName: t.treeCode,
+                              quantity: "",
+                              unitBase: "kg",
+                            };
+                          });
+                          setFormData((prev) => ({
+                            ...prev,
+                            harvestTargets: nextTargets,
+                            harvestDetails: nextDetails,
                           }));
                         }}
                       />
-                      <Calendar className="absolute left-3.5 top-3.5 h-4 w-4 text-slate-400 pointer-events-none" />
-                    </div>
-                  </div>
-                </div>
+                    )}
 
-                {/* Mô tả */}
-                <div className="space-y-2">
-                  <Label>Mô tả chi tiết lần cập nhật</Label>
-                  <Textarea
-                    placeholder="Nhập mô tả hoặc ghi chú lần cập nhật..."
-                    rows={4}
-                    className="bg-white border-slate-200 focus:ring-green-500/20"
-                    value={formData.description}
-                    onChange={(e) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        description: e.target.value,
-                      }))
-                    }
-                  />
-                </div>
-
-                {/* Upload hình ảnh đợt cập nhật */}
-                <div className="space-y-2 pt-1">
-                  <Label>Hình ảnh / Chứng từ đợt cập nhật (nếu có)</Label>
-                  <div
-                    onDragOver={(e) => {
-                      e.preventDefault();
-                      setIsDragging(true);
-                    }}
-                    onDragLeave={() => setIsDragging(false)}
-                    onDrop={handleDrop}
-                    onClick={() => fileInputRef.current?.click()}
-                    className={`rounded-2xl border-2 border-dashed p-4 text-center transition-all cursor-pointer ${
-                      isDragging
-                        ? "border-green-500 bg-green-50/50"
-                        : "border-slate-200 bg-slate-50/50 hover:border-green-300 hover:bg-white"
-                    }`}
-                  >
-                    <input
-                      ref={fileInputRef}
-                      type="file"
-                      accept="image/*"
-                      multiple
-                      className="hidden"
-                      onChange={handleFileInputChange}
-                    />
-                    <div className="flex flex-col items-center gap-2">
-                      <div className="w-9 h-9 rounded-full bg-white shadow-2xs border border-slate-200 flex items-center justify-center text-green-600">
-                        <Upload className="w-4 h-4" />
-                      </div>
-                      <div>
-                        <p className="text-xs font-bold text-slate-800">
-                          Kéo thả hình ảnh hoặc{" "}
-                          <span className="text-green-600 underline">
-                            tải lên từ thiết bị
-                          </span>
-                        </p>
-                        <p className="text-[10px] text-slate-400 mt-0.5">
-                          Hỗ trợ định dạng PNG, JPG, JPEG (Tối đa 10MB)
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Danh sách ảnh đã chọn */}
-                  {formData.images.length > 0 && (
-                    <div className="grid grid-cols-4 gap-2.5 pt-2">
-                      {formData.images.map((file, idx) => (
-                        <div
-                          key={`${file.name}-${idx}`}
-                          className="group relative h-20 rounded-xl overflow-hidden border border-slate-200 bg-white shadow-2xs"
-                        >
-                          <img
-                            src={URL.createObjectURL(file)}
-                            alt={file.name}
-                            className="h-full w-full object-cover"
-                          />
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              removeImage(idx);
-                            }}
-                            className="absolute top-1 right-1 h-5 w-5 rounded-full bg-slate-900/80 text-white flex items-center justify-center hover:bg-red-600 transition-colors"
-                            title="Xóa ảnh này"
+                    {/* Chi tiết từng mục thu hoạch */}
+                    {formData.harvestDetails.length > 0 ? (
+                      <div className="space-y-4">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-sm font-bold text-slate-900">
+                              Chi tiết thu hoạch
+                            </p>
+                            <p className="text-xs text-slate-500">
+                              Nhập mã, sản lượng và đơn vị cơ bản cho từng mục
+                              đã chọn.
+                            </p>
+                          </div>
+                          <Badge
+                            variant="outline"
+                            className="bg-green-50 text-green-700 border-green-200 font-bold"
                           >
-                            <X className="h-3 w-3" />
-                          </button>
+                            {formData.harvestDetails.length} mục
+                          </Badge>
                         </div>
-                      ))}
-                    </div>
-                  )}
+
+                        {formData.harvestDetails.map((detail, index) => (
+                          <div
+                            key={detail.id}
+                            className="rounded-2xl border border-green-100 bg-white p-4 shadow-sm space-y-3"
+                          >
+                            <div className="flex items-center justify-between gap-2">
+                              <div>
+                                <p className="text-sm font-semibold text-slate-900">
+                                  {detail.targetLabel}
+                                </p>
+                                <p className="text-[11px] text-slate-500">
+                                  {getHarvestLabel(formData.harvestScope)} #
+                                  {index + 1}
+                                </p>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  syncHarvestDetails(
+                                    formData.harvestTargets.filter(
+                                      (id) => id !== detail.targetId,
+                                    ),
+                                  )
+                                }
+                                className="p-1 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                                title="Xóa mục này"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </button>
+                            </div>
+
+                            {formData.harvestScope === "region" ? (
+                              <GeographicalSelector
+                                regions={regionOptions}
+                                existingSelections={existingGeoSelections}
+                                onConfirm={handleConfirmGeoSelections}
+                                isRegionSearching={isRegionSearching}
+                                customTrigger={
+                                  <GeographicalSelectionCard
+                                    codeName={detail.codeName}
+                                    onChangeLocation={() => {}}
+                                    onRemove={() =>
+                                      syncHarvestDetails(
+                                        formData.harvestTargets.filter(
+                                          (id) => id !== detail.targetId,
+                                        ),
+                                      )
+                                    }
+                                  />
+                                }
+                              />
+                            ) : null}
+
+                            <div className="grid grid-cols-12 gap-3">
+                              <div className="space-y-1.5 md:col-span-8">
+                                <Label className="text-xs font-semibold text-slate-500">
+                                  Sản lượng
+                                </Label>
+                                <Input
+                                  type="number"
+                                  placeholder="Nhập sản lượng..."
+                                  className="h-10 bg-white border-slate-200 text-sm"
+                                  value={detail.quantity}
+                                  onChange={(e) => {
+                                    const next = e.target.value;
+                                    setFormData((prev) => ({
+                                      ...prev,
+                                      harvestDetails: prev.harvestDetails.map(
+                                        (item) =>
+                                          item.id === detail.id
+                                            ? { ...item, quantity: next }
+                                            : item,
+                                      ),
+                                    }));
+                                  }}
+                                />
+                              </div>
+                              <div className="space-y-1.5 md:col-span-4">
+                                <Label className="text-xs font-semibold text-slate-500">
+                                  Đơn vị cơ bản
+                                </Label>
+                                <Select
+                                  value={detail.unitBase}
+                                  onValueChange={(value) => {
+                                    setFormData((prev) => ({
+                                      ...prev,
+                                      harvestDetails: prev.harvestDetails.map(
+                                        (item) =>
+                                          item.id === detail.id
+                                            ? { ...item, unitBase: value }
+                                            : item,
+                                      ),
+                                    }));
+                                  }}
+                                >
+                                  <SelectTrigger className="h-10 bg-white border-slate-200 text-sm">
+                                    <SelectValue placeholder="Chọn đơn vị" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {getHarvestUnitOptions().map((unit) => (
+                                      <SelectItem
+                                        key={unit.value}
+                                        value={unit.value}
+                                      >
+                                        {unit.label}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="rounded-2xl border border-dashed border-green-200 bg-green-50/30 p-6 text-sm text-slate-500 font-medium">
+                        Chưa chọn đối tượng thu hoạch.
+                      </div>
+                    )}
+                  </div>
                 </div>
               </CardContent>
             </Card>
-
-            {/* Block Thu hoạch (Nếu chọn loại công việc Thu hoạch) */}
-            {formData.workType === "harvest" && (
-              <Card className="border-none bg-white shadow-sm">
-                <CardHeader className="border-b border-slate-100 pb-3">
-                  <CardTitle className="flex items-center gap-2 text-base font-bold">
-                    <Apple className="h-4 w-4 text-green-600" />
-                    Thu hoạch
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="pt-6">
-                  <div className="space-y-8">
-                    <div className="space-y-4">
-                      <div className="space-y-1">
-                        <p className="text-sm font-semibold text-slate-900">
-                          Đối tượng thu hoạch
-                        </p>
-                        <p className="text-xs text-slate-500">
-                          Chọn theo vùng canh tác hoặc cây canh tác, rồi nhập
-                          chi tiết cho từng mục.
-                        </p>
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-2">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setFormData((prev) => ({
-                              ...prev,
-                              harvestScope: "region",
-                              harvestTargets: [],
-                              harvestDetails: [],
-                            }));
-                          }}
-                          className={`h-11 rounded-xl border px-3 text-xs font-extrabold transition-all cursor-pointer ${
-                            formData.harvestScope === "region"
-                              ? "border-green-600 bg-green-50/60 text-green-700 shadow-2xs"
-                              : "border-slate-200 bg-white text-slate-600 hover:border-slate-300"
-                          }`}
-                        >
-                          Vùng canh tác
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setFormData((prev) => ({
-                              ...prev,
-                              harvestScope: "crop",
-                              harvestTargets: [],
-                              harvestDetails: [],
-                            }));
-                          }}
-                          className={`h-11 rounded-xl border px-3 text-xs font-extrabold transition-all cursor-pointer ${
-                            formData.harvestScope === "crop"
-                              ? "border-green-600 bg-green-50/60 text-green-700 shadow-2xs"
-                              : "border-slate-200 bg-white text-slate-600 hover:border-slate-300"
-                          }`}
-                        >
-                          Cây canh tác
-                        </button>
-                      </div>
-                    </div>
-
-                    <div className="space-y-4">
-                      {formData.harvestScope === "region" ? (
-                        <Button
-                          type="button"
-                          variant="outline"
-                          onClick={() => setGeoDialogOpen(true)}
-                          className="w-full h-11 border-2 border-dashed border-green-200 bg-green-50/40 hover:bg-green-50 hover:border-green-400 text-green-700 font-bold gap-2 transition-all rounded-xl shadow-2xs cursor-pointer text-xs justify-center"
-                        >
-                          <Layers className="w-4 h-4 text-green-600" />
-                          <span>
-                            {formData.harvestDetails.length > 0
-                              ? `Đã chọn ${formData.harvestDetails.length} đơn vị địa lý (Bấm để chọn lại)`
-                              : "Chọn các vùng / khu vực / lô địa lý thu hoạch..."}
-                          </span>
-                        </Button>
-                      ) : (
-                        <HarvestTreeSelectorDialog
-                          selectedItems={formData.harvestDetails
-                            .filter((d) => d.codeName)
-                            .map((d) => ({
-                              id: d.targetId,
-                              codeName: d.codeName,
-                              label: d.targetLabel,
-                              treeCode: d.codeName,
-                              regionName: "Vùng trồng #1",
-                            }))}
-                          onConfirmSelections={(trees) => {
-                            const currentMap = new Map(
-                              formData.harvestDetails.map((d) => [
-                                d.targetId,
-                                d,
-                              ]),
-                            );
-                            const nextTargets = trees.map((t) => t.id);
-                            const nextDetails = trees.map((t) => {
-                              const existing = currentMap.get(t.id);
-                              if (existing) {
-                                return {
-                                  ...existing,
-                                  codeName: t.treeCode,
-                                  targetLabel: t.label,
-                                };
-                              }
-                              return {
-                                id: `h-tree-${t.id}`,
-                                targetId: t.id,
-                                targetLabel: t.label,
-                                codeName: t.treeCode,
-                                quantity: "",
-                                unitBase: "kg",
-                              };
-                            });
-                            setFormData((prev) => ({
-                              ...prev,
-                              harvestTargets: nextTargets,
-                              harvestDetails: nextDetails,
-                            }));
-                          }}
-                        />
-                      )}
-
-                      {/* Chi tiết từng mục thu hoạch */}
-                      {formData.harvestDetails.length > 0 ? (
-                        <div className="space-y-4">
-                          <div className="flex items-center justify-between">
-                            <div>
-                              <p className="text-sm font-bold text-slate-900">
-                                Chi tiết thu hoạch
-                              </p>
-                              <p className="text-xs text-slate-500">
-                                Nhập mã, sản lượng và đơn vị cơ bản cho từng mục
-                                đã chọn.
-                              </p>
-                            </div>
-                            <Badge
-                              variant="outline"
-                              className="bg-green-50 text-green-700 border-green-200 font-bold"
-                            >
-                              {formData.harvestDetails.length} mục
-                            </Badge>
-                          </div>
-
-                          {formData.harvestDetails.map((detail, index) => (
-                            <div
-                              key={detail.id}
-                              className="rounded-2xl border border-green-100 bg-white p-4 shadow-sm space-y-3"
-                            >
-                              <div className="flex items-center justify-between gap-2">
-                                <div>
-                                  <p className="text-sm font-semibold text-slate-900">
-                                    {detail.targetLabel}
-                                  </p>
-                                  <p className="text-[11px] text-slate-500">
-                                    {getHarvestLabel(formData.harvestScope)} #
-                                    {index + 1}
-                                  </p>
-                                </div>
-                                <button
-                                  type="button"
-                                  onClick={() =>
-                                    syncHarvestDetails(
-                                      formData.harvestTargets.filter(
-                                        (id) => id !== detail.targetId,
-                                      ),
-                                    )
-                                  }
-                                  className="p-1 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
-                                  title="Xóa mục này"
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                </button>
-                              </div>
-
-                              {formData.harvestScope === "region" ? (
-                                <GeographicalSelectionCard
-                                  codeName={detail.codeName}
-                                  onChangeLocation={() =>
-                                    setGeoDialogOpen(true)
-                                  }
-                                  onRemove={() =>
-                                    syncHarvestDetails(
-                                      formData.harvestTargets.filter(
-                                        (id) => id !== detail.targetId,
-                                      ),
-                                    )
-                                  }
-                                />
-                              ) : null}
-
-                              <div className="grid grid-cols-12 gap-3">
-                                <div className="space-y-1.5 md:col-span-8">
-                                  <Label className="text-xs font-semibold text-slate-500">
-                                    Sản lượng
-                                  </Label>
-                                  <Input
-                                    type="number"
-                                    placeholder="Nhập sản lượng..."
-                                    className="h-10 bg-white border-slate-200 text-sm"
-                                    value={detail.quantity}
-                                    onChange={(e) => {
-                                      const next = e.target.value;
-                                      setFormData((prev) => ({
-                                        ...prev,
-                                        harvestDetails: prev.harvestDetails.map(
-                                          (item) =>
-                                            item.id === detail.id
-                                              ? { ...item, quantity: next }
-                                              : item,
-                                        ),
-                                      }));
-                                    }}
-                                  />
-                                </div>
-                                <div className="space-y-1.5 md:col-span-4">
-                                  <Label className="text-xs font-semibold text-slate-500">
-                                    Đơn vị cơ bản
-                                  </Label>
-                                  <Select
-                                    value={detail.unitBase}
-                                    onValueChange={(value) => {
-                                      setFormData((prev) => ({
-                                        ...prev,
-                                        harvestDetails: prev.harvestDetails.map(
-                                          (item) =>
-                                            item.id === detail.id
-                                              ? { ...item, unitBase: value }
-                                              : item,
-                                        ),
-                                      }));
-                                    }}
-                                  >
-                                    <SelectTrigger className="h-10 bg-white border-slate-200 text-sm">
-                                      <SelectValue placeholder="Chọn đơn vị" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                      {getHarvestUnitOptions().map((unit) => (
-                                        <SelectItem
-                                          key={unit.value}
-                                          value={unit.value}
-                                        >
-                                          {unit.label}
-                                        </SelectItem>
-                                      ))}
-                                    </SelectContent>
-                                  </Select>
-                                </div>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      ) : (
-                        <div className="rounded-2xl border border-dashed border-green-200 bg-green-50/30 p-6 text-sm text-slate-500 font-medium">
-                          Chưa chọn đối tượng thu hoạch.
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-          </div>
-
-          {/* Cột phải: Phân bổ công việc & Cấp phát vật tư */}
-          <div className="lg:col-span-5">
-            <WorkAllocationCard
-              selectedStages={formData.selectedStages}
-              plannedStages={plannedStages}
-              isPlannedMode={isPlannedMode}
-              materialAllocations={formData.materialAllocations}
-              domainCode={workflowDomainCode as DomainCode}
-              initialProgress={selectedTask?.lastCompletionPercentage ?? 60}
-              onAddStage={addStage}
-              onRemoveStage={removeStage}
-              onAddMaterial={handleAddMaterial}
-              onRemoveMaterial={handleRemoveMaterial}
-              onUpdateActualQuantity={handleUpdateActualQuantity}
-            />
-          </div>
+          )}
         </div>
 
-        {/* Nút hành động (Sticky Footer) */}
-        <div className="fixed left-0 right-0 bottom-0 z-30 bg-white/95 backdrop-blur-md border-t border-slate-200 shadow-lg px-6 py-4 flex items-center justify-end gap-3 rounded-b-2xl">
-          <Button
-            variant="outline"
-            type="button"
-            className="h-11 px-6 rounded-xl text-sm font-semibold"
-            onClick={() => setLocation(backUrl)}
-          >
-            Hủy bỏ
-          </Button>
-          <Button
-            type="button"
-            className="h-11 px-8 rounded-xl text-sm bg-green-600 hover:bg-green-700 text-white font-bold shadow-md shadow-green-600/20"
-            onClick={handleSubmitForm}
-          >
-            Lưu nhật ký
-          </Button>
+        {/* Block 2: Phân bổ công việc & Cấp phát vật tư (Stacked Full Width) */}
+        <div>
+          <WorkAllocationCard
+            selectedStages={formData.selectedStages}
+            plannedStages={plannedStages}
+            isPlannedMode={isPlannedMode}
+            workTaskDetails={workTaskDetails}
+            materialAllocations={formData.materialAllocations}
+            domainCode={workflowDomainCode as DomainCode}
+            onAddStage={addStage}
+            onRemoveStage={removeStage}
+            onUpdateWorkTaskDetail={handleUpdateWorkTaskDetail}
+            onAddMaterial={handleAddMaterial}
+            onRemoveMaterial={handleRemoveMaterial}
+            onUpdateActualQuantity={handleUpdateActualQuantity}
+          />
         </div>
       </div>
 
-      {/* Dialog chọn các vùng địa lý thu hoạch (Multi-select) */}
-      <HarvestGeographicalSelectorDialog
-        open={geoDialogOpen}
-        onOpenChange={setGeoDialogOpen}
-        selectedItems={formData.harvestDetails
-          .filter((d) => d.codeName)
-          .map((d) => ({
-            id: d.targetId,
-            codeName: d.codeName,
-            label: d.targetLabel,
-            type: d.codeName.includes(" › ")
-              ? d.codeName.split(" › ").length >= 3
-                ? "plot"
-                : "area"
-              : "region",
-          }))}
-        onConfirmSelections={(selectedGeoItems) => {
-          const currentMap = new Map(
-            formData.harvestDetails.map((d) => [d.targetId, d]),
-          );
-
-          const nextTargets = selectedGeoItems.map((item) => item.id);
-          const nextDetails = selectedGeoItems.map((item) => {
-            const existing = currentMap.get(item.id);
-            if (existing) {
-              return {
-                ...existing,
-                codeName: item.codeName,
-                targetLabel: item.label,
-              };
-            }
-            return {
-              id: `h-geo-${item.id}`,
-              targetId: item.id,
-              targetLabel: item.label,
-              codeName: item.codeName,
-              quantity: "",
-              unitBase: "kg",
-            };
-          });
-
-          setFormData((prev) => ({
-            ...prev,
-            harvestTargets: nextTargets,
-            harvestDetails: nextDetails,
-          }));
-        }}
-      />
+      {/* Nút hành động (Sticky Footer) */}
+      <div className="fixed left-0 right-0 bottom-0 z-30 bg-white/95 backdrop-blur-md border-t border-slate-200 shadow-lg px-6 py-4 flex items-center justify-end gap-3 rounded-b-2xl">
+        <Button
+          variant="outline"
+          type="button"
+          className="h-11 px-6 rounded-xl text-sm font-semibold"
+          onClick={() => setLocation(backUrl)}
+        >
+          Hủy bỏ
+        </Button>
+        <Button
+          type="button"
+          className="h-11 px-8 rounded-xl text-sm bg-green-600 hover:bg-green-700 text-white font-bold shadow-md shadow-green-600/20"
+          onClick={handleSubmitForm}
+        >
+          Lưu nhật ký
+        </Button>
+      </div>
     </PageWrapper>
   );
 }

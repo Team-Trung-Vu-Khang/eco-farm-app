@@ -11,7 +11,7 @@ export interface MockWorkflowItem {
   scopeName?: string;
   boundary?: [number, number][];
   centerPoint?: [number, number];
-  scopes?: any[];
+  scopes?: unknown[];
 }
 
 export interface MockPlanItem {

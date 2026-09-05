@@ -1,10 +1,9 @@
 import {
-  Badge,
   Button,
   DataTable,
   type Column,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { Clock, Eye, Link2, PackageOpen, Zap } from "lucide-react";
+import { Clock, Eye, PackageOpen } from "lucide-react";
 import { useMemo } from "react";
 import { useLocation } from "wouter";
 import type { TaskHistoryItem } from "../mock/history.mock";
@@ -64,28 +63,6 @@ export function UpdateHistoryTable({
             )}
           </div>
         ),
-      },
-      {
-        key: "origin",
-        label: "Phân loại",
-        render: (_val, row) =>
-          row.origin === "PLANNED" ? (
-            <Badge
-              variant="outline"
-              className="bg-blue-50 text-blue-700 border-blue-200 font-bold gap-1 text-[11px]"
-            >
-              <Link2 className="w-3 h-3 text-blue-600" />
-              Theo kế hoạch
-            </Badge>
-          ) : (
-            <Badge
-              variant="outline"
-              className="bg-purple-50 text-purple-700 border-purple-200 font-bold gap-1 text-[11px]"
-            >
-              <Zap className="w-3 h-3 text-purple-600" />
-              Thường nhật
-            </Badge>
-          ),
       },
       {
         key: "latestUpdate",

@@ -7,19 +7,10 @@ import {
   CardTitle,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import {
-  Apple,
-  Bug,
   CheckCircle2,
-  ClipboardList,
-  Clock,
-  FileText,
-  Flag,
   History,
-  Layers,
   ShieldCheck,
-  Sprout,
   UserCheck,
-  Wrench,
 } from "lucide-react";
 import type { MockTaskItem } from "../mock/history.mock";
 
@@ -28,34 +19,12 @@ interface PlannedTaskDetailCardProps {
   planObjective?: string;
 }
 
-function getWorkTypeLabel(workType: string) {
-  switch (workType) {
-    case "cultivation":
-      return "Canh tác";
-    case "facility-upgrade":
-      return "Nâng cấp CSVC";
-    case "treatment":
-      return "Điều trị";
-    case "amendment":
-      return "Cải tạo đất";
-    case "harvest":
-      return "Thu hoạch";
-    default:
-      return workType || "Canh tác";
-  }
-}
-
 export function PlannedTaskDetailCard({
   task,
-  planObjective,
 }: PlannedTaskDetailCardProps) {
   const completion = task.lastCompletionPercentage ?? 60;
-  const remaining = task.remainingPercentage ?? 100 - completion;
   const updatedCount = task.updatedCount ?? 3;
-  const priority = task.priority || "Quan trọng";
   const taskCategory = task.taskCategory || "Dự kiến";
-  const objective =
-    task.objective || planObjective || "Chưa xác định nhóm công việc";
   const manager = task.manager || {
     name: "Nguyễn Văn Hùng",
     role: "Kỹ sư Canh tác Trưởng",
@@ -76,13 +45,6 @@ export function PlannedTaskDetailCard({
                 className="bg-green-50 text-green-700 border-green-200 text-[10px] font-bold"
               >
                 Hạng mục: {taskCategory}
-              </Badge>
-              <Badge
-                variant="outline"
-                className="bg-amber-50 text-amber-700 border-amber-200 text-[10px] font-bold"
-              >
-                <Flag className="w-3 h-3 mr-1 text-amber-500" />
-                Ưu tiên: {priority}
               </Badge>
             </div>
             <CardTitle className="text-base font-extrabold text-slate-900 leading-snug">
@@ -179,19 +141,6 @@ export function PlannedTaskDetailCard({
             </div>
           </div>
         </div>
-
-        {/* Mô tả công việc */}
-        {task.description && (
-          <div className="rounded-xl border border-slate-200/80 bg-white p-3">
-            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1 flex items-center gap-1">
-              <FileText className="w-3 h-3 text-slate-400" />
-              Mô tả công việc hạng mục
-            </span>
-            <p className="text-slate-700 leading-relaxed text-xs">
-              {task.description}
-            </p>
-          </div>
-        )}
       </CardContent>
     </Card>
   );
