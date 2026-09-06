@@ -105,6 +105,7 @@ export function farmTaskToLegacyTask(task: FarmTaskResponse): Task {
     name: task.name,
     plan: planName,
     planId: task.plan?.id ? String(task.plan.id) : undefined,
+    planPurpose: task.plan?.purpose,
     stage: mapStageLabel(task),
     assignedTo: executorNames,
     assignedToIds: [],
@@ -136,6 +137,7 @@ export function farmTaskToLegacyTask(task: FarmTaskResponse): Task {
     tasks: [],
     geographicalSelections: mapScopeToSelections(task),
     sourceWorkItemName: task.sourceWorkItem?.name,
+    sourceWorkItemId: task.sourceWorkItem?.id,
     stageName: task.stage?.name,
     isRepeating:
       task.recurrence?.repeatMode === "SPECIFIC_DATES" &&

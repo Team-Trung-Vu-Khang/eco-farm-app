@@ -57,7 +57,6 @@ import type { FarmTaskRequest } from "@/features/farm-task";
 import { useFarmTaskById, useUpdateFarmTask } from "@/features/farm-task";
 import {
   useFarmPlanById,
-  useFarmPlanMutations,
   useFarmPlans,
   useFarmWorkflows,
 } from "@/features/farm-workflow/hooks";
@@ -191,14 +190,15 @@ function resolveApiStageId(
     : undefined;
   if (sourceStage) return sourceStage.id;
 
+  if (!stageKey) return undefined;
+
   const stageLabel = getStageLabelFromKey(stageKey);
   const matchedStage =
     stages.find((stage) => String(stage.id) === String(stageKey)) ||
     stages.find((stage) => stage.name === stageLabel) ||
     stages.find((stage) => stage.name === stageKey);
 
-  if (matchedStage) return matchedStage.id;
-  return stages.length === 1 ? stages[0].id : null;
+  return matchedStage ? matchedStage.id : undefined;
 }
 
 function buildTaskDraftFromTask(task: ReturnType<typeof farmTaskToLegacyTask>) {
@@ -208,6 +208,7 @@ function buildTaskDraftFromTask(task: ReturnType<typeof farmTaskToLegacyTask>) {
     stageId,
     name: task.name,
     description: task.description,
+    sourceWorkItemId: task.sourceWorkItemId,
     labor:
       task.assignedTo.length > 0
         ? `Nhân sự: ${task.assignedTo.join(", ")}`
@@ -284,7 +285,6 @@ export default function TaskEditPage() {
       ? `/task?planId=${encodeURIComponent(String(planId))}`
       : "/task";
   }, [search, taskResponse]);
-  const { createAdHocStage } = useFarmPlanMutations();
   const updateTaskMutation = useUpdateFarmTask({
     onSuccess: () => {
       toast({
@@ -646,7 +646,7 @@ export default function TaskEditPage() {
                   : plannedStageName || "Công việc phát sinh",
                 sourceWorkItemId: plannedWorkItem
                   ? Number(plannedWorkItem.id)
-                  : undefined,
+                  : (toFiniteNumber(sourceWorkItemId) ?? undefined),
                 name:
                   plannedWorkItem?.name ||
                   apiTask?.name ||
@@ -1215,54 +1215,17 @@ export default function TaskEditPage() {
       selections.length > 0 ? mapSelectionsToScope(selections) : existingScope;
     const isPlanned = formData.mode === "plan";
 
-    // When the AD_HOC reference plan has real stages to pick from, each task
-    // in the detailed form must explicitly choose one — silently falling
-    // back to an auto-created "Phát sinh" stage is only acceptable when the
-    // plan has no stages at all.
-    const requiredStageOptions = selectedPlan?.selectedStages || [];
-    if (
-      !isPlanned &&
-      !isSimpleMode &&
-      requiredStageOptions.length > 0 &&
-      formData.tasks.some(
-        (task) => !requiredStageOptions.includes(task.stageId),
-      )
-    ) {
-      toast({
-        title: "Thiếu giai đoạn",
-        description: "Vui lòng chọn giai đoạn cho từng công việc phát sinh.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    // AD_HOC tasks must carry a stageId. Resolve the giai đoạn explicitly
-    // chosen for the task (detailed form), fall back to the task's existing
-    // stage, or create a new "Phát sinh" stage on the fly.
-    let adHocStageId =
+    // AD_HOC tasks carry a stageId only when the user explicitly picked a
+    // giai đoạn (detailed form) or the task already had one — never
+    // auto-created on the fly.
+    const adHocStageId =
       resolveApiStageId(
         planDetailQuery.data,
         (formData.tasks[0] as TaskAllocation | undefined)?.stageId,
       ) ?? toFiniteNumber(taskResponse.stage?.id);
-    if (!isPlanned && adHocStageId == null) {
-      const adHocPlanId = toFiniteNumber(formData.planId);
-      if (adHocPlanId != null) {
-        try {
-          const adHocStage = await createAdHocStage.mutateAsync({
-            planId: adHocPlanId,
-            payload: { name: "Phát sinh" },
-          });
-          adHocStageId = adHocStage.id;
-        } catch (error) {
-          toast({
-            title: "Không thể tạo hạng mục phát sinh",
-            description: (error as Error).message,
-            variant: "destructive",
-          });
-          return;
-        }
-      }
-    }
+    const adHocSourceWorkItemId = toFiniteNumber(
+      (formData.tasks[0] as TaskAllocation | undefined)?.sourceWorkItemId,
+    );
 
     const plannedSourceWorkItemId = toFiniteNumber(
       formData.mainTaskId || formData.mainTaskIds[0],
@@ -1290,12 +1253,15 @@ export default function TaskEditPage() {
           }
         : {
             workflowId: toFiniteNumber(formData.regimenId),
-            stageId: adHocStageId,
+            sourceWorkItemId: adHocSourceWorkItemId,
+            stageId:
+              adHocSourceWorkItemId == null ? adHocStageId : undefined,
             taskCategoryId:
-              (formData.tasks[0] as TaskAllocation)?.taskCategoryId ??
-              taskResponse.taskCategory?.id ??
-              (selectedPlan?.taskAllocations[0] as any)?.taskCategoryId ??
-              null,
+              adHocSourceWorkItemId != null
+                ? null
+                : ((formData.tasks[0] as TaskAllocation)?.taskCategoryId ??
+                  taskResponse.taskCategory?.id ??
+                  null),
           }),
       // `planId` is also used for an AD_HOC task's reference plan.
       planId: toFiniteNumber(formData.planId),
@@ -1360,6 +1326,45 @@ export default function TaskEditPage() {
         ),
       status: taskResponse.status,
     };
+
+    if (payload.planId == null) {
+      toast({
+        title: "Thiếu kế hoạch",
+        description: "Vui lòng chọn kế hoạch trước khi lưu công việc.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // stageId is mandatory whenever the task has no sourceWorkItemId — for
+    // both PLANNED and AD_HOC — so require the user to explicitly pick one
+    // rather than silently generating a stage on their behalf.
+    if (payload.sourceWorkItemId == null && payload.stageId == null) {
+      toast({
+        title: "Thiếu giai đoạn",
+        description:
+          "Vui lòng chọn hạng mục công việc hoặc hạng mục dự kiến cho công việc.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Scope is mandatory for PLANNED; for AD_HOC it's optional but must be a
+    // complete pair if either half is provided.
+    const hasScopeType = payload.scopeType != null;
+    const hasScopeId = payload.scopeId != null;
+    const scopeInvalid =
+      payload.origin === "PLANNED"
+        ? !hasScopeType || !hasScopeId
+        : hasScopeType !== hasScopeId;
+    if (scopeInvalid) {
+      toast({
+        title: "Thiếu phạm vi thực hiện",
+        description: "Vui lòng chọn đầy đủ phạm vi (vùng/khu/lô) cho công việc.",
+        variant: "destructive",
+      });
+      return;
+    }
 
     await updateTaskMutation.updateFarmTask({
       id: task.id,
@@ -1520,9 +1525,7 @@ export default function TaskEditPage() {
 
                 <div className="space-y-2">
                   <Label className="text-sm font-bold text-slate-700" required>
-                    {formData.mode === "phat-sinh"
-                      ? "Công việc phát sinh"
-                      : "Công việc"}
+                    Công việc
                   </Label>
                   <Input
                     value={formData.name}
@@ -2537,10 +2540,10 @@ export default function TaskEditPage() {
               <TaskStageAllocation
                 key="phat-sinh"
                 stageName="Công việc phát sinh"
-                cycleName="Phát sinh"
+                plainList
                 // A single block covers the whole AD_HOC mode — each task
-                // picks its own giai đoạn below instead of being filtered
-                // into per-stage blocks.
+                // picks its own (optional) giai đoạn below instead of being
+                // filtered into per-stage blocks.
                 allocations={formData.materials}
                 tasks={formData.tasks}
                 onAddMaterial={(item) => handleAddMaterial(item)}
@@ -2567,9 +2570,7 @@ export default function TaskEditPage() {
                 masterSelections={selections}
                 enterpriseId={selectedEnterpriseId}
                 stageOptions={selectedPlan?.selectedStages || []}
-                stageOptionsRequired={
-                  (selectedPlan?.selectedStages || []).length > 0
-                }
+                stageOptionsRequired={false}
                 allowAddRemove={false}
               />
             ) : null}

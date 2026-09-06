@@ -5,6 +5,7 @@ import {
   Card,
   CardContent,
   Checkbox,
+  Combobox,
   Input,
   Label,
   Select,
@@ -25,7 +26,7 @@ import {
   RefreshCw,
   X,
 } from "lucide-react";
-import type { CSSProperties, Dispatch, SetStateAction } from "react";
+import { useRef, type CSSProperties, type Dispatch, type SetStateAction } from "react";
 import {
   formatLocalISODate,
   getRepeatDatesText,
@@ -78,6 +79,11 @@ interface SimpleTaskFormProps {
     workflowId?: string;
     purpose?: string;
     selectedStages?: string[];
+    taskAllocations?: Array<{
+      id: number;
+      name: string;
+      stageId?: string;
+    }>;
   }>;
   handleComplete: () => void;
   goBack: () => void;
@@ -99,6 +105,18 @@ export default function SimpleTaskForm({
   const mainSubtask = formData.tasks[0];
   const isRepeating = Boolean(mainSubtask?.isRepeating);
   const repeatDates = mainSubtask?.repeatDates || [];
+
+  // Snapshot the mode-related fields as they were first loaded (e.g. an
+  // existing task's plan/giai đoạn) so toggling "Nhóm công việc" away and
+  // back doesn't leave them permanently blank.
+  const originalModeFieldsRef = useRef({
+    mode: formData.mode,
+    regimenId: formData.regimenId,
+    planId: formData.planId,
+    planName: formData.planName,
+    selectedStages: formData.selectedStages,
+    selectedPlotIds: formData.selectedPlotIds,
+  });
 
   // Repeat dates are the start dates of future child tasks. They can be
   // after the current task's end date; only dates before the current start
@@ -141,12 +159,45 @@ export default function SimpleTaskForm({
   const stageOptions = selectedPlanForStages?.selectedStages || [];
   const selectedStageKey = formData.selectedStages[0] || "";
 
+  // Specific work items ("hạng mục công việc") to attach the task to —
+  // scoped to the chosen giai đoạn when one is picked, otherwise every work
+  // item across the plan.
+  const availableWorkItems = (
+    selectedPlanForStages?.taskAllocations || []
+  ).filter((item) => !selectedStageKey || item.stageId === selectedStageKey);
+  const selectedWorkItemId = mainSubtask?.sourceWorkItemId
+    ? String(mainSubtask.sourceWorkItemId)
+    : "";
+
+  const setSourceWorkItem = (workItemId: string) => {
+    const selectedItem = availableWorkItems.find(
+      (item) => String(item.id) === workItemId,
+    );
+    setFormData((prev) => {
+      const existing = prev.tasks[0] || {
+        id: Date.now(),
+        stageId: "",
+        name: prev.name,
+        description: prev.description,
+        geographicalSelections: [],
+      };
+      return {
+        ...prev,
+        tasks: [
+          { ...existing, sourceWorkItemId: selectedItem?.id },
+        ],
+      };
+    });
+  };
+
   const isValid =
     Boolean(formData.name) &&
     Boolean(formData.objectiveType) &&
     Boolean(formData.regimenId) &&
     (formData.mode === "phat-sinh" || Boolean(formData.planId)) &&
-    (stageOptions.length === 0 || Boolean(selectedStageKey)) &&
+    (formData.mode === "phat-sinh" ||
+      stageOptions.length === 0 ||
+      Boolean(selectedStageKey)) &&
     Boolean(formData.startDate) &&
     Boolean(formData.endDate) &&
     (!isRepeating || repeatDates.length > 0);
@@ -165,17 +216,6 @@ export default function SimpleTaskForm({
             phạm vi cụ thể.
           </p>
         </div>
-      </div>
-
-      <div className="space-y-2">
-        <Label required>Công việc</Label>
-        <Input
-          value={formData.name}
-          onChange={(e) =>
-            setFormData((prev) => ({ ...prev, name: e.target.value }))
-          }
-          placeholder="VD: Bón phân thúc đợt 1"
-        />
       </div>
 
       <div className="space-y-2">
@@ -210,18 +250,25 @@ export default function SimpleTaskForm({
           <Switch
             checked={formData.mode === "phat-sinh"}
             className="data-[state=checked]:bg-amber-500 data-[state=unchecked]:bg-blue-500"
-            onCheckedChange={(checked) =>
+            onCheckedChange={(checked) => {
+              const nextMode = checked ? "phat-sinh" : "plan";
+              const original = originalModeFieldsRef.current;
+              // Switching back to the mode the task originally loaded with
+              // restores its plan/giai đoạn instead of leaving them blank.
+              const restoreOriginal = nextMode === original.mode;
               setFormData((prev) => ({
                 ...prev,
-                mode: checked ? "phat-sinh" : "plan",
+                mode: nextMode,
                 objectiveType: checked ? "phat-sinh" : "theo-ke-hoach",
-                regimenId: "",
-                planId: "",
-                planName: "",
-                selectedStages: [],
-                selectedPlotIds: [],
-              }))
-            }
+                regimenId: restoreOriginal ? original.regimenId : "",
+                planId: restoreOriginal ? original.planId : "",
+                planName: restoreOriginal ? original.planName : "",
+                selectedStages: restoreOriginal ? original.selectedStages : [],
+                selectedPlotIds: restoreOriginal
+                  ? original.selectedPlotIds
+                  : [],
+              }));
+            }}
           />
 
           <div className="flex items-center gap-3">
@@ -256,10 +303,16 @@ export default function SimpleTaskForm({
 
       <div className="space-y-2">
         <Label required>Vụ mùa / Vụ nuôi</Label>
-        <Select
+        <Combobox
+          options={workflows.map((workflow) => ({
+            value: String(workflow.id),
+            label: workflow.code
+              ? `${workflow.code} - ${workflow.name}`
+              : workflow.name,
+          }))}
           value={formData.regimenId}
           disabled={lockPlanSelection}
-          onValueChange={(value) =>
+          onChange={(value) =>
             setFormData((prev) => ({
               ...prev,
               regimenId: value,
@@ -270,28 +323,21 @@ export default function SimpleTaskForm({
               selectedStages: [],
             }))
           }
-        >
-          <SelectTrigger className="disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-500 disabled:opacity-80">
-            <SelectValue placeholder="Chọn vụ mùa / vụ nuôi..." />
-          </SelectTrigger>
-          <SelectContent>
-            {workflows.map((workflow) => (
-              <SelectItem key={workflow.id} value={String(workflow.id)}>
-                {workflow.code
-                  ? `${workflow.code} - ${workflow.name}`
-                  : workflow.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+          placeholder="Chọn vụ mùa / vụ nuôi..."
+          searchPlaceholder="Tìm vụ mùa / vụ nuôi..."
+        />
       </div>
 
       <div className="space-y-2">
         <Label required={formData.mode === "plan"}>Kế hoạch triển khai</Label>
-        <Select
+        <Combobox
+          options={plans.map((plan) => ({
+            value: String(plan.id),
+            label: `${plan.name}${plan.code ? ` (${plan.code})` : ""}`,
+          }))}
           value={formData.planId}
           disabled={lockPlanSelection || !formData.regimenId || plans.length === 0}
-          onValueChange={(value) => {
+          onChange={(value) => {
             const selectedPlan = plans.find(
               (plan) => String(plan.id) === value,
             );
@@ -304,18 +350,9 @@ export default function SimpleTaskForm({
               selectedStages: [],
             }));
           }}
-        >
-          <SelectTrigger className="disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-500 disabled:opacity-80">
-            <SelectValue placeholder="Chọn kế hoạch triển khai..." />
-          </SelectTrigger>
-          <SelectContent>
-            {plans.map((plan) => (
-              <SelectItem key={plan.id} value={String(plan.id)}>
-                {plan.name} {plan.code ? `(${plan.code})` : ""}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+          placeholder="Chọn kế hoạch triển khai..."
+          searchPlaceholder="Tìm kế hoạch triển khai..."
+        />
         {!formData.regimenId && (
           <p className="text-[11px] font-medium text-slate-400">
             Chọn vụ mùa / vụ nuôi trước để tải kế hoạch.
@@ -330,14 +367,32 @@ export default function SimpleTaskForm({
 
       {formData.planId && (
         <div className="space-y-2">
-          <Label required={stageOptions.length > 0}>
-            Hạng mục dự kiến
-            {stageOptions.length === 0 && (
-              <span className="ml-2 text-[10px] font-medium text-slate-400">
-                Không bắt buộc
-              </span>
+          <div className="flex items-center justify-between">
+            <Label
+              required={
+                formData.mode !== "phat-sinh" && stageOptions.length > 0
+              }
+            >
+              Hạng mục dự kiến
+              {formData.mode !== "phat-sinh" && stageOptions.length === 0 && (
+                <span className="ml-2 text-[10px] font-medium text-slate-400">
+                  Không bắt buộc
+                </span>
+              )}
+            </Label>
+            {selectedStageKey && (
+              <button
+                type="button"
+                className="flex items-center gap-1 text-[11px] font-medium text-slate-400 hover:text-rose-500"
+                onClick={() =>
+                  setFormData((prev) => ({ ...prev, selectedStages: [] }))
+                }
+              >
+                <X className="h-3 w-3" />
+                Bỏ chọn
+              </button>
             )}
-          </Label>
+          </div>
           <Select
             value={selectedStageKey}
             disabled={stageOptions.length === 0}
@@ -369,6 +424,40 @@ export default function SimpleTaskForm({
           )}
         </div>
       )}
+
+      <div
+        className={cn(
+          "grid grid-cols-1 gap-4",
+          formData.planId && "sm:grid-cols-2",
+        )}
+      >
+        <div className="space-y-2">
+          <Label required>Công việc</Label>
+          <Input
+            value={formData.name}
+            onChange={(e) =>
+              setFormData((prev) => ({ ...prev, name: e.target.value }))
+            }
+            placeholder="VD: Bón phân thúc đợt 1"
+          />
+        </div>
+
+        {formData.planId ? (
+          <div className="space-y-2">
+            <Label>Hạng mục công việc</Label>
+            <Combobox
+              options={availableWorkItems.map((item) => ({
+                value: String(item.id),
+                label: item.name,
+              }))}
+              value={selectedWorkItemId}
+              onChange={setSourceWorkItem}
+              placeholder="Tìm hạng mục công việc..."
+              searchPlaceholder="Tìm hạng mục công việc..."
+            />
+          </div>
+        ) : null}
+      </div>
 
       <div className="space-y-2">
         <Label>Mức độ ưu tiên</Label>

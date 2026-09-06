@@ -55,7 +55,6 @@ import type { FarmTaskRequest } from "@/features/farm-task";
 import { useCreateFarmTask } from "@/features/farm-task";
 import {
   useFarmPlanById,
-  useFarmPlanMutations,
   useFarmPlans,
   useFarmWorkflows,
 } from "../../features/farm-workflow/hooks";
@@ -221,14 +220,15 @@ function resolveApiStageId(
     : undefined;
   if (sourceStage) return sourceStage.id;
 
+  if (!stageKey) return undefined;
+
   const stageLabel = getStageLabelFromKey(stageKey);
   const matchedStage =
     stages.find((stage) => String(stage.id) === String(stageKey)) ||
     stages.find((stage) => stage.name === stageLabel) ||
     stages.find((stage) => stage.name === stageKey);
 
-  if (matchedStage) return matchedStage.id;
-  return stages.length === 1 ? stages[0].id : null;
+  return matchedStage ? matchedStage.id : undefined;
 }
 
 export default function TaskCreatePage() {
@@ -236,7 +236,6 @@ export default function TaskCreatePage() {
   const [, setLocation] = useLocation();
   const search = useSearch();
   const createTaskMutation = useCreateFarmTask();
-  const { createAdHocStage } = useFarmPlanMutations();
   const taskCategoriesQuery = useTaskCategorySearch({
     params: { domainCode: "CROP" },
   });
@@ -885,27 +884,6 @@ export default function TaskCreatePage() {
       return;
     }
 
-    // When the AD_HOC reference plan has real stages to pick from, each task
-    // in the detailed form must explicitly choose one — silently falling
-    // back to an auto-created "Phát sinh" stage is only acceptable when the
-    // plan has no stages at all.
-    const requiredStageOptions = selectedPlan?.selectedStages || [];
-    if (
-      !isPlannedMode &&
-      !isSimpleMode &&
-      requiredStageOptions.length > 0 &&
-      formData.tasks.some(
-        (task) => !requiredStageOptions.includes(task.stageId),
-      )
-    ) {
-      toast({
-        title: "Thiếu giai đoạn",
-        description: "Vui lòng chọn giai đoạn cho từng công việc phát sinh.",
-        variant: "destructive",
-      });
-      return;
-    }
-
     const taskRequestEntries = isSimpleMode
       ? [{ stageName: "", task: formData.tasks[0] }]
       : formData.tasks.map((task) => ({
@@ -980,8 +958,14 @@ export default function TaskCreatePage() {
           stagePlanTasks.find(
             (task: any) => task.name && task.name === stageTask?.name,
           ) ||
-          stagePlanTasks[stageTaskPosition] ||
-          selectedPlanTaskAllocations[index];
+          // Positional fallback only makes sense in detailed mode, where
+          // each task block maps to a real "giai đoạn" — in simple mode
+          // `stageName` is always "" and this would silently attach the
+          // first plan work item to a task the user never picked one for.
+          (isSimpleMode
+            ? undefined
+            : stagePlanTasks[stageTaskPosition] ||
+              selectedPlanTaskAllocations[index]);
         const sourceWorkItemId = toFiniteNumber(
           (stageTask as TaskAllocation & { sourceWorkItemId?: number })
             ?.sourceWorkItemId ?? planTask?.id,
@@ -1107,42 +1091,6 @@ export default function TaskCreatePage() {
       },
     );
 
-    // AD_HOC tasks with no matching plan stage / source work item need a
-    // "phát sinh" stage created on the fly so the task has somewhere to
-    // attach stageId — the backend has no default AD_HOC stage otherwise.
-    const adHocStageIdByPlanId = new Map<string, number>();
-    for (const payload of requests) {
-      if (
-        payload.origin !== "AD_HOC" ||
-        payload.stageId != null ||
-        payload.sourceWorkItemId != null ||
-        payload.planId == null
-      ) {
-        continue;
-      }
-
-      const planKey = String(payload.planId);
-      let adHocStageId = adHocStageIdByPlanId.get(planKey);
-      if (adHocStageId == null) {
-        try {
-          const adHocStage = await createAdHocStage.mutateAsync({
-            planId: payload.planId,
-            payload: { name: "Phát sinh" },
-          });
-          adHocStageId = adHocStage.id;
-          adHocStageIdByPlanId.set(planKey, adHocStageId);
-        } catch (error) {
-          toast({
-            title: "Không thể tạo hạng mục phát sinh",
-            description: (error as Error).message,
-            variant: "destructive",
-          });
-          return;
-        }
-      }
-      payload.stageId = adHocStageId;
-    }
-
     if (requests.some((payload) => payload.planId == null)) {
       toast({
         title: "Thiếu kế hoạch",
@@ -1152,14 +1100,39 @@ export default function TaskCreatePage() {
       return;
     }
 
+    // stageId is mandatory whenever a task has no sourceWorkItemId — for
+    // both PLANNED and AD_HOC — so require the user to explicitly pick one
+    // rather than silently generating a stage on their behalf.
     if (
       requests.some(
-        (payload) => payload.sourceWorkItemId == null && payload.stageId == null,
+        (payload) =>
+          payload.sourceWorkItemId == null && payload.stageId == null,
       )
     ) {
       toast({
         title: "Thiếu giai đoạn",
-        description: "Vui lòng chọn giai đoạn hoặc công việc mẫu cho công việc.",
+        description:
+          "Vui lòng chọn hạng mục công việc hoặc hạng mục dự kiến cho từng công việc.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Scope is mandatory for PLANNED; for AD_HOC it's optional but must be a
+    // complete pair if either half is provided.
+    if (
+      requests.some((payload) => {
+        const hasScopeType = payload.scopeType != null;
+        const hasScopeId = payload.scopeId != null;
+        return payload.origin === "PLANNED"
+          ? !hasScopeType || !hasScopeId
+          : hasScopeType !== hasScopeId;
+      })
+    ) {
+      toast({
+        title: "Thiếu phạm vi thực hiện",
+        description:
+          "Vui lòng chọn đầy đủ phạm vi (vùng/khu/lô) cho từng công việc.",
         variant: "destructive",
       });
       return;
@@ -1342,9 +1315,7 @@ export default function TaskCreatePage() {
 
                 <div className="space-y-2">
                   <Label className="text-sm font-bold text-slate-700" required>
-                    {formData.mode === "phat-sinh"
-                      ? "Công việc phát sinh"
-                      : "Công việc"}
+                    Công việc
                   </Label>
                   <Input
                     value={formData.name}
@@ -2365,10 +2336,10 @@ export default function TaskCreatePage() {
               <TaskStageAllocation
                 key="phat-sinh"
                 stageName="Công việc phát sinh"
-                cycleName="Phát sinh"
+                plainList
                 // A single block covers the whole AD_HOC mode — each task
-                // picks its own giai đoạn below instead of being filtered
-                // into per-stage blocks.
+                // picks its own (optional) giai đoạn below instead of being
+                // filtered into per-stage blocks.
                 allocations={formData.materials}
                 tasks={formData.tasks}
                 onAddMaterial={(item) => handleAddMaterial(item)}
@@ -2395,9 +2366,7 @@ export default function TaskCreatePage() {
                 masterSelections={selections}
                 enterpriseId={selectedEnterpriseId}
                 stageOptions={selectedPlan?.selectedStages || []}
-                stageOptionsRequired={
-                  (selectedPlan?.selectedStages || []).length > 0
-                }
+                stageOptionsRequired={false}
               />
             ) : null}
           </div>

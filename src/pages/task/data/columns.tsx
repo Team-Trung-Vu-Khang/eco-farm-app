@@ -32,10 +32,33 @@ function getAssignmentCounts(
   return executorCount > 0 ? [{ role: "EXECUTOR", count: executorCount }] : [];
 }
 
+const PLAN_PURPOSE_LABELS: Record<string, string> = {
+  CULTIVATION: "Canh tác",
+  FACILITY_UPGRADE: "Nâng cấp CSVC",
+  TREATMENT: "Điều trị",
+  SOIL_IMPROVEMENT: "Cải tạo đất",
+  HARVEST: "Thu hoạch",
+};
+
 export const taskColumns: Column<Task>[] = [
-  { key: "code", label: "Mã", render: (value) => <CodeBadge value={value} /> },
-  { key: "name", label: "Tên công việc" },
   { key: "plan", label: "Kế hoạch" },
+  {
+    key: "planPurpose",
+    label: "Mục đích kế hoạch",
+    render: (value) =>
+      value ? (
+        <span>{PLAN_PURPOSE_LABELS[String(value)] || String(value)}</span>
+      ) : (
+        <span className="text-muted-foreground italic">Công việc phát sinh</span>
+      ),
+  },
+  {
+    key: "stageName",
+    label: "Hạng mục dự kiến",
+    render: (value) => <span>{value ? String(value) : "—"}</span>,
+  },
+  { key: "code", label: "Mã công việc", render: (value) => <CodeBadge value={value} /> },
+  { key: "name", label: "Công việc" },
   {
     key: "sourceWorkItemName",
     label: "Hạng mục công việc",
@@ -45,11 +68,6 @@ export const taskColumns: Column<Task>[] = [
       ) : (
         <span className="text-muted-foreground italic">Chưa xác định</span>
       ),
-  },
-  {
-    key: "stageName",
-    label: "Hạng mục dự kiến",
-    render: (value) => <span>{value ? String(value) : "—"}</span>,
   },
   {
     key: "assignedTo",

@@ -56,7 +56,16 @@ export interface Task {
   // plan stage ("hạng mục dự kiến") it belongs to — used by the task list's
   // "Hạng mục công việc" / "Hạng mục dự kiến" columns.
   sourceWorkItemName?: string;
+  sourceWorkItemId?: number;
   stageName?: string;
+  // Raw API purpose of the plan this task belongs to — used by the task
+  // list's "Mục đích kế hoạch" column.
+  planPurpose?:
+    | "CULTIVATION"
+    | "FACILITY_UPGRADE"
+    | "TREATMENT"
+    | "SOIL_IMPROVEMENT"
+    | "HARVEST";
 }
 
 interface TaskStore {

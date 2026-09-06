@@ -80,6 +80,7 @@ export const TaskStageAllocation = memo(
     stageOptions,
     stageOptionsRequired = false,
     allowAddRemove = true,
+    plainList = false,
   }: {
     stageName: string;
     cycleName?: string | null;
@@ -115,13 +116,20 @@ export const TaskStageAllocation = memo(
      * per-task remove button — used when a task can only ever hold one
      * fixed work item (e.g. editing an existing task). */
     allowAddRemove?: boolean;
+    /** Renders this block as a plain task list ("Danh sách công việc")
+     * instead of a "Giai đoạn X" card — used for AD_HOC work, where there is
+     * no real giai đoạn grouping and each task picks its own (optional) one
+     * via `stageOptions`. */
+    plainList?: boolean;
   }) => {
     const displayStageName = getStageDisplayName(stageName);
 
-    // When the user clicks "Thêm" for the stage, we add a blank task
+    // When the user clicks "Thêm" for the stage, we add a blank task. A
+    // plain list has no real giai đoạn to inherit — leave stageId empty so
+    // the per-task "Giai đoạn" picker stays genuinely optional/unselected.
     const handleAddBlankTask = () => {
       onAddTask({
-        stageId: stageName,
+        stageId: plainList ? "" : stageName,
         name: "",
         description: "",
         labor: "",
@@ -137,9 +145,9 @@ export const TaskStageAllocation = memo(
         <div className="bg-slate-900 px-5 py-4 flex justify-between items-center text-white">
           <div className="flex items-center gap-3">
             <h4 className="font-black text-lg">
-              Giai đoạn {displayStageName}
+              {plainList ? "Danh sách công việc" : `Giai đoạn ${displayStageName}`}
             </h4>
-            {cycleName && (
+            {cycleName && !plainList && (
               <Badge className="bg-white/20 text-white border-none font-bold">
                 {cycleName}
               </Badge>
@@ -493,10 +501,21 @@ const TaskBlock = ({
                     <span className="text-red-500">*</span>
                   )}
                 </span>
-                {stageOptionsRequired && !stageOptions.includes(task.stageId) && (
+                {stageOptionsRequired && !stageOptions.includes(task.stageId) ? (
                   <span className="text-[10px] text-amber-500 italic">
                     Chưa chọn giai đoạn
                   </span>
+                ) : (
+                  stageOptions.includes(task.stageId) && (
+                    <button
+                      type="button"
+                      className="flex items-center gap-1 text-[11px] font-medium text-slate-400 hover:text-rose-500"
+                      onClick={() => onUpdateTask?.(task.id, { stageId: "" })}
+                    >
+                      <X className="h-3 w-3" />
+                      Bỏ chọn
+                    </button>
+                  )
                 )}
               </div>
               <Select
