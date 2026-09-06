@@ -3,12 +3,14 @@ import {
   useFarmTaskStats,
   useFarmTasks,
 } from "@/features/farm-task";
+import { useFarmPlanById } from "@/features/farm-workflow/hooks";
 import { useDebounce } from "@/shared/hooks/useDebounce";
 import { useToast } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { useMemo, useState } from "react";
 import { useLocation, useSearch } from "wouter";
 import usePlanStore from "../../../stores/usePlanStore";
 import type { Task } from "../../../stores/useTaskStore";
+import { mapPlanResponseToPlan } from "../../plan-growth/utils/api-mappers";
 import { farmTaskToLegacyTask } from "../utils/task-mappers";
 import type {
   FarmTaskPriority,
@@ -68,10 +70,14 @@ export function useTaskPage() {
   const [pageSize, setPageSize] = useState(10);
 
   const planId = new URLSearchParams(search).get("planId") || "";
-  const plan = useMemo(
-    () => (planId ? plans.find((p) => String(p.id) === planId) : undefined),
-    [planId, plans],
-  );
+  const planDetailQuery = useFarmPlanById(planId || "0", {
+    enabled: !!planId,
+  });
+  const plan = useMemo(() => {
+    if (!planId) return undefined;
+    if (planDetailQuery.data) return mapPlanResponseToPlan(planDetailQuery.data);
+    return plans.find((p) => String(p.id) === planId);
+  }, [planDetailQuery.data, planId, plans]);
 
   const debouncedSearch = useDebounce(searchKeyword, 300);
 
@@ -148,7 +154,8 @@ export function useTaskPage() {
   );
 
   const isPlanScoped = !!planId;
-  const planNotFound = isPlanScoped && !plan;
+  const planNotFound =
+    isPlanScoped && !planDetailQuery.isLoading && !plan;
 
   const handleSearchChange = (value: string) => {
     setSearchKeyword(value);
