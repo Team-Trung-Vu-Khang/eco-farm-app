@@ -204,20 +204,6 @@ export default function SimpleTaskForm({
 
   return (
     <div className="max-w-2xl mx-auto space-y-6 pb-24">
-      <div className="flex items-center gap-4 p-4 bg-blue-50 text-blue-900 rounded-lg border border-blue-100">
-        <div className="bg-white p-2 rounded-full shadow-sm">
-          <ClipboardList className="w-6 h-6 text-blue-600" />
-        </div>
-        <div>
-          <h3 className="font-semibold">Chế độ đơn giản</h3>
-          <p className="text-sm text-blue-700">
-            Nhập nhanh những thông tin cần thiết nhất để tạo công việc. Chuyển
-            sang chế độ chi tiết bất cứ lúc nào để gắn với kế hoạch, vật tư và
-            phạm vi cụ thể.
-          </p>
-        </div>
-      </div>
-
       <div className="space-y-2">
         <Label required>Nhóm công việc</Label>
         <div className="flex items-center justify-between gap-4 rounded-2xl border-2 border-slate-100 bg-white p-4">
