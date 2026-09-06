@@ -4,6 +4,8 @@ import type {
   FarmPlanQueryParams,
   FarmPlanRequest,
   FarmPlanResponse,
+  FarmPlanStageRequest,
+  FarmPlanStageResponse,
   FarmWorkflowPageResponse,
   FarmWorkflowQueryParams,
   FarmWorkflowRequest,
@@ -68,15 +70,24 @@ export const farmPlanApi = {
       .then((response) => response.data);
   },
 
-  getById(id: number | string) {
+  getById(
+    id: number | string,
+    params?: Pick<FarmPlanQueryParams, "includeAdHocStages">,
+  ) {
     return apiClient
-      .get<FarmPlanResponse>(`${FARM_PLAN_PATH}/${id}`)
+      .get<FarmPlanResponse>(`${FARM_PLAN_PATH}/${id}`, { params })
       .then((response) => response.data);
   },
 
   create(workflowId: number | string, payload: FarmPlanRequest) {
     return apiClient
       .post<FarmPlanResponse>(`${FARM_WORKFLOW_PATH}/${workflowId}/plans`, payload)
+      .then((response) => response.data);
+  },
+
+  createAdHocStage(id: number | string, payload: FarmPlanStageRequest) {
+    return apiClient
+      .post<FarmPlanStageResponse>(`${FARM_PLAN_PATH}/${id}/stages/ad-hoc`, payload)
       .then((response) => response.data);
   },
 

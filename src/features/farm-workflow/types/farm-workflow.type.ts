@@ -220,12 +220,14 @@ export interface FarmPlanStageResponse {
   id: number;
   workflowId: number;
   planId: number;
+  origin?: "PLANNED" | "AD_HOC";
   code?: string;
   name: string;
   description?: string;
   seasonStage?: FarmCatalogRef | null;
   supplyLines?: FarmPlanStageSupplyLineResponse[];
   workItems?: FarmPlanWorkItemResponse[];
+  displayOrder?: number;
 }
 
 export interface FarmPlanRequest {
@@ -267,6 +269,7 @@ export interface FarmPlanQueryParams {
   keyword?: string;
   status?: FarmPlanStatus;
   domainCode?: DomainCode;
+  includeAdHocStages?: boolean;
   page?: number;
   size?: number;
 }

@@ -58,9 +58,11 @@ import type { FarmTaskRequest } from "@/features/farm-task";
 import { useFarmTaskById, useUpdateFarmTask } from "@/features/farm-task";
 import {
   useFarmPlanById,
+  useFarmPlanMutations,
   useFarmPlans,
   useFarmWorkflows,
 } from "@/features/farm-workflow/hooks";
+import type { FarmPlanResponse } from "@/features/farm-workflow/types/farm-workflow.type";
 import {
   useFarmPersonnel,
   type FarmPersonnelResponse,
@@ -169,6 +171,37 @@ function pickArray<T>(...values: Array<T[] | null | undefined>) {
   return [];
 }
 
+function getStageLabelFromKey(stageKey?: string | null) {
+  if (!stageKey) return "";
+  const separatorIndex = stageKey.indexOf(":");
+  return separatorIndex >= 0 ? stageKey.slice(separatorIndex + 1) : stageKey;
+}
+
+function resolveApiStageId(
+  plan: FarmPlanResponse | undefined,
+  stageKey: string | undefined,
+  sourceWorkItemId?: number | null,
+) {
+  const stages = plan?.stages || [];
+  const sourceStage = sourceWorkItemId
+    ? stages.find((stage) =>
+        (stage.workItems || []).some(
+          (workItem) => String(workItem.id) === String(sourceWorkItemId),
+        ),
+      )
+    : undefined;
+  if (sourceStage) return sourceStage.id;
+
+  const stageLabel = getStageLabelFromKey(stageKey);
+  const matchedStage =
+    stages.find((stage) => String(stage.id) === String(stageKey)) ||
+    stages.find((stage) => stage.name === stageLabel) ||
+    stages.find((stage) => stage.name === stageKey);
+
+  if (matchedStage) return matchedStage.id;
+  return stages.length === 1 ? stages[0].id : null;
+}
+
 function buildTaskDraftFromTask(task: ReturnType<typeof farmTaskToLegacyTask>) {
   const stageId = task.stage || "Công việc phát sinh";
   return {
@@ -252,6 +285,7 @@ export default function TaskEditPage() {
       ? `/task?planId=${encodeURIComponent(String(planId))}`
       : "/task";
   }, [search, taskResponse]);
+  const { createAdHocStage } = useFarmPlanMutations();
   const updateTaskMutation = useUpdateFarmTask({
     onSuccess: () => {
       toast({
@@ -291,10 +325,12 @@ export default function TaskEditPage() {
         quantity: String((item as any).quantity ?? 0),
         availableQuantity: Number((item as any).quantity ?? 0),
         supplyItemId: item.id,
-        unitOptions: (item.packagingVariants || []).map((variant) => ({
-          id: variant.unitBase.id,
-          name: variant.unitBase.name,
-        })),
+        unitOptions: (item.packagingVariants || [])
+          .filter((variant) => variant.unitBase)
+          .map((variant) => ({
+            id: variant.unitBase!.id,
+            name: variant.unitBase!.name,
+          })),
       })),
     );
   }, [supplyCatalog.optionsByType]);
@@ -321,27 +357,31 @@ export default function TaskEditPage() {
       return farmPersonnelQuery.items.map((item: FarmPersonnelResponse) => ({
         id: item.id,
         fullName: item.fullName,
-        avatar: (item as any).avatarUrl || (item as any).avatar || "",
-        position:
-          (item as any).position?.name ||
-          (item as any).positionName ||
-          (item as any).position?.code ||
-          "",
-        department:
+        code: item.code,
+        avatar: (item as any).avatarUrl || (item as any).avatar,
+        taxCode: item.code,
+        departmentName:
           (item as any).department?.name ||
           (item as any).departmentName ||
           (item as any).department?.code ||
           "",
-        team:
-          item.teams
-            ?.map((team) => team.name)
-            .filter(Boolean)
-            .join(", ") || "",
-        taxCode: (item as any).taxCode || item.code || "",
+        positionName:
+          (item as any).position?.name ||
+          (item as any).positionName ||
+          (item as any).position?.code ||
+          "",
       }));
     }
 
-    return localPersonnel;
+    return localPersonnel.map((item) => ({
+      id: item.id,
+      fullName: item.fullName,
+      code: item.taxCode,
+      avatar: item.avatar,
+      taxCode: item.taxCode,
+      departmentName: item.department,
+      positionName: item.position,
+    }));
   }, [farmPersonnelQuery.items, localPersonnel, numericWorkspaceId]);
   const localTask = useTaskStore((state) =>
     state.tasks.find((item) => item.id === Number(params.id)),
@@ -349,6 +389,7 @@ export default function TaskEditPage() {
   const planIdForDetail = taskResponse?.plan?.id ?? localTask?.planId ?? "";
   const planDetailQuery = useFarmPlanById(planIdForDetail || "0", {
     enabled: !!planIdForDetail,
+    includeAdHocStages: true,
   });
   const task = useMemo(
     () => (taskResponse ? farmTaskToLegacyTask(taskResponse) : localTask),
@@ -360,29 +401,76 @@ export default function TaskEditPage() {
   );
 
   const [isSimpleMode, setIsSimpleMode] = useState(true);
+
+  useEffect(() => {
+    const seenSources = new Set<number>();
+    const seenNames = new Set<string>();
+    const uniqueTasks = formData.tasks.filter((task) => {
+      const sourceId = task.sourceWorkItemId;
+      const nameKey = `${task.stageId || ""}:${task.name?.trim().toLowerCase() || ""}`;
+      if (sourceId != null) {
+        if (seenSources.has(sourceId)) return false;
+        seenSources.add(sourceId);
+      }
+      if (task.name?.trim() && seenNames.has(nameKey)) return false;
+      if (task.name?.trim()) seenNames.add(nameKey);
+      return true;
+    });
+
+    if (uniqueTasks.length !== formData.tasks.length) {
+      setFormData((prev) => ({ ...prev, tasks: uniqueTasks }));
+    }
+  }, [formData.tasks]);
+
   const [isSupervisorDialogOpen, setIsSupervisorDialogOpen] = useState(false);
   const [searchSupervisor, setSearchSupervisor] = useState("");
   const [isInspectorDialogOpen, setIsInspectorDialogOpen] = useState(false);
   const [searchInspector, setSearchInspector] = useState("");
+  const [regimenSearchTerm, setRegimenSearchTerm] = useState("");
   const [planSearchTerm, setPlanSearchTerm] = useState("");
   const [selectedEnterpriseId] = useState<string>("");
   const [selections, setSelections] = useState<GeographicalSelection[]>([]);
 
-  const workflowPlansQuery = useFarmPlans({
+  const workflowOptions = useMemo(() => {
+    const query = regimenSearchTerm.trim().toLowerCase();
+    if (!query) return workflowsQuery.items;
+
+    return workflowsQuery.items.filter((workflow) =>
+      `${workflow.code || ""} ${workflow.name || ""} ${
+        workflow.description || ""
+      }`
+        .toLowerCase()
+        .includes(query),
+    );
+  }, [regimenSearchTerm, workflowsQuery.items]);
+
+  const selectedWorkflow = workflowsQuery.items.find(
+    (workflow) => String(workflow.id) === formData.regimenId,
+  );
+
+  const workflowPlanQuery = useFarmPlans({
+    params: {
+      workflowId:
+        formData.mode === "plan" ? Number(formData.regimenId) : undefined,
+      page: 0,
+      size: 100,
+    },
+    enabled: formData.mode === "plan" && !!formData.regimenId,
+  });
+
+  const allPlanQuery = useFarmPlans({
     params: {
       workflowId: formData.regimenId ? Number(formData.regimenId) : undefined,
       page: 0,
       size: 100,
     },
-    enabled: !!formData.regimenId,
+    enabled: formData.mode === "phat-sinh" && !!formData.regimenId,
   });
 
-  const planScopes = useMemo(() => {
-    const selectedPlanResponse = workflowPlansQuery.items.find(
-      (plan) => String(plan.id) === String(formData.planId),
-    );
-    return planDetailQuery.data?.scopes || selectedPlanResponse?.scopes || [];
-  }, [formData.planId, planDetailQuery.data?.scopes, workflowPlansQuery.items]);
+  const selectedPlanDetailQuery = useFarmPlanById(formData.planId || "0", {
+    enabled: !!formData.planId,
+    includeAdHocStages: true,
+  });
 
   const [newMaterial, setNewMaterial] = useState({
     type: "fertilizer" as "fertilizer" | "pesticide" | "tool" | "other",
@@ -421,13 +509,28 @@ export default function TaskEditPage() {
       (taskResponse as any)?.sourceWorkItemId ??
       (localTask as any)?.mainTaskId ??
       (taskResponse as any)?.mainTaskId;
-    const plannedStageName = planMatch?.taskAllocations?.find(
-      (item: any) => String(item.id) === String(sourceWorkItemId),
-    )?.stageId;
+    const plannedStageName =
+      planMatch?.taskAllocations?.find(
+        (item: any) => String(item.id) === String(sourceWorkItemId),
+      )?.stageId ??
+      // Ad-hoc-from-plan tasks (no sourceWorkItem) only carry the plain stage
+      // name from the API — resolve it to the "api-stage-<id>:<name>" key the
+      // plan's selectedStages/taskAllocations use so the Select can match it.
+      (taskResponse?.stage?.name
+        ? planMatch?.selectedStages?.find(
+            (key: string) =>
+              key === taskResponse.stage?.name ||
+              key.endsWith(`:${taskResponse.stage?.name}`),
+          )
+        : undefined);
 
+    // An AD_HOC task can still reference a real stage from its reference
+    // plan (picked in the "Giai đoạn" selector) rather than only the
+    // synthetic "Phát sinh" bucket — resolve it the same way a planned
+    // task's stage is resolved before falling back.
     const stageSource = isPlannedTask
       ? plannedStageName || task?.stage || ""
-      : "Công việc phát sinh";
+      : plannedStageName || "Công việc phát sinh";
     const selectedStages =
       stageSource && stageSource !== "N/A"
         ? stageSource
@@ -490,7 +593,7 @@ export default function TaskEditPage() {
         ? plannedStageName ||
           material.stageId?.normalize?.() ||
           material.stageId
-        : "Công việc phát sinh",
+        : plannedStageName || "Công việc phát sinh",
     })) as MaterialAllocation[];
     const hydratedTasks = pickArray(localTask?.tasks, apiTask?.tasks).map(
       (item) => ({
@@ -505,10 +608,11 @@ export default function TaskEditPage() {
         stageId: isPlannedTask
           ? item.stageId?.normalize?.() ||
             plannedWorkItem?.stageId ||
+            plannedStageName ||
             apiTask?.stage ||
             item.stageId ||
             ""
-          : "Công việc phát sinh",
+          : plannedStageName || "Công việc phát sinh",
         startDate: item.startDate || apiTask?.startDate,
         endDate: item.endDate || apiTask?.endDate,
         isRepeating: item.isRepeating ?? isRepeating,
@@ -536,10 +640,11 @@ export default function TaskEditPage() {
                 // the scope label returned by the API.
                 stageId: isPlannedTask
                   ? plannedWorkItem?.stageId ||
+                    plannedStageName ||
                     buildTaskDraftFromTask(
                       apiTask ?? farmTaskToLegacyTask(taskResponse),
                     ).stageId
-                  : "Công việc phát sinh",
+                  : plannedStageName || "Công việc phát sinh",
                 sourceWorkItemId: plannedWorkItem
                   ? Number(plannedWorkItem.id)
                   : undefined,
@@ -571,9 +676,15 @@ export default function TaskEditPage() {
         taskResponse?.origin === "PLANNED" || localTask?.planId
           ? "plan"
           : "phat-sinh",
-      objectiveType: (planMatch
-        ? (PURPOSE_TO_OBJECTIVE_TYPE[planMatch.purpose as Plan["purpose"]] ??
-          "phat-sinh")
+      // An AD_HOC task keeps objectiveType "phat-sinh" even when it
+      // references a plan — the plan's own purpose only drives objectiveType
+      // for a "theo kế hoạch" (PLANNED) task.
+      objectiveType: (isPlannedTask
+        ? (planMatch
+            ? (PURPOSE_TO_OBJECTIVE_TYPE[
+                planMatch.purpose as Plan["purpose"]
+              ] ?? "phat-sinh")
+            : "phat-sinh")
         : "phat-sinh") as TaskObjectiveType,
       planId: taskResponse?.plan?.id
         ? String(taskResponse.plan.id)
@@ -605,186 +716,151 @@ export default function TaskEditPage() {
     });
   }, [taskResponse, localTask, planDetailQuery.data, plans, amendmentPlans]);
 
-  const activePlans = useMemo(() => {
-    const basePlans = plans.filter((p) => {
-      if (formData.objectiveType === "theo-ke-hoach")
-        return p.purpose === "cultivation";
-      if (formData.objectiveType === "thu-hoach")
-        return p.purpose === "harvest";
-      if (formData.objectiveType === "tri-benh")
-        return p.purpose === "treatment";
-      if (formData.objectiveType === "cai-tao-dat")
-        return p.purpose === "amendment";
-      return false;
-    });
-
-    if (formData.objectiveType === "cai-tao-dat") {
-      return [...basePlans, ...amendmentPlans];
-    }
-    return basePlans;
-  }, [formData.objectiveType, plans, amendmentPlans]);
-
-  const filteredPlans = useMemo(() => {
+  const planOptions = useMemo(() => {
+    const rawPlans =
+      formData.mode === "phat-sinh"
+        ? allPlanQuery.items
+        : workflowPlanQuery.items;
+    const mappedPlans = rawPlans.map(mapPlanResponseToPlan);
     const query = planSearchTerm.trim().toLowerCase();
-    if (!query) return plans;
+    if (!query) return mappedPlans;
 
-    return plans.filter((plan) =>
+    return mappedPlans.filter((plan) =>
       `${plan.name} ${plan.code}`.toLowerCase().includes(query),
     );
-  }, [plans, planSearchTerm]);
+  }, [
+    allPlanQuery.items,
+    formData.mode,
+    planSearchTerm,
+    workflowPlanQuery.items,
+  ]);
 
-  const apiPlans = useMemo(
-    () => workflowPlansQuery.items.map(mapPlanResponseToPlan),
-    [workflowPlansQuery.items],
-  );
-  const planOptionsFromApi = useMemo(() => {
-    const query = planSearchTerm.trim().toLowerCase();
-    if (!query) return apiPlans;
-    return apiPlans.filter((plan) =>
-      `${plan.name} ${plan.code}`.toLowerCase().includes(query),
-    );
-  }, [apiPlans, planSearchTerm]);
-
-  // Phát sinh tasks aren't scoped to a purpose, so they can reference any
-  // plan directly instead of the purpose-filtered `activePlans` list.
-  const selectedPlan =
-    (planDetailQuery.data
-      ? mapPlanResponseToPlan(planDetailQuery.data)
+  const selectedPlanSource =
+    formData.mode === "phat-sinh"
+      ? allPlanQuery.items
+      : workflowPlanQuery.items;
+  const selectedPlanResponse =
+    (selectedPlanDetailQuery.data &&
+    String(selectedPlanDetailQuery.data.id) === formData.planId
+      ? selectedPlanDetailQuery.data
       : undefined) ||
-    apiPlans.find((plan) => String(plan.id) === formData.planId) ||
-    (formData.mode === "phat-sinh" ? plans : (activePlans as any[])).find(
-      (p: any) => String(p.id) === formData.planId,
-    );
-  const mergedPlanOptions = [
-    ...planOptionsFromApi,
-    ...filteredPlans.filter(
-      (plan) =>
-        !planOptionsFromApi.some(
-          (apiPlan) => String(apiPlan.id) === String(plan.id),
-        ),
-    ),
-  ];
-  const planOptionsForSelect =
-    selectedPlan &&
-    !mergedPlanOptions.some(
-      (plan) => String(plan.id) === String(selectedPlan.id),
-    )
-      ? [selectedPlan, ...mergedPlanOptions]
-      : mergedPlanOptions;
-
+    selectedPlanSource.find((plan) => String(plan.id) === formData.planId) ||
+    (planDetailQuery.data && String(planDetailQuery.data.id) === formData.planId
+      ? planDetailQuery.data
+      : undefined);
+  const selectedPlan =
+    (selectedPlanDetailQuery.data &&
+    String(selectedPlanDetailQuery.data.id) === formData.planId
+      ? mapPlanResponseToPlan(selectedPlanDetailQuery.data)
+      : undefined) ||
+    selectedPlanSource
+      .map(mapPlanResponseToPlan)
+      .find((p) => String(p.id) === formData.planId) ||
+    (planDetailQuery.data && String(planDetailQuery.data.id) === formData.planId
+      ? mapPlanResponseToPlan(planDetailQuery.data)
+      : undefined);
+  const selectedPlanTaskAllocations = selectedPlan?.taskAllocations || [];
+  const selectedPlanMaterialAllocations =
+    selectedPlan?.materialAllocations || [];
+  // AD_HOC can optionally use a selected plan as its resource template.
+  const usePlanResources = formData.mode === "plan" || Boolean(formData.planId);
+  const resolvedSelectedStages =
+    formData.selectedStages.length > 0
+      ? formData.selectedStages
+      : selectedPlan?.selectedStages || [];
   const { regions, getRegionById } = useRegionStore();
 
-  const planScopedRegions = useMemo(() => {
-    const apiScopes = planScopes;
-    if (apiScopes.length > 0) {
-      const groupedRegions = new Map<string, any>();
+  const planScopedRegions = useMemo<
+    Array<{
+      id: string;
+      name: string;
+      enterpriseId?: string;
+      subAreas: Array<{
+        id: string;
+        name: string;
+        plots: Array<{ id: string; name: string }>;
+      }>;
+    }>
+  >(() => {
+    const scopes = selectedPlanResponse?.scopes || [];
+    if (scopes.length === 0) return [];
 
-      apiScopes.forEach((scope) => {
-        const region =
-          scope.region ?? scope.area?.region ?? scope.plot?.area?.region;
-        if (!region) return;
+    const groupedRegions = new Map<string, any>();
 
-        const regionKey = String(region.id);
-        const regionEntry =
-          groupedRegions.get(regionKey) ??
-          ({
-            id: regionKey,
-            name: region.name || `Vùng #${region.id}`,
-            enterpriseId:
-              (planDetailQuery.data as any)?.enterpriseId ||
-              selectedEnterpriseId ||
-              undefined,
-            subAreas: [],
-          } as any);
+    scopes.forEach((scope) => {
+      const region =
+        scope.region ?? scope.area?.region ?? scope.plot?.area?.region;
+      if (!region) return;
 
-        if (scope.scopeType === "REGION") {
-          groupedRegions.set(regionKey, regionEntry);
-          return;
-        }
+      const regionKey = String(region.id);
+      const regionEntry = groupedRegions.get(regionKey) ?? {
+        id: regionKey,
+        name: region.name || `Vùng #${region.id}`,
+        enterpriseId:
+          (selectedPlanResponse as any)?.enterpriseId ||
+          selectedEnterpriseId ||
+          undefined,
+        subAreas: [],
+      };
 
-        if (scope.scopeType === "AREA" && scope.area) {
-          const areaKey = String(scope.area.id);
-          const existingArea = regionEntry.subAreas.find(
-            (area: any) => area.id === areaKey,
-          );
-          if (!existingArea) {
-            regionEntry.subAreas.push({
-              id: areaKey,
-              name: scope.area.name || `Khu vực #${scope.area.id}`,
-              plots: [],
-            });
-          }
-          groupedRegions.set(regionKey, regionEntry);
-          return;
-        }
+      if (scope.scopeType === "REGION") {
+        groupedRegions.set(regionKey, {
+          ...regionEntry,
+          subAreas: regionEntry.subAreas,
+        });
+        return;
+      }
 
-        if (scope.scopeType === "PLOT" && scope.plot) {
-          const area = scope.area ?? scope.plot.area;
-          if (!area) return;
-          const areaKey = String(area.id);
-          const existingArea = regionEntry.subAreas.find(
-            (item: any) => item.id === areaKey,
-          );
-          const areaEntry = existingArea ?? {
+      if (scope.scopeType === "AREA" && scope.area) {
+        const areaKey = String(scope.area.id);
+        const existingArea = regionEntry.subAreas.find(
+          (area: any) => area.id === areaKey,
+        );
+
+        if (!existingArea) {
+          regionEntry.subAreas.push({
             id: areaKey,
-            name: area.name || `Khu vực #${area.id}`,
+            name: scope.area.name || `Khu vực #${scope.area.id}`,
             plots: [],
-          };
-
-          const plotKey = String(scope.plot.id);
-          if (!areaEntry.plots.some((plot: any) => plot.id === plotKey)) {
-            areaEntry.plots.push({
-              id: plotKey,
-              name: scope.plot.name || `Lô #${scope.plot.id}`,
-            });
-          }
-
-          if (!existingArea) {
-            regionEntry.subAreas.push(areaEntry);
-          }
-
-          groupedRegions.set(regionKey, regionEntry);
+          });
         }
-      });
 
-      return Array.from(groupedRegions.values());
-    }
+        groupedRegions.set(regionKey, regionEntry);
+        return;
+      }
 
-    if (!selectedPlan) return [];
+      if (scope.scopeType === "PLOT" && scope.plot) {
+        const area = scope.area ?? scope.plot.area;
+        if (!area) return;
 
-    const regionIds = ((selectedPlan as any).selectedRegionIds || []).map(
-      String,
-    );
-    const zoneIds = ((selectedPlan as any).selectedZoneIds || []).map(String);
-    const plotIds = ((selectedPlan as any).selectedPlotIds || []).map(String);
-    if (!regionIds.length && !zoneIds.length && !plotIds.length) return [];
+        const areaKey = String(area.id);
+        const existingArea = regionEntry.subAreas.find(
+          (item: any) => item.id === areaKey,
+        );
+        const areaEntry = existingArea ?? {
+          id: areaKey,
+          name: area.name || `Khu vực #${area.id}`,
+          plots: [],
+        };
 
-    return regions
-      .map((region: any) => {
-        const regionId = String(region.id);
-        const isWholeRegionSelected = regionIds.includes(regionId);
+        const plotKey = String(scope.plot.id);
+        if (!areaEntry.plots.some((plot: any) => plot.id === plotKey)) {
+          areaEntry.plots.push({
+            id: plotKey,
+            name: scope.plot.name || `Lô #${scope.plot.id}`,
+          });
+        }
 
-        if (isWholeRegionSelected) return region;
+        if (!existingArea) {
+          regionEntry.subAreas.push(areaEntry);
+        }
 
-        const subAreas = (region.subAreas || [])
-          .map((area: any) => {
-            const areaId = String(area.id);
-            const isWholeAreaSelected = zoneIds.includes(areaId);
+        groupedRegions.set(regionKey, regionEntry);
+      }
+    });
 
-            if (isWholeAreaSelected) return area;
-
-            const plots = (area.plots || []).filter((plot: any) =>
-              plotIds.includes(String(plot.id)),
-            );
-
-            return plots.length > 0 ? { ...area, plots } : null;
-          })
-          .filter(Boolean);
-
-        return subAreas.length > 0 ? { ...region, subAreas } : null;
-      })
-      .filter(Boolean) as any[];
-  }, [planScopes, regions, selectedPlan, selectedEnterpriseId]);
+    return Array.from(groupedRegions.values());
+  }, [selectedEnterpriseId, selectedPlanResponse]);
 
   const filteredRegionsForPhatSinh = useMemo(() => {
     if (formData.objectiveType !== "phat-sinh" || selections.length === 0) {
@@ -834,7 +910,15 @@ export default function TaskEditPage() {
 
   const getSelectionSummary = (
     targetSelections: GeographicalSelection[],
-    sourceRegions = regions,
+    sourceRegions: Array<{
+      id: string | number;
+      name: string;
+      subAreas?: Array<{
+        id: string | number;
+        name: string;
+        plots?: Array<{ id: string | number; name: string }>;
+      }>;
+    }> = regions,
   ) => {
     if (!targetSelections || targetSelections.length === 0) return [];
     const summary: {
@@ -966,10 +1050,34 @@ export default function TaskEditPage() {
 
     setFormData((prev) => ({
       ...prev,
-      tasks: [
-        ...prev.tasks,
-        { id: Date.now(), ...item, geographicalSelections: geoMapping },
-      ],
+      tasks: (() => {
+        const duplicateIndex = prev.tasks.findIndex((task) => {
+          const sameStage = task.stageId === item.stageId;
+          const sameSource =
+            item.sourceWorkItemId != null &&
+            task.sourceWorkItemId === item.sourceWorkItemId;
+          const sameName =
+            Boolean(item.name?.trim()) &&
+            task.name?.trim() === item.name.trim();
+          return sameStage && (sameSource || sameName);
+        });
+
+        if (duplicateIndex < 0) {
+          return [
+            ...prev.tasks,
+            { id: Date.now(), ...item, geographicalSelections: geoMapping },
+          ];
+        }
+
+        // A planned work item may already be preloaded when the user picks it
+        // again from the combobox. Update the existing block instead of
+        // creating a second FarmTask request for the same work item.
+        return prev.tasks.map((task, index) =>
+          index === duplicateIndex
+            ? { ...task, ...item, geographicalSelections: geoMapping }
+            : task,
+        );
+      })(),
     }));
   };
 
@@ -1108,16 +1216,73 @@ export default function TaskEditPage() {
       selections.length > 0 ? mapSelectionsToScope(selections) : existingScope;
     const isPlanned = formData.mode === "plan";
 
+    // When the AD_HOC reference plan has real stages to pick from, each task
+    // in the detailed form must explicitly choose one — silently falling
+    // back to an auto-created "Phát sinh" stage is only acceptable when the
+    // plan has no stages at all.
+    const requiredStageOptions = selectedPlan?.selectedStages || [];
+    if (
+      !isPlanned &&
+      !isSimpleMode &&
+      requiredStageOptions.length > 0 &&
+      formData.tasks.some(
+        (task) => !requiredStageOptions.includes(task.stageId),
+      )
+    ) {
+      toast({
+        title: "Thiếu giai đoạn",
+        description: "Vui lòng chọn giai đoạn cho từng công việc phát sinh.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // AD_HOC tasks must carry a stageId. Resolve the giai đoạn explicitly
+    // chosen for the task (detailed form), fall back to the task's existing
+    // stage, or create a new "Phát sinh" stage on the fly.
+    let adHocStageId =
+      resolveApiStageId(
+        planDetailQuery.data,
+        (formData.tasks[0] as TaskAllocation | undefined)?.stageId,
+      ) ?? toFiniteNumber(taskResponse.stage?.id);
+    if (!isPlanned && adHocStageId == null) {
+      const adHocPlanId = toFiniteNumber(formData.planId);
+      if (adHocPlanId != null) {
+        try {
+          const adHocStage = await createAdHocStage.mutateAsync({
+            planId: adHocPlanId,
+            payload: { name: "Phát sinh" },
+          });
+          adHocStageId = adHocStage.id;
+        } catch (error) {
+          toast({
+            title: "Không thể tạo hạng mục phát sinh",
+            description: (error as Error).message,
+            variant: "destructive",
+          });
+          return;
+        }
+      }
+    }
+
+    const plannedSourceWorkItemId = toFiniteNumber(
+      formData.mainTaskId || formData.mainTaskIds[0],
+    );
+
     const payload: FarmTaskRequest = {
       origin: isPlanned ? "PLANNED" : "AD_HOC",
       ...(isPlanned
         ? {
-            sourceWorkItemId: toFiniteNumber(
-              formData.mainTaskId || formData.mainTaskIds[0],
-            ),
+            sourceWorkItemId: plannedSourceWorkItemId,
+            // The backend requires a stageId whenever there's no source work
+            // item to derive it from (e.g. a plan-linked task added directly
+            // in the detailed form rather than picked from the plan).
+            stageId:
+              plannedSourceWorkItemId == null ? adHocStageId : undefined,
           }
         : {
             workflowId: toFiniteNumber(formData.regimenId),
+            stageId: adHocStageId,
             taskCategoryId:
               (formData.tasks[0] as TaskAllocation)?.taskCategoryId ??
               taskResponse.taskCategory?.id ??
@@ -1198,6 +1363,34 @@ export default function TaskEditPage() {
       )
       .filter(Boolean);
 
+  const handleWorkflowChange = (workflowId: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      regimenId: workflowId,
+      objectiveType: "theo-ke-hoach",
+      planId: "",
+      planName: "",
+      mainTaskId: "",
+      mainTaskIds: [],
+      selectedPlotIds: [],
+    }));
+    setSelections([]);
+    setPlanSearchTerm("");
+  };
+
+  const handleAdHocWorkflowChange = (workflowId: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      regimenId: workflowId,
+      planId: "",
+      planName: "",
+      selectedStages: [],
+      selectedPlotIds: [],
+    }));
+    setSelections([]);
+    setPlanSearchTerm("");
+  };
+
   const steps: Step[] = [
     {
       id: "objective",
@@ -1215,15 +1408,10 @@ export default function TaskEditPage() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-3">
-                  <Label className="text-sm font-bold text-slate-700">
-                    Nhóm công việc *
+                  <Label className="text-sm font-bold text-slate-700" required>
+                    Nhóm công việc
                   </Label>
-                  <div
-                    className={cn(
-                      "flex items-center justify-between gap-4 rounded-2xl border-2 border-slate-100 bg-white p-4",
-                      formData.planId && "cursor-not-allowed opacity-70",
-                    )}
-                  >
+                  <div className="flex items-center justify-between gap-4 rounded-2xl border-2 border-slate-100 bg-white p-4">
                     <div className="flex items-center gap-3">
                       <div
                         className={cn(
@@ -1254,7 +1442,6 @@ export default function TaskEditPage() {
 
                     <Switch
                       checked={formData.mode === "phat-sinh"}
-                      disabled={!!formData.planId}
                       className="data-[state=checked]:bg-amber-500 data-[state=unchecked]:bg-blue-500"
                       onCheckedChange={(checked) => {
                         setFormData({
@@ -1263,14 +1450,23 @@ export default function TaskEditPage() {
                           // Reset to a neutral placeholder — picking a plan
                           // below immediately derives the real value from
                           // its purpose.
-                          objectiveType: "phat-sinh",
+                          objectiveType: checked
+                            ? "phat-sinh"
+                            : "theo-ke-hoach",
+                          regimenId: "",
                           planId: "",
                           planName: "",
                           mainTaskIds: [],
+                          selectedStages: [],
                           selectedPlotIds: [],
+                          // A planned work item must not leak into an AD_HOC
+                          // task. AD_HOC resources are selected independently.
+                          tasks: checked ? [] : formData.tasks,
+                          materials: checked ? [] : formData.materials,
                         });
                         setSelections([]);
                         setPlanSearchTerm("");
+                        setRegimenSearchTerm("");
                       }}
                     />
 
@@ -1305,10 +1501,10 @@ export default function TaskEditPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label className="text-sm font-bold text-slate-700">
+                  <Label className="text-sm font-bold text-slate-700" required>
                     {formData.mode === "phat-sinh"
-                      ? "Công việc phát sinh *"
-                      : "Hạng mục công việc triển khai *"}
+                      ? "Công việc phát sinh"
+                      : "Công việc"}
                   </Label>
                   <Input
                     value={formData.name}
@@ -1319,18 +1515,120 @@ export default function TaskEditPage() {
                   />
                 </div>
 
+                {formData.mode === "phat-sinh" && (
+                  <div className="space-y-2 pt-2 border-slate-100">
+                    <Label
+                      className="text-sm font-bold text-slate-700"
+                      required
+                    >
+                      Vụ mùa / Vụ nuôi
+                    </Label>
+                    <Select
+                      value={formData.regimenId}
+                      onValueChange={(value) =>
+                        handleAdHocWorkflowChange(value)
+                      }
+                    >
+                      <SelectTrigger className="h-12">
+                        <SelectValue placeholder="Chọn vụ mùa / vụ nuôi..." />
+                      </SelectTrigger>
+                      <SelectContent className="max-h-80">
+                        {workflowOptions.map((workflow) => (
+                          <SelectItem
+                            key={workflow.id}
+                            value={String(workflow.id)}
+                          >
+                            {workflow.code
+                              ? `${workflow.code} - ${workflow.name}`
+                              : workflow.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <p className="text-[11px] font-medium text-slate-400">
+                      Chọn vụ mùa hoặc vụ nuôi bắt buộc cho công việc phát sinh.
+                    </p>
+                  </div>
+                )}
+
                 {formData.mode === "plan" && (
-                  <div className="space-y-6 animation-fade-in border-t pt-6 mt-6 border-slate-100">
+                  <div className="space-y-6 animation-fade-in pt-2 border-slate-100">
                     <div className="space-y-4">
                       <div className="space-y-2">
+                        <Label
+                          className="text-sm font-bold text-slate-700"
+                          required
+                        >
+                          Vụ mùa / Vụ nuôi
+                        </Label>
+                        <Select
+                          value={formData.regimenId}
+                          onValueChange={handleWorkflowChange}
+                        >
+                          <SelectTrigger className="h-12 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-500 disabled:opacity-80">
+                            <SelectValue
+                              placeholder="Chọn vụ mùa / vụ nuôi..."
+                            />
+                          </SelectTrigger>
+                          <SelectContent className="max-h-80 overflow-hidden p-0">
+                            <div
+                              className="sticky top-0 z-10 border-b border-slate-100 bg-white p-2"
+                              onKeyDown={(event) => event.stopPropagation()}
+                            >
+                              <div className="relative">
+                                <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" />
+                                <Input
+                                  value={regimenSearchTerm}
+                                  onChange={(event) =>
+                                    setRegimenSearchTerm(event.target.value)
+                                  }
+                                  onClick={(event) => event.stopPropagation()}
+                                  onPointerDown={(event) =>
+                                    event.stopPropagation()
+                                  }
+                                  placeholder="Tìm vụ mùa / vụ nuôi..."
+                                  className="h-9 pl-8 text-sm"
+                                />
+                              </div>
+                            </div>
+                            <div className="max-h-64 overflow-y-auto p-1">
+                              {workflowOptions.map((workflow) => (
+                                <SelectItem
+                                  key={workflow.id}
+                                  value={String(workflow.id)}
+                                >
+                                  {workflow.code
+                                    ? `${workflow.code} - ${workflow.name}`
+                                    : workflow.name}
+                                </SelectItem>
+                              ))}
+                              {workflowOptions.length === 0 && (
+                                <div className="p-4 text-center text-xs text-slate-400 italic">
+                                  Không tìm thấy vụ mùa / vụ nuôi phù hợp
+                                </div>
+                              )}
+                            </div>
+                          </SelectContent>
+                        </Select>
+                        <p className="text-[11px] font-medium text-slate-400">
+                          Chọn vụ mùa / vụ nuôi trước để lọc danh sách kế hoạch
+                          triển khai.
+                        </p>
+                      </div>
+                      <div className="space-y-2">
                         <Label className="text-sm font-bold text-slate-700">
-                          Thông tin kế hoạch triển khai *
+                          Kế hoạch triển khai
+                          <span className="ml-2 text-[10px] font-medium text-slate-400 normal-case">
+                            Không bắt buộc
+                          </span>
                         </Label>
                         <Select
                           value={formData.planId}
-                          disabled={!!formData.planId}
+                          disabled={!formData.regimenId}
                           onValueChange={(val) => {
-                            const p = plans.find((p) => String(p.id) === val);
+                            const p = planOptions.find(
+                              (p) => String(p.id) === val,
+                            );
                             // Carry the plan's personnel across as a starting
                             // point; they stay removable below.
                             const planSupervisors = resolvePersonnelNames(
@@ -1346,13 +1644,14 @@ export default function TaskEditPage() {
                               objectiveType: p
                                 ? (PURPOSE_TO_OBJECTIVE_TYPE[p.purpose] ??
                                   "phat-sinh")
-                                : "phat-sinh",
+                                : "theo-ke-hoach",
+                              selectedStages: p?.selectedStages || [],
                               mainTaskIds: [],
                               selectedPlotIds: [],
                               supervisors: planSupervisors,
                               qualityInspectors: planInspectors,
                             });
-                            setSelections([]);
+                            setSelections(p?.scopes || []);
                             setPlanSearchTerm("");
                           }}
                         >
@@ -1380,40 +1679,61 @@ export default function TaskEditPage() {
                                 />
                               </div>
                             </div>
-                            <>
-                              {filteredPlans.map((p) => (
+                            <div className="max-h-64 overflow-y-auto p-1">
+                              {planOptions.map((p) => (
                                 <SelectItem key={p.id} value={String(p.id)}>
                                   {p.name} ({p.code})
                                 </SelectItem>
                               ))}
-                              {filteredPlans.length === 0 && (
+                              {planOptions.length === 0 && (
                                 <div className="p-4 text-center text-xs text-slate-400 italic">
-                                  Không tìm thấy kế hoạch phù hợp
+                                  {formData.regimenId
+                                    ? "Không tìm thấy kế hoạch phù hợp"
+                                    : "Hãy chọn vụ mùa / vụ nuôi trước"}
                                 </div>
                               )}
-                            </>
+                            </div>
                           </SelectContent>
                         </Select>
-                        {formData.planId && (
+                        {!formData.regimenId && (
                           <p className="text-[11px] font-medium text-slate-400">
-                            Kế hoạch đã được cố định cho công việc đang chỉnh
-                            sửa.
+                            Kế hoạch sẽ được lọc theo vụ mùa / vụ nuôi đã chọn.
                           </p>
                         )}
-
                         {formData.planId && selectedPlan && (
                           <div className="space-y-3 rounded-2xl border border-emerald-100 bg-emerald-50/30 p-4">
                             <div className="flex items-center justify-between gap-3">
                               <div>
-                                <Label className="text-sm font-bold text-slate-700">
-                                  Phạm vi thực hiện từ kế hoạch
-                                  <span className="text-red-500"> *</span>
+                                <Label
+                                  className="text-sm font-bold text-slate-700"
+                                  required
+                                >
+                                  Vùng canh tác từ kế hoạch
                                 </Label>
                                 <p className="mt-1 text-[11px] font-medium text-slate-400">
-                                  Phạm vi được lấy trực tiếp từ kế hoạch triển
+                                  Chỉ chọn được vùng/khu/lô thuộc kế hoạch triển
                                   khai đã chọn.
                                 </p>
                               </div>
+                              <GeographicalSelector
+                                regions={planScopedRegions}
+                                enterpriseId={
+                                  selectedEnterpriseId ||
+                                  (selectedPlan as any)?.enterpriseId ||
+                                  ""
+                                }
+                                existingSelections={selections}
+                                onConfirm={(nextSelections) => {
+                                  setSelections(nextSelections);
+                                  setFormData((prev) => ({
+                                    ...prev,
+                                    selectedPlotIds: nextSelections
+                                      .filter((item) => item.type === "plot")
+                                      .map((item) => String(item.plotId)),
+                                  }));
+                                }}
+                                disabled={planScopedRegions.length === 0}
+                              />
                             </div>
 
                             {planScopedRegions.length === 0 ? (
@@ -1520,50 +1840,15 @@ export default function TaskEditPage() {
                 )}
 
                 {formData.mode === "phat-sinh" && (
-                  <div className="space-y-6 animation-fade-in border-t pt-6 mt-6 border-slate-100">
+                  <div className="space-y-6 animation-fade-in border-slate-100">
                     <div className="space-y-2">
                       <Label className="text-sm font-bold text-slate-700">
-                        Vụ mùa / Vụ nuôi *
-                      </Label>
-                      <Select
-                        value={formData.regimenId}
-                        onValueChange={(value) =>
-                          setFormData((prev) => ({
-                            ...prev,
-                            regimenId: value,
-                          }))
-                        }
-                      >
-                        <SelectTrigger className="h-12">
-                          <SelectValue placeholder="Chọn vụ mùa / vụ nuôi..." />
-                        </SelectTrigger>
-                        <SelectContent className="max-h-80">
-                          {workflowsQuery.items.map((workflow) => (
-                            <SelectItem
-                              key={workflow.id}
-                              value={String(workflow.id)}
-                            >
-                              {workflow.code
-                                ? `${workflow.code} - ${workflow.name}`
-                                : workflow.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label className="text-sm font-bold text-slate-700">
-                        Kế hoạch triển khai tham chiếu
-                        <span className="ml-2 text-[10px] font-medium text-slate-400 normal-case">
-                          Không bắt buộc — dùng để giới hạn vùng canh tác bên
-                          dưới
-                        </span>
+                        Kế hoạch triển khai
                       </Label>
                       <Select
                         value={formData.planId}
                         onValueChange={(val) => {
-                          const p = planOptionsForSelect.find(
+                          const p = planOptions.find(
                             (p) => String(p.id) === val,
                           );
                           const plan = p as any;
@@ -1586,13 +1871,10 @@ export default function TaskEditPage() {
                             ...prev,
                             planId: val,
                             planName: p?.name || "",
+                            selectedStages: p?.selectedStages || [],
                             selectedPlotIds: [],
-                            materials:
-                              planMaterials.length > 0
-                                ? planMaterials
-                                : prev.materials,
-                            tasks:
-                              planTasks.length > 0 ? planTasks : prev.tasks,
+                            materials: planMaterials,
+                            tasks: planTasks,
                             assignedTo: planPersonnel
                               .filter(
                                 (person: any) => person.role === "EXECUTOR",
@@ -1615,7 +1897,7 @@ export default function TaskEditPage() {
                             startDate: plan.startDate || prev.startDate,
                             endDate: plan.endDate || prev.endDate,
                           }));
-                          setSelections([]);
+                          setSelections(p?.scopes || []);
                           setPlanSearchTerm("");
                         }}
                       >
@@ -1643,18 +1925,18 @@ export default function TaskEditPage() {
                               />
                             </div>
                           </div>
-                          <>
-                            {planOptionsForSelect.map((p) => (
+                          <div className="max-h-64 overflow-y-auto p-1">
+                            {planOptions.map((p) => (
                               <SelectItem key={p.id} value={String(p.id)}>
                                 {p.name} ({p.code})
                               </SelectItem>
                             ))}
-                            {planOptionsForSelect.length === 0 && (
+                            {planOptions.length === 0 && (
                               <div className="p-4 text-center text-xs text-slate-400 italic">
                                 Không tìm thấy kế hoạch phù hợp
                               </div>
                             )}
-                          </>
+                          </div>
                         </SelectContent>
                       </Select>
 
@@ -1662,9 +1944,11 @@ export default function TaskEditPage() {
                         <div className="space-y-3 rounded-2xl border border-emerald-100 bg-emerald-50/30 p-4">
                           <div className="flex items-center justify-between gap-3">
                             <div>
-                              <Label className="text-sm font-bold text-slate-700">
+                              <Label
+                                className="text-sm font-bold text-slate-700"
+                                required
+                              >
                                 Vùng canh tác từ kế hoạch
-                                <span className="text-red-500"> *</span>
                               </Label>
                               <p className="mt-1 text-[11px] font-medium text-slate-400">
                                 Chỉ chọn được vùng/khu/lô thuộc kế hoạch triển
@@ -1775,8 +2059,13 @@ export default function TaskEditPage() {
                               <p className="text-sm font-bold text-slate-800 leading-none">
                                 {name}
                               </p>
-                              <p className="text-[10px] text-slate-400 font-mono mt-0.5">
-                                {item?.taxCode || "Quản lý"}
+                              <p className="text-[10px] text-slate-400 mt-0.5">
+                                {[item?.departmentName, item?.positionName]
+                                  .filter(Boolean)
+                                  .join(" · ") ||
+                                  item?.taxCode ||
+                                  item?.code ||
+                                  "Quản lý"}
                               </p>
                             </div>
                           </div>
@@ -1849,8 +2138,13 @@ export default function TaskEditPage() {
                               <p className="text-sm font-bold text-slate-800 leading-none">
                                 {name}
                               </p>
-                              <p className="text-[10px] text-slate-400 font-mono mt-0.5">
-                                {item?.taxCode || "Kiểm định"}
+                              <p className="text-[10px] text-slate-400 mt-0.5">
+                                {[item?.departmentName, item?.positionName]
+                                  .filter(Boolean)
+                                  .join(" · ") ||
+                                  item?.taxCode ||
+                                  item?.code ||
+                                  "Kiểm định"}
                               </p>
                             </div>
                           </div>
@@ -1911,7 +2205,7 @@ export default function TaskEditPage() {
                       <div className="space-y-1 pb-2">
                         {personnel
                           .filter((p) =>
-                            p.fullName
+                            `${p.fullName} ${p.code || ""}`
                               .toLowerCase()
                               .includes(searchSupervisor.toLowerCase()),
                           )
@@ -1955,8 +2249,12 @@ export default function TaskEditPage() {
                                   <p className="text-sm font-semibold text-slate-800 truncate">
                                     {p.fullName}
                                   </p>
-                                  <p className="text-[11px] text-slate-400 truncate">
-                                    {p.taxCode || "—"}
+                                  <p className="text-[11px] text-slate-500 truncate">
+                                    {[p.departmentName, p.positionName]
+                                      .filter(Boolean)
+                                      .join(" · ") ||
+                                      p.code ||
+                                      "—"}
                                   </p>
                                 </div>
                                 {isSelected && (
@@ -2005,7 +2303,7 @@ export default function TaskEditPage() {
                       <div className="space-y-1 pb-2">
                         {personnel
                           .filter((p) =>
-                            p.fullName
+                            `${p.fullName} ${p.code || ""}`
                               .toLowerCase()
                               .includes(searchInspector.toLowerCase()),
                           )
@@ -2048,8 +2346,12 @@ export default function TaskEditPage() {
                                   <p className="text-sm font-semibold text-slate-800 truncate">
                                     {p.fullName}
                                   </p>
-                                  <p className="text-[11px] text-slate-400 truncate">
-                                    {p.taxCode || "—"}
+                                  <p className="text-[11px] text-slate-500 truncate">
+                                    {[p.departmentName, p.positionName]
+                                      .filter(Boolean)
+                                      .join(" · ") ||
+                                      p.code ||
+                                      "—"}
                                   </p>
                                 </div>
                                 {isSelected && (
@@ -2084,8 +2386,11 @@ export default function TaskEditPage() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-3">
-                  <Label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-                    Độ ưu tiên *
+                  <Label
+                    className="text-[11px] font-bold text-slate-500 uppercase tracking-wider"
+                    required
+                  >
+                    Độ ưu tiên
                   </Label>
                   <div className="grid grid-cols-3 gap-2">
                     {[
@@ -2196,8 +2501,8 @@ export default function TaskEditPage() {
             formData.objectiveType === "thu-hoach" ||
             formData.objectiveType === "cai-tao-dat" ||
             formData.objectiveType === "tri-benh" ? (
-              formData.selectedStages.length > 0 ? (
-                formData.selectedStages.map((stageName) => (
+              resolvedSelectedStages.length > 0 ? (
+                resolvedSelectedStages.map((stageName) => (
                   <TaskStageAllocation
                     key={stageName}
                     stageName={stageName}
@@ -2220,7 +2525,6 @@ export default function TaskEditPage() {
                     onAddTask={handleAddTask}
                     onRemoveTask={handleRemoveTask}
                     onUpdateTask={handleUpdateTask}
-                    showTaskPicker
                     regions={regions}
                     personnel={personnel}
                     masterSelections={selections}
@@ -2229,20 +2533,20 @@ export default function TaskEditPage() {
                       (selectedPlan as any)?.enterpriseId ||
                       ""
                     }
-                    availableTasks={selectedPlan?.taskAllocations?.filter(
+                    availableTasks={selectedPlanTaskAllocations.filter(
                       (t: any) => t.stageId === stageName,
                     )}
                     availableMaterials={
-                      formData.mode === "plan"
-                        ? formData.materials.filter(
+                      usePlanResources
+                        ? selectedPlanMaterialAllocations.filter(
                             (material) => material.stageId === stageName,
                           )
                         : apiSupplyMaterials
                     }
-                    availableMaterialsOnly={formData.mode === "plan"}
-                    availableTasksOnly={formData.mode === "plan"}
+                    availableMaterialsOnly={usePlanResources}
+                    availableTasksOnly={usePlanResources}
                     availableTaskCategories={
-                      formData.mode === "plan" ? [] : taskCategoriesQuery.items
+                      usePlanResources ? [] : taskCategoriesQuery.items
                     }
                   />
                 ))
@@ -2262,7 +2566,6 @@ export default function TaskEditPage() {
                   onAddTask={handleAddTask}
                   onRemoveTask={handleRemoveTask}
                   onUpdateTask={handleUpdateTask}
-                  showTaskPicker
                   regions={regions}
                   personnel={personnel}
                   masterSelections={selections}
@@ -2271,16 +2574,16 @@ export default function TaskEditPage() {
                     (selectedPlan as any)?.enterpriseId ||
                     ""
                   }
-                  availableTasks={selectedPlan?.taskAllocations}
+                  availableTasks={selectedPlanTaskAllocations}
                   availableMaterials={
-                    formData.mode === "plan"
-                      ? formData.materials
+                    usePlanResources
+                      ? selectedPlanMaterialAllocations
                       : apiSupplyMaterials
                   }
-                  availableMaterialsOnly={formData.mode === "plan"}
-                  availableTasksOnly={formData.mode === "plan"}
+                  availableMaterialsOnly={usePlanResources}
+                  availableTasksOnly={usePlanResources}
                   availableTaskCategories={
-                    formData.mode === "plan" ? [] : taskCategoriesQuery.items
+                    usePlanResources ? [] : taskCategoriesQuery.items
                   }
                 />
               ) : (
@@ -2295,37 +2598,37 @@ export default function TaskEditPage() {
                 key="phat-sinh"
                 stageName="Công việc phát sinh"
                 cycleName="Phát sinh"
-                allocations={formData.materials.filter(
-                  (m: any) => m.stageId === "Công việc phát sinh",
-                )}
-                tasks={formData.tasks.filter(
-                  (t: any) => t.stageId === "Công việc phát sinh",
-                )}
+                // A single block covers the whole AD_HOC mode — each task
+                // picks its own giai đoạn below instead of being filtered
+                // into per-stage blocks.
+                allocations={formData.materials}
+                tasks={formData.tasks}
                 onAddMaterial={(item) => handleAddMaterial(item)}
                 onRemoveMaterial={handleRemoveMaterial}
                 onUpdateMaterial={handleUpdateMaterial}
                 onAddTask={handleAddTask}
                 onRemoveTask={handleRemoveTask}
                 onUpdateTask={handleUpdateTask}
-                showTaskPicker
+                availableTasks={
+                  usePlanResources ? selectedPlanTaskAllocations : undefined
+                }
+                availableMaterials={
+                  usePlanResources
+                    ? selectedPlanMaterialAllocations
+                    : apiSupplyMaterials
+                }
+                availableMaterialsOnly={usePlanResources}
+                availableTasksOnly={usePlanResources}
+                availableTaskCategories={
+                  usePlanResources ? [] : taskCategoriesQuery.items
+                }
                 regions={filteredRegionsForPhatSinh}
                 personnel={personnel}
                 masterSelections={selections}
                 enterpriseId={selectedEnterpriseId}
-                availableTasks={
-                  formData.mode === "phat-sinh"
-                    ? undefined
-                    : selectedPlan?.taskAllocations
-                }
-                availableMaterials={
-                  formData.mode === "plan"
-                    ? formData.materials
-                    : apiSupplyMaterials
-                }
-                availableMaterialsOnly={formData.mode === "plan"}
-                availableTasksOnly={formData.mode === "plan"}
-                availableTaskCategories={
-                  formData.mode === "plan" ? [] : taskCategoriesQuery.items
+                stageOptions={selectedPlan?.selectedStages || []}
+                stageOptionsRequired={
+                  (selectedPlan?.selectedStages || []).length > 0
                 }
               />
             ) : null}
@@ -2415,8 +2718,26 @@ export default function TaskEditPage() {
             {/* Info rows card */}
             <Card className="border-slate-100">
               <CardContent className="p-0 divide-y divide-slate-50">
+                {selectedWorkflow && (
+                  <div className="flex items-start gap-4 px-5 py-4">
+                    <div className="w-8 h-8 rounded-xl bg-violet-50 flex items-center justify-center shrink-0 mt-0.5">
+                      <ClipboardList className="w-4 h-4 text-violet-500" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-0.5">
+                        Vụ mùa / Vụ nuôi
+                      </p>
+                      <p className="text-sm font-bold text-slate-800 truncate">
+                        {selectedWorkflow.code
+                          ? `${selectedWorkflow.code} - ${selectedWorkflow.name}`
+                          : selectedWorkflow.name}
+                      </p>
+                    </div>
+                  </div>
+                )}
                 {/* Plan & Stages row */}
-                {formData.objectiveType !== "phat-sinh" && (
+                {(formData.objectiveType !== "phat-sinh" ||
+                  formData.planName) && (
                   <div className="flex items-start gap-4 px-5 py-4">
                     <div className="w-8 h-8 rounded-xl bg-blue-50 flex items-center justify-center shrink-0 mt-0.5">
                       <Layers className="w-4 h-4 text-blue-500" />
@@ -2432,41 +2753,28 @@ export default function TaskEditPage() {
                           </span>
                         )}
                       </p>
-                      {formData.selectedStages.length > 0 && (
+                      {resolvedSelectedStages.length > 0 && (
                         <div className="flex flex-wrap gap-1 mt-1.5">
-                          {formData.selectedStages.map((s) => (
+                          {resolvedSelectedStages.map((s) => (
                             <Badge
                               key={s}
                               variant="secondary"
                               className="text-[10px] bg-blue-50 text-blue-700 border-none px-2 py-0 h-5 font-medium"
                             >
-                              {s}
+                              {getStageLabelFromKey(s)}
                             </Badge>
                           ))}
                         </div>
                       )}
                     </div>
-                    {selections.length > 0 && (
+                    {formData.selectedPlotIds.length > 0 && (
                       <div className="shrink-0 text-right">
                         <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-0.5">
-                          Phạm vi thực hiện
+                          Phạm vi lô đất
                         </p>
-                        <div className="flex max-w-[220px] flex-wrap justify-end gap-1">
-                          {getSelectionSummary(
-                            selections,
-                            planScopedRegions,
-                          ).flatMap((group) =>
-                            group.items.map((item) => (
-                              <Badge
-                                key={`${group.regionId}-${item.id}`}
-                                variant="secondary"
-                                className="text-[10px] bg-emerald-50 text-emerald-700 border-none px-2 py-0 h-5 font-medium"
-                              >
-                                {item.name}
-                              </Badge>
-                            )),
-                          )}
-                        </div>
+                        <p className="text-xs font-semibold text-slate-700 max-w-[160px] text-right leading-snug">
+                          {formData.selectedPlotIds.join("; ")}
+                        </p>
                       </div>
                     )}
                   </div>
@@ -2593,7 +2901,7 @@ export default function TaskEditPage() {
                           <Clock className="w-3.5 h-3.5 text-slate-400 mt-0.5" />
                           <div className="min-w-0">
                             <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">
-                              {task.isRepeating ? "Lặp lại" : "Thời gian"}
+                              {task.isRepeating ? "Tần suất" : "Thời gian"}
                             </p>
                             <p className="text-xs font-semibold text-slate-700">
                               {task.isRepeating
@@ -2604,56 +2912,59 @@ export default function TaskEditPage() {
                         </div>
                       </div>
 
-                      {/* Scope MapPin */}
-                      {((formData.mode === "plan"
-                        ? selections
-                        : task.geographicalSelections
-                      )?.length ?? 0) > 0 && (
-                        <div className="flex items-start gap-2.5 pt-3 border-t border-slate-50">
-                          <MapPin className="w-3.5 h-3.5 text-slate-400 mt-1" />
-                          <div className="flex-1">
-                            <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1.5 text-left">
-                              Phạm vi thực hiện
-                            </p>
-                            <div className="flex flex-wrap gap-1.5">
-                              {getSelectionSummary(
-                                formData.mode === "plan"
-                                  ? selections
-                                  : task.geographicalSelections || [],
-                                formData.mode === "plan"
-                                  ? planScopedRegions
-                                  : regions,
-                              ).map((group) => (
-                                <div
-                                  key={group.regionId}
-                                  className="flex flex-wrap gap-1"
-                                >
-                                  {group.items.map((item, i) => (
-                                    <Badge
-                                      key={`${item.id}-${i}`}
-                                      className={cn(
-                                        "text-[10px] px-2 py-0 border-none font-medium h-5",
-                                        item.type === "region"
-                                          ? "bg-emerald-50 text-emerald-700"
-                                          : item.type === "area"
-                                            ? "bg-blue-50 text-blue-700"
-                                            : "bg-amber-50 text-amber-700",
-                                      )}
-                                    >
-                                      {item.name}
-                                      {item.parentName && (
-                                        <span className="opacity-50 ml-1 font-normal">
-                                          ({item.parentName})
-                                        </span>
-                                      )}
-                                    </Badge>
-                                  ))}
-                                </div>
-                              ))}
+                      {/* Scope MapPin — an existing task's own scope takes
+                          priority; a task that hasn't picked one yet (e.g.
+                          it inherits the plan's scope) falls back to the
+                          Step 1 selection. */}
+                      {(task.geographicalSelections?.length
+                        ? task.geographicalSelections
+                        : selections
+                      ).length > 0 && (
+                          <div className="flex items-start gap-2.5 pt-3 border-t border-slate-50">
+                            <MapPin className="w-3.5 h-3.5 text-slate-400 mt-1" />
+                            <div className="flex-1">
+                              <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1.5 text-left">
+                                Phạm vi thực hiện
+                              </p>
+                              <div className="flex flex-wrap gap-1.5">
+                                {getSelectionSummary(
+                                  task.geographicalSelections?.length
+                                    ? task.geographicalSelections
+                                    : selections,
+                                  planScopedRegions.length > 0
+                                    ? planScopedRegions
+                                    : regions,
+                                ).map((group) => (
+                                  <div
+                                    key={group.regionId}
+                                    className="flex flex-wrap gap-1"
+                                  >
+                                    {group.items.map((item, i) => (
+                                      <Badge
+                                        key={`${item.id}-${i}`}
+                                        className={cn(
+                                          "text-[10px] px-2 py-0 border-none font-medium h-5",
+                                          item.type === "region"
+                                            ? "bg-emerald-50 text-emerald-700"
+                                            : item.type === "area"
+                                              ? "bg-blue-50 text-blue-700"
+                                              : "bg-amber-50 text-amber-700",
+                                        )}
+                                      >
+                                        {item.name}
+                                        {item.parentName && (
+                                          <span className="opacity-50 ml-1 font-normal">
+                                            ({item.parentName})
+                                          </span>
+                                        )}
+                                      </Badge>
+                                    ))}
+                                  </div>
+                                ))}
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      )}
+                        )}
 
                       {/* Materials for this task */}
                       {formData.materials.filter((m) => m.taskId === task.id)
@@ -2737,13 +3048,8 @@ export default function TaskEditPage() {
                     },
                     {
                       label: "Hạng mục công việc",
-                      value: formData.selectedStages.length || "—",
+                      value: resolvedSelectedStages.length || "—",
                       sub: "áp dụng",
-                    },
-                    {
-                      label: "Phạm vi",
-                      value: selections.length || "—",
-                      sub: "khu vực",
                     },
                   ].map((stat) => (
                     <div
@@ -2857,9 +3163,10 @@ export default function TaskEditPage() {
         {isSimpleMode ? (
           <SimpleTaskForm
             formData={formData}
+            isEdit
             setFormData={setFormData}
-            workflows={workflowsQuery.items}
-            plans={planOptionsForSelect}
+            workflows={workflowOptions}
+            plans={planOptions}
             handleComplete={handleComplete}
             goBack={() => setLocation(taskListPath)}
             completeLabel="Hoàn tất & Cập nhật"

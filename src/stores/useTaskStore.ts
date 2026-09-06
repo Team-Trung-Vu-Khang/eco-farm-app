@@ -46,6 +46,11 @@ export interface Task {
   materials?: MaterialAllocation[];
   tasks?: any[];
   geographicalSelections?: GeographicalSelection[];
+  // Explicit-dates recurrence, as returned by the API (recurrence.repeatDates)
+  // — distinct from the weekly repeatDays/repeatWeeks model used by seeded
+  // mock subtasks.
+  isRepeating?: boolean;
+  repeatDates?: string[];
 }
 
 interface TaskStore {

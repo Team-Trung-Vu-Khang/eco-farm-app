@@ -56,6 +56,7 @@ import type { FarmTaskRequest } from "@/features/farm-task";
 import { useCreateFarmTask } from "@/features/farm-task";
 import {
   useFarmPlanById,
+  useFarmPlanMutations,
   useFarmPlans,
   useFarmWorkflows,
 } from "../../features/farm-workflow/hooks";
@@ -200,11 +201,43 @@ function mapPriorityToApi(
   }
 }
 
+function getStageLabelFromKey(stageKey?: string | null) {
+  if (!stageKey) return "";
+  const separatorIndex = stageKey.indexOf(":");
+  return separatorIndex >= 0 ? stageKey.slice(separatorIndex + 1) : stageKey;
+}
+
+function resolveApiStageId(
+  plan: FarmPlanResponse | undefined,
+  stageKey: string | undefined,
+  sourceWorkItemId?: number | null,
+) {
+  const stages = plan?.stages || [];
+  const sourceStage = sourceWorkItemId
+    ? stages.find((stage) =>
+        (stage.workItems || []).some(
+          (workItem) => String(workItem.id) === String(sourceWorkItemId),
+        ),
+      )
+    : undefined;
+  if (sourceStage) return sourceStage.id;
+
+  const stageLabel = getStageLabelFromKey(stageKey);
+  const matchedStage =
+    stages.find((stage) => String(stage.id) === String(stageKey)) ||
+    stages.find((stage) => stage.name === stageLabel) ||
+    stages.find((stage) => stage.name === stageKey);
+
+  if (matchedStage) return matchedStage.id;
+  return stages.length === 1 ? stages[0].id : null;
+}
+
 export default function TaskCreatePage() {
   const { toast } = useToast();
   const [, setLocation] = useLocation();
   const search = useSearch();
   const createTaskMutation = useCreateFarmTask();
+  const { createAdHocStage } = useFarmPlanMutations();
   const taskCategoriesQuery = useTaskCategorySearch({
     params: { domainCode: "CROP" },
   });
@@ -225,10 +258,12 @@ export default function TaskCreatePage() {
             unit: firstPackaging?.unitBase?.name || "",
             supplyItemId: item.id,
             unitBaseId: firstPackaging?.unitBase?.id,
-            unitOptions: (item.packagingVariants || []).map((variant) => ({
-              id: variant.unitBase.id,
-              name: variant.unitBase.name,
-            })),
+            unitOptions: (item.packagingVariants || [])
+              .filter((variant) => variant.unitBase)
+              .map((variant) => ({
+                id: variant.unitBase!.id,
+                name: variant.unitBase!.name,
+              })),
           };
         }),
       ),
@@ -255,6 +290,7 @@ export default function TaskCreatePage() {
 
   const presetPlanQuery = useFarmPlanById(presetPlanId || "0", {
     enabled: !!presetPlanId,
+    includeAdHocStages: true,
   });
   const mappedPresetPlan = useMemo(
     () =>
@@ -416,6 +452,11 @@ export default function TaskCreatePage() {
     enabled: formData.mode === "phat-sinh" && !!formData.regimenId,
   });
 
+  const selectedPlanDetailQuery = useFarmPlanById(formData.planId || "0", {
+    enabled: !!formData.planId,
+    includeAdHocStages: true,
+  });
+
   const planOptions = useMemo(() => {
     const rawPlans =
       formData.mode === "phat-sinh"
@@ -440,11 +481,19 @@ export default function TaskCreatePage() {
       ? allPlanQuery.items
       : workflowPlanQuery.items;
   const selectedPlanResponse =
+    (selectedPlanDetailQuery.data &&
+    String(selectedPlanDetailQuery.data.id) === formData.planId
+      ? selectedPlanDetailQuery.data
+      : undefined) ||
     selectedPlanSource.find((plan) => String(plan.id) === formData.planId) ||
     (presetPlanQuery.data && String(presetPlanQuery.data.id) === formData.planId
       ? presetPlanQuery.data
       : undefined);
   const selectedPlan =
+    (selectedPlanDetailQuery.data &&
+    String(selectedPlanDetailQuery.data.id) === formData.planId
+      ? mapPlanResponseToPlan(selectedPlanDetailQuery.data)
+      : undefined) ||
     selectedPlanSource
       .map(mapPlanResponseToPlan)
       .find((p) => String(p.id) === formData.planId) ||
@@ -823,7 +872,7 @@ export default function TaskCreatePage() {
     }));
   };
 
-  const handleComplete = () => {
+  const handleComplete = async () => {
     // The work type is the source of truth for the API origin. The simple /
     // detailed toggle only controls how much allocation detail is shown; it
     // must not turn a selected plan into an AD_HOC task.
@@ -836,6 +885,28 @@ export default function TaskCreatePage() {
       });
       return;
     }
+
+    // When the AD_HOC reference plan has real stages to pick from, each task
+    // in the detailed form must explicitly choose one — silently falling
+    // back to an auto-created "Phát sinh" stage is only acceptable when the
+    // plan has no stages at all.
+    const requiredStageOptions = selectedPlan?.selectedStages || [];
+    if (
+      !isPlannedMode &&
+      !isSimpleMode &&
+      requiredStageOptions.length > 0 &&
+      formData.tasks.some(
+        (task) => !requiredStageOptions.includes(task.stageId),
+      )
+    ) {
+      toast({
+        title: "Thiếu giai đoạn",
+        description: "Vui lòng chọn giai đoạn cho từng công việc phát sinh.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     const taskRequestEntries = isSimpleMode
       ? [{ stageName: "", task: formData.tasks[0] }]
       : formData.tasks.map((task) => ({
@@ -912,12 +983,15 @@ export default function TaskCreatePage() {
           ) ||
           stagePlanTasks[stageTaskPosition] ||
           selectedPlanTaskAllocations[index];
-        const sourceWorkItemId = isPlannedMode
-          ? toFiniteNumber(
-              (stageTask as TaskAllocation & { sourceWorkItemId?: number })
-                ?.sourceWorkItemId ?? planTask?.id,
-            )
-          : null;
+        const sourceWorkItemId = toFiniteNumber(
+          (stageTask as TaskAllocation & { sourceWorkItemId?: number })
+            ?.sourceWorkItemId ?? planTask?.id,
+        );
+        const stageId = resolveApiStageId(
+          selectedPlanResponse,
+          stageName || stageTask?.stageId || formData.selectedStages[0],
+          sourceWorkItemId,
+        );
 
         // "Chọn nhân sự" per task block encodes assigned names into
         // `labor` as "N người: A, B" rather than formData.assignedTo — mirror
@@ -1003,11 +1077,12 @@ export default function TaskCreatePage() {
           workflowId: isPlannedMode
             ? undefined
             : toFiniteNumber(formData.regimenId),
+          stageId: sourceWorkItemId == null ? stageId : undefined,
           scopeType,
           scopeId,
           sourceWorkItemId,
           taskCategoryId:
-            origin === "PLANNED"
+            sourceWorkItemId != null
               ? null
               : (stageTask?.taskCategoryId ?? planTask?.taskCategoryId ?? null),
           name: formData.name,
@@ -1030,6 +1105,64 @@ export default function TaskCreatePage() {
         };
       },
     );
+
+    // AD_HOC tasks with no matching plan stage / source work item need a
+    // "phát sinh" stage created on the fly so the task has somewhere to
+    // attach stageId — the backend has no default AD_HOC stage otherwise.
+    const adHocStageIdByPlanId = new Map<string, number>();
+    for (const payload of requests) {
+      if (
+        payload.origin !== "AD_HOC" ||
+        payload.stageId != null ||
+        payload.sourceWorkItemId != null ||
+        payload.planId == null
+      ) {
+        continue;
+      }
+
+      const planKey = String(payload.planId);
+      let adHocStageId = adHocStageIdByPlanId.get(planKey);
+      if (adHocStageId == null) {
+        try {
+          const adHocStage = await createAdHocStage.mutateAsync({
+            planId: payload.planId,
+            payload: { name: "Phát sinh" },
+          });
+          adHocStageId = adHocStage.id;
+          adHocStageIdByPlanId.set(planKey, adHocStageId);
+        } catch (error) {
+          toast({
+            title: "Không thể tạo hạng mục phát sinh",
+            description: (error as Error).message,
+            variant: "destructive",
+          });
+          return;
+        }
+      }
+      payload.stageId = adHocStageId;
+    }
+
+    if (requests.some((payload) => payload.planId == null)) {
+      toast({
+        title: "Thiếu kế hoạch",
+        description: "Vui lòng chọn kế hoạch trước khi tạo công việc.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (
+      requests.some(
+        (payload) => payload.sourceWorkItemId == null && payload.stageId == null,
+      )
+    ) {
+      toast({
+        title: "Thiếu giai đoạn",
+        description: "Vui lòng chọn giai đoạn hoặc công việc mẫu cho công việc.",
+        variant: "destructive",
+      });
+      return;
+    }
 
     Promise.all(
       requests.map((payload) => createTaskMutation.createFarmTask(payload)),
@@ -2307,12 +2440,11 @@ export default function TaskCreatePage() {
                 key="phat-sinh"
                 stageName="Công việc phát sinh"
                 cycleName="Phát sinh"
-                allocations={formData.materials.filter(
-                  (m: any) => m.stageId === "Công việc phát sinh",
-                )}
-                tasks={formData.tasks.filter(
-                  (t: any) => t.stageId === "Công việc phát sinh",
-                )}
+                // A single block covers the whole AD_HOC mode — each task
+                // picks its own giai đoạn below instead of being filtered
+                // into per-stage blocks.
+                allocations={formData.materials}
+                tasks={formData.tasks}
                 onAddMaterial={(item) => handleAddMaterial(item)}
                 onRemoveMaterial={handleRemoveMaterial}
                 onUpdateMaterial={handleUpdateMaterial}
@@ -2336,6 +2468,10 @@ export default function TaskCreatePage() {
                 personnel={personnel}
                 masterSelections={selections}
                 enterpriseId={selectedEnterpriseId}
+                stageOptions={selectedPlan?.selectedStages || []}
+                stageOptionsRequired={
+                  (selectedPlan?.selectedStages || []).length > 0
+                }
               />
             ) : null}
           </div>
@@ -2424,14 +2560,14 @@ export default function TaskCreatePage() {
             {/* Info rows card */}
             <Card className="border-slate-100">
               <CardContent className="p-0 divide-y divide-slate-50">
-                {formData.mode === "plan" && selectedWorkflow && (
+                {selectedWorkflow && (
                   <div className="flex items-start gap-4 px-5 py-4">
                     <div className="w-8 h-8 rounded-xl bg-violet-50 flex items-center justify-center shrink-0 mt-0.5">
                       <ClipboardList className="w-4 h-4 text-violet-500" />
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-0.5">
-                        Quy trình
+                        Vụ mùa / Vụ nuôi
                       </p>
                       <p className="text-sm font-bold text-slate-800 truncate">
                         {selectedWorkflow.code
@@ -2442,7 +2578,8 @@ export default function TaskCreatePage() {
                   </div>
                 )}
                 {/* Plan & Stages row */}
-                {formData.objectiveType !== "phat-sinh" && (
+                {(formData.objectiveType !== "phat-sinh" ||
+                  formData.planName) && (
                   <div className="flex items-start gap-4 px-5 py-4">
                     <div className="w-8 h-8 rounded-xl bg-blue-50 flex items-center justify-center shrink-0 mt-0.5">
                       <Layers className="w-4 h-4 text-blue-500" />
@@ -2466,7 +2603,7 @@ export default function TaskCreatePage() {
                               variant="secondary"
                               className="text-[10px] bg-blue-50 text-blue-700 border-none px-2 py-0 h-5 font-medium"
                             >
-                              {s}
+                              {getStageLabelFromKey(s)}
                             </Badge>
                           ))}
                         </div>
@@ -2606,7 +2743,7 @@ export default function TaskCreatePage() {
                           <Clock className="w-3.5 h-3.5 text-slate-400 mt-0.5" />
                           <div className="min-w-0">
                             <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">
-                              {task.isRepeating ? "Lặp lại" : "Thời gian"}
+                              {task.isRepeating ? "Tần suất" : "Thời gian"}
                             </p>
                             <p className="text-xs font-semibold text-slate-700">
                               {task.isRepeating
@@ -2617,9 +2754,14 @@ export default function TaskCreatePage() {
                         </div>
                       </div>
 
-                      {/* Scope MapPin */}
-                      {task.geographicalSelections &&
-                        task.geographicalSelections.length > 0 && (
+                      {/* Scope MapPin — an existing task's own scope takes
+                          priority; a task that hasn't picked one yet (e.g.
+                          it inherits the plan's scope) falls back to the
+                          Step 1 selection. */}
+                      {(task.geographicalSelections?.length
+                        ? task.geographicalSelections
+                        : selections
+                      ).length > 0 && (
                           <div className="flex items-start gap-2.5 pt-3 border-t border-slate-50">
                             <MapPin className="w-3.5 h-3.5 text-slate-400 mt-1" />
                             <div className="flex-1">
@@ -2628,7 +2770,12 @@ export default function TaskCreatePage() {
                               </p>
                               <div className="flex flex-wrap gap-1.5">
                                 {getSelectionSummary(
-                                  task.geographicalSelections,
+                                  task.geographicalSelections?.length
+                                    ? task.geographicalSelections
+                                    : selections,
+                                  planScopedRegions.length > 0
+                                    ? planScopedRegions
+                                    : regions,
                                 ).map((group) => (
                                   <div
                                     key={group.regionId}

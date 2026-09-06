@@ -2,6 +2,7 @@ import type { DomainCode } from "@/features/farm-supply/types";
 import type { PageResponse } from "@/features/foundation/types/foundation.type";
 import type {
   FarmCatalogRef,
+  FarmPlanPurpose,
   FarmPlanPersonnelRole,
   FarmSupplyItemRef,
   FarmWorkflowAreaRef,
@@ -67,12 +68,14 @@ export interface FarmTaskPlanRef {
   id: number;
   code: string;
   name: string;
+  purpose?: FarmPlanPurpose;
 }
 
 export interface FarmTaskRequest {
   origin: FarmTaskOrigin;
   workflowId?: number | null;
   planId?: number | null;
+  stageId?: number | null;
   scopeType?: FarmWorkflowScopeType | null;
   scopeId?: number | null;
   sourceWorkItemId?: number | null;
@@ -101,6 +104,7 @@ export interface FarmTaskResponse {
   domainCode: DomainCode;
   workflow: FarmWorkflowSummaryRef;
   plan: FarmTaskPlanRef | null;
+  stage: FarmCatalogRef | null;
   scopeType: FarmWorkflowScopeType | null;
   region: FarmWorkflowRegionRef | null;
   area: FarmWorkflowAreaRef | null;
@@ -131,6 +135,7 @@ export interface FarmTaskParentRef {
 export interface FarmTaskQueryParams {
   origin?: FarmTaskOrigin;
   planId?: number | string;
+  stageId?: number | string;
   domainCode?: DomainCode;
   status?: FarmTaskStatus;
   priority?: FarmTaskPriority;

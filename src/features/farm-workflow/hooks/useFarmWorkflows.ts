@@ -29,8 +29,10 @@ export const farmPlanKeys = {
   all: () => ["farm-plans"] as const,
   list: (params?: FarmPlanQueryParams) =>
     [...farmPlanKeys.all(), "list", params ?? {}] as const,
-  detail: (id: number | string) =>
-    [...farmPlanKeys.all(), "detail", id] as const,
+  detail: (
+    id: number | string,
+    params?: Pick<FarmPlanQueryParams, "includeAdHocStages">,
+  ) => [...farmPlanKeys.all(), "detail", id, params ?? {}] as const,
 };
 
 interface UseFarmWorkflowsOptions {
@@ -148,15 +150,18 @@ export function useFarmPlans({
 
 interface UseFarmPlanByIdOptions {
   enabled?: boolean;
+  includeAdHocStages?: boolean;
 }
 
 export function useFarmPlanById(
   id: number | string,
-  { enabled = true }: UseFarmPlanByIdOptions = {},
+  { enabled = true, includeAdHocStages }: UseFarmPlanByIdOptions = {},
 ) {
+  const params = includeAdHocStages ? { includeAdHocStages } : undefined;
+
   return useQuery<FarmPlanResponse, Error>({
-    queryKey: farmPlanKeys.detail(id),
-    queryFn: () => farmPlanApi.getById(id),
+    queryKey: farmPlanKeys.detail(id, params),
+    queryFn: () => farmPlanApi.getById(id, params),
     enabled: enabled && !!id,
     staleTime: 5 * 60 * 1000,
     refetchOnWindowFocus: false,

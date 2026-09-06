@@ -33,7 +33,8 @@ const mapScopeToSelections = (task: FarmTaskResponse): Task["geographicalSelecti
   const base = {
     id: `task-${task.id}-${task.scopeType.toLowerCase()}-${task.region?.id ?? task.area?.id ?? task.plot?.id ?? task.id}`,
     regionId: String(task.region?.id ?? task.area?.region?.id ?? task.plot?.area?.region?.id ?? ""),
-  } as const;
+    regionName: task.region?.name ?? task.area?.region?.name ?? task.plot?.area?.region?.name,
+  };
 
   if (task.scopeType === "REGION" && task.region) {
     return [{ ...base, type: "region" as const }];
@@ -45,6 +46,7 @@ const mapScopeToSelections = (task: FarmTaskResponse): Task["geographicalSelecti
         ...base,
         type: "area" as const,
         areaId: String(task.area.id),
+        areaName: task.area.name,
       },
     ];
   }
@@ -55,7 +57,9 @@ const mapScopeToSelections = (task: FarmTaskResponse): Task["geographicalSelecti
         ...base,
         type: "plot" as const,
         areaId: String(task.plot.area?.id ?? ""),
+        areaName: task.plot.area?.name,
         plotId: String(task.plot.id),
+        plotName: task.plot.name,
       },
     ];
   }
@@ -64,6 +68,10 @@ const mapScopeToSelections = (task: FarmTaskResponse): Task["geographicalSelecti
 };
 
 const mapStageLabel = (task: FarmTaskResponse) => {
+  if (task.stage?.name) {
+    return task.stage.name;
+  }
+
   if (task.sourceWorkItem?.name) {
     return task.sourceWorkItem.name;
   }
@@ -127,6 +135,10 @@ export function farmTaskToLegacyTask(task: FarmTaskResponse): Task {
     })),
     tasks: [],
     geographicalSelections: mapScopeToSelections(task),
+    isRepeating:
+      task.recurrence?.repeatMode === "SPECIFIC_DATES" &&
+      (task.recurrence.repeatDates?.filter(Boolean).length ?? 0) > 0,
+    repeatDates: task.recurrence?.repeatDates?.filter(Boolean) || [],
   };
 }
 
@@ -169,6 +181,7 @@ export function buildFarmTaskRequestFromDraft(
     origin: "PLANNED" | "AD_HOC";
     workflowId?: number | null;
     planId?: number | null;
+    stageId?: number | null;
     scopeType?: "REGION" | "AREA" | "PLOT" | null;
     scopeId?: number | null;
     sourceWorkItemId?: number | null;
@@ -197,12 +210,13 @@ export function buildFarmTaskRequestFromDraft(
 
   return {
     origin: options.origin,
-    workflowId: isPlanned ? options.workflowId ?? null : null,
-    planId: isPlanned ? options.planId ?? null : null,
+    workflowId: isPlanned ? options.workflowId ?? null : options.workflowId ?? null,
+    planId: options.planId ?? null,
+    stageId: options.sourceWorkItemId == null ? options.stageId ?? null : undefined,
     scopeType: options.scopeType ?? null,
     scopeId: options.scopeId ?? null,
-    sourceWorkItemId: isPlanned ? options.sourceWorkItemId ?? null : null,
-    taskCategoryId: !isPlanned ? options.taskCategoryId ?? null : null,
+    sourceWorkItemId: options.sourceWorkItemId ?? null,
+    taskCategoryId: options.sourceWorkItemId == null ? options.taskCategoryId ?? null : null,
     name: draft.name,
     priority: mapPriorityToRequest(draft.priority),
     note: draft.description || null,

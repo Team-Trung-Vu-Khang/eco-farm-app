@@ -4,6 +4,8 @@ import { farmPlanKeys, farmWorkflowKeys } from "./useFarmWorkflows";
 import type {
   FarmPlanRequest,
   FarmPlanResponse,
+  FarmPlanStageRequest,
+  FarmPlanStageResponse,
   FarmWorkflowRequest,
   FarmWorkflowResponse,
 } from "../types/farm-workflow.type";
@@ -83,5 +85,18 @@ export function useFarmPlanMutations() {
     onSuccess: invalidatePlans,
   });
 
-  return { createPlan, updatePlan, deletePlan };
+  const createAdHocStage = useMutation<
+    FarmPlanStageResponse,
+    Error,
+    { planId: number | string; payload: FarmPlanStageRequest }
+  >({
+    mutationFn: ({ planId, payload }) =>
+      farmPlanApi.createAdHocStage(planId, payload),
+    onSuccess: (_, { planId }) => {
+      queryClient.invalidateQueries({ queryKey: farmPlanKeys.detail(planId) });
+      invalidatePlans();
+    },
+  });
+
+  return { createPlan, updatePlan, deletePlan, createAdHocStage };
 }

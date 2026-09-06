@@ -61,6 +61,11 @@ const PRIORITY_OPTIONS = [
   },
 ] as const;
 
+function getStageLabelFromKey(stageKey?: string | null) {
+  if (!stageKey) return "";
+  const separatorIndex = stageKey.indexOf(":");
+  return separatorIndex >= 0 ? stageKey.slice(separatorIndex + 1) : stageKey;
+}
 
 interface SimpleTaskFormProps {
   formData: TaskCreateFormData;
@@ -78,6 +83,7 @@ interface SimpleTaskFormProps {
   goBack: () => void;
   completeLabel?: string;
   lockPlanSelection?: boolean;
+  isEdit?: boolean;
 }
 
 export default function SimpleTaskForm({
@@ -129,11 +135,20 @@ export default function SimpleTaskForm({
     updateSubtask({ isRepeating: true, repeatDates });
   };
 
+  const selectedPlanForStages = plans.find(
+    (plan) => String(plan.id) === formData.planId,
+  );
+  const stageOptions = selectedPlanForStages?.selectedStages || [];
+  const selectedStageKey = formData.selectedStages[0] || "";
+
   const isValid =
     Boolean(formData.name) &&
     Boolean(formData.objectiveType) &&
     Boolean(formData.regimenId) &&
     (formData.mode === "phat-sinh" || Boolean(formData.planId)) &&
+    (formData.mode === "phat-sinh" ||
+      stageOptions.length === 0 ||
+      Boolean(selectedStageKey)) &&
     Boolean(formData.startDate) &&
     Boolean(formData.endDate) &&
     (!isRepeating || repeatDates.length > 0);
@@ -247,7 +262,15 @@ export default function SimpleTaskForm({
           value={formData.regimenId}
           disabled={lockPlanSelection}
           onValueChange={(value) =>
-            setFormData((prev) => ({ ...prev, regimenId: value }))
+            setFormData((prev) => ({
+              ...prev,
+              regimenId: value,
+              // Plans/stages belong to the previous workflow — drop them so a
+              // stale plan scope isn't submitted under the new workflow.
+              planId: "",
+              planName: "",
+              selectedStages: [],
+            }))
           }
         >
           <SelectTrigger className="disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-500 disabled:opacity-80">
@@ -283,7 +306,9 @@ export default function SimpleTaskForm({
               ...prev,
               planId: value,
               planName: selectedPlan?.name || "",
-              selectedStages: selectedPlan?.selectedStages || [],
+              // The user picks the specific stage below — don't preselect
+              // every stage of the plan.
+              selectedStages: [],
             }));
           }}
         >
@@ -309,6 +334,48 @@ export default function SimpleTaskForm({
           </p>
         )}
       </div>
+
+      {formData.planId && (
+        <div className="space-y-2">
+          <Label required={formData.mode === "plan" && stageOptions.length > 0}>
+            Giai đoạn
+            {formData.mode === "phat-sinh" && (
+              <span className="ml-2 text-[10px] font-medium text-slate-400">
+                Không bắt buộc
+              </span>
+            )}
+          </Label>
+          <Select
+            value={selectedStageKey}
+            disabled={stageOptions.length === 0}
+            onValueChange={(value) =>
+              setFormData((prev) => ({ ...prev, selectedStages: [value] }))
+            }
+          >
+            <SelectTrigger className="disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-500 disabled:opacity-80">
+              <SelectValue placeholder="Chọn giai đoạn của kế hoạch..." />
+            </SelectTrigger>
+            <SelectContent>
+              {stageOptions.map((stageKey) => (
+                <SelectItem key={stageKey} value={stageKey}>
+                  {getStageLabelFromKey(stageKey)}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          {stageOptions.length === 0 ? (
+            <p className="text-[11px] font-medium text-slate-400">
+              {formData.mode === "phat-sinh"
+                ? "Kế hoạch tham chiếu chưa có giai đoạn — hệ thống sẽ tự tạo hạng mục \"Phát sinh\"."
+                : "Kế hoạch này chưa có giai đoạn nào."}
+            </p>
+          ) : (
+            <p className="text-[11px] font-medium text-slate-400">
+              Công việc sẽ được gắn vào giai đoạn đã chọn.
+            </p>
+          )}
+        </div>
+      )}
 
       <div className="space-y-2">
         <Label>Mức độ ưu tiên</Label>

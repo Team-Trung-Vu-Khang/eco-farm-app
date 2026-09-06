@@ -40,6 +40,7 @@ export function mapScopeToSelection(
       id: `region-${scope.region.id}`,
       type: "region",
       regionId: String(scope.region.id),
+      regionName: scope.region.name,
     };
   }
 
@@ -52,7 +53,9 @@ export function mapScopeToSelection(
       id: `area-${scope.area.id}`,
       type: "area",
       regionId: String(region.id),
+      regionName: region.name,
       areaId: String(scope.area.id),
+      areaName: scope.area.name,
     };
   }
 
@@ -64,8 +67,11 @@ export function mapScopeToSelection(
       id: `plot-${scope.plot.id}`,
       type: "plot",
       regionId: String(region.id),
+      regionName: region.name,
       areaId: String(area.id),
+      areaName: area.name,
       plotId: String(scope.plot.id),
+      plotName: scope.plot.name,
     };
   }
 

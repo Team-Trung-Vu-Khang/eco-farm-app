@@ -10,6 +10,12 @@ export interface GeographicalSelection {
   regionId: string;
   areaId?: string;
   plotId?: string;
+  // Embedded display names — set when the selection is derived straight from
+  // an API scope response, so a display-only summary doesn't need to depend
+  // on the (often incomplete) local region store to render a label.
+  regionName?: string;
+  areaName?: string;
+  plotName?: string;
 }
 
 export interface MaterialAllocation extends StoreMaterialAllocation {

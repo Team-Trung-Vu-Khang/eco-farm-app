@@ -50,6 +50,12 @@ function getStageDisplayName(stageName: string) {
   return displayName || stageName;
 }
 
+function getStageLabelFromKey(stageKey?: string | null) {
+  if (!stageKey) return "";
+  const separatorIndex = stageKey.indexOf(":");
+  return separatorIndex >= 0 ? stageKey.slice(separatorIndex + 1) : stageKey;
+}
+
 export const TaskStageAllocation = memo(
   ({
     stageName,
@@ -70,6 +76,8 @@ export const TaskStageAllocation = memo(
     showTaskPicker = true,
     personnel = [],
     onUpdateMaterial,
+    stageOptions,
+    stageOptionsRequired = false,
   }: {
     stageName: string;
     cycleName?: string | null;
@@ -95,6 +103,12 @@ export const TaskStageAllocation = memo(
     availableMaterials?: MaterialAllocation[];
     availableMaterialsOnly?: boolean;
     showTaskPicker?: boolean;
+    /** When provided, each task block gets its own "Giai đoạn" picker instead
+     * of inheriting `stageName` for every task in this block. */
+    stageOptions?: string[];
+    /** Requires a task to have an explicit stage picked from `stageOptions`
+     * before it's considered complete. */
+    stageOptionsRequired?: boolean;
   }) => {
     const displayStageName = getStageDisplayName(stageName);
 
@@ -127,15 +141,17 @@ export const TaskStageAllocation = memo(
               ({tasks.length} công việc)
             </span>
           </div>
-          <Button
-            size="sm"
-            variant="outline"
-            className="bg-transparent border-slate-700 text-white hover:bg-slate-800 hover:text-white"
-            onClick={handleAddBlankTask}
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            Thêm
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              size="sm"
+              variant="outline"
+              className="bg-transparent border-slate-700 text-white hover:bg-slate-800 hover:text-white"
+              onClick={handleAddBlankTask}
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Thêm
+            </Button>
+          </div>
         </div>
 
         {/* List of Blocks */}
@@ -170,6 +186,8 @@ export const TaskStageAllocation = memo(
                   availableMaterialsOnly={availableMaterialsOnly}
                   showTaskPicker={showTaskPicker}
                   onUpdateMaterial={onUpdateMaterial}
+                  stageOptions={stageOptions}
+                  stageOptionsRequired={stageOptionsRequired}
                 />
               );
             })
@@ -196,6 +214,8 @@ const TaskBlock = ({
   availableMaterialsOnly = false,
   showTaskPicker = true,
   onUpdateMaterial,
+  stageOptions,
+  stageOptionsRequired = false,
 }: any) => {
   const [isPersonnelDialogOpen, setIsPersonnelDialogOpen] = useState(false);
   const [personnelSearch, setPersonnelSearch] = useState("");
@@ -449,6 +469,47 @@ const TaskBlock = ({
               />
             )}
           </div>
+
+          {Array.isArray(stageOptions) && stageOptions.length > 0 && (
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+                  Giai đoạn {stageOptionsRequired && (
+                    <span className="text-red-500">*</span>
+                  )}
+                </span>
+                {stageOptionsRequired && !stageOptions.includes(task.stageId) && (
+                  <span className="text-[10px] text-amber-500 italic">
+                    Chưa chọn giai đoạn
+                  </span>
+                )}
+              </div>
+              <Select
+                value={stageOptions.includes(task.stageId) ? task.stageId : ""}
+                onValueChange={(value) =>
+                  onUpdateTask?.(task.id, { stageId: value })
+                }
+              >
+                <SelectTrigger
+                  className={cn(
+                    "bg-slate-50 border-slate-200",
+                    stageOptionsRequired &&
+                      !stageOptions.includes(task.stageId) &&
+                      "border-amber-400",
+                  )}
+                >
+                  <SelectValue placeholder="Chọn giai đoạn cho công việc này..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {stageOptions.map((stageKey: string) => (
+                    <SelectItem key={stageKey} value={stageKey}>
+                      {getStageLabelFromKey(stageKey)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
 
           <div className="flex flex-col gap-3">
             {/* Personnel assigned */}

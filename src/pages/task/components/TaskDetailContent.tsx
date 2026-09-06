@@ -30,7 +30,7 @@ import {
 } from "lucide-react";
 import { type Task } from "../../../stores/useTaskStore";
 import useRegionStore from "../../../stores/useRegionStore";
-import { getFrequencyText } from "../../plan/utils/task";
+import { getFrequencyText, getRepeatDatesText } from "../../plan/utils/task";
 
 const MATERIAL_TYPE_LABELS: Record<string, string> = {
   fertilizer: "Phân bón",
@@ -362,12 +362,16 @@ export function TaskDetailBody({ task }: { task: Task }) {
     }[] = [];
 
     selections.forEach((sel) => {
+      // The selection may already embed display names straight from the API
+      // scope (see mapScopeToSelections) — prefer those so a region missing
+      // from the local store doesn't silently drop the whole selection.
       const region = regions.find((r) => String(r.id) === String(sel.regionId));
-      if (!region) return;
+      const regionName = sel.regionName || region?.name;
+      if (!regionName) return;
 
       let group = summary.find((s) => s.regionId === sel.regionId);
       if (!group) {
-        group = { regionId: sel.regionId, regionName: region.name, items: [] };
+        group = { regionId: sel.regionId, regionName, items: [] };
         summary.push(group);
       }
 
@@ -375,19 +379,19 @@ export function TaskDetailBody({ task }: { task: Task }) {
         group.items.push({
           type: "region",
           id: sel.id,
-          name: "Toàn bộ vùng " + region.name,
+          name: "Toàn bộ vùng " + regionName,
         });
       } else if (sel.type === "area") {
-        const area = region.subAreas?.find(
+        const area = region?.subAreas?.find(
           (a: any) => String(a.id) === String(sel.areaId),
         );
         group.items.push({
           type: "area",
           id: sel.id,
-          name: "Khu vực " + (area?.name || sel.areaId),
+          name: "Khu vực " + (sel.areaName || area?.name || sel.areaId),
         });
       } else if (sel.type === "plot") {
-        const area = region.subAreas?.find(
+        const area = region?.subAreas?.find(
           (a: any) => String(a.id) === String(sel.areaId),
         );
         const plot = area?.plots?.find(
@@ -396,8 +400,8 @@ export function TaskDetailBody({ task }: { task: Task }) {
         group.items.push({
           type: "plot",
           id: sel.id,
-          name: "Lô " + (plot?.name || sel.plotId),
-          parentName: area?.name,
+          name: "Lô " + (sel.plotName || plot?.name || sel.plotId),
+          parentName: sel.areaName || area?.name,
         });
       }
     });
@@ -410,12 +414,16 @@ export function TaskDetailBody({ task }: { task: Task }) {
       ? task.tasks
       : [
           {
-            id: 0,
+            // Materials carry the parent task's own id as their `taskId` —
+            // match it here so the "Vật tư phân bổ" filter below finds them.
+            id: task.id,
             name: task.name,
             startDate: task.startDate,
             endDate: task.endDate,
             geographicalSelections: task.geographicalSelections,
             labor: (task.assignedTo || []).join(", "),
+            isRepeating: task.isRepeating,
+            repeatDates: task.repeatDates,
           },
         ];
 
@@ -459,6 +467,15 @@ export function TaskDetailBody({ task }: { task: Task }) {
                   {idx + 1}
                 </span>
                 {t.name}
+                {(t.stageId || task.stage) && (
+                  <Badge
+                    variant="secondary"
+                    className="ml-auto bg-emerald-50 text-emerald-700 border-none font-semibold"
+                  >
+                    <Layers className="w-3 h-3 mr-1" />
+                    {t.stageId || task.stage}
+                  </Badge>
+                )}
               </CardTitle>
             </CardHeader>
             <CardContent className="pt-4 space-y-5">
@@ -510,10 +527,12 @@ export function TaskDetailBody({ task }: { task: Task }) {
                       <>
                         <RefreshCw className="w-5 h-5 text-primary shrink-0" />
                         <p className="text-sm font-semibold text-slate-800">
-                          {getFrequencyText(
-                            t.repeatDays || [],
-                            t.repeatWeeks || 0,
-                          )}
+                          {t.repeatDates?.length
+                            ? getRepeatDatesText(t.repeatDates)
+                            : getFrequencyText(
+                                t.repeatDays || [],
+                                t.repeatWeeks || 0,
+                              )}
                         </p>
                       </>
                     ) : (
