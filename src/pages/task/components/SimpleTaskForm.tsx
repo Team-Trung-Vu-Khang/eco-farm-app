@@ -487,7 +487,19 @@ export default function SimpleTaskForm({
 
         {formData.planId ? (
           <div className="space-y-2">
-            <Label>Hạng mục công việc</Label>
+            <div className="flex items-center justify-between">
+              <Label>Hạng mục công việc</Label>
+              {selectedWorkItemId && (
+                <button
+                  type="button"
+                  className="flex items-center gap-1 text-[11px] font-medium text-slate-400 hover:text-rose-500"
+                  onClick={() => setSourceWorkItem("")}
+                >
+                  <X className="h-3 w-3" />
+                  Bỏ chọn
+                </button>
+              )}
+            </div>
             <Combobox
               options={availableWorkItems.map((item) => ({
                 value: String(item.id),
