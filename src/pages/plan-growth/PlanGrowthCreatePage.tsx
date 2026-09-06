@@ -1968,6 +1968,7 @@ export default function PlanGrowthCreatePage({
             selections={selections}
             selectionSummary={selectionSummary}
             handleGeographicalConfirm={handleGeographicalConfirm}
+            growthCycles={growthCycles}
             personnel={personnel}
             supplyCatalog={supplyCatalog}
           />

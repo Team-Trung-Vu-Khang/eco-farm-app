@@ -358,6 +358,7 @@ export default function PlanAquacultureGrowthEditPage({
           <button
             key={type.id}
             type="button"
+            disabled
             onClick={() => {
               setFormData((prev) => ({
                 ...prev,
@@ -370,10 +371,10 @@ export default function PlanAquacultureGrowthEditPage({
               }));
             }}
             className={cn(
-              "cursor-pointer p-4 rounded-2xl border-2 transition-all flex flex-col items-center text-center gap-1 group relative overflow-hidden",
+              "p-4 rounded-2xl border-2 transition-all flex flex-col items-center text-center gap-1 group relative overflow-hidden cursor-not-allowed opacity-60",
               formData.purpose === type.id
                 ? `${type.borderColor} ${type.bgColor} ${type.textColor} shadow-md`
-                : "border-slate-100 bg-white hover:border-slate-200 hover:shadow-sm",
+                : "border-slate-100 bg-white",
             )}
           >
             <div
@@ -2046,6 +2047,7 @@ export default function PlanAquacultureGrowthEditPage({
             growthCycles={growthCycles}
             personnel={personnel}
             supplyCatalog={supplyCatalog}
+            isEdit
           />
         ) : (
           <StepperForm

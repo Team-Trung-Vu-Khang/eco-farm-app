@@ -691,7 +691,7 @@ export function useAnimalGrowthForm(
           86400000,
       ) || 1,
     );
-    const stages = buildFarmPlanStagesRequest(formData);
+    const stages = buildFarmPlanStagesRequest(formData, planDetailQuery.data?.stages);
 
     if (mode === "edit" && params.id) {
       let updated;

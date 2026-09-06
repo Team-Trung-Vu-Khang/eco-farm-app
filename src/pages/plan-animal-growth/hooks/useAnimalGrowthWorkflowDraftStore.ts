@@ -2,7 +2,7 @@ import { applyEdgeChanges, applyNodeChanges } from "reactflow";
 import type { Edge, EdgeChange, Node, NodeChange } from "reactflow";
 import { create } from "zustand";
 import type { Plan } from "@/stores/useAnimalGrowthPlanStore";
-import type { GeographicalSelection } from "../types";
+import type { GeographicalSelection, GrowthCycleSelection } from "../types";
 
 export type WorkflowSetupKind = "plan" | "stage" | "detail";
 
@@ -45,6 +45,10 @@ export type DiagramInfoRecord = {
   plannedDurationYears: string;
   plannedDurationMonths: string;
   plannedDurationDays: string;
+  // Growth cycle (or a specific stage within one) applicable to the
+  // selected farming zone(s) — local-only, the backend workflow scope
+  // schema has no growth-cycle concept yet. At most one entry.
+  growthCycleSelections?: GrowthCycleSelection[];
   isActive: boolean;
   position: { x: number; y: number };
 };

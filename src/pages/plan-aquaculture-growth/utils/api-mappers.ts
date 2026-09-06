@@ -243,6 +243,36 @@ const durationUnitToLabel: Record<FarmWorkDurationUnit, string> = {
   WEEK: "tuần",
 };
 
+type FarmPlanStage = NonNullable<FarmPlanResponse["stages"]>[number];
+
+function getSeasonStageId(stage: FarmPlanStage) {
+  // Depending on the backend version, the relation is returned either as
+  // `seasonStage.id` or as the flattened `seasonStageId`. Keep both forms
+  // so a freshly-created plan can hydrate its selected stages on edit.
+  const rawId =
+    stage.seasonStage?.id ??
+    (stage as FarmPlanStage & {
+      seasonStageId?: number | string | null;
+    }).seasonStageId;
+  const id = Number(rawId);
+  return Number.isFinite(id) ? id : undefined;
+}
+
+function getApiStageKey(stage: FarmPlanStage) {
+  const seasonStageId = getSeasonStageId(stage);
+  return seasonStageId != null
+    ? `api-stage-${seasonStageId}:${stage.name}`
+    : stage.name;
+}
+
+// A client-generated allocation id (Date.now()-based) is always far larger
+// than any real database id — use that gap to tell a not-yet-saved item from
+// one that already exists on the backend and must be preserved on update.
+const MAX_PLAUSIBLE_BACKEND_ID = 1_000_000_000;
+function isBackendId(id: number | undefined | null): id is number {
+  return typeof id === "number" && Number.isFinite(id) && id < MAX_PLAUSIBLE_BACKEND_ID;
+}
+
 export function mapPlanResponseToPlan(plan: FarmPlanResponse): Plan {
   const selections = plan.scopes
     .map(mapScopeToSelection)
@@ -259,24 +289,6 @@ export function mapPlanResponseToPlan(plan: FarmPlanResponse): Plan {
     .map((selection) => String(selection.plotId));
 
   const stages = plan.stages || [];
-  const getSeasonStageId = (stage: FarmPlanResponse["stages"][number]) => {
-    // Depending on the backend version, the relation is returned either as
-    // `seasonStage.id` or as the flattened `seasonStageId`. Keep both forms
-    // so a freshly-created plan can hydrate its selected stages on edit.
-    const rawId =
-      stage.seasonStage?.id ??
-      (stage as FarmPlanResponse["stages"][number] & {
-        seasonStageId?: number | string | null;
-      }).seasonStageId;
-    const id = Number(rawId);
-    return Number.isFinite(id) ? id : undefined;
-  };
-  const getApiStageKey = (stage: FarmPlanResponse["stages"][number]) => {
-    const seasonStageId = getSeasonStageId(stage);
-    return seasonStageId != null
-      ? `api-stage-${seasonStageId}:${stage.name}`
-      : stage.name;
-  };
   const selectedStages = stages.map(getApiStageKey);
   const seasonStageIds = stages
     .map(getSeasonStageId)
@@ -376,9 +388,14 @@ export function mapPlanResponseToPlan(plan: FarmPlanResponse): Plan {
 }
 
 // Builds the FarmPlanRequest.stages payload from the form's selected stages,
-// material allocations, and task allocations.
+// material allocations, and task allocations. `existingStages` — the stages
+// on the plan as last loaded from the API — lets an already-persisted stage
+// or work item carry its real id back to the backend, so an update can
+// recognize and keep it instead of deleting and recreating it (which the
+// backend rejects once a work item has real FarmTasks allocated against it).
 export function buildFarmPlanStagesRequest(
   formData: PlanFormData,
+  existingStages: FarmPlanResponse["stages"] = [],
 ): FarmPlanStageRequest[] {
   const stageKeys =
     formData.purpose === "harvest" ? ["Xuất bán"] : formData.selectedStages;
@@ -391,6 +408,9 @@ export function buildFarmPlanStagesRequest(
     const stageName = separatorIndex >= 0
       ? stageKey.slice(separatorIndex + 1)
       : stageKey;
+    const existingStage = existingStages.find(
+      (stage) => getApiStageKey(stage) === stageKey,
+    );
 
     const supplyLines = groupMaterialAllocations(formData.materialAllocations)
       .map((material) => {
@@ -425,6 +445,10 @@ export function buildFarmPlanStagesRequest(
     const workItems = formData.taskAllocations
       .filter((task) => task.stageId === stageKey)
       .map((task) => ({
+        // A real backend id tells the API to keep/update this work item
+        // instead of recreating it — required once it already has FarmTasks
+        // allocated against it (the backend blocks deleting those).
+        ...(isBackendId(task.id) ? { id: task.id } : {}),
         taskCategoryId: task.taskCategoryId,
         name: task.name,
         description: task.description || undefined,
@@ -449,6 +473,7 @@ export function buildFarmPlanStagesRequest(
     });
 
     return {
+      ...(isBackendId(existingStage?.id) ? { id: existingStage.id } : {}),
       name: stageName,
       ...(selectedCycleStage?.stageId
         ? { seasonStageId: Number(selectedCycleStage.stageId) }

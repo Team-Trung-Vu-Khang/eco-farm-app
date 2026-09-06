@@ -145,6 +145,7 @@ interface SimplePlanFormProps {
   growthCycles: GrowthCycle[];
   personnel: PersonnelOption[];
   supplyCatalog: AquacultureSupplyCatalog;
+  isEdit?: boolean;
 }
 
 function StageMaterialPicker({
@@ -386,6 +387,7 @@ export default function SimplePlanForm({
   growthCycles,
   personnel,
   supplyCatalog,
+  isEdit = false,
 }: SimplePlanFormProps) {
   const [newStage, setNewStage] = useState("");
   const [removedGrowthCycleStages, setRemovedGrowthCycleStages] = useState<
@@ -650,6 +652,7 @@ export default function SimplePlanForm({
           }
           placeholder="Mô tả ngắn gọn mục đích của kế hoạch..."
           rows={2}
+          disabled={isEdit}
         />
         <div className="grid grid-cols-3 gap-2 sm:grid-cols-5">
           {PURPOSE_OPTIONS.map((type) => {
@@ -659,6 +662,7 @@ export default function SimplePlanForm({
               <button
                 key={type.id}
                 type="button"
+                disabled={isEdit}
                 onClick={() =>
                   setFormData((prev) => {
                     if (prev.purpose === type.id) return prev;
@@ -677,10 +681,14 @@ export default function SimplePlanForm({
                   })
                 }
                 className={cn(
-                  "cursor-pointer p-3 rounded-xl border-2 transition-all flex flex-col items-center text-center gap-1",
+                  "p-3 rounded-xl border-2 transition-all flex flex-col items-center text-center gap-1",
+                  isEdit ? "cursor-not-allowed opacity-60" : "cursor-pointer",
                   isActive
                     ? `${colors.border} ${colors.bg} ${colors.text} shadow-sm`
-                    : "border-slate-100 bg-white hover:border-slate-200",
+                    : cn(
+                        "border-slate-100 bg-white",
+                        !isEdit && "hover:border-slate-200",
+                      ),
                 )}
               >
                 <div

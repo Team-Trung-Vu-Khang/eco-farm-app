@@ -35,6 +35,14 @@ const planStatusMap: Record<string, Plan["status"]> = {
 let fallbackPlans: Plan[] = initialAnimalGrowthPlans as Plan[];
 let fallbackWorkflows: Workflow[] = initialAnimalGrowthWorkflows as Workflow[];
 
+// A client-generated allocation id (Date.now()-based) is always far larger
+// than any real database id — use that gap to tell a not-yet-saved item from
+// one that already exists on the backend and must be preserved on update.
+const MAX_PLAUSIBLE_BACKEND_ID = 1_000_000_000;
+function isBackendId(id: number | undefined | null): id is number {
+  return typeof id === "number" && Number.isFinite(id) && id < MAX_PLAUSIBLE_BACKEND_ID;
+}
+
 export function mapScopeToSelection(
   scope: FarmWorkflowScopeResponse,
 ): GeographicalSelection | null {
@@ -340,9 +348,14 @@ export function mapPlanResponseToPlan(plan: FarmPlanResponse): Plan {
 }
 
 // Builds the FarmPlanRequest.stages payload from the form's selected stages,
-// material allocations, and task allocations.
+// material allocations, and task allocations. `existingStages` — the stages
+// on the plan as last loaded from the API — lets an already-persisted stage
+// or work item carry its real id back to the backend, so an update can
+// recognize and keep it instead of deleting and recreating it (which the
+// backend rejects once a work item has real FarmTasks allocated against it).
 export function buildFarmPlanStagesRequest(
   formData: PlanFormData,
+  existingStages: FarmPlanResponse["stages"] = [],
 ): FarmPlanStageRequest[] {
   // The harvest resources step (StageAllocation's harvest branch in
   // PlanAnimalGrowthEditPage) tags every material/task it adds with
@@ -351,10 +364,17 @@ export function buildFarmPlanStagesRequest(
   const stageKeys =
     formData.purpose === "harvest" ? ["Xuất bán"] : formData.selectedStages;
 
-  return stageKeys.map((stageKey, index) => {
-    const stageName = stageKey.includes(":")
-      ? stageKey.split(":")[1]
+  return stageKeys.map((stageKey) => {
+    const separatorIndex = stageKey.indexOf(":");
+    const stagePrefix = separatorIndex >= 0
+      ? stageKey.slice(0, separatorIndex)
+      : "";
+    const stageName = separatorIndex >= 0
+      ? stageKey.slice(separatorIndex + 1)
       : stageKey;
+    const existingStage = existingStages?.find(
+      (stage) => stage.name === stageName,
+    );
 
     const supplyLines = groupMaterialAllocations(formData.materialAllocations)
       .map((material) => {
@@ -389,6 +409,10 @@ export function buildFarmPlanStagesRequest(
     const workItems = formData.taskAllocations
       .filter((task) => task.stageId === stageKey)
       .map((task) => ({
+        // A real backend id tells the API to keep/update this work item
+        // instead of recreating it — required once it already has FarmTasks
+        // allocated against it (the backend blocks deleting those).
+        ...(isBackendId(task.id) ? { id: task.id } : {}),
         taskCategoryId: task.taskCategoryId,
         name: task.name,
         description: task.description || undefined,
@@ -397,10 +421,26 @@ export function buildFarmPlanStagesRequest(
         durationUnit: task.durationUnit,
       }));
 
+    const selectedCycleStage = formData.growthCycleSelections?.find((selection) => {
+      if (selection.type !== "stage" || selection.stageId == null) return false;
+      if (stagePrefix.startsWith("api-stage-")) {
+        return String(selection.stageId) === stagePrefix.slice("api-stage-".length);
+      }
+      if (stageKey.includes(":")) {
+        const [cycleId, ...nameParts] = stageKey.split(":");
+        return (
+          selection.cycleId === cycleId &&
+          nameParts.join(":") === stageName
+        );
+      }
+      return selection.stageName === stageName;
+    });
+
     return {
+      ...(isBackendId(existingStage?.id) ? { id: existingStage.id } : {}),
       name: stageName,
-      ...(formData.seasonStageIds?.[index]
-        ? { seasonStageId: formData.seasonStageIds[index] }
+      ...(selectedCycleStage?.stageId
+        ? { seasonStageId: Number(selectedCycleStage.stageId) }
         : {}),
       supplyLines,
       workItems,

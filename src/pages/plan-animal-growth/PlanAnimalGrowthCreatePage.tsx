@@ -2017,6 +2017,7 @@ export default function PlanAnimalGrowthCreatePage({
             selections={selections}
             selectionSummary={selectionSummary}
             handleGeographicalConfirm={handleGeographicalConfirm}
+            growthCycles={growthCycles}
             personnel={personnel}
             supplyCatalog={supplyCatalog}
           />
