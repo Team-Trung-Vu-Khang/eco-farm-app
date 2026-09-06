@@ -21,7 +21,6 @@ import {
   SelectValue,
   StepperForm,
   Switch,
-  Textarea,
   cn,
   useToast,
   type Step,
@@ -722,7 +721,7 @@ export default function TaskCreatePage() {
         regionGroup.items.push({
           type: "region",
           id: String(region.id),
-          name: `Toàn bộ ${region.name}`,
+          name: "Toàn bộ",
         });
       } else if (sel.type === "area") {
         const area = region.subAreas?.find(
@@ -1086,8 +1085,10 @@ export default function TaskCreatePage() {
               ? null
               : (stageTask?.taskCategoryId ?? planTask?.taskCategoryId ?? null),
           name: formData.name,
-          priority: mapPriorityToApi(formData.priority),
-          note: formData.description || null,
+          priority: mapPriorityToApi(
+            stageTask?.priority || formData.priority,
+          ),
+          note: stageTask?.description || formData.description || null,
           personnel: personnelRequests,
           startDate: formData.startDate,
           endDate: formData.endDate,
@@ -1236,8 +1237,8 @@ export default function TaskCreatePage() {
       description: "Thông tin mô tả công việc",
       isValid: isObjectiveStepValid,
       content: (
-        <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
-          <div className="lg:col-span-3 space-y-6">
+        <div className="grid grid-cols-1 gap-6">
+          <div className="space-y-6">
             <Card>
               <CardHeader>
                 <CardTitle className="text-lg flex items-center gap-2">
@@ -2222,87 +2223,6 @@ export default function TaskCreatePage() {
               </CardContent>
             </Card>
           </div>
-
-          <div className="lg:col-span-2 space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <StickyNote className="w-5 h-5 text-primary" />
-                  Ưu tiên & Ghi chú
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-3">
-                  <Label
-                    className="text-[11px] font-bold text-slate-500 uppercase tracking-wider"
-                    required
-                  >
-                    Độ ưu tiên
-                  </Label>
-                  <div className="grid grid-cols-3 gap-2">
-                    {[
-                      {
-                        id: "low",
-                        label: "Thấp",
-                        color: "emerald",
-                        activeClass:
-                          "bg-emerald-500 text-white border-emerald-500 shadow-emerald-200",
-                        inactiveClass:
-                          "bg-emerald-50 text-emerald-600 border-emerald-100 hover:bg-emerald-100",
-                      },
-                      {
-                        id: "medium",
-                        label: "Thường",
-                        color: "amber",
-                        activeClass:
-                          "bg-amber-500 text-white border-amber-500 shadow-amber-200",
-                        inactiveClass:
-                          "bg-amber-50 text-amber-600 border-amber-100 hover:bg-amber-100",
-                      },
-                      {
-                        id: "high",
-                        label: "Cao",
-                        color: "rose",
-                        activeClass:
-                          "bg-rose-500 text-white border-rose-500 shadow-rose-200",
-                        inactiveClass:
-                          "bg-rose-50 text-rose-600 border-rose-100 hover:bg-rose-100",
-                      },
-                    ].map((p) => (
-                      <div
-                        key={p.id}
-                        onClick={() =>
-                          setFormData({ ...formData, priority: p.id as any })
-                        }
-                        className={cn(
-                          "cursor-pointer px-2 py-3 rounded-xl border-2 text-center text-[10px] font-black uppercase transition-all shadow-sm",
-                          formData.priority === p.id
-                            ? `${p.activeClass} scale-105`
-                            : p.inactiveClass,
-                        )}
-                      >
-                        {p.label}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-                    Ghi chú
-                  </Label>
-                  <Textarea
-                    value={formData.description}
-                    onChange={(e) =>
-                      setFormData({ ...formData, description: e.target.value })
-                    }
-                    placeholder="Mô tả chi tiết công việc..."
-                    rows={4}
-                  />
-                </div>
-              </CardContent>
-            </Card>
-          </div>
         </div>
       ),
     },
@@ -2648,18 +2568,20 @@ export default function TaskCreatePage() {
 
             {/* Tasks and Materials List */}
             <div className="space-y-4">
-              <div className="flex items-center justify-between px-2">
-                <h4 className="text-sm font-bold text-slate-700 flex items-center gap-2">
-                  <ClipboardList className="w-4 h-4 text-emerald-500" />
-                  Danh sách công việc chi tiết
-                </h4>
-                <Badge
-                  variant="secondary"
-                  className="bg-slate-100 text-slate-600 font-bold px-2 py-0"
-                >
-                  {formData.tasks.length} công việc
-                </Badge>
-              </div>
+              {formData.tasks.length > 1 && (
+                <div className="flex items-center justify-between px-2">
+                  <h4 className="text-sm font-bold text-slate-700 flex items-center gap-2">
+                    <ClipboardList className="w-4 h-4 text-emerald-500" />
+                    Danh sách công việc chi tiết
+                  </h4>
+                  <Badge
+                    variant="secondary"
+                    className="bg-slate-100 text-slate-600 font-bold px-2 py-0"
+                  >
+                    {formData.tasks.length} công việc
+                  </Badge>
+                </div>
+              )}
 
               {formData.tasks.length === 0 ? (
                 <Card className="border-dashed border-slate-200 bg-slate-50/30">
@@ -2678,9 +2600,11 @@ export default function TaskCreatePage() {
                     {/* Task Header */}
                     <div className="bg-slate-50/80 px-4 py-3 border-b border-slate-100 flex flex-wrap items-center justify-between gap-3">
                       <div className="flex items-center gap-2 min-w-0">
-                        <div className="w-6 h-6 rounded-md bg-emerald-500 text-white flex items-center justify-center text-[10px] font-bold shrink-0">
-                          {taskIdx + 1}
-                        </div>
+                        {formData.tasks.length > 1 && (
+                          <div className="w-6 h-6 rounded-md bg-emerald-500 text-white flex items-center justify-center text-[10px] font-bold shrink-0">
+                            {taskIdx + 1}
+                          </div>
+                        )}
                         <span className="font-bold text-slate-800 truncate">
                           {task.name}
                         </span>

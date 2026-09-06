@@ -17,6 +17,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
+  Textarea,
   cn,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { vi } from "date-fns/locale";
@@ -78,6 +79,7 @@ export const TaskStageAllocation = memo(
     onUpdateMaterial,
     stageOptions,
     stageOptionsRequired = false,
+    allowAddRemove = true,
   }: {
     stageName: string;
     cycleName?: string | null;
@@ -109,6 +111,10 @@ export const TaskStageAllocation = memo(
     /** Requires a task to have an explicit stage picked from `stageOptions`
      * before it's considered complete. */
     stageOptionsRequired?: boolean;
+    /** When false, hides the "Thêm"/task-count header controls and the
+     * per-task remove button — used when a task can only ever hold one
+     * fixed work item (e.g. editing an existing task). */
+    allowAddRemove?: boolean;
   }) => {
     const displayStageName = getStageDisplayName(stageName);
 
@@ -120,6 +126,7 @@ export const TaskStageAllocation = memo(
         description: "",
         labor: "",
         duration: "",
+        priority: "medium",
         geographicalSelections: masterSelections || [],
       });
     };
@@ -137,21 +144,25 @@ export const TaskStageAllocation = memo(
                 {cycleName}
               </Badge>
             )}
-            <span className="text-xs text-slate-400 font-medium ml-2">
-              ({tasks.length} công việc)
-            </span>
+            {allowAddRemove && (
+              <span className="text-xs text-slate-400 font-medium ml-2">
+                ({tasks.length} công việc)
+              </span>
+            )}
           </div>
-          <div className="flex items-center gap-2">
-            <Button
-              size="sm"
-              variant="outline"
-              className="bg-transparent border-slate-700 text-white hover:bg-slate-800 hover:text-white"
-              onClick={handleAddBlankTask}
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              Thêm
-            </Button>
-          </div>
+          {allowAddRemove && (
+            <div className="flex items-center gap-2">
+              <Button
+                size="sm"
+                variant="outline"
+                className="bg-transparent border-slate-700 text-white hover:bg-slate-800 hover:text-white"
+                onClick={handleAddBlankTask}
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Thêm
+              </Button>
+            </div>
+          )}
         </div>
 
         {/* List of Blocks */}
@@ -188,6 +199,7 @@ export const TaskStageAllocation = memo(
                   onUpdateMaterial={onUpdateMaterial}
                   stageOptions={stageOptions}
                   stageOptionsRequired={stageOptionsRequired}
+                  allowAddRemove={allowAddRemove}
                 />
               );
             })
@@ -216,6 +228,7 @@ const TaskBlock = ({
   onUpdateMaterial,
   stageOptions,
   stageOptionsRequired = false,
+  allowAddRemove = true,
 }: any) => {
   const [isPersonnelDialogOpen, setIsPersonnelDialogOpen] = useState(false);
   const [personnelSearch, setPersonnelSearch] = useState("");
@@ -401,13 +414,15 @@ const TaskBlock = ({
 
   return (
     <div className="border shadow-sm rounded-xl overflow-hidden bg-white relative animate-in fade-in slide-in-from-bottom-2">
-      <button
-        type="button"
-        className="absolute top-0 cursor-pointer right-0 text-slate-300 transition-colors z-10 bg-red-500 p-1 rounded-bl-md"
-        onClick={() => onRemoveTask(task.id)}
-      >
-        <X className="w-5 h-5 text-white" />
-      </button>
+      {allowAddRemove && (
+        <button
+          type="button"
+          className="absolute top-0 cursor-pointer right-0 text-slate-300 transition-colors z-10 bg-red-500 p-1 rounded-bl-md"
+          onClick={() => onRemoveTask(task.id)}
+        >
+          <X className="w-5 h-5 text-white" />
+        </button>
+      )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-slate-100">
         {/* Left Side: Task Info */}
@@ -582,6 +597,63 @@ const TaskBlock = ({
             </Button>
           </div>
 
+          <div className="space-y-3 pt-2 border-t border-slate-100">
+            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+              Độ ưu tiên
+            </span>
+            <div className="grid grid-cols-3 gap-2">
+              {(
+                [
+                  {
+                    id: "low",
+                    label: "Thấp",
+                    activeClass:
+                      "bg-emerald-500 text-white border-emerald-500",
+                    inactiveClass:
+                      "bg-emerald-50 text-emerald-600 border-emerald-100 hover:bg-emerald-100",
+                  },
+                  {
+                    id: "medium",
+                    label: "Thường",
+                    activeClass: "bg-amber-500 text-white border-amber-500",
+                    inactiveClass:
+                      "bg-amber-50 text-amber-600 border-amber-100 hover:bg-amber-100",
+                  },
+                  {
+                    id: "high",
+                    label: "Cao",
+                    activeClass: "bg-rose-500 text-white border-rose-500",
+                    inactiveClass:
+                      "bg-rose-50 text-rose-600 border-rose-100 hover:bg-rose-100",
+                  },
+                ] as const
+              ).map((p) => (
+                <button
+                  type="button"
+                  key={p.id}
+                  onClick={() => onUpdateTask?.(task.id, { priority: p.id })}
+                  className={cn(
+                    "cursor-pointer px-2 py-2 rounded-xl border-2 text-center text-[10px] font-black uppercase transition-all",
+                    (task.priority || "medium") === p.id
+                      ? p.activeClass
+                      : p.inactiveClass,
+                  )}
+                >
+                  {p.label}
+                </button>
+              ))}
+            </div>
+            <Textarea
+              value={task.description || ""}
+              onChange={(e) =>
+                onUpdateTask?.(task.id, { description: e.target.value })
+              }
+              placeholder="Mô tả chi tiết công việc..."
+              rows={3}
+              className="bg-slate-50 border-slate-200 text-sm"
+            />
+          </div>
+
           <div className="space-y-4 pt-2 border-t border-slate-100">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
@@ -725,12 +797,12 @@ const TaskBlock = ({
 
         {/* Right Side: Material Info */}
         <div className="p-0 flex flex-col bg-slate-50/50">
-          <div className="p-4 border-b border-slate-200 mt-1 space-y-2">
-            <div className="relative pr-5">
+          <div className="px-4 pb-4 pt-9 border-b border-slate-200 space-y-2">
+            <div className="relative">
               <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 z-10" />
               <Input
                 placeholder="Tìm kiếm vật tư..."
-                className="pl-10 h-9 text-sm bg-white"
+                className="pl-10 h-9 text-sm bg-white w-full"
                 value={materialSearch}
                 onChange={(e) => setMaterialSearch(e.target.value)}
               />

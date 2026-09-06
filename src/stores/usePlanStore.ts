@@ -23,6 +23,7 @@ export interface TaskAllocation {
   description: string;
   labor: string;
   duration: string;
+  priority?: "low" | "medium" | "high";
   geographicalSelections?: import("../pages/plan/types").GeographicalSelection[];
   isRepeating?: boolean;
   repeatDays?: number[];

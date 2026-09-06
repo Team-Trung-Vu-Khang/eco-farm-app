@@ -119,7 +119,7 @@ export function getGeographicalSelectionSummary(
       regionGroup.items.push({
         type: "region",
         id: String(region.id),
-        name: `Toàn bộ ${region.name}`,
+        name: "Toàn bộ",
       });
       return;
     }
