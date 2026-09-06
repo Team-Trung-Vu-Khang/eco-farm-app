@@ -1279,6 +1279,15 @@ export default function TaskEditPage() {
             // in the detailed form rather than picked from the plan).
             stageId:
               plannedSourceWorkItemId == null ? adHocStageId : undefined,
+            // A real source work item already carries its own category
+            // server-side — only send one when the task was added directly
+            // (no source work item to derive it from).
+            taskCategoryId:
+              plannedSourceWorkItemId != null
+                ? null
+                : ((formData.tasks[0] as TaskAllocation)?.taskCategoryId ??
+                  taskResponse.taskCategory?.id ??
+                  null),
           }
         : {
             workflowId: toFiniteNumber(formData.regimenId),

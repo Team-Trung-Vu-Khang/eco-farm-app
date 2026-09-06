@@ -185,6 +185,8 @@ export interface FarmPlanStageSupplyLineResponse {
 }
 
 export interface FarmPlanWorkItemRequest {
+  /** Set when updating an existing work item — omit for a new one. */
+  id?: number;
   taskCategoryId?: number | null;
   name: string;
   description?: string;
@@ -207,6 +209,8 @@ export interface FarmPlanWorkItemResponse {
 }
 
 export interface FarmPlanStageRequest {
+  /** Set when updating an existing stage — omit for a new one. */
+  id?: number;
   code?: string | null;
   name: string;
   description?: string;

@@ -135,6 +135,8 @@ export function farmTaskToLegacyTask(task: FarmTaskResponse): Task {
     })),
     tasks: [],
     geographicalSelections: mapScopeToSelections(task),
+    sourceWorkItemName: task.sourceWorkItem?.name,
+    stageName: task.stage?.name,
     isRepeating:
       task.recurrence?.repeatMode === "SPECIFIC_DATES" &&
       (task.recurrence.repeatDates?.filter(Boolean).length ?? 0) > 0,

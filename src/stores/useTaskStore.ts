@@ -51,6 +51,12 @@ export interface Task {
   // mock subtasks.
   isRepeating?: boolean;
   repeatDates?: string[];
+  // Kept distinct from `stage` (which blends in fallbacks for display
+  // elsewhere): the plan's real work item this task was picked from, and the
+  // plan stage ("hạng mục dự kiến") it belongs to — used by the task list's
+  // "Hạng mục công việc" / "Hạng mục dự kiến" columns.
+  sourceWorkItemName?: string;
+  stageName?: string;
 }
 
 interface TaskStore {
