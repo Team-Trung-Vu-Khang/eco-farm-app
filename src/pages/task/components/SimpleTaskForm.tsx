@@ -23,10 +23,17 @@ import {
   Calendar as CalendarIcon,
   ClipboardList,
   Info,
+  Loader2,
   RefreshCw,
   X,
 } from "lucide-react";
-import { useRef, type CSSProperties, type Dispatch, type SetStateAction } from "react";
+import {
+  useRef,
+  useState,
+  type CSSProperties,
+  type Dispatch,
+  type SetStateAction,
+} from "react";
 import {
   formatLocalISODate,
   getRepeatDatesText,
@@ -90,6 +97,7 @@ interface SimpleTaskFormProps {
   completeLabel?: string;
   lockPlanSelection?: boolean;
   isEdit?: boolean;
+  loading?: boolean;
 }
 
 export default function SimpleTaskForm({
@@ -101,10 +109,31 @@ export default function SimpleTaskForm({
   goBack,
   completeLabel = "Hoàn tất & Khởi tạo",
   lockPlanSelection = false,
+  isEdit = false,
+  loading = false,
 }: SimpleTaskFormProps) {
   const mainSubtask = formData.tasks[0];
   const isRepeating = Boolean(mainSubtask?.isRepeating);
   const repeatDates = mainSubtask?.repeatDates || [];
+
+  // Fields that were auto-filled from an existing task stay locked until the
+  // user explicitly clears them via "Bỏ chọn" — after that they're free to
+  // pick (and re-pick) a new value for the rest of this session.
+  const [unlockedFields, setUnlockedFields] = useState<{
+    regimenId?: boolean;
+    planId?: boolean;
+    selectedStages?: boolean;
+    sourceWorkItem?: boolean;
+  }>({});
+
+  // A preset plan (from the URL) pins Vụ mùa/Kế hoạch while the task stays
+  // in "Dự kiến" mode. The moment the user actively toggles "Nhóm công
+  // việc" — even switching back to "Dự kiến" afterwards — that pin no
+  // longer applies; re-locking already-restored values would trap them.
+  const [hasToggledMode, setHasToggledMode] = useState(false);
+  const effectiveLockPlanSelection = lockPlanSelection && !hasToggledMode;
+  const isFieldLocked = (field: keyof typeof unlockedFields, value: unknown) =>
+    isEdit && Boolean(value) && !unlockedFields[field];
 
   // Snapshot the mode-related fields as they were first loaded (e.g. an
   // existing task's plan/giai đoạn) so toggling "Nhóm công việc" away and
@@ -170,6 +199,9 @@ export default function SimpleTaskForm({
     : "";
 
   const setSourceWorkItem = (workItemId: string) => {
+    if (!workItemId) {
+      setUnlockedFields((prev) => ({ ...prev, sourceWorkItem: true }));
+    }
     const selectedItem = availableWorkItems.find(
       (item) => String(item.id) === workItemId,
     );
@@ -183,9 +215,7 @@ export default function SimpleTaskForm({
       };
       return {
         ...prev,
-        tasks: [
-          { ...existing, sourceWorkItemId: selectedItem?.id },
-        ],
+        tasks: [{ ...existing, sourceWorkItemId: selectedItem?.id }],
       };
     });
   };
@@ -235,8 +265,10 @@ export default function SimpleTaskForm({
 
           <Switch
             checked={formData.mode === "phat-sinh"}
-            className="data-[state=checked]:bg-amber-500 data-[state=unchecked]:bg-blue-500"
+            disabled={isEdit}
+            className="data-[state=checked]:bg-amber-500 data-[state=unchecked]:bg-blue-500 disabled:cursor-not-allowed disabled:opacity-60"
             onCheckedChange={(checked) => {
+              setHasToggledMode(true);
               const nextMode = checked ? "phat-sinh" : "plan";
               const original = originalModeFieldsRef.current;
               // Switching back to the mode the task originally loaded with
@@ -297,8 +329,19 @@ export default function SimpleTaskForm({
               : workflow.name,
           }))}
           value={formData.regimenId}
-          disabled={lockPlanSelection}
-          onChange={(value) =>
+          disabled={
+            effectiveLockPlanSelection ||
+            isFieldLocked("regimenId", formData.regimenId)
+          }
+          onChange={(value) => {
+            if (!value) {
+              setUnlockedFields((prev) => ({
+                ...prev,
+                regimenId: true,
+                planId: true,
+                selectedStages: true,
+              }));
+            }
             setFormData((prev) => ({
               ...prev,
               regimenId: value,
@@ -307,8 +350,8 @@ export default function SimpleTaskForm({
               planId: "",
               planName: "",
               selectedStages: [],
-            }))
-          }
+            }));
+          }}
           placeholder="Chọn vụ mùa / vụ nuôi..."
           searchPlaceholder="Tìm vụ mùa / vụ nuôi..."
         />
@@ -322,8 +365,20 @@ export default function SimpleTaskForm({
             label: `${plan.name}${plan.code ? ` (${plan.code})` : ""}`,
           }))}
           value={formData.planId}
-          disabled={lockPlanSelection || !formData.regimenId || plans.length === 0}
+          disabled={
+            effectiveLockPlanSelection ||
+            !formData.regimenId ||
+            plans.length === 0 ||
+            isFieldLocked("planId", formData.planId)
+          }
           onChange={(value) => {
+            if (!value) {
+              setUnlockedFields((prev) => ({
+                ...prev,
+                planId: true,
+                selectedStages: true,
+              }));
+            }
             const selectedPlan = plans.find(
               (plan) => String(plan.id) === value,
             );
@@ -344,11 +399,6 @@ export default function SimpleTaskForm({
             Chọn vụ mùa / vụ nuôi trước để tải kế hoạch.
           </p>
         )}
-        {lockPlanSelection && (
-          <p className="text-[11px] font-medium text-slate-400">
-            Kế hoạch đã được cố định từ liên kết phân bổ công việc.
-          </p>
-        )}
       </div>
 
       {formData.planId && (
@@ -366,13 +416,17 @@ export default function SimpleTaskForm({
                 </span>
               )}
             </Label>
-            {selectedStageKey && (
+            {selectedStageKey && stageOptions.length > 0 && (
               <button
                 type="button"
                 className="flex items-center gap-1 text-[11px] font-medium text-slate-400 hover:text-rose-500"
-                onClick={() =>
-                  setFormData((prev) => ({ ...prev, selectedStages: [] }))
-                }
+                onClick={() => {
+                  setUnlockedFields((prev) => ({
+                    ...prev,
+                    selectedStages: true,
+                  }));
+                  setFormData((prev) => ({ ...prev, selectedStages: [] }));
+                }}
               >
                 <X className="h-3 w-3" />
                 Bỏ chọn
@@ -381,7 +435,10 @@ export default function SimpleTaskForm({
           </div>
           <Select
             value={selectedStageKey}
-            disabled={stageOptions.length === 0}
+            disabled={
+              stageOptions.length === 0 ||
+              isFieldLocked("selectedStages", selectedStageKey)
+            }
             onValueChange={(value) =>
               setFormData((prev) => ({ ...prev, selectedStages: [value] }))
             }
@@ -400,7 +457,7 @@ export default function SimpleTaskForm({
           {stageOptions.length === 0 ? (
             <p className="text-[11px] font-medium text-slate-400">
               {formData.mode === "phat-sinh"
-                ? "Kế hoạch tham chiếu chưa có giai đoạn — hệ thống sẽ tự tạo hạng mục \"Phát sinh\"."
+                ? 'Kế hoạch tham chiếu chưa có giai đoạn — hệ thống sẽ tự tạo hạng mục "Phát sinh".'
                 : "Kế hoạch này chưa có giai đoạn nào."}
             </p>
           ) : (
@@ -437,6 +494,7 @@ export default function SimpleTaskForm({
                 label: item.name,
               }))}
               value={selectedWorkItemId}
+              disabled={isFieldLocked("sourceWorkItem", selectedWorkItemId)}
               onChange={setSourceWorkItem}
               placeholder="Tìm hạng mục công việc..."
               searchPlaceholder="Tìm hạng mục công việc..."
@@ -600,14 +658,16 @@ export default function SimpleTaskForm({
               selected={repeatDates.map(parseLocalISODate)}
               onSelect={(dates) =>
                 updateSubtask({
-                  repeatDates: (dates || []).map(formatLocalISODate).filter((date, _, all) =>
-                    isRepeatDateAllowed(
-                      date,
-                      formData.startDate,
-                      formData.endDate,
-                      all.filter((other) => other !== date),
+                  repeatDates: (dates || [])
+                    .map(formatLocalISODate)
+                    .filter((date, _, all) =>
+                      isRepeatDateAllowed(
+                        date,
+                        formData.startDate,
+                        formData.endDate,
+                        all.filter((other) => other !== date),
+                      ),
                     ),
-                  ),
                 })
               }
               disabled={(date) => {
@@ -670,17 +730,23 @@ export default function SimpleTaskForm({
       </Card>
 
       <div className="sticky bottom-0 left-0 right-0 flex items-center justify-between gap-3 bg-white/95 backdrop-blur border-t border-slate-100 pt-4 pb-2 -mx-4 px-4">
-        <Button type="button" variant="outline" onClick={goBack}>
+        <Button
+          type="button"
+          variant="outline"
+          onClick={goBack}
+          disabled={loading}
+        >
           <ArrowLeft className="w-4 h-4 mr-2" />
           Quay lại
         </Button>
         <Button
           type="button"
-          disabled={!isValid}
+          disabled={!isValid || loading}
           onClick={handleComplete}
           className="font-bold"
         >
-          {completeLabel}
+          {loading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+          {loading ? "Đang xử lý..." : completeLabel}
         </Button>
       </div>
     </div>

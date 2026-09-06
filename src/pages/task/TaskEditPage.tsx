@@ -13,12 +13,8 @@ import {
   DialogTitle,
   Input,
   Label,
+  RemoteAutoCompleteSelect,
   ScrollArea,
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
   StepperForm,
   Switch,
   cn,
@@ -58,6 +54,7 @@ import { useFarmTaskById, useUpdateFarmTask } from "@/features/farm-task";
 import {
   useFarmPlanById,
   useFarmPlans,
+  useFarmWorkflowById,
   useFarmWorkflows,
 } from "@/features/farm-workflow/hooks";
 import type { FarmPlanResponse } from "@/features/farm-workflow/types/farm-workflow.type";
@@ -95,6 +92,11 @@ type TaskObjectiveType =
   | "thu-hoach"
   | "cai-tao-dat"
   | "tri-benh";
+
+// Options backing a RemoteAutoCompleteSelect are searched server-side as the
+// user types, so a small page is enough — no need to preload hundreds of
+// rows just to filter them locally.
+const REMOTE_SEARCH_PAGE_SIZE = 10;
 
 // Inverse of the purpose filter in `activePlans`. Partial on purpose: an
 // "incurred" plan has no objective type and falls back to "phat-sinh".
@@ -335,8 +337,18 @@ export default function TaskEditPage() {
   }, [supplyCatalog.optionsByType]);
   const plans = usePlanStore((state) => state.plans);
   const amendmentPlans = useAmendmentPlanStore((state) => state.plans);
+  // Vụ mùa/Kế hoạch are picked via RemoteAutoCompleteSelect, which searches
+  // server-side as the user types — no need to preload a big page of
+  // options up front like the old plain <Select> did.
+  const [regimenSearchTerm, setRegimenSearchTerm] = useState("");
+  const [planSearchTerm, setPlanSearchTerm] = useState("");
+
   const workflowsQuery = useFarmWorkflows({
-    params: { page: 0, size: 100 },
+    params: {
+      page: 0,
+      size: REMOTE_SEARCH_PAGE_SIZE,
+      keyword: regimenSearchTerm || undefined,
+    },
   });
   const localPersonnel = usePersonnelStore((state) => state.personnel);
   const workspaceId = useSelectedWorkspaceId();
@@ -401,6 +413,16 @@ export default function TaskEditPage() {
 
   const [isSimpleMode, setIsSimpleMode] = useState(true);
 
+  // Fields auto-filled from the existing task stay locked until the user
+  // explicitly clears them via "Bỏ chọn" — after that they're free to pick
+  // (and re-pick) a new value for the rest of this session.
+  const [unlockedFields, setUnlockedFields] = useState<{
+    regimenId?: boolean;
+    planId?: boolean;
+  }>({});
+  const isFieldLocked = (field: keyof typeof unlockedFields, value: unknown) =>
+    Boolean(value) && !unlockedFields[field];
+
   useEffect(() => {
     const seenSources = new Set<number>();
     const seenNames = new Set<string>();
@@ -425,34 +447,43 @@ export default function TaskEditPage() {
   const [searchSupervisor, setSearchSupervisor] = useState("");
   const [isInspectorDialogOpen, setIsInspectorDialogOpen] = useState(false);
   const [searchInspector, setSearchInspector] = useState("");
-  const [regimenSearchTerm, setRegimenSearchTerm] = useState("");
-  const [planSearchTerm, setPlanSearchTerm] = useState("");
   const [selectedEnterpriseId] = useState<string>("");
   const [selections, setSelections] = useState<GeographicalSelection[]>([]);
 
+  // The already-assigned workflow may fall outside the current keyword
+  // search / first page — fetch it directly so it never disappears from the
+  // RemoteAutoCompleteSelect just because the user searched for something
+  // else, or because it isn't among the first page of results.
+  const selectedWorkflowQuery = useFarmWorkflowById(formData.regimenId || "0", {
+    enabled: !!formData.regimenId,
+  });
+
+  // The API already applies `keyword` server-side — no local re-filtering.
   const workflowOptions = useMemo(() => {
-    const query = regimenSearchTerm.trim().toLowerCase();
-    if (!query) return workflowsQuery.items;
+    const items = workflowsQuery.items;
+    if (
+      selectedWorkflowQuery.data &&
+      !items.some(
+        (workflow) => String(workflow.id) === String(selectedWorkflowQuery.data!.id),
+      )
+    ) {
+      return [selectedWorkflowQuery.data, ...items];
+    }
+    return items;
+  }, [selectedWorkflowQuery.data, workflowsQuery.items]);
 
-    return workflowsQuery.items.filter((workflow) =>
-      `${workflow.code || ""} ${workflow.name || ""} ${
-        workflow.description || ""
-      }`
-        .toLowerCase()
-        .includes(query),
-    );
-  }, [regimenSearchTerm, workflowsQuery.items]);
-
-  const selectedWorkflow = workflowsQuery.items.find(
-    (workflow) => String(workflow.id) === formData.regimenId,
-  );
+  const selectedWorkflow =
+    workflowsQuery.items.find(
+      (workflow) => String(workflow.id) === formData.regimenId,
+    ) || selectedWorkflowQuery.data;
 
   const workflowPlanQuery = useFarmPlans({
     params: {
       workflowId:
         formData.mode === "plan" ? Number(formData.regimenId) : undefined,
       page: 0,
-      size: 100,
+      size: REMOTE_SEARCH_PAGE_SIZE,
+      keyword: planSearchTerm || undefined,
     },
     enabled: formData.mode === "plan" && !!formData.regimenId,
   });
@@ -461,7 +492,8 @@ export default function TaskEditPage() {
     params: {
       workflowId: formData.regimenId ? Number(formData.regimenId) : undefined,
       page: 0,
-      size: 100,
+      size: REMOTE_SEARCH_PAGE_SIZE,
+      keyword: planSearchTerm || undefined,
     },
     enabled: formData.mode === "phat-sinh" && !!formData.regimenId,
   });
@@ -715,22 +747,32 @@ export default function TaskEditPage() {
     });
   }, [taskResponse, localTask, planDetailQuery.data, plans, amendmentPlans]);
 
+  // The API already applies `keyword` server-side — no local re-filtering.
+  // The already-selected plan is merged in so it never disappears from the
+  // RemoteAutoCompleteSelect just because it fell outside the current
+  // keyword search / first page.
   const planOptions = useMemo(() => {
     const rawPlans =
       formData.mode === "phat-sinh"
         ? allPlanQuery.items
         : workflowPlanQuery.items;
     const mappedPlans = rawPlans.map(mapPlanResponseToPlan);
-    const query = planSearchTerm.trim().toLowerCase();
-    if (!query) return mappedPlans;
-
-    return mappedPlans.filter((plan) =>
-      `${plan.name} ${plan.code}`.toLowerCase().includes(query),
-    );
+    if (
+      selectedPlanDetailQuery.data &&
+      !mappedPlans.some(
+        (plan) => String(plan.id) === String(selectedPlanDetailQuery.data!.id),
+      )
+    ) {
+      return [
+        mapPlanResponseToPlan(selectedPlanDetailQuery.data),
+        ...mappedPlans,
+      ];
+    }
+    return mappedPlans;
   }, [
     allPlanQuery.items,
     formData.mode,
-    planSearchTerm,
+    selectedPlanDetailQuery.data,
     workflowPlanQuery.items,
   ]);
 
@@ -1465,7 +1507,8 @@ export default function TaskEditPage() {
 
                     <Switch
                       checked={formData.mode === "phat-sinh"}
-                      className="data-[state=checked]:bg-amber-500 data-[state=unchecked]:bg-blue-500"
+                      disabled
+                      className="data-[state=checked]:bg-amber-500 data-[state=unchecked]:bg-blue-500 disabled:cursor-not-allowed disabled:opacity-60"
                       onCheckedChange={(checked) => {
                         setFormData({
                           ...formData,
@@ -1544,28 +1587,30 @@ export default function TaskEditPage() {
                     >
                       Vụ mùa / Vụ nuôi
                     </Label>
-                    <Select
+                    <RemoteAutoCompleteSelect
+                      options={workflowOptions.map((workflow) => ({
+                        value: String(workflow.id),
+                        label: workflow.code
+                          ? `${workflow.code} - ${workflow.name}`
+                          : workflow.name,
+                      }))}
                       value={formData.regimenId}
-                      onValueChange={(value) =>
-                        handleAdHocWorkflowChange(value)
-                      }
-                    >
-                      <SelectTrigger className="h-12">
-                        <SelectValue placeholder="Chọn vụ mùa / vụ nuôi..." />
-                      </SelectTrigger>
-                      <SelectContent className="max-h-80">
-                        {workflowOptions.map((workflow) => (
-                          <SelectItem
-                            key={workflow.id}
-                            value={String(workflow.id)}
-                          >
-                            {workflow.code
-                              ? `${workflow.code} - ${workflow.name}`
-                              : workflow.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                      disabled={isFieldLocked("regimenId", formData.regimenId)}
+                      onChange={(value) => {
+                        if (!value) {
+                          setUnlockedFields((prev) => ({
+                            ...prev,
+                            regimenId: true,
+                            planId: true,
+                          }));
+                        }
+                        handleAdHocWorkflowChange(value);
+                      }}
+                      onSearch={setRegimenSearchTerm}
+                      placeholder="Chọn vụ mùa / vụ nuôi..."
+                      searchPlaceholder="Tìm vụ mùa / vụ nuôi..."
+                      emptyText="Không tìm thấy vụ mùa / vụ nuôi phù hợp"
+                    />
                     <p className="text-[11px] font-medium text-slate-400">
                       Chọn vụ mùa hoặc vụ nuôi bắt buộc cho công việc phát sinh.
                     </p>
@@ -1582,55 +1627,33 @@ export default function TaskEditPage() {
                         >
                           Vụ mùa / Vụ nuôi
                         </Label>
-                        <Select
+                        <RemoteAutoCompleteSelect
+                          options={workflowOptions.map((workflow) => ({
+                            value: String(workflow.id),
+                            label: workflow.code
+                              ? `${workflow.code} - ${workflow.name}`
+                              : workflow.name,
+                          }))}
                           value={formData.regimenId}
-                          onValueChange={handleWorkflowChange}
-                        >
-                          <SelectTrigger className="h-12 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-500 disabled:opacity-80">
-                            <SelectValue
-                              placeholder="Chọn vụ mùa / vụ nuôi..."
-                            />
-                          </SelectTrigger>
-                          <SelectContent className="max-h-80 overflow-hidden p-0">
-                            <div
-                              className="sticky top-0 z-10 border-b border-slate-100 bg-white p-2"
-                              onKeyDown={(event) => event.stopPropagation()}
-                            >
-                              <div className="relative">
-                                <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" />
-                                <Input
-                                  value={regimenSearchTerm}
-                                  onChange={(event) =>
-                                    setRegimenSearchTerm(event.target.value)
-                                  }
-                                  onClick={(event) => event.stopPropagation()}
-                                  onPointerDown={(event) =>
-                                    event.stopPropagation()
-                                  }
-                                  placeholder="Tìm vụ mùa / vụ nuôi..."
-                                  className="h-9 pl-8 text-sm"
-                                />
-                              </div>
-                            </div>
-                            <div className="max-h-64 overflow-y-auto p-1">
-                              {workflowOptions.map((workflow) => (
-                                <SelectItem
-                                  key={workflow.id}
-                                  value={String(workflow.id)}
-                                >
-                                  {workflow.code
-                                    ? `${workflow.code} - ${workflow.name}`
-                                    : workflow.name}
-                                </SelectItem>
-                              ))}
-                              {workflowOptions.length === 0 && (
-                                <div className="p-4 text-center text-xs text-slate-400 italic">
-                                  Không tìm thấy vụ mùa / vụ nuôi phù hợp
-                                </div>
-                              )}
-                            </div>
-                          </SelectContent>
-                        </Select>
+                          disabled={isFieldLocked(
+                            "regimenId",
+                            formData.regimenId,
+                          )}
+                          onChange={(value) => {
+                            if (!value) {
+                              setUnlockedFields((prev) => ({
+                                ...prev,
+                                regimenId: true,
+                                planId: true,
+                              }));
+                            }
+                            handleWorkflowChange(value);
+                          }}
+                          onSearch={setRegimenSearchTerm}
+                          placeholder="Chọn vụ mùa / vụ nuôi..."
+                          searchPlaceholder="Tìm vụ mùa / vụ nuôi..."
+                          emptyText="Không tìm thấy vụ mùa / vụ nuôi phù hợp"
+                        />
                         <p className="text-[11px] font-medium text-slate-400">
                           Chọn vụ mùa / vụ nuôi trước để lọc danh sách kế hoạch
                           triển khai.
@@ -1639,14 +1662,24 @@ export default function TaskEditPage() {
                       <div className="space-y-2">
                         <Label className="text-sm font-bold text-slate-700">
                           Kế hoạch triển khai
-                          <span className="ml-2 text-[10px] font-medium text-slate-400 normal-case">
-                            Không bắt buộc
-                          </span>
                         </Label>
-                        <Select
+                        <RemoteAutoCompleteSelect
+                          options={planOptions.map((p) => ({
+                            value: String(p.id),
+                            label: `${p.name} (${p.code})`,
+                          }))}
                           value={formData.planId}
-                          disabled={!formData.regimenId}
-                          onValueChange={(val) => {
+                          disabled={
+                            !formData.regimenId ||
+                            isFieldLocked("planId", formData.planId)
+                          }
+                          onChange={(val) => {
+                            if (!val) {
+                              setUnlockedFields((prev) => ({
+                                ...prev,
+                                planId: true,
+                              }));
+                            }
                             const p = planOptions.find(
                               (p) => String(p.id) === val,
                             );
@@ -1673,49 +1706,16 @@ export default function TaskEditPage() {
                               qualityInspectors: planInspectors,
                             });
                             setSelections(p?.scopes || []);
-                            setPlanSearchTerm("");
                           }}
-                        >
-                          <SelectTrigger className="h-12 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-500 disabled:opacity-80">
-                            <SelectValue placeholder="Chọn kế hoạch áp dụng..." />
-                          </SelectTrigger>
-                          <SelectContent className="max-h-80 overflow-hidden p-0">
-                            <div
-                              className="sticky top-0 z-10 border-b border-slate-100 bg-white p-2"
-                              onKeyDown={(event) => event.stopPropagation()}
-                            >
-                              <div className="relative">
-                                <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" />
-                                <Input
-                                  value={planSearchTerm}
-                                  onChange={(event) =>
-                                    setPlanSearchTerm(event.target.value)
-                                  }
-                                  onClick={(event) => event.stopPropagation()}
-                                  onPointerDown={(event) =>
-                                    event.stopPropagation()
-                                  }
-                                  placeholder="Tìm theo tên hoặc mã kế hoạch..."
-                                  className="h-9 pl-10 text-sm"
-                                />
-                              </div>
-                            </div>
-                            <div className="max-h-64 overflow-y-auto p-1">
-                              {planOptions.map((p) => (
-                                <SelectItem key={p.id} value={String(p.id)}>
-                                  {p.name} ({p.code})
-                                </SelectItem>
-                              ))}
-                              {planOptions.length === 0 && (
-                                <div className="p-4 text-center text-xs text-slate-400 italic">
-                                  {formData.regimenId
-                                    ? "Không tìm thấy kế hoạch phù hợp"
-                                    : "Hãy chọn vụ mùa / vụ nuôi trước"}
-                                </div>
-                              )}
-                            </div>
-                          </SelectContent>
-                        </Select>
+                          onSearch={setPlanSearchTerm}
+                          placeholder="Chọn kế hoạch áp dụng..."
+                          searchPlaceholder="Tìm theo tên hoặc mã kế hoạch..."
+                          emptyText={
+                            formData.regimenId
+                              ? "Không tìm thấy kế hoạch phù hợp"
+                              : "Hãy chọn vụ mùa / vụ nuôi trước"
+                          }
+                        />
                         {!formData.regimenId && (
                           <p className="text-[11px] font-medium text-slate-400">
                             Kế hoạch sẽ được lọc theo vụ mùa / vụ nuôi đã chọn.
@@ -1866,9 +1866,20 @@ export default function TaskEditPage() {
                       <Label className="text-sm font-bold text-slate-700">
                         Kế hoạch triển khai
                       </Label>
-                      <Select
+                      <RemoteAutoCompleteSelect
+                        options={planOptions.map((p) => ({
+                          value: String(p.id),
+                          label: `${p.name} (${p.code})`,
+                        }))}
                         value={formData.planId}
-                        onValueChange={(val) => {
+                        disabled={isFieldLocked("planId", formData.planId)}
+                        onChange={(val) => {
+                          if (!val) {
+                            setUnlockedFields((prev) => ({
+                              ...prev,
+                              planId: true,
+                            }));
+                          }
                           const p = planOptions.find(
                             (p) => String(p.id) === val,
                           );
@@ -1919,47 +1930,12 @@ export default function TaskEditPage() {
                             endDate: plan.endDate || prev.endDate,
                           }));
                           setSelections(p?.scopes || []);
-                          setPlanSearchTerm("");
                         }}
-                      >
-                        <SelectTrigger className="h-12">
-                          <SelectValue placeholder="Chọn kế hoạch áp dụng..." />
-                        </SelectTrigger>
-                        <SelectContent className="max-h-80 overflow-hidden p-0">
-                          <div
-                            className="sticky top-0 z-10 border-b border-slate-100 bg-white p-2"
-                            onKeyDown={(event) => event.stopPropagation()}
-                          >
-                            <div className="relative">
-                              <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" />
-                              <Input
-                                value={planSearchTerm}
-                                onChange={(event) =>
-                                  setPlanSearchTerm(event.target.value)
-                                }
-                                onClick={(event) => event.stopPropagation()}
-                                onPointerDown={(event) =>
-                                  event.stopPropagation()
-                                }
-                                placeholder="Tìm theo tên hoặc mã kế hoạch..."
-                                className="h-9 pl-10 text-sm"
-                              />
-                            </div>
-                          </div>
-                          <div className="max-h-64 overflow-y-auto p-1">
-                            {planOptions.map((p) => (
-                              <SelectItem key={p.id} value={String(p.id)}>
-                                {p.name} ({p.code})
-                              </SelectItem>
-                            ))}
-                            {planOptions.length === 0 && (
-                              <div className="p-4 text-center text-xs text-slate-400 italic">
-                                Không tìm thấy kế hoạch phù hợp
-                              </div>
-                            )}
-                          </div>
-                        </SelectContent>
-                      </Select>
+                        onSearch={setPlanSearchTerm}
+                        placeholder="Chọn kế hoạch áp dụng..."
+                        searchPlaceholder="Tìm theo tên hoặc mã kế hoạch..."
+                        emptyText="Không tìm thấy kế hoạch phù hợp"
+                      />
 
                       {formData.planId && selectedPlan && (
                         <div className="space-y-3 rounded-2xl border border-emerald-100 bg-emerald-50/30 p-4">
@@ -3116,6 +3092,7 @@ export default function TaskEditPage() {
             handleComplete={handleComplete}
             goBack={() => setLocation(taskListPath)}
             completeLabel="Hoàn tất & Cập nhật"
+            loading={updateTaskMutation.isPending}
           />
         ) : (
           <StepperForm
@@ -3123,6 +3100,7 @@ export default function TaskEditPage() {
             onComplete={handleComplete}
             onCancel={() => setLocation(taskListPath)}
             completeLabel="Hoàn tất & Cập nhật"
+            loading={updateTaskMutation.isPending}
           />
         )}
       </div>
