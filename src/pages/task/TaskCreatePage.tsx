@@ -1225,11 +1225,16 @@ export default function TaskCreatePage() {
     setPlanSearchTerm("");
   };
 
+  const isObjectiveStepValid =
+    Boolean(formData.name) && Boolean(formData.regimenId);
+  const isResourcesStepValid = formData.tasks.length > 0;
+
   const steps: Step[] = [
     {
       id: "objective",
       title: "Công việc triển khai",
       description: "Thông tin mô tả công việc",
+      isValid: isObjectiveStepValid,
       content: (
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
           <div className="lg:col-span-3 space-y-6">
@@ -2303,6 +2308,7 @@ export default function TaskCreatePage() {
     },
     {
       id: "resources",
+      isValid: isResourcesStepValid,
       title:
         formData.objectiveType === "theo-ke-hoach" ||
         formData.objectiveType === "cai-tao-dat"

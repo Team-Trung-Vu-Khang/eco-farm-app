@@ -146,9 +146,7 @@ export default function SimpleTaskForm({
     Boolean(formData.objectiveType) &&
     Boolean(formData.regimenId) &&
     (formData.mode === "phat-sinh" || Boolean(formData.planId)) &&
-    (formData.mode === "phat-sinh" ||
-      stageOptions.length === 0 ||
-      Boolean(selectedStageKey)) &&
+    (stageOptions.length === 0 || Boolean(selectedStageKey)) &&
     Boolean(formData.startDate) &&
     Boolean(formData.endDate) &&
     (!isRepeating || repeatDates.length > 0);
@@ -289,12 +287,7 @@ export default function SimpleTaskForm({
       </div>
 
       <div className="space-y-2">
-        <Label required={formData.mode === "plan"}>
-          Kế hoạch triển khai
-          <span className="ml-2 text-[10px] font-medium text-slate-400">
-            {formData.mode === "plan" ? "Bắt buộc với hạng mục dự kiến" : "Không bắt buộc"}
-          </span>
-        </Label>
+        <Label required={formData.mode === "plan"}>Kế hoạch triển khai</Label>
         <Select
           value={formData.planId}
           disabled={lockPlanSelection || !formData.regimenId || plans.length === 0}
@@ -337,9 +330,9 @@ export default function SimpleTaskForm({
 
       {formData.planId && (
         <div className="space-y-2">
-          <Label required={formData.mode === "plan" && stageOptions.length > 0}>
+          <Label required={stageOptions.length > 0}>
             Hạng mục dự kiến
-            {formData.mode === "phat-sinh" && (
+            {stageOptions.length === 0 && (
               <span className="ml-2 text-[10px] font-medium text-slate-400">
                 Không bắt buộc
               </span>

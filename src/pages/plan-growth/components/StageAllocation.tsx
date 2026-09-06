@@ -1,7 +1,6 @@
 import {
   Badge,
   Button,
-  Combobox,
   Dialog,
   DialogContent,
   DialogFooter,
@@ -41,6 +40,7 @@ import type { GeographicalSelection } from "../types";
 import type { MaterialAllocation, TaskAllocation } from "../types";
 import type { CropSupplyCatalog, CropSupplyType } from "../hooks/useCropSupplyCatalog";
 import { useTaskCategorySearch } from "@/features/task-category/hooks/useTaskCategory";
+import { useDebounce } from "@/shared/hooks/useDebounce";
 import type { FarmWorkDurationUnit } from "@/features/farm-workflow/types/farm-workflow.type";
 import {
   getSupplyTypeOptions,
@@ -114,6 +114,7 @@ export const StageAllocation = memo(
       count: "1",
       assignedPersonnel: [] as string[],
       geographicalSelections: masterSelections,
+      taskSearchValue: "",
     });
 
     const [durationValue, setDurationValue] = useState("");
@@ -121,7 +122,14 @@ export const StageAllocation = memo(
 
     const { personnel } = usePersonnelStore();
     const [personnelSearch, setPersonnelSearch] = useState("");
-    const { items: taskCategories } = useTaskCategorySearch();
+    const debouncedTaskSearch = useDebounce(newTask.taskSearchValue.trim(), 300);
+    const { items: taskCategories, isFetching: isFetchingTaskCategories } =
+      useTaskCategorySearch({
+        params: {
+          domainCode: "CROP",
+          keyword: debouncedTaskSearch || undefined,
+        },
+      });
 
     const filteredPersonnel = personnelSearch.trim()
       ? personnel.filter((p) =>
@@ -235,6 +243,7 @@ export const StageAllocation = memo(
         count: "1",
         assignedPersonnel: [],
         geographicalSelections: masterSelections || [],
+        taskSearchValue: "",
       });
       setDurationValue("");
       setDurationUnit("ngày");
@@ -576,27 +585,35 @@ export const StageAllocation = memo(
                 {/* Add Task Form */}
                 <div className="space-y-2 pt-3 border-t mt-auto text-sm shrink-0">
                   <div className="flex gap-2">
-                    <Combobox
-                      options={taskCategories.map((category) => ({
-                        value: String(category.id),
-                        label: category.name,
-                      }))}
-                      value={newTask.taskCategoryId}
-                      onChange={(v) => {
-                        const category = taskCategories.find(
-                          (item) => String(item.id) === v,
-                        );
-                        setNewTask({
-                          ...newTask,
-                          taskCategoryId: v,
-                          name: category?.name || newTask.name,
-                        });
-                      }}
-                      placeholder="Chọn công việc..."
-                      searchPlaceholder="Tìm công việc..."
-                      emptyText="Không tìm thấy công việc."
-                      className="h-9 flex-1 font-medium bg-slate-50/50"
-                    />
+                    <div className="flex-1">
+                      <RemoteAutoCompleteSelect
+                        options={taskCategories.map((category) => ({
+                          value: String(category.id),
+                          label: category.name,
+                        }))}
+                        value={newTask.taskCategoryId}
+                        onChange={(v) => {
+                          const category = taskCategories.find(
+                            (item) => String(item.id) === v,
+                          );
+                          setNewTask({
+                            ...newTask,
+                            taskCategoryId: v,
+                            name: category?.name || newTask.name,
+                          });
+                        }}
+                        onSearch={(value) =>
+                          setNewTask((prev) => ({
+                            ...prev,
+                            taskSearchValue: value,
+                          }))
+                        }
+                        loading={isFetchingTaskCategories}
+                        placeholder="Chọn công việc..."
+                        searchPlaceholder="Tìm công việc..."
+                        emptyText="Không tìm thấy công việc."
+                      />
+                    </div>
                     <Button
                       size="sm"
                       className="h-9 px-3 bg-slate-900 hover:bg-slate-800"
