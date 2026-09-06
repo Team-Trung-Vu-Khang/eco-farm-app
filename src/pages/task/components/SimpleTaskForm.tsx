@@ -338,7 +338,7 @@ export default function SimpleTaskForm({
       {formData.planId && (
         <div className="space-y-2">
           <Label required={formData.mode === "plan" && stageOptions.length > 0}>
-            Giai đoạn
+            Hạng mục dự kiến
             {formData.mode === "phat-sinh" && (
               <span className="ml-2 text-[10px] font-medium text-slate-400">
                 Không bắt buộc
