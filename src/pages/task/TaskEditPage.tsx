@@ -53,11 +53,15 @@ import type { FarmTaskRequest } from "@/features/farm-task";
 import { useFarmTaskById, useUpdateFarmTask } from "@/features/farm-task";
 import {
   useFarmPlanById,
+  useFarmPlanMutations,
   useFarmPlans,
   useFarmWorkflowById,
   useFarmWorkflows,
 } from "@/features/farm-workflow/hooks";
-import type { FarmPlanResponse } from "@/features/farm-workflow/types/farm-workflow.type";
+import type {
+  FarmPlanResponse,
+  FarmPlanStageResponse,
+} from "@/features/farm-workflow/types/farm-workflow.type";
 import {
   useFarmPersonnel,
   type FarmPersonnelResponse,
@@ -71,6 +75,7 @@ import useRegionStore from "../../stores/useRegionStore";
 import useTaskStore from "../../stores/useTaskStore";
 import { useCropSupplyCatalog } from "../plan-growth/hooks/useCropSupplyCatalog";
 import {
+  getApiStageKey,
   mapPlanResponseToPlan,
   mapWorkflowScopesToSelections,
 } from "../plan-growth/utils/api-mappers";
@@ -175,6 +180,33 @@ function getStageLabelFromKey(stageKey?: string | null) {
   if (!stageKey) return "";
   const separatorIndex = stageKey.indexOf(":");
   return separatorIndex >= 0 ? stageKey.slice(separatorIndex + 1) : stageKey;
+}
+
+// Returns the stage keys matching `origin`, or `null` when the raw stages
+// aren't loaded yet (meaning "don't filter" rather than "nothing matches").
+function getStageKeysByOrigin(
+  rawStages: FarmPlanStageResponse[] | undefined,
+  origin: "PLANNED" | "AD_HOC",
+) {
+  if (!rawStages || rawStages.length === 0) return null;
+  return new Set(
+    rawStages
+      .filter((stage) => (stage.origin || "PLANNED") === origin)
+      .map(getApiStageKey),
+  );
+}
+
+// PLANNED tasks must only ever pick a PLANNED giai đoạn; AD_HOC tasks must
+// only ever pick the plan's AD_HOC ("Phát sinh") giai đoạn — a plan's stage
+// list mixes both origins together, so filter before showing it as options.
+function filterSelectedStagesByOrigin(
+  selectedStages: string[],
+  rawStages: FarmPlanStageResponse[] | undefined,
+  origin: "PLANNED" | "AD_HOC",
+) {
+  const allowedKeys = getStageKeysByOrigin(rawStages, origin);
+  if (!allowedKeys) return selectedStages;
+  return selectedStages.filter((key) => allowedKeys.has(key));
 }
 
 function resolveApiStageId(
@@ -287,6 +319,7 @@ export default function TaskEditPage() {
       ? `/task?planId=${encodeURIComponent(String(planId))}`
       : "/task";
   }, [search, taskResponse]);
+  const { createAdHocStage } = useFarmPlanMutations();
   const updateTaskMutation = useUpdateFarmTask({
     onSuccess: () => {
       toast({
@@ -516,8 +549,15 @@ export default function TaskEditPage() {
     const apiTask = taskResponse
       ? farmTaskToLegacyTask(taskResponse)
       : undefined;
+    // `localTask` is the local (offline-draft) task store, keyed by the same
+    // numeric id as the route param — once a real API task is loaded, a
+    // stale/unrelated local entry for that id must never leak into fields
+    // the API legitimately reports as empty (e.g. a null `note`). Every
+    // localTask-derived fallback below goes through this instead, so it's
+    // only consulted when there's no real API task at all.
+    const local = taskResponse ? undefined : localTask;
     const isPlannedTask =
-      taskResponse?.origin === "PLANNED" || Boolean(localTask?.planId);
+      taskResponse?.origin === "PLANNED" || Boolean(local?.planId);
     const repeatDates =
       taskResponse?.recurrence?.repeatMode === "SPECIFIC_DATES"
         ? taskResponse.recurrence.repeatDates?.filter(Boolean) || []
@@ -535,12 +575,16 @@ export default function TaskEditPage() {
             (plan) => plan.name?.normalize?.() === task?.plan?.normalize?.(),
           );
 
-    const sourceWorkItemId =
-      taskResponse?.sourceWorkItem?.id ??
-      (taskResponse as any)?.sourceWorkItemId ??
-      (localTask as any)?.mainTaskId ??
-      (taskResponse as any)?.mainTaskId;
-    const plannedStageName =
+    // Trust the API's own sourceWorkItem id exclusively — never invent one
+    // from a local draft field when the API doesn't report a work item.
+    const sourceWorkItemId = taskResponse
+      ? taskResponse.sourceWorkItem?.id
+      : (local as any)?.mainTaskId;
+    // .normalize() matches the treatment `selectedStages` gets below — the
+    // API can return Vietnamese text in a differently-composed Unicode form,
+    // and an un-normalized stageId here would silently fail to match the
+    // (normalized) stage key TaskStageAllocation filters tasks by.
+    const plannedStageName = (
       planMatch?.taskAllocations?.find(
         (item: any) => String(item.id) === String(sourceWorkItemId),
       )?.stageId ??
@@ -553,7 +597,8 @@ export default function TaskEditPage() {
               key === taskResponse.stage?.name ||
               key.endsWith(`:${taskResponse.stage?.name}`),
           )
-        : undefined);
+        : undefined)
+    )?.normalize?.();
 
     // An AD_HOC task can still reference a real stage from its reference
     // plan (picked in the "Giai đoạn" selector) rather than only the
@@ -575,8 +620,8 @@ export default function TaskEditPage() {
     const taskSelections =
       isPlannedTask && scopeSelections.length > 0
         ? scopeSelections
-        : localTask?.geographicalSelections?.length
-          ? localTask.geographicalSelections
+        : local?.geographicalSelections?.length
+          ? local.geographicalSelections
           : apiTask?.geographicalSelections?.length
             ? apiTask.geographicalSelections
             : [];
@@ -591,32 +636,42 @@ export default function TaskEditPage() {
               .filter((item) => item.type === "plot")
               .map((item) => String(item.plotId))
           : [];
-    const mainTaskIds = Array.isArray((localTask as any)?.mainTaskIds)
-      ? (localTask as any).mainTaskIds.map(String)
-      : Array.isArray((taskResponse as any)?.mainTaskIds)
+    // Trust the API exclusively once a real task is loaded — if it reports a
+    // work item id, use it; if not, mainTaskIds stays empty rather than
+    // inventing one from a local draft field.
+    const mainTaskIds = taskResponse
+      ? Array.isArray((taskResponse as any)?.mainTaskIds)
         ? (taskResponse as any).mainTaskIds.map(String)
-        : taskResponse?.sourceWorkItem?.id
+        : taskResponse.sourceWorkItem?.id
           ? [String(taskResponse.sourceWorkItem.id)]
-          : (localTask as any)?.mainTaskId || (taskResponse as any)?.mainTaskId
-            ? [
-                String(
-                  (localTask as any)?.mainTaskId ||
-                    (taskResponse as any)?.mainTaskId,
-                ),
-              ]
-            : [];
+          : []
+      : Array.isArray((local as any)?.mainTaskIds)
+        ? (local as any).mainTaskIds.map(String)
+        : (local as any)?.mainTaskId
+          ? [String((local as any).mainTaskId)]
+          : [];
 
-    const plannedWorkItem = isPlannedTask
+    const rawPlannedWorkItem = isPlannedTask
       ? planMatch?.taskAllocations?.find(
           (item: any) => String(item.id) === String(mainTaskIds[0]),
         ) ||
         planMatch?.taskAllocations?.find(
-          (item: any) => item.stageId === selectedStages[0],
+          (item: any) => item.stageId?.normalize?.() === selectedStages[0],
         )
       : undefined;
+    // Normalized once here so every downstream stageId read from it matches
+    // the (normalized) key in `selectedStages`/`resolvedSelectedStages`.
+    const plannedWorkItem = rawPlannedWorkItem
+      ? { ...rawPlannedWorkItem, stageId: rawPlannedWorkItem.stageId?.normalize?.() }
+      : undefined;
 
+    // `localTask` is the local (offline-draft) task store, keyed by the same
+    // numeric id — once a real API task is loaded, its own subarrays must
+    // win outright; a stale/unrelated local entry for that id must never
+    // override real API data (it did: a leftover local id-102 entry with
+    // completely different content was silently taking precedence here).
     const hydratedMaterials = pickArray(
-      localTask?.materials,
+      local?.materials,
       apiTask?.materials,
     ).map((material) => ({
       ...material,
@@ -626,7 +681,10 @@ export default function TaskEditPage() {
           material.stageId
         : plannedStageName || "Công việc phát sinh",
     })) as MaterialAllocation[];
-    const hydratedTasks = pickArray(localTask?.tasks, apiTask?.tasks).map(
+    const hydratedTasks = pickArray(
+      local?.tasks,
+      apiTask?.tasks,
+    ).map(
       (item) => ({
         ...item,
         name: item.name || plannedWorkItem?.name || apiTask?.name || "",
@@ -679,11 +737,7 @@ export default function TaskEditPage() {
                 sourceWorkItemId: plannedWorkItem
                   ? Number(plannedWorkItem.id)
                   : (toFiniteNumber(sourceWorkItemId) ?? undefined),
-                name:
-                  plannedWorkItem?.name ||
-                  apiTask?.name ||
-                  localTask?.name ||
-                  "",
+                name: plannedWorkItem?.name || apiTask?.name || local?.name || "",
                 taskCategoryId:
                   plannedWorkItem?.taskCategoryId ??
                   taskResponse.taskCategory?.id,
@@ -700,11 +754,11 @@ export default function TaskEditPage() {
     setSelections(taskSelections.length > 0 ? taskSelections : scopeSelections);
     setFormData({
       code:
-        pickText(taskResponse?.code, (localTask as any)?.code) ||
+        pickText(taskResponse?.code, (local as any)?.code) ||
         createEmptyTaskFormData().code,
-      name: pickText(taskResponse?.name, localTask?.name),
+      name: pickText(taskResponse?.name, local?.name),
       mode:
-        taskResponse?.origin === "PLANNED" || localTask?.planId
+        taskResponse?.origin === "PLANNED" || local?.planId
           ? "plan"
           : "phat-sinh",
       // An AD_HOC task keeps objectiveType "phat-sinh" even when it
@@ -714,34 +768,33 @@ export default function TaskEditPage() {
         ? (planMatch
             ? (PURPOSE_TO_OBJECTIVE_TYPE[
                 planMatch.purpose as Plan["purpose"]
-              ] ?? "phat-sinh")
-            : "phat-sinh")
+              ] ?? "theo-ke-hoach")
+            : "theo-ke-hoach")
         : "phat-sinh") as TaskObjectiveType,
       planId: taskResponse?.plan?.id
         ? String(taskResponse.plan.id)
-        : (localTask as any)?.planId || "",
-      planName: pickText(taskResponse?.plan?.name, localTask?.plan),
-      mainTaskId: (localTask as any)?.mainTaskId || mainTaskIds[0] || "",
+        : (local as any)?.planId || "",
+      planName: pickText(taskResponse?.plan?.name, local?.plan),
+      mainTaskId: (local as any)?.mainTaskId || mainTaskIds[0] || "",
       mainTaskIds,
       selectedStages,
       selectedPlotIds,
       regimenId: String((taskResponse as any)?.workflow?.id || ""),
-      assignedType:
-        localTask?.assignedType || apiTask?.assignedType || "individual",
-      assignedTo: pickArray(localTask?.assignedTo, apiTask?.assignedTo),
-      supervisors: pickArray(localTask?.supervisors, apiTask?.supervisors),
+      assignedType: local?.assignedType || apiTask?.assignedType || "individual",
+      assignedTo: pickArray(local?.assignedTo, apiTask?.assignedTo),
+      supervisors: pickArray(local?.supervisors, apiTask?.supervisors),
       qualityInspectors: pickArray(
-        localTask?.qualityInspectors,
+        local?.qualityInspectors,
         apiTask?.qualityInspectors,
       ),
       startDate:
-        pickText(taskResponse?.startDate, localTask?.startDate) ||
+        pickText(taskResponse?.startDate, local?.startDate) ||
         new Date().toISOString().split("T")[0],
       endDate:
-        pickText(taskResponse?.endDate, localTask?.endDate) ||
+        pickText(taskResponse?.endDate, local?.endDate) ||
         new Date().toISOString().split("T")[0],
-      priority: localTask?.priority || apiTask?.priority || "medium",
-      description: pickText(taskResponse?.note, localTask?.description),
+      priority: local?.priority || apiTask?.priority || "medium",
+      description: pickText(taskResponse?.note, local?.description),
       materials: hydratedMaterials,
       tasks: seededTask,
     });
@@ -752,11 +805,35 @@ export default function TaskEditPage() {
   // RemoteAutoCompleteSelect just because it fell outside the current
   // keyword search / first page.
   const planOptions = useMemo(() => {
+    const stageOrigin = formData.mode === "phat-sinh" ? "AD_HOC" : "PLANNED";
+    const mapPlanWithOriginFilteredStages = (raw: FarmPlanResponse) => {
+      const mapped = mapPlanResponseToPlan(raw);
+      const allowedStageKeys = getStageKeysByOrigin(raw.stages, stageOrigin);
+      return {
+        ...mapped,
+        selectedStages: filterSelectedStagesByOrigin(
+          mapped.selectedStages,
+          raw.stages,
+          stageOrigin,
+        ),
+        // Also scope work items/materials to the matching giai đoạn — this
+        // plan object is what seeds `formData.tasks`/`materials` wholesale
+        // when picked as an AD_HOC task's reference plan, so an unfiltered
+        // list here leaks PLANNED work items into the AD_HOC task list.
+        taskAllocations: mapped.taskAllocations.filter(
+          (task) => !allowedStageKeys || allowedStageKeys.has(task.stageId),
+        ),
+        materialAllocations: mapped.materialAllocations.filter(
+          (material) =>
+            !allowedStageKeys || allowedStageKeys.has(material.stageId),
+        ),
+      };
+    };
     const rawPlans =
       formData.mode === "phat-sinh"
         ? allPlanQuery.items
         : workflowPlanQuery.items;
-    const mappedPlans = rawPlans.map(mapPlanResponseToPlan);
+    const mappedPlans = rawPlans.map(mapPlanWithOriginFilteredStages);
     if (
       selectedPlanDetailQuery.data &&
       !mappedPlans.some(
@@ -764,7 +841,7 @@ export default function TaskEditPage() {
       )
     ) {
       return [
-        mapPlanResponseToPlan(selectedPlanDetailQuery.data),
+        mapPlanWithOriginFilteredStages(selectedPlanDetailQuery.data),
         ...mappedPlans,
       ];
     }
@@ -800,15 +877,32 @@ export default function TaskEditPage() {
     (planDetailQuery.data && String(planDetailQuery.data.id) === formData.planId
       ? mapPlanResponseToPlan(planDetailQuery.data)
       : undefined);
-  const selectedPlanTaskAllocations = selectedPlan?.taskAllocations || [];
-  const selectedPlanMaterialAllocations =
-    selectedPlan?.materialAllocations || [];
+  // A plan's work items/materials span both PLANNED and AD_HOC stages — only
+  // offer the ones belonging to the giai đoạn matching the current mode.
+  const allowedStageKeysForMode = getStageKeysByOrigin(
+    selectedPlanResponse?.stages,
+    formData.mode === "phat-sinh" ? "AD_HOC" : "PLANNED",
+  );
+  const selectedPlanTaskAllocations = (
+    selectedPlan?.taskAllocations || []
+  ).filter(
+    (task) => !allowedStageKeysForMode || allowedStageKeysForMode.has(task.stageId),
+  );
+  const selectedPlanMaterialAllocations = (
+    selectedPlan?.materialAllocations || []
+  ).filter(
+    (material) =>
+      !allowedStageKeysForMode || allowedStageKeysForMode.has(material.stageId),
+  );
   // AD_HOC can optionally use a selected plan as its resource template.
   const usePlanResources = formData.mode === "plan" || Boolean(formData.planId);
-  const resolvedSelectedStages =
+  const resolvedSelectedStages = filterSelectedStagesByOrigin(
     formData.selectedStages.length > 0
       ? formData.selectedStages
-      : selectedPlan?.selectedStages || [];
+      : selectedPlan?.selectedStages || [],
+    selectedPlanResponse?.stages,
+    formData.mode === "phat-sinh" ? "AD_HOC" : "PLANNED",
+  );
   const { regions, getRegionById } = useRegionStore();
 
   const planScopedRegions = useMemo<
@@ -1142,6 +1236,10 @@ export default function TaskEditPage() {
 
       return {
         ...prev,
+        // The overall task title follows whichever hạng mục công việc was
+        // picked for the first task block — there's no separate free-text
+        // name field on step 1 anymore.
+        name: tasks[0]?.name || prev.name,
         tasks,
         ...(hasStartDate && updatedTaskRow
           ? { startDate: updatedTaskRow.startDate || prev.startDate }
@@ -1273,7 +1371,7 @@ export default function TaskEditPage() {
       formData.mainTaskId || formData.mainTaskIds[0],
     );
 
-    const payload: FarmTaskRequest = {
+    let payload: FarmTaskRequest = {
       origin: isPlanned ? "PLANNED" : "AD_HOC",
       ...(isPlanned
         ? {
@@ -1378,6 +1476,42 @@ export default function TaskEditPage() {
       return;
     }
 
+    // AD_HOC tasks with no matching giai đoạn are attached to the plan's
+    // "Phát sinh" ad-hoc stage instead of blocking submission — reuse the
+    // plan's existing AD_HOC stage if it already has one, otherwise create it.
+    if (
+      payload.origin === "AD_HOC" &&
+      payload.sourceWorkItemId == null &&
+      payload.stageId == null &&
+      payload.planId != null
+    ) {
+      const existingAdHocStage =
+        String(payload.planId) === String(planDetailQuery.data?.id)
+          ? planDetailQuery.data?.stages?.find(
+              (stage) => stage.origin === "AD_HOC",
+            )
+          : undefined;
+      if (existingAdHocStage) {
+        payload = { ...payload, stageId: existingAdHocStage.id };
+      } else {
+        try {
+          const createdStage = await createAdHocStage.mutateAsync({
+            planId: payload.planId,
+            payload: { name: "Phát sinh" },
+          });
+          payload = { ...payload, stageId: createdStage.id };
+        } catch (error) {
+          toast({
+            title: "Không thể tạo hạng mục phát sinh",
+            description:
+              error instanceof Error ? error.message : "Vui lòng thử lại.",
+            variant: "destructive",
+          });
+          return;
+        }
+      }
+    }
+
     // stageId is mandatory whenever the task has no sourceWorkItemId — for
     // both PLANNED and AD_HOC — so require the user to explicitly pick one
     // rather than silently generating a stage on their behalf.
@@ -1452,7 +1586,7 @@ export default function TaskEditPage() {
   };
 
   const isObjectiveStepValid =
-    Boolean(formData.name) && Boolean(formData.regimenId);
+    Boolean(formData.regimenId) && Boolean(formData.planId);
   const isResourcesStepValid = formData.tasks.length > 0;
 
   const steps: Step[] = [
@@ -1566,18 +1700,6 @@ export default function TaskEditPage() {
                   </div>
                 </div>
 
-                <div className="space-y-2">
-                  <Label className="text-sm font-bold text-slate-700" required>
-                    Công việc
-                  </Label>
-                  <Input
-                    value={formData.name}
-                    onChange={(e) =>
-                      setFormData({ ...formData, name: e.target.value })
-                    }
-                    placeholder="VD: Bón phân thúc đợt 1"
-                  />
-                </div>
 
                 {formData.mode === "phat-sinh" && (
                   <div className="space-y-2 pt-2 border-slate-100">
@@ -1660,7 +1782,10 @@ export default function TaskEditPage() {
                         </p>
                       </div>
                       <div className="space-y-2">
-                        <Label className="text-sm font-bold text-slate-700">
+                        <Label
+                          className="text-sm font-bold text-slate-700"
+                          required
+                        >
                           Kế hoạch triển khai
                         </Label>
                         <RemoteAutoCompleteSelect
@@ -1863,7 +1988,10 @@ export default function TaskEditPage() {
                 {formData.mode === "phat-sinh" && (
                   <div className="space-y-6 animation-fade-in border-slate-100">
                     <div className="space-y-2">
-                      <Label className="text-sm font-bold text-slate-700">
+                      <Label
+                        className="text-sm font-bold text-slate-700"
+                        required
+                      >
                         Kế hoạch triển khai
                       </Label>
                       <RemoteAutoCompleteSelect
@@ -2537,16 +2665,18 @@ export default function TaskEditPage() {
                     : apiSupplyMaterials
                 }
                 availableMaterialsOnly={usePlanResources}
-                availableTasksOnly={usePlanResources}
-                availableTaskCategories={
-                  usePlanResources ? [] : taskCategoriesQuery.items
-                }
+                // AD_HOC "Công việc" is always searched from the system's
+                // task categories — a reference plan's (often empty) AD_HOC
+                // work items must never lock out that search.
+                availableTasksOnly={false}
+                availableTaskCategories={taskCategoriesQuery.items}
                 regions={filteredRegionsForPhatSinh}
                 personnel={personnel}
                 masterSelections={selections}
                 enterpriseId={selectedEnterpriseId}
-                stageOptions={selectedPlan?.selectedStages || []}
-                stageOptionsRequired={false}
+                // No giai đoạn picker for AD_HOC — a task with no matching
+                // stage is auto-attached to the plan's "Phát sinh" ad-hoc
+                // stage on submit instead of letting the user pick one.
                 allowAddRemove={false}
               />
             ) : null}

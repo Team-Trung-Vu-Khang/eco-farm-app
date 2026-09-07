@@ -3,7 +3,6 @@ import {
   Button,
   Calendar,
   Checkbox,
-  Combobox,
   Dialog,
   DialogContent,
   DialogFooter,
@@ -11,6 +10,7 @@ import {
   DialogTitle,
   Input,
   Label,
+  RemoteAutoCompleteSelect,
   ScrollArea,
   Select,
   SelectContent,
@@ -33,7 +33,9 @@ import {
   X,
 } from "lucide-react";
 import { memo, useState, type CSSProperties } from "react";
-import { MATERIAL_OPTIONS, TASK_OPTIONS } from "../data/mocks";
+import { useTaskCategorySearch } from "@/features/task-category/hooks/useTaskCategory";
+import { useDebounce } from "@/shared/hooks/useDebounce";
+import { MATERIAL_OPTIONS } from "../data/mocks";
 import type {
   GeographicalSelection,
   MaterialAllocation,
@@ -145,7 +147,11 @@ export const TaskStageAllocation = memo(
         <div className="bg-slate-900 px-5 py-4 flex justify-between items-center text-white">
           <div className="flex items-center gap-3">
             <h4 className="font-black text-lg">
-              {plainList ? "Danh sách công việc" : `Giai đoạn ${displayStageName}`}
+              {plainList
+                ? "Danh sách công việc"
+                : allowAddRemove
+                  ? `Danh sách công việc (${displayStageName})`
+                  : `Công việc (${displayStageName})`}
             </h4>
             {cycleName && !plainList && (
               <Badge className="bg-white/20 text-white border-none font-bold">
@@ -238,6 +244,23 @@ const TaskBlock = ({
   stageOptionsRequired = false,
   allowAddRemove = true,
 }: any) => {
+  // "Công việc" search — synced with the simple form's AD_HOC field: search
+  // is remote (live API call) against the system's task categories rather
+  // than a static pre-fetched list. Plan-linked tasks (`availableTasksOnly`)
+  // are filtered client-side since that list is already small and loaded.
+  const [taskSearchTerm, setTaskSearchTerm] = useState("");
+  const debouncedTaskSearchTerm = useDebounce(taskSearchTerm, 300);
+  const taskCategorySearchQuery = useTaskCategorySearch({
+    params: { domainCode: "CROP", keyword: debouncedTaskSearchTerm },
+    enabled: !availableTasksOnly && debouncedTaskSearchTerm.trim().length > 0,
+  });
+  const taskCategoryOptions = debouncedTaskSearchTerm.trim()
+    ? taskCategorySearchQuery.items
+    : availableTaskCategories;
+  // AD_HOC "Công việc" is free text — the user can type anything; matching
+  // system task categories are offered only as suggestions (synced with
+  // SimpleTaskForm's AD_HOC field).
+  const [isNameSuggestOpen, setIsNameSuggestOpen] = useState(false);
   const [isPersonnelDialogOpen, setIsPersonnelDialogOpen] = useState(false);
   const [personnelSearch, setPersonnelSearch] = useState("");
   const [personnelGroupFilter, setPersonnelGroupFilter] = useState("all");
@@ -435,54 +458,133 @@ const TaskBlock = ({
       <div className="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-slate-100">
         {/* Left Side: Task Info */}
         <div className="p-5 space-y-5">
-          {/* Task Combobox */}
-          <div>
+          {/* Task select (remote search) */}
+          <div className="space-y-1.5">
+            {showTaskPicker && (
+              <Label
+                required
+                className="text-xs font-bold text-slate-500 uppercase tracking-wider"
+              >
+                Công việc
+              </Label>
+            )}
             {showTaskPicker ? (
-              <Combobox
-                options={
-                  availableTasksOnly
-                    ? (availableTasks || []).map((t: any) => ({
-                        value: t.name,
-                        label: t.name,
-                      }))
-                    : availableTasks && availableTasks.length > 0
-                    ? availableTasks.map((t: any) => ({
-                        value: t.name,
-                        label: t.name,
-                      }))
-                    : availableTaskCategories.length > 0
-                      ? availableTaskCategories.map((category: any) => ({
-                          value: category.name,
-                          label: category.code
-                            ? `${category.code} - ${category.name}`
-                            : category.name,
-                        }))
-                      : (TASK_OPTIONS as any[])
+              (() => {
+                const usePlanTaskList =
+                  availableTasksOnly ||
+                  (Array.isArray(availableTasks) && availableTasks.length > 0);
+
+                if (usePlanTaskList) {
+                  const options = (availableTasks || [])
+                    .filter(
+                      (t: any) =>
+                        !taskSearchTerm ||
+                        t.name
+                          .toLowerCase()
+                          .includes(taskSearchTerm.toLowerCase()),
+                    )
+                    .map((t: any) => ({
+                      value: String(t.id),
+                      label: t.name,
+                    }));
+                  const selectedValue =
+                    task.sourceWorkItemId != null
+                      ? String(task.sourceWorkItemId)
+                      : "";
+                  return (
+                    <RemoteAutoCompleteSelect
+                      options={options}
+                      value={selectedValue}
+                      clearable
+                      onSearch={setTaskSearchTerm}
+                      onChange={(val) => {
+                        if (!val) {
+                          onUpdateTask?.(task.id, {
+                            name: "",
+                            taskCategoryName: undefined,
+                            sourceWorkItemId: undefined,
+                            taskCategoryId: undefined,
+                          });
+                          return;
+                        }
+                        const selectedTask = (availableTasks || []).find(
+                          (t: any) => String(t.id) === val,
+                        );
+                        if (!selectedTask) return;
+                        onUpdateTask?.(task.id, {
+                          name: selectedTask.name,
+                          taskCategoryName: undefined,
+                          sourceWorkItemId: selectedTask.id,
+                          taskCategoryId: selectedTask.taskCategoryId,
+                          liter: selectedTask.liter,
+                          labor: selectedTask.labor || "",
+                          geographicalSelections:
+                            selectedTask.geographicalSelections || [],
+                        });
+                      }}
+                      placeholder="Chọn công việc..."
+                      searchPlaceholder="Tìm kiếm công việc..."
+                      emptyText="Không tìm thấy công việc phù hợp"
+                    />
+                  );
                 }
-                value={task.taskCategoryName || task.name}
-                onChange={(val) => {
-                  const selectedTask = availableTasks?.find(
-                    (t: any) => t.name === val,
-                  );
-                  const selectedCategory = availableTaskCategories.find(
-                    (category: any) => category.name === val,
-                  );
-                  onUpdateTask?.(task.id, {
-                    name: val,
-                    taskCategoryName: selectedCategory?.name || val,
-                    sourceWorkItemId: selectedTask?.id,
-                    taskCategoryId:
-                      selectedTask?.taskCategoryId ?? selectedCategory?.id,
-                    liter: selectedTask?.liter,
-                    labor: selectedTask?.labor || "",
-                    geographicalSelections:
-                      selectedTask?.geographicalSelections || [],
-                  });
-                }}
-                placeholder="Danh sách hạng mục công việc trong kế hoạch"
-                searchPlaceholder="Tìm kiếm công việc..."
-                className="w-full font-bold bg-slate-50 border-slate-200"
-              />
+
+                // AD_HOC: free text, synced with SimpleTaskForm — the user
+                // can type anything; matching system task categories are
+                // shown only as optional suggestions, searched live.
+                return (
+                  <div className="relative">
+                    <Input
+                      value={task.name}
+                      onChange={(e) => {
+                        const text = e.target.value;
+                        setTaskSearchTerm(text);
+                        onUpdateTask?.(task.id, {
+                          name: text,
+                          taskCategoryName: undefined,
+                          taskCategoryId: undefined,
+                        });
+                      }}
+                      onFocus={() => setIsNameSuggestOpen(true)}
+                      onBlur={() =>
+                        // Let a suggestion's onMouseDown fire before the
+                        // list unmounts on blur.
+                        setTimeout(() => setIsNameSuggestOpen(false), 120)
+                      }
+                      placeholder="VD: Bón phân thúc đợt 1"
+                      autoComplete="off"
+                      className="w-full font-bold bg-slate-50 border-slate-200"
+                    />
+                    {isNameSuggestOpen && taskCategoryOptions.length > 0 && (
+                      <div className="absolute left-0 right-0 top-full z-50 mt-1 max-h-56 overflow-y-auto rounded-lg border border-slate-200 bg-white p-1 shadow-lg">
+                        <p className="px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                          Gợi ý từ hệ thống
+                        </p>
+                        {taskCategoryOptions.map((category: any) => (
+                          <button
+                            key={category.id}
+                            type="button"
+                            className="w-full rounded-md px-2 py-1.5 text-left text-sm font-medium text-slate-700 hover:bg-slate-100"
+                            onMouseDown={(e) => {
+                              // Prevent the input's blur from closing the
+                              // list before this click registers.
+                              e.preventDefault();
+                              onUpdateTask?.(task.id, {
+                                name: category.name,
+                                taskCategoryName: category.name,
+                                taskCategoryId: category.id,
+                              });
+                              setIsNameSuggestOpen(false);
+                            }}
+                          >
+                            {category.name}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })()
             ) : (
               <Input
                 value={task.name}
@@ -496,11 +598,12 @@ const TaskBlock = ({
           {Array.isArray(stageOptions) && stageOptions.length > 0 && (
             <div className="space-y-1.5">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">
-                  Giai đoạn {stageOptionsRequired && (
-                    <span className="text-red-500">*</span>
-                  )}
-                </span>
+                <Label
+                  required={stageOptionsRequired}
+                  className="text-xs font-bold text-slate-500 uppercase tracking-wider"
+                >
+                  Giai đoạn
+                </Label>
                 {stageOptionsRequired && !stageOptions.includes(task.stageId) ? (
                   <span className="text-[10px] text-amber-500 italic">
                     Chưa chọn giai đoạn
@@ -549,9 +652,9 @@ const TaskBlock = ({
             {/* Personnel assigned */}
             <div className="space-y-1.5">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+                <Label className="text-xs font-bold text-slate-500 uppercase tracking-wider">
                   Nhân sự
-                </span>
+                </Label>
                 {assignedPersonnelList.length === 0 && (
                   <span className="text-[10px] text-amber-500 italic">
                     Chưa phân công
@@ -617,9 +720,9 @@ const TaskBlock = ({
           </div>
 
           <div className="space-y-3 pt-2 border-t border-slate-100">
-            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+            <Label className="text-xs font-bold text-slate-500 uppercase tracking-wider">
               Độ ưu tiên
-            </span>
+            </Label>
             <div className="grid grid-cols-3 gap-2">
               {(
                 [

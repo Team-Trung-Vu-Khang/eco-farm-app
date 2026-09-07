@@ -1,3 +1,5 @@
+import { useTaskCategorySearch } from "@/features/task-category/hooks/useTaskCategory";
+import { useDebounce } from "@/shared/hooks/useDebounce";
 import {
   Badge,
   Button,
@@ -131,6 +133,15 @@ export default function SimpleTaskForm({
   // việc" — even switching back to "Dự kiến" afterwards — that pin no
   // longer applies; re-locking already-restored values would trap them.
   const [hasToggledMode, setHasToggledMode] = useState(false);
+  // AD_HOC "Công việc" is free text — the user can type anything; matching
+  // system task categories are searched live from the API as suggestions.
+  const [isNameSuggestOpen, setIsNameSuggestOpen] = useState(false);
+  const isAdHoc = formData.mode === "phat-sinh";
+  const debouncedNameKeyword = useDebounce(formData.name, 300);
+  const nameSuggestQuery = useTaskCategorySearch({
+    params: { domainCode: "CROP", keyword: debouncedNameKeyword },
+    enabled: isAdHoc && debouncedNameKeyword.trim().length > 0,
+  });
   const effectiveLockPlanSelection = lockPlanSelection && !hasToggledMode;
   const isFieldLocked = (field: keyof typeof unlockedFields, value: unknown) =>
     isEdit && Boolean(value) && !unlockedFields[field];
@@ -189,8 +200,9 @@ export default function SimpleTaskForm({
   const selectedStageKey = formData.selectedStages[0] || "";
 
   // Specific work items ("hạng mục công việc") to attach the task to —
-  // scoped to the chosen giai đoạn when one is picked, otherwise every work
-  // item across the plan.
+  // scoped to the chosen giai đoạn when one is picked. "Dự kiến" tasks must
+  // pick one of these; "Phát sinh" (AD_HOC) tasks type the name freely and
+  // only get these (system task categories) as optional suggestions.
   const availableWorkItems = (
     selectedPlanForStages?.taskAllocations || []
   ).filter((item) => !selectedStageKey || item.stageId === selectedStageKey);
@@ -215,16 +227,44 @@ export default function SimpleTaskForm({
       };
       return {
         ...prev,
-        tasks: [{ ...existing, sourceWorkItemId: selectedItem?.id }],
+        name: selectedItem?.name || "",
+        tasks: [
+          {
+            ...existing,
+            name: selectedItem?.name || existing.name,
+            sourceWorkItemId: selectedItem?.id,
+          },
+        ],
       };
     });
   };
+
+  // AD_HOC: free text name, with matching task categories offered only as
+  // suggestions — picking one doesn't lock the field, it just fills it in.
+  const setNameFreeText = (text: string, taskCategoryId?: number) => {
+    setFormData((prev) => {
+      const existing = prev.tasks[0] || {
+        id: Date.now(),
+        stageId: "",
+        name: prev.name,
+        description: prev.description,
+        geographicalSelections: [],
+      };
+      return {
+        ...prev,
+        name: text,
+        tasks: [{ ...existing, name: text, taskCategoryId }],
+      };
+    });
+  };
+
+  const nameSuggestions = isAdHoc ? nameSuggestQuery.items.slice(0, 8) : [];
 
   const isValid =
     Boolean(formData.name) &&
     Boolean(formData.objectiveType) &&
     Boolean(formData.regimenId) &&
-    (formData.mode === "phat-sinh" || Boolean(formData.planId)) &&
+    Boolean(formData.planId) &&
     (formData.mode === "phat-sinh" ||
       stageOptions.length === 0 ||
       Boolean(selectedStageKey)) &&
@@ -358,7 +398,7 @@ export default function SimpleTaskForm({
       </div>
 
       <div className="space-y-2">
-        <Label required={formData.mode === "plan"}>Kế hoạch triển khai</Label>
+        <Label required>Kế hoạch triển khai</Label>
         <Combobox
           options={plans.map((plan) => ({
             value: String(plan.id),
@@ -401,16 +441,12 @@ export default function SimpleTaskForm({
         )}
       </div>
 
-      {formData.planId && (
+      {formData.planId && !isAdHoc && (
         <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <Label
-              required={
-                formData.mode !== "phat-sinh" && stageOptions.length > 0
-              }
-            >
+            <Label required={stageOptions.length > 0}>
               Hạng mục dự kiến
-              {formData.mode !== "phat-sinh" && stageOptions.length === 0 && (
+              {stageOptions.length === 0 && (
                 <span className="ml-2 text-[10px] font-medium text-slate-400">
                   Không bắt buộc
                 </span>
@@ -456,9 +492,7 @@ export default function SimpleTaskForm({
           </Select>
           {stageOptions.length === 0 ? (
             <p className="text-[11px] font-medium text-slate-400">
-              {formData.mode === "phat-sinh"
-                ? 'Kế hoạch tham chiếu chưa có giai đoạn — hệ thống sẽ tự tạo hạng mục "Phát sinh".'
-                : "Kế hoạch này chưa có giai đoạn nào."}
+              Kế hoạch này chưa có giai đoạn nào.
             </p>
           ) : (
             <p className="text-[11px] font-medium text-slate-400">
@@ -468,27 +502,52 @@ export default function SimpleTaskForm({
         </div>
       )}
 
-      <div
-        className={cn(
-          "grid grid-cols-1 gap-4",
-          formData.planId && "sm:grid-cols-2",
-        )}
-      >
-        <div className="space-y-2">
-          <Label required>Công việc</Label>
-          <Input
-            value={formData.name}
-            onChange={(e) =>
-              setFormData((prev) => ({ ...prev, name: e.target.value }))
-            }
-            placeholder="VD: Bón phân thúc đợt 1"
-          />
-        </div>
-
-        {formData.planId ? (
-          <div className="space-y-2">
+      <div className="space-y-2">
+        {isAdHoc ? (
+          <>
+            <Label required>Công việc</Label>
+            <div className="relative">
+              <Input
+                value={formData.name}
+                onChange={(e) => setNameFreeText(e.target.value)}
+                onFocus={() => setIsNameSuggestOpen(true)}
+                onBlur={() =>
+                  // Let a suggestion's onMouseDown fire before the list
+                  // unmounts on blur.
+                  setTimeout(() => setIsNameSuggestOpen(false), 120)
+                }
+                placeholder="VD: Bón phân thúc đợt 1"
+                autoComplete="off"
+              />
+              {isNameSuggestOpen && nameSuggestions.length > 0 && (
+                <div className="absolute left-0 right-0 top-full z-50 mt-1 max-h-56 overflow-y-auto rounded-lg border border-slate-200 bg-white p-1 shadow-lg">
+                  <p className="px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                    Gợi ý từ hệ thống
+                  </p>
+                  {nameSuggestions.map((category) => (
+                    <button
+                      key={category.id}
+                      type="button"
+                      className="w-full rounded-md px-2 py-1.5 text-left text-sm font-medium text-slate-700 hover:bg-slate-100"
+                      onMouseDown={(e) => {
+                        // Prevent the input's blur from closing the list
+                        // before this click registers.
+                        e.preventDefault();
+                        setNameFreeText(category.name, category.id);
+                        setIsNameSuggestOpen(false);
+                      }}
+                    >
+                      {category.name}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          </>
+        ) : (
+          <>
             <div className="flex items-center justify-between">
-              <Label>Hạng mục công việc</Label>
+              <Label required>Công việc</Label>
               {selectedWorkItemId && (
                 <button
                   type="button"
@@ -508,11 +567,11 @@ export default function SimpleTaskForm({
               value={selectedWorkItemId}
               disabled={isFieldLocked("sourceWorkItem", selectedWorkItemId)}
               onChange={setSourceWorkItem}
-              placeholder="Tìm hạng mục công việc..."
-              searchPlaceholder="Tìm hạng mục công việc..."
+              placeholder="Tìm công việc..."
+              searchPlaceholder="Tìm công việc..."
             />
-          </div>
-        ) : null}
+          </>
+        )}
       </div>
 
       <div className="space-y-2">

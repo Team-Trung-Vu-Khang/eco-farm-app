@@ -265,7 +265,7 @@ function getSeasonStageId(stage: FarmPlanStageResponse) {
   return Number.isFinite(id) ? id : undefined;
 }
 
-function getApiStageKey(stage: FarmPlanStageResponse) {
+export function getApiStageKey(stage: FarmPlanStageResponse) {
   const seasonStageId = getSeasonStageId(stage);
   return seasonStageId != null
     ? `api-stage-${seasonStageId}:${stage.name}`

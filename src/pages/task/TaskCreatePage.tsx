@@ -51,12 +51,14 @@ import type { FarmTaskRequest } from "@/features/farm-task";
 import { useCreateFarmTask } from "@/features/farm-task";
 import {
   useFarmPlanById,
+  useFarmPlanMutations,
   useFarmPlans,
   useFarmWorkflowById,
   useFarmWorkflows,
 } from "../../features/farm-workflow/hooks";
 import type {
   FarmPlanResponse,
+  FarmPlanStageResponse,
   FarmWorkflowResponse,
 } from "../../features/farm-workflow/types/farm-workflow.type";
 import {
@@ -69,6 +71,7 @@ import usePersonnelStore from "../../stores/usePersonnelStore";
 import useRegionStore from "../../stores/useRegionStore";
 import { useCropSupplyCatalog } from "../plan-growth/hooks/useCropSupplyCatalog";
 import {
+  getApiStageKey,
   mapPlanResponseToPlan,
   mapWorkflowScopesToSelections,
 } from "../plan-growth/utils/api-mappers";
@@ -206,6 +209,33 @@ function getStageLabelFromKey(stageKey?: string | null) {
   return separatorIndex >= 0 ? stageKey.slice(separatorIndex + 1) : stageKey;
 }
 
+// Returns the stage keys matching `origin`, or `null` when the raw stages
+// aren't loaded yet (meaning "don't filter" rather than "nothing matches").
+function getStageKeysByOrigin(
+  rawStages: FarmPlanStageResponse[] | undefined,
+  origin: "PLANNED" | "AD_HOC",
+) {
+  if (!rawStages || rawStages.length === 0) return null;
+  return new Set(
+    rawStages
+      .filter((stage) => (stage.origin || "PLANNED") === origin)
+      .map(getApiStageKey),
+  );
+}
+
+// PLANNED tasks must only ever pick a PLANNED giai đoạn; AD_HOC tasks must
+// only ever pick the plan's AD_HOC ("Phát sinh") giai đoạn — a plan's stage
+// list mixes both origins together, so filter before showing it as options.
+function filterSelectedStagesByOrigin(
+  selectedStages: string[],
+  rawStages: FarmPlanStageResponse[] | undefined,
+  origin: "PLANNED" | "AD_HOC",
+) {
+  const allowedKeys = getStageKeysByOrigin(rawStages, origin);
+  if (!allowedKeys) return selectedStages;
+  return selectedStages.filter((key) => allowedKeys.has(key));
+}
+
 function resolveApiStageId(
   plan: FarmPlanResponse | undefined,
   stageKey: string | undefined,
@@ -237,6 +267,7 @@ export default function TaskCreatePage() {
   const [, setLocation] = useLocation();
   const search = useSearch();
   const createTaskMutation = useCreateFarmTask();
+  const { createAdHocStage } = useFarmPlanMutations();
   const taskCategoriesQuery = useTaskCategorySearch({
     params: { domainCode: "CROP" },
   });
@@ -479,11 +510,35 @@ export default function TaskCreatePage() {
   // RemoteAutoCompleteSelect just because it fell outside the current
   // keyword search / first page.
   const planOptions = useMemo(() => {
+    const stageOrigin = formData.mode === "phat-sinh" ? "AD_HOC" : "PLANNED";
+    const mapPlanWithOriginFilteredStages = (raw: FarmPlanResponse) => {
+      const mapped = mapPlanResponseToPlan(raw);
+      const allowedStageKeys = getStageKeysByOrigin(raw.stages, stageOrigin);
+      return {
+        ...mapped,
+        selectedStages: filterSelectedStagesByOrigin(
+          mapped.selectedStages,
+          raw.stages,
+          stageOrigin,
+        ),
+        // Also scope work items/materials to the matching giai đoạn — this
+        // plan object is what seeds `formData.tasks`/`materials` wholesale
+        // when picked as an AD_HOC task's reference plan, so an unfiltered
+        // list here leaks PLANNED work items into the AD_HOC task list.
+        taskAllocations: mapped.taskAllocations.filter(
+          (task) => !allowedStageKeys || allowedStageKeys.has(task.stageId),
+        ),
+        materialAllocations: mapped.materialAllocations.filter(
+          (material) =>
+            !allowedStageKeys || allowedStageKeys.has(material.stageId),
+        ),
+      };
+    };
     const rawPlans =
       formData.mode === "phat-sinh"
         ? allPlanQuery.items
         : workflowPlanQuery.items;
-    const mappedPlans = rawPlans.map(mapPlanResponseToPlan);
+    const mappedPlans = rawPlans.map(mapPlanWithOriginFilteredStages);
     if (
       selectedPlanDetailQuery.data &&
       !mappedPlans.some(
@@ -491,7 +546,7 @@ export default function TaskCreatePage() {
       )
     ) {
       return [
-        mapPlanResponseToPlan(selectedPlanDetailQuery.data),
+        mapPlanWithOriginFilteredStages(selectedPlanDetailQuery.data),
         ...mappedPlans,
       ];
     }
@@ -527,15 +582,32 @@ export default function TaskCreatePage() {
     (mappedPresetPlan && String(mappedPresetPlan.id) === formData.planId
       ? mappedPresetPlan
       : undefined);
-  const selectedPlanTaskAllocations = selectedPlan?.taskAllocations || [];
-  const selectedPlanMaterialAllocations =
-    selectedPlan?.materialAllocations || [];
+  // A plan's work items/materials span both PLANNED and AD_HOC stages — only
+  // offer the ones belonging to the giai đoạn matching the current mode.
+  const allowedStageKeysForMode = getStageKeysByOrigin(
+    selectedPlanResponse?.stages,
+    formData.mode === "phat-sinh" ? "AD_HOC" : "PLANNED",
+  );
+  const selectedPlanTaskAllocations = (
+    selectedPlan?.taskAllocations || []
+  ).filter(
+    (task) => !allowedStageKeysForMode || allowedStageKeysForMode.has(task.stageId),
+  );
+  const selectedPlanMaterialAllocations = (
+    selectedPlan?.materialAllocations || []
+  ).filter(
+    (material) =>
+      !allowedStageKeysForMode || allowedStageKeysForMode.has(material.stageId),
+  );
   // AD_HOC can optionally use a selected plan as its resource template.
   const usePlanResources = formData.mode === "plan" || Boolean(formData.planId);
-  const resolvedSelectedStages =
+  const resolvedSelectedStages = filterSelectedStagesByOrigin(
     formData.selectedStages.length > 0
       ? formData.selectedStages
-      : selectedPlan?.selectedStages || [];
+      : selectedPlan?.selectedStages || [],
+    selectedPlanResponse?.stages,
+    formData.mode === "phat-sinh" ? "AD_HOC" : "PLANNED",
+  );
   const selectedWorkflow =
     workflows.find((workflow) => String(workflow.id) === formData.regimenId) ||
     selectedWorkflowQuery.data;
@@ -866,6 +938,10 @@ export default function TaskCreatePage() {
 
       return {
         ...prev,
+        // The overall task title follows whichever hạng mục công việc was
+        // picked for the first task block — there's no separate free-text
+        // name field anymore.
+        name: updatedTasks[0]?.name || prev.name,
         startDate: updatedTaskValue?.startDate || prev.startDate,
         endDate: updatedTaskValue?.endDate || prev.endDate,
         tasks: updatedTasks,
@@ -948,7 +1024,7 @@ export default function TaskCreatePage() {
       return;
     }
 
-    const requests: FarmTaskRequest[] = taskRequestEntries.map(
+    let requests: FarmTaskRequest[] = taskRequestEntries.map(
       ({ stageName, task: stageTask }, index) => {
         const stageTaskPosition = taskRequestEntries
           .slice(0, index)
@@ -1129,6 +1205,62 @@ export default function TaskCreatePage() {
       return;
     }
 
+    // AD_HOC tasks with no matching giai đoạn are attached to the plan's
+    // "Phát sinh" ad-hoc stage instead of blocking submission — reuse the
+    // plan's existing AD_HOC stage if it already has one, otherwise create it.
+    const planIdsNeedingAdHocStage = Array.from(
+      new Set(
+        requests
+          .filter(
+            (payload) =>
+              payload.origin === "AD_HOC" &&
+              payload.sourceWorkItemId == null &&
+              payload.stageId == null &&
+              payload.planId != null,
+          )
+          .map((payload) => payload.planId as number),
+      ),
+    );
+
+    if (planIdsNeedingAdHocStage.length > 0) {
+      const adHocStageIdByPlanId = new Map<number, number>();
+      for (const planId of planIdsNeedingAdHocStage) {
+        const existingAdHocStage =
+          String(planId) === String(selectedPlanResponse?.id)
+            ? selectedPlanResponse?.stages?.find(
+                (stage) => stage.origin === "AD_HOC",
+              )
+            : undefined;
+        if (existingAdHocStage) {
+          adHocStageIdByPlanId.set(planId, existingAdHocStage.id);
+          continue;
+        }
+        try {
+          const createdStage = await createAdHocStage.mutateAsync({
+            planId,
+            payload: { name: "Phát sinh" },
+          });
+          adHocStageIdByPlanId.set(planId, createdStage.id);
+        } catch (error) {
+          toast({
+            title: "Không thể tạo hạng mục phát sinh",
+            description:
+              error instanceof Error ? error.message : "Vui lòng thử lại.",
+            variant: "destructive",
+          });
+          return;
+        }
+      }
+      requests = requests.map((payload) =>
+        payload.sourceWorkItemId == null &&
+        payload.stageId == null &&
+        payload.planId != null &&
+        adHocStageIdByPlanId.has(payload.planId)
+          ? { ...payload, stageId: adHocStageIdByPlanId.get(payload.planId) }
+          : payload,
+      );
+    }
+
     // stageId is mandatory whenever a task has no sourceWorkItemId — for
     // both PLANNED and AD_HOC — so require the user to explicitly pick one
     // rather than silently generating a stage on their behalf.
@@ -1229,7 +1361,7 @@ export default function TaskCreatePage() {
   };
 
   const isObjectiveStepValid =
-    Boolean(formData.name) && Boolean(formData.regimenId);
+    Boolean(formData.regimenId) && Boolean(formData.planId);
   const isResourcesStepValid = formData.tasks.length > 0;
 
   const steps: Step[] = [
@@ -1342,19 +1474,6 @@ export default function TaskCreatePage() {
                   </div>
                 </div>
 
-                <div className="space-y-2">
-                  <Label className="text-sm font-bold text-slate-700" required>
-                    Công việc
-                  </Label>
-                  <Input
-                    value={formData.name}
-                    onChange={(e) =>
-                      setFormData({ ...formData, name: e.target.value })
-                    }
-                    placeholder="VD: Bón phân thúc đợt 1"
-                  />
-                </div>
-
                 {formData.mode === "phat-sinh" && (
                   <div className="space-y-2 pt-2 border-slate-100">
                     <Label
@@ -1414,7 +1533,10 @@ export default function TaskCreatePage() {
                         </p>
                       </div>
                       <div className="space-y-2">
-                        <Label className="text-sm font-bold text-slate-700">
+                        <Label
+                          className="text-sm font-bold text-slate-700"
+                          required
+                        >
                           Kế hoạch triển khai
                         </Label>
                         <RemoteAutoCompleteSelect
@@ -1440,9 +1562,15 @@ export default function TaskCreatePage() {
                               ...formData,
                               planId: val,
                               planName: p?.name || "",
+                              // This picker only exists inside "Dự kiến"
+                              // (mode === "plan") — an unmapped plan purpose
+                              // must still resolve to a PLANNED objectiveType,
+                              // never "phat-sinh", or the allocation UI below
+                              // silently swaps to the AD_HOC block and leaks
+                              // whatever tasks were already added per stage.
                               objectiveType: p
                                 ? (PLAN_PURPOSE_TO_OBJECTIVE_TYPE[p.purpose] ??
-                                  "phat-sinh")
+                                  "theo-ke-hoach")
                                 : "theo-ke-hoach",
                               selectedStages: p?.selectedStages || [],
                               mainTaskIds: [],
@@ -1615,7 +1743,10 @@ export default function TaskCreatePage() {
                 {formData.mode === "phat-sinh" && (
                   <div className="space-y-6 animation-fade-in border-slate-100">
                     <div className="space-y-2">
-                      <Label className="text-sm font-bold text-slate-700">
+                      <Label
+                        className="text-sm font-bold text-slate-700"
+                        required
+                      >
                         Kế hoạch triển khai
                       </Label>
                       <RemoteAutoCompleteSelect
@@ -2280,16 +2411,18 @@ export default function TaskCreatePage() {
                     : apiSupplyMaterials
                 }
                 availableMaterialsOnly={usePlanResources}
-                availableTasksOnly={usePlanResources}
-                availableTaskCategories={
-                  usePlanResources ? [] : taskCategoriesQuery.items
-                }
+                // AD_HOC "Công việc" is always searched from the system's
+                // task categories — a reference plan's (often empty) AD_HOC
+                // work items must never lock out that search.
+                availableTasksOnly={false}
+                availableTaskCategories={taskCategoriesQuery.items}
                 regions={filteredRegionsForPhatSinh}
                 personnel={personnel}
                 masterSelections={selections}
                 enterpriseId={selectedEnterpriseId}
-                stageOptions={selectedPlan?.selectedStages || []}
-                stageOptionsRequired={false}
+                // No giai đoạn picker for AD_HOC — a task with no matching
+                // stage is auto-attached to the plan's "Phát sinh" ad-hoc
+                // stage on submit instead of letting the user pick one.
               />
             ) : null}
           </div>
