@@ -278,9 +278,6 @@ export function TaskDetailHeader({ task }: { task: Task }) {
               <Field label="Hình thức phân công">
                 {task.assignedType === "team" ? "Đội nhóm" : "Cá nhân"}
               </Field>
-              <Field label="Số hạng mục">
-                {task.tasks?.length || 1} hạng mục
-              </Field>
               <Field label="Số tuần lặp lại">
                 {repeatWeeks > 0 ? `${repeatWeeks} tuần` : "Không lặp lại"}
               </Field>
@@ -441,12 +438,14 @@ export function TaskDetailBody({ task }: { task: Task }) {
             Phạm vi, tiến độ và nguồn lực của từng hạng mục
           </p>
         </div>
-        <Badge
-          variant="secondary"
-          className="ml-auto bg-primary/10 text-primary border-transparent font-bold h-7 px-3"
-        >
-          {items.length} hạng mục
-        </Badge>
+        {items.length > 1 && (
+          <Badge
+            variant="secondary"
+            className="ml-auto bg-primary/10 text-primary border-transparent font-bold h-7 px-3"
+          >
+            {items.length} hạng mục
+          </Badge>
+        )}
       </div>
 
       {items.map((t: any, idx: number) => {
@@ -463,11 +462,16 @@ export function TaskDetailBody({ task }: { task: Task }) {
           <Card key={t.id || idx} className="shadow-sm">
             <CardHeader className="pb-3 border-b bg-slate-50/80">
               <CardTitle className="text-base flex items-center gap-2 text-slate-800">
-                <span className="flex items-center justify-center w-6 h-6 rounded-full bg-emerald-100 text-emerald-600 text-xs font-bold shrink-0">
-                  {idx + 1}
-                </span>
+                {items.length > 1 && (
+                  <span className="flex items-center justify-center w-6 h-6 rounded-full bg-emerald-100 text-emerald-600 text-xs font-bold shrink-0">
+                    {idx + 1}
+                  </span>
+                )}
                 {t.name}
-                {(t.stageId || task.stage) && (
+                {/* When there's only one hạng mục, its stage is already the
+                    "Giai đoạn" field in the "Thông tin chung" card above —
+                    repeating it here would just be noise. */}
+                {items.length > 1 && (t.stageId || task.stage) && (
                   <Badge
                     variant="secondary"
                     className="ml-auto bg-emerald-50 text-emerald-700 border-none font-semibold"
@@ -479,7 +483,12 @@ export function TaskDetailBody({ task }: { task: Task }) {
               </CardTitle>
             </CardHeader>
             <CardContent className="pt-4 space-y-5">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div
+                className={cn(
+                  "grid grid-cols-1 gap-4",
+                  items.length > 1 && "md:grid-cols-2",
+                )}
+              >
                 <div>
                   <label className="text-xs text-muted-foreground font-semibold uppercase tracking-wider mb-2 block">
                     Phạm vi thực hiện
@@ -518,62 +527,75 @@ export function TaskDetailBody({ task }: { task: Task }) {
                   </div>
                 </div>
 
-                <div>
-                  <label className="text-xs text-muted-foreground font-semibold uppercase tracking-wider mb-2 block">
-                    {t.isRepeating ? "Tần suất" : "Thời gian"}
-                  </label>
-                  <div className="flex items-center gap-3 bg-slate-50 p-3 rounded-lg border border-slate-100">
-                    {t.isRepeating ? (
-                      <>
-                        <RefreshCw className="w-5 h-5 text-primary shrink-0" />
-                        <p className="text-sm font-semibold text-slate-800">
-                          {t.repeatDates?.length
-                            ? getRepeatDatesText(t.repeatDates)
-                            : getFrequencyText(
-                                t.repeatDays || [],
-                                t.repeatWeeks || 0,
-                              )}
-                        </p>
-                      </>
-                    ) : (
-                      <>
-                        <Calendar className="w-5 h-5 text-slate-500 shrink-0" />
-                        <p className="text-sm font-semibold text-slate-800">
-                          {formatDate(t.startDate || task.startDate)} -{" "}
-                          {formatDate(t.endDate || task.endDate)}
-                        </p>
-                      </>
-                    )}
+                {/* With a single hạng mục this is the same "Thời gian thực
+                    hiện" already shown in the "Thông tin chung" card above —
+                    only show a per-item time/frequency block when there's
+                    more than one item to actually distinguish. */}
+                {items.length > 1 && (
+                  <div>
+                    <label className="text-xs text-muted-foreground font-semibold uppercase tracking-wider mb-2 block">
+                      {t.isRepeating ? "Tần suất" : "Thời gian"}
+                    </label>
+                    <div className="flex items-center gap-3 bg-slate-50 p-3 rounded-lg border border-slate-100">
+                      {t.isRepeating ? (
+                        <>
+                          <RefreshCw className="w-5 h-5 text-primary shrink-0" />
+                          <p className="text-sm font-semibold text-slate-800">
+                            {t.repeatDates?.length
+                              ? getRepeatDatesText(t.repeatDates)
+                              : getFrequencyText(
+                                  t.repeatDays || [],
+                                  t.repeatWeeks || 0,
+                                )}
+                          </p>
+                        </>
+                      ) : (
+                        <>
+                          <Calendar className="w-5 h-5 text-slate-500 shrink-0" />
+                          <p className="text-sm font-semibold text-slate-800">
+                            {formatDate(t.startDate || task.startDate)} -{" "}
+                            {formatDate(t.endDate || task.endDate)}
+                          </p>
+                        </>
+                      )}
+                    </div>
                   </div>
-                </div>
-              </div>
-
-              <Separator />
-
-              <div>
-                <label className="text-xs text-muted-foreground font-semibold uppercase tracking-wider mb-2 block">
-                  Nhân sự thực hiện{" "}
-                  <span className="text-slate-400 font-normal normal-case">
-                    ({itemLabor.length})
-                  </span>
-                </label>
-                {itemLabor.length > 0 ? (
-                  <div className="flex flex-wrap gap-1.5">
-                    {itemLabor.map((name: string, pIdx: number) => (
-                      <Badge
-                        key={`${name}-${pIdx}`}
-                        variant="outline"
-                        className="bg-emerald-50 text-emerald-700 border-emerald-200 font-medium"
-                      >
-                        <User className="w-3 h-3 mr-1" />
-                        {name}
-                      </Badge>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-sm italic text-slate-400">Chưa phân công</p>
                 )}
               </div>
+
+              {/* With a single hạng mục its labor is the same list already
+                  shown in the "Nhân sự phụ trách" card above. */}
+              {items.length > 1 && (
+                <>
+                  <Separator />
+                  <div>
+                    <label className="text-xs text-muted-foreground font-semibold uppercase tracking-wider mb-2 block">
+                      Nhân sự thực hiện{" "}
+                      <span className="text-slate-400 font-normal normal-case">
+                        ({itemLabor.length})
+                      </span>
+                    </label>
+                    {itemLabor.length > 0 ? (
+                      <div className="flex flex-wrap gap-1.5">
+                        {itemLabor.map((name: string, pIdx: number) => (
+                          <Badge
+                            key={`${name}-${pIdx}`}
+                            variant="outline"
+                            className="bg-emerald-50 text-emerald-700 border-emerald-200 font-medium"
+                          >
+                            <User className="w-3 h-3 mr-1" />
+                            {name}
+                          </Badge>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-sm italic text-slate-400">
+                        Chưa phân công
+                      </p>
+                    )}
+                  </div>
+                </>
+              )}
 
               <Separator />
 
