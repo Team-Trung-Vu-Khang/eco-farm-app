@@ -387,7 +387,9 @@ export default function TaskCreatePage() {
     setSelections(mapWorkflowScopesToSelections(presetPlan.scopes || []));
   }, [mappedPresetPlan, presetPlanId, presetPlanQuery.data]);
 
-  const [isSimpleMode, setIsSimpleMode] = useState(true);
+  // TODO: simple mode temporarily disabled — re-enable by restoring the
+  // toggle in the header actions below and defaulting back to `true`.
+  const [isSimpleMode, setIsSimpleMode] = useState(false);
 
   useEffect(() => {
     const seenSources = new Set<number>();
@@ -2934,19 +2936,24 @@ export default function TaskCreatePage() {
       description="Quy trình 3 bước lập lịch và quản lý nguồn lực"
       actions={
         <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2.5 rounded-full border border-slate-200 bg-white px-4 py-2 shadow-sm">
-            <Label
-              htmlFor="simple-task-mode-toggle"
-              className="text-xs font-bold text-slate-700 whitespace-nowrap cursor-pointer"
-            >
-              Thông tin chuyên sâu
-            </Label>
-            <Switch
-              id="simple-task-mode-toggle"
-              checked={!isSimpleMode}
-              onCheckedChange={(checked) => setIsSimpleMode(!checked)}
-            />
-          </div>
+          {/* TODO: simple mode temporarily disabled — flip this back to
+              `true` (and the isSimpleMode default above back to `true`)
+              to bring back the simple/advanced switch. */}
+          {false && (
+            <div className="flex items-center gap-2.5 rounded-full border border-slate-200 bg-white px-4 py-2 shadow-sm">
+              <Label
+                htmlFor="simple-task-mode-toggle"
+                className="text-xs font-bold text-slate-700 whitespace-nowrap cursor-pointer"
+              >
+                Thông tin chuyên sâu
+              </Label>
+              <Switch
+                id="simple-task-mode-toggle"
+                checked={!isSimpleMode}
+                onCheckedChange={(checked) => setIsSimpleMode(!checked)}
+              />
+            </div>
+          )}
           <Button variant="ghost" onClick={() => setLocation("/task")}>
             <ChevronLeft className="w-4 h-4 mr-2" />
             Quay lại danh sách
