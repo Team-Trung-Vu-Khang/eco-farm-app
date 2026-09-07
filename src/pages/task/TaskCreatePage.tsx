@@ -268,9 +268,7 @@ export default function TaskCreatePage() {
   const search = useSearch();
   const createTaskMutation = useCreateFarmTask();
   const { createAdHocStage } = useFarmPlanMutations();
-  const taskCategoriesQuery = useTaskCategorySearch({
-    params: { domainCode: "CROP" },
-  });
+  const taskCategoriesQuery = useTaskCategorySearch({});
   const supplyCatalog = useCropSupplyCatalog();
   const apiSupplyMaterials = useMemo<MaterialAllocation[]>(
     () =>
@@ -471,7 +469,8 @@ export default function TaskCreatePage() {
     if (
       selectedWorkflowQuery.data &&
       !workflows.some(
-        (workflow) => String(workflow.id) === String(selectedWorkflowQuery.data!.id),
+        (workflow) =>
+          String(workflow.id) === String(selectedWorkflowQuery.data!.id),
       )
     ) {
       return [selectedWorkflowQuery.data, ...workflows];
@@ -591,7 +590,8 @@ export default function TaskCreatePage() {
   const selectedPlanTaskAllocations = (
     selectedPlan?.taskAllocations || []
   ).filter(
-    (task) => !allowedStageKeysForMode || allowedStageKeysForMode.has(task.stageId),
+    (task) =>
+      !allowedStageKeysForMode || allowedStageKeysForMode.has(task.stageId),
   );
   const selectedPlanMaterialAllocations = (
     selectedPlan?.materialAllocations || []
@@ -1174,9 +1174,7 @@ export default function TaskCreatePage() {
               ? null
               : (stageTask?.taskCategoryId ?? planTask?.taskCategoryId ?? null),
           name: formData.name,
-          priority: mapPriorityToApi(
-            stageTask?.priority || formData.priority,
-          ),
+          priority: mapPriorityToApi(stageTask?.priority || formData.priority),
           note: stageTask?.description || formData.description || null,
           personnel: personnelRequests,
           startDate: formData.startDate,
@@ -2717,51 +2715,51 @@ export default function TaskCreatePage() {
                         ? task.geographicalSelections
                         : selections
                       ).length > 0 && (
-                          <div className="flex items-start gap-2.5 pt-3 border-t border-slate-50">
-                            <MapPin className="w-3.5 h-3.5 text-slate-400 mt-1" />
-                            <div className="flex-1">
-                              <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1.5 text-left">
-                                Phạm vi thực hiện
-                              </p>
-                              <div className="flex flex-wrap gap-1.5">
-                                {getSelectionSummary(
-                                  task.geographicalSelections?.length
-                                    ? task.geographicalSelections
-                                    : selections,
-                                  planScopedRegions.length > 0
-                                    ? planScopedRegions
-                                    : regions,
-                                ).map((group) => (
-                                  <div
-                                    key={group.regionId}
-                                    className="flex flex-wrap gap-1"
-                                  >
-                                    {group.items.map((item, i) => (
-                                      <Badge
-                                        key={`${item.id}-${i}`}
-                                        className={cn(
-                                          "text-[10px] px-2 py-0 border-none font-medium h-5",
-                                          item.type === "region"
-                                            ? "bg-emerald-50 text-emerald-700"
-                                            : item.type === "area"
-                                              ? "bg-blue-50 text-blue-700"
-                                              : "bg-amber-50 text-amber-700",
-                                        )}
-                                      >
-                                        {item.name}
-                                        {item.parentName && (
-                                          <span className="opacity-50 ml-1 font-normal">
-                                            ({item.parentName})
-                                          </span>
-                                        )}
-                                      </Badge>
-                                    ))}
-                                  </div>
-                                ))}
-                              </div>
+                        <div className="flex items-start gap-2.5 pt-3 border-t border-slate-50">
+                          <MapPin className="w-3.5 h-3.5 text-slate-400 mt-1" />
+                          <div className="flex-1">
+                            <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1.5 text-left">
+                              Phạm vi thực hiện
+                            </p>
+                            <div className="flex flex-wrap gap-1.5">
+                              {getSelectionSummary(
+                                task.geographicalSelections?.length
+                                  ? task.geographicalSelections
+                                  : selections,
+                                planScopedRegions.length > 0
+                                  ? planScopedRegions
+                                  : regions,
+                              ).map((group) => (
+                                <div
+                                  key={group.regionId}
+                                  className="flex flex-wrap gap-1"
+                                >
+                                  {group.items.map((item, i) => (
+                                    <Badge
+                                      key={`${item.id}-${i}`}
+                                      className={cn(
+                                        "text-[10px] px-2 py-0 border-none font-medium h-5",
+                                        item.type === "region"
+                                          ? "bg-emerald-50 text-emerald-700"
+                                          : item.type === "area"
+                                            ? "bg-blue-50 text-blue-700"
+                                            : "bg-amber-50 text-amber-700",
+                                      )}
+                                    >
+                                      {item.name}
+                                      {item.parentName && (
+                                        <span className="opacity-50 ml-1 font-normal">
+                                          ({item.parentName})
+                                        </span>
+                                      )}
+                                    </Badge>
+                                  ))}
+                                </div>
+                              ))}
                             </div>
                           </div>
-                        )}
+                        </div>
+                      )}
 
                       {/* Materials for this task */}
                       {formData.materials.filter((m) => m.taskId === task.id)

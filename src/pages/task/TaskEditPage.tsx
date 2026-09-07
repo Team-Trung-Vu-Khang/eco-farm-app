@@ -337,9 +337,7 @@ export default function TaskEditPage() {
     },
   });
   const taskDomainCode: DomainCode = taskResponse?.domainCode || "CROP";
-  const taskCategoriesQuery = useTaskCategorySearch({
-    params: { domainCode: taskDomainCode },
-  });
+  const taskCategoriesQuery = useTaskCategorySearch();
   const supplyCatalog = useCropSupplyCatalog(taskDomainCode);
   const apiSupplyMaterials = useMemo<MaterialAllocation[]>(() => {
     return Object.values(supplyCatalog.optionsByType).flatMap((options) =>
@@ -497,7 +495,8 @@ export default function TaskEditPage() {
     if (
       selectedWorkflowQuery.data &&
       !items.some(
-        (workflow) => String(workflow.id) === String(selectedWorkflowQuery.data!.id),
+        (workflow) =>
+          String(workflow.id) === String(selectedWorkflowQuery.data!.id),
       )
     ) {
       return [selectedWorkflowQuery.data, ...items];
@@ -662,7 +661,10 @@ export default function TaskEditPage() {
     // Normalized once here so every downstream stageId read from it matches
     // the (normalized) key in `selectedStages`/`resolvedSelectedStages`.
     const plannedWorkItem = rawPlannedWorkItem
-      ? { ...rawPlannedWorkItem, stageId: rawPlannedWorkItem.stageId?.normalize?.() }
+      ? {
+          ...rawPlannedWorkItem,
+          stageId: rawPlannedWorkItem.stageId?.normalize?.(),
+        }
       : undefined;
 
     // `localTask` is the local (offline-draft) task store, keyed by the same
@@ -681,10 +683,7 @@ export default function TaskEditPage() {
           material.stageId
         : plannedStageName || "Công việc phát sinh",
     })) as MaterialAllocation[];
-    const hydratedTasks = pickArray(
-      local?.tasks,
-      apiTask?.tasks,
-    ).map(
+    const hydratedTasks = pickArray(local?.tasks, apiTask?.tasks).map(
       (item) => ({
         ...item,
         name: item.name || plannedWorkItem?.name || apiTask?.name || "",
@@ -737,7 +736,8 @@ export default function TaskEditPage() {
                 sourceWorkItemId: plannedWorkItem
                   ? Number(plannedWorkItem.id)
                   : (toFiniteNumber(sourceWorkItemId) ?? undefined),
-                name: plannedWorkItem?.name || apiTask?.name || local?.name || "",
+                name:
+                  plannedWorkItem?.name || apiTask?.name || local?.name || "",
                 taskCategoryId:
                   plannedWorkItem?.taskCategoryId ??
                   taskResponse.taskCategory?.id,
@@ -765,11 +765,10 @@ export default function TaskEditPage() {
       // references a plan — the plan's own purpose only drives objectiveType
       // for a "theo kế hoạch" (PLANNED) task.
       objectiveType: (isPlannedTask
-        ? (planMatch
-            ? (PURPOSE_TO_OBJECTIVE_TYPE[
-                planMatch.purpose as Plan["purpose"]
-              ] ?? "theo-ke-hoach")
-            : "theo-ke-hoach")
+        ? planMatch
+          ? (PURPOSE_TO_OBJECTIVE_TYPE[planMatch.purpose as Plan["purpose"]] ??
+            "theo-ke-hoach")
+          : "theo-ke-hoach"
         : "phat-sinh") as TaskObjectiveType,
       planId: taskResponse?.plan?.id
         ? String(taskResponse.plan.id)
@@ -780,7 +779,8 @@ export default function TaskEditPage() {
       selectedStages,
       selectedPlotIds,
       regimenId: String((taskResponse as any)?.workflow?.id || ""),
-      assignedType: local?.assignedType || apiTask?.assignedType || "individual",
+      assignedType:
+        local?.assignedType || apiTask?.assignedType || "individual",
       assignedTo: pickArray(local?.assignedTo, apiTask?.assignedTo),
       supervisors: pickArray(local?.supervisors, apiTask?.supervisors),
       qualityInspectors: pickArray(
@@ -886,7 +886,8 @@ export default function TaskEditPage() {
   const selectedPlanTaskAllocations = (
     selectedPlan?.taskAllocations || []
   ).filter(
-    (task) => !allowedStageKeysForMode || allowedStageKeysForMode.has(task.stageId),
+    (task) =>
+      !allowedStageKeysForMode || allowedStageKeysForMode.has(task.stageId),
   );
   const selectedPlanMaterialAllocations = (
     selectedPlan?.materialAllocations || []
@@ -1379,8 +1380,7 @@ export default function TaskEditPage() {
             // The backend requires a stageId whenever there's no source work
             // item to derive it from (e.g. a plan-linked task added directly
             // in the detailed form rather than picked from the plan).
-            stageId:
-              plannedSourceWorkItemId == null ? adHocStageId : undefined,
+            stageId: plannedSourceWorkItemId == null ? adHocStageId : undefined,
             // A real source work item already carries its own category
             // server-side — only send one when the task was added directly
             // (no source work item to derive it from).
@@ -1394,8 +1394,7 @@ export default function TaskEditPage() {
         : {
             workflowId: toFiniteNumber(formData.regimenId),
             sourceWorkItemId: adHocSourceWorkItemId,
-            stageId:
-              adHocSourceWorkItemId == null ? adHocStageId : undefined,
+            stageId: adHocSourceWorkItemId == null ? adHocStageId : undefined,
             taskCategoryId:
               adHocSourceWorkItemId != null
                 ? null
@@ -1536,7 +1535,8 @@ export default function TaskEditPage() {
     if (scopeInvalid) {
       toast({
         title: "Thiếu phạm vi thực hiện",
-        description: "Vui lòng chọn đầy đủ phạm vi (vùng/khu/lô) cho công việc.",
+        description:
+          "Vui lòng chọn đầy đủ phạm vi (vùng/khu/lô) cho công việc.",
         variant: "destructive",
       });
       return;
@@ -1699,7 +1699,6 @@ export default function TaskEditPage() {
                     </div>
                   </div>
                 </div>
-
 
                 {formData.mode === "phat-sinh" && (
                   <div className="space-y-2 pt-2 border-slate-100">
@@ -2972,51 +2971,51 @@ export default function TaskEditPage() {
                         ? task.geographicalSelections
                         : selections
                       ).length > 0 && (
-                          <div className="flex items-start gap-2.5 pt-3 border-t border-slate-50">
-                            <MapPin className="w-3.5 h-3.5 text-slate-400 mt-1" />
-                            <div className="flex-1">
-                              <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1.5 text-left">
-                                Phạm vi thực hiện
-                              </p>
-                              <div className="flex flex-wrap gap-1.5">
-                                {getSelectionSummary(
-                                  task.geographicalSelections?.length
-                                    ? task.geographicalSelections
-                                    : selections,
-                                  planScopedRegions.length > 0
-                                    ? planScopedRegions
-                                    : regions,
-                                ).map((group) => (
-                                  <div
-                                    key={group.regionId}
-                                    className="flex flex-wrap gap-1"
-                                  >
-                                    {group.items.map((item, i) => (
-                                      <Badge
-                                        key={`${item.id}-${i}`}
-                                        className={cn(
-                                          "text-[10px] px-2 py-0 border-none font-medium h-5",
-                                          item.type === "region"
-                                            ? "bg-emerald-50 text-emerald-700"
-                                            : item.type === "area"
-                                              ? "bg-blue-50 text-blue-700"
-                                              : "bg-amber-50 text-amber-700",
-                                        )}
-                                      >
-                                        {item.name}
-                                        {item.parentName && (
-                                          <span className="opacity-50 ml-1 font-normal">
-                                            ({item.parentName})
-                                          </span>
-                                        )}
-                                      </Badge>
-                                    ))}
-                                  </div>
-                                ))}
-                              </div>
+                        <div className="flex items-start gap-2.5 pt-3 border-t border-slate-50">
+                          <MapPin className="w-3.5 h-3.5 text-slate-400 mt-1" />
+                          <div className="flex-1">
+                            <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1.5 text-left">
+                              Phạm vi thực hiện
+                            </p>
+                            <div className="flex flex-wrap gap-1.5">
+                              {getSelectionSummary(
+                                task.geographicalSelections?.length
+                                  ? task.geographicalSelections
+                                  : selections,
+                                planScopedRegions.length > 0
+                                  ? planScopedRegions
+                                  : regions,
+                              ).map((group) => (
+                                <div
+                                  key={group.regionId}
+                                  className="flex flex-wrap gap-1"
+                                >
+                                  {group.items.map((item, i) => (
+                                    <Badge
+                                      key={`${item.id}-${i}`}
+                                      className={cn(
+                                        "text-[10px] px-2 py-0 border-none font-medium h-5",
+                                        item.type === "region"
+                                          ? "bg-emerald-50 text-emerald-700"
+                                          : item.type === "area"
+                                            ? "bg-blue-50 text-blue-700"
+                                            : "bg-amber-50 text-amber-700",
+                                      )}
+                                    >
+                                      {item.name}
+                                      {item.parentName && (
+                                        <span className="opacity-50 ml-1 font-normal">
+                                          ({item.parentName})
+                                        </span>
+                                      )}
+                                    </Badge>
+                                  ))}
+                                </div>
+                              ))}
                             </div>
                           </div>
-                        )}
+                        </div>
+                      )}
 
                       {/* Materials for this task */}
                       {formData.materials.filter((m) => m.taskId === task.id)

@@ -139,7 +139,7 @@ export default function SimpleTaskForm({
   const isAdHoc = formData.mode === "phat-sinh";
   const debouncedNameKeyword = useDebounce(formData.name, 300);
   const nameSuggestQuery = useTaskCategorySearch({
-    params: { domainCode: "CROP", keyword: debouncedNameKeyword },
+    params: { keyword: debouncedNameKeyword },
     enabled: isAdHoc && debouncedNameKeyword.trim().length > 0,
   });
   const effectiveLockPlanSelection = lockPlanSelection && !hasToggledMode;

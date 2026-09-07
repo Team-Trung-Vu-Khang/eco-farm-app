@@ -1,3 +1,5 @@
+import { useTaskCategorySearch } from "@/features/task-category/hooks/useTaskCategory";
+import { useDebounce } from "@/shared/hooks/useDebounce";
 import {
   Badge,
   Button,
@@ -33,8 +35,6 @@ import {
   X,
 } from "lucide-react";
 import { memo, useState, type CSSProperties } from "react";
-import { useTaskCategorySearch } from "@/features/task-category/hooks/useTaskCategory";
-import { useDebounce } from "@/shared/hooks/useDebounce";
 import { MATERIAL_OPTIONS } from "../data/mocks";
 import type {
   GeographicalSelection,
@@ -251,7 +251,7 @@ const TaskBlock = ({
   const [taskSearchTerm, setTaskSearchTerm] = useState("");
   const debouncedTaskSearchTerm = useDebounce(taskSearchTerm, 300);
   const taskCategorySearchQuery = useTaskCategorySearch({
-    params: { domainCode: "CROP", keyword: debouncedTaskSearchTerm },
+    params: { keyword: debouncedTaskSearchTerm },
     enabled: !availableTasksOnly && debouncedTaskSearchTerm.trim().length > 0,
   });
   const taskCategoryOptions = debouncedTaskSearchTerm.trim()
@@ -373,8 +373,7 @@ const TaskBlock = ({
 
     const performUpdate = () => {
       const repeatDates = (task.repeatDates || []).filter(
-        (date: string) =>
-          !newStart || date >= newStart,
+        (date: string) => !newStart || date >= newStart,
       );
       onUpdateTask?.(task.id, {
         startDate: newStart,
@@ -604,7 +603,8 @@ const TaskBlock = ({
                 >
                   Giai đoạn
                 </Label>
-                {stageOptionsRequired && !stageOptions.includes(task.stageId) ? (
+                {stageOptionsRequired &&
+                !stageOptions.includes(task.stageId) ? (
                   <span className="text-[10px] text-amber-500 italic">
                     Chưa chọn giai đoạn
                   </span>
@@ -729,8 +729,7 @@ const TaskBlock = ({
                   {
                     id: "low",
                     label: "Thấp",
-                    activeClass:
-                      "bg-emerald-500 text-white border-emerald-500",
+                    activeClass: "bg-emerald-500 text-white border-emerald-500",
                     inactiveClass:
                       "bg-emerald-50 text-emerald-600 border-emerald-100 hover:bg-emerald-100",
                   },
@@ -859,7 +858,8 @@ const TaskBlock = ({
                   </Button>
                 </div>
                 <p className="text-[11px] text-slate-500">
-                  Mỗi ngày đã chọn sẽ tạo một task con khi task hiện tại hoàn tất.
+                  Mỗi ngày đã chọn sẽ tạo một task con khi task hiện tại hoàn
+                  tất.
                 </p>
                 <Calendar
                   mode="multiple"
@@ -869,14 +869,13 @@ const TaskBlock = ({
                     onUpdateTask?.(task.id, {
                       repeatDates: (dates || [])
                         .map(formatLocalISODate)
-                        .filter(
-                          (date, _, all) =>
-                            isRepeatDateAllowed(
-                              date,
-                              task.startDate || "",
-                              task.endDate || "",
-                              all.filter((other) => other !== date),
-                            ),
+                        .filter((date, _, all) =>
+                          isRepeatDateAllowed(
+                            date,
+                            task.startDate || "",
+                            task.endDate || "",
+                            all.filter((other) => other !== date),
+                          ),
                         ),
                     })
                   }

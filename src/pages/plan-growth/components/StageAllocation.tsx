@@ -1,3 +1,13 @@
+import type { SupplyItemResponse } from "@/features/farm-supply/types";
+import type { FarmWorkDurationUnit } from "@/features/farm-workflow/types/farm-workflow.type";
+import { useTaskCategorySearch } from "@/features/task-category/hooks/useTaskCategory";
+import { useDebounce } from "@/shared/hooks/useDebounce";
+import {
+  getSupplyTypeOptions,
+  isEquipmentSupplyType,
+  mapSupplyItemToOption,
+  useRemoteSupplySearch,
+} from "@/shared/hooks/useRemoteSupplySearch";
 import {
   Badge,
   Button,
@@ -7,6 +17,7 @@ import {
   DialogHeader,
   DialogTitle,
   Input,
+  RemoteAutoCompleteSelect,
   ScrollArea,
   Select,
   SelectContent,
@@ -17,7 +28,6 @@ import {
   TabsContent,
   TabsList,
   TabsTrigger,
-  RemoteAutoCompleteSelect,
   cn,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import {
@@ -35,25 +45,22 @@ import {
 } from "lucide-react";
 import { memo, useMemo, useState } from "react";
 import usePersonnelStore from "../../../stores/usePersonnelStore";
-import type { SupplyItemResponse } from "@/features/farm-supply/types";
-import type { GeographicalSelection } from "../types";
-import type { MaterialAllocation, TaskAllocation } from "../types";
-import type { CropSupplyCatalog, CropSupplyType } from "../hooks/useCropSupplyCatalog";
-import { useTaskCategorySearch } from "@/features/task-category/hooks/useTaskCategory";
-import { useDebounce } from "@/shared/hooks/useDebounce";
-import type { FarmWorkDurationUnit } from "@/features/farm-workflow/types/farm-workflow.type";
-import {
-  getSupplyTypeOptions,
-  isEquipmentSupplyType,
-  mapSupplyItemToOption,
-  useRemoteSupplySearch,
-} from "@/shared/hooks/useRemoteSupplySearch";
-import {
-  groupMaterialAllocations,
-  isEquipmentAllocation,
-} from "../utils/material-allocations";
+import type {
+  CropSupplyCatalog,
+  CropSupplyType,
+} from "../hooks/useCropSupplyCatalog";
+import type {
+  GeographicalSelection,
+  MaterialAllocation,
+  TaskAllocation,
+} from "../types";
+import { groupMaterialAllocations } from "../utils/material-allocations";
 
-const DURATION_UNIT_OPTIONS: { value: string; label: string; api: FarmWorkDurationUnit }[] = [
+const DURATION_UNIT_OPTIONS: {
+  value: string;
+  label: string;
+  api: FarmWorkDurationUnit;
+}[] = [
   { value: "phút", label: "Phút", api: "MINUTE" },
   { value: "giờ", label: "Giờ", api: "HOUR" },
   { value: "ngày", label: "Ngày", api: "DAY" },
@@ -122,11 +129,13 @@ export const StageAllocation = memo(
 
     const { personnel } = usePersonnelStore();
     const [personnelSearch, setPersonnelSearch] = useState("");
-    const debouncedTaskSearch = useDebounce(newTask.taskSearchValue.trim(), 300);
+    const debouncedTaskSearch = useDebounce(
+      newTask.taskSearchValue.trim(),
+      300,
+    );
     const { items: taskCategories, isFetching: isFetchingTaskCategories } =
       useTaskCategorySearch({
         params: {
-          domainCode: "CROP",
           keyword: debouncedTaskSearch || undefined,
         },
       });
@@ -149,14 +158,15 @@ export const StageAllocation = memo(
     const materialOptions = searchedMaterials.map(mapSupplyItemToOption);
     if (
       selectedMaterial &&
-      !materialOptions.some((option) => option.value === String(selectedMaterial.id))
+      !materialOptions.some(
+        (option) => option.value === String(selectedMaterial.id),
+      )
     ) {
       materialOptions.unshift(mapSupplyItemToOption(selectedMaterial));
     }
-    const packagingVariantOptions =
-      !isEquipmentSupplyType(newItem.type)
-        ? selectedMaterial?.packagingVariants || []
-        : [];
+    const packagingVariantOptions = !isEquipmentSupplyType(newItem.type)
+      ? selectedMaterial?.packagingVariants || []
+      : [];
     const selectedPackagingVariant = packagingVariantOptions.find(
       (variant) => String(variant.unitBase?.id) === newItem.unitBaseId,
     );
@@ -173,7 +183,10 @@ export const StageAllocation = memo(
 
     const handleAddMaterial = () => {
       if (!selectedMaterial || !newItem.qty) return;
-      if (!isEquipmentSupplyType(newItem.type) && !selectedPackagingVariant?.unitBase)
+      if (
+        !isEquipmentSupplyType(newItem.type) &&
+        !selectedPackagingVariant?.unitBase
+      )
         return;
       onAddMaterial({
         stageId: stageName,
@@ -229,7 +242,8 @@ export const StageAllocation = memo(
         taskCategoryId: newTask.taskCategoryId
           ? Number(newTask.taskCategoryId)
           : undefined,
-        headcount: Number.isFinite(headcount) && headcount > 0 ? headcount : undefined,
+        headcount:
+          Number.isFinite(headcount) && headcount > 0 ? headcount : undefined,
         durationValue: durationValue ? Number(durationValue) : undefined,
         durationUnit: durationValue ? durationUnitApi : undefined,
       });
@@ -454,7 +468,13 @@ export const StageAllocation = memo(
 
                     {/* Row 2: Configuration (Quantity, Unit & Add Button) */}
                     <div className="grid grid-cols-12 gap-2">
-                      <div className={isEquipmentSupplyType(newItem.type) ? "col-span-9" : "col-span-5"}>
+                      <div
+                        className={
+                          isEquipmentSupplyType(newItem.type)
+                            ? "col-span-9"
+                            : "col-span-5"
+                        }
+                      >
                         <Input
                           placeholder="Số lượng"
                           type="number"
@@ -480,7 +500,10 @@ export const StageAllocation = memo(
                             <SelectContent>
                               {packagingVariantOptions.map((variant) => (
                                 <SelectItem
-                                  key={variant.unitBase?.id ?? variant.unitBase?.name}
+                                  key={
+                                    variant.unitBase?.id ??
+                                    variant.unitBase?.name
+                                  }
                                   value={String(variant.unitBase?.id)}
                                 >
                                   {variant.unitBase?.name ||
@@ -506,8 +529,9 @@ export const StageAllocation = memo(
                     {exceedsPackagingQuantity && (
                       <p className="text-[11px] text-amber-600 mt-1">
                         Số lượng vượt quá định mức đóng gói (
-                        {maxPackagingQuantity} {selectedPackagingVariant?.unitBase?.name}
-                        /{selectedPackagingVariant?.packagingType?.name})
+                        {maxPackagingQuantity}{" "}
+                        {selectedPackagingVariant?.unitBase?.name}/
+                        {selectedPackagingVariant?.packagingType?.name})
                       </p>
                     )}
                   </div>
@@ -575,7 +599,6 @@ export const StageAllocation = memo(
                               )}
                             </div>
                           </div>
-
                         </div>
                       ))
                     )}
@@ -757,7 +780,6 @@ export const StageAllocation = memo(
                       </Select>
                     </div>
                   </div>
-
                 </div>
               </TabsContent>
             </Tabs>
