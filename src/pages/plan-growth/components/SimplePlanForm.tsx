@@ -19,7 +19,6 @@ import {
   Loader2,
   Plus,
   Sprout,
-  Trash2,
   Wrench,
   X,
 } from "lucide-react";
@@ -875,15 +874,7 @@ export default function SimplePlanForm({
                 : null;
 
               return (
-                <div key={stageKey} className="relative">
-                  <button
-                    type="button"
-                    onClick={() => removeStage(stageKey)}
-                    title="Xoá hạng mục"
-                    className="absolute right-3 top-3 z-10 flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-slate-300 transition-colors hover:bg-red-50 hover:text-red-500"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </button>
+                <div key={stageKey}>
                   <StageAllocation
                     isDetail={false}
                     stageName={stageName}
