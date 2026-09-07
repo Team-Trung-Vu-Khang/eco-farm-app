@@ -1960,6 +1960,8 @@ export default function PlanAquacultureGrowthCreatePage({
             handleDurationPartChange={handleDurationPartChange}
             handleAddMaterial={handleAddMaterial}
             handleRemoveMaterial={handleRemoveMaterial}
+            handleAddTask={handleAddTask}
+            handleRemoveTask={handleRemoveTask}
             handleComplete={handleComplete}
             goBack={goBack}
             completeLabel={completeLabel}

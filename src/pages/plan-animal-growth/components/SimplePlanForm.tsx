@@ -6,13 +6,7 @@ import {
   Checkbox,
   Input,
   Label,
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
   Textarea,
-  RemoteAutoCompleteSelect,
   cn,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import {
@@ -22,8 +16,6 @@ import {
   Calendar,
   Info,
   Layers,
-  Link2,
-  Plus,
   Sprout,
   Trash2,
   Wrench,
@@ -37,16 +29,13 @@ import {
   type SetStateAction,
 } from "react";
 import type { GrowthCycle } from "../../growth-cycle/types/types";
-import type {
-  AnimalSupplyCatalog,
-  AnimalSupplyType,
-} from "../hooks/useAnimalSupplyCatalog";
-import type { SupplyItemResponse } from "@/features/farm-supply/types";
+import type { AnimalSupplyCatalog } from "../hooks/useAnimalSupplyCatalog";
 import type {
   GeographicalSelection,
   GrowthCycleSelection,
   MaterialAllocation,
   PlanFormData,
+  TaskAllocation,
 } from "../types";
 import GeographicalSelector from "./GeographicalSelector";
 import GrowthCycleSelector from "../../plan-growth/components/GrowthCycleSelector";
@@ -55,13 +44,7 @@ import {
   type PersonnelOption,
 } from "./PersonnelMultiSelectCard";
 import { RegimenSelector } from "./RegimenSelector";
-import {
-  getSupplyTypeOptions,
-  isEquipmentSupplyType,
-  mapSupplyItemToOption,
-  useRemoteSupplySearch,
-} from "@/shared/hooks/useRemoteSupplySearch";
-import { isEquipmentAllocation } from "../../plan-growth/utils/material-allocations";
+import { StageAllocation } from "./StageAllocation";
 
 const PURPOSE_OPTIONS = [
   { id: "cultivation", label: "Chăn nuôi", icon: Layers, color: "blue" },
@@ -127,6 +110,8 @@ interface SimplePlanFormProps {
   ) => void;
   handleAddMaterial: (item: Omit<MaterialAllocation, "id">) => void;
   handleRemoveMaterial: (id: number) => void;
+  handleAddTask: (item: Omit<TaskAllocation, "id">) => void;
+  handleRemoveTask: (id: number) => void;
   handleComplete: () => void;
   goBack: () => void;
   completeLabel: string;
@@ -147,225 +132,6 @@ interface SimplePlanFormProps {
   isEdit?: boolean;
 }
 
-function StageMaterialPicker({
-  stageKey,
-  allocations,
-  onAddMaterial,
-  onRemoveMaterial,
-  supplyCatalog,
-}: {
-  stageKey: string;
-  allocations: MaterialAllocation[];
-  onAddMaterial: (item: Omit<MaterialAllocation, "id">) => void;
-  onRemoveMaterial: (id: number) => void;
-  supplyCatalog: AnimalSupplyCatalog;
-}) {
-  const defaultType =
-    getSupplyTypeOptions("LIVESTOCK")[1]?.value ||
-    getSupplyTypeOptions("LIVESTOCK")[0]?.value ||
-    "fertilizer";
-  const [newItem, setNewItem] = useState({
-    name: "",
-    qty: "",
-    unitBaseId: "",
-    selectedMaterial: null as SupplyItemResponse | null,
-    searchValue: "",
-    type: defaultType as AnimalSupplyType,
-  });
-
-  const selectedTypeOption = supplyCatalog.typeOptions.find(
-    (option) => option.value === newItem.type,
-  );
-  const { items: searchedMaterials, isFetching } = useRemoteSupplySearch(
-    "LIVESTOCK",
-    newItem.type,
-    newItem.searchValue,
-  );
-  const selectedMaterial = newItem.selectedMaterial;
-  const materialOptions = searchedMaterials.map(mapSupplyItemToOption);
-  if (
-    selectedMaterial &&
-    !materialOptions.some((option) => option.value === String(selectedMaterial.id))
-  ) {
-    materialOptions.unshift(mapSupplyItemToOption(selectedMaterial));
-  }
-  const packagingVariantOptions =
-    !isEquipmentSupplyType(newItem.type)
-      ? selectedMaterial?.packagingVariants || []
-      : [];
-  const selectedPackagingVariant = packagingVariantOptions.find(
-    (variant) => String(variant.unitBase?.id) === newItem.unitBaseId,
-  );
-  const selectedEquipmentUnitBase =
-    selectedMaterial?.packagingVariants?.[0]?.unitBase;
-  const maxPackagingQuantity = selectedPackagingVariant?.quantity;
-  const exceedsPackagingQuantity =
-    maxPackagingQuantity != null && Number(newItem.qty) > maxPackagingQuantity;
-
-  const handleAdd = () => {
-    if (!selectedMaterial || !newItem.qty) return;
-    if (!isEquipmentSupplyType(newItem.type) && !selectedPackagingVariant?.unitBase)
-      return;
-    onAddMaterial({
-      stageId: stageKey,
-      supplyType: newItem.type,
-      materialCategory: selectedTypeOption?.label || newItem.type,
-      materialType: selectedTypeOption?.label || newItem.type,
-      materialName: selectedMaterial.name,
-      quantity: newItem.qty,
-      unit: isEquipmentSupplyType(newItem.type)
-        ? "Cái / Chiếc"
-        : selectedPackagingVariant?.unitBase?.name || "",
-      supplyItemId: selectedMaterial.id,
-      unitBaseId: isEquipmentSupplyType(newItem.type)
-        ? 6
-        : selectedPackagingVariant?.unitBase?.id,
-    });
-    setNewItem({
-      name: "",
-      qty: "",
-      unitBaseId: "",
-      selectedMaterial: null,
-      searchValue: "",
-      type: newItem.type,
-    });
-  };
-
-  return (
-    <div className="space-y-3">
-      {allocations.length > 0 && (
-        <div className="space-y-1.5">
-          {allocations.map((a) => (
-            <div
-              key={a.id}
-              className="flex items-center justify-between bg-white rounded-lg border border-slate-100 px-3 py-1.5 text-sm"
-            >
-              <span className="font-medium text-slate-700">
-                {a.materialName}
-              </span>
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-semibold text-slate-600 bg-slate-50 px-2 py-0.5 rounded border">
-                  {a.unit ? `${a.quantity} ${a.unit}` : a.quantity}
-                </span>
-                <button
-                  type="button"
-                  className="text-slate-300 hover:text-red-500 transition-colors"
-                  onClick={() => onRemoveMaterial(a.id)}
-                >
-                  <X className="w-3.5 h-3.5" />
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-
-      <div className="grid grid-cols-12 gap-2">
-        <div className="col-span-4">
-          <Select
-            value={newItem.type}
-            onValueChange={(v) => {
-              const type = v as AnimalSupplyType;
-              setNewItem({ ...newItem, type, name: "", unitBaseId: "" });
-            }}
-          >
-            <SelectTrigger className="w-full h-9 text-xs bg-white">
-              <SelectValue placeholder="Loại..." />
-            </SelectTrigger>
-            <SelectContent>
-              {supplyCatalog.typeOptions.map((type) => (
-                <SelectItem key={type.value} value={type.value}>
-                  {type.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="col-span-8">
-          <RemoteAutoCompleteSelect
-            options={materialOptions}
-            value={newItem.name}
-            onChange={(v) => {
-              const item = materialOptions.find((option) => option.value === v)?.item;
-              const firstVariant = item?.packagingVariants?.[0];
-              setNewItem({
-                ...newItem,
-                name: v,
-                selectedMaterial: item ?? null,
-                unitBaseId: firstVariant?.unitBase?.id
-                  ? String(firstVariant.unitBase.id)
-                  : "",
-              });
-            }}
-            onSearch={(value) =>
-              setNewItem((prev) => ({
-                ...prev,
-                searchValue: value,
-              }))
-            }
-            placeholder="Chọn vật tư..."
-            searchPlaceholder="Tìm vật tư..."
-            emptyText={
-              isFetching ? "Đang tải danh sách vật tư..." : "Không tìm thấy vật tư."
-            }
-            loading={isFetching}
-          />
-        </div>
-        <div className={isEquipmentSupplyType(newItem.type) ? "col-span-9" : "col-span-5"}>
-          <Input
-            placeholder="Số lượng ước lượng"
-            type="number"
-            className="h-9 text-sm bg-white"
-            value={newItem.qty}
-            onChange={(e) => setNewItem({ ...newItem, qty: e.target.value })}
-          />
-        </div>
-        {!isEquipmentSupplyType(newItem.type) && (
-          <div className="col-span-4">
-            <Select
-              value={newItem.unitBaseId}
-              onValueChange={(v) => setNewItem({ ...newItem, unitBaseId: v })}
-              disabled={packagingVariantOptions.length === 0}
-            >
-              <SelectTrigger className="h-9 text-xs w-full bg-white">
-                <SelectValue placeholder="Đơn vị..." />
-              </SelectTrigger>
-              <SelectContent>
-                {packagingVariantOptions.map((variant) => (
-                  <SelectItem
-                    key={variant.unitBase?.id ?? variant.unitBase?.name}
-                    value={String(variant.unitBase?.id)}
-                  >
-                    {variant.unitBase?.name || variant.packagingType?.name || ""}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        )}
-        <div className="col-span-3">
-          <Button
-            type="button"
-            size="sm"
-            className="h-9 w-full p-0 bg-slate-900 hover:bg-slate-800 font-bold text-xs"
-            onClick={handleAdd}
-          >
-            <Plus className="w-3.5 h-3.5 mr-1" />
-            THÊM
-          </Button>
-        </div>
-      </div>
-      {exceedsPackagingQuantity && (
-        <p className="text-[11px] text-amber-600">
-          Số lượng vượt quá định mức đóng gói ({maxPackagingQuantity}{" "}
-          {selectedPackagingVariant?.unitBase?.name}/
-          {selectedPackagingVariant?.packagingType?.name})
-        </p>
-      )}
-    </div>
-  );
-}
-
 export default function SimplePlanForm({
   formData,
   setFormData,
@@ -373,6 +139,8 @@ export default function SimplePlanForm({
   handleDurationPartChange,
   handleAddMaterial,
   handleRemoveMaterial,
+  handleAddTask,
+  handleRemoveTask,
   handleComplete,
   goBack,
   completeLabel,
@@ -1127,50 +895,60 @@ export default function SimplePlanForm({
 
       {formData.selectedStages.length > 0 && (
         <div className="space-y-3">
-          <Label>Chọn vật tư / ước lượng theo hạng mục</Label>
-          <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <Label>Vật tư, nhân lực & phạm vi theo hạng mục</Label>
+            <Badge
+              variant="outline"
+              className="shrink-0 bg-slate-50 text-slate-600"
+            >
+              {formData.selectedStages.length} hạng mục
+            </Badge>
+          </div>
+          <div className="space-y-3">
             {formData.selectedStages.map((stageKey, idx) => {
-              const stageName = stageKey.includes(":")
-                ? stageKey.split(":").slice(1).join(":")
-                : stageKey;
-              const materialCount = formData.materialAllocations.filter(
-                (m) => m.stageId === stageKey,
-              ).length;
+              const [cycleId, rawStageName] = stageKey.includes(":")
+                ? stageKey.split(":")
+                : [null, stageKey];
+              const stageName = rawStageName ?? stageKey;
+              const cycleName = cycleId
+                ? growthCycles.find((c) => c.id === cycleId)?.name ||
+                  regimens.find((r) => r.id === cycleId)?.name
+                : null;
 
               return (
-                <div
-                  key={stageKey}
-                  className="rounded-2xl border border-slate-100 bg-white shadow-sm overflow-hidden"
-                >
-                  <div className="flex items-center gap-3 px-4 py-3">
-                    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-slate-50 text-xs font-bold text-slate-700">
-                      {idx + 1}
-                    </span>
-                    <span className="flex-1 truncate font-bold text-sm text-slate-800">
-                      {stageName}
-                    </span>
-                    <span className="flex items-center gap-1 text-[11px] font-medium text-slate-400 whitespace-nowrap">
-                      <Link2 className="h-3.5 w-3.5" /> {materialCount} vật tư
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => removeStage(stageKey)}
-                      className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-slate-300 transition-colors hover:bg-red-50 hover:text-red-500"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </button>
-                  </div>
-                  <div className="border-t border-slate-100 p-4">
-                    <StageMaterialPicker
-                      stageKey={stageKey}
-                      allocations={formData.materialAllocations.filter(
-                        (m) => m.stageId === stageKey,
-                      )}
-                      onAddMaterial={handleAddMaterial}
-                      onRemoveMaterial={handleRemoveMaterial}
-                      supplyCatalog={supplyCatalog}
-                    />
-                  </div>
+                <div key={stageKey} className="relative">
+                  <button
+                    type="button"
+                    onClick={() => removeStage(stageKey)}
+                    title="Xoá hạng mục"
+                    className="absolute right-3 top-3 z-10 flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-slate-300 transition-colors hover:bg-red-50 hover:text-red-500"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                  <StageAllocation
+                    isDetail={false}
+                    stageName={stageName}
+                    cycleName={cycleName}
+                    index={idx}
+                    allocations={formData.materialAllocations.filter(
+                      (m) => m.stageId === stageKey,
+                    )}
+                    tasks={formData.taskAllocations.filter(
+                      (t) => t.stageId === stageKey,
+                    )}
+                    regions={regions}
+                    masterSelections={selections}
+                    enterpriseId={selectedEnterpriseId}
+                    onAddMaterial={(item) =>
+                      handleAddMaterial({ ...item, stageId: stageKey })
+                    }
+                    onRemoveMaterial={handleRemoveMaterial}
+                    onAddTask={(item) =>
+                      handleAddTask({ ...item, stageId: stageKey })
+                    }
+                    onRemoveTask={handleRemoveTask}
+                    supplyCatalog={supplyCatalog}
+                  />
                 </div>
               );
             })}
