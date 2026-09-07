@@ -1016,5 +1016,7 @@ export function usePlanForm(
         ? `Cập nhật thông tin chi tiết cho kế hoạch ${plan.code}`
         : "Xây dựng lộ trình trồng trọt, phân bổ nguồn lực và giám sát",
     completeLabel: mode === "edit" ? "Lưu thay đổi" : "Kích hoạt Kế hoạch",
+    isSubmitting:
+      mode === "edit" ? updatePlan.isPending : createPlan.isPending,
   };
 }

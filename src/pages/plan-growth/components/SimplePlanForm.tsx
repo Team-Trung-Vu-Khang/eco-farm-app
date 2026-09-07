@@ -23,6 +23,7 @@ import {
   Info,
   Layers,
   Link2,
+  Loader2,
   Plus,
   Sprout,
   Trash2,
@@ -149,6 +150,7 @@ interface SimplePlanFormProps {
   personnel: PersonnelOption[];
   supplyCatalog: CropSupplyCatalog;
   isEdit?: boolean;
+  loading?: boolean;
 }
 
 function StageMaterialPicker({
@@ -399,6 +401,7 @@ export default function SimplePlanForm({
   personnel,
   supplyCatalog,
   isEdit = false,
+  loading = false,
 }: SimplePlanFormProps) {
   const [newStage, setNewStage] = useState("");
   const [removedGrowthCycleStages, setRemovedGrowthCycleStages] = useState<
@@ -663,7 +666,6 @@ export default function SimplePlanForm({
           }
           placeholder="Mô tả ngắn gọn mục đích của kế hoạch..."
           rows={2}
-          disabled={isEdit}
         />
         <div className="grid grid-cols-3 gap-2 sm:grid-cols-5">
           {PURPOSE_OPTIONS.map((type) => {
@@ -1157,17 +1159,23 @@ export default function SimplePlanForm({
       </Card>
 
       <div className="sticky bottom-0 left-0 right-0 flex items-center justify-between gap-3 bg-white/95 backdrop-blur border-t border-slate-100 pt-4 pb-2 -mx-4 px-4">
-        <Button type="button" variant="outline" onClick={goBack}>
+        <Button
+          type="button"
+          variant="outline"
+          onClick={goBack}
+          disabled={loading}
+        >
           <ArrowLeft className="w-4 h-4 mr-2" />
           Quay lại
         </Button>
         <Button
           type="button"
-          disabled={!isValid}
+          disabled={!isValid || loading}
           onClick={handleComplete}
           className="font-bold"
         >
-          {completeLabel}
+          {loading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+          {loading ? "Đang xử lý..." : completeLabel}
         </Button>
       </div>
     </div>

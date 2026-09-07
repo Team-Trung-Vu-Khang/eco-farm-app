@@ -88,6 +88,7 @@ export default function PlanGrowthCreatePage({
     pageTitle,
     pageDescription,
     completeLabel,
+    isSubmitting,
   } = usePlanForm("create", basePath);
   const supplyCatalog = useCropSupplyCatalog();
 
@@ -1971,6 +1972,7 @@ export default function PlanGrowthCreatePage({
             growthCycles={growthCycles}
             personnel={personnel}
             supplyCatalog={supplyCatalog}
+            loading={isSubmitting}
           />
         ) : (
           <StepperForm
@@ -1978,6 +1980,7 @@ export default function PlanGrowthCreatePage({
             onComplete={handleComplete}
             onCancel={goBack}
             completeLabel={completeLabel}
+            loading={isSubmitting}
           />
         )}
       </div>

@@ -98,6 +98,7 @@ export default function PlanGrowthEditPage({
     pageTitle,
     pageDescription,
     completeLabel,
+    isSubmitting,
   } = usePlanForm("edit", basePath, { onSaved, onCancel });
   const supplyCatalog = useCropSupplyCatalog();
 
@@ -358,7 +359,7 @@ export default function PlanGrowthEditPage({
           <button
             key={type.id}
             type="button"
-            disabled
+            disabled={plan?.status !== "draft"}
             onClick={() => {
               setFormData((prev) => ({
                 ...prev,
@@ -371,7 +372,10 @@ export default function PlanGrowthEditPage({
               }));
             }}
             className={cn(
-              "p-4 rounded-2xl border-2 transition-all flex flex-col items-center text-center gap-1 group relative overflow-hidden cursor-not-allowed opacity-60",
+              "p-4 rounded-2xl border-2 transition-all flex flex-col items-center text-center gap-1 group relative overflow-hidden",
+              plan?.status !== "draft"
+                ? "cursor-not-allowed opacity-60"
+                : "cursor-pointer",
               formData.purpose === type.id
                 ? `${type.borderColor} ${type.bgColor} ${type.textColor} shadow-md`
                 : "border-slate-100 bg-white",
@@ -2047,7 +2051,8 @@ export default function PlanGrowthEditPage({
             growthCycles={growthCycles}
             personnel={personnel}
             supplyCatalog={supplyCatalog}
-            isEdit
+            isEdit={plan?.status !== "draft"}
+            loading={isSubmitting}
           />
         ) : (
           <StepperForm
@@ -2055,6 +2060,7 @@ export default function PlanGrowthEditPage({
             onComplete={handleComplete}
             onCancel={goBack}
             completeLabel={completeLabel}
+            loading={isSubmitting}
           />
         )}
       </div>
