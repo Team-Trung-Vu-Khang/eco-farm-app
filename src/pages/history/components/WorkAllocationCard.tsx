@@ -8,12 +8,30 @@ import {
   CardTitle,
   Input,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { CheckCircle2, FileText, Layers, Plus, X } from "lucide-react";
+import {
+  CheckCircle2,
+  ChevronDown,
+  FileText,
+  Layers,
+  Plus,
+  X,
+} from "lucide-react";
 import {
   StageMaterialPicker,
   type MaterialAllocation,
 } from "./StageMaterialPicker";
 import type { DomainCode } from "@/features/farm-supply";
+import { getSupplyTypeOptions } from "@/shared/hooks/useRemoteSupplySearch";
+
+// Stat-pill colors keyed by the underlying supply type (`value`), not the
+// (domain-specific) label text, so they stay stable across CROP/LIVESTOCK/
+// AQUACULTURE wording differences.
+const MATERIAL_TYPE_STAT_COLORS: Record<string, string> = {
+  medicine: "bg-red-50 text-red-700 border-red-200",
+  fertilizer: "bg-green-50 text-green-700 border-green-200",
+  material: "bg-slate-100 text-slate-600 border-slate-200",
+  equipment: "bg-blue-50 text-blue-700 border-blue-200",
+};
 
 export interface WorkTaskDetail {
   id: string;
@@ -78,11 +96,23 @@ export function WorkAllocationCard({
   onUpdateActualQuantity,
 }: WorkAllocationCardProps) {
   const [newStageInput, setNewStageInput] = useState("");
+  // Collapsed by default — the header already surfaces the progress/priority
+  // summary, so the detail form + material picker only need to open when the
+  // user actually wants to edit that item. Accordion behaviour: opening one
+  // item closes whichever other item was open, so at most one stays open.
+  const [expandedStage, setExpandedStage] = useState<string | null>(null);
+
+  const toggleStage = (stage: string) => {
+    setExpandedStage((prev) => (prev === stage ? null : stage));
+  };
 
   const handleAddStage = () => {
-    if (!newStageInput.trim()) return;
-    onAddStage(newStageInput.trim());
+    const name = newStageInput.trim();
+    if (!name) return;
+    onAddStage(name);
     setNewStageInput("");
+    // Auto-open the freshly added item so the user can fill it in right away.
+    setExpandedStage(name);
   };
 
   return (
@@ -146,13 +176,38 @@ export function WorkAllocationCard({
                 PRIORITY_MAP[detail.priority || "MEDIUM"] ||
                 PRIORITY_MAP.MEDIUM;
 
+              const isItemExpanded = expandedStage === stage;
+
+              // Collapsed-state summary: how many materials of each supply
+              // type are allocated to this stage, so the card stays useful
+              // at a glance without opening it.
+              const stageMaterials = materialAllocations.filter(
+                (m) => m.stageId === stage,
+              );
+              const materialStats = getSupplyTypeOptions(domainCode)
+                .map((opt) => ({
+                  ...opt,
+                  count: stageMaterials.filter(
+                    (m) => m.materialType === opt.label,
+                  ).length,
+                }))
+                .filter((opt) => opt.count > 0);
+
               return (
                 <div
                   key={stage}
-                  className="rounded-2xl border border-slate-200 bg-white p-4 shadow-2xs space-y-4"
+                  className="rounded-2xl border border-slate-200 bg-white p-4 shadow-2xs"
                 >
-                  {/* Item Header */}
-                  <div className="space-y-2 pb-3 border-b border-slate-100">
+                  {/* Item Header — click to expand/collapse the detail form
+                      below. The bottom divider only makes sense when there's
+                      content below it to separate from, so it's hidden while
+                      collapsed. */}
+                  <div
+                    className={`space-y-2 pb-3 cursor-pointer select-none ${
+                      isItemExpanded ? "border-b border-slate-100" : ""
+                    }`}
+                    onClick={() => toggleStage(stage)}
+                  >
                     <div className="flex items-center justify-between gap-2">
                       <div className="flex items-center gap-3 min-w-0">
                         <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-green-100 text-[11px] text-green-700 font-bold">
@@ -181,12 +236,20 @@ export function WorkAllocationCard({
                         </Badge>
                         <button
                           type="button"
-                          onClick={() => onRemoveStage(stage)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onRemoveStage(stage);
+                          }}
                           className="text-slate-400 hover:text-red-500 p-1 rounded-lg hover:bg-red-50 transition-colors"
                           title="Xóa công việc này"
                         >
                           <X className="h-4 w-4" />
                         </button>
+                        <ChevronDown
+                          className={`h-4 w-4 text-slate-400 transition-transform duration-200 ${
+                            isItemExpanded ? "rotate-180" : ""
+                          }`}
+                        />
                       </div>
                     </div>
 
@@ -197,104 +260,143 @@ export function WorkAllocationCard({
                         style={{ width: `${detail.progress}%` }}
                       />
                     </div>
-                  </div>
 
-                  {/* Form Chi tiết thực thi Công việc */}
-                  <div className="p-3.5 rounded-xl border border-slate-200 bg-slate-50/60 space-y-3">
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
-                        <CheckCircle2 className="w-3.5 h-3.5 text-green-600" />
-                        Thông tin thực hiện công việc
-                      </span>
-                      {/* Read-only Priority Badge */}
-                      <Badge
-                        variant="outline"
-                        className={`text-[10px] font-bold py-0.5 px-2 ${prioInfo.className}`}
-                      >
-                        Ưu tiên: {prioInfo.label}
-                      </Badge>
-                    </div>
-
-                    {/* Editable Fields: Tiến độ (%) & Thời gian kết thúc */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-                      {/* Field 1: Tiến độ % (Editable) */}
-                      <div className="space-y-1">
-                        <div className="flex justify-between items-center text-[10px] font-bold text-slate-500">
-                          <span>Tiến độ hoàn thành</span>
-                          <span className="text-green-700 font-extrabold">
-                            {detail.progress}%
+                    {/* Collapsed-state summary — material stats by type, so
+                        the card still carries useful info while closed. */}
+                    {!isItemExpanded && (
+                      <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                        {materialStats.length > 0 ? (
+                          materialStats.map((stat) => (
+                            <span
+                              key={stat.value}
+                              className={`text-[10px] font-bold px-2 py-0.5 rounded-lg border ${
+                                MATERIAL_TYPE_STAT_COLORS[stat.value] ||
+                                "bg-slate-100 text-slate-600 border-slate-200"
+                              }`}
+                            >
+                              {stat.label}: {stat.count}
+                            </span>
+                          ))
+                        ) : (
+                          <span className="text-[10px] font-medium text-slate-400 italic">
+                            Chưa có vật tư nào
                           </span>
-                        </div>
-                        <Input
-                          type="number"
-                          min={0}
-                          max={100}
-                          clearable={false}
-                          value={detail.progress}
-                          onChange={(e) => {
-                            const val = Math.min(
-                              100,
-                              Math.max(0, Number(e.target.value) || 0),
-                            );
-                            onUpdateWorkTaskDetail(stage, { progress: val });
-                          }}
-                          className="h-9 text-xs bg-white border-slate-200 font-bold rounded-lg"
-                        />
+                        )}
                       </div>
-
-                      {/* Field 2: Thời gian kết thúc (Editable) */}
-                      <div className="space-y-1">
-                        <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">
-                          Thời gian kết thúc
-                        </span>
-                        <Input
-                          type="date"
-                          value={detail.endDate}
-                          onChange={(e) =>
-                            onUpdateWorkTaskDetail(stage, {
-                              endDate: e.target.value,
-                            })
-                          }
-                          className="h-9 text-xs bg-white border-slate-200 rounded-lg font-medium"
-                        />
-                      </div>
-
-                      {/* Field 3: Ngày bắt đầu (View-only) */}
-                      <div className="space-y-1 sm:col-span-2">
-                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
-                          Ngày bắt đầu
-                        </span>
-                        <div className="h-9 px-3 flex items-center text-xs bg-slate-100/70 border border-slate-200 rounded-lg text-slate-600 font-medium">
-                          {detail.startDate || "Theo kế hoạch"}
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Field 4: Mô tả công việc (View-only) */}
-                    <div className="space-y-1 pt-1">
-                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
-                        Mô tả công việc
-                      </span>
-                      <div className="p-2.5 text-xs bg-slate-100/70 border border-slate-200 rounded-lg text-slate-700 font-medium leading-relaxed min-h-[38px]">
-                        {detail.description || "Không có mô tả chi tiết."}
-                      </div>
-                    </div>
+                    )}
                   </div>
 
-                  {/* Phân bổ vật tư cho Công việc này */}
-                  <div className="space-y-3 pt-3 border-t border-slate-100">
-                    <div className="flex items-center gap-1.5 text-xs font-bold text-slate-700">
-                      <Layers className="w-3.5 h-3.5 text-green-600" />
-                      <span>Cấp phát & Phân bổ vật tư</span>
+                  {/* Animated collapse: grid-template-rows tween from 0fr to
+                      1fr, with the inner wrapper clipping overflow so the
+                      height transition reads smoothly in both directions. */}
+                  <div
+                    className={`grid transition-[grid-template-rows,margin-top,opacity] duration-300 ease-in-out ${
+                      isItemExpanded
+                        ? "grid-rows-[1fr] mt-4 opacity-100"
+                        : "grid-rows-[0fr] mt-0 opacity-0"
+                    }`}
+                  >
+                    <div className="overflow-hidden space-y-4">
+                      {/* Form Chi tiết thực thi Công việc */}
+                      <div className="p-3.5 rounded-xl border border-slate-200 bg-slate-50/60 space-y-3">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                            <CheckCircle2 className="w-3.5 h-3.5 text-green-600" />
+                            Thông tin thực hiện công việc
+                          </span>
+                          {/* Read-only Priority Badge */}
+                          <Badge
+                            variant="outline"
+                            className={`text-[10px] font-bold py-0.5 px-2 ${prioInfo.className}`}
+                          >
+                            Ưu tiên: {prioInfo.label}
+                          </Badge>
+                        </div>
+
+                        {/* Editable Fields: Tiến độ (%) & Thời gian kết thúc */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                          {/* Field 1: Tiến độ % (Editable) */}
+                          <div className="space-y-1">
+                            <div className="flex justify-between items-center text-[10px] font-bold text-slate-500">
+                              <span>Tiến độ hoàn thành</span>
+                              <span className="text-green-700 font-extrabold">
+                                {detail.progress}%
+                              </span>
+                            </div>
+                            <Input
+                              type="number"
+                              min={0}
+                              max={100}
+                              clearable={false}
+                              value={detail.progress}
+                              onChange={(e) => {
+                                const val = Math.min(
+                                  100,
+                                  Math.max(0, Number(e.target.value) || 0),
+                                );
+                                onUpdateWorkTaskDetail(stage, {
+                                  progress: val,
+                                });
+                              }}
+                              className="h-9 text-xs bg-white border-slate-200 font-bold rounded-lg"
+                            />
+                          </div>
+
+                          {/* Field 2: Thời gian kết thúc (Editable) */}
+                          <div className="space-y-1">
+                            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">
+                              Thời gian kết thúc
+                            </span>
+                            <Input
+                              type="date"
+                              value={detail.endDate}
+                              onChange={(e) =>
+                                onUpdateWorkTaskDetail(stage, {
+                                  endDate: e.target.value,
+                                })
+                              }
+                              className="h-9 text-xs bg-white border-slate-200 rounded-lg font-medium"
+                            />
+                          </div>
+
+                          {/* Field 3: Ngày bắt đầu (View-only) */}
+                          <div className="space-y-1 sm:col-span-2">
+                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+                              Ngày bắt đầu
+                            </span>
+                            <div className="h-9 px-3 flex items-center text-xs bg-slate-100/70 border border-slate-200 rounded-lg text-slate-600 font-medium">
+                              {detail.startDate || "Theo kế hoạch"}
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Field 4: Mô tả công việc (View-only) */}
+                        <div className="space-y-1 pt-1">
+                          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+                            Mô tả công việc
+                          </span>
+                          <div className="p-2.5 text-xs bg-slate-100/70 border border-slate-200 rounded-lg text-slate-700 font-medium leading-relaxed min-h-[38px]">
+                            {detail.description || "Không có mô tả chi tiết."}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Phân bổ vật tư cho Công việc này */}
+                      <div className="space-y-3 pt-3 border-t border-slate-100">
+                        <div className="flex items-center gap-1.5 text-xs font-bold text-slate-700">
+                          <Layers className="w-3.5 h-3.5 text-green-600" />
+                          <span>Cấp phát & Phân bổ vật tư</span>
+                        </div>
+                        <StageMaterialPicker
+                          stageKey={stage}
+                          allocations={materialAllocations}
+                          onAddMaterial={onAddMaterial}
+                          onRemoveMaterial={onRemoveMaterial}
+                          onUpdateActualQuantity={onUpdateActualQuantity}
+                          domainCode={domainCode}
+                        />
+                      </div>
                     </div>
-                    <StageMaterialPicker
-                      stageKey={stage}
-                      allocations={materialAllocations}
-                      onAddMaterial={onAddMaterial}
-                      onRemoveMaterial={onRemoveMaterial}
-                      onUpdateActualQuantity={onUpdateActualQuantity}
-                      domainCode={domainCode}
-                    />
                   </div>
                 </div>
               );
