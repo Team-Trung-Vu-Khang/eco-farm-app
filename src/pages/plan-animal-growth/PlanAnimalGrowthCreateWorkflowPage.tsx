@@ -975,8 +975,8 @@ export default function PlanAnimalGrowthCreateWorkflowPage() {
 
   return (
     <PageWrapper
-      title="Sơ đồ quy trình chăn nuôi"
-      description="Quy trình triển khai các kế hoạch được liên kết với nhau trên sơ đồ"
+      title="Vụ chăn nuôi"
+      description="Quy trình triển khai các kế hoạch được liên kết với nhau trong vụ chăn nuôi"
       actions={
         <div className="flex flex-wrap gap-2">
           <Button
@@ -993,7 +993,7 @@ export default function PlanAnimalGrowthCreateWorkflowPage() {
             onClick={handleSaveWorkflow}
           >
             <Save className="mr-2 h-4 w-4" />
-            Lưu quy trình
+            Lưu thông tin
           </Button>
         </div>
       }
@@ -1002,16 +1002,13 @@ export default function PlanAnimalGrowthCreateWorkflowPage() {
         {infoNodes.length === 0 ? (
           <div className="rounded-3xl border border-dashed border-slate-300 bg-white p-10 text-center shadow-sm">
             <Workflow className="mx-auto h-10 w-10 text-slate-400" />
-            <p className="mt-4 text-lg font-semibold text-slate-900">
-              Chưa có sơ đồ quy trình
-            </p>
-            <p className="mx-auto mt-2 max-w-md text-sm text-slate-600">
-              Tạo thông tin sơ đồ quy trình trước khi bắt đầu xây dựng các kế
-              hoạch liên kết với nhau.
+            <p className="mx-auto mt-4 max-w-md text-sm text-slate-600">
+              Bắt đầu vụ chăn nuôi mới trước khi xây dựng các kế hoạch liên
+              kết với nhau.
             </p>
             <Button className="mt-6" onClick={handleOpenCreateInfoNode}>
               <Plus className="mr-2 h-4 w-4" />
-              Tạo sơ đồ quy trình
+              Tạo thông tin vụ mới
             </Button>
           </div>
         ) : (

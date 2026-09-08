@@ -10,8 +10,8 @@ export interface GrowthStage {
 export interface GrowthCycle {
   id: string;
   name: string;
-  cycleType?: "plant";
-  scope: "group" | "crop" | "variety";
+  cycleType?: "plant" | "animal" | "aquaculture";
+  scope: "group" | "crop" | "variety" | "livestock" | "aquaculture";
   scopeNames?: string[];
   cropId: string;
   cropName: string;

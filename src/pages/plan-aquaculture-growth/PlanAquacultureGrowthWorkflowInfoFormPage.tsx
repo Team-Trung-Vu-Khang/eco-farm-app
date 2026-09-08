@@ -441,8 +441,8 @@ export default function PlanAquacultureGrowthWorkflowInfoFormPage() {
 
   return (
     <PageWrapper
-      title={isEdit ? "Chỉnh sửa sơ đồ quy trình" : "Tạo sơ đồ quy trình"}
-      description="Tên, mô tả và vùng nuôi trồng thủy sản áp dụng cho quy trình này"
+      title={isEdit ? "Chỉnh sửa thông tin vụ nuôi" : "Khởi tạo thông tin vụ mới"}
+      description="Mô tả thông tin canh tác áp dụng cho vụ nuôi trồng thủy sản này"
       actions={
         <div className="flex flex-wrap gap-2">
           <Button
@@ -474,12 +474,12 @@ export default function PlanAquacultureGrowthWorkflowInfoFormPage() {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>
-                      Tên sơ đồ
+                      Thông tin vụ nuôi
                       <span className="text-destructive ml-1">*</span>
                     </FormLabel>
                     <FormControl>
                       <Input
-                        placeholder="VD: Sơ đồ nuôi tôm vụ 1"
+                        placeholder="Ví dụ: Vụ tôm đông xuân 2026"
                         data-testid="input-diagram-name"
                         {...field}
                       />

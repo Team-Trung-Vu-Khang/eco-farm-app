@@ -112,10 +112,10 @@ function getDurationLabel(startDate?: string | null, endDate?: string | null) {
 }
 
 /** Fixed per module: this page only ever renders this plan type. */
-const WORKFLOW_TITLE = "Sơ đồ quy trình canh tác";
+const WORKFLOW_TITLE = "Vụ mùa canh tác";
 
 const WORKFLOW_DESCRIPTION =
-  "Quy trình triển khai các kế hoạch được liên kết với nhau trên sơ đồ.";
+  "Quy trình triển khai các kế hoạch được liên kết với nhau trong vụ mùa.";
 
 function countWorkers(tasks: Plan["taskAllocations"]) {
   const total = tasks.reduce((sum, task) => {

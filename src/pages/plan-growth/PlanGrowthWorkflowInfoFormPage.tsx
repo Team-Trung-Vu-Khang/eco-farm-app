@@ -441,8 +441,8 @@ export default function PlanGrowthWorkflowInfoFormPage() {
 
   return (
     <PageWrapper
-      title={isEdit ? "Chỉnh sửa sơ đồ quy trình" : "Tạo sơ đồ quy trình"}
-      description="Tên, mô tả và vùng canh tác áp dụng cho quy trình này"
+      title={isEdit ? "Chỉnh sửa thông tin vụ mùa" : "Khởi tạo thông tin vụ mới"}
+      description="Mô tả thông tin canh tác áp dụng cho vụ mùa trồng trọt này"
       actions={
         <div className="flex flex-wrap gap-2">
           <Button
@@ -474,12 +474,12 @@ export default function PlanGrowthWorkflowInfoFormPage() {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>
-                      Tên sơ đồ
+                      Thông tin vụ mùa
                       <span className="text-destructive ml-1">*</span>
                     </FormLabel>
                     <FormControl>
                       <Input
-                        placeholder="VD: Sơ đồ canh tác lúa vụ Hè Thu"
+                        placeholder="Ví dụ: Vụ lúa đông xuân 2026"
                         data-testid="input-diagram-name"
                         {...field}
                       />
