@@ -128,13 +128,22 @@ export default function PlanDiaryPage() {
               <p className="font-bold text-slate-800 text-[13px] leading-snug mt-0.5">
                 {row.name}
               </p>
-              <p className="text-xs text-slate-400 mt-0.5">
-                {row.workflow?.name || "—"}
-                {row.plan ? ` • ${row.plan.name}` : ""}
-              </p>
+              {row.plan && (
+                <p className="text-xs text-slate-400 mt-0.5">{row.plan.name}</p>
+              )}
             </div>
           </div>
         ),
+      },
+      {
+        key: "workflow",
+        label: "Vụ mùa",
+        render: (_value, row) =>
+          row.workflow?.name ? (
+            <span className="text-xs font-semibold text-slate-600">{row.workflow.name}</span>
+          ) : (
+            <span className="text-xs text-slate-300 italic">—</span>
+          ),
       },
       {
         key: "scope",
