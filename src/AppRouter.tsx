@@ -8,16 +8,16 @@ import { AdminReportPage } from "./pages/reports/AdminReportPage";
 
 const DashboardPage = lazy(() => import("./pages/dashboard/Dashboard"));
 const HistoryCreatePage = lazy(
-  () => import("./pages/history/HistoryCreatePage"),
+  () => import("./pages/diary/HistoryCreatePage"),
 );
-const HistoryPage = lazy(() => import("./pages/history/HistoryPage"));
-const PlanDiaryPage = lazy(() => import("./pages/history/PlanDiaryPage"));
-const PlanDiaryDetailPage = lazy(() => import("./pages/history/PlanDiaryDetailPage"));
-const UpdateHistoryPage = lazy(() => import("./pages/history/UpdateHistoryPage"));
+const HistoryPage = lazy(() => import("./pages/diary/HistoryPage"));
+const PlanDiaryPage = lazy(() => import("./pages/diary/PlanDiaryPage"));
+const PlanDiaryDetailPage = lazy(() => import("./pages/diary/PlanDiaryDetailPage"));
+const UpdateHistoryPage = lazy(() => import("./pages/diary/UpdateHistoryPage"));
 const UpdateHistoryDetailPage = lazy(
-  () => import("./pages/history/UpdateHistoryDetailPage"),
+  () => import("./pages/diary/UpdateHistoryDetailPage"),
 );
-const DiaryLookupPage = lazy(() => import("./pages/history/DiaryLookupPage"));
+const DiaryLookupPage = lazy(() => import("./pages/diary/DiaryLookupPage"));
 
 const PlanHistoryPage = () => <UpdateHistoryPage scope="PLANNED" />;
 const DailyHistoryPage = () => <UpdateHistoryPage scope="AD_HOC" />;

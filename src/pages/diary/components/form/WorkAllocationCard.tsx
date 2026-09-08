@@ -1,0 +1,481 @@
+import React, { useState } from "react";
+import {
+  Badge,
+  Button,
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  Input,
+} from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import {
+  CheckCircle2,
+  ChevronDown,
+  FileText,
+  Layers,
+  Plus,
+  X,
+} from "lucide-react";
+import {
+  StageMaterialPicker,
+  type MaterialAllocation,
+} from "./StageMaterialPicker";
+import type { DomainCode } from "@/features/farm-supply";
+import { getSupplyTypeOptions } from "@/shared/hooks/useRemoteSupplySearch";
+
+// Stat-pill colors keyed by the underlying supply type (`value`), not the
+// (domain-specific) label text, so they stay stable across CROP/LIVESTOCK/
+// AQUACULTURE wording differences.
+const MATERIAL_TYPE_STAT_COLORS: Record<string, string> = {
+  medicine: "bg-red-50 text-red-700 border-red-200",
+  fertilizer: "bg-emerald-50 text-emerald-700 border-emerald-200",
+  material: "bg-slate-100 text-slate-600 border-slate-200",
+  equipment: "bg-blue-50 text-blue-700 border-blue-200",
+};
+
+export interface WorkTaskDetail {
+  id: string;
+  stageName: string;
+  progress: number;
+  priority?: "LOW" | "MEDIUM" | "HIGH" | "URGENT";
+  startDate?: string;
+  endDate: string;
+  description?: string;
+  isDirty?: boolean;
+}
+
+interface WorkAllocationCardProps {
+  title?: string;
+  selectedStages: string[];
+  plannedStages: string[];
+  isPlannedMode: boolean;
+  workTaskDetails: Record<string, WorkTaskDetail>;
+  materialAllocations: MaterialAllocation[];
+  domainCode: DomainCode;
+  onAddStage: (stageName: string) => void;
+  onRemoveStage: (stageName: string) => void;
+  onUpdateWorkTaskDetail: (
+    stageName: string,
+    updates: Partial<WorkTaskDetail>,
+  ) => void;
+  onAddMaterial: (item: Omit<MaterialAllocation, "id">) => void;
+  onRemoveMaterial: (id: number) => void;
+  onUpdateActualQuantity: (id: number, val: string) => void;
+}
+
+const PRIORITY_MAP = {
+  LOW: {
+    label: "Thấp",
+    className: "bg-slate-100 text-slate-600 border-slate-200",
+  },
+  MEDIUM: {
+    label: "Trung bình",
+    className: "bg-blue-50 text-blue-700 border-blue-200",
+  },
+  HIGH: {
+    label: "Cao",
+    className: "bg-amber-50 text-amber-700 border-amber-200",
+  },
+  URGENT: {
+    label: "Khẩn cấp",
+    className: "bg-red-50 text-red-700 border-red-200",
+  },
+};
+
+export function WorkAllocationCard({
+  title = "Phân bổ công việc",
+  selectedStages,
+  plannedStages,
+  isPlannedMode,
+  workTaskDetails,
+  materialAllocations,
+  domainCode,
+  onAddStage,
+  onRemoveStage,
+  onUpdateWorkTaskDetail,
+  onAddMaterial,
+  onRemoveMaterial,
+  onUpdateActualQuantity,
+}: WorkAllocationCardProps) {
+  const [newStageInput, setNewStageInput] = useState("");
+  // Collapsed by default — the header already surfaces the progress/priority
+  // summary, so the detail form + material picker only need to open when the
+  // user actually wants to edit that item. Accordion behaviour: opening one
+  // item closes whichever other item was open, so at most one stays open.
+  const [expandedStage, setExpandedStage] = useState<string | null>(null);
+
+  const toggleStage = (stage: string) => {
+    setExpandedStage((prev) => (prev === stage ? null : stage));
+  };
+
+  const handleAddStage = () => {
+    const name = newStageInput.trim();
+    if (!name) return;
+    onAddStage(name);
+    setNewStageInput("");
+    // Auto-open the freshly added item so the user can fill it in right away.
+    setExpandedStage(name);
+  };
+
+  return (
+    <Card className="border-none shadow-sm bg-white rounded-2xl overflow-hidden">
+      <CardHeader className="pb-3 border-b border-slate-100 bg-white">
+        <CardTitle className="text-base font-bold flex items-center justify-between">
+          <span className="flex items-center gap-2 text-slate-900">
+            <FileText className="w-4 h-4 text-emerald-600" />
+            {title}
+          </span>
+          <Badge
+            variant="outline"
+            className="bg-emerald-50 text-emerald-700 border-emerald-200 font-bold text-xs"
+          >
+            {selectedStages.length} công việc
+          </Badge>
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="pt-5 space-y-5">
+        {/* Input thêm công việc mới */}
+        <div className="flex gap-2">
+          <Input
+            placeholder="Thêm hạng mục / công việc mới (Làm đất, Gieo hạt...)"
+            value={newStageInput}
+            onChange={(e) => setNewStageInput(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                handleAddStage();
+              }
+            }}
+            className="h-11 bg-white border-slate-200 font-medium text-xs rounded-xl"
+          />
+          <Button
+            type="button"
+            onClick={handleAddStage}
+            className="h-11 rounded-xl px-5 text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white shrink-0 shadow-2xs cursor-pointer"
+          >
+            <Plus className="w-4 h-4 mr-1" />
+            Thêm công việc
+          </Button>
+        </div>
+
+        {/* Danh sách các Item Công việc */}
+        {selectedStages.length > 0 ? (
+          <div className="space-y-6">
+            {selectedStages.map((stage, index) => {
+              const isPlannedStage =
+                isPlannedMode && plannedStages.includes(stage);
+              const detail: WorkTaskDetail = workTaskDetails[stage] || {
+                id: stage,
+                stageName: stage,
+                progress: 100,
+                priority: "MEDIUM",
+                startDate: new Date().toISOString().split("T")[0],
+                endDate: new Date().toISOString().split("T")[0],
+                description: "",
+              };
+
+              const prioInfo =
+                PRIORITY_MAP[detail.priority || "MEDIUM"] ||
+                PRIORITY_MAP.MEDIUM;
+
+              const isItemExpanded = expandedStage === stage;
+
+              // Collapsed-state summary: how many materials of each supply
+              // type are allocated to this stage, so the card stays useful
+              // at a glance without opening it.
+              const stageMaterials = materialAllocations.filter(
+                (m) => m.stageId === stage,
+              );
+              const materialStats = getSupplyTypeOptions(domainCode)
+                .map((opt) => ({
+                  ...opt,
+                  count: stageMaterials.filter(
+                    (m) => m.materialType === opt.label,
+                  ).length,
+                }))
+                .filter((opt) => opt.count > 0);
+
+              return (
+                <div
+                  key={stage}
+                  className="rounded-2xl border border-slate-200 bg-white p-4 shadow-2xs"
+                >
+                  {/* Item Header — click to expand/collapse the detail form
+                      below. The bottom divider only makes sense when there's
+                      content below it to separate from, so it's hidden while
+                      collapsed. */}
+                  <div
+                    className={`space-y-2 pb-3 cursor-pointer select-none ${
+                      isItemExpanded ? "border-b border-slate-100" : ""
+                    }`}
+                    onClick={() => toggleStage(stage)}
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-[11px] text-emerald-700 font-bold">
+                          {index + 1}
+                        </span>
+                        <span className="font-extrabold text-sm text-slate-900 truncate">
+                          {stage}
+                        </span>
+                      </div>
+
+                      <div className="flex items-center gap-2 shrink-0">
+                        {isPlannedStage ? (
+                          <span className="text-[10px] font-extrabold text-amber-700 bg-amber-50 border border-amber-200 px-2.5 py-0.5 rounded-lg">
+                            Kế hoạch
+                          </span>
+                        ) : (
+                          <span className="text-[10px] font-extrabold text-blue-700 bg-blue-50 border border-blue-200 px-2.5 py-0.5 rounded-lg">
+                            Phát sinh
+                          </span>
+                        )}
+                        {isPlannedMode && (
+                          <Badge
+                            variant="outline"
+                            className="bg-emerald-50 text-emerald-700 border-emerald-200 font-bold text-xs"
+                          >
+                            Tiến độ: {detail.progress}%
+                          </Badge>
+                        )}
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onRemoveStage(stage);
+                          }}
+                          className="text-slate-400 hover:text-red-500 p-1 rounded-lg hover:bg-red-50 transition-colors"
+                          title="Xóa công việc này"
+                        >
+                          <X className="h-4 w-4" />
+                        </button>
+                        <ChevronDown
+                          className={`h-4 w-4 text-slate-400 transition-transform duration-200 ${
+                            isItemExpanded ? "rotate-180" : ""
+                          }`}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Progress bar visual */}
+                    {isPlannedMode && (
+                      <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+                        <div
+                          className="bg-emerald-600 h-full transition-all duration-300 rounded-full"
+                          style={{ width: `${detail.progress}%` }}
+                        />
+                      </div>
+                    )}
+
+                    {/* Collapsed-state summary — material stats by type, so
+                        the card still carries useful info while closed. */}
+                    {!isItemExpanded && (
+                      <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                        {materialStats.length > 0 ? (
+                          materialStats.map((stat) => (
+                            <span
+                              key={stat.value}
+                              className={`text-[10px] font-bold px-2 py-0.5 rounded-lg border ${
+                                MATERIAL_TYPE_STAT_COLORS[stat.value] ||
+                                "bg-slate-100 text-slate-600 border-slate-200"
+                              }`}
+                            >
+                              {stat.label}: {stat.count}
+                            </span>
+                          ))
+                        ) : (
+                          <span className="text-[10px] font-medium text-slate-400 italic">
+                            Chưa có vật tư nào
+                          </span>
+                        )}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Animated collapse: grid-template-rows tween from 0fr to
+                      1fr, with the inner wrapper clipping overflow so the
+                      height transition reads smoothly in both directions. */}
+                  <div
+                    className={`grid transition-[grid-template-rows,margin-top,opacity] duration-300 ease-in-out ${
+                      isItemExpanded
+                        ? "grid-rows-[1fr] mt-4 opacity-100"
+                        : "grid-rows-[0fr] mt-0 opacity-0"
+                    }`}
+                  >
+                    <div className="overflow-hidden space-y-4">
+                      {/* Form Chi tiết thực thi Công việc */}
+                      <div className="p-3.5 rounded-xl border border-slate-200 bg-slate-50/60 space-y-3">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                            Thông tin thực hiện công việc
+                          </span>
+                          {/* Read-only Priority Badge (Planned Mode only) */}
+                          {isPlannedMode && (
+                            <Badge
+                              variant="outline"
+                              className={`text-[10px] font-bold py-0.5 px-2 ${prioInfo.className}`}
+                            >
+                              Ưu tiên: {prioInfo.label}
+                            </Badge>
+                          )}
+                        </div>
+
+                        {/* Fields: Daily Diary vs Planned Mode */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                          {isPlannedMode ? (
+                            <>
+                              {/* Field 1: Tiến độ % (Editable in Planned Mode) */}
+                              <div className="space-y-1">
+                                <div className="flex justify-between items-center text-[10px] font-bold text-slate-500">
+                                  <span>Tiến độ hoàn thành</span>
+                                  <span className="text-emerald-700 font-extrabold">
+                                    {detail.progress}%
+                                  </span>
+                                </div>
+                                <Input
+                                  type="number"
+                                  min={0}
+                                  max={100}
+                                  clearable={false}
+                                  value={detail.progress}
+                                  onChange={(e) => {
+                                    const val = Math.min(
+                                      100,
+                                      Math.max(0, Number(e.target.value) || 0),
+                                    );
+                                    onUpdateWorkTaskDetail(stage, {
+                                      progress: val,
+                                    });
+                                  }}
+                                  className="h-9 text-xs bg-white border-slate-200 font-bold rounded-lg"
+                                />
+                              </div>
+
+                              {/* Field 2: Thời gian kết thúc (Editable) */}
+                              <div className="space-y-1">
+                                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">
+                                  Thời gian kết thúc
+                                </span>
+                                <Input
+                                  type="date"
+                                  value={detail.endDate}
+                                  onChange={(e) =>
+                                    onUpdateWorkTaskDetail(stage, {
+                                      endDate: e.target.value,
+                                    })
+                                  }
+                                  className="h-9 text-xs bg-white border-slate-200 rounded-lg font-medium"
+                                />
+                              </div>
+
+                              {/* Field 3: Ngày bắt đầu (View-only in Planned Mode) */}
+                              <div className="space-y-1 sm:col-span-2">
+                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+                                  Ngày bắt đầu
+                                </span>
+                                <div className="h-9 px-3 flex items-center text-xs bg-slate-100/70 border border-slate-200 rounded-lg text-slate-600 font-medium">
+                                  {detail.startDate || "Theo kế hoạch"}
+                                </div>
+                              </div>
+
+                              {/* Field 4: Mô tả công việc (View-only in Planned Mode) */}
+                              <div className="space-y-1 sm:col-span-2 pt-1">
+                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+                                  Mô tả công việc
+                                </span>
+                                <div className="p-2.5 text-xs bg-slate-100/70 border border-slate-200 rounded-lg text-slate-700 font-medium leading-relaxed min-h-[38px]">
+                                  {detail.description ||
+                                    "Không có mô tả chi tiết."}
+                                </div>
+                              </div>
+                            </>
+                          ) : (
+                            <>
+                              {/* Field 1: Ngày bắt đầu (Editable in Daily Diary) */}
+                              <div className="space-y-1">
+                                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">
+                                  Ngày bắt đầu
+                                </span>
+                                <Input
+                                  type="date"
+                                  value={detail.startDate || ""}
+                                  onChange={(e) =>
+                                    onUpdateWorkTaskDetail(stage, {
+                                      startDate: e.target.value,
+                                    })
+                                  }
+                                  className="h-9 text-xs bg-white border-slate-200 rounded-lg font-medium"
+                                />
+                              </div>
+
+                              {/* Field 2: Thời gian kết thúc (Editable in Daily Diary) */}
+                              <div className="space-y-1">
+                                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">
+                                  Thời gian kết thúc
+                                </span>
+                                <Input
+                                  type="date"
+                                  value={detail.endDate || ""}
+                                  onChange={(e) =>
+                                    onUpdateWorkTaskDetail(stage, {
+                                      endDate: e.target.value,
+                                    })
+                                  }
+                                  className="h-9 text-xs bg-white border-slate-200 rounded-lg font-medium"
+                                />
+                              </div>
+
+                              {/* Field 3: Mô tả công việc (Editable in Daily Diary) */}
+                              <div className="space-y-1 sm:col-span-2 pt-1">
+                                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">
+                                  Mô tả công việc
+                                </span>
+                                <textarea
+                                  rows={2}
+                                  value={detail.description || ""}
+                                  onChange={(e) =>
+                                    onUpdateWorkTaskDetail(stage, {
+                                      description: e.target.value,
+                                    })
+                                  }
+                                  placeholder="Nhập mô tả chi tiết công việc..."
+                                  className="w-full p-2.5 text-xs bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 font-medium text-slate-700 placeholder:text-slate-400"
+                                />
+                              </div>
+                            </>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Phân bổ vật tư cho Công việc này */}
+                      <div className="space-y-3 pt-3 border-t border-slate-100">
+                        <div className="flex items-center gap-1.5 text-xs font-bold text-slate-700">
+                          <Layers className="w-3.5 h-3.5 text-emerald-600" />
+                          <span>Cấp phát & Phân bổ vật tư</span>
+                        </div>
+                        <StageMaterialPicker
+                          stageKey={stage}
+                          allocations={materialAllocations}
+                          onAddMaterial={onAddMaterial}
+                          onRemoveMaterial={onRemoveMaterial}
+                          onUpdateActualQuantity={onUpdateActualQuantity}
+                          domainCode={domainCode}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="rounded-xl border border-dashed border-slate-200 p-6 text-center text-xs text-slate-400">
+            Chưa có hạng mục / công việc nào. Hãy chọn từ Hạng mục dự kiến hoặc
+            nhập để thêm mới.
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
