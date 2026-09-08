@@ -36,6 +36,25 @@ export function useAquacultureZoneCreateForm(
     if (isEditMode) {
       if (!zoneData) return; // wait for data
 
+      // Build varietyLabels and varietyCropMap
+      const varietyLabels: Record<string, string> = {};
+      const varietyCropMap: Record<string, string> = {};
+
+      (zoneData.productionSubjectVariants ?? []).forEach((v) => {
+        if (!v.id) return;
+        varietyLabels[String(v.id)] = v.name || "";
+        const cId = v.productionSubject?.id || v.crop?.id;
+        if (cId) varietyCropMap[String(v.id)] = String(cId);
+      });
+
+      (zoneData.subjectVariants ?? []).forEach((s) => {
+        const vId = s.cropVariety?.id || s.subjectVariant?.id || s.id;
+        if (!vId) return;
+        varietyLabels[String(vId)] = s.cropVariety?.name || s.subjectVariant?.name || s.name || "";
+        const cId = s.productionSubject?.id || s.crop?.id || s.productionSubjectId;
+        if (cId) varietyCropMap[String(vId)] = String(cId);
+      });
+
       reset({
         id: zoneData.id,
         code: zoneData.code,
@@ -72,9 +91,25 @@ export function useAquacultureZoneCreateForm(
         }),
         farmingMethodId: zoneData.productionMethod?.id ?? 0,
         rearingMethodId: zoneData.rearingMethod?.id ?? 0,
-        seedIds: (zoneData.seeds ?? zoneData?.subjectVariants ?? []).map(
-          (s) => s.id,
-        ),
+        seedIds: (zoneData.subjectVariants ?? zoneData.seeds ?? []).map((s) => s.id),
+        cropIds:
+          (zoneData.metadataJson?.selectedCropIds as string[]) ||
+          (zoneData.subjectVariants ?? []).map((s) =>
+            (s.productionSubject?.id || s.crop?.id || 0).toString(),
+          ).filter((id) => id !== "0"),
+        cropSeedToggles:
+          (zoneData.metadataJson?.cropSeedToggles as Record<string, boolean>) || {},
+        varietyIds:
+          (zoneData.productionSubjectVariants ?? []).map((v) => v.id).filter(
+            (id) => id > 0,
+          ).length > 0
+            ? (zoneData.productionSubjectVariants ?? []).map((v) => v.id)
+            : (zoneData.subjectVariants ?? []).map(
+                (s) => s.cropVariety?.id || s.subjectVariant?.id || 0,
+              ).filter((id) => id > 0),
+        useSpecificSeeds: (zoneData.subjectVariants ?? []).length > 0,
+        varietyLabels,
+        varietyCropMap,
         certificateIds: (zoneData.certificates ?? []).map((c) => c.id),
         personnelIds: (zoneData.personnel ?? []).map((p) => p.id),
         notes: zoneData.notes ?? "",
@@ -89,6 +124,10 @@ export function useAquacultureZoneCreateForm(
         farmingMethodId: 0,
         rearingMethodId: 0,
         seedIds: [],
+        cropIds: [],
+        cropSeedToggles: {},
+        varietyIds: [],
+        useSpecificSeeds: false,
         certificateIds: [],
         personnelIds: [],
         notes: "",
@@ -105,6 +144,17 @@ export function useAquacultureZoneCreateForm(
   ) => {
     setIsSubmitting(true);
     try {
+      const buildVariantPayload = (useSpecific: boolean, seedIds: number[], varietyIds: number[]) => {
+        if (useSpecific) {
+          return { subjectVariantIds: seedIds };
+        } else {
+          return { productionSubjectVariantIds: varietyIds };
+        }
+      };
+
+      const seedIds = (data.seedIds ?? []).map(Number).filter((id) => !isNaN(id) && id > 0);
+      const varietyIds = (data.varietyIds ?? []).filter((id) => id > 0);
+
       const request: FarmCultivationZoneRequest = {
         code: isEditMode ? zoneData?.code || data.code : undefined,
         name: data.name,
@@ -133,7 +183,7 @@ export function useAquacultureZoneCreateForm(
         rearingMethodId: data.rearingMethodId
           ? Number(data.rearingMethodId)
           : undefined,
-        seedIds: (data.seedIds ?? []).map(Number).filter((id) => !isNaN(id)),
+        ...buildVariantPayload(!!data.useSpecificSeeds, seedIds, varietyIds),
         certificateIds: isEditMode
           ? (data.certificateIds ?? []).map(Number).filter((id) => !isNaN(id))
           : undefined,

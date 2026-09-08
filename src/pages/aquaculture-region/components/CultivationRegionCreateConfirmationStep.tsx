@@ -8,8 +8,21 @@ import {
   Waves,
 } from "lucide-react";
 import { Badge, Card } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import type { CultivationRegionConfig } from "../../../stores/useCultivationRegionStore";
 import type { CultivationRegionTargetEntity } from "../hooks/useCultivationRegionCreatePage";
+
+type VarietySummary = {
+  id: number;
+  name: string;
+  code: string;
+  seeds?: Array<{ id: number; name: string }>;
+};
+
+type CropSummaryItem = {
+  cropId: number;
+  cropName: string;
+  cropCode: string;
+  checkedVarieties: VarietySummary[];
+};
 
 type Props = {
   name: string;
@@ -24,11 +37,11 @@ type Props = {
     code: string;
     name: string;
   }>;
-  commonConfig: CultivationRegionConfig;
+  farmingMethodId: string;
+  irrigationMethodId: string;
   farmingMethods: Array<{ id: string; name: string }>;
   irrigationSystems: Array<{ id: string; name: string }>;
-  varieties: Array<{ id: string; varietyName: string }>;
-  seeds: Array<{ id: string; varietyName: string }>;
+  cropSummary: CropSummaryItem[];
   title?: string;
   description?: string;
 };
@@ -39,11 +52,11 @@ export const CultivationRegionCreateConfirmationStep = ({
   entities,
   selectedManagers,
   selectedCerts,
-  commonConfig,
+  farmingMethodId,
+  irrigationMethodId,
   farmingMethods,
   irrigationSystems,
-  varieties,
-  seeds,
+  cropSummary,
   title = "Xác nhận thông tin",
   description = "Vui lòng kiểm tra kỹ các thông tin dưới đây. Sau khi xác nhận, hệ thống sẽ tiến hành khởi tạo vùng nuôi trồng mới.",
 }: Props) => {
@@ -118,12 +131,16 @@ export const CultivationRegionCreateConfirmationStep = ({
                 {selectedCerts.length > 0 && (
                   <tr className="border-b border-slate-100">
                     <td className="py-3 px-4 text-muted-foreground">
-                      Chứng nhận
+                      Tiêu chuẩn chứng nhận
                     </td>
                     <td className="py-3 px-4">
                       <div className="flex flex-wrap gap-2">
                         {selectedCerts.map((cert) => (
-                          <Badge key={cert.code} variant="secondary">
+                          <Badge
+                            key={cert.code}
+                            variant="outline"
+                            className="text-xs border-cyan-200 text-cyan-700 bg-cyan-50"
+                          >
                             {cert.name}
                           </Badge>
                         ))}
@@ -171,9 +188,10 @@ export const CultivationRegionCreateConfirmationStep = ({
             </h4>
           </div>
           <div className="p-6 space-y-6">
+            {/* Farming method + Rearing */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 flex items-start gap-3">
-                <div className="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center text-green-600 shrink-0">
+                <div className="w-10 h-10 rounded-lg bg-cyan-100 flex items-center justify-center text-cyan-600 shrink-0">
                   <ScrollText className="w-5 h-5" />
                 </div>
                 <div>
@@ -181,9 +199,8 @@ export const CultivationRegionCreateConfirmationStep = ({
                     Loại hình nuôi
                   </div>
                   <div className="font-bold text-slate-900">
-                    {farmingMethods.find(
-                      (method) => method.id === commonConfig.farmingMethodId,
-                    )?.name || (
+                    {farmingMethods.find((m) => m.id === farmingMethodId)
+                      ?.name || (
                       <span className="text-red-500 italic">Chưa chọn</span>
                     )}
                   </div>
@@ -199,69 +216,100 @@ export const CultivationRegionCreateConfirmationStep = ({
                     Hình thức nuôi thả
                   </div>
                   <div className="font-bold text-slate-900">
-                    {irrigationSystems.find(
-                      (method) => method.id === commonConfig.irrigationMethodId,
-                    )?.name || (
-                      <span className="text-red-500 italic">Chưa chọn</span>
+                    {irrigationSystems.find((s) => s.id === irrigationMethodId)
+                      ?.name || (
+                      <span className="text-slate-400 italic text-sm">
+                        Chưa chọn
+                      </span>
                     )}
                   </div>
                 </div>
               </div>
             </div>
 
-            <div className="pt-6 border-t border-slate-100">
-              <div className="text-xs text-muted-foreground uppercase tracking-wider font-bold mb-4 flex items-center gap-2">
+            {/* 3-level summary */}
+            <div className="pt-4 border-t border-slate-100">
+              <div className="text-xs text-muted-foreground uppercase tracking-wider font-bold mb-3 flex items-center gap-2">
                 <Fish className="w-4 h-4 text-cyan-600" />
-                Danh sách loài nuôi áp dụng (
-                {(commonConfig.selectedCrops || []).length})
+                Loài nuôi &amp; Giống ({cropSummary.length} loài nuôi)
               </div>
-              <div className="grid grid-cols-1 gap-3">
-                {(commonConfig.selectedCrops || []).length > 0 ? (
-                  (commonConfig.selectedCrops || []).map((cropId) => {
-                    const crop = varieties.find((item) => item.id === cropId);
 
-                    return (
-                      <div
-                        key={cropId}
-                        className="flex flex-col sm:flex-row sm:items-center gap-2 p-3 rounded-lg border border-slate-100 bg-white"
-                      >
-                        <div className="flex items-center gap-2 min-w-50">
-                          <div className="w-2 h-2 rounded-full bg-green-500" />
-                          <span className="font-bold text-slate-800">
-                            {crop?.varietyName}
-                          </span>
+              {cropSummary.length === 0 ? (
+                <span className="text-red-500 italic text-sm">
+                  Chưa chọn loài nuôi
+                </span>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {cropSummary.map((crop) => (
+                    <div
+                      key={crop.cropId}
+                      className="rounded-xl border border-slate-200 bg-white overflow-hidden"
+                    >
+                      {/* Species header */}
+                      <div className="flex items-center gap-2 px-4 py-3 bg-cyan-50/60 border-b border-slate-100">
+                        <div className="w-6 h-6 rounded-md bg-cyan-100 flex items-center justify-center shrink-0">
+                          <Fish className="w-3.5 h-3.5 text-cyan-600" />
                         </div>
-                        {commonConfig.seedSelections?.[cropId] &&
-                          commonConfig.seedSelections[cropId].length > 0 && (
-                            <div className="flex flex-wrap gap-1 items-center ml-4 sm:ml-0">
-                              <span className="text-xs text-muted-foreground italic mr-1">
-                                Con giống:
-                              </span>
-                              {commonConfig.seedSelections[cropId].map(
-                                (seedId) => (
-                                  <Badge
-                                    key={seedId}
-                                    variant="secondary"
-                                    className="text-[10px] bg-slate-100"
-                                  >
-                                    {
-                                      seeds.find((seed) => seed.id === seedId)
-                                        ?.varietyName
-                                    }
-                                  </Badge>
-                                ),
+                        <span className="font-semibold text-sm text-slate-800">
+                          {crop.cropName}
+                        </span>
+                        {crop.cropCode && (
+                          <span className="text-xs text-muted-foreground ml-1">
+                            ({crop.cropCode})
+                          </span>
+                        )}
+                        <Badge
+                          variant="secondary"
+                          className="ml-auto text-[10px]"
+                        >
+                          {crop.checkedVarieties.length} giống đã chọn
+                        </Badge>
+                      </div>
+
+                      {/* Varieties */}
+                      {crop.checkedVarieties.length === 0 ? (
+                        <div className="px-4 py-3 text-xs text-muted-foreground italic">
+                          Chưa chọn giống thủy sản nào
+                        </div>
+                      ) : (
+                        <div className="divide-y divide-slate-50">
+                          {crop.checkedVarieties.map((variety) => (
+                            <div
+                              key={variety.id}
+                              className="px-4 py-2.5 flex flex-col gap-1.5"
+                            >
+                              <div className="flex items-center gap-2 min-w-40">
+                                <div className="w-1.5 h-1.5 rounded-full bg-cyan-400 shrink-0" />
+                                <span className="text-sm font-semibold text-slate-700">
+                                  {variety.name}
+                                </span>
+                                {variety.code && (
+                                  <span className="text-xs text-muted-foreground font-normal">
+                                    ({variety.code})
+                                  </span>
+                                )}
+                              </div>
+                              {variety.seeds && variety.seeds.length > 0 && (
+                                <div className="flex flex-wrap gap-1.5 pl-3.5 mt-0.5">
+                                  {variety.seeds.map((seed: any) => (
+                                    <Badge
+                                      key={seed.id}
+                                      variant="outline"
+                                      className="bg-slate-50 border-slate-200 text-slate-500 text-[10px] py-0.5 px-2 rounded font-normal shadow-2xs"
+                                    >
+                                      Con giống: {seed.name}
+                                    </Badge>
+                                  ))}
+                                </div>
                               )}
                             </div>
-                          )}
-                      </div>
-                    );
-                  })
-                ) : (
-                  <span className="text-red-500 italic text-sm">
-                    Chưa chọn loài nuôi
-                  </span>
-                )}
-              </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         </Card>

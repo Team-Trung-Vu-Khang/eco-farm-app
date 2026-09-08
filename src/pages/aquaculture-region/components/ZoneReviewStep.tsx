@@ -4,8 +4,8 @@ import { useRearingMethods } from "@/features/master-data/hooks/useRearingMethod
 import { useMasterData, useFarmPersonnel } from "@/features/master-data";
 import { useSelectedWorkspaceId } from "@/features/workspace";
 import { CultivationRegionCreateConfirmationStep } from "./CultivationRegionCreateConfirmationStep";
-import { useMethodApplications, useProductionMethods } from "@/features/foundation";
 import { useMemo } from "react";
+import { useMethodApplications, useProductionMethods } from "@/features/foundation";
 
 export const ZoneReviewStep = () => {
   const { watch } = useFormContext<CultivationZoneFormValues>();
@@ -27,42 +27,64 @@ export const ZoneReviewStep = () => {
 
   const selectedFarmingMethodId = Number(formValues.farmingMethodId);
 
+  // Fetch all method applications to resolve subject → variety names
   const { items: methodApplications } = useMethodApplications({
-    params: { domainCode: "AQUACULTURE", size: 100 },
+    params: {
+      domainCode: "AQUACULTURE",
+      size: 100,
+      status: "active",
+    },
     enabled: !!selectedFarmingMethodId && selectedFarmingMethodId > 0,
   });
 
-  const activeMethodApp = useMemo(() => {
-    return methodApplications.find(
+  // Filter only those matching the selected farming method
+  const activeMethodApps = useMemo(() => {
+    if (!selectedFarmingMethodId || selectedFarmingMethodId <= 0) return [];
+    return methodApplications.filter(
       (item) => item.productionMethod?.id === selectedFarmingMethodId,
     );
   }, [methodApplications, selectedFarmingMethodId]);
 
-  // Extract selected variants
-  const selectedVariants = useMemo(() => {
-    if (!activeMethodApp) return [];
-    const list: Array<{
-      id: number;
-      name: string;
-      code: string;
-      subjectName: string;
-    }> = [];
-    activeMethodApp.subjects?.forEach((subject) => {
-      subject.variants?.forEach((variant) => {
-        if (
-          (formValues.seedIds ?? []).map(Number).includes(Number(variant.id))
-        ) {
-          list.push({
-            id: variant.id,
-            name: variant.name || "",
-            code: variant.code || "",
-            subjectName: subject.subjectName || "",
-          });
+  // Build a map: subjectId → { name, code, variants: {variantId → {name, code}} }
+  const subjectMap = useMemo(() => {
+    const map: Record<
+      number,
+      {
+        name: string;
+        code: string;
+        variants: Record<number, { name: string; code: string }>;
+      }
+    > = {};
+    activeMethodApps.forEach((app) => {
+      (app.subjects ?? []).forEach((subj) => {
+        if (!subj.subjectId) return;
+        if (!map[subj.subjectId]) {
+          map[subj.subjectId] = {
+            name: subj.subjectName || "",
+            code: subj.subjectCode || "",
+            variants: {},
+          };
         }
+        (subj.variants ?? []).forEach((v) => {
+          if (!v.id) return;
+          map[subj.subjectId!].variants[v.id] = {
+            name: v.name || "",
+            code: v.code || "",
+          };
+        });
       });
     });
-    return list;
-  }, [activeMethodApp, formValues.seedIds]);
+    return map;
+  }, [activeMethodApps]);
+
+  const selectedCropIds: number[] = useMemo(
+    () => (formValues.cropIds ?? []).map(Number).filter(Boolean),
+    [formValues.cropIds],
+  );
+  const selectedVarietyIds: number[] = useMemo(
+    () => formValues.varietyIds ?? [],
+    [formValues.varietyIds],
+  );
 
   const workspaceId = useSelectedWorkspaceId();
   const numericWorkspaceId = workspaceId ? Number(workspaceId) : undefined;
@@ -78,7 +100,6 @@ export const ZoneReviewStep = () => {
     (formValues.personnelIds ?? []).map(Number).includes(Number(p.id)),
   );
 
-  // ─── Map form state to Confirmation Step Props ──────────────────────────
   const mappedManagers = selectedPersonnel.map((p) => ({
     id: String(p.id),
     fullName: p.fullName,
@@ -103,40 +124,81 @@ export const ZoneReviewStep = () => {
     typeCode: sel.type,
   }));
 
-  const selectedCrops = (formValues.seedIds ?? []).map(String);
-
-  const commonConfig = {
-    farmingMethodId: String(formValues.farmingMethodId),
-    irrigationMethodId: String(formValues.rearingMethodId ?? ""),
-    selectedCrops,
-    seedSelections: (() => {
-      const selections: Record<string, string[]> = {};
-      selectedCrops.forEach((cropId) => {
-        selections[cropId] = [cropId];
-      });
-      return selections;
-    })(),
-  };
-
   const mappedFarmingMethods = farmingMethods.map((m) => ({
     id: String(m.id),
     name: m.name ?? "",
   }));
 
-  const mappedIrrigationSystems = rearingMethods.map((s) => ({
-    id: String(s.id),
-    name: s.name ?? "",
-  }));
+  const mappedIrrigationSystems = rearingMethods
+    .filter((s) => s.domainCode === "AQUACULTURE")
+    .map((s) => ({
+      id: String(s.id),
+      name: s.name ?? "",
+    }));
 
-  const mappedVarieties = selectedVariants.map((v) => ({
-    id: String(v.id),
-    varietyName: v.name,
-  }));
+  const selectedVarietyLabels: Record<string, string> = useMemo(
+    () => (formValues.varietyLabels ?? {}) as Record<string, string>,
+    [formValues.varietyLabels],
+  );
 
-  const mappedSeeds = selectedVariants.map((v) => ({
-    id: String(v.id),
-    varietyName: v.name,
-  }));
+  const varietyCropMap: Record<string, string> = useMemo(
+    () => (formValues.varietyCropMap ?? {}) as Record<string, string>,
+    [formValues.varietyCropMap],
+  );
+
+  const varietySeedMap: Record<string, number[]> = useMemo(
+    () => (formValues.varietySeedMap ?? {}) as Record<string, number[]>,
+    [formValues.varietySeedMap],
+  );
+
+  const seedLabels: Record<string, string> = useMemo(
+    () => (formValues.seedLabels ?? {}) as Record<string, string>,
+    [formValues.seedLabels],
+  );
+
+  // Build 3-level aquatic summary
+  const cropSummary = useMemo(
+    () =>
+      selectedCropIds.map((cropId) => {
+        const subject = subjectMap[cropId];
+        const cropName = subject?.name || `Loài nuôi #${cropId}`;
+        const cropCode = subject?.code || "";
+
+        const checkedVarieties = selectedVarietyIds
+          .filter((vId) => {
+            const mappedCropId = varietyCropMap[String(vId)];
+            return String(mappedCropId) === String(cropId);
+          })
+          .map((vId) => {
+            const seedIdsOfVariety = varietySeedMap[String(vId)] ?? [];
+            const seedsOfVariety = seedIdsOfVariety.map((sId) => ({
+              id: sId,
+              name: seedLabels[String(sId)] || `Con giống #${sId}`,
+            }));
+
+            return {
+              id: vId,
+              name:
+                selectedVarietyLabels[String(vId)] ||
+                subject?.variants?.[vId]?.name ||
+                `Giống #${vId}`,
+              code: subject?.variants?.[vId]?.code || "",
+              seeds: seedsOfVariety,
+            };
+          });
+
+        return { cropId, cropName, cropCode, checkedVarieties };
+      }),
+    [
+      selectedCropIds,
+      selectedVarietyIds,
+      subjectMap,
+      selectedVarietyLabels,
+      varietyCropMap,
+      varietySeedMap,
+      seedLabels,
+    ],
+  );
 
   const isEdit = !!formValues.id;
   const title = isEdit ? "Xác nhận cập nhật thông tin" : "Xác nhận thông tin";
@@ -151,11 +213,11 @@ export const ZoneReviewStep = () => {
       entities={entities}
       selectedManagers={mappedManagers}
       selectedCerts={mappedCerts}
-      commonConfig={commonConfig}
+      farmingMethodId={String(formValues.farmingMethodId)}
+      irrigationMethodId={String(formValues.rearingMethodId ?? "")}
       farmingMethods={mappedFarmingMethods}
       irrigationSystems={mappedIrrigationSystems}
-      varieties={mappedVarieties}
-      seeds={mappedSeeds}
+      cropSummary={cropSummary}
       title={title}
       description={description}
     />
