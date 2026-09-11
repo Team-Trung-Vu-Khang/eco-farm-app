@@ -63,6 +63,13 @@ export const getPolygonCenter = (
   if (!feature.geometry) return null;
 
   try {
+    // Zones/areas without a surveyed boundary fall back to a Point feature
+    // at their address's center — treat that point as its own "center".
+    if (feature.geometry.type === "Point") {
+      const [lng, lat] = feature.geometry.coordinates;
+      return { lat, lng };
+    }
+
     let coordinates: Position[] = [];
     if (feature.geometry.type === "Polygon") {
       coordinates = feature.geometry.coordinates?.[0] || [];

@@ -107,6 +107,18 @@ const buildPointFeature = (
   };
 };
 
+// Units that haven't surveyed/drawn their boundary yet only have an address
+// (geocoded down to a center point). Prefer the real polygon when it's
+// there; otherwise fall back to a marker at the center point rather than
+// dropping the zone/area/plot off the map entirely.
+const buildScopeFeature = (
+  boundary: CoordinatePoint[] | undefined,
+  centerPoint: { latitude?: number; longitude?: number } | undefined,
+  properties: GeoJsonProperties,
+): GeoFeature | null =>
+  buildPolygonFeature(boundary, properties) ||
+  buildPointFeature(centerPoint?.latitude, centerPoint?.longitude, properties);
+
 const DEFAULT_CENTER: [number, number] = [11.558, 107.134];
 type GeoFeature = Feature<Geometry, GeoJsonProperties>;
 type GeoFeatureCollection = FeatureCollection<Geometry, GeoJsonProperties>;
@@ -115,6 +127,11 @@ const SCOPE_TYPE_BY_LEVEL: Record<
   "zone" | "area" | "plot",
   FarmCultivationZoneScopeType
 > = { zone: "REGION", area: "AREA", plot: "PLOT" };
+
+// Nudge the focused point this many pixels to the right of the map's own
+// center so, on screen, the selected zone/area/plot sits a bit left of dead
+// center instead of looking off-balance toward the right.
+const FOCUS_PIXEL_OFFSET_X = 120;
 
 const MapUpdater = ({
   center,
@@ -125,7 +142,15 @@ const MapUpdater = ({
 }) => {
   const map = useMap();
   useEffect(() => {
-    map.flyTo(center, zoom);
+    const targetPoint = map.project(
+      L.latLng(center[0], center[1]),
+      zoom,
+    );
+    const shiftedLatLng = map.unproject(
+      targetPoint.add(L.point(FOCUS_PIXEL_OFFSET_X, 0)),
+      zoom,
+    );
+    map.flyTo(shiftedLatLng, zoom);
   }, [center, zoom, map]);
   return null;
 };
@@ -134,6 +159,37 @@ const ZoomListener = ({ onChange }: { onChange: (zoom: number) => void }) => {
   const map = useMapEvents({
     zoomend: () => {
       onChange(map.getZoom());
+    },
+  });
+  return null;
+};
+
+const OVERLAY_NAME_TO_LAYER_KEY: Record<
+  string,
+  "zone" | "area" | "plot" | "plant"
+> = {
+  "Vùng trồng": "zone",
+  "Khu vực": "area",
+  "Lô trồng": "plot",
+  "Cây trồng": "plant",
+};
+
+// The native Leaflet layer-control checkboxes only toggle Leaflet's own
+// internal layer add/remove; without this, clicking them never updates the
+// `visibleLayers` state that actually gates the GeoJSON/marker content.
+const LayerVisibilitySync = ({
+  onToggle,
+}: {
+  onToggle: (key: "zone" | "area" | "plot" | "plant", visible: boolean) => void;
+}) => {
+  useMapEvents({
+    overlayadd: (event) => {
+      const key = OVERLAY_NAME_TO_LAYER_KEY[event.name];
+      if (key) onToggle(key, true);
+    },
+    overlayremove: (event) => {
+      const key = OVERLAY_NAME_TO_LAYER_KEY[event.name];
+      if (key) onToggle(key, false);
     },
   });
   return null;
@@ -358,7 +414,7 @@ const MapContent = () => {
             selectedRegionId === undefined || region.id === selectedRegionId,
         )
         .map((region) =>
-          buildPolygonFeature(region.boundary, {
+          buildScopeFeature(region.boundary, region.centerPoint, {
             ...region,
             area: region.acreage,
           }),
@@ -371,12 +427,17 @@ const MapContent = () => {
     () =>
       apiAreas
         .map((area) =>
-          buildPolygonFeature(area.boundary, { ...area, area: area.acreage }),
+          buildScopeFeature(area.boundary, area.centerPoint, {
+            ...area,
+            area: area.acreage,
+          }),
         )
         .filter((feature): feature is GeoFeature => Boolean(feature)),
     [apiAreas],
   );
 
+  // Plots are always individually surveyed (no address-only path), so they
+  // keep requiring a real drawn boundary.
   const plotFeatures = useMemo(
     () =>
       apiPlots
@@ -746,14 +807,15 @@ const MapContent = () => {
           feature.properties?.id ||
           `${level}-${index}`,
       );
-      const title = getFeatureLabel(feature);
       const soilClusters = buildSoilClusters(entityId, soilData[entityId]);
 
       return {
         id: entityId,
         key: `${level}-${index}`,
         level,
-        type: title,
+        // Was previously set to the feature's display label, which meant
+        // it always duplicated the title wherever both were rendered.
+        type: level,
         properties: feature.properties,
         stats,
         center,
@@ -892,12 +954,17 @@ const MapContent = () => {
     [],
   );
 
+  // Tracks whether the user has manually picked/navigated a node for the
+  // current region, so the auto-seed effect below knows not to clobber it.
+  const hasUserInteractedRef = useRef(false);
+
   const selectLevel = (
     level: Exclude<SelectedEntity["level"], "soil-cluster">,
     index: number,
   ) => {
     const trail = buildTrail(level, index);
     if (!trail.length) return;
+    hasUserInteractedRef.current = true;
     setSelectionTrail(finalizeTrail(trail));
     setIsSidebarVisible(true);
     setIsSidebarCollapsed(false);
@@ -914,24 +981,30 @@ const MapContent = () => {
   };
 
   const handleBack = () => {
+    hasUserInteractedRef.current = true;
     setSelectionTrail((prev) => prev.slice(0, -1));
   };
 
   // Re-seed the sidebar with the newly selected region's zone whenever
   // "Vùng trồng" actually changes (not on incidental re-fetches), so the
   // info panel always reflects what's currently picked in the filter.
+  // Areas/plots load via separate, independently-resolving queries, so keep
+  // re-seeding (while the user hasn't navigated away) as they arrive —
+  // otherwise the "children" list can lock in empty if zones resolve first.
   const seededRegionIdRef = useRef<number | undefined>(undefined);
 
   useEffect(() => {
-    if (
-      selectedRegionId === undefined ||
-      seededRegionIdRef.current === selectedRegionId ||
-      zoneFeatures.length === 0
-    ) {
+    if (selectedRegionId === undefined || zoneFeatures.length === 0) {
       return;
     }
 
-    seededRegionIdRef.current = selectedRegionId;
+    if (seededRegionIdRef.current !== selectedRegionId) {
+      seededRegionIdRef.current = selectedRegionId;
+      hasUserInteractedRef.current = false;
+    } else if (hasUserInteractedRef.current) {
+      return;
+    }
+
     const firstZoneTrail = buildTrail("zone", 0);
     if (firstZoneTrail.length) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -939,7 +1012,14 @@ const MapContent = () => {
       setIsSidebarCollapsed(false);
       setIsDetailExpanded(true);
     }
-  }, [buildTrail, finalizeTrail, selectedRegionId, zoneFeatures]);
+  }, [
+    buildTrail,
+    finalizeTrail,
+    selectedRegionId,
+    zoneFeatures,
+    areaFeatures,
+    plotFeatures,
+  ]);
 
   const selectedEntity = selectionTrail[selectionTrail.length - 1] || null;
 
@@ -1097,6 +1177,21 @@ const MapContent = () => {
   };
   const areaStyle = { color: "#f03b20", weight: 2, fillOpacity: 0.1 };
   const plotStyle = { color: "#31a354", weight: 2, fillOpacity: 0.2 };
+
+  // Zones/areas without a drawn boundary fall back to a Point feature (see
+  // buildScopeFeature); render those as a colored pin instead of Leaflet's
+  // default blue marker so they still read as that layer's color.
+  const makeScopePointToLayer = (color: string) => (_feature: Feature, latlng: L.LatLng) =>
+    L.circleMarker(latlng, {
+      radius: 9,
+      fillColor: color,
+      color: "white",
+      weight: 2,
+      opacity: 1,
+      fillOpacity: 0.9,
+    });
+  const zonePointToLayer = makeScopePointToLayer(zoneStyle.color);
+  const areaPointToLayer = makeScopePointToLayer(areaStyle.color);
 
   const pointToLayer = (feature: Feature, latlng: L.LatLng) => {
     const status = feature.properties?.status;
@@ -1265,11 +1360,16 @@ const MapContent = () => {
           >
             <MapUpdater center={mapCenter} zoom={mapZoom} />
             <ZoomListener onChange={onZoomChange} />
+            <LayerVisibilitySync
+              onToggle={(key, visible) =>
+                setVisibleLayers((prev) => ({ ...prev, [key]: visible }))
+              }
+            />
             <LayersControl position="topright">
               <LayersControl.BaseLayer checked name="Bản đồ chuẩn">
                 <TileLayer
-                  attribution="Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community"
-                  url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
+                  attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                  url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                 />
               </LayersControl.BaseLayer>
               <LayersControl.BaseLayer name="Vệ tinh">
@@ -1289,6 +1389,7 @@ const MapContent = () => {
                       key={`layer-zone-${zoneFeatures.length}`}
                       data={zoneCollection as GeoJsonObject}
                       style={zoneStyle}
+                      pointToLayer={zonePointToLayer}
                       onEachFeature={createFeatureHandler("zone", zoneFeatures)}
                     />
                   )}
@@ -1305,6 +1406,7 @@ const MapContent = () => {
                       key={`layer-area-${areaFeatures.length}`}
                       data={areaCollection as GeoJsonObject}
                       style={areaStyle}
+                      pointToLayer={areaPointToLayer}
                       onEachFeature={createFeatureHandler("area", areaFeatures)}
                     />
                   )}
@@ -1428,7 +1530,7 @@ const MapContent = () => {
             <MapLegend visibleLayers={visibleLayers} />
           </MapContainer>
 
-          <div className="absolute right-16 top-4 z-[1000]">
+          <div className="absolute right-16 top-4 z-999">
             <button
               onClick={() => {
                 if (isFullScreenParam) {
