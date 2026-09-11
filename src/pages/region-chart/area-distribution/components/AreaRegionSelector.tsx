@@ -1,4 +1,5 @@
 import { regionApi } from "@/features/farm/api/farm.api";
+import { useAddressOptions } from "@/features/master-data/hooks/useAddressOptions";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { useEffect, useMemo, useState, type UIEvent } from "react";
 import {
@@ -31,9 +32,21 @@ export function SelectedRegionCard({
 }: SelectedRegionCardProps) {
   const region =
     regionOverride ?? regions.find((item) => item.id.toString() === regionId);
+  const { provinces, wards } = useAddressOptions(region?.province);
+
   if (!region) {
     return null;
   }
+
+  const provinceName =
+    provinces.find((p) => p.code === region.province)?.name || region.province;
+  const wardName =
+    wards.find((w) => w.code === (region.ward || region.district))?.name ||
+    region.ward ||
+    region.district;
+  const locationText = [region.address, wardName, provinceName]
+    .filter(Boolean)
+    .join(", ");
 
   return (
     <div className="animate-in slide-in-from-bottom-2 fade-in overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm duration-300">
@@ -53,10 +66,11 @@ export function SelectedRegionCard({
           <h4 className="truncate font-bold leading-tight text-slate-800">
             {region.name}
           </h4>
-          <p className="mt-0.5 truncate text-[11px] italic text-slate-500">
-            {region.address}, {region.ward}, {region.district},{" "}
-            {region.province}
-          </p>
+          {locationText && (
+            <p className="mt-0.5 truncate text-[11px] italic text-slate-500">
+              {locationText}
+            </p>
+          )}
         </div>
         <Button
           variant="ghost"

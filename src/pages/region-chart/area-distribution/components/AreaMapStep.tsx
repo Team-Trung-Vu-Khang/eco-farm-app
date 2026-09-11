@@ -92,10 +92,12 @@ const isSelfIntersecting = (points: L.LatLng[]) => {
 const FitBoundsOnce = ({
   points,
   regionPoints,
+  regionCenter,
   fitTrigger,
 }: {
   points: L.LatLng[];
   regionPoints: L.LatLng[];
+  regionCenter?: L.LatLng | null;
   fitTrigger?: number;
 }) => {
   const map = useMap();
@@ -114,8 +116,13 @@ const FitBoundsOnce = ({
         map.fitBounds(bounds, { padding: [40, 40] });
         hasFitRef.current = true;
       }
+    } else if (regionCenter && !hasFitRef.current) {
+      // Region has no drawn boundary (e.g. created via the basic flow),
+      // fall back to its center point so step 2 still follows it.
+      map.setView(regionCenter, 15);
+      hasFitRef.current = true;
     }
-  }, [points, regionPoints, map]);
+  }, [points, regionPoints, regionCenter, map]);
 
   useEffect(() => {
     if (points.length > 0 && fitTrigger) {
@@ -166,6 +173,7 @@ interface MapLayoutProps {
   handlePointDragEnd: () => void;
   justChanged: boolean;
   regionPoints: L.LatLng[];
+  regionCenter: L.LatLng | null;
   otherAreas: Array<{ id: number; name: string; points: L.LatLng[] }>;
   selectedRegion: any;
   boundaryWarning: string | null;
@@ -188,6 +196,7 @@ const MapLayout = ({
   handlePointDragEnd,
   justChanged,
   regionPoints,
+  regionCenter,
   otherAreas,
   selectedRegion,
   boundaryWarning,
@@ -205,6 +214,7 @@ const MapLayout = ({
           <FitBoundsOnce
             points={areaPoints}
             regionPoints={regionPoints}
+            regionCenter={regionCenter}
             fitTrigger={mapFitTrigger}
           />
           <TileLayer
@@ -413,6 +423,15 @@ export const AreaMapStep = ({ markerIcon }: AreaMapStepProps) => {
     return selectedRegion.boundary
       .filter((c) => c.latitude !== undefined && c.longitude !== undefined)
       .map((c) => L.latLng(c.latitude!, c.longitude!));
+  }, [selectedRegion]);
+
+  // Regions created via the basic flow have no drawn boundary, only a
+  // center point — use that so step 2 still follows the selected region.
+  const regionCenter = useMemo(() => {
+    const lat = selectedRegion?.centerPoint?.latitude;
+    const lng = selectedRegion?.centerPoint?.longitude;
+    if (typeof lat !== "number" || typeof lng !== "number") return null;
+    return L.latLng(lat, lng);
   }, [selectedRegion]);
 
   const areaPoints = useMemo(
@@ -759,8 +778,11 @@ export const AreaMapStep = ({ markerIcon }: AreaMapStepProps) => {
     if (regionPoints.length > 0) {
       return getBoundsFromPoints(regionPoints, DEFAULT_POINTS).getCenter();
     }
+    if (regionCenter) {
+      return regionCenter;
+    }
     return getBoundsFromPoints(DEFAULT_POINTS, DEFAULT_POINTS).getCenter();
-  }, [areaPoints, regionPoints]);
+  }, [areaPoints, regionPoints, regionCenter]);
 
   return (
     <Card className="flex h-auto md:h-[750px] min-h-[600px] md:min-h-0 flex-col">
@@ -794,6 +816,7 @@ export const AreaMapStep = ({ markerIcon }: AreaMapStepProps) => {
             handlePointDragEnd={handlePointDragEnd}
             justChanged={justChanged}
             regionPoints={regionPoints}
+            regionCenter={regionCenter}
             otherAreas={otherAreas}
             selectedRegion={selectedRegion}
             boundaryWarning={boundaryWarning}
@@ -823,6 +846,7 @@ export const AreaMapStep = ({ markerIcon }: AreaMapStepProps) => {
                 handlePointDragEnd={handlePointDragEnd}
                 justChanged={justChanged}
                 regionPoints={regionPoints}
+                regionCenter={regionCenter}
                 otherAreas={otherAreas}
                 selectedRegion={selectedRegion}
                 boundaryWarning={boundaryWarning}
