@@ -35,6 +35,15 @@ const DEFAULT_POINTS = [
   L.latLng(11.53, 106.91),
 ];
 
+const SQUARE_HALF_SPAN = 0.01;
+
+const buildSquareAround = (lat: number, lng: number) => [
+  L.latLng(lat - SQUARE_HALF_SPAN, lng - SQUARE_HALF_SPAN),
+  L.latLng(lat + SQUARE_HALF_SPAN, lng - SQUARE_HALF_SPAN),
+  L.latLng(lat + SQUARE_HALF_SPAN, lng + SQUARE_HALF_SPAN),
+  L.latLng(lat - SQUARE_HALF_SPAN, lng + SQUARE_HALF_SPAN),
+];
+
 interface MapLayoutProps {
   center: L.LatLng;
   regionPoints: L.LatLng[];
@@ -289,6 +298,11 @@ const isSelfIntersecting = (points: L.LatLng[]) => {
 
 export const RegionMapEditor = ({ markerIcon }: RegionMapEditorProps) => {
   const { watch, setValue } = useFormContext();
+  const centerPoint = watch("centerPoint");
+  // Present only when editing an existing region (loaded via reset()); used
+  // to make sure we never silently overwrite a real saved boundary.
+  const regionId = watch("id");
+  const hasUserEditedMapRef = useRef(false);
   const { toast } = useToast();
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [justChanged, setJustChanged] = useState(false);
@@ -316,6 +330,41 @@ export const RegionMapEditor = ({ markerIcon }: RegionMapEditorProps) => {
     [coordinates],
   );
 
+  // Follow the address picked in step 1: as long as the user hasn't touched
+  // the map yet, keep re-centering the (still-default) square on the address
+  // instead of leaving it stuck on the hardcoded fallback coordinates. Never
+  // touches an existing region's real saved boundary (regionId present).
+  useEffect(() => {
+    if (regionId) return;
+    if (hasUserEditedMapRef.current) return;
+    const lat = centerPoint?.lat;
+    const lng = centerPoint?.lng;
+    if (
+      typeof lat !== "number" ||
+      typeof lng !== "number" ||
+      !Number.isFinite(lat) ||
+      !Number.isFinite(lng)
+    ) {
+      return;
+    }
+    const square = buildSquareAround(lat, lng);
+    const alreadyMatches =
+      regionPoints.length === square.length &&
+      regionPoints.every(
+        (p: L.LatLng, i: number) =>
+          Math.abs(p.lat - square[i].lat) < 1e-9 &&
+          Math.abs(p.lng - square[i].lng) < 1e-9,
+      );
+    if (alreadyMatches) return;
+    setValue(
+      "coordinates",
+      square.map((p) => ({ lat: p.lat, lng: p.lng })),
+      { shouldValidate: true },
+    );
+    setMapFitTrigger(Date.now());
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [regionId, centerPoint?.lat, centerPoint?.lng, regionPoints]);
+
   const setRegionPoints = useCallback(
     (points: L.LatLng[]) => {
       setValue(
@@ -323,6 +372,7 @@ export const RegionMapEditor = ({ markerIcon }: RegionMapEditorProps) => {
         points.map((p) => ({ lat: p.lat, lng: p.lng })),
         { shouldValidate: true },
       );
+      hasUserEditedMapRef.current = true;
     },
     [setValue],
   );
