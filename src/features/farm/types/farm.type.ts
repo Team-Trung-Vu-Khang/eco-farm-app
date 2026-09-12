@@ -314,9 +314,11 @@ export interface SeedRef {
 }
 
 export interface SubjectVariantRef {
+  linkId?: number;
   id: number;
   subjectVariantCode?: string;
   subjectVariantName?: string;
+  productionSubjectCode?: string;
   productionSubjectName?: string;
 }
 
@@ -372,6 +374,7 @@ export interface FarmCultivationZoneResponse {
   notes?: string;
   /** Giống Foundation đang được gán (khi không dùng hạt giống owner) */
   productionSubjectVariants?: Array<{
+    linkId?: number;
     id: number;
     code?: string;
     name?: string;
@@ -395,9 +398,11 @@ export interface CultivationZoneQueryParams {
   farmingMethodId?: number;
   rearingMethodId?: number;
   domainCode?: "CROP" | "LIVESTOCK" | "AQUACULTURE";
+  includeDetails?: boolean;
   page?: number;
   size?: number;
 }
+
 
 // ─── Plant Identification ───────────────────────────────────────────────────
 

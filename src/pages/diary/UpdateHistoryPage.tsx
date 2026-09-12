@@ -1,41 +1,62 @@
 import PageWrapper from "@/components/PageWrapper";
+import {
+  useFarmDailyDiaryEntries,
+  useFarmDailyDiaryStats,
+  type FarmPlanPurpose,
+} from "@/features/farm-daily-diary";
+import {
+  useFarmPlanTaskDiaryEntries,
+  useFarmPlanTaskDiaryStats,
+} from "@/features/farm-plan-task-diary";
+import { useFarmPlans, useFarmWorkflows } from "@/features/farm-workflow/hooks";
+import { useDebounce } from "@/shared/hooks/useDebounce";
 import { Badge, Button, cn, Input } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import {
   Camera,
   ClipboardList,
   Clock,
   Filter,
-  History,
   ImageOff,
   Layers,
-  Link2,
-  RefreshCw,
   Search,
-  Zap,
 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useLocation } from "wouter";
-import { UpdateHistoryTable } from "./components/table/UpdateHistoryTable";
 import { DiaryAdvancedFilterPanel } from "./components/lookup/DiaryAdvancedFilterPanel";
+import { UpdateHistoryTable } from "./components/table/UpdateHistoryTable";
 import type { DiaryAdvancedFilters } from "./hooks/useDiaryLookupPage";
-import {
-  MOCK_PLANS,
-  MOCK_UPDATE_HISTORY,
-  MOCK_WORKFLOWS,
-} from "./mock/history.mock";
+
+const WORK_TYPE_TO_PURPOSE_MAP: Record<string, FarmPlanPurpose> = {
+  cultivation: "CULTIVATION",
+  "facility-upgrade": "FACILITY_UPGRADE",
+  treatment: "TREATMENT",
+  amendment: "SOIL_IMPROVEMENT",
+  harvest: "HARVEST",
+};
 
 export interface UpdateHistoryPageProps {
   scope?: "PLANNED" | "AD_HOC";
 }
 
 export default function UpdateHistoryPage({
-  scope,
+  scope = "PLANNED",
 }: UpdateHistoryPageProps = {}) {
   const [, setLocation] = useLocation();
 
+  // Pagination States for Daily Diary
+  const [page, setPage] = useState(0);
+  const [size, setSize] = useState(20);
+
   // Search & Advanced Filter States
   const [searchQuery, setSearchQuery] = useState("");
+  const debouncedSearchQuery = useDebounce(searchQuery, 400);
+
   const [isAdvancedSearchOpen, setIsAdvancedSearchOpen] = useState(true);
+
+  // Reset page to 0 when search query changes
+  useEffect(() => {
+    setPage(0);
+  }, [debouncedSearchQuery]);
 
   const [draftFilters, setDraftFilters] = useState<DiaryAdvancedFilters>({
     workflowIds: [],
@@ -53,18 +74,108 @@ export default function UpdateHistoryPage({
     toDate: "",
   });
 
+  const selectedWorkflowId =
+    appliedFilters.workflowIds.length > 0
+      ? Number(appliedFilters.workflowIds[0])
+      : undefined;
+  const selectedPlanId =
+    appliedFilters.planIds.length > 0
+      ? Number(appliedFilters.planIds[0])
+      : undefined;
+
+  const activePurposes = useMemo(() => {
+    const list = appliedFilters.workTypes
+      .map((wt) => WORK_TYPE_TO_PURPOSE_MAP[wt])
+      .filter(Boolean) as FarmPlanPurpose[];
+    return list.length > 0 ? (list.length === 1 ? list[0] : list) : undefined;
+  }, [appliedFilters.workTypes]);
+
+  // Fetch real Daily Diary Entries when scope === 'AD_HOC'
+  const isAdHoc = scope === "AD_HOC";
+  const isPlanned = !isAdHoc;
+
+  const dailyQueryParams = useMemo(
+    () => ({
+      page,
+      size,
+      workflowId: selectedWorkflowId,
+      purpose: activePurposes,
+      keyword: debouncedSearchQuery.trim() || undefined,
+      fromDate: appliedFilters.fromDate || undefined,
+      toDate: appliedFilters.toDate || undefined,
+    }),
+    [
+      page,
+      size,
+      selectedWorkflowId,
+      activePurposes,
+      debouncedSearchQuery,
+      appliedFilters.fromDate,
+      appliedFilters.toDate,
+    ],
+  );
+
+  const {
+    data: dailyDiaryPageData,
+    isLoading: isDailyLoading,
+    refetch: refetchDailyEntries,
+  } = useFarmDailyDiaryEntries({
+    params: dailyQueryParams,
+    enabled: isAdHoc,
+  });
+
+  const { data: dailyStatsData } = useFarmDailyDiaryStats({
+    params: dailyQueryParams,
+    enabled: isAdHoc,
+  });
+
+  // Fetch real Plan Task Diary Entries when isPlanned (scope === 'PLANNED')
+  const plannedQueryParams = useMemo(
+    () => ({
+      page,
+      size,
+      keyword: debouncedSearchQuery.trim() || undefined,
+      workflowId: selectedWorkflowId,
+      planId: selectedPlanId,
+      purpose: activePurposes,
+      fromDate: appliedFilters.fromDate || undefined,
+      toDate: appliedFilters.toDate || undefined,
+    }),
+    [
+      page,
+      size,
+      debouncedSearchQuery,
+      selectedWorkflowId,
+      selectedPlanId,
+      activePurposes,
+      appliedFilters.fromDate,
+      appliedFilters.toDate,
+    ],
+  );
+
+  const { pageData: plannedDiaryPageData, loading: isPlannedLoading } =
+    useFarmPlanTaskDiaryEntries({
+      params: plannedQueryParams,
+      enabled: isPlanned,
+    });
+
+  const { data: plannedStatsData } = useFarmPlanTaskDiaryStats({
+    params: plannedQueryParams,
+    enabled: isPlanned,
+  });
+
   const activeFilterCount = useMemo(() => {
     let count = 0;
     if (appliedFilters.workflowIds.length > 0)
       count += appliedFilters.workflowIds.length;
-    if (appliedFilters.planIds.length > 0)
+    if (!isAdHoc && appliedFilters.planIds.length > 0)
       count += appliedFilters.planIds.length;
     if (appliedFilters.workTypes.length > 0)
       count += appliedFilters.workTypes.length;
     if (appliedFilters.fromDate) count += 1;
     if (appliedFilters.toDate) count += 1;
     return count;
-  }, [appliedFilters]);
+  }, [appliedFilters, isAdHoc]);
 
   const toggleFilter = (
     key: "workflowIds" | "planIds" | "workTypes",
@@ -99,23 +210,29 @@ export default function UpdateHistoryPage({
     setAppliedFilters(empty);
   };
 
+  const workflowsQuery = useFarmWorkflows({ params: { page: 0, size: 100 } });
+  const apiWorkflows = workflowsQuery.items || [];
+
+  const plansQuery = useFarmPlans({ params: { page: 0, size: 100 } });
+  const apiPlans = plansQuery.items || [];
+
   const workflowOptions = useMemo(
     () =>
-      MOCK_WORKFLOWS.map((w) => ({
+      apiWorkflows.map((w) => ({
         id: String(w.id),
         name: w.code ? `${w.code} - ${w.name}` : w.name,
       })),
-    [],
+    [apiWorkflows],
   );
 
   const planOptions = useMemo(
     () =>
-      MOCK_PLANS.map((p) => ({
+      apiPlans.map((p) => ({
         id: String(p.id),
         name: p.code ? `${p.code} - ${p.name}` : p.name,
-        workflowId: String(p.workflowId),
+        workflowId: p.workflowId ? String(p.workflowId) : "",
       })),
-    [],
+    [apiPlans],
   );
 
   const workTypeOptions = useMemo(
@@ -129,121 +246,43 @@ export default function UpdateHistoryPage({
     [],
   );
 
-  // Filtered dataset
-  const filteredData = useMemo(() => {
-    return MOCK_UPDATE_HISTORY.filter((item) => {
-      // 1. Filter by scope (PLANNED / AD_HOC)
-      if (scope === "PLANNED" && item.origin !== "PLANNED") return false;
-      if (scope === "AD_HOC" && item.origin !== "AD_HOC") return false;
+  // Statistics summary from real API
+  const activeStatsData = isAdHoc ? dailyStatsData : plannedStatsData;
 
-      // 2. Filter by search query
-      if (searchQuery.trim()) {
-        const query = searchQuery.toLowerCase();
-        const matchesName = item.taskName.toLowerCase().includes(query);
-        const matchesCode = item.taskCode.toLowerCase().includes(query);
-        const matchesWorkflow = (item.workflowName || "")
-          .toLowerCase()
-          .includes(query);
-        const matchesPlan = (item.planName || "").toLowerCase().includes(query);
-        const matchesUpdater = (item.latestUpdate?.updaterName || "")
-          .toLowerCase()
-          .includes(query);
-        const matchesNote = (item.latestUpdate?.note || "")
-          .toLowerCase()
-          .includes(query);
-        if (
-          !matchesName &&
-          !matchesCode &&
-          !matchesWorkflow &&
-          !matchesPlan &&
-          !matchesUpdater &&
-          !matchesNote
-        ) {
-          return false;
-        }
-      }
+  const totalUpdates =
+    activeStatsData?.totalUpdates ??
+    (isAdHoc
+      ? (dailyDiaryPageData?.totalElements ?? 0)
+      : (plannedDiaryPageData?.totalElements ?? 0));
+  const withEvidence = activeStatsData?.withEvidence ?? 0;
+  const withoutEvidence =
+    activeStatsData?.withoutEvidence ??
+    Math.max(0, totalUpdates - withEvidence);
 
-      // 3. Filter by workflowIds
-      if (appliedFilters.workflowIds.length > 0) {
-        if (
-          !item.workflowId ||
-          !appliedFilters.workflowIds.includes(String(item.workflowId))
-        ) {
-          return false;
-        }
-      }
-
-      // 4. Filter by planIds
-      if (appliedFilters.planIds.length > 0) {
-        if (
-          !item.planId ||
-          !appliedFilters.planIds.includes(String(item.planId))
-        ) {
-          return false;
-        }
-      }
-
-      // 5. Filter by workTypes
-      if (appliedFilters.workTypes.length > 0) {
-        const catName = (item.taskCategoryName || "").toLowerCase();
-        const matchesType = appliedFilters.workTypes.some((wt) => {
-          if (wt === "cultivation") return catName.includes("canh tác");
-          if (wt === "treatment")
-            return (
-              catName.includes("điều trị") ||
-              catName.includes("thuốc") ||
-              catName.includes("sâu")
-            );
-          if (wt === "amendment")
-            return catName.includes("cải tạo") || catName.includes("đất");
-          if (wt === "harvest") return catName.includes("thu hoạch");
-          if (wt === "facility-upgrade")
-            return catName.includes("nâng cấp") || catName.includes("csvc");
-          return false;
-        });
-        if (!matchesType) return false;
-      }
-
-      // 6. Filter by dates
-      if (appliedFilters.fromDate) {
-        const logDate = item.latestUpdate?.updatedAt?.split("T")[0] || "";
-        if (logDate && logDate < appliedFilters.fromDate) return false;
-      }
-      if (appliedFilters.toDate) {
-        const logDate = item.latestUpdate?.updatedAt?.split("T")[0] || "";
-        if (logDate && logDate > appliedFilters.toDate) return false;
-      }
-
-      return true;
+  const formattedLatestUpdate = useMemo(() => {
+    const raw = activeStatsData?.latestUpdatedAt;
+    if (!raw) return "Chưa có cập nhật";
+    const date = new Date(raw);
+    if (isNaN(date.getTime())) return "—";
+    return date.toLocaleDateString("vi-VN", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      timeZone: "UTC",
     });
-  }, [scope, searchQuery, appliedFilters]);
+  }, [activeStatsData?.latestUpdatedAt]);
 
-  // Statistics summary
-  const stats = useMemo(() => {
-    const list = MOCK_UPDATE_HISTORY.filter((item) => {
-      if (scope === "PLANNED") return item.origin === "PLANNED";
-      if (scope === "AD_HOC") return item.origin === "AD_HOC";
-      return true;
-    });
-    const total = list.length;
-    const planned = list.filter((i) => i.origin === "PLANNED").length;
-    const adhoc = list.filter((i) => i.origin === "AD_HOC").length;
-    return { total, planned, adhoc };
-  }, [scope]);
+  const pageTitle = isAdHoc
+    ? "Lịch sử cập nhật (Thường nhật)"
+    : "Lịch sử cập nhật (Theo kế hoạch)";
 
-  const pageTitle =
-    scope === "PLANNED"
-      ? "Lịch sử cập nhật (Theo kế hoạch)"
-      : scope === "AD_HOC"
-        ? "Lịch sử cập nhật (Thường nhật)"
-        : "Lịch sử cập nhật nhật ký";
+  const pageDescription = isAdHoc
+    ? "Danh sách các công việc thường nhật có thao tác cập nhật nhật ký mới nhất"
+    : "Danh sách các công việc theo kế hoạch có thao tác cập nhật nhật ký mới nhất";
 
-  const pageDescription =
-    scope === "PLANNED"
-      ? "Danh sách các công việc theo kế hoạch có thao tác cập nhật nhật ký mới nhất"
-      : scope === "AD_HOC"
-        ? "Danh sách các công việc thường nhật có thao tác cập nhật nhật ký mới nhất"
-        : "Danh sách các công việc có thao tác cập nhật nhật ký mới nhất";
+  const currentResultCount = isAdHoc
+    ? (dailyDiaryPageData?.totalElements ?? 0)
+    : (plannedDiaryPageData?.totalElements ?? 0);
 
   return (
     <PageWrapper title={pageTitle} description={pageDescription}>
@@ -258,7 +297,7 @@ export default function UpdateHistoryPage({
                   Tổng lần cập nhật
                 </p>
                 <p className="text-3xl font-extrabold text-slate-800 leading-none">
-                  {stats.total}
+                  {totalUpdates}
                 </p>
               </div>
               <div className="h-10 w-10 rounded-xl bg-green-100 text-green-600 flex items-center justify-center shrink-0">
@@ -268,35 +307,41 @@ export default function UpdateHistoryPage({
             <div className="mt-4 flex items-center gap-4">
               <div className="flex items-center gap-1.5 text-xs text-slate-600">
                 <Camera className="h-3.5 w-3.5 text-green-500" />
-                <span className="font-bold text-green-600">10</span>
+                <span className="font-bold text-green-600">{withEvidence}</span>
                 <span className="text-slate-400">có bằng chứng</span>
               </div>
               <div className="w-px h-4 bg-slate-100" />
               <div className="flex items-center gap-1.5 text-xs text-slate-600">
                 <ImageOff className="h-3.5 w-3.5 text-slate-400" />
-                <span className="font-bold text-slate-600">4</span>
+                <span className="font-bold text-slate-600">
+                  {withoutEvidence}
+                </span>
                 <span className="text-slate-400">không bằng chứng</span>
               </div>
             </div>
           </div>
 
-          {/* Block 2: Tần suất cập nhật */}
+          {/* Block 2: Tỷ lệ bằng chứng */}
           <div className="rounded-2xl border border-slate-100 bg-white shadow-sm p-5">
             <div className="flex items-start justify-between gap-3">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-wide text-slate-400 mb-1">
-                  Số lần trong tháng
+                  Số nhật ký có ảnh
                 </p>
                 <p className="text-3xl font-extrabold text-slate-800 leading-none">
-                  3
+                  {withEvidence}
                 </p>
               </div>
               <div className="h-10 w-10 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center shrink-0">
-                <RefreshCw className="h-5 w-5" />
+                <Camera className="h-5 w-5" />
               </div>
             </div>
             <p className="mt-4 text-xs text-slate-400">
-              Thông tin cập nhật mới nhất trong tháng
+              Chiếm{" "}
+              {totalUpdates > 0
+                ? Math.round((withEvidence / totalUpdates) * 100)
+                : 0}
+              % tổng số lượt ghi nhật ký
             </p>
           </div>
 
@@ -308,7 +353,7 @@ export default function UpdateHistoryPage({
                   Cập nhật mới nhất
                 </p>
                 <p className="text-2xl font-extrabold text-slate-800 leading-none">
-                  20
+                  {formattedLatestUpdate}
                 </p>
               </div>
               <div className="h-10 w-10 rounded-xl bg-amber-100 text-amber-600 flex items-center justify-center shrink-0">
@@ -316,7 +361,7 @@ export default function UpdateHistoryPage({
               </div>
             </div>
             <p className="mt-4 text-xs text-slate-400">
-              Nhật ký gần nhất được ghi nhận vào ngày này
+              Thời gian ghi nhận mới nhất (UTC)
             </p>
           </div>
         </div>
@@ -330,7 +375,7 @@ export default function UpdateHistoryPage({
                 size={18}
               />
               <Input
-                placeholder="Tìm kiếm nhật ký theo tên công việc, mã công việc, vụ mùa, kế hoạch, người cập nhật..."
+                placeholder="Tìm kiếm nhật ký theo mã, tên công việc, ghi chú..."
                 className="pl-10 h-11 border-slate-200 focus:border-green-600 focus:ring-green-600/20 transition-all rounded-xl bg-slate-50/50"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
@@ -364,7 +409,7 @@ export default function UpdateHistoryPage({
             </div>
           </div>
 
-          {/* DiaryAdvancedFilterPanel Component - Open by default */}
+          {/* DiaryAdvancedFilterPanel Component */}
           <DiaryAdvancedFilterPanel
             isOpen={isAdvancedSearchOpen}
             filters={draftFilters}
@@ -374,10 +419,11 @@ export default function UpdateHistoryPage({
             onApply={() => {
               applyFilters();
             }}
-            resultCount={filteredData.length}
+            resultCount={currentResultCount}
             workflowOptions={workflowOptions}
             planOptions={planOptions}
             workTypeOptions={workTypeOptions}
+            hidePlanFilter={isAdHoc}
           />
 
           {!isAdvancedSearchOpen && (
@@ -394,7 +440,7 @@ export default function UpdateHistoryPage({
                     <p className="text-xs text-green-700/80 font-medium mt-0.5">
                       Có{" "}
                       <span className="text-green-700 font-extrabold px-1.5 py-0.5 bg-white rounded-md border border-green-200 shadow-2xs">
-                        {filteredData.length}
+                        {currentResultCount}
                       </span>{" "}
                       nhật ký phù hợp với tiêu chí hiện tại.
                     </p>
@@ -416,8 +462,29 @@ export default function UpdateHistoryPage({
           )}
         </div>
 
-        {/* Main Table */}
-        <UpdateHistoryTable data={filteredData} />
+        <UpdateHistoryTable
+          isDaily={isAdHoc}
+          dailyEntries={dailyDiaryPageData?.content || []}
+          plannedEntries={plannedDiaryPageData?.content || []}
+          pageSize={size}
+          currentIndex={page + 1}
+          totalElements={
+            isAdHoc
+              ? (dailyDiaryPageData?.totalElements ?? 0)
+              : (plannedDiaryPageData?.totalElements ?? 0)
+          }
+          totalPages={
+            isAdHoc
+              ? (dailyDiaryPageData?.totalPages ?? 0)
+              : (plannedDiaryPageData?.totalPages ?? 0)
+          }
+          onPageSize={(newSize) => {
+            setSize(newSize);
+            setPage(0);
+          }}
+          onIndexChange={(newIndex) => setPage(newIndex - 1)}
+          loading={isAdHoc ? isDailyLoading : isPlannedLoading}
+        />
       </div>
     </PageWrapper>
   );

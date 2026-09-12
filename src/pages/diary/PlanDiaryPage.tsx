@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import PageWrapper from "@/components/PageWrapper";
 import {
   Badge,
@@ -19,8 +19,13 @@ import {
   User,
 } from "lucide-react";
 import { useLocation } from "wouter";
-import type { FarmTaskResponse, FarmTaskStatus } from "@/features/farm-task";
-import { MOCK_TASKS } from "./mock/history.mock";
+import type {
+  FarmTaskQueryParams,
+  FarmTaskResponse,
+  FarmTaskStatus,
+} from "@/features/farm-task";
+import { useFarmTasks, useFarmTaskStats } from "@/features/farm-task";
+import { useDebounce } from "@/shared/hooks/useDebounce";
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
@@ -30,6 +35,7 @@ function isOverdue(task: FarmTaskResponse): boolean {
   return (
     task.status !== "DONE" &&
     task.status !== "CANCELLED" &&
+    !!task.endDate &&
     task.endDate < TODAY
   );
 }
@@ -64,40 +70,51 @@ const TABS: { key: TabKey; label: string; icon: React.ElementType }[] = [
 export default function PlanDiaryPage() {
   const [, setLocation] = useLocation();
   const [activeTab, setActiveTab] = useState<TabKey>("newest");
+  const [searchQuery, setSearchQuery] = useState("");
+  const debouncedSearchQuery = useDebounce(searchQuery, 400);
 
-  const overdueCount = useMemo(() => MOCK_TASKS.filter(isOverdue).length, []);
+  const [page, setPage] = useState(0);
+  const [size, setSize] = useState(20);
+
+  // Reset page on tab or search changes
+  useEffect(() => {
+    setPage(0);
+  }, [activeTab, debouncedSearchQuery]);
+
+  // Farm task stats
+  const { item: statsResponse } = useFarmTaskStats({
+    params: { origin: "PLANNED" },
+  });
+
+  // Query params for planned farm tasks list API (GET /api/farm/tasks?origin=PLANNED)
+  const taskQueryParams = useMemo<FarmTaskQueryParams>(
+    () => ({
+      origin: "PLANNED",
+      keyword: debouncedSearchQuery.trim() || undefined,
+      sort: activeTab === "newest" ? "RECENTLY_ASSIGNED" : undefined,
+      overdue: activeTab === "overdue" ? true : undefined,
+      page,
+      size,
+    }),
+    [activeTab, debouncedSearchQuery, page, size],
+  );
+
+  const { items, response, loading } = useFarmTasks({
+    params: taskQueryParams,
+  });
+
+  const overdueCount = statsResponse?.overdueTasks ?? 0;
 
   const displayedTasks = useMemo<FarmTaskResponse[]>(() => {
-    const list = [...MOCK_TASKS];
-    switch (activeTab) {
-      case "overdue":
-        return list
-          .filter(isOverdue)
-          .sort((a, b) => a.endDate.localeCompare(b.endDate));
-      case "updated":
-        return list.sort((a, b) =>
-          (b.updatedAt ?? "").localeCompare(a.updatedAt ?? ""),
-        );
-      case "newest":
-      default:
-        return list.sort((a, b) =>
-          (b.createdAt ?? "").localeCompare(a.createdAt ?? ""),
-        );
+    if (activeTab === "updated") {
+      return [...items].sort((a, b) =>
+        (b.updatedAt ?? "").localeCompare(a.updatedAt ?? ""),
+      );
     }
-  }, [activeTab]);
+    return items;
+  }, [activeTab, items]);
 
-  // Stats calculation
-  const stats = useMemo(() => {
-    const all = MOCK_TASKS;
-    return {
-      total: all.length,
-      doing: all.filter((t) => t.status === "DOING").length,
-      done: all.filter((t) => t.status === "DONE").length,
-      overdue: all.filter(isOverdue).length,
-    };
-  }, []);
-
-  // Table Columns Definition
+  // Table Columns Definition for Farm Tasks
   const taskColumns = useMemo<Column<FarmTaskResponse>[]>(
     () => [
       {
@@ -140,7 +157,9 @@ export default function PlanDiaryPage() {
         label: "Vụ mùa",
         render: (_value, row) =>
           row.workflow?.name ? (
-            <span className="text-xs font-semibold text-slate-600">{row.workflow.name}</span>
+            <span className="text-xs font-semibold text-slate-600">
+              {row.workflow.name}
+            </span>
           ) : (
             <span className="text-xs text-slate-300 italic">—</span>
           ),
@@ -172,7 +191,9 @@ export default function PlanDiaryPage() {
         label: "Người thực hiện",
         render: (_value, row) => {
           if (!row.personnel || row.personnel.length === 0)
-            return <span className="text-xs text-slate-300 italic">Chưa giao</span>;
+            return (
+              <span className="text-xs text-slate-300 italic">Chưa giao</span>
+            );
           return (
             <div className="flex items-center gap-1 text-xs text-slate-600">
               <User className="h-3.5 w-3.5 text-slate-400 shrink-0" />
@@ -181,7 +202,9 @@ export default function PlanDiaryPage() {
                   .slice(0, 2)
                   .map((p) => p.fullName || `#${p.id}`)
                   .join(", ")}
-                {row.personnel.length > 2 ? ` (+${row.personnel.length - 2})` : ""}
+                {row.personnel.length > 2
+                  ? ` (+${row.personnel.length - 2})`
+                  : ""}
               </span>
             </div>
           );
@@ -193,7 +216,9 @@ export default function PlanDiaryPage() {
         render: (_value, row) => (
           <div className="flex items-center gap-1 text-xs text-slate-600">
             <Link2 className="h-3.5 w-3.5 text-slate-400" />
-            <span className="font-semibold">{row.supplyLines.length}</span>
+            <span className="font-semibold">
+              {row.supplyLines?.length ?? 0}
+            </span>
             <span className="text-slate-400">loại</span>
           </div>
         ),
@@ -209,15 +234,33 @@ export default function PlanDiaryPage() {
               </Badge>
             );
           }
-          const statusMap: Record<FarmTaskStatus, { label: string; cls: string }> = {
-            TODO: { label: "Chờ thực hiện", cls: "bg-slate-50 text-slate-600 border-slate-200" },
-            DOING: { label: "Đang thực hiện", cls: "bg-blue-50 text-blue-700 border-blue-200" },
-            DONE: { label: "Hoàn thành", cls: "bg-green-50 text-green-700 border-green-200" },
-            CANCELLED: { label: "Đã hủy", cls: "bg-slate-50 text-slate-400 border-slate-200" },
+          const statusMap: Record<
+            FarmTaskStatus,
+            { label: string; cls: string }
+          > = {
+            TODO: {
+              label: "Chờ thực hiện",
+              cls: "bg-slate-50 text-slate-600 border-slate-200",
+            },
+            DOING: {
+              label: "Đang thực hiện",
+              cls: "bg-blue-50 text-blue-700 border-blue-200",
+            },
+            DONE: {
+              label: "Hoàn thành",
+              cls: "bg-green-50 text-green-700 border-green-200",
+            },
+            CANCELLED: {
+              label: "Đã hủy",
+              cls: "bg-slate-50 text-slate-400 border-slate-200",
+            },
           };
           const info = statusMap[row.status] ?? statusMap.TODO;
           return (
-            <Badge variant="outline" className={`text-[10px] font-bold ${info.cls}`}>
+            <Badge
+              variant="outline"
+              className={`text-[10px] font-bold ${info.cls}`}
+            >
               {info.label}
             </Badge>
           );
@@ -269,7 +312,7 @@ export default function PlanDiaryPage() {
         {[
           {
             label: "Tổng công việc",
-            value: stats.total,
+            value: statsResponse?.totalTasks ?? response?.totalElements ?? 0,
             icon: ClipboardList,
             bg: "bg-green-100",
             iconCls: "text-green-600",
@@ -278,7 +321,7 @@ export default function PlanDiaryPage() {
           },
           {
             label: "Đang thực hiện",
-            value: stats.doing,
+            value: statsResponse?.doingTasks ?? 0,
             icon: RefreshCw,
             bg: "bg-blue-100",
             iconCls: "text-blue-600",
@@ -287,7 +330,7 @@ export default function PlanDiaryPage() {
           },
           {
             label: "Hoàn thành",
-            value: stats.done,
+            value: statsResponse?.doneTasks ?? 0,
             icon: CalendarCheck,
             bg: "bg-emerald-100",
             iconCls: "text-emerald-600",
@@ -296,7 +339,7 @@ export default function PlanDiaryPage() {
           },
           {
             label: "Quá hạn",
-            value: stats.overdue,
+            value: statsResponse?.overdueTasks ?? 0,
             icon: AlertTriangle,
             bg: "bg-orange-100",
             iconCls: "text-orange-600",
@@ -315,7 +358,9 @@ export default function PlanDiaryPage() {
                   <p className="text-xs font-semibold uppercase tracking-wide text-slate-400 mb-1">
                     {s.label}
                   </p>
-                  <p className={`text-3xl font-extrabold leading-none ${s.valCls}`}>
+                  <p
+                    className={`text-3xl font-extrabold leading-none ${s.valCls}`}
+                  >
                     {s.value}
                   </p>
                 </div>
@@ -363,11 +408,25 @@ export default function PlanDiaryPage() {
 
       {/* ── Table Data ── */}
       <DataTable<FarmTaskResponse>
+        loading={loading}
         columns={taskColumns}
         data={displayedTasks}
         searchable
         searchPlaceholder="Tìm kiếm công việc theo tên, mã..."
-        onView={(row) => setLocation(`/diary/plan/${row.id}`)}
+        onSearch={(query) => {
+          setSearchQuery(query);
+          setPage(0);
+        }}
+        pageSize={size}
+        currentIndex={page + 1}
+        totalElements={response?.totalElements ?? displayedTasks.length}
+        totalPages={response?.totalPages ?? 1}
+        onPageSize={(newSize) => {
+          setSize(newSize);
+          setPage(0);
+        }}
+        onIndexChange={(newIndex) => setPage(newIndex - 1)}
+        onView={(row) => setLocation(`/diary/update/${row.id}?type=PLANNED`)}
       />
     </PageWrapper>
   );

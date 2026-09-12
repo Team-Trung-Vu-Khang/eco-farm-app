@@ -7,6 +7,11 @@ import {
   CardHeader,
   CardTitle,
   Input,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import {
   CheckCircle2,
@@ -20,38 +25,41 @@ import {
   StageMaterialPicker,
   type MaterialAllocation,
 } from "./StageMaterialPicker";
-import type { DomainCode } from "@/features/farm-supply";
+import type { DomainCode, SupplyType } from "@/features/farm-supply";
 import { getSupplyTypeOptions } from "@/shared/hooks/useRemoteSupplySearch";
 
 // Stat-pill colors keyed by the underlying supply type (`value`), not the
 // (domain-specific) label text, so they stay stable across CROP/LIVESTOCK/
 // AQUACULTURE wording differences.
-const MATERIAL_TYPE_STAT_COLORS: Record<string, string> = {
+const MATERIAL_TYPE_STAT_COLORS: Record<SupplyType, string> = {
   medicine: "bg-red-50 text-red-700 border-red-200",
   fertilizer: "bg-emerald-50 text-emerald-700 border-emerald-200",
   material: "bg-slate-100 text-slate-600 border-slate-200",
   equipment: "bg-blue-50 text-blue-700 border-blue-200",
 };
 
+export type WorkTaskPriority = "LOW" | "MEDIUM" | "HIGH" | "URGENT";
+
 export interface WorkTaskDetail {
   id: string;
   stageName: string;
   progress: number;
-  priority?: "LOW" | "MEDIUM" | "HIGH" | "URGENT";
+  priority?: WorkTaskPriority;
   startDate?: string;
   endDate: string;
   description?: string;
   isDirty?: boolean;
 }
 
-interface WorkAllocationCardProps {
+export interface WorkAllocationCardProps {
   title?: string;
-  selectedStages: string[];
-  plannedStages: string[];
-  isPlannedMode: boolean;
-  workTaskDetails: Record<string, WorkTaskDetail>;
-  materialAllocations: MaterialAllocation[];
+  selectedStages?: string[];
+  plannedStages?: string[];
+  isPlannedMode?: boolean;
+  workTaskDetails?: Record<string, WorkTaskDetail>;
+  materialAllocations?: MaterialAllocation[];
   domainCode: DomainCode;
+  errors?: Record<string, string>;
   onAddStage: (stageName: string) => void;
   onRemoveStage: (stageName: string) => void;
   onUpdateWorkTaskDetail: (
@@ -60,10 +68,15 @@ interface WorkAllocationCardProps {
   ) => void;
   onAddMaterial: (item: Omit<MaterialAllocation, "id">) => void;
   onRemoveMaterial: (id: number) => void;
-  onUpdateActualQuantity: (id: number, val: string) => void;
+  onUpdateActualQuantity?: (id: number, val: string) => void;
 }
 
-const PRIORITY_MAP = {
+interface PriorityOption {
+  label: string;
+  className: string;
+}
+
+const PRIORITY_MAP: Record<WorkTaskPriority, PriorityOption> = {
   LOW: {
     label: "Thấp",
     className: "bg-slate-100 text-slate-600 border-slate-200",
@@ -84,12 +97,13 @@ const PRIORITY_MAP = {
 
 export function WorkAllocationCard({
   title = "Phân bổ công việc",
-  selectedStages,
-  plannedStages,
-  isPlannedMode,
-  workTaskDetails,
-  materialAllocations,
+  selectedStages = [],
+  plannedStages = [],
+  isPlannedMode = false,
+  workTaskDetails = {},
+  materialAllocations = [],
   domainCode,
+  errors = {},
   onAddStage,
   onRemoveStage,
   onUpdateWorkTaskDetail,
@@ -97,7 +111,7 @@ export function WorkAllocationCard({
   onRemoveMaterial,
   onUpdateActualQuantity,
 }: WorkAllocationCardProps) {
-  const [newStageInput, setNewStageInput] = useState("");
+  const [newStageInput, setNewStageInput] = useState<string>("");
   // Collapsed by default — the header already surfaces the progress/priority
   // summary, so the detail form + material picker only need to open when the
   // user actually wants to edit that item. Accordion behaviour: opening one
@@ -164,14 +178,22 @@ export function WorkAllocationCard({
             {selectedStages.map((stage, index) => {
               const isPlannedStage =
                 isPlannedMode && plannedStages.includes(stage);
-              const detail: WorkTaskDetail = workTaskDetails[stage] || {
-                id: stage,
-                stageName: stage,
-                progress: 100,
-                priority: "MEDIUM",
-                startDate: new Date().toISOString().split("T")[0],
-                endDate: new Date().toISOString().split("T")[0],
-                description: "",
+              const rawDetail = workTaskDetails[stage];
+              const todayStr = new Date().toISOString().split("T")[0];
+
+              const detail: WorkTaskDetail = {
+                id: rawDetail?.id || stage,
+                stageName: rawDetail?.stageName || stage,
+                progress:
+                  typeof rawDetail?.progress === "number" &&
+                  !isNaN(rawDetail.progress)
+                    ? rawDetail.progress
+                    : 0,
+                priority: rawDetail?.priority || "MEDIUM",
+                startDate: rawDetail?.startDate || todayStr,
+                endDate: rawDetail?.endDate || todayStr,
+                description: rawDetail?.description || "",
+                isDirty: rawDetail?.isDirty ?? false,
               };
 
               const prioInfo =
@@ -186,11 +208,14 @@ export function WorkAllocationCard({
               const stageMaterials = materialAllocations.filter(
                 (m) => m.stageId === stage,
               );
-              const materialStats = getSupplyTypeOptions(domainCode)
+              const typeOptions = getSupplyTypeOptions(domainCode);
+              const materialStats = typeOptions
                 .map((opt) => ({
                   ...opt,
                   count: stageMaterials.filter(
-                    (m) => m.materialType === opt.label,
+                    (m) =>
+                      m.materialType === opt.label ||
+                      m.materialType === opt.value,
                   ).length,
                 }))
                 .filter((opt) => opt.count > 0);
@@ -276,13 +301,19 @@ export function WorkAllocationCard({
                             <span
                               key={stat.value}
                               className={`text-[10px] font-bold px-2 py-0.5 rounded-lg border ${
-                                MATERIAL_TYPE_STAT_COLORS[stat.value] ||
+                                MATERIAL_TYPE_STAT_COLORS[
+                                  stat.value as SupplyType
+                                ] ||
                                 "bg-slate-100 text-slate-600 border-slate-200"
                               }`}
                             >
                               {stat.label}: {stat.count}
                             </span>
                           ))
+                        ) : stageMaterials.length > 0 ? (
+                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-lg border bg-slate-100 text-slate-600 border-slate-200">
+                            Vật tư: {stageMaterials.length}
+                          </span>
                         ) : (
                           <span className="text-[10px] font-medium text-slate-400 italic">
                             Chưa có vật tư nào
@@ -310,23 +341,117 @@ export function WorkAllocationCard({
                             <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
                             Thông tin thực hiện công việc
                           </span>
-                          {/* Read-only Priority Badge (Planned Mode only) */}
-                          {isPlannedMode && (
-                            <Badge
-                              variant="outline"
-                              className={`text-[10px] font-bold py-0.5 px-2 ${prioInfo.className}`}
-                            >
-                              Ưu tiên: {prioInfo.label}
-                            </Badge>
-                          )}
+                          {/* Priority Badge / Select */}
+                          {isPlannedMode &&
+                            (isPlannedStage ? (
+                              <Badge
+                                variant="outline"
+                                className={`text-[10px] font-bold py-0.5 px-2 ${prioInfo.className}`}
+                              >
+                                Ưu tiên: {prioInfo.label}
+                              </Badge>
+                            ) : (
+                              <div className="w-44">
+                                <Select
+                                  value={detail.priority || "MEDIUM"}
+                                  onValueChange={(val: string) =>
+                                    onUpdateWorkTaskDetail(stage, {
+                                      priority: val as WorkTaskPriority,
+                                    })
+                                  }
+                                >
+                                  <SelectTrigger className="h-8 text-xs bg-white border-slate-200 font-bold rounded-lg">
+                                    <SelectValue placeholder="Độ ưu tiên" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="LOW">
+                                      Ưu tiên: Thấp
+                                    </SelectItem>
+                                    <SelectItem value="MEDIUM">
+                                      Ưu tiên: Trung bình
+                                    </SelectItem>
+                                    <SelectItem value="HIGH">
+                                      Ưu tiên: Cao
+                                    </SelectItem>
+                                    <SelectItem value="URGENT">
+                                      Ưu tiên: Khẩn cấp
+                                    </SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                            ))}
                         </div>
 
                         {/* Fields: Daily Diary vs Planned Mode */}
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
                           {isPlannedMode ? (
                             <>
-                              {/* Field 1: Tiến độ % (Editable in Planned Mode) */}
+                              {/* Row 1, Col 1: Ngày bắt đầu */}
                               <div className="space-y-1">
+                                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">
+                                  Ngày bắt đầu{" "}
+                                  {!isPlannedStage && (
+                                    <span className="text-red-500">*</span>
+                                  )}
+                                </span>
+                                {isPlannedStage ? (
+                                  <div className="h-9 px-3 flex items-center text-xs bg-slate-100/70 border border-slate-200 rounded-lg text-slate-600 font-medium">
+                                    {detail.startDate || "Theo kế hoạch"}
+                                  </div>
+                                ) : (
+                                  <>
+                                    <Input
+                                      type="date"
+                                      value={detail.startDate || ""}
+                                      onChange={(e) =>
+                                        onUpdateWorkTaskDetail(stage, {
+                                          startDate: e.target.value,
+                                        })
+                                      }
+                                      className={`h-9 text-xs bg-white border-slate-200 rounded-lg font-medium ${
+                                        errors?.[`stage_${stage}_startDate`]
+                                          ? "border-red-500 focus:ring-1 focus:ring-red-500"
+                                          : ""
+                                      }`}
+                                    />
+                                    {errors?.[`stage_${stage}_startDate`] && (
+                                      <p className="text-[10px] text-red-500 font-medium mt-0.5">
+                                        {errors[`stage_${stage}_startDate`]}
+                                      </p>
+                                    )}
+                                  </>
+                                )}
+                              </div>
+
+                              {/* Row 1, Col 2: Thời gian kết thúc */}
+                              <div className="space-y-1">
+                                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">
+                                  Thời gian kết thúc{" "}
+                                  <span className="text-red-500">*</span>
+                                </span>
+                                <Input
+                                  type="date"
+                                  value={detail.endDate}
+                                  onChange={(e) =>
+                                    onUpdateWorkTaskDetail(stage, {
+                                      endDate: e.target.value,
+                                    })
+                                  }
+                                  className={`h-9 text-xs bg-white border-slate-200 rounded-lg font-medium ${
+                                    errors?.[`stage_${stage}_endDate`]
+                                      ? "border-red-500 focus:ring-1 focus:ring-red-500"
+                                      : ""
+                                  }`}
+                                />
+                                {errors?.[`stage_${stage}_endDate`] && (
+                                  <p className="text-[10px] text-red-500 font-medium mt-0.5">
+                                    {errors[`stage_${stage}_endDate`]}
+                                  </p>
+                                )}
+                              </div>
+
+                              {/* Row 2: Tiến độ % */}
+                              <div className="space-y-1 sm:col-span-2">
                                 <div className="flex justify-between items-center text-[10px] font-bold text-slate-500">
                                   <span>Tiến độ hoàn thành</span>
                                   <span className="text-emerald-700 font-extrabold">
@@ -352,42 +477,29 @@ export function WorkAllocationCard({
                                 />
                               </div>
 
-                              {/* Field 2: Thời gian kết thúc (Editable) */}
-                              <div className="space-y-1">
-                                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">
-                                  Thời gian kết thúc
-                                </span>
-                                <Input
-                                  type="date"
-                                  value={detail.endDate}
-                                  onChange={(e) =>
-                                    onUpdateWorkTaskDetail(stage, {
-                                      endDate: e.target.value,
-                                    })
-                                  }
-                                  className="h-9 text-xs bg-white border-slate-200 rounded-lg font-medium"
-                                />
-                              </div>
-
-                              {/* Field 3: Ngày bắt đầu (View-only in Planned Mode) */}
-                              <div className="space-y-1 sm:col-span-2">
-                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
-                                  Ngày bắt đầu
-                                </span>
-                                <div className="h-9 px-3 flex items-center text-xs bg-slate-100/70 border border-slate-200 rounded-lg text-slate-600 font-medium">
-                                  {detail.startDate || "Theo kế hoạch"}
-                                </div>
-                              </div>
-
-                              {/* Field 4: Mô tả công việc (View-only in Planned Mode) */}
+                              {/* Row 3: Mô tả công việc */}
                               <div className="space-y-1 sm:col-span-2 pt-1">
-                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+                                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">
                                   Mô tả công việc
                                 </span>
-                                <div className="p-2.5 text-xs bg-slate-100/70 border border-slate-200 rounded-lg text-slate-700 font-medium leading-relaxed min-h-[38px]">
-                                  {detail.description ||
-                                    "Không có mô tả chi tiết."}
-                                </div>
+                                {isPlannedStage ? (
+                                  <div className="p-2.5 text-xs bg-slate-100/70 border border-slate-200 rounded-lg text-slate-700 font-medium leading-relaxed min-h-[38px]">
+                                    {detail.description ||
+                                      "Không có mô tả chi tiết."}
+                                  </div>
+                                ) : (
+                                  <textarea
+                                    rows={2}
+                                    value={detail.description || ""}
+                                    onChange={(e) =>
+                                      onUpdateWorkTaskDetail(stage, {
+                                        description: e.target.value,
+                                      })
+                                    }
+                                    placeholder="Nhập mô tả chi tiết cho công việc phát sinh..."
+                                    className="w-full p-2.5 text-xs bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 font-medium text-slate-700 placeholder:text-slate-400"
+                                  />
+                                )}
                               </div>
                             </>
                           ) : (
@@ -395,7 +507,8 @@ export function WorkAllocationCard({
                               {/* Field 1: Ngày bắt đầu (Editable in Daily Diary) */}
                               <div className="space-y-1">
                                 <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">
-                                  Ngày bắt đầu
+                                  Ngày bắt đầu{" "}
+                                  <span className="text-red-500">*</span>
                                 </span>
                                 <Input
                                   type="date"
@@ -405,14 +518,24 @@ export function WorkAllocationCard({
                                       startDate: e.target.value,
                                     })
                                   }
-                                  className="h-9 text-xs bg-white border-slate-200 rounded-lg font-medium"
+                                  className={`h-9 text-xs bg-white border-slate-200 rounded-lg font-medium ${
+                                    errors?.[`stage_${stage}_startDate`]
+                                      ? "border-red-500 focus:ring-1 focus:ring-red-500"
+                                      : ""
+                                  }`}
                                 />
+                                {errors?.[`stage_${stage}_startDate`] && (
+                                  <p className="text-[10px] text-red-500 font-medium mt-0.5">
+                                    {errors[`stage_${stage}_startDate`]}
+                                  </p>
+                                )}
                               </div>
 
                               {/* Field 2: Thời gian kết thúc (Editable in Daily Diary) */}
                               <div className="space-y-1">
                                 <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">
-                                  Thời gian kết thúc
+                                  Thời gian kết thúc{" "}
+                                  <span className="text-red-500">*</span>
                                 </span>
                                 <Input
                                   type="date"
@@ -422,8 +545,17 @@ export function WorkAllocationCard({
                                       endDate: e.target.value,
                                     })
                                   }
-                                  className="h-9 text-xs bg-white border-slate-200 rounded-lg font-medium"
+                                  className={`h-9 text-xs bg-white border-slate-200 rounded-lg font-medium ${
+                                    errors?.[`stage_${stage}_endDate`]
+                                      ? "border-red-500 focus:ring-1 focus:ring-red-500"
+                                      : ""
+                                  }`}
                                 />
+                                {errors?.[`stage_${stage}_endDate`] && (
+                                  <p className="text-[10px] text-red-500 font-medium mt-0.5">
+                                    {errors[`stage_${stage}_endDate`]}
+                                  </p>
+                                )}
                               </div>
 
                               {/* Field 3: Mô tả công việc (Editable in Daily Diary) */}
@@ -461,6 +593,7 @@ export function WorkAllocationCard({
                           onRemoveMaterial={onRemoveMaterial}
                           onUpdateActualQuantity={onUpdateActualQuantity}
                           domainCode={domainCode}
+                          errors={errors}
                         />
                       </div>
                     </div>

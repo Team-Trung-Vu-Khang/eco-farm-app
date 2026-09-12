@@ -39,51 +39,60 @@ const MultiSelectField = ({
   }, []);
 
   return (
-  <div ref={containerRef} className="relative space-y-2">
-    <div className="flex items-center gap-2 ml-1">
-      {Icon && <Icon size={14} className="text-slate-400" />}
-      <Label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">
-        {label}
-      </Label>
-    </div>
-    <button
-      type="button"
-      className="flex h-10 w-full items-center justify-between rounded-md border border-slate-200 bg-white px-3 text-left text-sm shadow-sm"
-      onClick={() => setIsOpen((open) => !open)}
-    >
-      <span className={selectedValues?.length ? "text-slate-800" : "text-slate-500"}>
-        {selectedValues?.length === 1
-          ? options.find(
-              (option) => option.id.toString() === selectedValues[0]?.toString(),
-            )?.name || placeholder
-          : selectedValues?.length
-            ? `Đã chọn ${selectedValues.length}`
-            : placeholder}
-      </span>
-      <ChevronDown size={16} className="text-slate-400" />
-    </button>
-    {isOpen && (
-      <div className="absolute z-50 mt-1 max-h-60 w-full overflow-y-auto rounded-md border bg-white p-1 shadow-lg">
-        {options.map((opt) => {
-          const isSelected = selectedValues?.includes(opt.id);
-          return (
-            <button
-              key={opt.id}
-              type="button"
-              className={cn(
-                "flex w-full items-center gap-2 rounded px-3 py-2 text-left text-sm hover:bg-slate-50",
-                isSelected && "bg-primary/5 font-bold",
-              )}
-              onClick={() => onToggle(opt.id)}
-            >
-              <Checkbox checked={isSelected} className="mr-2" />
-              <span>{opt.name}</span>
-            </button>
-          );
-        })}
+    <div ref={containerRef} className="relative space-y-2">
+      <div className="flex items-center gap-2 ml-1">
+        {Icon && <Icon size={14} className="text-slate-400" />}
+        <Label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">
+          {label}
+        </Label>
       </div>
-    )}
-  </div>
+      <button
+        type="button"
+        className="flex h-10 w-full items-center justify-between rounded-md border border-slate-200 bg-white px-3 text-left text-xs shadow-2xs"
+        onClick={() => setIsOpen((open) => !open)}
+      >
+        <span
+          className={cn(
+            "truncate pr-2 min-w-0 font-medium",
+            selectedValues?.length ? "text-slate-800" : "text-slate-500",
+          )}
+        >
+          {selectedValues?.length === 1
+            ? options.find(
+                (option) =>
+                  option.id.toString() === selectedValues[0]?.toString(),
+              )?.name || placeholder
+            : selectedValues?.length
+              ? `Đã chọn ${selectedValues.length}`
+              : placeholder}
+        </span>
+        <ChevronDown size={15} className="text-slate-400 shrink-0" />
+      </button>
+      {isOpen && (
+        <div className="absolute left-0 z-50 mt-1 max-h-64 min-w-[280px] sm:min-w-[320px] max-w-[460px] w-max overflow-y-auto rounded-md border border-slate-200 bg-white p-1 shadow-lg flex flex-col">
+          {options.map((opt) => {
+            const isSelected = selectedValues?.includes(opt.id);
+            return (
+              <button
+                key={opt.id}
+                type="button"
+                title={opt.name}
+                className={cn(
+                  "flex w-full items-start gap-2 rounded px-3 py-2 text-left text-sm hover:bg-slate-50 transition-colors cursor-pointer",
+                  isSelected && "bg-emerald-50 text-emerald-800 font-bold",
+                )}
+                onClick={() => onToggle(opt.id)}
+              >
+                <Checkbox checked={isSelected} className="mt-0.5 shrink-0" />
+                <span className="break-words whitespace-normal leading-snug flex-1">
+                  {opt.name}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </div>
   );
 };
 

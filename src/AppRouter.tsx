@@ -2012,6 +2012,7 @@ function Router() {
         <Route path="/diary/plan/:taskId" component={PlanDiaryDetailPage} />
         <Route path="/diary/plan" component={PlanDiaryPage} />
         <Route path="/diary/update/:taskId" component={UpdateHistoryDetailPage} />
+        <Route path="/diary/detail/:taskId" component={UpdateHistoryDetailPage} />
         <Route path="/diary/update" component={PlanHistoryPage} />
         <Route path="/diary/lookup" component={DiaryLookupPage} />
 

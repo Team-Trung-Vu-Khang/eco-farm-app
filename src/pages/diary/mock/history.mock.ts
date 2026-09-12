@@ -970,6 +970,15 @@ export interface HarvestRecord {
   unit: string;
 }
 
+export interface PhotoObjectRecord {
+  objectKey?: string;
+  fileUrl: string;
+  fileName?: string;
+  mimeType?: string;
+  sizeBytes?: number;
+  thumbnailUrl?: string;
+}
+
 export interface UpdateLogEntry {
   id: string | number;
   updatedAt: string;
@@ -981,6 +990,7 @@ export interface UpdateLogEntry {
   supplies?: SupplyActualRecord[];
   harvestDetails?: HarvestRecord[];
   images?: string[];
+  photoObjects?: PhotoObjectRecord[];
 }
 
 export interface TaskHistoryItem {

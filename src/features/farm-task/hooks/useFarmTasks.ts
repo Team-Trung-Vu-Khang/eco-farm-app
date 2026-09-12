@@ -15,23 +15,52 @@ import type {
 
 export const farmTaskKeys = {
   all: () => ["farm-tasks"] as const,
-  list: (workspaceId: number | string | null | undefined, params?: FarmTaskQueryParams) =>
-    [...farmTaskKeys.all(), "list", workspaceId ?? "missing", params ?? {}] as const,
-  detail: (workspaceId: number | string | null | undefined, id: number | string) =>
-    [...farmTaskKeys.all(), "detail", workspaceId ?? "missing", id] as const,
+  list: (
+    workspaceId: number | string | null | undefined,
+    params?: FarmTaskQueryParams,
+  ) =>
+    [
+      ...farmTaskKeys.all(),
+      "list",
+      workspaceId ?? "missing",
+      params ?? {},
+    ] as const,
+  detail: (
+    workspaceId: number | string | null | undefined,
+    id: number | string,
+  ) => [...farmTaskKeys.all(), "detail", workspaceId ?? "missing", id] as const,
   stats: (
     workspaceId: number | string | null | undefined,
     params?: FarmTaskStatsQueryParams,
-  ) => [...farmTaskKeys.all(), "stats", workspaceId ?? "missing", params ?? {}] as const,
+  ) =>
+    [
+      ...farmTaskKeys.all(),
+      "stats",
+      workspaceId ?? "missing",
+      params ?? {},
+    ] as const,
   calendar: (
     workspaceId: number | string | null | undefined,
     params: FarmTaskCalendarQueryParams,
-  ) => [...farmTaskKeys.all(), "calendar", workspaceId ?? "missing", params] as const,
+  ) =>
+    [
+      ...farmTaskKeys.all(),
+      "calendar",
+      workspaceId ?? "missing",
+      params,
+    ] as const,
   calendarDay: (
     workspaceId: number | string | null | undefined,
     date: string,
     params?: FarmTaskCalendarDayQueryParams,
-  ) => [...farmTaskKeys.all(), "calendar-day", workspaceId ?? "missing", date, params ?? {}] as const,
+  ) =>
+    [
+      ...farmTaskKeys.all(),
+      "calendar-day",
+      workspaceId ?? "missing",
+      date,
+      params ?? {},
+    ] as const,
 };
 
 interface UseFarmTasksOptions {
@@ -48,7 +77,11 @@ export function useFarmTasks({
   const queryResult = useQuery<FarmTaskPageResponse, Error>({
     queryKey: farmTaskKeys.list(workspaceId, params),
     queryFn: () => {
-      if (workspaceId === null || workspaceId === undefined || workspaceId === "") {
+      if (
+        workspaceId === null ||
+        workspaceId === undefined ||
+        workspaceId === ""
+      ) {
         throw new Error("Missing workspace id for farm tasks");
       }
 
@@ -84,11 +117,19 @@ export function useFarmTaskCalendar(
   const queryResult = useQuery<FarmTaskCalendarResponse, Error>({
     queryKey: farmTaskKeys.calendar(workspaceId, params),
     queryFn: () => farmTaskApi.calendar(params),
-    enabled: enabled && workspaceId !== null && workspaceId !== undefined && workspaceId !== "",
+    enabled:
+      enabled &&
+      workspaceId !== null &&
+      workspaceId !== undefined &&
+      workspaceId !== "",
     refetchOnWindowFocus: false,
   });
 
-  return { ...queryResult, loading: queryResult.isLoading, error: queryResult.error?.message ?? null };
+  return {
+    ...queryResult,
+    loading: queryResult.isLoading,
+    error: queryResult.error?.message ?? null,
+  };
 }
 
 export function useFarmTaskCalendarDay(
@@ -100,7 +141,12 @@ export function useFarmTaskCalendarDay(
   const queryResult = useQuery<FarmTaskCalendarDayResponse, Error>({
     queryKey: farmTaskKeys.calendarDay(workspaceId, date, params),
     queryFn: () => farmTaskApi.calendarDay(date, params),
-    enabled: enabled && !!date && workspaceId !== null && workspaceId !== undefined && workspaceId !== "",
+    enabled:
+      enabled &&
+      !!date &&
+      workspaceId !== null &&
+      workspaceId !== undefined &&
+      workspaceId !== "",
     refetchOnWindowFocus: false,
   });
 
@@ -173,7 +219,11 @@ export function useFarmTaskStats({
   const queryResult = useQuery<FarmTaskStatsResponse, Error>({
     queryKey: farmTaskKeys.stats(workspaceId, params),
     queryFn: () => {
-      if (workspaceId === null || workspaceId === undefined || workspaceId === "") {
+      if (
+        workspaceId === null ||
+        workspaceId === undefined ||
+        workspaceId === ""
+      ) {
         throw new Error("Missing workspace id for farm task stats");
       }
 

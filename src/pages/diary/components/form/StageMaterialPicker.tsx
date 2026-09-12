@@ -7,6 +7,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
+  useToast,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { Link2, Plus, X, Search, ChevronRight } from "lucide-react";
 import { getSupplyTypeOptions } from "@/shared/hooks/useRemoteSupplySearch";
@@ -40,6 +41,7 @@ export function StageMaterialPicker({
   onRemoveMaterial,
   onUpdateActualQuantity,
   domainCode,
+  errors,
 }: {
   stageKey: string;
   allocations: MaterialAllocation[];
@@ -47,7 +49,9 @@ export function StageMaterialPicker({
   onRemoveMaterial: (id: number) => void;
   onUpdateActualQuantity?: (id: number, val: string) => void;
   domainCode: DomainCode;
+  errors?: Record<string, string>;
 }) {
+  const { toast } = useToast();
   const typeOptions = getSupplyTypeOptions(domainCode);
   const [selectedType, setSelectedType] = useState<SupplyType>(
     typeOptions[1]?.value || typeOptions[0]?.value || "fertilizer",
@@ -96,11 +100,11 @@ export function StageMaterialPicker({
         const basicName =
           rawBasicName.replace(/\s*\([^)]*\)/g, "").trim() || rawBasicName;
         const packTypeName = v.packagingType?.name || "Quy cách";
-        const qty = v.containedQuantity || 1;
-        const specLabel = `${packTypeName} ${qty} ${basicName}`;
+        const packQty = v.quantity || 1;
+        const specLabel = `${packTypeName} ${packQty} ${basicName}`;
 
         options.push({
-          key: `pack-${v.unitBase?.id ?? idx}`,
+          key: `pack-${idx}-${v.unitBase?.id ?? 0}`,
           label: specLabel,
           unitMode: "PACKAGING",
           unitLabel: packTypeName,
@@ -109,7 +113,7 @@ export function StageMaterialPicker({
         });
 
         options.push({
-          key: `basic-${v.unitBase?.id ?? idx}`,
+          key: `basic-${idx}-${v.unitBase?.id ?? 0}`,
           label: basicName,
           unitMode: "BASIC",
           unitLabel: basicName,
@@ -132,9 +136,8 @@ export function StageMaterialPicker({
     ];
   }, [selectedMaterial, isEquipment]);
 
-  const selectedUnitOption = unitOptions.find(
-    (opt) => opt.key === selectedUnitKey,
-  );
+  const selectedUnitOption =
+    unitOptions.find((opt) => opt.key === selectedUnitKey) || unitOptions[0];
 
   const handleSelectMaterial = (item: SupplyItemResponse) => {
     setSelectedMaterial(item);
@@ -143,7 +146,7 @@ export function StageMaterialPicker({
       defaultUnitKey = "equipment";
     } else if (item.packagingVariants && item.packagingVariants.length > 0) {
       const v = item.packagingVariants[0];
-      defaultUnitKey = `pack-${v.unitBase?.id ?? 0}`;
+      defaultUnitKey = `pack-0-${v.unitBase?.id ?? 0}`;
     } else {
       defaultUnitKey = "basic-default";
     }
@@ -151,20 +154,51 @@ export function StageMaterialPicker({
   };
 
   const handleAdd = () => {
-    if (!selectedMaterial || !qty || !selectedUnitOption) return;
+    if (!selectedMaterial) {
+      toast({
+        title: "Chưa chọn vật tư",
+        description: "Vui lòng chọn vật tư từ danh sách.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!qty || Number(qty) <= 0) {
+      toast({
+        title: "Thiếu số lượng",
+        description: "Vui lòng nhập số lượng vật tư lớn hơn 0.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const unitOpt = selectedUnitOption || unitOptions[0];
+    if (!unitOpt) {
+      toast({
+        title: "Thiếu đơn vị tính",
+        description: "Vui lòng chọn đơn vị tính hợp lệ.",
+        variant: "destructive",
+      });
+      return;
+    }
 
     onAddMaterial({
       stageId: stageKey,
       materialType: selectedTypeOption?.label || selectedType,
       materialName: selectedMaterial.name,
       quantity: qty,
-      unit: selectedUnitOption.unitLabel,
-      unitMode: selectedUnitOption.unitMode,
-      packagingSpecLabel: selectedUnitOption.packagingSpecLabel,
+      unit: unitOpt.unitLabel,
+      unitMode: unitOpt.unitMode,
+      packagingSpecLabel: unitOpt.packagingSpecLabel,
       supplyItemId: selectedMaterial.id,
-      unitBaseId: selectedUnitOption.unitBaseId,
+      unitBaseId: unitOpt.unitBaseId,
       isPlanned: false,
       isDirty: true,
+    });
+
+    toast({
+      title: "Đã thêm vật tư",
+      description: `Đã cấp phát ${qty} ${unitOpt.unitLabel} ${selectedMaterial.name}.`,
     });
 
     // Reset inputs
@@ -216,29 +250,40 @@ export function StageMaterialPicker({
                   <span className="text-xs font-semibold text-slate-600 shrink-0">
                     Thực tế:
                   </span>
-                  <div className="relative flex-1 flex items-center gap-2">
-                    <Input
-                      type="number"
-                      min={0}
-                      clearable={false}
-                      placeholder="0"
-                      className="h-10 text-sm bg-white border-slate-200 focus:border-emerald-500 focus:ring-emerald-500/20 rounded-xl font-bold text-slate-900"
-                      value={a.actualQuantity ?? ""}
-                      onChange={(e) =>
-                        onUpdateActualQuantity?.(a.id, e.target.value)
-                      }
-                    />
-                    <span className="text-xs font-bold text-slate-600 shrink-0">
-                      {displayUnit}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => onRemoveMaterial(a.id)}
-                      className="text-slate-400 hover:text-red-500 p-1.5 rounded-lg hover:bg-red-50 transition-colors shrink-0"
-                      title="Xóa vật tư này"
-                    >
-                      <X className="h-4 w-4" />
-                    </button>
+                  <div className="relative flex-1 flex flex-col gap-1">
+                    <div className="flex items-center gap-2">
+                      <Input
+                        type="number"
+                        min={0}
+                        clearable={false}
+                        placeholder="0"
+                        className={`h-10 text-sm bg-white border-slate-200 focus:border-emerald-500 focus:ring-emerald-500/20 rounded-xl font-bold text-slate-900 ${
+                          errors?.[`alloc_${a.id}`]
+                            ? "border-red-500 focus:ring-red-500"
+                            : ""
+                        }`}
+                        value={a.actualQuantity ?? ""}
+                        onChange={(e) =>
+                          onUpdateActualQuantity?.(a.id, e.target.value)
+                        }
+                      />
+                      <span className="text-xs font-bold text-slate-600 shrink-0">
+                        {displayUnit}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => onRemoveMaterial(a.id)}
+                        className="text-slate-400 hover:text-red-500 p-1.5 rounded-lg hover:bg-red-50 transition-colors shrink-0"
+                        title="Xóa vật tư này"
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                    </div>
+                    {errors?.[`alloc_${a.id}`] && (
+                      <p className="text-[10px] text-red-500 font-medium">
+                        {errors[`alloc_${a.id}`]}
+                      </p>
+                    )}
                   </div>
                 </div>
               </div>
@@ -247,7 +292,7 @@ export function StageMaterialPicker({
         </div>
       )}
 
-      {/* Inline Form thêm vật tư (UI cũ 4 cột) */}
+      {/* Inline Form thêm vật tư */}
       <div className="space-y-3 pt-3 border-t border-slate-100">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
           {/* Col 1: Loại vật tư */}
@@ -284,7 +329,11 @@ export function StageMaterialPicker({
             <button
               type="button"
               onClick={() => setIsDialogOpen(true)}
-              className="w-full h-10 px-3 bg-white border border-slate-200 hover:border-slate-300 rounded-xl font-medium text-xs flex items-center justify-between text-left transition-all group"
+              className={`w-full h-10 px-3 bg-white border rounded-xl font-medium text-xs flex items-center justify-between text-left transition-all group ${
+                selectedMaterial
+                  ? "border-emerald-300 bg-emerald-50/20"
+                  : "border-slate-200 hover:border-slate-300"
+              }`}
             >
               <span className="truncate flex items-center gap-1.5 text-slate-800">
                 <Search className="w-3.5 h-3.5 text-slate-400 shrink-0 group-hover:text-emerald-600 transition-colors" />
@@ -307,14 +356,19 @@ export function StageMaterialPicker({
           {/* Col 3: Số lượng */}
           <div className="space-y-1">
             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
-              Số lượng
+              Số lượng{" "}
+              {selectedMaterial && <span className="text-red-500">*</span>}
             </span>
             <Input
               type="number"
               min={0}
               clearable={false}
               placeholder="Nhập số lượng..."
-              className="h-10 text-xs bg-white border-slate-200 rounded-xl font-medium"
+              className={`h-10 text-xs bg-white border-slate-200 rounded-xl font-medium ${
+                selectedMaterial && !qty
+                  ? "border-amber-400 focus:border-amber-500 focus:ring-amber-500/20"
+                  : ""
+              }`}
               value={qty}
               onChange={(e) => setQty(e.target.value)}
             />
@@ -323,7 +377,8 @@ export function StageMaterialPicker({
           {/* Col 4: Đơn vị tính */}
           <div className="space-y-1">
             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
-              Đơn vị tính
+              Đơn vị tính{" "}
+              {selectedMaterial && <span className="text-red-500">*</span>}
             </span>
             <Select
               disabled={!selectedMaterial}
@@ -334,7 +389,9 @@ export function StageMaterialPicker({
                 className={`w-full h-10 text-xs rounded-xl font-medium ${
                   !selectedMaterial
                     ? "bg-slate-50 opacity-60 cursor-not-allowed border-slate-200"
-                    : "bg-white border-slate-200"
+                    : selectedMaterial && !selectedUnitOption
+                      ? "bg-white border-amber-400"
+                      : "bg-white border-slate-200"
                 }`}
               >
                 <SelectValue
@@ -354,10 +411,16 @@ export function StageMaterialPicker({
           </div>
         </div>
 
+        {selectedMaterial && (!qty || !selectedUnitOption) && (
+          <p className="text-[11px] font-semibold text-amber-700 bg-amber-50 p-2 rounded-lg border border-amber-200/80">
+            * Bạn đã chọn vật tư. Vui lòng nhập số lượng, chọn đơn vị tính và nhấn "Thêm vật tư" bên dưới để hoàn tất cấp phát.
+          </p>
+        )}
+
         {/* Action Button */}
         <Button
           type="button"
-          disabled={!selectedMaterial || !qty || !selectedUnitOption}
+          disabled={!selectedMaterial}
           className="h-10 w-full bg-slate-900 hover:bg-slate-800 disabled:opacity-50 font-bold text-xs gap-1.5 text-white rounded-xl shadow-2xs mt-1 cursor-pointer"
           onClick={handleAdd}
         >

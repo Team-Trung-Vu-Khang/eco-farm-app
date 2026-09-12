@@ -15,7 +15,32 @@ import {
   Sprout,
   X,
 } from "lucide-react";
+import { z } from "zod";
 import type { DiaryAdvancedFilters } from "../../hooks/useDiaryLookupPage";
+
+const dateFilterSchema = z
+  .object({
+    fromDate: z.string().optional(),
+    toDate: z.string().optional(),
+  })
+  .superRefine((data, ctx) => {
+    if (data.fromDate && data.toDate) {
+      const start = new Date(data.fromDate);
+      const end = new Date(data.toDate);
+      if (start > end) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Từ ngày phải nhỏ hơn hoặc bằng Đến ngày",
+          path: ["fromDate"],
+        });
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Đến ngày phải lớn hơn hoặc bằng Từ ngày",
+          path: ["toDate"],
+        });
+      }
+    }
+  });
 
 export interface Option {
   id: string;
@@ -58,11 +83,20 @@ function MultiSelectField({
     return options.filter((o) => o.name.toLowerCase().includes(q));
   }, [options, searchTerm]);
 
+  const selectedTextLabel = disabled
+    ? placeholder
+    : selectedValues.length === 1
+      ? options.find((o) => o.id === selectedValues[0])?.name || placeholder
+      : selectedValues.length
+        ? `Đã chọn ${selectedValues.length}`
+        : placeholder;
+
   return (
     <div ref={containerRef} className="relative">
       <button
         type="button"
         disabled={disabled}
+        title={selectedTextLabel}
         className={`flex h-10 w-full items-center justify-between rounded-md border px-3 text-left text-sm shadow-2xs transition-colors ${
           disabled
             ? "border-slate-200 bg-slate-100 text-slate-400 cursor-not-allowed opacity-70"
@@ -75,21 +109,14 @@ function MultiSelectField({
           setIsOpen((open) => !open);
         }}
       >
-        <span className="truncate pr-2">
-          {disabled
-            ? placeholder
-            : selectedValues.length === 1
-              ? options.find((o) => o.id === selectedValues[0])?.name ||
-                placeholder
-              : selectedValues.length
-                ? `Đã chọn ${selectedValues.length}`
-                : placeholder}
+        <span className="truncate pr-2 min-w-0 font-medium">
+          {selectedTextLabel}
         </span>
         <ChevronDown size={16} className="text-slate-400 shrink-0" />
       </button>
 
       {isOpen && !disabled && (
-        <div className="absolute z-50 mt-1 max-h-64 w-full overflow-hidden rounded-md border border-slate-200 bg-white shadow-lg flex flex-col">
+        <div className="absolute left-0 z-50 mt-1 max-h-72 min-w-[280px] sm:min-w-[340px] max-w-[480px] w-max overflow-hidden rounded-md border border-slate-200 bg-white shadow-lg flex flex-col">
           {/* Thanh tìm kiếm trực tiếp trong dropdown */}
           <div className="p-1.5 border-b border-slate-100 bg-slate-50 sticky top-0 z-10 flex items-center gap-1.5">
             <Search size={14} className="text-slate-400 ml-1.5 shrink-0" />
@@ -126,14 +153,17 @@ function MultiSelectField({
                 <button
                   key={opt.id}
                   type="button"
+                  title={opt.name}
                   className={cn(
-                    "flex w-full items-center gap-2 rounded px-3 py-2 text-left text-sm hover:bg-slate-50 transition-colors cursor-pointer",
+                    "flex w-full items-start gap-2 rounded px-3 py-2 text-left text-sm hover:bg-slate-50 transition-colors cursor-pointer",
                     isSelected && "bg-green-50 text-green-700 font-bold",
                   )}
                   onClick={() => onToggle(opt.id)}
                 >
-                  <Checkbox checked={isSelected} className="mr-2" />
-                  <span className="truncate">{opt.name}</span>
+                  <Checkbox checked={isSelected} className="mt-0.5 shrink-0" />
+                  <span className="break-words whitespace-normal leading-snug flex-1">
+                    {opt.name}
+                  </span>
                 </button>
               );
             })}
@@ -146,21 +176,21 @@ function MultiSelectField({
         <div className="mt-2 flex flex-wrap gap-1">
           {selectedValues.map((val) => {
             const opt = options.find((o) => o.id === val);
+            const badgeLabel = opt?.name || val;
             return (
               <span
                 key={val}
-                className="inline-flex items-center gap-1 rounded-md bg-green-50 px-2 py-0.5 text-[11px] font-bold text-green-700 border border-green-200 shadow-2xs"
+                title={badgeLabel}
+                className="inline-flex items-center gap-1 rounded-md bg-green-50 px-2 py-0.5 text-[11px] font-bold text-green-700 border border-green-200 shadow-2xs max-w-full"
               >
-                <span className="truncate max-w-[130px]">
-                  {opt?.name || val}
-                </span>
+                <span className="truncate max-w-[220px]">{badgeLabel}</span>
                 <button
                   type="button"
                   onClick={(e) => {
                     e.stopPropagation();
                     onToggle(val);
                   }}
-                  className="rounded-full hover:bg-green-200 p-0.5 text-green-700 transition-colors cursor-pointer"
+                  className="rounded-full hover:bg-green-200 p-0.5 text-green-700 transition-colors cursor-pointer shrink-0"
                   title="Xóa lựa chọn này"
                 >
                   <X size={11} />
@@ -188,6 +218,7 @@ interface DiaryAdvancedFilterPanelProps {
   workflowOptions: Option[];
   planOptions: Option[];
   workTypeOptions: Option[];
+  hidePlanFilter?: boolean;
 }
 
 export function DiaryAdvancedFilterPanel({
@@ -201,6 +232,7 @@ export function DiaryAdvancedFilterPanel({
   workflowOptions,
   planOptions,
   workTypeOptions,
+  hidePlanFilter = false,
 }: DiaryAdvancedFilterPanelProps) {
   const isWorkflowSelected =
     Boolean(filters.workflowIds) && filters.workflowIds.length > 0;
@@ -214,6 +246,31 @@ export function DiaryAdvancedFilterPanel({
     () => (filters.planIds || []).map(String),
     [filters.planIds],
   );
+
+  // Validate fromDate vs toDate using Zod
+  const dateValidation = useMemo(() => {
+    const parseResult = dateFilterSchema.safeParse({
+      fromDate: filters.fromDate,
+      toDate: filters.toDate,
+    });
+
+    if (parseResult.success) {
+      return { fromDateError: null, toDateError: null, isValid: true };
+    }
+
+    const issues = parseResult.error.issues;
+    const fromDateError =
+      issues.find((issue) => issue.path.includes("fromDate"))?.message || null;
+    const toDateError =
+      issues.find((issue) => issue.path.includes("toDate"))?.message || null;
+
+    return { fromDateError, toDateError, isValid: false };
+  }, [filters.fromDate, filters.toDate]);
+
+  const handleApply = () => {
+    if (!dateValidation.isValid) return;
+    onApply();
+  };
 
   // Lọc kế hoạch theo Vụ mùa / Vụ nuôi đã chọn
   const availablePlanOptions = useMemo(() => {
@@ -248,7 +305,12 @@ export function DiaryAdvancedFilterPanel({
         </Button>
       </div>
 
-      <div className="p-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 items-start">
+      <div
+        className={cn(
+          "p-6 grid grid-cols-1 sm:grid-cols-2 gap-4 items-start",
+          hidePlanFilter ? "lg:grid-cols-4" : "lg:grid-cols-5",
+        )}
+      >
         {/* Vụ mùa / Vụ nuôi */}
         <div className="space-y-2">
           <div className="flex items-center gap-1.5 text-slate-500 ml-1">
@@ -266,25 +328,27 @@ export function DiaryAdvancedFilterPanel({
         </div>
 
         {/* Kế hoạch (Khóa khi chưa chọn Vụ mùa) */}
-        <div className="space-y-2">
-          <div className="flex items-center gap-1.5 text-slate-500 ml-1">
-            <ClipboardList size={14} className="text-green-600" />
-            <span className="text-[10px] font-black uppercase tracking-widest">
-              Kế hoạch {isWorkflowSelected ? "(Đã lọc theo vụ)" : ""}
-            </span>
+        {!hidePlanFilter && (
+          <div className="space-y-2">
+            <div className="flex items-center gap-1.5 text-slate-500 ml-1">
+              <ClipboardList size={14} className="text-green-600" />
+              <span className="text-[10px] font-black uppercase tracking-widest">
+                Kế hoạch {isWorkflowSelected ? "(Đã lọc theo vụ)" : ""}
+              </span>
+            </div>
+            <MultiSelectField
+              options={availablePlanOptions}
+              selectedValues={selectedPlanIdStrings}
+              onToggle={(v) => onToggleFilter("planIds", v)}
+              disabled={!isWorkflowSelected}
+              placeholder={
+                !isWorkflowSelected
+                  ? "Vui lòng chọn vụ mùa trước..."
+                  : "Tất cả kế hoạch..."
+              }
+            />
           </div>
-          <MultiSelectField
-            options={availablePlanOptions}
-            selectedValues={selectedPlanIdStrings}
-            onToggle={(v) => onToggleFilter("planIds", v)}
-            disabled={!isWorkflowSelected}
-            placeholder={
-              !isWorkflowSelected
-                ? "Vui lòng chọn vụ mùa trước..."
-                : "Tất cả kế hoạch..."
-            }
-          />
-        </div>
+        )}
 
         {/* Loại công việc */}
         <div className="space-y-2">
@@ -312,10 +376,19 @@ export function DiaryAdvancedFilterPanel({
           </div>
           <Input
             type="date"
-            className="h-10 bg-white border-slate-200 text-sm font-medium"
+            className={cn(
+              "h-10 bg-white border-slate-200 text-sm font-medium",
+              dateValidation.fromDateError &&
+                "border-red-500 focus:border-red-500 focus:ring-1 focus:ring-red-500",
+            )}
             value={filters.fromDate}
             onChange={(e) => onDateChange("fromDate", e.target.value)}
           />
+          {dateValidation.fromDateError && (
+            <p className="text-[10px] font-semibold text-red-500 ml-1 mt-0.5">
+              {dateValidation.fromDateError}
+            </p>
+          )}
         </div>
 
         {/* Đến ngày */}
@@ -328,10 +401,19 @@ export function DiaryAdvancedFilterPanel({
           </div>
           <Input
             type="date"
-            className="h-10 bg-white border-slate-200 text-sm font-medium"
+            className={cn(
+              "h-10 bg-white border-slate-200 text-sm font-medium",
+              dateValidation.toDateError &&
+                "border-red-500 focus:border-red-500 focus:ring-1 focus:ring-red-500",
+            )}
             value={filters.toDate}
             onChange={(e) => onDateChange("toDate", e.target.value)}
           />
+          {dateValidation.toDateError && (
+            <p className="text-[10px] font-semibold text-red-500 ml-1 mt-0.5">
+              {dateValidation.toDateError}
+            </p>
+          )}
         </div>
       </div>
 
@@ -344,8 +426,9 @@ export function DiaryAdvancedFilterPanel({
           nhật ký phù hợp.
         </p>
         <Button
-          className="h-10 px-8 rounded-xl font-bold bg-green-600 hover:bg-green-700 text-white shadow-md shadow-green-600/20 cursor-pointer shrink-0"
-          onClick={onApply}
+          disabled={!dateValidation.isValid}
+          className="h-10 px-8 rounded-xl font-bold bg-green-600 hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed text-white shadow-md shadow-green-600/20 cursor-pointer shrink-0"
+          onClick={handleApply}
         >
           Áp dụng
         </Button>

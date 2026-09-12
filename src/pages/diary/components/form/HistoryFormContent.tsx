@@ -1,7 +1,27 @@
 import PageWrapper from "@/components/PageWrapper";
+import {
+  createDailyDiaryEntrySchema,
+  useCreateFarmDailyDiaryEntry,
+  useFarmDailyDiaryEntryDetail,
+  useUpdateFarmDailyDiaryEntry,
+  type DailyDiaryLineRequest,
+  type HarvestItemRequest,
+  type PhotoRequest,
+  type SupplyUsageRequest,
+} from "@/features/farm-daily-diary";
+import {
+  createPlanTaskDiaryEntrySchema,
+  useCreateFarmPlanTaskDiaryEntry,
+  type PlanTaskDiaryLineRequest,
+} from "@/features/farm-plan-task-diary";
 import type { DomainCode } from "@/features/farm-supply/types";
-import { useFarmWorkflows } from "@/features/farm-workflow/hooks";
+import { useFarmTaskById, useFarmTasks } from "@/features/farm-task/hooks";
+import { useFarmPlans, useFarmWorkflows } from "@/features/farm-workflow/hooks";
 import type { FarmWorkflowScopeResponse } from "@/features/farm-workflow/types/farm-workflow.type";
+import { useCultivationZones } from "@/features/farm/hooks/useCultivationZones";
+import { useSelectedWorkspaceId } from "@/features/workspace";
+import type { GeographicalSelection } from "@/pages/cultivation-zone/cultivation-region/components/types";
+import { useDebounce } from "@/shared/hooks/useDebounce";
 import {
   Badge,
   Button,
@@ -17,277 +37,53 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-  Switch,
   Textarea,
   useToast,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import {
   Apple,
-  Bug,
   CheckCircle2,
   ChevronLeft,
   ClipboardList,
   Layers,
-  Sprout,
+  Plus,
   Trash2,
   Upload,
-  Wrench,
   X,
 } from "lucide-react";
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { useLocation } from "wouter";
-import { z } from "zod";
-import {
-  MOCK_PLANS,
-  MOCK_TASKS,
-  MOCK_TASKS_LIST,
-  MOCK_WORKFLOWS,
-} from "../../mock/history.mock";
-import type { MockTaskItem } from "../../types/diary.types";
 import { GeographicalSelectionCard } from "./GeographicalSelectionCard";
-import { GeographicalSelector } from "@/pages/cultivation-zone/cultivation-region/components/SharedSelectors";
-import type { GeographicalSelection } from "@/pages/cultivation-zone/cultivation-region/components/types";
-import { useRegions } from "@/features/farm/hooks/useRegions";
-import type { FarmRegionResponse } from "@/features/farm/types/farm.type";
+import { CultivationZoneSelector } from "./CultivationZoneSelector";
 
-function toRegionOptions(apiRegions: FarmRegionResponse[]) {
-  return apiRegions.map((r) => ({
-    id: r.id,
-    code: r.code,
-    name: r.name ?? "",
-    enterpriseId: (r.metadataJson?.enterpriseId as string) ?? "",
-    subAreas: (r.areas ?? []).map((a) => ({
-      id: a.id,
-      name: a.name ?? "",
-      plots: [],
-    })),
-  }));
-}
+import {
+  WORK_TYPE_OPTIONS,
+  getHarvestLabel,
+  getHarvestUnitOptions,
+  getWorkflowLabel,
+  getWorkflowSubtitle,
+} from "../../constants/history-form.constants";
+import { historyFormSchema } from "../../schemas/historyFormSchema";
+import type {
+  HarvestDetail,
+  HistoryFormContentProps,
+  HistoryFormData,
+  MaterialAllocation,
+} from "../../types/history-form.types";
+import {
+  createHarvestDetail,
+  extractCropSubjectVariants,
+  mapWorkTypeToPurpose,
+  mapWorkflowScopeToHarvestOption,
+  toCultivationZoneOptions,
+  uploadPhotosInParallel,
+} from "../../utils/history-form.utils";
+import { useCropSupplyCatalog } from "@/pages/plan-growth/hooks/useCropSupplyCatalog";
+import { getSupplyTypeOptions } from "@/shared/hooks/useRemoteSupplySearch";
 import { HarvestTreeSelectorDialog } from "../dialogs/HarvestTreeSelectorDialog";
 import { PlannedTaskDetailCard } from "./PlannedTaskDetailCard";
 import { WorkAllocationCard, type WorkTaskDetail } from "./WorkAllocationCard";
 import { WorkflowScopeMapModal } from "../dialogs/WorkflowScopeMapModal";
-
-interface RawSupplyLineItem {
-  id: number;
-  supplyItem?: { name: string };
-  name?: string;
-  quantity?: number;
-  plannedQty?: number | string;
-  actualQty?: number | string;
-  unitBase?: { name: string };
-  unit?: string;
-}
-
-function mapSupplyLineItem(s: RawSupplyLineItem) {
-  return {
-    id: s.id,
-    name: s.supplyItem?.name || s.name || `Vật tư #${s.id}`,
-    plannedQty: String(s.quantity ?? s.plannedQty ?? 0),
-    actualQty: String(s.quantity ?? s.actualQty ?? 0),
-    unit: s.unitBase?.name || s.unit || "kg",
-  };
-}
-
-export interface MaterialAllocation {
-  id: number;
-  stageId: string;
-  materialType: string;
-  materialName: string;
-  quantity: string;
-  actualQuantity?: string;
-  unit: string;
-  supplyItemId?: number;
-  unitBaseId?: number;
-  isPlanned?: boolean;
-}
-
-export interface HarvestDetail {
-  id: string;
-  targetId: string;
-  targetLabel: string;
-  codeName: string;
-  quantity: string;
-  unitBase: string;
-}
-
-export interface HistoryFormData {
-  regimenId: string;
-  workType: string;
-  harvestScope: "region" | "crop";
-  harvestTargets: string[];
-  harvestDetails: HarvestDetail[];
-  harvestFiles: File[];
-  startDate: string;
-  endDate: string;
-  completionPercentage: number;
-  description: string;
-  images: File[];
-  selectedStages: string[];
-  materialAllocations: MaterialAllocation[];
-}
-
-const WORK_TYPE_OPTIONS = [
-  {
-    value: "cultivation",
-    label: "Canh tác",
-    icon: Layers,
-    activeClass: "border-blue-500 bg-blue-50/50 text-blue-700",
-    iconClass: "bg-blue-500 text-white",
-  },
-  {
-    value: "facility-upgrade",
-    label: "Nâng cấp CSVC",
-    icon: Wrench,
-    activeClass: "border-slate-500 bg-slate-50/80 text-slate-700",
-    iconClass: "bg-slate-700 text-white",
-  },
-  {
-    value: "treatment",
-    label: "Điều trị",
-    icon: Bug,
-    activeClass: "border-red-500 bg-red-50/50 text-red-700",
-    iconClass: "bg-red-500 text-white",
-  },
-  {
-    value: "amendment",
-    label: "Cải tạo đất",
-    icon: Sprout,
-    activeClass: "border-emerald-500 bg-emerald-50/50 text-emerald-700",
-    iconClass: "bg-emerald-500 text-white",
-  },
-  {
-    value: "harvest",
-    label: "Thu hoạch",
-    icon: Apple,
-    activeClass: "border-emerald-500 bg-emerald-50/50 text-emerald-700",
-    iconClass: "bg-emerald-600 text-white",
-  },
-] as const;
-
-function getWorkflowLabel(domainCode?: DomainCode | string) {
-  if (domainCode === "LIVESTOCK") return "Vụ nuôi";
-  if (domainCode === "AQUACULTURE") return "Vụ nuôi thủy sản";
-  return "Vụ mùa";
-}
-
-function getWorkflowSubtitle(domainCode?: DomainCode | string) {
-  if (domainCode === "LIVESTOCK" || domainCode === "AQUACULTURE")
-    return "Chăn nuôi và nuôi trồng thủy sản";
-  return "Vùng trồng";
-}
-
-function getHarvestLabel(scope: "region" | "crop") {
-  return scope === "region" ? "Vùng canh tác" : "Cây canh tác";
-}
-
-function getHarvestUnitOptions() {
-  return [
-    { label: "g (Gram)", value: "g" },
-    { label: "kg (Kilogram)", value: "kg" },
-    { label: "Tạ (100 kg)", value: "tạ" },
-    { label: "Tấn (1.000 kg)", value: "tấn" },
-    { label: "ml (Mililit / cc)", value: "ml" },
-    { label: "l / L (Lít)", value: "l" },
-  ];
-}
-
-function mapWorkflowScopeToHarvestOption(
-  scope: FarmWorkflowScopeResponse,
-  index: number,
-): { label: string; value: string; keywords?: string[] } | null {
-  const region = scope.region ?? scope.area?.region ?? scope.plot?.area?.region;
-  if (!region) return null;
-
-  if (scope.scopeType === "REGION") {
-    return {
-      label: region.name || `Vùng #${region.id}`,
-      value: `region-${region.id}`,
-      keywords: [region.code, region.name].filter(Boolean) as string[],
-    };
-  }
-
-  if (scope.scopeType === "AREA" && scope.area) {
-    return {
-      label: `${scope.area.name || `Khu #${scope.area.id}`}`,
-      value: `area-${scope.area.id}`,
-      keywords: [scope.area.code, scope.area.name, region.name].filter(
-        Boolean,
-      ) as string[],
-    };
-  }
-
-  if (scope.scopeType === "PLOT" && scope.plot) {
-    const area = scope.area ?? scope.plot.area;
-    return {
-      label: `${scope.plot.name || `Lô #${scope.plot.id}`}`,
-      value: `plot-${scope.plot.id}`,
-      keywords: [
-        scope.plot.code,
-        scope.plot.name,
-        area?.name,
-        region.name,
-      ].filter(Boolean) as string[],
-    };
-  }
-
-  return {
-    label: `Mục ${index + 1}`,
-    value: `${scope.scopeType.toLowerCase()}-${index}`,
-  };
-}
-
-function createHarvestDetail(
-  targetId: string,
-  targetLabel: string,
-): HarvestDetail {
-  return {
-    id: `harvest-${targetId}`,
-    targetId,
-    targetLabel,
-    codeName: targetLabel,
-    quantity: "",
-    unitBase: "",
-  };
-}
-
-const historyFormSchema = z
-  .object({
-    regimenId: z.string().min(1, "Vui lòng chọn vụ mùa / vụ nuôi"),
-    workType: z.string().min(1, "Vui lòng chọn loại công việc"),
-    startDate: z.string().min(1, "Vui lòng chọn ngày bắt đầu"),
-    isPlannedMode: z.boolean(),
-    planId: z.string().optional(),
-    taskId: z.string().optional(),
-  })
-  .superRefine((data, ctx) => {
-    if (data.isPlannedMode) {
-      if (!data.planId) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: "Vui lòng chọn kế hoạch",
-          path: ["planId"],
-        });
-      }
-      if (!data.taskId) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: "Vui lòng chọn công việc",
-          path: ["taskId"],
-        });
-      }
-    }
-  });
-
-export interface HistoryFormContentProps {
-  isPlannedModeDefault?: boolean;
-  allowModeToggle?: boolean;
-  initialTaskId?: string;
-  initialPlanId?: string;
-  initialWorkflowId?: string;
-  pageTitle?: string;
-  backUrl?: string;
-}
+import { useLocation } from "wouter";
 
 export function HistoryFormContent({
   isPlannedModeDefault = false,
@@ -296,20 +92,26 @@ export function HistoryFormContent({
   initialPlanId = "",
   initialWorkflowId = "",
   pageTitle = "Ghi nhận nhật ký nông hộ",
-  backUrl = "/history",
+  backUrl = "/diary/daily-history",
 }: HistoryFormContentProps) {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const workspaceId = useSelectedWorkspaceId();
+  const createDailyDiaryMutation = useCreateFarmDailyDiaryEntry();
+  const updateDailyDiaryMutation = useUpdateFarmDailyDiaryEntry();
+  const createPlanTaskDiaryMutation = useCreateFarmPlanTaskDiaryEntry();
 
-  const [isPlannedMode, setIsPlannedMode] =
-    useState<boolean>(isPlannedModeDefault);
-  const [selectedPlanId, setSelectedPlanId] = useState<string>(initialPlanId);
-  const [selectedTaskId, setSelectedTaskId] = useState<string>(initialTaskId);
-  const [errors, setErrors] = useState<Record<string, string>>({});
+  const searchParams = new URLSearchParams(window.location.search);
+  const editId = searchParams.get("editId") || "";
+  const urlWorkflowId = searchParams.get("workflowId") || "";
+
+  const { data: dailyDiaryDetail } = useFarmDailyDiaryEntryDetail(
+    editId,
+    Boolean(editId),
+  );
 
   const [formData, setFormData] = useState<HistoryFormData>({
-    regimenId: initialWorkflowId,
+    regimenId: initialWorkflowId || urlWorkflowId,
     workType: "",
     harvestScope: "region",
     harvestTargets: [],
@@ -323,6 +125,193 @@ export function HistoryFormContent({
     selectedStages: [],
     materialAllocations: [],
   });
+
+  const [workflowSearchQuery, setWorkflowSearchQuery] = useState("");
+  const debouncedWorkflowSearch = useDebounce(workflowSearchQuery, 300);
+
+  // Load workflows from API with search keyword
+  const workflowsQuery = useFarmWorkflows({
+    params: {
+      page: 0,
+      size: 100,
+      keyword: debouncedWorkflowSearch.trim() || undefined,
+    },
+  });
+  const workflows = workflowsQuery.items || [];
+
+  const selectedWorkflow = useMemo(
+    () =>
+      workflows.find(
+        (workflow) =>
+          String(workflow.id) ===
+          (dailyDiaryDetail?.workflowId
+            ? String(dailyDiaryDetail.workflowId)
+            : formData.regimenId),
+      ),
+    [formData.regimenId, workflows, dailyDiaryDetail?.workflowId],
+  );
+
+  const workflowDomainCode = (selectedWorkflow?.domainCode ??
+    "CROP") as DomainCode;
+
+  const supplyCatalog = useCropSupplyCatalog(workflowDomainCode);
+
+  const supplyMap = useMemo(() => {
+    const map = new Map<
+      number,
+      { name: string; type: SupplyType; typeLabel: string; unit: string }
+    >();
+    const typeOptions = getSupplyTypeOptions(workflowDomainCode);
+
+    (Object.keys(supplyCatalog.optionsByType) as SupplyType[]).forEach(
+      (type) => {
+        const typeOpt = typeOptions.find((t) => t.value === type);
+        const options = supplyCatalog.optionsByType[type] || [];
+        options.forEach((opt) => {
+          if (opt.item?.id) {
+            map.set(opt.item.id, {
+              name: opt.item.name,
+              type,
+              typeLabel: typeOpt?.label || "Vật tư khác",
+              unit: opt.unit || "kg",
+            });
+          }
+        });
+      },
+    );
+    return map;
+  }, [supplyCatalog.optionsByType, workflowDomainCode]);
+
+  const initializedEditIdRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (!editId || !dailyDiaryDetail) return;
+    if (initializedEditIdRef.current === editId) return;
+    initializedEditIdRef.current = editId;
+
+    const detail = dailyDiaryDetail;
+
+    const workTypeMap: Record<string, string> = {
+      CULTIVATION: "cultivation",
+      FACILITY_UPGRADE: "facility-upgrade",
+      TREATMENT: "treatment",
+      SOIL_IMPROVEMENT: "amendment",
+      HARVEST: "harvest",
+    };
+    const workType = workTypeMap[detail.purpose] || "cultivation";
+
+    const newTaskDetails: Record<string, WorkTaskDetail> = {};
+    const newAllocations: MaterialAllocation[] = [];
+
+    (detail.lines || []).forEach((line, idx) => {
+      newTaskDetails[line.name] = {
+        id: line.name,
+        stageName: line.name,
+        progress: 100,
+        priority: (line.priority as WorkTaskDetail["priority"]) || "MEDIUM",
+        startDate: line.startDate,
+        endDate: line.endDate,
+        description: line.description || "",
+        isDirty: false,
+      };
+
+      (line.supplies || []).forEach((s, sIdx) => {
+        const catalogItem = supplyMap.get(s.supplyItemId);
+        newAllocations.push({
+          id: Date.now() + idx * 100 + sIdx,
+          stageId: line.name,
+          materialType: catalogItem?.typeLabel || "Vật tư khác",
+          materialName:
+            catalogItem?.name || s.name || `Vật tư #${s.supplyItemId}`,
+          quantity: String(s.quantityActual ?? 0),
+          actualQuantity: String(s.quantityActual ?? 0),
+          unit: catalogItem?.unit || s.unit || "kg",
+          supplyItemId: s.supplyItemId,
+          unitBaseId: s.unitBaseId,
+          isPlanned: false,
+        });
+      });
+    });
+
+    const hasCropHarvest = (detail.harvestItems || []).some(
+      (h) =>
+        h.targetType === "ZONE_SUBJECT_VARIANT" ||
+        Boolean(h.targetType?.includes("VARIANT")) ||
+        Boolean(h.targetType?.includes("SUBJECT")),
+    );
+    const harvestScope: "region" | "crop" = hasCropHarvest ? "crop" : "region";
+
+    const newHarvestDetails: HarvestDetail[] = (detail.harvestItems || []).map(
+      (h) => {
+        const isCrop =
+          h.targetType === "ZONE_SUBJECT_VARIANT" ||
+          Boolean(h.targetType?.includes("VARIANT")) ||
+          Boolean(h.targetType?.includes("SUBJECT"));
+        return {
+          id: `h-${isCrop ? "variant" : "zone"}-${h.targetId}`,
+          targetId: String(h.targetId),
+          targetLabel:
+            h.targetName || h.productionSubjectName || `Vị trí #${h.targetId}`,
+          codeName:
+            h.targetCode || h.productionSubjectCode || `Vị trí #${h.targetId}`,
+          quantity: String(h.quantity ?? ""),
+          unitBase: "kg",
+        };
+      },
+    );
+
+    setWorkTaskDetails(newTaskDetails);
+    setFormData((prev) => ({
+      ...prev,
+      regimenId: String(detail.workflowId ?? prev.regimenId),
+      workType,
+      harvestScope,
+      harvestTargets: newHarvestDetails.map((d) => d.targetId),
+      description: detail.description || "",
+      startDate: detail.lines?.[0]?.startDate || prev.startDate,
+      endDate: detail.lines?.[0]?.endDate || prev.endDate,
+      selectedStages: Object.keys(newTaskDetails),
+      materialAllocations: newAllocations,
+      harvestDetails: newHarvestDetails,
+    }));
+  }, [editId, dailyDiaryDetail, supplyMap]);
+
+  useEffect(() => {
+    if (supplyMap.size === 0) return;
+    setFormData((prev) => {
+      let changed = false;
+      const updatedAllocations = prev.materialAllocations.map((alloc) => {
+        if (alloc.supplyItemId && supplyMap.has(alloc.supplyItemId)) {
+          const item = supplyMap.get(alloc.supplyItemId)!;
+          if (
+            alloc.materialName.startsWith("Vật tư #") ||
+            alloc.materialType === "Thực tế"
+          ) {
+            changed = true;
+            return {
+              ...alloc,
+              materialName: item.name,
+              materialType: item.typeLabel,
+              unit: alloc.unit || item.unit,
+            };
+          }
+        }
+        return alloc;
+      });
+      if (!changed) return prev;
+      return { ...prev, materialAllocations: updatedAllocations };
+    });
+  }, [supplyMap]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const uploadCacheRef = useRef<Map<string, PhotoRequest>>(new Map());
+
+  const [isPlannedMode, setIsPlannedMode] =
+    useState<boolean>(isPlannedModeDefault);
+  const [selectedPlanId, setSelectedPlanId] = useState<string>(initialPlanId);
+  const [selectedStageId, setSelectedStageId] = useState<string>("");
+  const [selectedTaskId, setSelectedTaskId] = useState<string>(initialTaskId);
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   const [workTaskDetails, setWorkTaskDetails] = useState<
     Record<string, WorkTaskDetail>
@@ -338,30 +327,66 @@ export function HistoryFormContent({
     updates: Partial<WorkTaskDetail>,
   ) => {
     setWorkTaskDetails((prev) => {
+      const defaultStart =
+        formData.startDate || new Date().toISOString().split("T")[0];
+      const defaultEnd =
+        formData.endDate || new Date().toISOString().split("T")[0];
       const existing = prev[stageName] || {
         id: stageName,
         stageName,
         progress: 100,
-        endDate: new Date().toISOString().split("T")[0],
+        priority: "MEDIUM",
+        startDate: defaultStart,
+        endDate: defaultEnd,
+        description: "",
       };
       return {
         ...prev,
         [stageName]: {
           ...existing,
           ...updates,
+          startDate: updates.startDate ?? existing.startDate ?? defaultStart,
+          endDate: updates.endDate ?? existing.endDate ?? defaultEnd,
           isDirty: true,
         },
       };
     });
+
+    setErrors((prev) => {
+      const stageStartKey = `stage_${stageName}_startDate`;
+      const stageEndKey = `stage_${stageName}_endDate`;
+      if (!prev[stageStartKey] && !prev[stageEndKey]) return prev;
+      const next = { ...prev };
+      if (updates.startDate && updates.startDate.trim() !== "") {
+        delete next[stageStartKey];
+      }
+      if (updates.endDate && updates.endDate.trim() !== "") {
+        delete next[stageEndKey];
+      }
+      return next;
+    });
   };
   const [isDragging, setIsDragging] = useState(false);
-  const { items: apiRegions, isFetching: isRegionSearching } = useRegions({
-    params: { size: 100 },
+  const { items: apiCultivationZones } = useCultivationZones({
+    params: { size: 100, includeDetails: true },
   });
-  const regionOptions = useMemo(
-    () => toRegionOptions(apiRegions),
-    [apiRegions],
-  );
+  const regionOptions = useMemo(() => {
+    return toCultivationZoneOptions(apiCultivationZones);
+  }, [apiCultivationZones]);
+
+  const cropSubjectVariants = useMemo(() => {
+    return extractCropSubjectVariants(apiCultivationZones);
+  }, [apiCultivationZones]);
+
+  function getGeographicalTargetId(sel: GeographicalSelection): string {
+    if (sel.type === "plot" && sel.plotId) return String(sel.plotId);
+    if (sel.type === "area" && sel.areaId) return String(sel.areaId);
+    if (sel.type === "region" && sel.regionId) return String(sel.regionId);
+    if (sel.plotId) return String(sel.plotId);
+    if (sel.areaId) return String(sel.areaId);
+    if (sel.regionId) return String(sel.regionId);
+    return String(sel.id);
+  }
 
   const existingGeoSelections = useMemo<GeographicalSelection[]>(() => {
     if (formData.harvestScope !== "region") return [];
@@ -369,10 +394,14 @@ export function HistoryFormContent({
       const parts = detail.codeName ? detail.codeName.split(" › ") : [];
       const type: "region" | "area" | "plot" =
         parts.length >= 3 ? "plot" : parts.length === 2 ? "area" : "region";
+      const targetIdStr = String(detail.targetId);
+
       return {
-        id: detail.targetId,
+        id: targetIdStr,
         type,
-        regionId: detail.targetId,
+        regionId: targetIdStr,
+        areaId: type === "area" || type === "plot" ? targetIdStr : undefined,
+        plotId: type === "plot" ? targetIdStr : undefined,
         name: detail.targetLabel,
         regionName: parts[0] ?? detail.targetLabel,
         areaName: parts[1],
@@ -387,9 +416,12 @@ export function HistoryFormContent({
       formData.harvestDetails.map((d) => [d.targetId, d]),
     );
 
-    const nextTargets = newSelections.map((sel) => sel.id);
+    const nextTargets: string[] = [];
     const nextDetails = newSelections.map((sel) => {
-      const existing = currentMap.get(sel.id);
+      const targetId = getGeographicalTargetId(sel);
+      nextTargets.push(targetId);
+
+      const existing = currentMap.get(targetId) || currentMap.get(sel.id);
       const label =
         sel.name || sel.areaName || sel.regionName || "Vị trí địa lý";
       const codeName =
@@ -399,13 +431,14 @@ export function HistoryFormContent({
       if (existing) {
         return {
           ...existing,
+          targetId,
           targetLabel: label,
           codeName,
         };
       }
       return {
-        id: `h-geo-${sel.id}`,
-        targetId: sel.id,
+        id: `h-geo-${targetId}`,
+        targetId,
         targetLabel: label,
         codeName,
         quantity: "",
@@ -420,149 +453,126 @@ export function HistoryFormContent({
     }));
   };
 
-  const [, setWorkflowSearchQuery] = useState("");
   const [, setPlanSearchQuery] = useState("");
   const [, setTaskSearchQuery] = useState("");
   const [plannedStages, setPlannedStages] = useState<string[]>([]);
 
-  // Load workflows with mock fallback
-  const workflowsQuery = useFarmWorkflows({
-    params: { page: 0, size: 100 },
+  // Load plans for selected workflow
+  const plansQuery = useFarmPlans({
+    params: {
+      page: 0,
+      size: 100,
+      workflowId: formData.regimenId ? Number(formData.regimenId) : undefined,
+    },
+    enabled: Boolean(formData.regimenId),
   });
-  const apiWorkflows = workflowsQuery.items || [];
-  const workflows = useMemo(() => {
-    if (!apiWorkflows || apiWorkflows.length === 0) return MOCK_WORKFLOWS;
-    const apiIds = new Set(apiWorkflows.map((w) => String(w.id)));
-    const remainingMock = MOCK_WORKFLOWS.filter(
-      (mw) => !apiIds.has(String(mw.id)),
-    );
-    return [...apiWorkflows, ...remainingMock];
-  }, [apiWorkflows]);
+  const availablePlans = plansQuery.items || [];
 
-  // Handle initialization: Auto select Workflow, Plan, and Task when initialTaskId is passed or in planned mode
+  // Load tasks for selected plan
+  const tasksQuery = useFarmTasks({
+    params: {
+      page: 0,
+      size: 100,
+      planId: selectedPlanId ? selectedPlanId : undefined,
+    },
+    enabled: Boolean(selectedPlanId),
+  });
+  const availableTasks = tasksQuery.items || [];
+
+  // Fetch initial task detail if initialTaskId is passed
+  const { item: initialTaskData } = useFarmTaskById(initialTaskId || "", {
+    enabled: Boolean(initialTaskId),
+  });
+
+  // Handle initialization when initialTaskData is loaded from API
   useEffect(() => {
-    let taskItem: MockTaskItem | undefined;
+    if (!initialTaskData) return;
+    const taskItem = initialTaskData;
 
-    if (initialTaskId) {
-      taskItem = MOCK_TASKS_LIST.find(
-        (t) =>
-          String(t.id) === String(initialTaskId) ||
-          t.code.toLowerCase() === String(initialTaskId).toLowerCase(),
-      );
-
-      if (!taskItem) {
-        const mockTaskObj = MOCK_TASKS.find(
-          (t) =>
-            String(t.id) === String(initialTaskId) ||
-            t.code.toLowerCase() === String(initialTaskId).toLowerCase(),
-        );
-        if (mockTaskObj) {
-          const planId = String(
-            mockTaskObj.plan?.id ??
-              (mockTaskObj as unknown as { planId?: string }).planId ??
-              "20",
-          );
-          taskItem = {
-            id: String(mockTaskObj.id),
-            planId,
-            code: mockTaskObj.code,
-            name: mockTaskObj.name,
-            workType:
-              mockTaskObj.taskCategory?.code === "CAT-THU-HOACH" ||
-              mockTaskObj.name.toLowerCase().includes("thu hoạch")
-                ? "harvest"
-                : mockTaskObj.taskCategory?.code === "CAT-PHUN-THUOC"
-                  ? "treatment"
-                  : mockTaskObj.taskCategory?.code === "CAT-CAI-TAO"
-                    ? "amendment"
-                    : "cultivation",
-            startDate: mockTaskObj.startDate,
-            endDate: mockTaskObj.endDate,
-            objective: mockTaskObj.note || mockTaskObj.plan?.name,
-            description: mockTaskObj.note,
-            supplyLines: (mockTaskObj.supplyLines || []).map(mapSupplyLineItem),
-          };
-        }
-      }
+    setSelectedTaskId(String(taskItem.id));
+    if (taskItem.stage?.id) {
+      setSelectedStageId(String(taskItem.stage.id));
+    }
+    if (taskItem.plan?.id) {
+      setSelectedPlanId(String(taskItem.plan.id));
+    }
+    if (taskItem.workflow?.id) {
+      setFormData((prev) => ({
+        ...prev,
+        regimenId: String(taskItem.workflow.id),
+      }));
     }
 
-    if (!taskItem && isPlannedModeDefault) {
-      taskItem = MOCK_TASKS_LIST[0];
-    }
-
-    if (taskItem) {
-      const foundPlan = MOCK_PLANS.find(
-        (p) => String(p.id) === String(taskItem.planId),
-      );
-      const planId = foundPlan ? String(foundPlan.id) : "3801";
-      const workflowId = foundPlan ? String(foundPlan.workflowId) : "38";
-
-      setSelectedTaskId(String(taskItem.id));
-      setSelectedPlanId(planId);
-
-      const plannedAllocations: MaterialAllocation[] = (
-        taskItem.supplyLines || []
-      ).map((s, idx) => ({
+    const plannedAllocations: MaterialAllocation[] = (
+      taskItem.supplyLines || []
+    ).map((s, idx) => {
+      const qtyVal = s.quantityActualTotal ?? s.quantity ?? 0;
+      return {
         id: Date.now() + idx,
         stageId: taskItem.name,
         materialType: "Kế hoạch",
-        materialName: s.name,
-        quantity: s.plannedQty,
-        actualQuantity: s.actualQty || s.plannedQty,
-        unit: s.unit,
+        materialName: s.supplyItem?.name || `Vật tư #${s.id}`,
+        quantity: String(qtyVal),
+        actualQuantity: String(qtyVal),
+        unit:
+          s.unitBase?.name ||
+          (s as { unit?: string; unitName?: string }).unit ||
+          (s as { unit?: string; unitName?: string }).unitName ||
+          "",
+        supplyItemId:
+          s.supplyItem?.id || (s as { supplyItemId?: number }).supplyItemId,
+        unitBaseId: s.unitBase?.id || (s as { unitBaseId?: number }).unitBaseId,
         isPlanned: true,
-      }));
-
-      const isHarvestTask =
-        taskItem.workType === "harvest" ||
-        taskItem.name.toLowerCase().includes("thu hoạch") ||
-        taskItem.name.toLowerCase().includes("harvest");
-
-      const resolvedWorkType = isHarvestTask ? "harvest" : taskItem.workType;
-
-      const initTaskProgress = taskItem.lastCompletionPercentage ?? 100;
-      const defaultTaskDetails: Record<string, WorkTaskDetail> = {
-        [taskItem.name]: {
-          id: taskItem.name,
-          stageName: taskItem.name,
-          progress: initTaskProgress,
-          priority:
-            (taskItem.priority as WorkTaskDetail["priority"]) || "MEDIUM",
-          startDate: taskItem.startDate,
-          endDate: taskItem.endDate,
-          description: taskItem.description || "",
-          isDirty: false,
-        },
       };
-      setWorkTaskDetails(defaultTaskDetails);
-      setInitialTaskDetails(defaultTaskDetails);
-      initialTaskDetailsRef.current = JSON.parse(
-        JSON.stringify(defaultTaskDetails),
-      );
-      initialAllocationsRef.current = JSON.parse(
-        JSON.stringify(plannedAllocations),
-      );
+    });
 
-      setPlannedStages([taskItem.name]);
-      setFormData((prev) => ({
-        ...prev,
-        regimenId: workflowId,
-        workType: resolvedWorkType,
+    const isHarvestTask =
+      taskItem.taskCategory?.code === "CAT-THU-HOACH" ||
+      taskItem.name.toLowerCase().includes("thu hoạch") ||
+      taskItem.name.toLowerCase().includes("harvest");
+
+    const resolvedWorkType = isHarvestTask ? "harvest" : "cultivation";
+
+    const taskItemWithProgress = taskItem as { progressPercent?: number };
+    const initialProgress =
+      typeof taskItemWithProgress.progressPercent === "number"
+        ? taskItemWithProgress.progressPercent
+        : taskItem.status === "DONE"
+          ? 100
+          : 0;
+
+    const defaultTaskDetails: Record<string, WorkTaskDetail> = {
+      [taskItem.name]: {
+        id: taskItem.name,
+        stageName: taskItem.name,
+        progress: initialProgress,
+        priority: (taskItem.priority as WorkTaskDetail["priority"]) || "MEDIUM",
         startDate: taskItem.startDate,
-        endDate: taskItem.endDate || new Date().toISOString().split("T")[0],
-        completionPercentage: taskItem.lastCompletionPercentage ?? 60,
-        selectedStages: [taskItem.name],
-        materialAllocations: plannedAllocations,
-      }));
-    }
-  }, [initialTaskId, isPlannedModeDefault]);
+        endDate: taskItem.endDate,
+        description: taskItem.note || "",
+        isDirty: false,
+      },
+    };
+    setWorkTaskDetails(defaultTaskDetails);
+    setInitialTaskDetails(defaultTaskDetails);
+    initialTaskDetailsRef.current = JSON.parse(
+      JSON.stringify(defaultTaskDetails),
+    );
+    initialAllocationsRef.current = JSON.parse(
+      JSON.stringify(plannedAllocations),
+    );
 
-  const selectedWorkflow = useMemo(
-    () =>
-      workflows.find((workflow) => String(workflow.id) === formData.regimenId),
-    [formData.regimenId, workflows],
-  );
-  const workflowDomainCode = selectedWorkflow?.domainCode ?? "CROP";
+    setPlannedStages([taskItem.name]);
+    setFormData((prev) => ({
+      ...prev,
+      workType: resolvedWorkType,
+      startDate: taskItem.startDate,
+      endDate: taskItem.endDate || new Date().toISOString().split("T")[0],
+      completionPercentage: initialProgress,
+      selectedStages: [taskItem.name],
+      materialAllocations: plannedAllocations,
+    }));
+  }, [initialTaskData]);
 
   const workflowOptions = useMemo(
     () =>
@@ -574,70 +584,71 @@ export function HistoryFormContent({
     [workflows],
   );
 
-  const availablePlans = useMemo(() => {
-    if (!formData.regimenId) return [];
-    return MOCK_PLANS.filter(
-      (p) => String(p.workflowId) === String(formData.regimenId),
-    );
-  }, [formData.regimenId]);
-
   const planOptions = useMemo(
     () =>
       availablePlans.map((p) => ({
         label: p.code ? `${p.code} - ${p.name}` : p.name,
         value: String(p.id),
-        keywords: [p.code, p.name],
+        keywords: [p.code, p.name].filter(Boolean) as string[],
       })),
     [availablePlans],
   );
 
   const selectedPlan = useMemo(
-    () => MOCK_PLANS.find((p) => String(p.id) === String(selectedPlanId)),
-    [selectedPlanId],
+    () => availablePlans.find((p) => String(p.id) === String(selectedPlanId)),
+    [availablePlans, selectedPlanId],
   );
 
-  const availableTasks = useMemo(() => {
-    if (!formData.regimenId || !selectedPlanId) return [];
-    return MOCK_TASKS_LIST.filter(
-      (t) => String(t.planId) === String(selectedPlanId),
+  const stageOptions = useMemo(
+    () =>
+      (selectedPlan?.stages || []).map((s) => ({
+        label: s.code ? `${s.code} - ${s.name}` : s.name,
+        value: String(s.id),
+        keywords: [s.code, s.name].filter(Boolean) as string[],
+      })),
+    [selectedPlan],
+  );
+
+  const filteredTasks = useMemo(() => {
+    if (!selectedStageId) return availableTasks;
+    return availableTasks.filter(
+      (t) => t.stage && String(t.stage.id) === String(selectedStageId),
     );
-  }, [formData.regimenId, selectedPlanId]);
+  }, [availableTasks, selectedStageId]);
 
   const taskOptions = useMemo(
     () =>
-      availableTasks.map((t) => ({
+      filteredTasks.map((t) => ({
         label: t.code ? `${t.code} - ${t.name}` : t.name,
         value: String(t.id),
-        keywords: [t.code, t.name],
+        keywords: [t.code, t.name].filter(Boolean) as string[],
       })),
-    [availableTasks],
+    [filteredTasks],
   );
 
   const selectedTask = useMemo(
-    () => MOCK_TASKS_LIST.find((t) => String(t.id) === String(selectedTaskId)),
-    [selectedTaskId],
+    () => availableTasks.find((t) => String(t.id) === String(selectedTaskId)),
+    [availableTasks, selectedTaskId],
   );
 
   const previousPercentage = useMemo(() => {
     const stages = formData.selectedStages;
-    if (stages.length === 0) return 100;
+    if (stages.length === 0) return 0;
     const sum = stages.reduce((acc, stage) => {
       const initDetail = initialTaskDetails[stage];
       const initP =
-        typeof initDetail?.progress === "number"
-          ? initDetail.progress
-          : (selectedTask?.lastCompletionPercentage ?? 100);
+        typeof initDetail?.progress === "number" ? initDetail.progress : 0;
       return acc + initP;
     }, 0);
     return Math.round(sum / stages.length);
-  }, [formData.selectedStages, initialTaskDetails, selectedTask]);
+  }, [formData.selectedStages, initialTaskDetails]);
 
   const currentPercentage = useMemo(() => {
     const stages = formData.selectedStages;
-    if (stages.length === 0) return 100;
+    if (stages.length === 0) return 0;
     const sum = stages.reduce((acc, stage) => {
       const detail = workTaskDetails[stage];
-      const p = typeof detail?.progress === "number" ? detail.progress : 100;
+      const p = typeof detail?.progress === "number" ? detail.progress : 0;
       return acc + p;
     }, 0);
     return Math.round(sum / stages.length);
@@ -710,9 +721,29 @@ export function HistoryFormContent({
       });
       return;
     }
+    const defaultStart =
+      formData.startDate || new Date().toISOString().split("T")[0];
+    const defaultEnd =
+      formData.endDate || new Date().toISOString().split("T")[0];
+
     setFormData((prev) => ({
       ...prev,
       selectedStages: [...prev.selectedStages, nameToAdd],
+    }));
+
+    setWorkTaskDetails((prev) => ({
+      ...prev,
+      [nameToAdd]: {
+        id: nameToAdd,
+        stageName: nameToAdd,
+        progress: 100,
+        priority: "MEDIUM",
+        startDate: defaultStart,
+        endDate: defaultEnd,
+        description: "",
+        isNewStage: true,
+        isDirty: true,
+      },
     }));
   };
 
@@ -731,7 +762,11 @@ export function HistoryFormContent({
       ...prev,
       materialAllocations: [
         ...prev.materialAllocations,
-        { ...item, id: Date.now(), actualQuantity: item.quantity },
+        {
+          ...item,
+          id: Date.now() + Math.floor(Math.random() * 1000),
+          actualQuantity: item.quantity,
+        },
       ],
     }));
   };
@@ -750,6 +785,12 @@ export function HistoryFormContent({
         m.id === id ? { ...m, actualQuantity: val } : m,
       ),
     }));
+    setErrors((prev) => {
+      if (!prev[`alloc_${id}`]) return prev;
+      const next = { ...prev };
+      delete next[`alloc_${id}`];
+      return next;
+    });
   };
 
   const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -783,16 +824,371 @@ export function HistoryFormContent({
     }));
   };
 
-  const handleSubmitForm = () => {
+  const handleSubmitForm = async () => {
     setErrors({});
-    const validationResult = historyFormSchema.safeParse({
+
+    const formValidationResult = historyFormSchema.safeParse({
       regimenId: formData.regimenId,
-      workType: formData.workType,
+      workType: isPlannedMode
+        ? formData.workType || "cultivation"
+        : formData.workType,
       startDate: formData.startDate,
       isPlannedMode,
       planId: selectedPlanId,
       taskId: selectedTaskId,
     });
+
+    const formattedErrors: Record<string, string> = {};
+
+    if (!formValidationResult.success) {
+      formValidationResult.error.issues.forEach((issue) => {
+        if (issue.path[0]) {
+          formattedErrors[String(issue.path[0])] = issue.message;
+        }
+      });
+    }
+
+    // Validate selectedStages and date fields inside workTaskDetails
+    formData.selectedStages.forEach((stage) => {
+      const isPlannedStage = isPlannedMode && plannedStages.includes(stage);
+      const detail = workTaskDetails[stage] || {
+        startDate: isPlannedStage ? formData.startDate : "",
+        endDate: formData.endDate,
+      };
+
+      const startDateVal =
+        detail.startDate || (isPlannedStage ? formData.startDate : "");
+      const endDateVal = detail.endDate || "";
+
+      if (!isPlannedStage && !startDateVal) {
+        formattedErrors[`stage_${stage}_startDate`] =
+          "Vui lòng chọn ngày bắt đầu.";
+      }
+      if (!endDateVal) {
+        formattedErrors[`stage_${stage}_endDate`] =
+          "Vui lòng chọn thời gian kết thúc.";
+      }
+      if (startDateVal && endDateVal && endDateVal < startDateVal) {
+        formattedErrors[`stage_${stage}_endDate`] =
+          "Thời gian kết thúc không thể trước ngày bắt đầu.";
+      }
+    });
+
+    // Validate material allocations ONLY if materials were chosen/added
+    if (formData.materialAllocations.length > 0) {
+      formData.materialAllocations.forEach((alloc) => {
+        const actualQtyStr = String(
+          alloc.actualQuantity ?? alloc.quantity ?? "",
+        ).trim();
+        const actualQty = Number(actualQtyStr);
+        if (actualQtyStr === "" || isNaN(actualQty) || actualQty < 0) {
+          formattedErrors[`alloc_${alloc.id}`] =
+            "Vui lòng nhập số lượng thực tế hợp lệ (≥ 0).";
+        }
+      });
+    }
+
+    if (Object.keys(formattedErrors).length > 0) {
+      setErrors(formattedErrors);
+
+      const firstErrorMsg =
+        Object.values(formattedErrors)[0] ||
+        "Vui lòng điền đầy đủ các thông tin bắt buộc.";
+      toast({
+        title: "Thông tin chưa đầy đủ",
+        description: firstErrorMsg,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (isPlannedMode) {
+      if (!selectedPlanId || !selectedStageId) {
+        toast({
+          title: "Thông tin chưa hợp lệ",
+          description: "Vui lòng chọn Kế hoạch và Hạng mục dự kiến.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const planId = Number(selectedPlanId) || 1;
+      const stageId = Number(selectedStageId) || 1;
+
+      // Build lines for tasks/items that have been modified or added by user
+      const candidateStages =
+        formData.selectedStages.length > 0
+          ? formData.selectedStages
+          : ["Công việc"];
+
+      const activeStages = candidateStages.filter((stName) => {
+        const detail = workTaskDetails[stName];
+        if (candidateStages.length === 1) return true;
+        const isNewStage = !plannedStages.includes(stName);
+        const hasMaterialChange = formData.materialAllocations.some(
+          (alloc) => alloc.stageId === stName && Boolean(alloc.supplyItemId),
+        );
+        return Boolean(detail?.isDirty || isNewStage || hasMaterialChange);
+      });
+
+      if (candidateStages.length > 1 && activeStages.length === 0) {
+        toast({
+          title: "Chưa có thay đổi",
+          description:
+            "Vui lòng cập nhật tiến độ hoặc thông tin cho ít nhất 1 công việc.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const stagesToMap =
+        activeStages.length > 0 ? activeStages : candidateStages;
+
+      const lines: PlanTaskDiaryLineRequest[] = stagesToMap.map((stName) => {
+        const detail = workTaskDetails[stName];
+        const matchedTask = availableTasks.find(
+          (t) => t.name === stName || String(t.id) === detail?.id,
+        );
+        const isNewStageTask =
+          Boolean(detail?.isNewStage) ||
+          !plannedStages.includes(stName) ||
+          !matchedTask;
+        const taskId = isNewStageTask
+          ? undefined
+          : (matchedTask?.id ?? (Number(detail?.id) || undefined));
+
+        const taskExecutors =
+          matchedTask?.personnel?.filter((p) => p.role === "EXECUTOR") || [];
+        const hasExecutors = taskExecutors.length > 0;
+
+        const taskSupplies: SupplyUsageRequest[] = formData.materialAllocations
+          .filter(
+            (alloc) => alloc.stageId === stName && Boolean(alloc.supplyItemId),
+          )
+          .map((alloc) => ({
+            supplyItemId: Number(alloc.supplyItemId),
+            unitBaseId: Number(alloc.unitBaseId || 1),
+            quantityActual: Number(alloc.actualQuantity || alloc.quantity || 0),
+          }));
+
+        return {
+          taskId,
+          description:
+            detail?.description ||
+            matchedTask?.name ||
+            stName ||
+            "Cập nhật tiến độ kế hoạch",
+          endDate:
+            detail?.endDate ||
+            formData.endDate ||
+            new Date().toISOString().split("T")[0],
+          progressPercent: hasExecutors ? undefined : (detail?.progress ?? 100),
+          executorProgress: hasExecutors
+            ? taskExecutors.map((exec) => ({
+                personnelId: exec.id,
+                progressPercent: detail?.progress ?? 100,
+              }))
+            : undefined,
+          supplies: taskSupplies.length > 0 ? taskSupplies : undefined,
+        };
+      });
+
+      // Convert harvestDetails into HarvestItemRequest[]
+      const harvestItems: HarvestItemRequest[] = formData.harvestDetails
+        .map((detail) => {
+          const isSubject =
+            detail.id.includes("subject") ||
+            detail.id.includes("variant") ||
+            formData.harvestScope === "crop";
+          const rawId = String(detail.targetId).replace(/^[^\d]+/, "");
+          const parsedId = parseInt(rawId, 10);
+          const targetId = !isNaN(parsedId) && parsedId > 0 ? parsedId : 0;
+
+          return {
+            targetType: isSubject
+              ? ("ZONE_SUBJECT_VARIANT" as const)
+              : ("ZONE" as const),
+            targetId,
+            quantity: Number(detail.quantity) || 0,
+            unitBaseId: 1,
+          };
+        })
+        .filter((h) => h.quantity > 0 && h.targetId > 0);
+
+      const validationPayload = {
+        planId,
+        stageId,
+        submittedByPersonnelId: undefined,
+        description: formData.description,
+        photos: [],
+        lines,
+        harvestItems: harvestItems.length > 0 ? harvestItems : undefined,
+      };
+
+      const validationResult =
+        createPlanTaskDiaryEntrySchema.safeParse(validationPayload);
+
+      if (!validationResult.success) {
+        const formattedErrors: Record<string, string> = {};
+        validationResult.error.issues.forEach((issue) => {
+          if (issue.path[0]) {
+            formattedErrors[String(issue.path[0])] = issue.message;
+          }
+        });
+        setErrors(formattedErrors);
+
+        const firstErrorMsg =
+          validationResult.error.issues[0]?.message ||
+          "Vui lòng kiểm tra các trường bắt buộc đối với nhật ký kế hoạch.";
+        toast({
+          title: "Thông tin chưa hợp lệ",
+          description: firstErrorMsg,
+          variant: "destructive",
+        });
+        return;
+      }
+
+      setIsSubmitting(true);
+      try {
+        // Upload images in parallel with caching to prevent duplicate uploads
+        const uploadedPhotos = await uploadPhotosInParallel(
+          formData.images || [],
+          workspaceId,
+          uploadCacheRef.current,
+        );
+
+        const finalPayload = {
+          planId,
+          stageId,
+          submittedByPersonnelId: undefined,
+          description: formData.description || null,
+          photos: uploadedPhotos.length > 0 ? uploadedPhotos : undefined,
+          lines,
+          harvestItems: harvestItems.length > 0 ? harvestItems : undefined,
+        };
+
+        await createPlanTaskDiaryMutation.mutateAsync(finalPayload);
+        toast({
+          title: "Thành công",
+          description: "Đã lưu nhật ký theo kế hoạch!",
+        });
+        setLocation(backUrl);
+      } catch (err: unknown) {
+        console.error("Lỗi khi tạo nhật ký kế hoạch:", err);
+        const errObj = err as { response?: { data?: { message?: string } } };
+        toast({
+          title: "Lỗi tạo nhật ký kế hoạch",
+          description:
+            errObj.response?.data?.message ||
+            "Không thể tạo nhật ký theo kế hoạch. Vui lòng thử lại sau.",
+          variant: "destructive",
+        });
+      } finally {
+        setIsSubmitting(false);
+      }
+      return;
+    }
+
+    // ─── AD-HOC MODE: CREATE DAILY DIARY ENTRY via API ───────────────────────
+    const purpose = mapWorkTypeToPurpose(formData.workType);
+    const selectedWorkflow = workflows.find(
+      (w) => String(w.id) === String(formData.regimenId),
+    );
+    const workflowId =
+      Number(formData.regimenId) ||
+      (selectedWorkflow?.id ? Number(selectedWorkflow.id) : 1);
+    const seasonId =
+      selectedWorkflow?.seasons && selectedWorkflow.seasons.length > 0
+        ? Number(selectedWorkflow.seasons[0].id)
+        : workflowId;
+
+    // Convert workTaskDetails into DailyDiaryLineRequest[]
+    const lines: DailyDiaryLineRequest[] = Object.values(workTaskDetails).map(
+      (task) => {
+        const supplies: SupplyUsageRequest[] = formData.materialAllocations
+          .filter(
+            (alloc) =>
+              alloc.stageId === task.stageName && Boolean(alloc.supplyItemId),
+          )
+          .map((alloc) => ({
+            supplyItemId: Number(alloc.supplyItemId),
+            unitBaseId: Number(alloc.unitBaseId || 1),
+            quantityActual: Number(alloc.actualQuantity || alloc.quantity || 0),
+          }));
+
+        return {
+          name: task.stageName || "Công việc phát sinh",
+          priority: task.priority || "MEDIUM",
+          startDate: task.startDate || formData.startDate,
+          endDate: task.endDate || formData.endDate,
+          description: task.description || null,
+          supplies: supplies.length > 0 ? supplies : undefined,
+        };
+      },
+    );
+
+    // If no workTaskDetails were added, create a default line if workType (except harvest) or dates are present
+    if (
+      lines.length === 0 &&
+      formData.workType !== "harvest" &&
+      (formData.workType || formData.startDate)
+    ) {
+      const label =
+        WORK_TYPE_OPTIONS.find((w) => w.value === formData.workType)?.label ||
+        formData.workType ||
+        "phát sinh";
+      const supplies: SupplyUsageRequest[] = formData.materialAllocations
+        .filter((alloc) => Boolean(alloc.supplyItemId))
+        .map((alloc) => ({
+          supplyItemId: Number(alloc.supplyItemId),
+          unitBaseId: Number(alloc.unitBaseId || 1),
+          quantityActual: Number(alloc.actualQuantity || alloc.quantity || 0),
+        }));
+
+      lines.push({
+        name: `Công việc ${label}`,
+        priority: "MEDIUM",
+        startDate: formData.startDate,
+        endDate: formData.endDate,
+        description: formData.description || null,
+        supplies: supplies.length > 0 ? supplies : undefined,
+      });
+    }
+
+    // Convert harvestDetails into HarvestItemRequest[]
+    const harvestItems: HarvestItemRequest[] = formData.harvestDetails
+      .map((detail) => {
+        const isSubject =
+          detail.id.includes("subject") ||
+          detail.id.includes("variant") ||
+          formData.harvestScope === "crop";
+        const rawId = String(detail.targetId).replace(/^[^\d]+/, "");
+        const parsedId = parseInt(rawId, 10);
+        const targetId = !isNaN(parsedId) && parsedId > 0 ? parsedId : 0;
+
+        return {
+          targetType: isSubject
+            ? ("ZONE_SUBJECT_VARIANT" as const)
+            : ("ZONE" as const),
+          targetId,
+          quantity: Number(detail.quantity) || 0,
+          unitBaseId: 1,
+        };
+      })
+      .filter((h) => h.quantity > 0 && h.targetId > 0);
+
+    const validationPayload = {
+      workflowId,
+      seasonId,
+      purpose,
+      description: formData.description,
+      photos: [],
+      lines,
+      harvestItems,
+    };
+
+    const validationResult =
+      createDailyDiaryEntrySchema.safeParse(validationPayload);
 
     if (!validationResult.success) {
       const formattedErrors: Record<string, string> = {};
@@ -803,54 +1199,59 @@ export function HistoryFormContent({
       });
       setErrors(formattedErrors);
 
+      const firstErrorMsg =
+        validationResult.error.issues[0]?.message ||
+        "Vui lòng kiểm tra các trường bắt buộc và đảm bảo có ít nhất 1 nội dung nhật ký.";
       toast({
         title: "Thông tin chưa hợp lệ",
-        description: "Vui lòng điền đầy đủ các thông tin bắt buộc.",
+        description: firstErrorMsg,
         variant: "destructive",
       });
       return;
     }
 
-    const getModifiedTasks = () => {
-      return Object.values(workTaskDetails).filter((task) => {
-        if (task.isDirty) return true;
-        const initObj = initialTaskDetailsRef.current[task.stageName];
-        if (!initObj) return true;
-        return (
-          initObj.progress !== task.progress ||
-          initObj.endDate !== task.endDate ||
-          initObj.startDate !== task.startDate ||
-          initObj.description !== task.description
-        );
-      });
-    };
+    setIsSubmitting(true);
+    try {
+      // Upload images in parallel with caching to prevent duplicate uploads
+      const uploadedPhotos = await uploadPhotosInParallel(
+        formData.images || [],
+        workspaceId,
+        uploadCacheRef.current,
+      );
 
-    const getModifiedAllocations = () => {
-      return formData.materialAllocations.filter((alloc) => {
-        if (alloc.isDirty) return true;
-        const initAlloc = initialAllocationsRef.current.find(
-          (i) => i.id === alloc.id,
-        );
-        if (!initAlloc) return true;
-        return (
-          initAlloc.actualQuantity !== alloc.actualQuantity ||
-          initAlloc.quantity !== alloc.quantity ||
-          initAlloc.unit !== alloc.unit
-        );
-      });
-    };
+      // Build payload and submit
+      const finalPayload = {
+        workflowId,
+        seasonId,
+        purpose,
+        description: formData.description || null,
+        photos: uploadedPhotos.length > 0 ? uploadedPhotos : undefined,
+        lines: lines.length > 0 ? lines : undefined,
+        harvestItems: harvestItems.length > 0 ? harvestItems : undefined,
+      };
 
-    const modifiedTasks = getModifiedTasks();
-    const modifiedAllocations = getModifiedAllocations();
-
-    console.log("Dirty Checking - Tasks to submit:", modifiedTasks);
-    console.log("Dirty Checking - Allocations to submit:", modifiedAllocations);
-
-    toast({
-      title: "Thành công",
-      description: `Đã lưu nhật ký! (${modifiedTasks.length} công việc và ${modifiedAllocations.length} vật tư có thay đổi)`,
-    });
-    setLocation(backUrl);
+      if (editId) {
+        await updateDailyDiaryMutation.mutateAsync({
+          id: editId,
+          payload: finalPayload,
+        });
+        toast({
+          title: "Thành công",
+          description: "Đã cập nhật nhật ký thường nhật!",
+        });
+      } else {
+        await createDailyDiaryMutation.mutateAsync(finalPayload);
+        toast({
+          title: "Thành công",
+          description: "Đã lưu nhật ký thường nhật!",
+        });
+      }
+      setLocation("/diary/daily-history");
+    } catch (err: unknown) {
+      console.error("Lỗi khi tạo nhật ký thường nhật:", err);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -924,6 +1325,7 @@ export function HistoryFormContent({
                   placeholder={`Chọn ${getWorkflowLabel(workflowDomainCode).toLowerCase()}...`}
                   searchPlaceholder={`Tìm ${getWorkflowLabel(workflowDomainCode).toLowerCase()}...`}
                   emptyText="Không tìm thấy mục phù hợp."
+                  loading={workflowsQuery.loading}
                   disabled={!allowModeToggle}
                 />
                 {errors.regimenId && (
@@ -942,10 +1344,11 @@ export function HistoryFormContent({
                 )}
               </div>
 
-              {/* Chế độ Theo kế hoạch -> Combobox chọn Kế hoạch & Hạng mục dự kiến */}
+              {/* Chế độ Theo kế hoạch -> Combobox chọn Kế hoạch & Hạng mục dự kiến (Stage) */}
               {isPlannedMode && (
                 <div className="space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* Combobox 1: Kế hoạch */}
                     <div className="space-y-2">
                       <Label required>Kế hoạch</Label>
                       <RemoteAutoCompleteSelect
@@ -953,7 +1356,15 @@ export function HistoryFormContent({
                         value={selectedPlanId}
                         onChange={(val) => {
                           setSelectedPlanId(val);
+                          setSelectedStageId("");
                           setSelectedTaskId("");
+                          setPlannedStages([]);
+                          setWorkTaskDetails({});
+                          setFormData((prev) => ({
+                            ...prev,
+                            selectedStages: [],
+                            materialAllocations: [],
+                          }));
                           if (errors.planId) {
                             setErrors((prev) => ({ ...prev, planId: "" }));
                           }
@@ -973,102 +1384,157 @@ export function HistoryFormContent({
                       )}
                     </div>
 
+                    {/* Combobox 2: Hạng mục dự kiến (Giai đoạn/Stage thuộc Kế hoạch) */}
                     <div className="space-y-2">
                       <Label required>Hạng mục dự kiến</Label>
                       <RemoteAutoCompleteSelect
-                        options={taskOptions}
-                        value={selectedTaskId}
+                        onSearch={() => {}}
+                        options={stageOptions}
+                        value={selectedStageId}
                         onChange={(val) => {
-                          setSelectedTaskId(val);
-                          const taskItem = MOCK_TASKS_LIST.find(
-                            (t) => String(t.id) === String(val),
+                          setSelectedStageId(val);
+                          if (errors.stageId) {
+                            setErrors((prev) => ({ ...prev, stageId: "" }));
+                          }
+
+                          const targetStage = selectedPlan?.stages?.find(
+                            (s) => String(s.id) === String(val),
                           );
-                          if (taskItem) {
-                            const plannedAllocations: MaterialAllocation[] = (
-                              taskItem.supplyLines || []
-                            ).map((s, idx) => ({
-                              id: Date.now() + idx,
-                              stageId: taskItem.name,
-                              materialType: "Kế hoạch",
-                              materialName: s.name,
-                              quantity: s.plannedQty,
-                              actualQuantity: s.actualQty || s.plannedQty,
-                              unit: s.unit,
-                              isPlanned: true,
-                            }));
+                          const stageTasks = availableTasks.filter(
+                            (t) =>
+                              t.stage && String(t.stage.id) === String(val),
+                          );
 
-                            const isHarvestTask =
-                              taskItem.workType === "harvest" ||
-                              taskItem.name
-                                .toLowerCase()
-                                .includes("thu hoạch") ||
-                              taskItem.name.toLowerCase().includes("harvest");
+                          const newTaskNames: string[] = [];
+                          const newTaskDetails: Record<string, WorkTaskDetail> =
+                            {};
+                          const newAllocations: MaterialAllocation[] = [];
 
-                            const resolvedWorkType = isHarvestTask
-                              ? "harvest"
-                              : taskItem.workType;
-
-                            const initTaskProgress =
-                              taskItem.lastCompletionPercentage ?? 100;
-                            const defaultTaskDetails: Record<
-                              string,
-                              WorkTaskDetail
-                            > = {
-                              [taskItem.name]: {
-                                id: taskItem.name,
-                                stageName: taskItem.name,
-                                progress: initTaskProgress,
+                          if (stageTasks.length > 0) {
+                            stageTasks.forEach((taskItem, tIdx) => {
+                              const taskName = taskItem.name;
+                              newTaskNames.push(taskName);
+                              const taskItemWithProgress = taskItem as {
+                                progressPercent?: number;
+                              };
+                              const taskProgress =
+                                typeof taskItemWithProgress.progressPercent ===
+                                "number"
+                                  ? taskItemWithProgress.progressPercent
+                                  : taskItem.status === "DONE"
+                                    ? 100
+                                    : 0;
+                              newTaskDetails[taskName] = {
+                                id: String(taskItem.id),
+                                stageName: taskName,
+                                progress: taskProgress,
                                 priority:
                                   (taskItem.priority as WorkTaskDetail["priority"]) ||
                                   "MEDIUM",
                                 startDate: taskItem.startDate,
-                                endDate: taskItem.endDate,
-                                description: taskItem.description || "",
+                                endDate:
+                                  taskItem.endDate ||
+                                  new Date().toISOString().split("T")[0],
+                                description: taskItem.note || "",
                                 isDirty: false,
-                              },
-                            };
-                            setWorkTaskDetails(defaultTaskDetails);
-                            setInitialTaskDetails(defaultTaskDetails);
-                            initialTaskDetailsRef.current = JSON.parse(
-                              JSON.stringify(defaultTaskDetails),
-                            );
-                            initialAllocationsRef.current = JSON.parse(
-                              JSON.stringify(plannedAllocations),
-                            );
+                              };
 
-                            setPlannedStages([taskItem.name]);
-                            setFormData((prev) => ({
-                              ...prev,
-                              workType: resolvedWorkType,
-                              startDate: taskItem.startDate,
-                              endDate:
-                                taskItem.endDate ||
-                                new Date().toISOString().split("T")[0],
-                              completionPercentage: initTaskProgress,
-                              selectedStages: [taskItem.name],
-                              materialAllocations: plannedAllocations,
-                              harvestDetails: prev.harvestDetails,
-                            }));
+                              (taskItem.supplyLines || []).forEach(
+                                (s, sIdx) => {
+                                  const qtyVal =
+                                    s.quantityActualTotal ?? s.quantity ?? 0;
+                                  newAllocations.push({
+                                    id: Date.now() + tIdx * 100 + sIdx,
+                                    stageId: taskName,
+                                    materialType: "Kế hoạch",
+                                    materialName:
+                                      s.supplyItem?.name || `Vật tư #${s.id}`,
+                                    quantity: String(qtyVal),
+                                    actualQuantity: String(qtyVal),
+                                    unit:
+                                      s.unitBase?.name ||
+                                      (
+                                        s as {
+                                          unit?: string;
+                                          unitName?: string;
+                                        }
+                                      ).unit ||
+                                      (
+                                        s as {
+                                          unit?: string;
+                                          unitName?: string;
+                                        }
+                                      ).unitName ||
+                                      "",
+                                    supplyItemId:
+                                      s.supplyItem?.id ||
+                                      (s as { supplyItemId?: number })
+                                        .supplyItemId,
+                                    unitBaseId:
+                                      s.unitBase?.id ||
+                                      (s as { unitBaseId?: number }).unitBaseId,
+                                    isPlanned: true,
+                                  });
+                                },
+                              );
+                            });
+                          } else if (
+                            targetStage?.workItems &&
+                            targetStage.workItems.length > 0
+                          ) {
+                            targetStage.workItems.forEach((wi) => {
+                              const wiName = wi.name;
+                              newTaskNames.push(wiName);
+                              newTaskDetails[wiName] = {
+                                id: String(wi.id),
+                                stageName: wiName,
+                                progress: 100,
+                                priority: "MEDIUM",
+                                startDate: new Date()
+                                  .toISOString()
+                                  .split("T")[0],
+                                endDate: new Date().toISOString().split("T")[0],
+                                description: wi.description || "",
+                                isDirty: false,
+                              };
+                            });
+                          } else if (targetStage) {
+                            const stageName = targetStage.name;
+                            newTaskNames.push(stageName);
+                            newTaskDetails[stageName] = {
+                              id: String(targetStage.id),
+                              stageName: stageName,
+                              progress: 100,
+                              priority: "MEDIUM",
+                              startDate: new Date().toISOString().split("T")[0],
+                              endDate: new Date().toISOString().split("T")[0],
+                              description: targetStage.description || "",
+                              isDirty: false,
+                            };
                           }
-                          if (errors.taskId) {
-                            setErrors((prev) => ({ ...prev, taskId: "" }));
-                          }
+
+                          setWorkTaskDetails(newTaskDetails);
+                          setInitialTaskDetails(newTaskDetails);
+                          setPlannedStages(newTaskNames);
+                          setFormData((prev) => ({
+                            ...prev,
+                            selectedStages: newTaskNames,
+                            materialAllocations: newAllocations,
+                          }));
                         }}
-                        onSearch={(query) => {
-                          setTaskSearchQuery(query);
-                        }}
-                        placeholder="Chọn công việc..."
-                        searchPlaceholder="Tìm công việc..."
-                        emptyText="Không tìm thấy công việc."
+                        placeholder="Chọn hạng mục dự kiến..."
+                        searchPlaceholder="Tìm hạng mục dự kiến..."
+                        emptyText="Không tìm thấy hạng mục dự kiến."
                         disabled={
                           !allowModeToggle ||
                           !formData.regimenId ||
-                          !selectedPlanId
+                          !selectedPlanId ||
+                          stageOptions.length === 0
                         }
                       />
-                      {errors.taskId && (
+                      {errors.stageId && (
                         <p className="text-xs font-medium text-red-500 mt-1">
-                          {errors.taskId}
+                          {errors.stageId}
                         </p>
                       )}
                     </div>
@@ -1412,56 +1878,67 @@ export function HistoryFormContent({
 
                   <div className="space-y-4">
                     {formData.harvestScope === "region" ? (
-                      <GeographicalSelector
+                      <CultivationZoneSelector
                         regions={regionOptions}
                         existingSelections={existingGeoSelections}
                         onConfirm={handleConfirmGeoSelections}
-                        isRegionSearching={isRegionSearching}
+                        regionOnly={true}
                         customTrigger={
                           <Button
                             type="button"
                             variant="outline"
-                            className="w-full h-11 border-2 border-dashed border-emerald-200 bg-emerald-50/40 hover:bg-emerald-50 hover:border-emerald-400 text-emerald-700 font-bold gap-2 transition-all rounded-xl shadow-2xs cursor-pointer text-xs justify-center"
+                            className="w-full cursor-pointer border-2 border-dashed border-primary/20 bg-primary/5 hover:bg-primary/10 hover:border-primary/40 text-primary font-bold gap-2 transition-all rounded-lg shadow-sm hover:shadow-md"
                           >
-                            <Layers className="w-4 h-4 text-emerald-600" />
+                            <Plus className="w-5 h-5" />
                             <span>
                               {formData.harvestDetails.length > 0
-                                ? `Đã chọn ${formData.harvestDetails.length} đơn vị địa lý (Bấm để chọn lại)`
-                                : "Chọn các vùng / khu vực / lô địa lý thu hoạch..."}
+                                ? `Đã chọn ${formData.harvestDetails.length} vùng canh tác (Bấm để chọn lại)`
+                                : "Chọn vùng canh tác..."}
                             </span>
                           </Button>
                         }
                       />
                     ) : (
                       <HarvestTreeSelectorDialog
+                        variants={cropSubjectVariants}
                         selectedItems={formData.harvestDetails
                           .filter((d) => d.codeName)
                           .map((d) => ({
-                            id: d.targetId,
+                            id: d.targetId.toString(),
                             codeName: d.codeName,
                             label: d.targetLabel,
                             treeCode: d.codeName,
-                            regionName: "Vùng trồng #1",
+                            regionName: d.codeName,
                           }))}
                         onConfirmSelections={(trees) => {
                           const currentMap = new Map(
-                            formData.harvestDetails.map((d) => [d.targetId, d]),
+                            formData.harvestDetails.map((d) => [
+                              String(d.targetId),
+                              d,
+                            ]),
                           );
-                          const nextTargets = trees.map((t) => t.id);
+                          const nextTargets = trees.map((t) =>
+                            String(t.linkId ?? t.id),
+                          );
                           const nextDetails = trees.map((t) => {
-                            const existing = currentMap.get(t.id);
+                            const targetIdStr = String(t.linkId ?? t.id);
+                            const existing = currentMap.get(targetIdStr);
+                            const label = t.name || `Giống #${t.id}`;
+                            const codeName = t.code || label;
+
                             if (existing) {
                               return {
                                 ...existing,
-                                codeName: t.treeCode,
-                                targetLabel: t.label,
+                                targetId: targetIdStr,
+                                codeName,
+                                targetLabel: label,
                               };
                             }
                             return {
-                              id: `h-tree-${t.id}`,
-                              targetId: t.id,
-                              targetLabel: t.label,
-                              codeName: t.treeCode,
+                              id: `h-variant-${targetIdStr}`,
+                              targetId: targetIdStr,
+                              targetLabel: label,
+                              codeName,
                               quantity: "",
                               unitBase: "kg",
                             };
@@ -1528,11 +2005,11 @@ export function HistoryFormContent({
                             </div>
 
                             {formData.harvestScope === "region" ? (
-                              <GeographicalSelector
+                              <CultivationZoneSelector
                                 regions={regionOptions}
                                 existingSelections={existingGeoSelections}
                                 onConfirm={handleConfirmGeoSelections}
-                                isRegionSearching={isRegionSearching}
+                                regionOnly={true}
                                 customTrigger={
                                   <GeographicalSelectionCard
                                     codeName={detail.codeName}
@@ -1632,6 +2109,7 @@ export function HistoryFormContent({
             workTaskDetails={workTaskDetails}
             materialAllocations={formData.materialAllocations}
             domainCode={workflowDomainCode as DomainCode}
+            errors={errors}
             onAddStage={addStage}
             onRemoveStage={removeStage}
             onUpdateWorkTaskDetail={handleUpdateWorkTaskDetail}
@@ -1654,10 +2132,13 @@ export function HistoryFormContent({
         </Button>
         <Button
           type="button"
-          className="h-11 px-8 rounded-xl text-sm bg-emerald-600 hover:bg-emerald-700 text-white font-bold shadow-md shadow-emerald-600/20"
+          disabled={isSubmitting || createDailyDiaryMutation.isPending}
+          className="h-11 px-8 rounded-xl text-sm bg-emerald-600 hover:bg-emerald-700 text-white font-bold shadow-md shadow-emerald-600/20 disabled:opacity-50"
           onClick={handleSubmitForm}
         >
-          Lưu nhật ký
+          {isSubmitting || createDailyDiaryMutation.isPending
+            ? "Đang lưu nhật ký..."
+            : "Lưu nhật ký"}
         </Button>
       </div>
     </PageWrapper>

@@ -57,6 +57,7 @@ export interface FarmTaskSupplyLineResponse {
   unitBase: FarmTaskSupplyUnitBaseRef;
   quantity: number;
   displayOrder: number;
+  quantityActualTotal: number;
 }
 
 export interface FarmTaskSourceWorkItemRef {
@@ -132,6 +133,8 @@ export interface FarmTaskParentRef {
   name?: string;
 }
 
+export type FarmTaskSort = "RECENTLY_ASSIGNED";
+
 export interface FarmTaskQueryParams {
   origin?: FarmTaskOrigin;
   planId?: number | string;
@@ -140,6 +143,12 @@ export interface FarmTaskQueryParams {
   status?: FarmTaskStatus;
   priority?: FarmTaskPriority;
   assignedPersonnelId?: number | string;
+  assignedPersonnelRoles?:
+    | FarmTaskPersonnelRole
+    | FarmTaskPersonnelRole[]
+    | string;
+  overdue?: boolean;
+  sort?: FarmTaskSort | string;
   keyword?: string;
   fromDate?: string;
   toDate?: string;
@@ -154,6 +163,10 @@ export interface FarmTaskStatsQueryParams {
   domainCode?: DomainCode;
   priority?: FarmTaskPriority;
   assignedPersonnelId?: number | string;
+  assignedPersonnelRoles?:
+    | FarmTaskPersonnelRole
+    | FarmTaskPersonnelRole[]
+    | string;
   keyword?: string;
   fromDate?: string;
   toDate?: string;
@@ -165,6 +178,7 @@ export interface FarmTaskStatsResponse {
   doingTasks: number;
   doneTasks: number;
   cancelledTasks: number;
+  overdueTasks?: number;
 }
 
 export type FarmTaskPageResponse = PageResponse<FarmTaskResponse>;
@@ -182,15 +196,19 @@ export interface FarmTaskCalendarEntry {
   preview: FarmTaskCalendarPreview[];
 }
 
-export interface FarmTaskCalendarQueryParams
-  extends Omit<FarmTaskQueryParams, "page" | "size"> {
+export interface FarmTaskCalendarQueryParams extends Omit<
+  FarmTaskQueryParams,
+  "page" | "size"
+> {
   fromDate: string;
   toDate: string;
   previewLimit?: number;
 }
 
-export interface FarmTaskCalendarDayQueryParams
-  extends Omit<FarmTaskQueryParams, "fromDate" | "toDate"> {
+export interface FarmTaskCalendarDayQueryParams extends Omit<
+  FarmTaskQueryParams,
+  "fromDate" | "toDate"
+> {
   page?: number;
   size?: number;
 }

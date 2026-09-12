@@ -23,16 +23,19 @@ import {
   Sprout,
   User,
   Zap,
+  Edit3,
+  Wrench,
+  Bug,
+  ExternalLink,
 } from "lucide-react";
-import { useLocation, useParams } from "wouter";
-import {
-  MOCK_PLANS,
-  MOCK_TASKS,
-  MOCK_TASKS_LIST,
-  MOCK_UPDATE_HISTORY,
-  MOCK_WORKFLOWS,
-  type TaskHistoryItem,
-} from "./mock/history.mock";
+import { useLocation, useParams, useSearch } from "wouter";
+import { useFarmDailyDiaryEntryDetail } from "@/features/farm-daily-diary";
+import { useFarmTaskDiaryHistory } from "@/features/farm-plan-task-diary";
+import { useFarmWorkflows } from "@/features/farm-workflow/hooks";
+import { useFarmTaskById } from "@/features/farm-task/hooks";
+import { useQuery } from "@tanstack/react-query";
+import { farmSupplyApi } from "@/features/farm-supply/api/farm-supply.api";
+import type { TaskHistoryItem } from "./mock/history.mock";
 import { WorkflowScopeMapModal } from "./components/dialogs/WorkflowScopeMapModal";
 
 function formatDate(isoString?: string) {
@@ -50,20 +53,25 @@ function formatDate(isoString?: string) {
   return `${timeStr} ${dateStr}`;
 }
 
-function getWorkTypeBadge(catName?: string) {
-  const name = (catName || "").toLowerCase();
-  if (name.includes("thu hoạch") || name.includes("harvest")) {
+function getWorkTypeBadge(purposeOrCategoryName?: string) {
+  const str = (purposeOrCategoryName || "").toUpperCase();
+
+  if (
+    str === "FACILITY_UPGRADE" ||
+    str.includes("NÂNG CẤP") ||
+    str.includes("CSVC")
+  ) {
     return (
       <Badge
         variant="outline"
-        className="bg-amber-50 text-amber-700 border-amber-200 font-bold gap-1.5 px-3 py-1 text-xs rounded-xl"
+        className="bg-blue-50 text-blue-700 border-blue-200 font-bold gap-1.5 px-3 py-1 text-xs rounded-xl"
       >
-        <Zap className="w-3.5 h-3.5 text-amber-600" />
-        Thu hoạch
+        <Wrench className="w-3.5 h-3.5 text-blue-600" />
+        Nâng cấp CSVC
       </Badge>
     );
   }
-  if (name.includes("cải tạo")) {
+  if (str === "SOIL_IMPROVEMENT" || str.includes("CẢI TẠO")) {
     return (
       <Badge
         variant="outline"
@@ -74,14 +82,29 @@ function getWorkTypeBadge(catName?: string) {
       </Badge>
     );
   }
-  if (name.includes("điều trị") || name.includes("thuốc")) {
+  if (
+    str === "TREATMENT" ||
+    str.includes("ĐIỀU TRỊ") ||
+    str.includes("THUỐC")
+  ) {
     return (
       <Badge
         variant="outline"
         className="bg-rose-50 text-rose-700 border-rose-200 font-bold gap-1.5 px-3 py-1 text-xs rounded-xl"
       >
-        <Layers className="w-3.5 h-3.5 text-rose-600" />
+        <Bug className="w-3.5 h-3.5 text-rose-600" />
         Phun thuốc / Điều trị
+      </Badge>
+    );
+  }
+  if (str === "HARVEST" || str.includes("THU HOẠCH")) {
+    return (
+      <Badge
+        variant="outline"
+        className="bg-amber-50 text-amber-700 border-amber-200 font-bold gap-1.5 px-3 py-1 text-xs rounded-xl"
+      >
+        <Zap className="w-3.5 h-3.5 text-amber-600" />
+        Thu hoạch
       </Badge>
     );
   }
@@ -90,7 +113,7 @@ function getWorkTypeBadge(catName?: string) {
       variant="outline"
       className="bg-purple-50 text-purple-700 border-purple-200 font-bold gap-1.5 px-3 py-1 text-xs rounded-xl"
     >
-      <ClipboardList className="w-3.5 h-3.5 text-purple-600" />
+      <Layers className="w-3.5 h-3.5 text-purple-600" />
       Canh tác
     </Badge>
   );
@@ -102,89 +125,334 @@ export default function UpdateHistoryDetailPage() {
   const [logSearchQuery, setLogSearchQuery] = useState("");
   const [previewImage, setPreviewImage] = useState<string | null>(null);
 
-  // Find task item from MOCK_UPDATE_HISTORY or fallback
-  const taskHistoryItem: TaskHistoryItem | undefined = useMemo(() => {
-    if (!taskId) return undefined;
-    const found = MOCK_UPDATE_HISTORY.find(
-      (item) =>
-        String(item.id) === String(taskId) ||
-        item.taskCode.toLowerCase() === String(taskId).toLowerCase(),
+  const search = useSearch();
+  const searchParams = useMemo(() => new URLSearchParams(search), [search]);
+  const typeParam = searchParams.get("type");
+  const isPlannedType = typeParam === "PLANNED";
+
+  const { data: baseUnits } = useQuery({
+    queryKey: ["base-units"],
+    queryFn: () => farmSupplyApi.listBaseUnits(),
+    staleTime: 10 * 60 * 1000,
+  });
+
+  const baseUnitMap = useMemo(() => {
+    const map = new Map<number, string>();
+    (baseUnits || []).forEach((u) => {
+      if (u.id) {
+        map.set(u.id, u.name || u.code || "");
+      }
+    });
+    return map;
+  }, [baseUnits]);
+
+  // Fetch real daily diary entry detail only if not PLANNED type
+  const { data: dailyDiaryDetail, isLoading: isDailyLoading } =
+    useFarmDailyDiaryEntryDetail(taskId, Boolean(taskId) && !isPlannedType);
+
+  const workflowsQuery = useFarmWorkflows({ params: { page: 0, size: 100 } });
+  const apiWorkflows = workflowsQuery.items || [];
+
+  const dailyDiaryHistoryItem: TaskHistoryItem | undefined = useMemo(() => {
+    if (!dailyDiaryDetail) return undefined;
+
+    const matchedWorkflow = apiWorkflows.find(
+      (w) => String(w.id) === String(dailyDiaryDetail.workflowId),
     );
-    if (found) return found;
 
-    // Fallback search from MOCK_TASKS_LIST or MOCK_TASKS
-    const taskObj =
-      MOCK_TASKS_LIST.find((t) => String(t.id) === String(taskId)) ||
-      MOCK_TASKS.find((t) => String(t.id) === String(taskId));
+    const firstLine = dailyDiaryDetail.lines?.[0];
+    const purposeMap: Record<string, string> = {
+      CULTIVATION: "Canh tác",
+      FACILITY_UPGRADE: "Nâng cấp CSVC",
+      TREATMENT: "Điều trị",
+      SOIL_IMPROVEMENT: "Cải tạo đất",
+      HARVEST: "Thu hoạch",
+    };
+    const purposeLabel =
+      purposeMap[dailyDiaryDetail.purpose] ||
+      dailyDiaryDetail.purpose ||
+      "Canh tác";
 
-    if (taskObj) {
-      const planObj = MOCK_PLANS.find(
-        (p) =>
-          String(p.id) === String((taskObj as any).planId || taskObj.plan?.id),
+    const suppliesList = (dailyDiaryDetail.lines || []).flatMap((line) =>
+      (line.supplies || []).map((s) => {
+        const item = s as typeof s & {
+          unitName?: string;
+          unitBase?: { name?: string };
+          unitBaseId?: number;
+        };
+        const unitName =
+          s.unit ||
+          item.unitName ||
+          item.unitBase?.name ||
+          (item.unitBaseId ? baseUnitMap.get(item.unitBaseId) : "") ||
+          "";
+        return {
+          id: String(s.supplyItemId),
+          name: s.name || `Vật tư #${s.supplyItemId}`,
+          actualQty: String(s.quantityActual ?? 0),
+          unit: unitName,
+        };
+      }),
+    );
+
+    const harvestList = (dailyDiaryDetail.harvestItems || []).map((h) => {
+      const item = h as typeof h & {
+        unit?: string;
+        unitName?: string;
+        unitBase?: { name?: string };
+        unitBaseId?: number;
+      };
+      const unitName =
+        item.unit ||
+        item.unitName ||
+        item.unitBase?.name ||
+        (h.unitBaseId ? baseUnitMap.get(h.unitBaseId) : "") ||
+        "";
+      return {
+        id: String(h.targetId),
+        targetLabel:
+          h.targetName || h.productionSubjectName || `Vị trí #${h.targetId}`,
+        quantity: String(h.quantity ?? 0),
+        unit: unitName,
+      };
+    });
+
+    const photoObjects = (dailyDiaryDetail.photos || []).map((p) => ({
+      objectKey: p.objectKey,
+      fileUrl: p.fileUrl,
+      fileName: p.fileName || "Ảnh bằng chứng",
+      mimeType: p.mimeType,
+      sizeBytes: p.sizeBytes,
+      thumbnailUrl: p.thumbnail?.fileUrl || p.fileUrl,
+    }));
+
+    const photosList = photoObjects.map((p) => p.fileUrl);
+
+    return {
+      id: dailyDiaryDetail.id,
+      taskCode: dailyDiaryDetail.code,
+      taskName:
+        firstLine?.name ||
+        dailyDiaryDetail.description ||
+        `Nhật ký ${purposeLabel}`,
+      origin: "AD_HOC",
+      workflowCode:
+        matchedWorkflow?.code || `WKF-${dailyDiaryDetail.workflowId ?? ""}`,
+      workflowName: matchedWorkflow
+        ? `${matchedWorkflow.code} - ${matchedWorkflow.name}`
+        : "Vụ mùa canh tác",
+      workflowId: dailyDiaryDetail.workflowId ?? 0,
+      planCode: "N/A",
+      planName: "Nhật ký phát sinh ngoài kế hoạch",
+      planId: 0,
+      taskCategoryName:
+        dailyDiaryDetail.purpose ||
+        firstLine?.taskCategory?.name ||
+        purposeLabel,
+      latestUpdate: {
+        id: dailyDiaryDetail.id,
+        updatedAt: dailyDiaryDetail.createdAt,
+        updaterName: `Người dùng #${dailyDiaryDetail.createdByUserId ?? 1}`,
+        updaterRole: "Nông hộ / Kỹ thuật viên",
+        completionPercent: 100,
+        status: "COMPLETED",
+        note:
+          dailyDiaryDetail.description ||
+          firstLine?.description ||
+          "Ghi nhận nhật ký canh tác",
+        supplies: suppliesList,
+        harvestDetails: harvestList,
+        photos: photosList,
+        photoObjects,
+      },
+      historyLogs: [
+        {
+          id: dailyDiaryDetail.id,
+          updatedAt: dailyDiaryDetail.createdAt,
+          updaterName: `Người dùng #${dailyDiaryDetail.createdByUserId ?? 1}`,
+          updaterRole: "Nông hộ / Kỹ thuật viên",
+          completionPercent: 100,
+          status: "COMPLETED",
+          note:
+            dailyDiaryDetail.description ||
+            firstLine?.description ||
+            "Ghi nhận nhật ký canh tác",
+          supplies: suppliesList,
+          harvestDetails: harvestList,
+          photos: photosList,
+          photoObjects,
+        },
+      ],
+    };
+  }, [dailyDiaryDetail, apiWorkflows, baseUnitMap]);
+
+  // Find task item from MOCK_UPDATE_HISTORY or fallback
+  // Fetch real task detail (GET /api/farm/tasks/{id})
+  const { data: realFarmTask, isLoading: isTaskLoading } = useFarmTaskById(
+    taskId,
+    {
+      enabled: Boolean(taskId) && isPlannedType,
+    },
+  );
+
+  // Fetch real update history entries for task (GET /api/farm/tasks/{id}/plan-diary-entries)
+  const { items: taskDiaryHistory, loading: isTaskHistoryLoading } =
+    useFarmTaskDiaryHistory(
+      taskId || "",
+      { page: 0, size: 50 },
+      { enabled: Boolean(taskId) && isPlannedType },
+    );
+
+  const plannedTaskHistoryItem: TaskHistoryItem | undefined = useMemo(() => {
+    if (!realFarmTask) return undefined;
+
+    const defaultSupplies = (realFarmTask.supplyLines || []).map((s) => {
+      const item = s as typeof s & {
+        unit?: string;
+        unitName?: string;
+        unitBaseId?: number;
+      };
+      const unitName =
+        s.unitBase?.name ||
+        item.unit ||
+        item.unitName ||
+        (item.unitBaseId ? baseUnitMap.get(item.unitBaseId) : "") ||
+        "";
+      return {
+        id: String(s.supplyItem?.id || s.id),
+        name: s.supplyItem?.name || `Vật tư #${s.id}`,
+        actualQty: String(s.quantityActualTotal ?? s.quantity ?? 0),
+        unit: unitName,
+      };
+    });
+
+    const logsFromHistory = (taskDiaryHistory || []).map((entry) => {
+      const entryFirstLine = entry.lines?.[0];
+      const entrySupplies = (entry.lines || []).flatMap((line) =>
+        (line.supplies || []).map((s) => {
+          const item = s as typeof s & {
+            unitName?: string;
+            unitBaseId?: number;
+          };
+          const unitName =
+            s.unit ||
+            s.unitBase?.name ||
+            item.unitName ||
+            (item.unitBaseId ? baseUnitMap.get(item.unitBaseId) : "") ||
+            "";
+          return {
+            id: String(s.supplyItemId || s.id),
+            name:
+              s.supplyItem?.name ||
+              s.name ||
+              `Vật tư #${s.supplyItemId || s.id}`,
+            actualQty: String(s.quantityActual ?? 0),
+            unit: unitName,
+          };
+        }),
       );
-      const workflowObj = MOCK_WORKFLOWS.find(
-        (w) =>
-          String(w.id) ===
-          String(planObj?.workflowId || (taskObj as any).workflow?.id || "38"),
-      );
+      const entryPhotos = (entry.photos || []).map((p) => ({
+        objectKey: p.objectKey,
+        fileUrl: p.fileUrl,
+        fileName: p.fileName || "Ảnh bằng chứng",
+        mimeType: p.mimeType,
+        sizeBytes: p.sizeBytes,
+        thumbnailUrl: p.thumbnail?.fileUrl || p.fileUrl,
+      }));
 
       return {
-        id: taskObj.id,
-        taskCode: taskObj.code,
-        taskName: taskObj.name,
-        origin: "PLANNED",
-        workflowCode: workflowObj?.code || "WKF-0000035",
-        workflowName: workflowObj
-          ? `${workflowObj.code} - ${workflowObj.name}`
-          : "Vụ mùa chuẩn",
-        workflowId: workflowObj?.id || 38,
-        planCode: planObj?.code || "PLN-3801",
-        planName: planObj?.name || "Kế hoạch Canh tác",
-        planId: planObj?.id || 3801,
-        taskCategoryName: (taskObj as any).taskCategory?.name || "Canh tác",
-        latestUpdate: {
-          id: `upd-${taskObj.id}-1`,
-          updatedAt: taskObj.updatedAt || new Date().toISOString(),
-          updaterName: "Người cập nhật",
-          updaterRole: "Kỹ thuật viên",
-          completionPercent: 60,
-          status: "DOING",
-          note:
-            taskObj.description ||
-            taskObj.note ||
-            "Đã cập nhật tiến độ công việc.",
-          supplies: [],
-        },
-        historyLogs: [
-          {
-            id: `upd-${taskObj.id}-1`,
-            updatedAt: taskObj.updatedAt || new Date().toISOString(),
-            updaterName: "Người cập nhật",
-            updaterRole: "Kỹ thuật viên",
-            completionPercent: 60,
-            status: "DOING",
-            note:
-              taskObj.description ||
-              taskObj.note ||
-              "Đã cập nhật tiến độ công việc.",
-            supplies: [],
-          },
-        ],
+        id: entry.id,
+        updatedAt: entry.createdAt,
+        updaterName:
+          entry.submittedByPersonnel?.fullName ||
+          `Người dùng #${entry.createdByUserId ?? 1}`,
+        updaterRole: "Kỹ thuật viên",
+        completionPercent: entryFirstLine?.progressPercent ?? 100,
+        status: "COMPLETED",
+        note:
+          entry.description ||
+          entryFirstLine?.description ||
+          realFarmTask.note ||
+          realFarmTask.name ||
+          "Ghi nhận nhật ký kế hoạch",
+        supplies: entrySupplies.length > 0 ? entrySupplies : defaultSupplies,
+        harvestDetails: (entry.harvestItems || []).map((h) => {
+          const item = h as typeof h & {
+            unit?: string;
+            unitName?: string;
+            unitBase?: { name?: string };
+            unitBaseId?: number;
+          };
+          const unitName =
+            item.unit ||
+            item.unitName ||
+            item.unitBase?.name ||
+            (h.unitBaseId ? baseUnitMap.get(h.unitBaseId) : "") ||
+            "";
+          return {
+            id: String(h.targetId),
+            targetLabel:
+              h.targetName ||
+              h.productionSubjectName ||
+              `Vị trí #${h.targetId}`,
+            quantity: String(h.quantity ?? 0),
+            unit: unitName,
+          };
+        }),
+        photos: entryPhotos.map((p) => p.fileUrl),
+        photoObjects: entryPhotos,
       };
-    }
+    });
 
-    return undefined;
-  }, [taskId]);
+    const isDone = realFarmTask.status === "DONE";
+    const isDoing = realFarmTask.status === "DOING";
+    const percent =
+      realFarmTask.progressPercent ?? (isDone ? 100 : isDoing ? 50 : 0);
+    const personnelName =
+      realFarmTask.personnel?.[0]?.fullName || "Kỹ thuật viên";
+
+    const latestLog = logsFromHistory[0] || {
+      id: `upd-${realFarmTask.id}`,
+      updatedAt:
+        realFarmTask.updatedAt ||
+        realFarmTask.createdAt ||
+        new Date().toISOString(),
+      updaterName: personnelName,
+      updaterRole: "Phân bổ",
+      completionPercent: percent,
+      status: isDone ? "COMPLETED" : "DOING",
+      note: realFarmTask.note || realFarmTask.name,
+      supplies: defaultSupplies,
+    };
+
+    return {
+      id: realFarmTask.id,
+      taskCode: realFarmTask.code,
+      taskName: realFarmTask.name,
+      origin: realFarmTask.origin || "PLANNED",
+      workflowCode: realFarmTask.workflow?.code || "WKF-0000035",
+      workflowName: realFarmTask.workflow?.name || "Vụ mùa canh tác",
+      workflowId: realFarmTask.workflow?.id || 0,
+      planCode: realFarmTask.plan?.code || "N/A",
+      planName: realFarmTask.plan?.name || "Kế hoạch canh tác",
+      planId: realFarmTask.plan?.id || 0,
+      taskCategoryName: realFarmTask.taskCategory?.name || "Canh tác",
+      latestUpdate: latestLog,
+      historyLogs: logsFromHistory.length > 0 ? logsFromHistory : [latestLog],
+    };
+  }, [realFarmTask, taskDiaryHistory]);
+
+  const taskHistoryItem = isPlannedType
+    ? plannedTaskHistoryItem
+    : dailyDiaryHistoryItem || plannedTaskHistoryItem;
 
   // Find workflow item for map scope modal
   const selectedWorkflow = useMemo(() => {
-    if (!taskHistoryItem?.workflowId) return MOCK_WORKFLOWS[0];
-    return (
-      MOCK_WORKFLOWS.find(
-        (w) => String(w.id) === String(taskHistoryItem.workflowId),
-      ) || MOCK_WORKFLOWS[0]
+    if (!taskHistoryItem?.workflowId) return undefined;
+    return apiWorkflows.find(
+      (w) => String(w.id) === String(taskHistoryItem.workflowId),
     );
-  }, [taskHistoryItem]);
+  }, [taskHistoryItem, apiWorkflows]);
 
   // Filter history logs inside this task
   const filteredLogs = useMemo(() => {
@@ -268,6 +536,26 @@ export default function UpdateHistoryDetailPage() {
 
   const currentPercent = taskHistoryItem?.latestUpdate?.completionPercent ?? 60;
 
+  const isPlannedLoading =
+    isPlannedType && (isTaskLoading || isTaskHistoryLoading);
+  const isLoading = isPlannedType ? isPlannedLoading : isDailyLoading;
+
+  if (isLoading) {
+    return (
+      <PageWrapper
+        title="Đang tải chi tiết nhật ký..."
+        description="Vui lòng chờ trong giây lát"
+      >
+        <div className="py-20 text-center space-y-4">
+          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-600"></div>
+          <p className="text-slate-500 font-medium">
+            Đang tải dữ liệu chi tiết nhật ký...
+          </p>
+        </div>
+      </PageWrapper>
+    );
+  }
+
   if (!taskHistoryItem) {
     return (
       <PageWrapper
@@ -309,18 +597,32 @@ export default function UpdateHistoryDetailPage() {
           <Button
             variant="outline"
             className="h-10 px-4 text-sm font-semibold gap-2 border-slate-200 hover:bg-slate-50 cursor-pointer"
-            onClick={() => setLocation("/diary/update")}
+            onClick={() => {
+              if (window.history.length > 1) {
+                window.history.back();
+              } else {
+                setLocation(
+                  taskHistoryItem?.origin === "PLANNED"
+                    ? "/diary/plan"
+                    : "/diary/daily-history",
+                );
+              }
+            }}
           >
             <ChevronLeft className="h-4 w-4" />
             Quay lại
           </Button>
-          <Button
-            className="h-10 px-4 text-sm font-bold text-white gap-2 cursor-pointer"
-            onClick={() => setLocation(`/diary/plan/${taskHistoryItem.id}`)}
-          >
-            <Plus className="h-4 w-4" />
-            Cập nhật đợt mới
-          </Button>
+          {dailyDiaryDetail?.editable && (
+            <Button
+              className="h-10 px-4 text-sm font-bold text-white bg-emerald-600 hover:bg-emerald-700 gap-2 cursor-pointer"
+              onClick={() =>
+                setLocation(`/diary/incident?editId=${dailyDiaryDetail.id}`)
+              }
+            >
+              <Edit3 className="h-4 w-4" />
+              Chỉnh sửa nhật ký
+            </Button>
+          )}
         </div>
       }
     >
@@ -351,43 +653,58 @@ export default function UpdateHistoryDetailPage() {
               </div>
 
               {/* Grid Thông tin Vụ mùa & Kế hoạch */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {/* Vụ mùa / Vụ nuôi */}
-                <div className="rounded-xl border border-slate-100 bg-slate-50/60 p-3.5 space-y-1">
-                  <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
-                    <Sprout className="w-3.5 h-3.5 text-green-600" />
-                    Vụ mùa / Vụ nuôi
-                  </span>
-                  <p className="text-sm font-extrabold text-slate-800">
-                    {taskHistoryItem.workflowName || "Vụ mùa canh tác"}
-                  </p>
-                  <p className="text-xs text-slate-500">
-                    Mã vụ:{" "}
-                    <span className="font-mono font-bold text-slate-700">
-                      {taskHistoryItem.workflowCode ||
-                        selectedWorkflow?.code ||
-                        "WKF-0000035"}
-                    </span>
-                  </p>
-                </div>
+              {(() => {
+                const isPlanned =
+                  taskHistoryItem.origin === "PLANNED" &&
+                  Boolean(taskHistoryItem.planCode) &&
+                  taskHistoryItem.planCode !== "N/A";
 
-                {/* Kế hoạch */}
-                <div className="rounded-xl border border-slate-100 bg-slate-50/60 p-3.5 space-y-1">
-                  <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
-                    <Calendar className="w-3.5 h-3.5 text-blue-600" />
-                    Kế hoạch sản xuất
-                  </span>
-                  <p className="text-sm font-extrabold text-slate-800">
-                    {taskHistoryItem.planName || "Kế hoạch canh tác"}
-                  </p>
-                  <p className="text-xs text-slate-500">
-                    Mã kế hoạch:{" "}
-                    <span className="font-mono font-bold text-slate-700">
-                      {taskHistoryItem.planCode}
-                    </span>
-                  </p>
-                </div>
-              </div>
+                return (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* Vụ mùa / Vụ nuôi */}
+                    <div
+                      className={`rounded-xl border border-slate-100 bg-slate-50/60 p-3.5 space-y-1 ${
+                        !isPlanned ? "md:col-span-2" : ""
+                      }`}
+                    >
+                      <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+                        <Sprout className="w-3.5 h-3.5 text-green-600" />
+                        Vụ mùa / Vụ nuôi
+                      </span>
+                      <p className="text-sm font-extrabold text-slate-800">
+                        {taskHistoryItem.workflowName || "Vụ mùa canh tác"}
+                      </p>
+                      <p className="text-xs text-slate-500">
+                        Mã vụ:{" "}
+                        <span className="font-mono font-bold text-slate-700">
+                          {taskHistoryItem.workflowCode ||
+                            selectedWorkflow?.code ||
+                            "WKF-0000035"}
+                        </span>
+                      </p>
+                    </div>
+
+                    {/* Kế hoạch - Chỉ hiển thị khi là Nhật ký theo kế hoạch */}
+                    {isPlanned && (
+                      <div className="rounded-xl border border-slate-100 bg-slate-50/60 p-3.5 space-y-1">
+                        <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+                          <Calendar className="w-3.5 h-3.5 text-blue-600" />
+                          Kế hoạch sản xuất
+                        </span>
+                        <p className="text-sm font-extrabold text-slate-800">
+                          {taskHistoryItem.planName || "Kế hoạch canh tác"}
+                        </p>
+                        <p className="text-xs text-slate-500">
+                          Mã kế hoạch:{" "}
+                          <span className="font-mono font-bold text-slate-700">
+                            {taskHistoryItem.planCode}
+                          </span>
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
 
               {/* Bản đồ phạm vi Mùa vụ */}
               {selectedWorkflow && (
@@ -648,33 +965,98 @@ export default function UpdateHistoryDetailPage() {
                             </div>
                           )}
 
-                        {/* Hình ảnh bằng chứng đợt đó */}
-                        {log.images && log.images.length > 0 && (
-                          <div className="space-y-1.5 pt-2 border-t border-slate-100">
-                            <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1">
+                        {/* Hình ảnh bằng chứng đợt đó / File tĩnh đính kèm */}
+                        {(log.photoObjects && log.photoObjects.length > 0) ||
+                        (log.images && log.images.length > 0) ? (
+                          <div className="space-y-2 pt-2 border-t border-slate-100">
+                            <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
                               <Camera className="w-3.5 h-3.5 text-green-600" />
-                              Hình ảnh bằng chứng đợt này ({
-                                log.images.length
-                              }{" "}
-                              ảnh):
+                              Hình ảnh bằng chứng & Tệp đính kèm (
+                              {log.photoObjects?.length ||
+                                log.images?.length ||
+                                0}{" "}
+                              tệp):
                             </p>
-                            <div className="flex flex-wrap gap-2">
-                              {log.images.map((imgUrl, i) => (
-                                <div
-                                  key={i}
-                                  className="relative group rounded-xl overflow-hidden border border-slate-200 shadow-2xs hover:border-green-500 transition-all cursor-pointer"
-                                  onClick={() => setPreviewImage(imgUrl)}
-                                >
-                                  <img
-                                    src={imgUrl}
-                                    alt={`Bằng chứng ${i + 1}`}
-                                    className="w-16 h-16 object-cover group-hover:scale-105 transition-transform"
-                                  />
-                                </div>
-                              ))}
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                              {log.photoObjects && log.photoObjects.length > 0
+                                ? log.photoObjects.map((photo, i) => {
+                                    const sizeFormatted = photo.sizeBytes
+                                      ? photo.sizeBytes > 1024 * 1024
+                                        ? `${(
+                                            photo.sizeBytes /
+                                            (1024 * 1024)
+                                          ).toFixed(1)} MB`
+                                        : `${(photo.sizeBytes / 1024).toFixed(
+                                            0,
+                                          )} KB`
+                                      : "";
+                                    return (
+                                      <div
+                                        key={i}
+                                        className="flex items-center gap-3 p-2.5 rounded-xl border border-slate-200 bg-slate-50/70 hover:border-emerald-500 hover:bg-white transition-all group"
+                                      >
+                                        <div
+                                          className="relative h-14 w-14 shrink-0 rounded-lg overflow-hidden border border-slate-200 cursor-pointer"
+                                          onClick={() =>
+                                            setPreviewImage(photo.fileUrl)
+                                          }
+                                        >
+                                          <img
+                                            src={
+                                              photo.thumbnailUrl ||
+                                              photo.fileUrl
+                                            }
+                                            alt={
+                                              photo.fileName || `Ảnh ${i + 1}`
+                                            }
+                                            className="h-full w-full object-cover group-hover:scale-105 transition-transform"
+                                          />
+                                        </div>
+                                        <div className="min-w-0 flex-1 space-y-0.5">
+                                          <p
+                                            className="text-xs font-bold text-slate-800 truncate cursor-pointer hover:text-emerald-700"
+                                            onClick={() =>
+                                              setPreviewImage(photo.fileUrl)
+                                            }
+                                          >
+                                            {photo.fileName ||
+                                              `Bằng chứng ${i + 1}.jpg`}
+                                          </p>
+                                          {sizeFormatted && (
+                                            <p className="text-[10px] font-medium text-slate-400">
+                                              {sizeFormatted}
+                                            </p>
+                                          )}
+                                          <a
+                                            href={photo.fileUrl}
+                                            target="_blank"
+                                            rel="noreferrer"
+                                            className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-600 hover:text-emerald-800 underline mt-0.5"
+                                            onClick={(e) => e.stopPropagation()}
+                                          >
+                                            <ExternalLink className="w-2.5 h-2.5" />
+                                            Xem tệp tĩnh gốc
+                                          </a>
+                                        </div>
+                                      </div>
+                                    );
+                                  })
+                                : log.images?.map((imgUrl, i) => (
+                                    <div
+                                      key={i}
+                                      className="relative group rounded-xl overflow-hidden border border-slate-200 shadow-2xs hover:border-emerald-500 transition-all cursor-pointer"
+                                      onClick={() => setPreviewImage(imgUrl)}
+                                    >
+                                      <img
+                                        src={imgUrl}
+                                        alt={`Bằng chứng ${i + 1}`}
+                                        className="w-16 h-16 object-cover group-hover:scale-105 transition-transform"
+                                      />
+                                    </div>
+                                  ))}
                             </div>
                           </div>
-                        )}
+                        ) : null}
                       </div>
                     </div>
                   ))}
@@ -735,14 +1117,26 @@ export default function UpdateHistoryDetailPage() {
                 Cập nhật thêm đợt nhật ký mới
               </div>
               <p className="text-xs text-slate-600 leading-relaxed">
-                Bạn muốn tiếp tục ghi nhận tiến độ hoặc vật tư cho hạng mục công
-                việc dự kiến này?
+                {isPlannedType
+                  ? "Bạn muốn tiếp tục ghi nhận tiến độ hoặc vật tư cho hạng mục công việc dự kiến này?"
+                  : "Bạn muốn tiếp tục ghi nhận đợt nhật ký thường nhật mới cho vụ mùa này?"}
               </p>
               <Button
                 className="w-full h-10 font-bold text-white shadow-md shadow-green-600/20 cursor-pointer"
-                onClick={() => setLocation(`/diary/plan/${taskHistoryItem.id}`)}
+                onClick={() => {
+                  if (isPlannedType) {
+                    setLocation(`/diary/plan/${taskHistoryItem.id}`);
+                  } else {
+                    const wId = taskHistoryItem?.workflowId;
+                    setLocation(
+                      wId
+                        ? `/diary/incident?workflowId=${wId}`
+                        : `/diary/incident`,
+                    );
+                  }
+                }}
               >
-                Cập nhật nhật ký ngay
+                Ghi nhật ký ngay
               </Button>
             </div>
           </div>
