@@ -27,8 +27,10 @@ export const RegionReviewStep = ({
   const { watch } = useFormContext<RegionFormValues>();
   const formData = watch();
 
-  const { items: lands } = useCatalog("soil-types");
-  const { items: terrains } = useCatalog("terrain-features");
+  const { items: lands } = useCatalog("soil-types", { params: { size: 100 } });
+  const { items: terrains } = useCatalog("terrain-features", {
+    params: { size: 100 },
+  });
   const { data: cropsData } = useCrops({ params: { size: 100 } });
 
   const workspaceId = useSelectedWorkspaceId();
@@ -45,6 +47,14 @@ export const RegionReviewStep = ({
 
   const subAreas = formData.subAreas || [];
   const { provinces, wards } = useAddressOptions(formData.provinceId);
+
+  const getLandTypeName = (landTypeId?: string) => {
+    if (!landTypeId) return "Chưa chọn loại đất";
+    const found = lands.find(
+      (land) => String(land.id || land.code) === String(landTypeId),
+    );
+    return found?.name || landTypeId;
+  };
 
   const regionPoints = useMemo(() => {
     const coordinates = formData.coordinates || [];
@@ -299,6 +309,8 @@ export const RegionReviewStep = ({
                         className="text-[10px] font-bold"
                       >
                         {subArea.name || `Khu ${index + 1}`}
+                        {subArea.landType &&
+                          ` (${getLandTypeName(subArea.landType)})`}
                       </Tooltip>
                     </Polygon>
                   ))}
@@ -393,35 +405,42 @@ export const RegionReviewStep = ({
         <CardContent className="px-5 py-5">
           {subAreas.length > 0 ? (
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-              {subAreas.map((subArea, index) => (
-                <div
-                  key={subArea.id || index}
-                  className="flex items-center justify-between rounded-xl border border-slate-100 bg-slate-50 p-3 transition-all hover:bg-white hover:shadow-sm"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-amber-100 text-[11px] font-extrabold text-amber-700">
-                      {index + 1}
+              {subAreas.map((subArea, index) => {
+                const landTypeName = getLandTypeName(subArea.landType);
+                return (
+                  <div
+                    key={subArea.id || index}
+                    className="flex items-center justify-between rounded-xl border border-slate-100 bg-slate-50 p-3.5 transition-all hover:bg-white hover:shadow-sm"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-amber-100 text-xs font-extrabold text-amber-700">
+                        {index + 1}
+                      </div>
+                      <div className="space-y-1">
+                        <p className="text-sm font-bold text-slate-800">
+                          {subArea.name || `Khu ${index + 1}`}
+                        </p>
+                        <div className="flex flex-wrap items-center gap-1.5 text-xs text-slate-500">
+                          <span className="font-medium text-slate-500">
+                            Loại đất:
+                          </span>
+                          <span className="rounded border border-amber-200/60 bg-amber-50 px-1.5 py-0.5 text-[11px] font-semibold text-amber-800">
+                            {landTypeName}
+                          </span>
+                          {subArea.plots && subArea.plots.length > 0 && (
+                            <span className="text-slate-400">
+                              · {subArea.plots.length} lô
+                            </span>
+                          )}
+                        </div>
+                      </div>
                     </div>
-                    <div>
-                      <p className="text-sm font-semibold text-slate-700">
-                        {subArea.name || `Khu ${index + 1}`}
-                      </p>
-                      <p className="text-[11px] text-slate-400">
-                        {lands.find(
-                          (land) =>
-                            String(land.id || land.code) ===
-                            String(subArea.landType),
-                        )?.name || "Chưa chọn loại đất"}
-                        {subArea.plots && subArea.plots.length > 0 &&
-                          ` · ${subArea.plots.length} lô`}
-                      </p>
-                    </div>
+                    <span className="rounded-lg border border-slate-200/60 bg-white px-2.5 py-1 text-xs font-bold text-slate-700">
+                      {subArea.area ?? 0} ha
+                    </span>
                   </div>
-                  <span className="rounded-lg border border-slate-100 bg-white px-2 py-0.5 text-xs font-bold text-slate-400">
-                    {subArea.area ?? 0} ha
-                  </span>
-                </div>
-              ))}
+                );
+              })}
             </div>
           ) : (
             <div className="flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-slate-100 py-8 text-center">

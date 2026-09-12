@@ -286,7 +286,7 @@ export function PlotInfoStep({
                   Đường bình độ
                 </FormLabel>
                 <FormControl>
-                  <Input {...field} placeholder="100m" />
+                  <Input {...field} placeholder="Khoảng cao đều từ 1m đến 2m" />
                 </FormControl>
                 <FormMessage />
               </FormItem>

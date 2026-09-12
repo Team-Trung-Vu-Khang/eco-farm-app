@@ -78,22 +78,20 @@ const FitBoundsOnce = ({
   useEffect(() => {
     const timer = setTimeout(() => {
       map.invalidateSize();
+      if (points.length > 0 && !hasFitRef.current) {
+        const bounds = L.latLngBounds(points);
+        if (bounds.isValid()) {
+          map.fitBounds(bounds, { padding: [40, 40] });
+          hasFitRef.current = true;
+        }
+      }
     }, 200);
     return () => clearTimeout(timer);
-  }, [map]);
-
-  useEffect(() => {
-    if (points.length > 0 && !hasFitRef.current) {
-      const bounds = L.latLngBounds(points);
-      if (bounds.isValid()) {
-        map.fitBounds(bounds, { padding: [40, 40] });
-        hasFitRef.current = true;
-      }
-    }
-  }, [points, map]);
+  }, [map, points]);
 
   useEffect(() => {
     if (points.length > 0 && fitTrigger) {
+      map.invalidateSize();
       const bounds = L.latLngBounds(points);
       if (bounds.isValid()) {
         map.fitBounds(bounds, { padding: [40, 40] });
