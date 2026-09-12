@@ -13,8 +13,7 @@ import {
   TabsTrigger,
   type Column,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import L from "leaflet";
-import "leaflet/dist/leaflet.css";
+import { GoogleMap, Marker, Polygon, useJsApiLoader } from "@react-google-maps/api";
 import {
   Download,
   Droplets,
@@ -25,20 +24,10 @@ import {
   Target,
   Waves,
 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
-import {
-  MapContainer,
-  Marker,
-  Polygon,
-  TileLayer,
-  useMap,
-} from "react-leaflet";
+import { useMemo, useRef, useState } from "react";
 import { useLocation, useRoute } from "wouter";
 
 import PageWrapper from "@/components/PageWrapper";
-import defaultMarkerIcon2xUrl from "leaflet/dist/images/marker-icon-2x.png";
-import defaultMarkerIconUrl from "leaflet/dist/images/marker-icon.png";
-import defaultMarkerShadowUrl from "leaflet/dist/images/marker-shadow.png";
 
 type LatLngTuple = [number, number];
 
@@ -91,15 +80,7 @@ export type AquacultureDistribution = {
   polygon: LatLngTuple[];
 };
 
-const defaultLeafletIcon = L.icon({
-  iconUrl: defaultMarkerIconUrl,
-  iconRetinaUrl: defaultMarkerIcon2xUrl,
-  shadowUrl: defaultMarkerShadowUrl,
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
-  popupAnchor: [1, -34],
-  shadowSize: [41, 41],
-});
+const mapContainerStyle = { width: "100%", height: "100%" };
 
 export const MOCK_DISTRIBUTIONS: AquacultureDistribution[] = [
   {
@@ -212,16 +193,6 @@ export const MOCK_DISTRIBUTIONS: AquacultureDistribution[] = [
   },
 ];
 
-const MapSync = ({ center }: { center: LatLngTuple }) => {
-  const map = useMap();
-
-  useEffect(() => {
-    map.setView(center, map.getZoom(), { animate: true });
-  }, [center, map]);
-
-  return null;
-};
-
 const buildClosedPath = (coordinates: LatLngTuple[]) => {
   if (coordinates.length < 3) return [];
   const path = [...coordinates];
@@ -288,6 +259,12 @@ const AquacultureDistributionDetailPage = () => {
 
   const units = useMemo(() => detailData?.units || [], [detailData]);
   const history = useMemo(() => generateMockHistory(15), []);
+
+  const { isLoaded } = useJsApiLoader({
+    id: "google-map-script",
+    googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY?.trim() ?? "",
+  });
+  const mapRef = useRef<google.maps.Map | null>(null);
 
   const handleBack = () => {
     setLocation("/aquaculture-distribution-detail");
@@ -581,35 +558,46 @@ const AquacultureDistributionDetailPage = () => {
                   </div>
                 </CardHeader>
                 <div className="flex-1 relative z-0">
-                  <MapContainer
-                    center={mapCenter}
-                    zoom={17}
-                    className="h-full w-full"
-                    zoomControl={false}
-                    scrollWheelZoom
-                  >
-                    <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-                    <MapSync center={mapCenter} />
-                    {polygonPath.length > 0 ? (
-                      <Polygon
-                        positions={polygonPath}
-                        pathOptions={{
-                          color: "#0ea5e9",
-                          weight: 3,
-                          fillColor: "#0ea5e9",
-                          fillOpacity: 0.12,
-                        }}
-                      />
-                    ) : null}
-                    {units.map((unit) => (
-                      <Marker
-                        key={unit.id}
-                        position={[unit.coordinate.lat, unit.coordinate.lng]}
-                        icon={defaultLeafletIcon}
-                        title={`${unit.code} - ${unit.name}`}
-                      />
-                    ))}
-                  </MapContainer>
+                  {isLoaded ? (
+                    <GoogleMap
+                      mapContainerStyle={mapContainerStyle}
+                      center={{ lat: mapCenter[0], lng: mapCenter[1] }}
+                      zoom={17}
+                      options={{ zoomControl: false }}
+                      onLoad={(map) => {
+                        mapRef.current = map;
+                      }}
+                    >
+                      {polygonPath.length > 0 ? (
+                        <Polygon
+                          paths={polygonPath.map(([lat, lng]) => ({
+                            lat,
+                            lng,
+                          }))}
+                          options={{
+                            strokeColor: "#0ea5e9",
+                            strokeWeight: 3,
+                            fillColor: "#0ea5e9",
+                            fillOpacity: 0.12,
+                          }}
+                        />
+                      ) : null}
+                      {units.map((unit) => (
+                        <Marker
+                          key={unit.id}
+                          position={{
+                            lat: unit.coordinate.lat,
+                            lng: unit.coordinate.lng,
+                          }}
+                          title={`${unit.code} - ${unit.name}`}
+                        />
+                      ))}
+                    </GoogleMap>
+                  ) : (
+                    <div className="h-full w-full flex items-center justify-center text-sm text-muted-foreground">
+                      Đang tải bản đồ...
+                    </div>
+                  )}
                 </div>
               </Card>
             </div>

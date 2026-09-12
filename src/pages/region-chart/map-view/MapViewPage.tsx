@@ -3,26 +3,20 @@ import { cn } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import type {
   Feature,
   FeatureCollection,
-  GeoJsonObject,
   GeoJsonProperties,
   Geometry,
   Position,
 } from "geojson";
-import L from "leaflet";
-import "leaflet/dist/leaflet.css";
+import {
+  GoogleMap,
+  InfoWindow,
+  Marker,
+  Polygon,
+  Polyline,
+  useJsApiLoader,
+} from "@react-google-maps/api";
 import { ChevronLeft, ChevronRight, Maximize2, Minimize2 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import {
-  GeoJSON,
-  LayerGroup,
-  LayersControl,
-  MapContainer,
-  Marker,
-  Polyline,
-  TileLayer,
-  useMap,
-  useMapEvents,
-} from "react-leaflet";
 
 import { useAreas } from "@/features/farm/hooks/useAreas";
 import { usePlantIdentifications } from "@/features/farm/hooks/usePlantIdentifications";
@@ -50,6 +44,7 @@ import type {
   SoilData,
 } from "./types/types";
 import {
+  convertGeoJsonToPath,
   getCenterFromCoordinates,
   getPolygonCenter,
   isPointInPolygon,
@@ -133,66 +128,23 @@ const SCOPE_TYPE_BY_LEVEL: Record<
 // center instead of looking off-balance toward the right.
 const FOCUS_PIXEL_OFFSET_X = 120;
 
-const MapUpdater = ({
-  center,
-  zoom,
-}: {
-  center: [number, number];
-  zoom: number;
-}) => {
-  const map = useMap();
+const useFocusedMapUpdater = (
+  mapRef: React.MutableRefObject<google.maps.Map | null>,
+  isLoaded: boolean,
+  center: [number, number],
+  zoom: number,
+) => {
   useEffect(() => {
-    const targetPoint = map.project(
-      L.latLng(center[0], center[1]),
-      zoom,
-    );
-    const shiftedLatLng = map.unproject(
-      targetPoint.add(L.point(FOCUS_PIXEL_OFFSET_X, 0)),
-      zoom,
-    );
-    map.flyTo(shiftedLatLng, zoom);
-  }, [center, zoom, map]);
-  return null;
-};
-
-const ZoomListener = ({ onChange }: { onChange: (zoom: number) => void }) => {
-  const map = useMapEvents({
-    zoomend: () => {
-      onChange(map.getZoom());
-    },
-  });
-  return null;
-};
-
-const OVERLAY_NAME_TO_LAYER_KEY: Record<
-  string,
-  "zone" | "area" | "plot" | "plant"
-> = {
-  "Vùng trồng": "zone",
-  "Khu vực": "area",
-  "Lô trồng": "plot",
-  "Cây trồng": "plant",
-};
-
-// The native Leaflet layer-control checkboxes only toggle Leaflet's own
-// internal layer add/remove; without this, clicking them never updates the
-// `visibleLayers` state that actually gates the GeoJSON/marker content.
-const LayerVisibilitySync = ({
-  onToggle,
-}: {
-  onToggle: (key: "zone" | "area" | "plot" | "plant", visible: boolean) => void;
-}) => {
-  useMapEvents({
-    overlayadd: (event) => {
-      const key = OVERLAY_NAME_TO_LAYER_KEY[event.name];
-      if (key) onToggle(key, true);
-    },
-    overlayremove: (event) => {
-      const key = OVERLAY_NAME_TO_LAYER_KEY[event.name];
-      if (key) onToggle(key, false);
-    },
-  });
-  return null;
+    if (!isLoaded || !mapRef.current) return;
+    const map = mapRef.current;
+    map.panTo({ lat: center[0], lng: center[1] });
+    map.setZoom(zoom);
+    // Nudge the focused point this many pixels to the right of the map's
+    // own center so, on screen, the selected zone/area/plot sits a bit
+    // left of dead center instead of looking off-balance toward the right.
+    map.panBy(FOCUS_PIXEL_OFFSET_X, 0);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isLoaded, center[0], center[1], zoom]);
 };
 
 const createDefaultSoilData = (): Record<string, SoilData> => {
@@ -487,31 +439,6 @@ const MapContent = () => {
   const plantFeatures = useMemo(
     () => getCollectionFeatures(processedPlantData),
     [processedPlantData],
-  );
-
-  const zoneCollection = useMemo(
-    () =>
-      ({
-        type: "FeatureCollection",
-        features: zoneFeatures,
-      }) as GeoFeatureCollection,
-    [zoneFeatures],
-  );
-  const areaCollection = useMemo(
-    () =>
-      ({
-        type: "FeatureCollection",
-        features: areaFeatures,
-      }) as GeoFeatureCollection,
-    [areaFeatures],
-  );
-  const plotCollection = useMemo(
-    () =>
-      ({
-        type: "FeatureCollection",
-        features: plotFeatures,
-      }) as GeoFeatureCollection,
-    [plotFeatures],
   );
 
   const findContainerFeature = useCallback(
@@ -1157,6 +1084,13 @@ const MapContent = () => {
   const mapCenter = selectionViewport?.center || mapViewport.center;
   const mapZoom = selectionViewport?.zoom || mapViewport.zoom;
 
+  const { isLoaded } = useJsApiLoader({
+    id: "google-map-script",
+    googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY?.trim() ?? "",
+  });
+  const mapRef = useRef<google.maps.Map | null>(null);
+  useFocusedMapUpdater(mapRef, isLoaded, mapCenter, mapZoom);
+
   const onZoomChange = (zoom: number) => {
     if (zoom < 14) {
       setVisibleLayers({ zone: true, area: false, plot: false, plant: false });
@@ -1179,64 +1113,124 @@ const MapContent = () => {
   const plotStyle = { color: "#31a354", weight: 2, fillOpacity: 0.2 };
 
   // Zones/areas without a drawn boundary fall back to a Point feature (see
-  // buildScopeFeature); render those as a colored pin instead of Leaflet's
-  // default blue marker so they still read as that layer's color.
-  const makeScopePointToLayer = (color: string) => (_feature: Feature, latlng: L.LatLng) =>
-    L.circleMarker(latlng, {
-      radius: 9,
-      fillColor: color,
-      color: "white",
-      weight: 2,
-      opacity: 1,
-      fillOpacity: 0.9,
-    });
-  const zonePointToLayer = makeScopePointToLayer(zoneStyle.color);
-  const areaPointToLayer = makeScopePointToLayer(areaStyle.color);
-
-  const pointToLayer = (feature: Feature, latlng: L.LatLng) => {
+  // buildScopeFeature); render those as a colored pin so they still read as
+  // that layer's color.
+  const getPlantColor = (feature: GeoFeature) => {
     const status = feature.properties?.status;
-    let color = "#22c55e";
-    if (status === "diseased") color = "#ef4444";
-    if (status === "harvesting") color = "#eab308";
-
-    return L.circleMarker(latlng, {
-      radius: 4,
-      fillColor: color,
-      color: "white",
-      weight: 1,
-      opacity: 1,
-      fillOpacity: 0.85,
-    });
+    if (status === "diseased") return "#ef4444";
+    if (status === "harvesting") return "#eab308";
+    return "#22c55e";
   };
 
-  const createFeatureHandler = (
-    level: Exclude<SelectedEntity["level"], "soil-cluster">,
-    collection: GeoFeature[],
-  ) => {
-    return (feature: GeoFeature, layer: L.Layer) => {
-      const index = collection.findIndex((item) => item === feature);
-      layer.bindTooltip(getFeatureLabel(feature), { sticky: true });
+  const circleIcon = (color: string, radius: number) => ({
+    path: google.maps.SymbolPath.CIRCLE,
+    scale: radius,
+    fillColor: color,
+    fillOpacity: 0.9,
+    strokeColor: "white",
+    strokeWeight: 2,
+  });
 
-      if (feature.geometry.type === "Point") {
+  const [hoveredFeatureKey, setHoveredFeatureKey] = useState<string | null>(
+    null,
+  );
+  const [openPointKey, setOpenPointKey] = useState<string | null>(null);
+
+  const renderFeatureLayer = (
+    level: Exclude<SelectedEntity["level"], "soil-cluster">,
+    features: GeoFeature[],
+    strokeColor: string,
+    fillOpacity: number,
+    pointColor: string | ((feature: GeoFeature) => string),
+    pointRadius: number,
+  ) =>
+    features.map((feature, index) => {
+      const key = `${level}-${index}`;
+      const label = getFeatureLabel(feature);
+
+      if (feature.geometry?.type === "Point") {
         const point = getPointCoordinates(feature);
-        if (point) {
-          const [lng, lat] = point;
-          const { zoneName, areaName, plotName } = getLocationInfo(lng, lat);
-          layer.bindPopup(
-            `<div class="font-semibold">${getFeatureLabel(feature)}</div>
-             <div class="text-xs text-slate-500">${zoneName || ""}</div>
-             <div class="text-xs text-slate-500">${areaName || ""}</div>
-             <div class="text-xs text-slate-500">${plotName || ""}</div>`,
-          );
-        }
+        if (!point) return null;
+        const [lng, lat] = point;
+        const color =
+          typeof pointColor === "function" ? pointColor(feature) : pointColor;
+        return (
+          <Marker
+            key={key}
+            position={{ lat, lng }}
+            icon={circleIcon(color, pointRadius)}
+            onClick={() => {
+              setOpenPointKey((current) => (current === key ? null : key));
+              selectLevel(level, index);
+            }}
+          >
+            {openPointKey === key &&
+              (() => {
+                const { zoneName, areaName, plotName } = getLocationInfo(
+                  lng,
+                  lat,
+                );
+                return (
+                  <InfoWindow onCloseClick={() => setOpenPointKey(null)}>
+                    <div>
+                      <div className="font-semibold">{label}</div>
+                      {zoneName && (
+                        <div className="text-xs text-slate-500">
+                          {zoneName}
+                        </div>
+                      )}
+                      {areaName && (
+                        <div className="text-xs text-slate-500">
+                          {areaName}
+                        </div>
+                      )}
+                      {plotName && (
+                        <div className="text-xs text-slate-500">
+                          {plotName}
+                        </div>
+                      )}
+                    </div>
+                  </InfoWindow>
+                );
+              })()}
+          </Marker>
+        );
       }
 
-      layer.on("click", (event) => {
-        L.DomEvent.stopPropagation(event);
-        selectLevel(level, index);
-      });
-    };
-  };
+      const path = convertGeoJsonToPath(feature.geometry);
+      if (path.length < 3) return null;
+      const center = getPolygonCenter(feature);
+
+      return (
+        <div key={key}>
+          <Polygon
+            paths={path}
+            options={{
+              strokeColor,
+              strokeWeight: 2,
+              fillColor: strokeColor,
+              fillOpacity,
+            }}
+            onClick={() => selectLevel(level, index)}
+            onMouseOver={() => setHoveredFeatureKey(key)}
+            onMouseOut={() =>
+              setHoveredFeatureKey((current) =>
+                current === key ? null : current,
+              )
+            }
+          />
+          {hoveredFeatureKey === key && center && (
+            <InfoWindow
+              position={center}
+              options={{ disableAutoPan: true }}
+              onCloseClick={() => setHoveredFeatureKey(null)}
+            >
+              <div className="text-xs font-medium">{label}</div>
+            </InfoWindow>
+          )}
+        </div>
+      );
+    });
 
   const selectedPath = useMemo(
     () =>
@@ -1352,183 +1346,174 @@ const MapContent = () => {
             isAreaSearching={isAreaSearching}
           />
 
-          <MapContainer
-            center={mapCenter}
-            zoom={mapZoom}
-            className="h-full w-full"
-            style={{ background: "#f0f0f0" }}
-          >
-            <MapUpdater center={mapCenter} zoom={mapZoom} />
-            <ZoomListener onChange={onZoomChange} />
-            <LayerVisibilitySync
-              onToggle={(key, visible) =>
-                setVisibleLayers((prev) => ({ ...prev, [key]: visible }))
-              }
-            />
-            <LayersControl position="topright">
-              <LayersControl.BaseLayer checked name="Bản đồ chuẩn">
-                <TileLayer
-                  attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                  url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          {isLoaded ? (
+            <GoogleMap
+              mapContainerClassName="h-full w-full"
+              mapContainerStyle={{ background: "#f0f0f0" }}
+              center={{ lat: mapCenter[0], lng: mapCenter[1] }}
+              zoom={mapZoom}
+              options={{ mapTypeControl: true }}
+              onLoad={(map) => {
+                mapRef.current = map;
+              }}
+              onZoomChanged={() => {
+                const zoom = mapRef.current?.getZoom();
+                if (zoom !== undefined) onZoomChange(zoom);
+              }}
+            >
+              {/* Overlay layer toggles (Leaflet's LayersControl overlay checkboxes) */}
+              <div className="absolute right-2 top-2 z-10 rounded-md border border-slate-200 bg-white p-2 text-xs shadow-md">
+                {(
+                  [
+                    ["zone", "Vùng trồng"],
+                    ["area", "Khu vực"],
+                    ["plot", "Lô trồng"],
+                    ["plant", "Cây trồng"],
+                  ] as const
+                ).map(([key, label]) => (
+                  <label
+                    key={key}
+                    className="flex items-center gap-1.5 py-0.5 font-medium text-slate-700"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={visibleLayers[key]}
+                      onChange={(e) =>
+                        setVisibleLayers((prev) => ({
+                          ...prev,
+                          [key]: e.target.checked,
+                        }))
+                      }
+                    />
+                    {label}
+                  </label>
+                ))}
+              </div>
+
+              {visibleLayers.zone &&
+                renderFeatureLayer(
+                  "zone",
+                  zoneFeatures,
+                  zoneStyle.color,
+                  zoneStyle.fillOpacity,
+                  zoneStyle.color,
+                  9,
+                )}
+
+              {visibleLayers.area &&
+                renderFeatureLayer(
+                  "area",
+                  areaFeatures,
+                  areaStyle.color,
+                  areaStyle.fillOpacity,
+                  areaStyle.color,
+                  9,
+                )}
+
+              {visibleLayers.plot &&
+                renderFeatureLayer(
+                  "plot",
+                  plotFeatures,
+                  plotStyle.color,
+                  plotStyle.fillOpacity,
+                  plotStyle.color,
+                  6,
+                )}
+
+              {visibleLayers.plant &&
+                renderFeatureLayer(
+                  "plant",
+                  plantFeatures,
+                  "#22c55e",
+                  0.2,
+                  getPlantColor,
+                  4,
+                )}
+
+              {selectedPath.length > 1 && (
+                <Polyline
+                  path={selectedPath.map(([lat, lng]) => ({ lat, lng }))}
+                  options={{
+                    strokeOpacity: 0,
+                    strokeColor: "#0ea5e9",
+                    icons: [
+                      {
+                        icon: { path: "M 0,-1 0,1", strokeOpacity: 1, scale: 3 },
+                        offset: "0",
+                        repeat: "10px",
+                      },
+                    ],
+                  }}
                 />
-              </LayersControl.BaseLayer>
-              <LayersControl.BaseLayer name="Vệ tinh">
-                <TileLayer
-                  attribution="Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community"
-                  url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
-                />
-              </LayersControl.BaseLayer>
+              )}
 
-              <LayersControl.Overlay
-                checked={visibleLayers.zone}
-                name="Vùng trồng"
-              >
-                <LayerGroup>
-                  {visibleLayers.zone && (
-                    <GeoJSON
-                      key={`layer-zone-${zoneFeatures.length}`}
-                      data={zoneCollection as GeoJsonObject}
-                      style={zoneStyle}
-                      pointToLayer={zonePointToLayer}
-                      onEachFeature={createFeatureHandler("zone", zoneFeatures)}
+              {visibleLayers.zone &&
+                zoneFeatures.map((feature, index) => {
+                  const center = getPolygonCenter(feature);
+                  if (!center) return null;
+                  return (
+                    <Marker
+                      key={`label-zone-${index}`}
+                      position={center}
+                      icon={circleIcon("#3b82f6", 3)}
+                      label={{
+                        text: getFeatureLabel(feature),
+                        color: "#1e40af",
+                        fontSize: "11px",
+                        fontWeight: "bold",
+                        className: "mt-4",
+                      }}
                     />
-                  )}
-                </LayerGroup>
-              </LayersControl.Overlay>
+                  );
+                })}
 
-              <LayersControl.Overlay
-                checked={visibleLayers.area}
-                name="Khu vực"
-              >
-                <LayerGroup>
-                  {visibleLayers.area && (
-                    <GeoJSON
-                      key={`layer-area-${areaFeatures.length}`}
-                      data={areaCollection as GeoJsonObject}
-                      style={areaStyle}
-                      pointToLayer={areaPointToLayer}
-                      onEachFeature={createFeatureHandler("area", areaFeatures)}
+              {visibleLayers.area &&
+                areaFeatures.map((feature, index) => {
+                  const center = getPolygonCenter(feature);
+                  if (!center) return null;
+                  return (
+                    <Marker
+                      key={`label-area-${index}`}
+                      position={center}
+                      icon={circleIcon("#ef4444", 2.5)}
+                      label={{
+                        text: getFeatureLabel(feature),
+                        color: "#b91c1c",
+                        fontSize: "10px",
+                        fontWeight: "bold",
+                        className: "mt-4",
+                      }}
                     />
-                  )}
-                </LayerGroup>
-              </LayersControl.Overlay>
+                  );
+                })}
 
-              <LayersControl.Overlay
-                checked={visibleLayers.plot}
-                name="Lô trồng"
-              >
-                <LayerGroup>
-                  {visibleLayers.plot && (
-                    <GeoJSON
-                      key={`layer-plot-${plotFeatures.length}`}
-                      data={plotCollection as GeoJsonObject}
-                      style={plotStyle}
-                      onEachFeature={createFeatureHandler("plot", plotFeatures)}
+              {visibleLayers.plot &&
+                plotFeatures.map((feature, index) => {
+                  const center = getPolygonCenter(feature);
+                  if (!center) return null;
+                  return (
+                    <Marker
+                      key={`label-plot-${index}`}
+                      position={center}
+                      icon={circleIcon("#22c55e", 2.5)}
+                      label={{
+                        text: getFeatureLabel(feature),
+                        color: "#14532d",
+                        fontSize: "9px",
+                        fontWeight: "bold",
+                        className: "mt-4",
+                      }}
                     />
-                  )}
-                </LayerGroup>
-              </LayersControl.Overlay>
+                  );
+                })}
 
-              <LayersControl.Overlay
-                checked={visibleLayers.plant}
-                name="Cây trồng"
-              >
-                <LayerGroup>
-                  {visibleLayers.plant && (
-                    <GeoJSON
-                      key={`layer-plant-${plantFeatures.length}`}
-                      data={processedPlantData as GeoJsonObject}
-                      pointToLayer={pointToLayer}
-                      onEachFeature={createFeatureHandler(
-                        "plant",
-                        plantFeatures,
-                      )}
-                    />
-                  )}
-                </LayerGroup>
-              </LayersControl.Overlay>
-            </LayersControl>
-
-            {selectedPath.length > 1 && (
-              <Polyline
-                positions={selectedPath}
-                pathOptions={{
-                  color: "#0ea5e9",
-                  weight: 3,
-                  opacity: 0.75,
-                  dashArray: "8 6",
-                }}
-              />
-            )}
-
-            {visibleLayers.zone &&
-              zoneFeatures.map((feature, index) => {
-                const center = getPolygonCenter(feature);
-                if (!center) return null;
-                return (
-                  <Marker
-                    key={`label-zone-${index}`}
-                    position={center}
-                    icon={L.divIcon({
-                      className: "bg-transparent border-none",
-                      html: `
-                        <div class="flex flex-col items-center justify-center">
-                          <div class="w-2 h-2 bg-blue-500 rounded-full border border-white shadow-sm"></div>
-                          <div class="text-blue-800 text-xs font-bold whitespace-nowrap drop-shadow-md mt-0.5">${getFeatureLabel(feature)}</div>
-                        </div>
-                      `,
-                      iconSize: [0, 0],
-                    })}
-                  />
-                );
-              })}
-
-            {visibleLayers.area &&
-              areaFeatures.map((feature, index) => {
-                const center = getPolygonCenter(feature);
-                if (!center) return null;
-                return (
-                  <Marker
-                    key={`label-area-${index}`}
-                    position={center}
-                    icon={L.divIcon({
-                      className: "bg-transparent border-none",
-                      html: `
-                        <div class="flex flex-col items-center justify-center">
-                          <div class="w-1.5 h-1.5 bg-red-500 rounded-full border border-white shadow-sm"></div>
-                          <div class="text-red-700 text-[10px] font-bold whitespace-nowrap drop-shadow-md mt-0.5">${getFeatureLabel(feature)}</div>
-                        </div>
-                      `,
-                      iconSize: [0, 0],
-                    })}
-                  />
-                );
-              })}
-
-            {visibleLayers.plot &&
-              plotFeatures.map((feature, index) => {
-                const center = getPolygonCenter(feature);
-                if (!center) return null;
-                return (
-                  <Marker
-                    key={`label-plot-${index}`}
-                    position={center}
-                    icon={L.divIcon({
-                      className: "bg-transparent border-none",
-                      html: `
-                        <div class="flex flex-col items-center justify-center">
-                          <div class="w-1.5 h-1.5 bg-green-500 rounded-full border border-white shadow-sm"></div>
-                          <div class="text-green-900 text-[9px] font-bold whitespace-nowrap drop-shadow-md mt-0.5">${getFeatureLabel(feature)}</div>
-                        </div>
-                      `,
-                      iconSize: [0, 0],
-                    })}
-                  />
-                );
-              })}
-
-            <MapLegend visibleLayers={visibleLayers} />
-          </MapContainer>
+              <MapLegend visibleLayers={visibleLayers} />
+            </GoogleMap>
+          ) : (
+            <div className="flex h-full w-full items-center justify-center text-sm text-muted-foreground">
+              Đang tải bản đồ...
+            </div>
+          )}
 
           <div className="absolute right-16 top-4 z-999">
             <button

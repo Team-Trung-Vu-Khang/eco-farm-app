@@ -1,4 +1,3 @@
-import type L from "leaflet";
 import type { RefObject } from "react";
 import type { Personnel } from "../../../../../stores/usePersonnelStore";
 import type { Plan } from "../../../../../stores/usePlanStore";
@@ -101,10 +100,9 @@ export type CropDetailOverviewProps = {
   setIsScopeMapExpanded: (value: boolean) => void;
   focusScopeMapToCoordinates: (coordinates?: Coordinate[]) => void;
   formatFullAddress: (region?: GeoEntity | null) => string;
-  cropMarkerIcon?: L.DivIcon;
   regionIndex: RegionIndex;
-  scopeMapRef: RefObject<L.Map | null>;
-  expandedScopeMapRef: RefObject<L.Map | null>;
+  scopeMapRef: RefObject<google.maps.Map | null>;
+  expandedScopeMapRef: RefObject<google.maps.Map | null>;
 };
 
 export type CropDetailCropsProps = {

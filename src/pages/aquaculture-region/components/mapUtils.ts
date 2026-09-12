@@ -1,16 +1,10 @@
-import L from "leaflet";
-
 export const getMarkerIcon = (color: string = "red") => {
-  return L.icon({
-    iconUrl:
+  return {
+    url:
       "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-" +
       color +
       ".png",
-    iconSize: [25, 41],
-    iconAnchor: [12, 41],
-    popupAnchor: [1, -34],
-    shadowSize: [41, 41],
-    shadowUrl:
-      "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-shadow.png",
-  });
+    scaledSize: new google.maps.Size(25, 41),
+    anchor: new google.maps.Point(12, 41),
+  };
 };

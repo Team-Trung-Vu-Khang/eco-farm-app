@@ -6,11 +6,9 @@ import {
   CardHeader,
   ScrollArea,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import L from "leaflet";
-import "leaflet/dist/leaflet.css";
+import { GoogleMap, Marker, useJsApiLoader } from "@react-google-maps/api";
 import { Edit2, Layers, Navigation } from "lucide-react";
-import { useEffect, useMemo } from "react";
-import { MapContainer, Marker, TileLayer, useMap } from "react-leaflet";
+import { useMemo } from "react";
 import { MOCK_SEEDS } from "../constants";
 import type {
   AnimalDistributionMethod,
@@ -31,22 +29,7 @@ type Props = {
   generateAnimalLocations: () => void;
 };
 
-const defaultLeafletIcon = L.icon({
-  iconUrl: treeMarkerIcon,
-  iconSize: [32, 32],
-  iconAnchor: [16, 32],
-  popupAnchor: [0, -30],
-});
-
-const MapCenterSync = ({ center }: { center: [number, number] }) => {
-  const map = useMap();
-
-  useEffect(() => {
-    map.setView(center, 18, { animate: true });
-  }, [center, map]);
-
-  return null;
-};
+const mapContainerStyle = { width: "100%", height: "100%" };
 
 export const AnimalDistributionGpsStep = ({
   distributionMethod,
@@ -72,12 +55,26 @@ export const AnimalDistributionGpsStep = ({
     );
   }, [animalLocations, selectedAnimalId]);
 
-  const mapCenter: [number, number] = activeAnimalLocation
-    ? [
-        activeAnimalLocation.coordinate.lat,
-        activeAnimalLocation.coordinate.lng,
-      ]
-    : [11.558, 107.134];
+  const mapCenter = activeAnimalLocation
+    ? {
+        lat: activeAnimalLocation.coordinate.lat,
+        lng: activeAnimalLocation.coordinate.lng,
+      }
+    : { lat: 11.558, lng: 107.134 };
+
+  const { isLoaded } = useJsApiLoader({
+    id: "google-map-script",
+    googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY?.trim() ?? "",
+  });
+
+  const treeIcon = useMemo(() => {
+    if (!isLoaded) return undefined;
+    return {
+      url: treeMarkerIcon,
+      scaledSize: new google.maps.Size(32, 32),
+      anchor: new google.maps.Point(16, 32),
+    };
+  }, [isLoaded]);
 
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
@@ -132,46 +129,48 @@ export const AnimalDistributionGpsStep = ({
                 </Button>
               </div>
 
-              <MapContainer
-                center={mapCenter}
-                zoom={18}
-                className="h-full w-full"
-                zoomControl={false}
-                scrollWheelZoom
-              >
-                <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-                <MapCenterSync center={mapCenter} />
+              {isLoaded ? (
+                <GoogleMap
+                  mapContainerStyle={mapContainerStyle}
+                  center={mapCenter}
+                  zoom={18}
+                  options={{ zoomControl: false }}
+                >
+                  {animalLocations.map((location) => {
+                    const seed = MOCK_SEEDS.find(
+                      (item) => item.id === location.seedId,
+                    );
+                    const seedName = seed?.name || "Chưa xác định";
 
-                {animalLocations.map((location) => {
-                  const seed = MOCK_SEEDS.find(
-                    (item) => item.id === location.seedId,
-                  );
-                  const seedName = seed?.name || "Chưa xác định";
-
-                  return (
-                    <Marker
-                      key={location.id}
-                      position={[
-                        location.coordinate.lat,
-                        location.coordinate.lng,
-                      ]}
-                      icon={defaultLeafletIcon}
-                      draggable
-                      title={`${location.animalCode} - ${seedName}`}
-                      eventHandlers={{
-                        click: () => {
+                    return (
+                      <Marker
+                        key={location.id}
+                        position={{
+                          lat: location.coordinate.lat,
+                          lng: location.coordinate.lng,
+                        }}
+                        icon={treeIcon}
+                        draggable
+                        title={`${location.animalCode} - ${seedName}`}
+                        onClick={() => {
                           setSelectedAnimalId(location.id);
-                        },
-                        dragend: (event) => {
-                          const marker = event.target as L.Marker;
-                          const { lat, lng } = marker.getLatLng();
-                          updateAnimalLocation(location.id, lat, lng);
-                        },
-                      }}
-                    />
-                  );
-                })}
-              </MapContainer>
+                        }}
+                        onDragEnd={(event) => {
+                          const lat = event.latLng?.lat();
+                          const lng = event.latLng?.lng();
+                          if (lat !== undefined && lng !== undefined) {
+                            updateAnimalLocation(location.id, lat, lng);
+                          }
+                        }}
+                      />
+                    );
+                  })}
+                </GoogleMap>
+              ) : (
+                <div className="h-full w-full flex items-center justify-center text-sm text-muted-foreground">
+                  Đang tải bản đồ...
+                </div>
+              )}
 
               <div className="absolute bottom-4 left-4 right-auto bg-white/90 backdrop-blur-md p-3 rounded-lg shadow-lg border border-slate-200 max-w-[200px] z-[500]">
                 <div className="text-xs font-bold mb-2 text-slate-800">
@@ -373,14 +372,6 @@ export const AnimalDistributionGpsStep = ({
         </div>
       )}
 
-      <style>{`
-        .leaflet-container {
-          height: 100%;
-          width: 100%;
-          font-family: inherit;
-          background: #e2e8f0;
-        }
-      `}</style>
     </div>
   );
 };

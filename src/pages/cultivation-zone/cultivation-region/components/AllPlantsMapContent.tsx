@@ -1,26 +1,25 @@
-import React, { useEffect } from "react";
 import {
-  MapContainer,
+  GoogleMap,
+  InfoWindow,
   Marker,
   Polygon,
   Polyline,
-  TileLayer,
-  Tooltip,
-  useMap,
-  useMapEvents,
-} from "react-leaflet";
+  useJsApiLoader,
+} from "@react-google-maps/api";
 import * as turf from "@turf/turf";
-import { getMarkerIcon } from "./mapUtils";
+import { useEffect, useRef, useState } from "react";
 import type { PlantEntry } from "./types";
 
-// Component to recenter map when coordinates change manually
-export const RecenterMap = ({ lat, lng }: { lat: number; lng: number }) => {
-  const map = useMapEvents({});
-  useEffect(() => {
-    map.flyTo([lat, lng], Math.max(map.getZoom(), 17), { duration: 0.6 });
-  }, [lat, lng, map]);
-  return null;
-};
+const mapContainerStyle = { width: "100%", height: "100%" };
+
+const getMarkerIcon = (color: string) => ({
+  url:
+    "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-" +
+    color +
+    ".png",
+  scaledSize: new google.maps.Size(25, 41),
+  anchor: new google.maps.Point(12, 41),
+});
 
 // ---- Map: multiple markers + all plot boundaries ----
 export const AllPlantsMapContent = ({
@@ -32,6 +31,7 @@ export const AllPlantsMapContent = ({
   geographicalUnits,
   setActiveEntryId,
   suggestedCorrection,
+  mapCenter,
 }: {
   activeId: string;
   onPlantMove: (entryId: string, lat: number, lng: number) => void;
@@ -46,9 +46,28 @@ export const AllPlantsMapContent = ({
   geographicalUnits: any[];
   setActiveEntryId: (id: string) => void;
   suggestedCorrection?: { entryId: string; lat: number; lng: number } | null;
+  mapCenter: [number, number];
 }) => {
-  const map = useMap();
+  const { isLoaded } = useJsApiLoader({
+    id: "google-map-script",
+    googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY?.trim() ?? "",
+  });
+
+  const mapRef = useRef<google.maps.Map | null>(null);
+  const [hoveredUnitId, setHoveredUnitId] = useState<string | null>(null);
+
   const activePlant = plants.find((p) => p.entryId === activeId);
+
+  // Auto-pan to active plant on tab click
+  useEffect(() => {
+    if (!activePlant || !mapRef.current) return;
+    mapRef.current.panTo({
+      lat: activePlant.coordinate.lat,
+      lng: activePlant.coordinate.lng,
+    });
+    const currentZoom = mapRef.current.getZoom() ?? 17;
+    if (currentZoom < 17) mapRef.current.setZoom(17);
+  }, [activePlant?.coordinate.lat, activePlant?.coordinate.lng]);
 
   const findCurrentPlot = (lng: number, lat: number) => {
     // Use all geographical units sorted by most specific first (Plot > Area > Region)
@@ -72,97 +91,121 @@ export const AllPlantsMapContent = ({
     return null;
   };
 
-  // Inner component to handle map clicks
-  const MapClickHandler = () => {
-    useMapEvents({
-      click(e) {
-        if (!clickable || !activeId) return;
-        const { lat, lng } = e.latlng;
+  const handleMapClick = (event: google.maps.MapMouseEvent) => {
+    if (!clickable || !activeId || !event.latLng) return;
+    const lat = event.latLng.lat();
+    const lng = event.latLng.lng();
 
-        // If plant has no plotId: auto-detect which unit was clicked
-        if (!activePlant?.plotId) {
-          const plotId = findCurrentPlot(lng, lat);
-          if (plotId) {
-            onAutoAssign(activeId, plotId, lat, lng);
-            return;
-          }
-          // Clicked outside all units — do nothing
-          return;
-        }
+    // If plant has no plotId: auto-detect which unit was clicked
+    if (!activePlant?.plotId) {
+      const plotId = findCurrentPlot(lng, lat);
+      if (plotId) {
+        onAutoAssign(activeId, plotId, lat, lng);
+        return;
+      }
+      // Clicked outside all units — do nothing
+      return;
+    }
 
-        // Plant already has a plotId — move within boundary
-        onPlantMove(activeId, lat, lng);
-      },
-    });
-    return null;
+    // Plant already has a plotId — move within boundary
+    onPlantMove(activeId, lat, lng);
   };
 
   // Style helpers per level
   const getBoundaryStyle = (unit: any, isActiveUnit: boolean) => {
     if (isActiveUnit) {
       return {
-        color: "#6366f1",
-        weight: 2.5,
+        strokeColor: "#6366f1",
+        strokeWeight: 2.5,
         fillOpacity: 0.18,
-        dashArray: undefined,
       };
     }
     switch (unit.level) {
       case 1: // Plot
         return {
-          color: "#f59e0b",
-          weight: 1.5,
+          strokeColor: "#f59e0b",
+          strokeWeight: 1.5,
           fillOpacity: 0.06,
-          dashArray: "5,4",
         };
       case 2: // Area
         return {
-          color: "#10b981",
-          weight: 2,
+          strokeColor: "#10b981",
+          strokeWeight: 2,
           fillOpacity: 0.08,
-          dashArray: "8,4",
         };
       case 3: // Region
       default:
         return {
-          color: "#3b82f6",
-          weight: 2.5,
+          strokeColor: "#3b82f6",
+          strokeWeight: 2.5,
           fillOpacity: 0.05,
-          dashArray: undefined,
         };
     }
   };
 
+  if (!isLoaded) {
+    return (
+      <div className="flex h-full w-full items-center justify-center text-sm text-muted-foreground">
+        Đang tải bản đồ...
+      </div>
+    );
+  }
+
+  const initialCenter = activePlant
+    ? { lat: activePlant.coordinate.lat, lng: activePlant.coordinate.lng }
+    : { lat: mapCenter[0], lng: mapCenter[1] };
+
+  const sortedUnits = [...geographicalUnits].sort(
+    (a, b) => b.level - a.level,
+  ); // Region first so Plots render on top
+
   return (
-    <>
-      <TileLayer
-        url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
-        attribution="Esri"
-      />
-      <MapClickHandler />
-      {/* Auto-pan to active plant on tab click */}
-      {activePlant && (
-        <RecenterMap
-          lat={activePlant.coordinate.lat}
-          lng={activePlant.coordinate.lng}
-        />
-      )}
+    <GoogleMap
+      mapContainerStyle={mapContainerStyle}
+      center={initialCenter}
+      zoom={17}
+      options={{ zoomControl: false, mapTypeId: "satellite" }}
+      onLoad={(map) => {
+        mapRef.current = map;
+      }}
+      onClick={handleMapClick}
+    >
       {/* All geographical boundaries — Region > Area > Plot, rendered outermost first */}
-      {[...geographicalUnits]
-        .sort((a, b) => b.level - a.level) // Region first so Plots render on top
-        .map((unit) => {
-          if (!unit.coordinates || unit.coordinates.length < 3) return null;
-          const isActiveUnit = activePlant?.plotId === unit.id;
-          const style = getBoundaryStyle(unit, isActiveUnit);
-          const showTooltip = true; // show name for all units (Region, Area, Plot) on hover
-          return (
+      {sortedUnits.map((unit) => {
+        if (!unit.coordinates || unit.coordinates.length < 3) return null;
+        const isActiveUnit = activePlant?.plotId === unit.id;
+        const style = getBoundaryStyle(unit, isActiveUnit);
+        const path = unit.coordinates.map((c: any) => ({
+          lat: c.lat,
+          lng: c.lng,
+        }));
+        const center = path.reduce(
+          (acc: { lat: number; lng: number }, p: { lat: number; lng: number }) => ({
+            lat: acc.lat + p.lat / path.length,
+            lng: acc.lng + p.lng / path.length,
+          }),
+          { lat: 0, lng: 0 },
+        );
+
+        return (
+          <div key={unit.id}>
             <Polygon
-              key={unit.id}
-              positions={unit.coordinates.map((c: any) => [c.lat, c.lng])}
-              pathOptions={style}
-            >
-              {showTooltip && (
-                <Tooltip sticky direction="top" opacity={0.95}>
+              paths={path}
+              options={style}
+              onMouseOver={() => setHoveredUnitId(unit.id)}
+              onMouseOut={() =>
+                setHoveredUnitId((current) =>
+                  current === unit.id ? null : current,
+                )
+              }
+            />
+            {hoveredUnitId === unit.id && (
+              <InfoWindow
+                position={center}
+                options={{ disableAutoPan: true }}
+                onCloseClick={() => setHoveredUnitId(null)}
+              >
+                <div>
                   <div
                     style={{ fontWeight: 600, fontSize: 12, lineHeight: "1.4" }}
                   >
@@ -178,20 +221,20 @@ export const AllPlantsMapContent = ({
                   >
                     {unit.type}
                   </div>
-                </Tooltip>
-              )}
-            </Polygon>
-          );
-        })}
+                </div>
+              </InfoWindow>
+            )}
+          </div>
+        );
+      })}
       {/* All plant markers */}
       {plants.map((p) => {
-        // if (!p.plotId) return null;
         const isActive = p.entryId === activeId;
 
         return (
           <Marker
             key={p.entryId}
-            position={[p.coordinate.lat, p.coordinate.lng]}
+            position={{ lat: p.coordinate.lat, lng: p.coordinate.lng }}
             draggable={isActive}
             opacity={isActive ? 1 : 0.6}
             icon={
@@ -201,35 +244,33 @@ export const AllPlantsMapContent = ({
                   ? getMarkerIcon("red")
                   : getMarkerIcon("green")
             }
-            eventHandlers={{
-              click() {
-                if (!isActive) {
-                  document
-                    .getElementById(`plant-${p.entryId}`)
-                    ?.scrollIntoView({
-                      block: "center",
-                      behavior: "smooth",
-                    });
-                }
-                map.flyTo([p.coordinate.lat, p.coordinate.lng], map.getZoom(), {
-                  duration: 0.5,
+            onClick={() => {
+              if (!isActive) {
+                document.getElementById(`plant-${p.entryId}`)?.scrollIntoView({
+                  block: "center",
+                  behavior: "smooth",
                 });
-                setActiveEntryId(p.entryId);
-              },
-              dragend(e) {
-                if (!isActive) return;
-                const pos = e.target.getLatLng();
+              }
+              mapRef.current?.panTo({
+                lat: p.coordinate.lat,
+                lng: p.coordinate.lng,
+              });
+              setActiveEntryId(p.entryId);
+            }}
+            onDragEnd={(event) => {
+              if (!isActive || !event.latLng) return;
+              const lat = event.latLng.lat();
+              const lng = event.latLng.lng();
 
-                if (!p.plotId) {
-                  const plotId = findCurrentPlot(pos.lng, pos.lat);
-                  if (plotId) {
-                    onAutoAssign(p.entryId, plotId, pos.lat, pos.lng);
-                    return;
-                  }
+              if (!p.plotId) {
+                const plotId = findCurrentPlot(lng, lat);
+                if (plotId) {
+                  onAutoAssign(p.entryId, plotId, lat, lng);
+                  return;
                 }
+              }
 
-                onPlantMove(p.entryId, pos.lat, pos.lng);
-              },
+              onPlantMove(p.entryId, lat, lng);
             }}
           />
         );
@@ -240,23 +281,31 @@ export const AllPlantsMapContent = ({
         activePlant && (
           <>
             <Polyline
-              positions={[
-                [activePlant.coordinate.lat, activePlant.coordinate.lng],
-                [suggestedCorrection.lat, suggestedCorrection.lng],
+              path={[
+                { lat: activePlant.coordinate.lat, lng: activePlant.coordinate.lng },
+                { lat: suggestedCorrection.lat, lng: suggestedCorrection.lng },
               ]}
-              pathOptions={{ color: "#ef4444", dashArray: "5, 5", weight: 2 }}
+              options={{
+                strokeColor: "#ef4444",
+                strokeWeight: 2,
+                icons: [
+                  {
+                    icon: { path: "M 0,-1 0,1", strokeOpacity: 1, scale: 3 },
+                    offset: "0",
+                    repeat: "10px",
+                  },
+                ],
+              }}
             />
             <Marker
-              position={[suggestedCorrection.lat, suggestedCorrection.lng]}
-              opacity={0.5}
-              eventHandlers={{
-                click() {
-                  // Clicking suggestion might not do anything specific, users use the Apply button
-                },
+              position={{
+                lat: suggestedCorrection.lat,
+                lng: suggestedCorrection.lng,
               }}
+              opacity={0.5}
             />
           </>
         )}
-    </>
+    </GoogleMap>
   );
 };

@@ -19,7 +19,7 @@ import {
   useToast,
   type Column,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import "leaflet/dist/leaflet.css";
+import { GoogleMap, Marker, Polygon, useJsApiLoader } from "@react-google-maps/api";
 import {
   Award,
   Building2,
@@ -35,14 +35,7 @@ import {
   Search,
   ShieldCheck,
 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
-import {
-  CircleMarker,
-  MapContainer,
-  Polygon,
-  TileLayer,
-  useMap,
-} from "react-leaflet";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   AQUACULTURE_IDENTIFICATION_GEO_UNITS,
   AQUACULTURE_IDENTIFICATION_REGIONS,
@@ -117,14 +110,87 @@ const buildClosedPath = (coordinates?: Array<{ lat: number; lng: number }>) => {
   return path;
 };
 
-const MapSync = ({ center, zoom }: { center: LatLngTuple; zoom: number }) => {
-  const map = useMap();
+const mapContainerStyle = { width: "100%", height: "100%" };
+
+const FarmGoogleMap = ({
+  center,
+  zoom,
+  regionPath,
+  farms,
+  onFarmClick,
+}: {
+  center: LatLngTuple;
+  zoom: number;
+  regionPath: LatLngTuple[];
+  farms: FarmRecord[];
+  onFarmClick: (farm: FarmRecord) => void;
+}) => {
+  const { isLoaded } = useJsApiLoader({
+    id: "google-map-script",
+    googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY?.trim() ?? "",
+  });
+  const mapRef = useRef<google.maps.Map | null>(null);
 
   useEffect(() => {
-    map.setView(center, zoom, { animate: true });
-  }, [center, map, zoom]);
+    const map = mapRef.current;
+    if (!map) return;
+    map.panTo({ lat: center[0], lng: center[1] });
+    map.setZoom(zoom);
+  }, [center, zoom]);
 
-  return null;
+  if (!isLoaded) {
+    return (
+      <div className="flex h-full w-full items-center justify-center text-sm text-muted-foreground">
+        Đang tải bản đồ...
+      </div>
+    );
+  }
+
+  const markerColor = (status: SearchStatus) =>
+    status === "healthy"
+      ? "#16a34a"
+      : status === "monitoring"
+        ? "#d97706"
+        : "#dc2626";
+
+  return (
+    <GoogleMap
+      mapContainerStyle={mapContainerStyle}
+      center={{ lat: center[0], lng: center[1] }}
+      zoom={zoom}
+      options={{ zoomControl: false }}
+      onLoad={(map) => {
+        mapRef.current = map;
+      }}
+    >
+      {regionPath.length > 0 ? (
+        <Polygon
+          paths={regionPath.map(([lat, lng]) => ({ lat, lng }))}
+          options={{
+            strokeColor: "#3b82f6",
+            strokeWeight: 3,
+            fillColor: "#3b82f6",
+            fillOpacity: 0.1,
+          }}
+        />
+      ) : null}
+      {farms.map((farm) => (
+        <Marker
+          key={farm.id}
+          position={{ lat: farm.center.lat, lng: farm.center.lng }}
+          icon={{
+            path: google.maps.SymbolPath.CIRCLE,
+            scale: 9,
+            fillColor: markerColor(farm.status),
+            fillOpacity: 0.8,
+            strokeColor: markerColor(farm.status),
+            strokeWeight: 2,
+          }}
+          onClick={() => onFarmClick(farm)}
+        />
+      ))}
+    </GoogleMap>
+  );
 };
 
 const FARM_MARKERS: Record<string, { lat: number; lng: number }> = {
@@ -987,57 +1053,17 @@ const AquacultureSearchFarmPage = () => {
                           isDetailOpen && "opacity-0",
                         )}
                       >
-                        <MapContainer
+                        <FarmGoogleMap
                           center={mapCenter}
                           zoom={mapZoom}
-                          className="h-full w-full"
-                          zoomControl={false}
-                          scrollWheelZoom
-                        >
-                          <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-                          <MapSync center={mapCenter} zoom={mapZoom} />
-                          {regionPath.length > 0 ? (
-                            <Polygon
-                              positions={regionPath}
-                              pathOptions={{
-                                color: "#3b82f6",
-                                weight: 3,
-                                fillColor: "#3b82f6",
-                                fillOpacity: 0.1,
-                              }}
-                            />
-                          ) : null}
-                          {filteredFarmsToShow.map((farm) => (
-                            <CircleMarker
-                              key={farm.id}
-                              center={[farm.center.lat, farm.center.lng]}
-                              radius={9}
-                              pathOptions={{
-                                color:
-                                  farm.status === "healthy"
-                                    ? "#16a34a"
-                                    : farm.status === "monitoring"
-                                      ? "#d97706"
-                                      : "#dc2626",
-                                fillColor:
-                                  farm.status === "healthy"
-                                    ? "#16a34a"
-                                    : farm.status === "monitoring"
-                                      ? "#d97706"
-                                      : "#dc2626",
-                                fillOpacity: 0.8,
-                                weight: 2,
-                              }}
-                              eventHandlers={{
-                                click: () => {
-                                  setActiveFarm(farm);
-                                  setIsDetailOpen(true);
-                                  setSelectedFarmId(farm.id);
-                                },
-                              }}
-                            />
-                          ))}
-                        </MapContainer>
+                          regionPath={regionPath}
+                          farms={filteredFarmsToShow}
+                          onFarmClick={(farm) => {
+                            setActiveFarm(farm);
+                            setIsDetailOpen(true);
+                            setSelectedFarmId(farm.id);
+                          }}
+                        />
 
                         <div
                           onClick={() => setIsMapExpanded(true)}
@@ -1124,57 +1150,17 @@ const AquacultureSearchFarmPage = () => {
             {selectedFarm && (
               <div className="flex h-full w-full overflow-hidden">
                 <div className="flex-1 relative bg-white border-r">
-                  <MapContainer
+                  <FarmGoogleMap
                     center={mapCenter}
                     zoom={mapZoom}
-                    className="h-full w-full"
-                    zoomControl={false}
-                    scrollWheelZoom
-                  >
-                    <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-                    <MapSync center={mapCenter} zoom={mapZoom} />
-                    {regionPath.length > 0 ? (
-                      <Polygon
-                        positions={regionPath}
-                        pathOptions={{
-                          color: "#3b82f6",
-                          weight: 3,
-                          fillColor: "#3b82f6",
-                          fillOpacity: 0.1,
-                        }}
-                      />
-                    ) : null}
-                    {filteredFarmsToShow.map((farm) => (
-                      <CircleMarker
-                        key={farm.id}
-                        center={[farm.center.lat, farm.center.lng]}
-                        radius={9}
-                        pathOptions={{
-                          color:
-                            farm.status === "healthy"
-                              ? "#16a34a"
-                              : farm.status === "monitoring"
-                                ? "#d97706"
-                                : "#dc2626",
-                          fillColor:
-                            farm.status === "healthy"
-                              ? "#16a34a"
-                              : farm.status === "monitoring"
-                                ? "#d97706"
-                                : "#dc2626",
-                          fillOpacity: 0.8,
-                          weight: 2,
-                        }}
-                        eventHandlers={{
-                          click: () => {
-                            setActiveFarm(farm);
-                            setIsDetailOpen(true);
-                            setSelectedFarmId(farm.id);
-                          },
-                        }}
-                      />
-                    ))}
-                  </MapContainer>
+                    regionPath={regionPath}
+                    farms={filteredFarmsToShow}
+                    onFarmClick={(farm) => {
+                      setActiveFarm(farm);
+                      setIsDetailOpen(true);
+                      setSelectedFarmId(farm.id);
+                    }}
+                  />
                   <div
                     className="p-3 rounded-xl cursor-pointer absolute top-4 right-4 z-1000 bg-white/90 backdrop-blur-sm shadow-xl hover:bg-white transition-colors"
                     onClick={() => setIsMapExpanded(false)}

@@ -20,28 +20,38 @@ import {
 import booleanPointInPolygon from "@turf/boolean-point-in-polygon";
 import { point, polygon } from "@turf/helpers";
 import L from "leaflet";
-import "leaflet/dist/leaflet.css";
-import { Edit, Maximize2, Plus, Trash2, X } from "lucide-react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useForm, useFormContext } from "react-hook-form";
 import {
-  MapContainer,
+  GoogleMap,
+  InfoWindow,
   Marker,
   Polygon,
   Polyline,
-  TileLayer,
-  Tooltip,
-} from "react-leaflet";
+  useJsApiLoader,
+} from "@react-google-maps/api";
+import { Edit, Maximize2, Plus, Trash2, X } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useForm, useFormContext } from "react-hook-form";
 import readXlsxFile from "read-excel-file";
 import { z } from "zod";
 
 import { useCatalog } from "@/features/foundation/hooks/useCatalog";
+import { getMarkerIcon as getGoogleMarkerIcon } from "@/pages/animal-husbandry-zone/animal-husbandry-region/components/mapUtils";
 import {
   getBoundsFromPoints,
   getNearestPointOnPolygonBoundary,
   toTurfPolygonFromCoords,
   type PointWarning,
 } from "../utils/map";
+
+const mapContainerStyle = { width: "100%", height: "100%" };
+
+const dashedLineIcons = [
+  {
+    icon: { path: "M 0,-1 0,1", strokeOpacity: 1, scale: 3 },
+    offset: "0",
+    repeat: "10px",
+  },
+];
 
 const isSegmentsIntersecting = (
   p1: L.LatLng,
@@ -111,9 +121,6 @@ interface PlotLayoutProps {
   plotWarningForDisplay: any;
   plotPoints: L.LatLng[];
   lands: any[];
-  customIcon: L.Icon;
-  activeIcon: L.Icon;
-  invalidIcon: L.Icon;
   setEditingPlot: (val: any) => void;
   removePlotPoint: (index: number) => void;
   handlePlotPointInputChange: (
@@ -476,9 +483,6 @@ const PlotLayout = ({
   plotWarningForDisplay,
   plotPoints,
   lands,
-  customIcon,
-  activeIcon,
-  invalidIcon,
   setEditingPlot,
   removePlotPoint,
   handlePlotPointInputChange,
@@ -495,119 +499,173 @@ const PlotLayout = ({
   handleDownloadSampleExcel,
   justChangedPlotCoords,
 }: PlotLayoutProps) => {
+  const mapRef = useRef<google.maps.Map | null>(null);
+  const { isLoaded } = useJsApiLoader({
+    id: "google-map-script",
+    googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY?.trim() ?? "",
+  });
+  const [hoveredPointIndex, setHoveredPointIndex] = useState<number | null>(
+    null,
+  );
+
+  const customMarkerIcon = useMemo(() => getGoogleMarkerIcon("blue"), []);
+  const activeMarkerIcon = useMemo(() => getGoogleMarkerIcon("green"), []);
+  const invalidMarkerIcon = useMemo(() => getGoogleMarkerIcon("red"), []);
+
+  const centroidOf = (points: L.LatLng[]) => {
+    if (points.length === 0) return { lat: 0, lng: 0 };
+    const lat = points.reduce((sum, p) => sum + p.lat, 0) / points.length;
+    const lng = points.reduce((sum, p) => sum + p.lng, 0) / points.length;
+    return { lat, lng };
+  };
+
   return (
     <div className="grid h-auto lg:h-full w-full grid-cols-1 gap-6 p-4 lg:grid-cols-5 overflow-y-auto lg:overflow-hidden">
       <div className="relative z-0 h-96 lg:h-full w-full lg:col-span-3 shrink-0 lg:shrink overflow-hidden rounded-lg border">
-        <MapContainer
-          center={[center.lat, center.lng]}
-          zoom={14}
-          className="h-full w-full"
-        >
-          <TileLayer
-            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-          />
-
-          <Polygon
-            positions={regionPoints}
-            pathOptions={{
-              color: "blue",
-              fill: false,
-              dashArray: "5, 5",
+        {isLoaded ? (
+          <GoogleMap
+            mapContainerStyle={mapContainerStyle}
+            center={{ lat: center.lat, lng: center.lng }}
+            zoom={14}
+            onLoad={(map) => {
+              mapRef.current = map;
             }}
-          />
-
-          {plots.map((plot) => {
-            if (editingPlot && plot.id === editingPlot.id) return null;
-            if (!plot.coordinates || plot.coordinates.length < 3) return null;
-
-            const positions = plot.coordinates.map((coordinate: any) =>
-              L.latLng(coordinate.lat, coordinate.lng),
-            );
-
-            return (
-              <Polygon
-                key={plot.id}
-                positions={positions}
-                pathOptions={{ color: "green", weight: 2 }}
-                eventHandlers={{
-                  click: () => onLoadPlotForEdit(plot),
+          >
+            {regionPoints.length >= 2 && (
+              <Polyline
+                path={[...regionPoints, regionPoints[0]]}
+                options={{
+                  strokeOpacity: 0,
+                  icons: dashedLineIcons,
+                  strokeColor: "blue",
                 }}
               />
-            );
-          })}
+            )}
 
-          {editingPlot && (
-            <>
-              <Polygon
-                positions={plotPoints}
-                pathOptions={{
-                  color: "#22c55e",
-                  weight: 2,
-                  fillOpacity: 0.2,
-                }}
-              >
-                {justChangedPlotCoords && (
-                  <Tooltip permanent sticky direction="top">
-                    Đã tự động điều chỉnh sắp xếp các điểm để phù hợp đường bao
-                  </Tooltip>
-                )}
-              </Polygon>
+            {plots.map((plot) => {
+              if (editingPlot && plot.id === editingPlot.id) return null;
+              if (!plot.coordinates || plot.coordinates.length < 3) return null;
 
-              {plotPoints.map((point, index) => {
-                const isActive = activePlotPointIndex === index;
-                const isInvalid = !!plotPointWarnings[index];
-                const markerIcon = isInvalid
-                  ? invalidIcon
-                  : isActive
-                    ? activeIcon
-                    : customIcon;
+              const positions = plot.coordinates.map((coordinate: any) =>
+                L.latLng(coordinate.lat, coordinate.lng),
+              );
 
-                return (
-                  <Marker
-                    key={`sub-point-${index}`}
-                    position={point}
-                    draggable={true}
-                    icon={markerIcon}
-                    eventHandlers={{
-                      click: () => onPlotPointSelect(index, point),
-                      dragstart: (event) =>
-                        handlePlotPointDrag(index, event.target.getLatLng(), {
-                          finalize: false,
-                        }),
-                      drag: (event) =>
-                        handlePlotPointDrag(index, event.target.getLatLng(), {
-                          finalize: false,
-                        }),
-                      dragend: (event) =>
-                        handlePlotPointDrag(index, event.target.getLatLng(), {
-                          finalize: true,
-                        }),
-                    }}
-                  >
-                    <Tooltip sticky direction="top" className="z-1000">
-                      Điểm {index + 1}
-                    </Tooltip>
-                  </Marker>
-                );
-              })}
+              return (
+                <Polygon
+                  key={plot.id}
+                  paths={positions}
+                  options={{
+                    strokeColor: "green",
+                    strokeWeight: 2,
+                    fillOpacity: 0.2,
+                  }}
+                  onClick={() => onLoadPlotForEdit(plot)}
+                />
+              );
+            })}
 
-              {plotWarningForDisplay && (
-                <Polyline
-                  positions={[
-                    plotWarningForDisplay.invalidLatLng,
-                    plotWarningForDisplay.suggestedLatLng,
-                  ]}
-                  pathOptions={{
-                    color: "red",
-                    weight: 2,
-                    dashArray: "6, 6",
+            {editingPlot && (
+              <>
+                <Polygon
+                  paths={plotPoints}
+                  options={{
+                    strokeColor: "#22c55e",
+                    strokeWeight: 2,
+                    fillOpacity: 0.2,
                   }}
                 />
-              )}
-            </>
-          )}
-        </MapContainer>
+                {justChangedPlotCoords && plotPoints.length > 0 && (
+                  <InfoWindow
+                    position={centroidOf(plotPoints)}
+                    options={{ disableAutoPan: true }}
+                  >
+                    <div className="text-xs font-medium">
+                      Đã tự động điều chỉnh sắp xếp các điểm để phù hợp đường bao
+                    </div>
+                  </InfoWindow>
+                )}
+
+                {plotPoints.map((point, index) => {
+                  const isActive = activePlotPointIndex === index;
+                  const isInvalid = !!plotPointWarnings[index];
+                  const markerIcon = isInvalid
+                    ? invalidMarkerIcon
+                    : isActive
+                      ? activeMarkerIcon
+                      : customMarkerIcon;
+
+                  return (
+                    <Marker
+                      key={`sub-point-${index}`}
+                      position={point}
+                      draggable
+                      icon={markerIcon}
+                      onClick={() => onPlotPointSelect(index, point)}
+                      onMouseOver={() => setHoveredPointIndex(index)}
+                      onMouseOut={() =>
+                        setHoveredPointIndex((current) =>
+                          current === index ? null : current,
+                        )
+                      }
+                      onDragStart={(event) => {
+                        if (!event.latLng) return;
+                        handlePlotPointDrag(
+                          index,
+                          L.latLng(event.latLng.lat(), event.latLng.lng()),
+                          { finalize: false },
+                        );
+                      }}
+                      onDrag={(event) => {
+                        if (!event.latLng) return;
+                        handlePlotPointDrag(
+                          index,
+                          L.latLng(event.latLng.lat(), event.latLng.lng()),
+                          { finalize: false },
+                        );
+                      }}
+                      onDragEnd={(event) => {
+                        if (!event.latLng) return;
+                        handlePlotPointDrag(
+                          index,
+                          L.latLng(event.latLng.lat(), event.latLng.lng()),
+                          { finalize: true },
+                        );
+                      }}
+                    >
+                      {hoveredPointIndex === index && (
+                        <InfoWindow
+                          position={point}
+                          options={{ disableAutoPan: true }}
+                          onCloseClick={() => setHoveredPointIndex(null)}
+                        >
+                          <div className="text-xs">Điểm {index + 1}</div>
+                        </InfoWindow>
+                      )}
+                    </Marker>
+                  );
+                })}
+
+                {plotWarningForDisplay && (
+                  <Polyline
+                    path={[
+                      plotWarningForDisplay.invalidLatLng,
+                      plotWarningForDisplay.suggestedLatLng,
+                    ]}
+                    options={{
+                      strokeOpacity: 0,
+                      icons: dashedLineIcons,
+                      strokeColor: "red",
+                    }}
+                  />
+                )}
+              </>
+            )}
+          </GoogleMap>
+        ) : (
+          <div className="flex h-full w-full items-center justify-center text-sm text-muted-foreground">
+            Đang tải bản đồ...
+          </div>
+        )}
       </div>
 
       <div className="flex h-[500px] lg:h-full w-full lg:col-span-2 shrink-0 lg:shrink flex-col overflow-hidden rounded-lg border bg-slate-50">
@@ -695,11 +753,10 @@ const PlotLayout = ({
   );
 };
 
-export const AreaPlotsStep = ({
-  customIcon,
-  activeIcon,
-  invalidIcon,
-}: AreaPlotsStepProps) => {
+// `customIcon`/`activeIcon`/`invalidIcon` (Leaflet L.Icon from the caller) are
+// accepted but unused now that this component renders its own Google Maps
+// marker icons internally.
+export const AreaPlotsStep = (_props: AreaPlotsStepProps) => {
   const { watch, setValue } = useFormContext();
   const { toast } = useToast();
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -1279,9 +1336,6 @@ export const AreaPlotsStep = ({
             plotPoints={plotPoints}
             regionArea={regionArea}
             lands={lands}
-            customIcon={customIcon}
-            activeIcon={activeIcon}
-            invalidIcon={invalidIcon}
             setEditingPlot={setEditingPlot}
             removePlotPoint={removePlotPoint}
             handlePlotPointInputChange={handlePlotPointInputChange}
@@ -1316,9 +1370,6 @@ export const AreaPlotsStep = ({
                 plotPoints={plotPoints}
                 regionArea={regionArea}
                 lands={lands}
-                customIcon={customIcon}
-                activeIcon={activeIcon}
-                invalidIcon={invalidIcon}
                 setEditingPlot={setEditingPlot}
                 removePlotPoint={removePlotPoint}
                 handlePlotPointInputChange={handlePlotPointInputChange}

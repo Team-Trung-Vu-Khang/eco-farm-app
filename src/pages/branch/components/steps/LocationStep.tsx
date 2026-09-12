@@ -1,15 +1,9 @@
 import AddressSearchInput from "@/components/AddressSearchInput";
 import { AddressRemoteCombobox } from "@/components/AddressRemoteCombobox";
 import { Button, Input, Label, useToast } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import L from "leaflet";
-import "leaflet/dist/leaflet.css";
+import { GoogleMap, Marker, useJsApiLoader } from "@react-google-maps/api";
 import { MapPin } from "lucide-react";
-import { useCallback, useEffect } from "react";
-import { MapContainer, Marker, TileLayer, useMap, useMapEvents } from "react-leaflet";
-
-import defaultMarkerIconUrl from "leaflet/dist/images/marker-icon.png";
-import defaultMarkerIcon2xUrl from "leaflet/dist/images/marker-icon-2x.png";
-import defaultMarkerShadowUrl from "leaflet/dist/images/marker-shadow.png";
+import { useCallback, useEffect, useRef } from "react";
 
 import type { BranchFormData } from "../../types/types";
 
@@ -18,68 +12,20 @@ interface LocationStepProps {
   updateFormData: (updates: Partial<BranchFormData>) => void;
 }
 
-const defaultLeafletIcon = L.icon({
-  iconUrl: defaultMarkerIconUrl,
-  iconRetinaUrl: defaultMarkerIcon2xUrl,
-  shadowUrl: defaultMarkerShadowUrl,
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
-  popupAnchor: [1, -34],
-  shadowSize: [41, 41],
-});
-
-L.Marker.prototype.options.icon = defaultLeafletIcon;
-
 const DEFAULT_CENTER: [number, number] = [10.7769, 106.7009];
 
-const MapCenterSync = ({ center }: { center: [number, number] }) => {
-  const map = useMap();
-
-  useEffect(() => {
-    map.setView(center, map.getZoom(), { animate: true });
-  }, [center, map]);
-
-  return null;
-};
-
-const MapClickHandler = ({
-  onPickLocation,
-}: {
-  onPickLocation: (lat: number, lon: number) => void;
-}) => {
-  useMapEvents({
-    click(event) {
-      onPickLocation(event.latlng.lat, event.latlng.lng);
-    },
-  });
-
-  return null;
-};
-
-const DraggableLocationMarker = ({
-  position,
-  onPickLocation,
-}: {
-  position: [number, number];
-  onPickLocation: (lat: number, lon: number) => void;
-}) => {
-  return (
-    <Marker
-      position={position}
-      draggable
-      eventHandlers={{
-        dragend: (event) => {
-          const marker = event.target as L.Marker;
-          const next = marker.getLatLng();
-          onPickLocation(next.lat, next.lng);
-        },
-      }}
-    />
-  );
-};
+const mapContainerStyle = { width: "100%", height: "100%" };
+const googleMapsLibraries: "places"[] = ["places"];
 
 export function LocationStep({ formData, updateFormData }: LocationStepProps) {
   const { toast } = useToast();
+  const mapRef = useRef<google.maps.Map | null>(null);
+
+  const { isLoaded } = useJsApiLoader({
+    id: "google-map-script",
+    googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY?.trim() ?? "",
+    libraries: googleMapsLibraries,
+  });
 
   const safeLatitude = Number.isFinite(formData.latitude)
     ? formData.latitude
@@ -87,7 +33,13 @@ export function LocationStep({ formData, updateFormData }: LocationStepProps) {
   const safeLongitude = Number.isFinite(formData.longitude)
     ? formData.longitude
     : DEFAULT_CENTER[1];
-  const center: [number, number] = [safeLatitude, safeLongitude];
+  const center = { lat: safeLatitude, lng: safeLongitude };
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    map.panTo(center);
+  }, [center.lat, center.lng]);
 
   const handlePickLocation = useCallback(
     (lat: number, lon: number) => {
@@ -153,21 +105,34 @@ export function LocationStep({ formData, updateFormData }: LocationStepProps) {
         />
 
         <div className="h-96 w-full overflow-hidden rounded-lg border">
-          <MapContainer
-            center={center}
-            zoom={15}
-            className="h-full w-full"
-            zoomControl
-            scrollWheelZoom
-          >
-            <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-            <MapCenterSync center={center} />
-            <MapClickHandler onPickLocation={handlePickLocation} />
-            <DraggableLocationMarker
-              position={center}
-              onPickLocation={handlePickLocation}
-            />
-          </MapContainer>
+          {isLoaded ? (
+            <GoogleMap
+              mapContainerStyle={mapContainerStyle}
+              center={center}
+              zoom={15}
+              options={{ zoomControl: true }}
+              onLoad={(map) => {
+                mapRef.current = map;
+              }}
+              onClick={(event) => {
+                if (!event.latLng) return;
+                handlePickLocation(event.latLng.lat(), event.latLng.lng());
+              }}
+            >
+              <Marker
+                position={center}
+                draggable
+                onDragEnd={(event) => {
+                  if (!event.latLng) return;
+                  handlePickLocation(event.latLng.lat(), event.latLng.lng());
+                }}
+              />
+            </GoogleMap>
+          ) : (
+            <div className="h-full w-full flex items-center justify-center text-sm text-muted-foreground">
+              Đang tải bản đồ...
+            </div>
+          )}
         </div>
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">

@@ -1,5 +1,4 @@
 import PageWrapper from "@/components/PageWrapper";
-import { getMarkerIcon } from "@/pages/cultivation-zone/cultivation-region/components/mapUtils";
 import {
   Badge,
   Button,
@@ -19,8 +18,7 @@ import {
   Textarea,
   cn,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import L from "leaflet";
-import "leaflet/dist/leaflet.css";
+import { GoogleMap, InfoWindow, Marker, Polygon, Polyline, useJsApiLoader } from "@react-google-maps/api";
 import {
   Award,
   Building2,
@@ -37,28 +35,239 @@ import {
   Trash2,
   X,
 } from "lucide-react";
-import {
-  MapContainer,
-  Marker,
-  Polygon,
-  Polyline,
-  TileLayer,
-  Tooltip,
-} from "react-leaflet";
+import { useEffect, useRef } from "react";
 import useEnterpriseCertificateStore from "../../stores/useEnterpriseCertificateStore";
 import usePersonnelStore from "../../stores/usePersonnelStore";
 import useVarietyStore from "../../stores/useVarietyStore";
 import { EnterpriseSelector } from "../cultivation-zone/cultivation-region/components";
-import { MapController } from "../region-chart/components/DraggableRectangle";
 import { CertificateSelector } from "./components/CertificateSelector";
 import { ManagerSelector } from "./components/ManagerSelector";
 import { SeedSelectorDialog } from "./components/SeedSelectorDialog";
 import { SubAreaSelectorDialog } from "./components/SubAreaSelectorDialog";
 import { useCultivationAreaForm } from "./hooks/useCultivationAreaForm";
+import type {
+  CultivationAreaPointWarning,
+  Region,
+  SubArea,
+} from "./types/types";
 
-const customIcon = getMarkerIcon("blue");
-const activeIcon = getMarkerIcon("green");
-const invalidIcon = getMarkerIcon("red");
+const mapContainerStyle = { width: "100%", height: "100%" };
+
+const markerIconConfig = (color: "blue" | "green" | "red") => ({
+  url:
+    "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-" +
+    color +
+    ".png",
+  scaledSize: new google.maps.Size(25, 41),
+  anchor: new google.maps.Point(12, 41),
+});
+
+type LatLng = { lat: number; lng: number };
+
+const centroidOf = (points: LatLng[]): LatLng => {
+  const lat = points.reduce((sum, p) => sum + p.lat, 0) / points.length;
+  const lng = points.reduce((sum, p) => sum + p.lng, 0) / points.length;
+  return { lat, lng };
+};
+
+const MapPlottingMap = ({
+  mapCenter,
+  selectedRegion,
+  effectiveRegion,
+  selectedArea,
+  areaPoints,
+  activePointIndex,
+  pointWarnings,
+  warning,
+  handlePointDrag,
+  setActivePointIndex,
+}: {
+  mapCenter: LatLng;
+  selectedRegion: Region;
+  effectiveRegion: Region | null;
+  selectedArea: SubArea | null;
+  areaPoints: LatLng[];
+  activePointIndex: number | null;
+  pointWarnings: Record<number, CultivationAreaPointWarning>;
+  warning: CultivationAreaPointWarning | null | undefined;
+  handlePointDrag: (index: number, latlng: LatLng, finalize?: boolean) => void;
+  setActivePointIndex: (index: number) => void;
+}) => {
+  const { isLoaded } = useJsApiLoader({
+    id: "google-map-script",
+    googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY?.trim() ?? "",
+  });
+  const mapRef = useRef<google.maps.Map | null>(null);
+
+  useEffect(() => {
+    mapRef.current?.panTo(mapCenter);
+  }, [mapCenter.lat, mapCenter.lng]);
+
+  const customIcon = markerIconConfig("blue");
+  const activeIcon = markerIconConfig("green");
+  const invalidIcon = markerIconConfig("red");
+
+  if (!isLoaded) {
+    return (
+      <div className="flex h-full w-full items-center justify-center text-sm text-muted-foreground">
+        Đang tải bản đồ...
+      </div>
+    );
+  }
+
+  return (
+    <GoogleMap
+      mapContainerStyle={mapContainerStyle}
+      center={mapCenter}
+      zoom={15}
+      options={{ mapTypeId: "satellite" }}
+      onLoad={(map) => {
+        mapRef.current = map;
+      }}
+    >
+      {selectedRegion.coordinates && (
+        <>
+          <Polygon
+            paths={selectedRegion.coordinates.map((coordinate) => ({
+              lat: coordinate.lat,
+              lng: coordinate.lng,
+            }))}
+            options={{
+              strokeColor: "#64748b",
+              strokeWeight: 2,
+              fillColor: "#f1f5f9",
+              fillOpacity: 0.05,
+            }}
+          />
+          <InfoWindow
+            position={centroidOf(
+              selectedRegion.coordinates.map((coordinate) => ({
+                lat: coordinate.lat,
+                lng: coordinate.lng,
+              })),
+            )}
+            options={{ disableAutoPan: true }}
+          >
+            <div className="text-[10px] font-bold text-slate-500">
+              Vùng: {selectedRegion.name}
+            </div>
+          </InfoWindow>
+        </>
+      )}
+
+      {(effectiveRegion?.subAreas || [])
+        .filter((area) => area.id !== selectedArea?.id)
+        .map((area) => {
+          const path = (area.coordinates || []).map((coordinate) => ({
+            lat: coordinate.lat,
+            lng: coordinate.lng,
+          }));
+          if (path.length < 3) return null;
+          return (
+            <div key={area.id}>
+              <Polygon
+                paths={path}
+                options={{
+                  strokeColor: "#f97316",
+                  strokeWeight: 2,
+                  fillColor: "#fb923c",
+                  fillOpacity: 0.1,
+                }}
+              />
+              <InfoWindow
+                position={centroidOf(path)}
+                options={{ disableAutoPan: true }}
+              >
+                <div className="text-[9px] font-black uppercase tracking-tighter">
+                  {area.name}
+                </div>
+              </InfoWindow>
+            </div>
+          );
+        })}
+
+      {areaPoints.length > 0 && (
+        <Polygon
+          paths={areaPoints.map((pointItem) => ({
+            lat: pointItem.lat,
+            lng: pointItem.lng,
+          }))}
+          options={{
+            strokeColor: "#22c55e",
+            strokeWeight: 4,
+            fillColor: "#22c55e",
+            fillOpacity: 0.35,
+          }}
+        />
+      )}
+
+      {areaPoints.map((pointItem, index) => (
+        <Marker
+          key={index}
+          position={pointItem}
+          draggable
+          title={`Điểm ${index + 1}`}
+          icon={
+            pointWarnings[index]
+              ? invalidIcon
+              : activePointIndex === index
+                ? activeIcon
+                : customIcon
+          }
+          zIndex={activePointIndex === index ? 1000 : undefined}
+          onDrag={(event) => {
+            if (!event.latLng) return;
+            handlePointDrag(
+              index,
+              { lat: event.latLng.lat(), lng: event.latLng.lng() },
+              false,
+            );
+          }}
+          onDragEnd={(event) => {
+            if (!event.latLng) return;
+            handlePointDrag(
+              index,
+              { lat: event.latLng.lat(), lng: event.latLng.lng() },
+              true,
+            );
+          }}
+          onClick={() => setActivePointIndex(index)}
+        />
+      ))}
+
+      {warning?.suggested && activePointIndex !== null && (
+        <>
+          <Polyline
+            path={[
+              { lat: warning.suggested.lat, lng: warning.suggested.lng },
+              {
+                lat: areaPoints[activePointIndex].lat,
+                lng: areaPoints[activePointIndex].lng,
+              },
+            ]}
+            options={{
+              strokeColor: "#ef4444",
+              strokeWeight: 1,
+              icons: [
+                {
+                  icon: { path: "M 0,-1 0,1", strokeOpacity: 1, scale: 3 },
+                  offset: "0",
+                  repeat: "8px",
+                },
+              ],
+            }}
+          />
+          <Marker
+            position={warning.suggested}
+            icon={activeIcon}
+            opacity={0.6}
+            title="Vị trí đề xuất (hợp lệ)"
+          />
+        </>
+      )}
+    </GoogleMap>
+  );
+};
 
 const CultivationAreaCreatePage = () => {
   const {
@@ -317,133 +526,18 @@ const CultivationAreaCreatePage = () => {
       <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-[600px]">
           <div className="lg:col-span-2 relative rounded-2xl overflow-hidden border shadow-inner bg-slate-100">
-            <MapContainer
-              center={mapCenter}
-              zoom={15}
-              className="h-full w-full"
-            >
-              <TileLayer url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}" />
-              <MapController center={mapCenter} />
-
-              {selectedRegion.coordinates && (
-                <Polygon
-                  positions={selectedRegion.coordinates.map((coordinate) => [
-                    coordinate.lat,
-                    coordinate.lng,
-                  ])}
-                  pathOptions={{
-                    color: "#64748b",
-                    weight: 2,
-                    dashArray: "5, 10",
-                    fillColor: "#f1f5f9",
-                    fillOpacity: 0.05,
-                  }}
-                >
-                  <Tooltip
-                    permanent
-                    direction="top"
-                    className="bg-white/80 backdrop-blur-sm border-slate-200 shadow-sm text-[10px] font-bold text-slate-500 rounded-lg px-2 py-1"
-                  >
-                    Vùng: {selectedRegion.name}
-                  </Tooltip>
-                </Polygon>
-              )}
-
-              {(effectiveRegion?.subAreas || [])
-                .filter((area) => area.id !== selectedArea?.id)
-                .map((area) => (
-                  <Polygon
-                    key={area.id}
-                    positions={(area.coordinates || []).map((coordinate) => [
-                      coordinate.lat,
-                      coordinate.lng,
-                    ])}
-                    pathOptions={{
-                      color: "#f97316",
-                      weight: 2,
-                      dashArray: "4, 4",
-                      fillColor: "#fb923c",
-                      fillOpacity: 0.1,
-                    }}
-                  >
-                    <Tooltip
-                      permanent
-                      direction="center"
-                      className="bg-orange-900 border-none shadow-xl text-[9px] font-black text-white px-2 py-0.5 rounded uppercase tracking-tighter"
-                    >
-                      {area.name}
-                    </Tooltip>
-                  </Polygon>
-                ))}
-
-              {areaPoints.length > 0 && (
-                <Polygon
-                  positions={areaPoints.map((pointItem) => [
-                    pointItem.lat,
-                    pointItem.lng,
-                  ])}
-                  pathOptions={{
-                    color: "#22c55e",
-                    weight: 4,
-                    fillColor: "#22c55e",
-                    fillOpacity: 0.35,
-                  }}
-                />
-              )}
-
-              {areaPoints.map((pointItem, index) => (
-                <Marker
-                  key={index}
-                  position={pointItem}
-                  draggable
-                  icon={
-                    pointWarnings[index]
-                      ? invalidIcon
-                      : activePointIndex === index
-                        ? activeIcon
-                        : customIcon
-                  }
-                  zIndexOffset={activePointIndex === index ? 1000 : 0}
-                  eventHandlers={{
-                    drag: (event) =>
-                      handlePointDrag(index, event.target.getLatLng(), false),
-                    dragend: (event) =>
-                      handlePointDrag(index, event.target.getLatLng(), true),
-                    click: () => setActivePointIndex(index),
-                  }}
-                >
-                  <Tooltip direction="top" offset={[0, -10]}>
-                    Điểm {index + 1}
-                  </Tooltip>
-                </Marker>
-              ))}
-
-              {warning?.suggested && activePointIndex !== null && (
-                <>
-                  <Polyline
-                    positions={[
-                      [warning.suggested.lat, warning.suggested.lng],
-                      [
-                        areaPoints[activePointIndex].lat,
-                        areaPoints[activePointIndex].lng,
-                      ],
-                    ]}
-                    pathOptions={{
-                      color: "#ef4444",
-                      weight: 1,
-                      dashArray: "4, 4",
-                    }}
-                  />
-                  <Marker
-                    position={warning.suggested}
-                    icon={activeIcon}
-                    opacity={0.6}
-                  >
-                    <Tooltip>Vị trí đề xuất (hợp lệ)</Tooltip>
-                  </Marker>
-                </>
-              )}
-            </MapContainer>
+            <MapPlottingMap
+              mapCenter={mapCenter}
+              selectedRegion={selectedRegion}
+              effectiveRegion={effectiveRegion}
+              selectedArea={selectedArea}
+              areaPoints={areaPoints}
+              activePointIndex={activePointIndex}
+              pointWarnings={pointWarnings}
+              warning={warning}
+              handlePointDrag={handlePointDrag}
+              setActivePointIndex={setActivePointIndex}
+            />
 
             <div className="absolute top-4 right-4 z-[400] bg-white/90 backdrop-blur-md p-3 rounded-xl shadow-lg border border-slate-200 pointer-events-none text-right">
               <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">
@@ -467,13 +561,13 @@ const CultivationAreaCreatePage = () => {
                 variant="outline"
                 className="h-8 rounded-lg"
                 onClick={() => {
-                  const bounds = L.latLngBounds(areaPoints);
-                  const center = bounds.isValid()
-                    ? bounds.getCenter()
-                    : mapCenter;
+                  const center =
+                    areaPoints.length > 0
+                      ? centroidOf(areaPoints)
+                      : mapCenter;
                   setAreaPoints((previous) => [
                     ...previous,
-                    L.latLng(center.lat + 0.001, center.lng + 0.001),
+                    { lat: center.lat + 0.001, lng: center.lng + 0.001 },
                   ]);
                 }}
               >

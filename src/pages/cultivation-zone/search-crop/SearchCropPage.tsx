@@ -14,8 +14,7 @@ import {
   useToast,
   type Column,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import L from "leaflet";
-import "leaflet/dist/leaflet.css";
+import { GoogleMap, Marker, Polygon, useJsApiLoader } from "@react-google-maps/api";
 import {
   Award,
   Building2,
@@ -30,14 +29,7 @@ import {
   PanelLeftOpen,
   Search,
 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
-import {
-  MapContainer,
-  Marker,
-  Polygon,
-  TileLayer,
-  useMap,
-} from "react-leaflet";
+import { useEffect, useMemo, useRef, useState } from "react";
 import useCropDetailStore from "../../../stores/useCropDetailStore";
 import useEnterpriseStore from "../../../stores/useEnterpriseStore";
 import useRegionStore from "../../../stores/useRegionStore";
@@ -46,62 +38,34 @@ import { type CropDetail } from "../constants";
 import { CropDetailDialog } from "./components/CropDetailDialog";
 import { CultivationZoneDialog } from "./components/CultivationZoneDialog";
 
-type LatLngTuple = [number, number];
+type LatLng = { lat: number; lng: number };
 
-const cropMarkerIcon = L.icon({
-  iconUrl: treeMarkerIcon,
-  iconSize: [32, 32],
-  iconAnchor: [16, 32],
-  popupAnchor: [0, -30],
-});
+const mapContainerStyle = { width: "100%", height: "100%" };
 
-const MapViewSync = ({
-  center,
-  zoom,
-}: {
-  center: LatLngTuple;
-  zoom: number;
-}) => {
-  const map = useMap();
+const toClosedPath = (coordinates?: Array<{ lat: number; lng: number }>): LatLng[] => {
+  if (!coordinates || coordinates.length < 3) return [];
 
-  useEffect(() => {
-    map.setView(center, zoom, { animate: true });
-  }, [center, map, zoom]);
+  const path = coordinates.map((coord) => ({ lat: coord.lat, lng: coord.lng }));
+  const first = path[0];
+  const last = path[path.length - 1];
+  if (first.lat !== last.lat || first.lng !== last.lng) {
+    path.push(first);
+  }
 
-  return null;
+  return path;
 };
 
 const MapContent = ({
   currentRegion,
   cropsInThisRegion,
   setActiveCropInDialog,
-  center,
-  zoom,
+  cropIcon,
 }: {
   currentRegion: Region | undefined;
   cropsInThisRegion: CropDetail[];
   setActiveCropInDialog: (c: CropDetail) => void;
-  center: LatLngTuple;
-  zoom: number;
+  cropIcon: google.maps.Icon | undefined;
 }) => {
-  const toClosedPath = useMemo(
-    () => (coordinates?: Array<{ lat: number; lng: number }>) => {
-      if (!coordinates || coordinates.length < 3) return [];
-
-      const path = coordinates.map(
-        (coord) => [coord.lat, coord.lng] as LatLngTuple,
-      );
-      const [firstLat, firstLng] = path[0];
-      const [lastLat, lastLng] = path[path.length - 1];
-      if (firstLat !== lastLat || firstLng !== lastLng) {
-        path.push([firstLat, firstLng]);
-      }
-
-      return path;
-    },
-    [],
-  );
-
   const regionPath = toClosedPath(currentRegion?.coordinates);
   const areaPaths = (currentRegion?.subAreas ?? []).map((area) => ({
     id: area.id,
@@ -116,14 +80,12 @@ const MapContent = ({
 
   return (
     <>
-      <MapViewSync center={center} zoom={zoom} />
-
       {regionPath.length > 0 ? (
         <Polygon
-          positions={regionPath}
-          pathOptions={{
-            color: "#3b82f6",
-            weight: 3,
+          paths={regionPath}
+          options={{
+            strokeColor: "#3b82f6",
+            strokeWeight: 3,
             fillColor: "#3b82f6",
             fillOpacity: 0.1,
           }}
@@ -134,10 +96,10 @@ const MapContent = ({
         area.path.length > 0 ? (
           <Polygon
             key={area.id}
-            positions={area.path}
-            pathOptions={{
-              color: "#22c55e",
-              weight: 2,
+            paths={area.path}
+            options={{
+              strokeColor: "#22c55e",
+              strokeWeight: 2,
               fillColor: "#22c55e",
               fillOpacity: 0.15,
             }}
@@ -149,10 +111,10 @@ const MapContent = ({
         plot.path.length > 0 ? (
           <Polygon
             key={plot.id}
-            positions={plot.path}
-            pathOptions={{
-              color: "#f97316",
-              weight: 1.5,
+            paths={plot.path}
+            options={{
+              strokeColor: "#f97316",
+              strokeWeight: 1.5,
               fillColor: "#f97316",
               fillOpacity: 0.2,
             }}
@@ -163,15 +125,76 @@ const MapContent = ({
       {cropsInThisRegion.map((c) => (
         <Marker
           key={c.id}
-          position={[c.coordinate.lat, c.coordinate.lng]}
-          icon={cropMarkerIcon}
+          position={{ lat: c.coordinate.lat, lng: c.coordinate.lng }}
+          icon={cropIcon}
           title={c.name}
-          eventHandlers={{
-            click: () => setActiveCropInDialog(c),
-          }}
+          onClick={() => setActiveCropInDialog(c)}
         />
       ))}
     </>
+  );
+};
+
+const CropGoogleMap = ({
+  currentRegion,
+  cropsInThisRegion,
+  setActiveCropInDialog,
+  center,
+  zoom,
+}: {
+  currentRegion: Region | undefined;
+  cropsInThisRegion: CropDetail[];
+  setActiveCropInDialog: (c: CropDetail) => void;
+  center: LatLng;
+  zoom: number;
+}) => {
+  const { isLoaded } = useJsApiLoader({
+    id: "google-map-script",
+    googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY?.trim() ?? "",
+  });
+  const mapRef = useRef<google.maps.Map | null>(null);
+
+  const cropIcon = useMemo(() => {
+    if (!isLoaded) return undefined;
+    return {
+      url: treeMarkerIcon,
+      scaledSize: new google.maps.Size(32, 32),
+      anchor: new google.maps.Point(16, 32),
+    };
+  }, [isLoaded]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    map.panTo(center);
+    map.setZoom(zoom);
+  }, [center.lat, center.lng, zoom]);
+
+  if (!isLoaded) {
+    return (
+      <div className="flex h-full w-full items-center justify-center text-sm text-muted-foreground">
+        Đang tải bản đồ...
+      </div>
+    );
+  }
+
+  return (
+    <GoogleMap
+      mapContainerStyle={mapContainerStyle}
+      center={center}
+      zoom={zoom}
+      options={{ zoomControl: false, mapTypeId: "satellite" }}
+      onLoad={(map) => {
+        mapRef.current = map;
+      }}
+    >
+      <MapContent
+        currentRegion={currentRegion}
+        cropsInThisRegion={cropsInThisRegion}
+        setActiveCropInDialog={setActiveCropInDialog}
+        cropIcon={cropIcon}
+      />
+    </GoogleMap>
   );
 };
 
@@ -481,17 +504,17 @@ const SearchCropPage = () => {
   const mapView = (() => {
     if (activeCropInDialog) {
       return {
-        center: [
-          activeCropInDialog.coordinate.lat,
-          activeCropInDialog.coordinate.lng,
-        ] as LatLngTuple,
+        center: {
+          lat: activeCropInDialog.coordinate.lat,
+          lng: activeCropInDialog.coordinate.lng,
+        },
         zoom: 17,
       };
     }
 
     if (!selectedRegionId) {
       return {
-        center: [11.53, 106.88] as LatLngTuple,
+        center: { lat: 11.53, lng: 106.88 },
         zoom: 15,
       };
     }
@@ -501,16 +524,16 @@ const SearchCropPage = () => {
     );
     if (!firstCrop) {
       return {
-        center: [11.53, 106.88] as LatLngTuple,
+        center: { lat: 11.53, lng: 106.88 },
         zoom: 15,
       };
     }
 
     return {
-      center: [
-        firstCrop.coordinate.lat,
-        firstCrop.coordinate.lng,
-      ] as LatLngTuple,
+      center: {
+        lat: firstCrop.coordinate.lat,
+        lng: firstCrop.coordinate.lng,
+      },
       zoom: 15,
     };
   })();
@@ -990,24 +1013,15 @@ const SearchCropPage = () => {
                                     isCropDetailOpen && "opacity-0",
                                   )}
                                 >
-                                  <MapContainer
+                                  <CropGoogleMap
+                                    currentRegion={currentRegion}
+                                    cropsInThisRegion={cropsInThisRegion}
+                                    setActiveCropInDialog={
+                                      setActiveCropInDialog
+                                    }
                                     center={mapView.center}
                                     zoom={mapView.zoom}
-                                    className="h-full w-full"
-                                    zoomControl={false}
-                                    scrollWheelZoom
-                                  >
-                                    <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-                                    <MapContent
-                                      currentRegion={currentRegion}
-                                      cropsInThisRegion={cropsInThisRegion}
-                                      setActiveCropInDialog={
-                                        setActiveCropInDialog
-                                      }
-                                      center={mapView.center}
-                                      zoom={mapView.zoom}
-                                    />
-                                  </MapContainer>
+                                  />
                                   <div
                                     onClick={() => setIsMapExpanded(true)}
                                     className="p-3 rounded-xl cursor-pointer absolute top-4 right-4 z-1000 bg-white/90 backdrop-blur-sm shadow-xl hover:bg-white transition-colors"
@@ -1167,26 +1181,17 @@ const SearchCropPage = () => {
               <div className="flex h-full w-full overflow-hidden">
                 {/* Map Section */}
                 <div className="flex-1 relative bg-white border-r">
-                  <MapContainer
+                  <CropGoogleMap
+                    currentRegion={regions.find(
+                      (r) => r.id === selectedRegionId,
+                    )}
+                    cropsInThisRegion={filteredCrops.filter(
+                      (c) => c.regionId === selectedRegionId,
+                    )}
+                    setActiveCropInDialog={setActiveCropInDialog}
                     center={mapView.center}
                     zoom={mapView.zoom}
-                    className="h-full w-full"
-                    zoomControl={false}
-                    scrollWheelZoom
-                  >
-                    <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-                    <MapContent
-                      currentRegion={regions.find(
-                        (r) => r.id === selectedRegionId,
-                      )}
-                      cropsInThisRegion={filteredCrops.filter(
-                        (c) => c.regionId === selectedRegionId,
-                      )}
-                      setActiveCropInDialog={setActiveCropInDialog}
-                      center={mapView.center}
-                      zoom={mapView.zoom}
-                    />
-                  </MapContainer>
+                  />
                   <div
                     className="p-3 rounded-xl cursor-pointer absolute top-4 right-4 z-1000 bg-white/90 backdrop-blur-sm shadow-xl hover:bg-white transition-colors"
                     onClick={() => setIsMapExpanded(false)}
@@ -1268,14 +1273,6 @@ const SearchCropPage = () => {
           onOpenChange={setIsCropDetailOpen}
           crop={activeCropInDialog}
         />
-        <style>{`
-          .leaflet-container {
-            height: 100%;
-            width: 100%;
-            font-family: inherit;
-            background: #e2e8f0;
-          }
-        `}</style>
       </div>
     </PageWrapper>
   );

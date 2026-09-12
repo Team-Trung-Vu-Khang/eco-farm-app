@@ -6,15 +6,25 @@ import {
   CardHeader,
   CardTitle,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import "leaflet/dist/leaflet.css";
+import { InfoWindow, Polygon } from "@react-google-maps/api";
 import { ChevronLeft, Edit, MapPin } from "lucide-react";
-import { Polygon, Tooltip } from "react-leaflet";
+import { useState } from "react";
 import { RegionChartMapCard } from "../components/RegionChartMapCard";
 import { usePlotDetailPage } from "../hooks/usePlotDetailPage";
 
 const PlotDetailPage = () => {
   const { setLocation, plot, area, region, center, isLoading } =
     usePlotDetailPage();
+  const [hoveredPolygon, setHoveredPolygon] = useState<
+    "area" | "plot" | null
+  >(null);
+
+  const centroidOf = (points: { lat: number; lng: number }[]) => {
+    if (points.length === 0) return { lat: 0, lng: 0 };
+    const lat = points.reduce((sum, p) => sum + p.lat, 0) / points.length;
+    const lng = points.reduce((sum, p) => sum + p.lng, 0) / points.length;
+    return { lat, lng };
+  };
 
   if (isLoading) {
     return (
@@ -126,34 +136,79 @@ const PlotDetailPage = () => {
             heightClassName="h-[500px]"
           >
             {area && area.coordinates && area.coordinates.length >= 3 && (
-              <Polygon
-                positions={area.coordinates.map((c: any) => [c.lat, c.lng])}
-                pathOptions={{
-                  color: "blue",
-                  dashArray: "5, 5",
-                  opacity: 0.5,
-                  fillColor: "#2563eb",
-                  fillOpacity: 0.1,
-                }}
-              >
-                <Tooltip direction="top">{area.name}</Tooltip>
-              </Polygon>
+              <>
+                <Polygon
+                  paths={area.coordinates.map((c: any) => ({
+                    lat: c.lat,
+                    lng: c.lng,
+                  }))}
+                  options={{
+                    strokeColor: "blue",
+                    strokeOpacity: 0.5,
+                    fillColor: "#2563eb",
+                    fillOpacity: 0.1,
+                  }}
+                  onMouseOver={() => setHoveredPolygon("area")}
+                  onMouseOut={() =>
+                    setHoveredPolygon((current) =>
+                      current === "area" ? null : current,
+                    )
+                  }
+                />
+                {hoveredPolygon === "area" && (
+                  <InfoWindow
+                    position={centroidOf(
+                      area.coordinates.map((c: any) => ({
+                        lat: c.lat,
+                        lng: c.lng,
+                      })),
+                    )}
+                    options={{ disableAutoPan: true }}
+                    onCloseClick={() => setHoveredPolygon(null)}
+                  >
+                    <div className="text-xs">{area.name}</div>
+                  </InfoWindow>
+                )}
+              </>
             )}
 
             {plot.coordinates && plot.coordinates.length >= 3 && (
-              <Polygon
-                positions={plot.coordinates.map((c: any) => [c.lat, c.lng])}
-                pathOptions={{
-                  color: "orange",
-                  fillColor: "orange",
-                  fillOpacity: 0.3,
-                  weight: 2,
-                }}
-              >
-                <Tooltip sticky>
-                  {plot.name} ({plot.area} ha)
-                </Tooltip>
-              </Polygon>
+              <>
+                <Polygon
+                  paths={plot.coordinates.map((c: any) => ({
+                    lat: c.lat,
+                    lng: c.lng,
+                  }))}
+                  options={{
+                    strokeColor: "orange",
+                    fillColor: "orange",
+                    fillOpacity: 0.3,
+                    strokeWeight: 2,
+                  }}
+                  onMouseOver={() => setHoveredPolygon("plot")}
+                  onMouseOut={() =>
+                    setHoveredPolygon((current) =>
+                      current === "plot" ? null : current,
+                    )
+                  }
+                />
+                {hoveredPolygon === "plot" && (
+                  <InfoWindow
+                    position={centroidOf(
+                      plot.coordinates.map((c: any) => ({
+                        lat: c.lat,
+                        lng: c.lng,
+                      })),
+                    )}
+                    options={{ disableAutoPan: true }}
+                    onCloseClick={() => setHoveredPolygon(null)}
+                  >
+                    <div className="text-xs">
+                      {plot.name} ({plot.area} ha)
+                    </div>
+                  </InfoWindow>
+                )}
+              </>
             )}
           </RegionChartMapCard>
         </div>

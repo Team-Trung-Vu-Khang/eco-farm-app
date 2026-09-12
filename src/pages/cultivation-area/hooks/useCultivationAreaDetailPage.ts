@@ -1,6 +1,5 @@
 import { useMemo } from "react";
 import { useLocation, useRoute } from "wouter";
-import L from "leaflet";
 import useCultivationAreaStore from "../../../stores/useCultivationAreaStore";
 import useEnterpriseCertificateStore from "../../../stores/useEnterpriseCertificateStore";
 import useEnterpriseStore from "../../../stores/useEnterpriseStore";
@@ -60,8 +59,8 @@ export const useCultivationAreaDetailPage = () => {
   );
 
   const center = geometry?.coordinates?.[0]
-    ? L.latLng(geometry.coordinates[0].lat, geometry.coordinates[0].lng)
-    : L.latLng(11.54, 106.9);
+    ? { lat: geometry.coordinates[0].lat, lng: geometry.coordinates[0].lng }
+    : { lat: 11.54, lng: 106.9 };
 
   return {
     data,

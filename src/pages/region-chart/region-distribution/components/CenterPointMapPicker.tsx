@@ -19,6 +19,7 @@ import {
 import { Search, Maximize2 } from "lucide-react";
 import { getMarkerIcon } from "@/pages/cultivation-zone/cultivation-region/components/mapUtils";
 import { useDebounce } from "@/shared/hooks/useDebounce";
+import { searchAddress } from "@/shared/lib/googleGeocode";
 import type { RegionFormValues } from "../data/region-form.schema";
 
 const customIcon = getMarkerIcon("blue");
@@ -50,7 +51,7 @@ const MapEvents = ({ onChange }: { onChange: (latlng: L.LatLng) => void }) => {
 };
 
 interface SearchResult {
-  place_id: number;
+  place_id: string;
   display_name: string;
   lat: string;
   lon: string;
@@ -279,15 +280,8 @@ export const CenterPointMapPicker = () => {
       isSearchingRef.current = true;
       setIsSearching(true);
       try {
-        const apiKey = import.meta.env.VITE_GEOCODE_API_KEY?.trim();
-        const url = new URL("https://geocode.maps.co/search");
-        url.searchParams.set("q", query);
-        if (apiKey) {
-          url.searchParams.set("api_key", apiKey);
-        }
-        const response = await fetch(url.toString());
-        const data = await response.json();
-        if (data && Array.isArray(data) && data.length > 0) {
+        const data = await searchAddress(query);
+        if (data.length > 0) {
           setSearchResults(data);
         } else {
           setSearchResults([]);

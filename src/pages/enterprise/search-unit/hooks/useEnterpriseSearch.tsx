@@ -29,7 +29,7 @@ type SearchEnterprise = Omit<Enterprise, "classification" | "contacts" | "branch
 };
 
 type MapLike = {
-  fitBounds?: (bounds: Array<{ lat: number; lng: number }> | [number, number][]) => void;
+  fitBounds?: (bounds: any) => void;
   setCenter?: (center: { lat: number; lng: number }) => void;
   setZoom?: (zoom: number) => void;
   getZoom?: () => number;
@@ -600,21 +600,15 @@ export function useEnterpriseSearch() {
 
     if (typeof map.fitBounds === "function") {
       try {
-        map.fitBounds([
-          { lat: minLat, lng: minLng },
-          { lat: maxLat, lng: maxLng },
-        ]);
+        map.fitBounds({
+          south: minLat,
+          west: minLng,
+          north: maxLat,
+          east: maxLng,
+        } as any);
         return;
       } catch {
-        try {
-          map.fitBounds([
-            [minLat, minLng],
-            [maxLat, maxLng],
-          ]);
-          return;
-        } catch {
-          // Fall back to center/zoom below.
-        }
+        // Fall back to center/zoom below.
       }
     }
 

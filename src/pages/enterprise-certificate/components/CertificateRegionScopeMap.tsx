@@ -1,19 +1,19 @@
 import type { FarmRegionResponse } from "@/features/farm/types/farm.type";
 import { Badge, ScrollArea, cn } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import L from "leaflet";
-import "leaflet/dist/leaflet.css";
+import { GoogleMap, Polygon, useJsApiLoader } from "@react-google-maps/api";
 import { ChevronRight, Layers, MapPin } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
-import { MapContainer, Polygon, TileLayer, useMap } from "react-leaflet";
+import { useEffect, useMemo, useRef, useState } from "react";
 
-type LatLngTuple = [number, number];
+type LatLng = { lat: number; lng: number };
 
 interface CertificateRegionScopeMapProps {
   regions: FarmRegionResponse[];
   selectedIds: string[];
 }
 
-const DEFAULT_CENTER: LatLngTuple = [11.53, 106.88];
+const mapContainerStyle = { width: "100%", height: "100%" };
+
+const DEFAULT_CENTER: LatLng = { lat: 11.53, lng: 106.88 };
 
 const toPolygon = (boundary?: FarmRegionResponse["boundary"]) =>
   (boundary || [])
@@ -27,41 +27,28 @@ const toPolygon = (boundary?: FarmRegionResponse["boundary"]) =>
         return null;
       }
 
-      return [point.latitude, point.longitude] as LatLngTuple;
+      return { lat: point.latitude, lng: point.longitude } as LatLng;
     })
-    .filter((point): point is LatLngTuple => Boolean(point));
+    .filter((point): point is LatLng => Boolean(point));
 
-const getCenterFromPoints = (points: LatLngTuple[]) => {
+const getCenterFromPoints = (points: LatLng[]) => {
   if (points.length === 0) return DEFAULT_CENTER;
 
-  const lat = points.reduce((sum, point) => sum + point[0], 0) / points.length;
-  const lng = points.reduce((sum, point) => sum + point[1], 0) / points.length;
-  return [lat, lng] as LatLngTuple;
-};
-
-const MapSync = ({
-  activeBoundary,
-}: {
-  activeBoundary: LatLngTuple[] | null;
-}) => {
-  const map = useMap();
-
-  useEffect(() => {
-    if (!activeBoundary || activeBoundary.length === 0) return;
-
-    const bounds = L.latLngBounds(activeBoundary);
-    if (bounds.isValid()) {
-      map.fitBounds(bounds, { padding: [36, 36], animate: true });
-    }
-  }, [activeBoundary, map]);
-
-  return null;
+  const lat = points.reduce((sum, point) => sum + point.lat, 0) / points.length;
+  const lng = points.reduce((sum, point) => sum + point.lng, 0) / points.length;
+  return { lat, lng } as LatLng;
 };
 
 export function CertificateRegionScopeMap({
   regions,
   selectedIds,
 }: CertificateRegionScopeMapProps) {
+  const { isLoaded } = useJsApiLoader({
+    id: "google-map-script",
+    googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY?.trim() ?? "",
+  });
+  const mapRef = useRef<google.maps.Map | null>(null);
+
   const regionItems = useMemo(
     () =>
       regions.map((region) => {
@@ -110,35 +97,48 @@ export function CertificateRegionScopeMap({
       ? getCenterFromPoints(activeRegion.boundary)
       : DEFAULT_CENTER;
 
+  useEffect(() => {
+    const map = mapRef.current;
+    const boundary = activeRegion?.boundary;
+    if (!map || !boundary || boundary.length === 0) return;
+
+    const bounds = new google.maps.LatLngBounds();
+    boundary.forEach((point) => bounds.extend(point));
+    map.fitBounds(bounds, 36);
+  }, [activeRegion, isLoaded]);
+
   return (
     <div className="grid gap-4 xl:grid-cols-[minmax(0,2fr)_minmax(320px,1fr)]">
-      <div className="relative overflow-hidden rounded-3xl -z-0">
-        <MapContainer
-          center={mapCenter}
-          zoom={13}
-          className="h-[34rem] w-full"
-          zoomControl={false}
-          scrollWheelZoom
-        >
-          <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-          <MapSync activeBoundary={activeRegion?.boundary ?? null} />
-
-          {activeRegion?.boundary.length >= 3 ? (
-            <Polygon
-              key={activeRegion.id}
-              positions={activeRegion.boundary}
-              pathOptions={{
-                color: "#10b981",
-                weight: 3,
-                fillColor: "#10b981",
-                fillOpacity: 0.24,
-              }}
-              eventHandlers={{
-                click: () => setManualActiveRegionId(activeRegion.id),
-              }}
-            />
-          ) : null}
-        </MapContainer>
+      <div className="relative overflow-hidden rounded-3xl -z-0 h-[34rem] w-full">
+        {isLoaded ? (
+          <GoogleMap
+            mapContainerStyle={mapContainerStyle}
+            center={mapCenter}
+            zoom={13}
+            options={{ zoomControl: false }}
+            onLoad={(map) => {
+              mapRef.current = map;
+            }}
+          >
+            {activeRegion?.boundary.length >= 3 ? (
+              <Polygon
+                key={activeRegion.id}
+                paths={activeRegion.boundary}
+                options={{
+                  strokeColor: "#10b981",
+                  strokeWeight: 3,
+                  fillColor: "#10b981",
+                  fillOpacity: 0.24,
+                }}
+                onClick={() => setManualActiveRegionId(activeRegion.id)}
+              />
+            ) : null}
+          </GoogleMap>
+        ) : (
+          <div className="flex h-full w-full items-center justify-center text-sm text-muted-foreground">
+            Đang tải bản đồ...
+          </div>
+        )}
       </div>
 
       <div className="rounded-3xl border border-slate-100 bg-white p-4 shadow-sm">

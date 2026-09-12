@@ -1,4 +1,3 @@
-import type L from "leaflet";
 import type {
   CultivationArea,
   CultivationAreaConfig,
@@ -29,6 +28,6 @@ export type CultivationAreaFormMode = "create" | "edit";
 export interface CultivationAreaPointWarning {
   type: "outside" | "overlap" | "intersect";
   label: string;
-  suggested: L.LatLng | null;
+  suggested: { lat: number; lng: number } | null;
   index?: number;
 }

@@ -13,8 +13,7 @@ import {
   TabsTrigger,
   type Column,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import L from "leaflet";
-import "leaflet/dist/leaflet.css";
+import { GoogleMap, Marker, useJsApiLoader } from "@react-google-maps/api";
 import {
   Download,
   Edit,
@@ -25,15 +24,11 @@ import {
   Target,
   Trees,
 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
-import { MapContainer, Marker, TileLayer, useMap } from "react-leaflet";
+import { useMemo, useState } from "react";
 import { useLocation, useRoute } from "wouter";
 import { MOCK_SEEDS } from "./constants";
 
 import PageWrapper from "@/components/PageWrapper";
-import defaultMarkerIcon2xUrl from "leaflet/dist/images/marker-icon-2x.png";
-import defaultMarkerIconUrl from "leaflet/dist/images/marker-icon.png";
-import defaultMarkerShadowUrl from "leaflet/dist/images/marker-shadow.png";
 
 // --- Mock Data ---
 
@@ -46,8 +41,6 @@ interface AnimalLocation {
   animaledDate: string;
   coordinate: { lat: number; lng: number };
 }
-
-type LatLngTuple = [number, number];
 
 const MOCK_DETAIL = {
   id: "dist-1",
@@ -95,25 +88,7 @@ interface HistoryLog {
 
 type HistoryAction = Pick<HistoryLog, "action" | "type" | "details">;
 
-const defaultLeafletIcon = L.icon({
-  iconUrl: defaultMarkerIconUrl,
-  iconRetinaUrl: defaultMarkerIcon2xUrl,
-  shadowUrl: defaultMarkerShadowUrl,
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
-  popupAnchor: [1, -34],
-  shadowSize: [41, 41],
-});
-
-const MapCenterSync = ({ center }: { center: LatLngTuple }) => {
-  const map = useMap();
-
-  useEffect(() => {
-    map.setView(center, map.getZoom(), { animate: true });
-  }, [center, map]);
-
-  return null;
-};
+const mapContainerStyle = { width: "100%", height: "100%" };
 
 const generateMockHistory = (count: number): HistoryLog[] => {
   const actions: HistoryAction[] = [
@@ -178,6 +153,11 @@ const AnimalDistributionDetailPage = () => {
 
   const history = useMemo(() => generateMockHistory(15), []);
 
+  const { isLoaded } = useJsApiLoader({
+    id: "google-map-script",
+    googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY?.trim() ?? "",
+  });
+
   const handleBack = () => {
     setLocation("/animal-distribution-detail");
   };
@@ -204,8 +184,8 @@ const AnimalDistributionDetailPage = () => {
   }
 
   const mapCenter = animals[0]?.coordinate
-    ? ([animals[0].coordinate.lat, animals[0].coordinate.lng] as LatLngTuple)
-    : ([11.558, 107.134] as LatLngTuple);
+    ? { lat: animals[0].coordinate.lat, lng: animals[0].coordinate.lng }
+    : { lat: 11.558, lng: 107.134 };
 
   const animalColumns: Column<AnimalLocation>[] = [
     {
@@ -447,28 +427,29 @@ const AnimalDistributionDetailPage = () => {
                   </div>
                 </CardHeader>
                 <div className="flex-1 relative z-0">
-                  <MapContainer
-                    center={mapCenter}
-                    zoom={17}
-                    className="h-full w-full"
-                    zoomControl={false}
-                    scrollWheelZoom
-                  >
-                    <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-                    <MapCenterSync center={mapCenter} />
-
-                    {animals.map((animal) => (
-                      <Marker
-                        key={animal.id}
-                        position={[
-                          animal.coordinate.lat,
-                          animal.coordinate.lng,
-                        ]}
-                        icon={defaultLeafletIcon}
-                        title={`${animal.code} - ${animal.variety}`}
-                      />
-                    ))}
-                  </MapContainer>
+                  {isLoaded ? (
+                    <GoogleMap
+                      mapContainerStyle={mapContainerStyle}
+                      center={mapCenter}
+                      zoom={17}
+                      options={{ zoomControl: false }}
+                    >
+                      {animals.map((animal) => (
+                        <Marker
+                          key={animal.id}
+                          position={{
+                            lat: animal.coordinate.lat,
+                            lng: animal.coordinate.lng,
+                          }}
+                          title={`${animal.code} - ${animal.variety}`}
+                        />
+                      ))}
+                    </GoogleMap>
+                  ) : (
+                    <div className="h-full w-full flex items-center justify-center text-sm text-muted-foreground">
+                      Đang tải bản đồ...
+                    </div>
+                  )}
                 </div>
               </Card>
             </div>

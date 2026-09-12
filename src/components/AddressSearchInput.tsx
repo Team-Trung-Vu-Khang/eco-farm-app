@@ -1,13 +1,24 @@
 import { Input } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { Loader2, MapPin } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { searchAddress } from "@/shared/lib/googleGeocode";
 
-interface SearchResult {
-  place_id: number | string;
-  display_name: string;
-  lat: string;
-  lon: string;
+interface GeocodeResult {
+  kind: "geocode";
+  id: string;
+  label: string;
+  lat: number;
+  lng: number;
 }
+
+interface GooglePredictionResult {
+  kind: "google";
+  id: string;
+  label: string;
+  prediction: google.maps.places.PlacePrediction;
+}
+
+type SearchResult = GeocodeResult | GooglePredictionResult;
 
 interface AddressSearchInputProps {
   value: string;
@@ -22,65 +33,30 @@ interface AddressSearchInputProps {
   placeholder?: string;
 }
 
-interface GoogleMapsPlace {
-  formatted_address?: string;
-  name?: string;
-  geometry?: {
-    location?: {
-      lat: () => number;
-      lng: () => number;
-    };
-  };
-}
-
-interface GoogleMapsAutocomplete {
-  addListener: (
-    eventName: string,
-    callback: () => void,
-  ) => { remove: () => void };
-  getPlace: () => GoogleMapsPlace;
-}
-
-interface GoogleMapsAutocompleteConstructor {
-  new (
-    input: HTMLInputElement,
-    options?: {
-      componentRestrictions?: { country: string | string[] };
-      fields?: string[];
-      types?: string[];
-    },
-  ): GoogleMapsAutocomplete;
-}
-
-declare global {
-  interface Window {
-    google?: {
-      maps?: {
-        places?: {
-          Autocomplete: GoogleMapsAutocompleteConstructor;
-        };
-      };
-    };
-  }
-}
-
 let googleMapsScriptPromise: Promise<void> | undefined;
 
-function loadGooglePlaces(apiKey: string) {
-  if (window.google?.maps?.places?.Autocomplete) return Promise.resolve();
+function isGoogleMapsScriptLoaded(): boolean {
+  return Boolean(
+    (window as unknown as { google?: { maps?: { importLibrary?: unknown } } })
+      .google?.maps?.importLibrary,
+  );
+}
+
+function loadGoogleMapsBootstrap(apiKey: string) {
+  if (isGoogleMapsScriptLoaded()) return Promise.resolve();
   if (googleMapsScriptPromise) return googleMapsScriptPromise;
 
   googleMapsScriptPromise = new Promise((resolve, reject) => {
     const script = document.createElement("script");
     const url = new URL("https://maps.googleapis.com/maps/api/js");
     url.searchParams.set("key", apiKey);
-    url.searchParams.set("libraries", "places");
+    url.searchParams.set("loading", "async");
     url.searchParams.set("language", "vi");
     url.searchParams.set("region", "VN");
     script.src = url.toString();
     script.async = true;
     script.onload = () => resolve();
-    script.onerror = () => reject(new Error("Không thể tải Google Places"));
+    script.onerror = () => reject(new Error("Không thể tải Google Maps"));
     document.head.appendChild(script);
   });
 
@@ -100,77 +76,43 @@ export default function AddressSearchInput({
   const [googlePlacesUnavailable, setGooglePlacesUnavailable] = useState(false);
   const selectedQueryRef = useRef(value);
   const userTypedQueryRef = useRef(value);
-  const inputWrapperRef = useRef<HTMLDivElement>(null);
-  const onSelectLocationRef = useRef(onSelectLocation);
-  const onChangeRef = useRef(onChange);
-
-  useEffect(() => {
-    onSelectLocationRef.current = onSelectLocation;
-    onChangeRef.current = onChange;
-  }, [onChange, onSelectLocation]);
+  const placesLibraryRef = useRef<google.maps.PlacesLibrary | null>(null);
+  const sessionTokenRef = useRef<google.maps.places.AutocompleteSessionToken | null>(
+    null,
+  );
 
   useEffect(() => {
     const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY?.trim();
-    if (!apiKey) return;
+    if (!apiKey) {
+      setGooglePlacesUnavailable(true);
+      return;
+    }
 
     let disposed = false;
-    let listener: { remove?: () => void } | undefined;
-
-    void loadGooglePlaces(apiKey)
-      .then(() => {
+    void loadGoogleMapsBootstrap(apiKey)
+      .then(
+        () =>
+          window.google.maps.importLibrary(
+            "places",
+          ) as Promise<google.maps.PlacesLibrary>,
+      )
+      .then((library) => {
         if (disposed) return;
-        const input = inputWrapperRef.current?.querySelector("input");
-        const Autocomplete = window.google?.maps?.places?.Autocomplete;
-        if (!input || !Autocomplete) return;
-
-        const autocomplete = new Autocomplete(input, {
-          componentRestrictions: { country: "vn" },
-          fields: ["formatted_address", "geometry", "name"],
-          types: ["geocode"],
-        });
-        listener = autocomplete.addListener("place_changed", () => {
-          const place = autocomplete.getPlace();
-          const latFn = place.geometry?.location?.lat;
-          const lngFn = place.geometry?.location?.lng;
-          const latitude = typeof latFn === "function" ? latFn() : undefined;
-          const longitude = typeof lngFn === "function" ? lngFn() : undefined;
-          const address = place.formatted_address || place.name;
-          if (
-            !address ||
-            latitude === undefined ||
-            longitude === undefined ||
-            !Number.isFinite(latitude) ||
-            !Number.isFinite(longitude)
-          ) {
-            return;
-          }
-
-          selectedQueryRef.current = address;
-          onChangeRef.current(address);
-          onSelectLocationRef.current({ address, latitude, longitude });
-        });
+        placesLibraryRef.current = library;
+        sessionTokenRef.current = new library.AutocompleteSessionToken();
         setGooglePlacesUnavailable(false);
       })
       .catch(() => {
-        // Keep the existing geocoding search available when Google is not configured correctly.
         if (!disposed) setGooglePlacesUnavailable(true);
       });
 
     return () => {
       disposed = true;
-      listener?.remove?.();
     };
   }, []);
 
   /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
-    if (
-      import.meta.env.VITE_GOOGLE_MAPS_API_KEY?.trim() &&
-      !googlePlacesUnavailable
-    ) {
-      setResults([]);
-      return;
-    }
     // If the value changed from an external source (autofill/prop update), skip searching
     if (value !== userTypedQueryRef.current) {
       userTypedQueryRef.current = value;
@@ -185,21 +127,47 @@ export default function AddressSearchInput({
     }
 
     const timer = window.setTimeout(async () => {
-      const apiKey = import.meta.env.VITE_GEOCODE_API_KEY?.trim();
-      const controller = new AbortController();
       setIsSearching(true);
       try {
-        const url = new URL("https://geocode.maps.co/search");
-        url.searchParams.set("q", query);
-        url.searchParams.set("format", "json");
-        if (apiKey) url.searchParams.set("api_key", apiKey);
-        const response = await fetch(url, { signal: controller.signal });
-        const data = (await response.json()) as SearchResult[];
-        setResults(Array.isArray(data) ? data.slice(0, 5) : []);
+        const library = placesLibraryRef.current;
+        if (library && !googlePlacesUnavailable) {
+          const { suggestions } =
+            await library.AutocompleteSuggestion.fetchAutocompleteSuggestions({
+              input: query,
+              sessionToken: sessionTokenRef.current ?? undefined,
+              includedRegionCodes: ["vn"],
+            });
+          setResults(
+            suggestions
+              .map((suggestion) => suggestion.placePrediction)
+              .filter((prediction): prediction is google.maps.places.PlacePrediction =>
+                prediction !== null,
+              )
+              .slice(0, 5)
+              .map((prediction, index) => ({
+                kind: "google" as const,
+                id: `google-${index}-${prediction.text.text}`,
+                label: prediction.text.text,
+                prediction,
+              })),
+          );
+          return;
+        }
+
+        const data = await searchAddress(query);
+        setResults(
+          data.slice(0, 5).map((item) => ({
+            kind: "geocode" as const,
+            id: String(item.place_id),
+            label: item.display_name,
+            lat: Number(item.lat),
+            lng: Number(item.lon),
+          })),
+        );
       } catch {
-        if (!controller.signal.aborted) setResults([]);
+        setResults([]);
       } finally {
-        if (!controller.signal.aborted) setIsSearching(false);
+        setIsSearching(false);
       }
     }, 600);
 
@@ -207,22 +175,40 @@ export default function AddressSearchInput({
   }, [value, googlePlacesUnavailable]);
   /* eslint-enable react-hooks/set-state-in-effect */
 
-  const selectResult = (result: SearchResult) => {
-    const latitude = Number(result.lat);
-    const longitude = Number(result.lon);
+  const selectResult = async (result: SearchResult) => {
+    if (result.kind === "geocode") {
+      if (!Number.isFinite(result.lat) || !Number.isFinite(result.lng)) return;
+      selectedQueryRef.current = result.label;
+      onChange(result.label);
+      onSelectLocation({
+        address: result.label,
+        latitude: result.lat,
+        longitude: result.lng,
+      });
+      setResults([]);
+      return;
+    }
+
+    const place = result.prediction.toPlace();
+    await place.fetchFields({ fields: ["formattedAddress", "location", "displayName"] });
+    const location = place.location;
+    const address = place.formattedAddress || place.displayName || result.label;
+    if (!location) return;
+    const latitude = location.lat();
+    const longitude = location.lng();
     if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) return;
-    selectedQueryRef.current = result.display_name;
-    onChange(result.display_name);
-    onSelectLocation({
-      address: result.display_name,
-      latitude,
-      longitude,
-    });
+
+    selectedQueryRef.current = address;
+    onChange(address);
+    onSelectLocation({ address, latitude, longitude });
     setResults([]);
+
+    const library = placesLibraryRef.current;
+    if (library) sessionTokenRef.current = new library.AutocompleteSessionToken();
   };
 
   return (
-    <div ref={inputWrapperRef} className="relative">
+    <div className="relative">
       <Input
         value={value}
         onChange={(event) => {
@@ -239,16 +225,16 @@ export default function AddressSearchInput({
         <div className="absolute z-[9999] mt-1 max-h-60 w-full overflow-y-auto rounded-md border bg-white p-1 shadow-lg">
           {results.map((result) => (
             <button
-              key={result.place_id}
+              key={result.id}
               type="button"
               className="flex w-full items-start gap-2 rounded px-3 py-2 text-left text-sm hover:bg-slate-100"
               onPointerDown={(event) => {
                 event.preventDefault();
-                selectResult(result);
+                void selectResult(result);
               }}
             >
               <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" />
-              <span>{result.display_name}</span>
+              <span>{result.label}</span>
             </button>
           ))}
         </div>

@@ -14,8 +14,6 @@ import {
   Separator,
   cn,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import L from "leaflet";
-import "leaflet/dist/leaflet.css";
 import {
   Activity,
   Battery,
@@ -32,16 +30,8 @@ import {
   X,
   Zap,
 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
-import {
-  GeoJSON,
-  MapContainer,
-  Marker,
-  Popup,
-  TileLayer,
-  useMap,
-  useMapEvents,
-} from "react-leaflet";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { GoogleMap, InfoWindow, Marker, useJsApiLoader } from "@react-google-maps/api";
 import {
   CartesianGrid,
   Tooltip as ChartTooltip,
@@ -105,71 +95,43 @@ const getLocationInfo = (lng: number, lat: number) => {
   };
 };
 
-const MapUpdater = ({
-  center,
-  zoom,
-}: {
-  center: [number, number];
-  zoom: number;
-}) => {
-  const map = useMap();
-  useEffect(() => {
-    map.flyTo(center, zoom);
-  }, [center, zoom, map]);
-  return null;
-};
-
-const ZoomListener = ({ onChange }: { onChange: (zoom: number) => void }) => {
-  useMapEvents({
-    zoomend: (e) => {
-      onChange(e.target.getZoom());
-    },
-  });
-  return null;
-};
-
 // --- Custom Icons for IoT ---
 
-const getIoTIcon = (type: string, status: string) => {
+const getIoTIcon = (type: string | undefined, status: string) => {
   let color = "#10b981"; // online
   if (status === "offline") color = "#ef4444";
   if (status === "low_battery") color = "#f59e0b";
   if (status === "alarm") color = "#8b5cf6";
 
-  const iconHtml = `
-    <div style="
-      background-color: ${color};
-      width: 32px;
-      height: 32px;
-      border-radius: 50%;
-      border: 2px solid white;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.3);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: white;
-    ">
-      ${
-        type === "Gateway"
-          ? '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>'
-          : type === "Actuator"
-            ? '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg>'
-            : '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v4"/><path d="m4.93 4.93 2.83 2.83"/><path d="M2 12h4"/><path d="m4.93 19.07 2.83-2.83"/><path d="M12 22v-4"/><path d="m19.07 19.07-2.83-2.83"/><path d="M22 12h-4"/><path d="m19.07 4.93-2.83 2.83"/></svg>'
-      }
-    </div>
-  `;
+  const innerPath =
+    type === "Gateway"
+      ? '<path d="M5 12h14"/><path d="m12 5 7 7-7 7"/>'
+      : type === "Actuator"
+        ? '<path d="M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/><path d="M12 8v4"/><path d="M12 16h.01"/>'
+        : '<path d="M12 2v4"/><path d="m4.93 4.93 2.83 2.83"/><path d="M2 12h4"/><path d="m4.93 19.07 2.83-2.83"/><path d="M12 22v-4"/><path d="m19.07 19.07-2.83-2.83"/><path d="M22 12h-4"/><path d="m19.07 4.93-2.83 2.83"/>';
 
-  return L.divIcon({
-    html: iconHtml,
-    className: "custom-iot-icon",
-    iconSize: [32, 32],
-    iconAnchor: [16, 16],
-  });
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32"><circle cx="16" cy="16" r="14" fill="${color}" stroke="white" stroke-width="2"/><g transform="translate(8,8)" stroke="white" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">${innerPath}</g></svg>`;
+
+  return {
+    url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`,
+    scaledSize: new google.maps.Size(32, 32),
+    anchor: new google.maps.Point(16, 16),
+  };
 };
 
 const IoTMapViewPage = () => {
   const isFullScreenParam =
     new URLSearchParams(window.location.search).get("fullscreen") === "true";
+
+  const { isLoaded } = useJsApiLoader({
+    id: "google-map-script",
+    googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY?.trim() ?? "",
+  });
+  const mapRef = useRef<google.maps.Map | null>(null);
+  const zoneLayerRef = useRef<google.maps.Data | null>(null);
+  const areaLayerRef = useRef<google.maps.Data | null>(null);
+  const plotLayerRef = useRef<google.maps.Data | null>(null);
+  const [activeMarkerId, setActiveMarkerId] = useState<string | null>(null);
 
   // State
   const [searchTerm, setSearchTerm] = useState("");
@@ -222,6 +184,20 @@ const IoTMapViewPage = () => {
       setVisibleLayers({ zone: true, area: true, plot: true, device: true });
     }
   };
+
+  // Keep map centered/zoomed in sync with state-driven changes (sidebar clicks, region select)
+  useEffect(() => {
+    if (!mapRef.current) return;
+    mapRef.current.panTo({ lat: mapCenter[0], lng: mapCenter[1] });
+    mapRef.current.setZoom(mapZoom);
+  }, [mapCenter, mapZoom]);
+
+  // Toggle GeoJSON layer visibility
+  useEffect(() => {
+    zoneLayerRef.current?.setMap(visibleLayers.zone ? mapRef.current : null);
+    areaLayerRef.current?.setMap(visibleLayers.area ? mapRef.current : null);
+    plotLayerRef.current?.setMap(visibleLayers.plot ? mapRef.current : null);
+  }, [visibleLayers]);
 
   const handlePing = async (id: string) => {
     setIsPinging(true);
@@ -480,96 +456,111 @@ const IoTMapViewPage = () => {
 
           {/* Center: Map */}
           <div className="flex-1 relative">
-            <MapContainer
-              center={mapCenter}
-              zoom={mapZoom}
-              className="h-full w-full"
-              zoomControl={false}
-            >
-              <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-              <MapUpdater center={mapCenter} zoom={mapZoom} />
-              <ZoomListener onChange={onZoomChange} />
+            {isLoaded ? (
+              <GoogleMap
+                mapContainerClassName="h-full w-full"
+                center={{ lat: mapCenter[0], lng: mapCenter[1] }}
+                zoom={mapZoom}
+                options={{ zoomControl: false }}
+                onLoad={(map) => {
+                  mapRef.current = map;
 
-              {visibleLayers.zone && (
-                <GeoJSON
-                  data={zoneData as any}
-                  style={{
-                    color: "#2b8cbe",
-                    weight: 2,
+                  const zoneLayer = new google.maps.Data({ map });
+                  zoneLayer.addGeoJson(zoneData as any);
+                  zoneLayer.setStyle({
+                    strokeColor: "#2b8cbe",
+                    strokeWeight: 2,
                     fillOpacity: 0.1,
-                    dashArray: "5, 5",
-                  }}
-                />
-              )}
-              {visibleLayers.area && (
-                <GeoJSON
-                  data={areaData as any}
-                  style={{ color: "#f03b20", weight: 2, fillOpacity: 0.05 }}
-                />
-              )}
-              {visibleLayers.plot && (
-                <GeoJSON
-                  data={plotData as any}
-                  style={{ color: "#31a354", weight: 2, fillOpacity: 0.1 }}
-                />
-              )}
+                  });
+                  zoneLayerRef.current = zoneLayer;
 
-              {visibleLayers.device &&
-                filteredDevices.map((device) => (
-                  <Marker
-                    key={device.id}
-                    position={[device.lat, device.lng]}
-                    icon={getIoTIcon(device.type, device.status)}
-                    eventHandlers={{
-                      click: () => setSelectedDevice(device),
-                    }}
-                  >
-                    <Popup>
-                      <div className="p-2 min-w-[260px]">
-                        <div className="font-bold text-primary text-base mb-2 border-b pb-1">
-                          {device.name}
-                        </div>
-                        <div className="grid grid-cols-[80px_1fr] gap-x-2 gap-y-2 text-xs">
-                          <span className="text-slate-500">MAC:</span>
-                          <span className="font-mono font-bold text-slate-700 break-all text-right">
-                            {device.mac}
-                          </span>
+                  const areaLayer = new google.maps.Data();
+                  areaLayer.addGeoJson(areaData as any);
+                  areaLayer.setStyle({
+                    strokeColor: "#f03b20",
+                    strokeWeight: 2,
+                    fillOpacity: 0.05,
+                  });
+                  areaLayerRef.current = areaLayer;
 
-                          <span className="text-slate-500">Trạng thái:</span>
-                          <span
-                            className={cn(
-                              "font-bold text-right",
-                              device.status === "online"
-                                ? "text-emerald-600"
-                                : "text-rose-600",
-                            )}
-                          >
-                            {device.status.toUpperCase()}
-                          </span>
+                  const plotLayer = new google.maps.Data();
+                  plotLayer.addGeoJson(plotData as any);
+                  plotLayer.setStyle({
+                    strokeColor: "#31a354",
+                    strokeWeight: 2,
+                    fillOpacity: 0.1,
+                  });
+                  plotLayerRef.current = plotLayer;
+                }}
+                onZoomChanged={() => {
+                  const zoom = mapRef.current?.getZoom();
+                  if (zoom !== undefined) onZoomChange(zoom);
+                }}
+              >
+                {visibleLayers.device &&
+                  filteredDevices.map((device) => (
+                    <Marker
+                      key={device.id}
+                      position={{ lat: device.lat, lng: device.lng }}
+                      icon={getIoTIcon(device.type, device.status)}
+                      onClick={() => {
+                        setSelectedDevice(device);
+                        setActiveMarkerId(device.id);
+                      }}
+                    >
+                      {activeMarkerId === device.id && (
+                        <InfoWindow onCloseClick={() => setActiveMarkerId(null)}>
+                          <div className="p-2 min-w-[260px]">
+                            <div className="font-bold text-primary text-base mb-2 border-b pb-1">
+                              {device.name}
+                            </div>
+                            <div className="grid grid-cols-[80px_1fr] gap-x-2 gap-y-2 text-xs">
+                              <span className="text-slate-500">MAC:</span>
+                              <span className="font-mono font-bold text-slate-700 break-all text-right">
+                                {device.mac}
+                              </span>
 
-                          <span className="text-slate-500">Pin:</span>
-                          <span className="font-bold text-right text-slate-700">
-                            {device.batteryLevel}%
-                          </span>
-                        </div>
+                              <span className="text-slate-500">Trạng thái:</span>
+                              <span
+                                className={cn(
+                                  "font-bold text-right",
+                                  device.status === "online"
+                                    ? "text-emerald-600"
+                                    : "text-rose-600",
+                                )}
+                              >
+                                {device.status.toUpperCase()}
+                              </span>
 
-                        <Separator className="my-3" />
+                              <span className="text-slate-500">Pin:</span>
+                              <span className="font-bold text-right text-slate-700">
+                                {device.batteryLevel}%
+                              </span>
+                            </div>
 
-                        <Button
-                          size="sm"
-                          className="w-full h-9 bg-primary/10 text-primary hover:bg-primary/20 border-none shadow-none"
-                          onClick={() =>
-                            window.open(`/iot-device/${device.id}`, "_blank")
-                          }
-                        >
-                          Xem chi tiết kỹ thuật
-                          <ChevronRight className="w-3 h-3 ml-1" />
-                        </Button>
-                      </div>
-                    </Popup>
-                  </Marker>
-                ))}
-            </MapContainer>
+                            <Separator className="my-3" />
+
+                            <Button
+                              size="sm"
+                              className="w-full h-9 bg-primary/10 text-primary hover:bg-primary/20 border-none shadow-none"
+                              onClick={() =>
+                                window.open(`/iot-device/${device.id}`, "_blank")
+                              }
+                            >
+                              Xem chi tiết kỹ thuật
+                              <ChevronRight className="w-3 h-3 ml-1" />
+                            </Button>
+                          </div>
+                        </InfoWindow>
+                      )}
+                    </Marker>
+                  ))}
+              </GoogleMap>
+            ) : (
+              <div className="flex h-full w-full items-center justify-center text-sm text-muted-foreground">
+                Đang tải bản đồ...
+              </div>
+            )}
 
             {/* Map Controls (Absolute) */}
             <div className="absolute top-4 right-4 z-[1000] flex flex-col gap-2">

@@ -1,4 +1,3 @@
-import type L from "leaflet";
 import type {
   CultivationPlot,
   CultivationPlotConfig,
@@ -28,6 +27,6 @@ export type {
 export interface CultivationPlotPointWarning {
   type: "outside" | "overlap" | "intersect";
   label: string;
-  suggested: L.LatLng | null;
+  suggested: { lat: number; lng: number } | null;
   index?: number;
 }

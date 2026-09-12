@@ -12,38 +12,19 @@ import {
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import * as turf from "@turf/turf";
 import L from "leaflet";
-import "leaflet/dist/leaflet.css";
+import { GoogleMap, InfoWindow, Marker, Polygon, useJsApiLoader } from "@react-google-maps/api";
 import { Maximize2, Plus, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useFormContext } from "react-hook-form";
-import {
-  MapContainer,
-  Marker,
-  Polygon,
-  TileLayer,
-  Tooltip,
-  useMap,
-  useMapEvents,
-} from "react-leaflet";
 import readXlsxFile from "read-excel-file";
 import { getBoundsFromPoints } from "../utils/map";
+import { getMarkerIcon as getGoogleMarkerIcon } from "@/pages/animal-husbandry-zone/animal-husbandry-region/components/mapUtils";
+
+const mapContainerStyle = { width: "100%", height: "100%" };
 
 interface AreaMapStepProps {
-  markerIcon: L.Icon;
+  markerIcon?: unknown;
 }
-
-const MapClickHandler = ({
-  onClick,
-}: {
-  onClick: (latlng: L.LatLng) => void;
-}) => {
-  useMapEvents({
-    click(event) {
-      onClick(event.latlng);
-    },
-  });
-  return null;
-};
 
 const DEFAULT_POINTS = [
   L.latLng(11.53, 106.88),
@@ -89,73 +70,52 @@ const isSelfIntersecting = (points: L.LatLng[]) => {
   return false;
 };
 
-const FitBoundsOnce = ({
-  points,
-  regionPoints,
-  regionCenter,
-  fitTrigger,
-}: {
-  points: L.LatLng[];
-  regionPoints: L.LatLng[];
-  regionCenter?: L.LatLng | null;
-  fitTrigger?: number;
-}) => {
-  const map = useMap();
+const useFitBoundsOnce = (
+  mapRef: React.MutableRefObject<google.maps.Map | null>,
+  isLoaded: boolean,
+  points: L.LatLng[],
+  regionPoints: L.LatLng[],
+  regionCenter: L.LatLng | null | undefined,
+  fitTrigger: number | undefined,
+) => {
   const hasFitRef = useRef(false);
 
   useEffect(() => {
+    if (!isLoaded || !mapRef.current) return;
+    const map = mapRef.current;
+
     if (points.length > 0 && !hasFitRef.current) {
-      const bounds = L.latLngBounds(points);
-      if (bounds.isValid()) {
-        map.fitBounds(bounds, { padding: [40, 40] });
-        hasFitRef.current = true;
-      }
+      const bounds = new google.maps.LatLngBounds();
+      points.forEach((p) => bounds.extend({ lat: p.lat, lng: p.lng }));
+      map.fitBounds(bounds, 40);
+      hasFitRef.current = true;
     } else if (regionPoints.length > 0 && !hasFitRef.current) {
-      const bounds = L.latLngBounds(regionPoints);
-      if (bounds.isValid()) {
-        map.fitBounds(bounds, { padding: [40, 40] });
-        hasFitRef.current = true;
-      }
+      const bounds = new google.maps.LatLngBounds();
+      regionPoints.forEach((p) => bounds.extend({ lat: p.lat, lng: p.lng }));
+      map.fitBounds(bounds, 40);
+      hasFitRef.current = true;
     } else if (regionCenter && !hasFitRef.current) {
       // Region has no drawn boundary (e.g. created via the basic flow),
       // fall back to its center point so step 2 still follows it.
-      map.setView(regionCenter, 15);
+      map.setCenter({ lat: regionCenter.lat, lng: regionCenter.lng });
+      map.setZoom(15);
       hasFitRef.current = true;
     }
-  }, [points, regionPoints, regionCenter, map]);
+  }, [isLoaded, points, regionPoints, regionCenter]);
 
   useEffect(() => {
+    if (!isLoaded || !mapRef.current) return;
     if (points.length > 0 && fitTrigger) {
-      const bounds = L.latLngBounds(points);
-      if (bounds.isValid()) {
-        map.fitBounds(bounds, { padding: [40, 40] });
-      }
+      const bounds = new google.maps.LatLngBounds();
+      points.forEach((p) => bounds.extend({ lat: p.lat, lng: p.lng }));
+      mapRef.current.fitBounds(bounds, 40);
     }
-  }, [fitTrigger, points, map]);
-
-  return null;
-};
-
-const InvalidateMapSize = () => {
-  const map = useMap();
-
-  useEffect(() => {
-    const frame = window.requestAnimationFrame(() => map.invalidateSize());
-    const timer = window.setTimeout(() => map.invalidateSize(), 200);
-
-    return () => {
-      window.cancelAnimationFrame(frame);
-      window.clearTimeout(timer);
-    };
-  }, [map]);
-
-  return null;
+  }, [isLoaded, fitTrigger, points]);
 };
 
 interface MapLayoutProps {
   center: L.LatLng;
   areaPoints: L.LatLng[];
-  markerIcon: L.Icon;
   isFullscreen: boolean;
   setIsFullscreen: (val: boolean) => void;
   handleMapClick: (latlng: L.LatLng) => void;
@@ -182,7 +142,6 @@ interface MapLayoutProps {
 const MapLayout = ({
   center,
   areaPoints,
-  markerIcon,
   isFullscreen,
   setIsFullscreen,
   handleMapClick,
@@ -202,91 +161,171 @@ const MapLayout = ({
   boundaryWarning,
 }: MapLayoutProps) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const mapRef = useRef<google.maps.Map | null>(null);
+  const { isLoaded } = useJsApiLoader({
+    id: "google-map-script",
+    googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY?.trim() ?? "",
+  });
+
+  useFitBoundsOnce(
+    mapRef,
+    isLoaded,
+    areaPoints,
+    regionPoints,
+    regionCenter,
+    mapFitTrigger,
+  );
+
+  useEffect(() => {
+    if (!isLoaded || !mapRef.current) return;
+    const map = mapRef.current;
+    const frame = window.requestAnimationFrame(() =>
+      google.maps.event.trigger(map, "resize"),
+    );
+    const timer = window.setTimeout(
+      () => google.maps.event.trigger(map, "resize"),
+      200,
+    );
+    return () => {
+      window.cancelAnimationFrame(frame);
+      window.clearTimeout(timer);
+    };
+  }, [isLoaded]);
+
+  const areaMarkerIcon = useMemo(() => getGoogleMarkerIcon("blue"), []);
+  const [hoveredPolygon, setHoveredPolygon] = useState<string | null>(null);
+
+  const centroidOf = (points: L.LatLng[]) => {
+    if (points.length === 0) return { lat: 0, lng: 0 };
+    const lat = points.reduce((sum, p) => sum + p.lat, 0) / points.length;
+    const lng = points.reduce((sum, p) => sum + p.lng, 0) / points.length;
+    return { lat, lng };
+  };
+
   return (
     <div className="grid h-full w-full flex-1 gap-4 overflow-y-auto p-4 md:grid-cols-[minmax(0,1fr)_300px] md:overflow-hidden">
       <div className="relative z-0 h-96 min-h-96 min-w-0 overflow-hidden rounded-lg border md:h-full">
-        <MapContainer
-          center={[center.lat, center.lng]}
-          zoom={14}
-          className="h-full w-full"
-        >
-          <InvalidateMapSize />
-          <FitBoundsOnce
-            points={areaPoints}
-            regionPoints={regionPoints}
-            regionCenter={regionCenter}
-            fitTrigger={mapFitTrigger}
-          />
-          <TileLayer
-            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-          />
-
-          <MapClickHandler onClick={handleMapClick} />
-
-          {/* Draw region polygon (green dashed border) */}
-          {regionPoints && regionPoints.length >= 3 && (
-            <Polygon
-              positions={regionPoints}
-              pathOptions={{
-                color: "#10b981",
-                fillColor: "transparent",
-                weight: 3,
-                dashArray: "5, 10",
-              }}
-            >
-              <Tooltip sticky>Vùng trồng: {selectedRegion?.name}</Tooltip>
-            </Polygon>
-          )}
-
-          {/* Draw other areas in the region (dim slate) */}
-          {otherAreas &&
-            otherAreas.map(
-              (area) =>
-                area.points.length >= 3 && (
-                  <Polygon
-                    key={`other-area-${area.id}`}
-                    positions={area.points}
-                    pathOptions={{
-                      color: "#64748b",
-                      fillColor: "#64748b",
-                      fillOpacity: 0.05,
-                      weight: 1.5,
-                    }}
-                  >
-                    <Tooltip sticky>Khu vực khác: {area.name}</Tooltip>
-                  </Polygon>
-                ),
-            )}
-
-          <Polygon
-            positions={areaPoints}
-            pathOptions={{ color: "blue", fillOpacity: 0.1 }}
+        {isLoaded ? (
+          <GoogleMap
+            mapContainerStyle={mapContainerStyle}
+            center={{ lat: center.lat, lng: center.lng }}
+            zoom={14}
+            onLoad={(map) => {
+              mapRef.current = map;
+            }}
+            onClick={(e) => {
+              if (!e.latLng) return;
+              handleMapClick(L.latLng(e.latLng.lat(), e.latLng.lng()));
+            }}
           >
-            {justChanged && (
-              <Tooltip permanent sticky direction="top">
-                Đã tự động điều chỉnh sắp xếp các điểm để phù hợp đường bao
-              </Tooltip>
+            {/* Draw region polygon (green dashed border) */}
+            {regionPoints && regionPoints.length >= 3 && (
+              <>
+                <Polygon
+                  paths={regionPoints}
+                  options={{
+                    strokeColor: "#10b981",
+                    fillColor: "transparent",
+                    strokeWeight: 3,
+                  }}
+                  onMouseOver={() => setHoveredPolygon("region")}
+                  onMouseOut={() =>
+                    setHoveredPolygon((current) =>
+                      current === "region" ? null : current,
+                    )
+                  }
+                />
+                {hoveredPolygon === "region" && (
+                  <InfoWindow
+                    position={centroidOf(regionPoints)}
+                    options={{ disableAutoPan: true }}
+                    onCloseClick={() => setHoveredPolygon(null)}
+                  >
+                    <div className="text-xs">
+                      Vùng trồng: {selectedRegion?.name}
+                    </div>
+                  </InfoWindow>
+                )}
+              </>
             )}
-          </Polygon>
 
-          {areaPoints.map((point, index) => (
-            <Marker
-              key={`point-${index}`}
-              position={point}
-              draggable={true}
-              icon={markerIcon}
-              eventHandlers={{
-                drag: (event) => {
-                  handlePointDrag(index, event.target.getLatLng());
-                },
-                dragend: () => {
-                  handlePointDragEnd();
-                },
-              }}
+            {/* Draw other areas in the region (dim slate) */}
+            {otherAreas &&
+              otherAreas.map(
+                (area) =>
+                  area.points.length >= 3 && (
+                    <div key={`other-area-${area.id}`}>
+                      <Polygon
+                        paths={area.points}
+                        options={{
+                          strokeColor: "#64748b",
+                          fillColor: "#64748b",
+                          fillOpacity: 0.05,
+                          strokeWeight: 1.5,
+                        }}
+                        onMouseOver={() =>
+                          setHoveredPolygon(`other-${area.id}`)
+                        }
+                        onMouseOut={() =>
+                          setHoveredPolygon((current) =>
+                            current === `other-${area.id}` ? null : current,
+                          )
+                        }
+                      />
+                      {hoveredPolygon === `other-${area.id}` && (
+                        <InfoWindow
+                          position={centroidOf(area.points)}
+                          options={{ disableAutoPan: true }}
+                          onCloseClick={() => setHoveredPolygon(null)}
+                        >
+                          <div className="text-xs">
+                            Khu vực khác: {area.name}
+                          </div>
+                        </InfoWindow>
+                      )}
+                    </div>
+                  ),
+              )}
+
+            <Polygon
+              paths={areaPoints}
+              options={{ strokeColor: "blue", fillColor: "blue", fillOpacity: 0.1 }}
             />
-          ))}
-        </MapContainer>
+            {justChanged && areaPoints.length > 0 && (
+              <InfoWindow
+                position={centroidOf(areaPoints)}
+                options={{ disableAutoPan: true }}
+              >
+                <div className="text-xs font-medium">
+                  Đã tự động điều chỉnh sắp xếp các điểm để phù hợp đường bao
+                </div>
+              </InfoWindow>
+            )}
+
+            {areaPoints.map((point, index) => (
+              <Marker
+                key={`point-${index}`}
+                position={point}
+                draggable
+                icon={areaMarkerIcon}
+                onDrag={(event) => {
+                  if (!event.latLng) return;
+                  handlePointDrag(
+                    index,
+                    L.latLng(event.latLng.lat(), event.latLng.lng()),
+                  );
+                }}
+                onDragEnd={() => {
+                  handlePointDragEnd();
+                }}
+              />
+            ))}
+          </GoogleMap>
+        ) : (
+          <div className="flex h-full w-full items-center justify-center text-sm text-muted-foreground">
+            Đang tải bản đồ...
+          </div>
+        )}
       </div>
 
       <div className="flex h-[450px] w-full flex-col overflow-hidden rounded-lg border bg-slate-50 md:h-full">
@@ -390,7 +429,9 @@ const MapLayout = ({
   );
 };
 
-export const AreaMapStep = ({ markerIcon }: AreaMapStepProps) => {
+// `markerIcon` (a Leaflet L.Icon from the caller) is accepted but unused now that
+// this component renders its own Google Maps marker icon internally.
+export const AreaMapStep = (_props: AreaMapStepProps) => {
   const { watch, setValue } = useFormContext();
   const { toast } = useToast();
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -476,7 +517,7 @@ export const AreaMapStep = ({ markerIcon }: AreaMapStepProps) => {
         };
       });
 
-    const currentCoords = [...areaPoints.map((p) => [p.lng, p.lat])];
+    const currentCoords = [...areaPoints.map((p: L.LatLng) => [p.lng, p.lat])];
     currentCoords.push(currentCoords[0]);
     const currentPoly = turf.polygon([currentCoords]);
 
@@ -738,7 +779,7 @@ export const AreaMapStep = ({ markerIcon }: AreaMapStepProps) => {
         });
         return;
       }
-      const newPoints = areaPoints.filter((_, i) => i !== index);
+      const newPoints = areaPoints.filter((_: L.LatLng, i: number) => i !== index);
       setAreaPoints(newPoints);
     },
     [areaPoints, setAreaPoints, toast],
@@ -762,8 +803,7 @@ export const AreaMapStep = ({ markerIcon }: AreaMapStepProps) => {
 
   const handleAddPoint = useCallback(() => {
     const mapCenter = getBoundsFromPoints(
-      areaPoints,
-      DEFAULT_POINTS,
+      areaPoints.length > 0 ? areaPoints : DEFAULT_POINTS,
     ).getCenter();
     setAreaPoints([
       ...areaPoints,
@@ -773,15 +813,15 @@ export const AreaMapStep = ({ markerIcon }: AreaMapStepProps) => {
 
   const center = useMemo(() => {
     if (areaPoints.length > 0) {
-      return getBoundsFromPoints(areaPoints, DEFAULT_POINTS).getCenter();
+      return getBoundsFromPoints(areaPoints).getCenter();
     }
     if (regionPoints.length > 0) {
-      return getBoundsFromPoints(regionPoints, DEFAULT_POINTS).getCenter();
+      return getBoundsFromPoints(regionPoints).getCenter();
     }
     if (regionCenter) {
       return regionCenter;
     }
-    return getBoundsFromPoints(DEFAULT_POINTS, DEFAULT_POINTS).getCenter();
+    return getBoundsFromPoints(DEFAULT_POINTS).getCenter();
   }, [areaPoints, regionPoints, regionCenter]);
 
   return (
@@ -802,7 +842,6 @@ export const AreaMapStep = ({ markerIcon }: AreaMapStepProps) => {
           <MapLayout
             center={center}
             areaPoints={areaPoints}
-            markerIcon={markerIcon}
             isFullscreen={isFullscreen}
             setIsFullscreen={setIsFullscreen}
             handleMapClick={handleMapClick}
@@ -832,7 +871,6 @@ export const AreaMapStep = ({ markerIcon }: AreaMapStepProps) => {
               <MapLayout
                 center={center}
                 areaPoints={areaPoints}
-                markerIcon={markerIcon}
                 isFullscreen={isFullscreen}
                 setIsFullscreen={setIsFullscreen}
                 handleMapClick={handleMapClick}

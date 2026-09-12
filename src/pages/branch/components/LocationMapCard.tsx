@@ -1,4 +1,3 @@
-import { useEffect } from "react";
 import {
   Card,
   CardContent,
@@ -6,13 +5,7 @@ import {
   CardTitle,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { MapPin } from "lucide-react";
-import L from "leaflet";
-import "leaflet/dist/leaflet.css";
-import { MapContainer, Marker, TileLayer, useMap } from "react-leaflet";
-
-import defaultMarkerIconUrl from "leaflet/dist/images/marker-icon.png";
-import defaultMarkerIcon2xUrl from "leaflet/dist/images/marker-icon-2x.png";
-import defaultMarkerShadowUrl from "leaflet/dist/images/marker-shadow.png";
+import { GoogleMap, Marker, useJsApiLoader } from "@react-google-maps/api";
 
 import type { BranchDetailView } from "../hooks/useBranchDetail";
 
@@ -30,25 +23,7 @@ interface LocationMapCardProps {
   >;
 }
 
-const defaultLeafletIcon = L.icon({
-  iconUrl: defaultMarkerIconUrl,
-  iconRetinaUrl: defaultMarkerIcon2xUrl,
-  shadowUrl: defaultMarkerShadowUrl,
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
-  popupAnchor: [1, -34],
-  shadowSize: [41, 41],
-});
-
-const MapCenterSync = ({ center }: { center: [number, number] }) => {
-  const map = useMap();
-
-  useEffect(() => {
-    map.setView(center, map.getZoom(), { animate: true });
-  }, [center, map]);
-
-  return null;
-};
+const mapContainerStyle = { width: "100%", height: "100%" };
 
 export function LocationMapCard({ branch }: LocationMapCardProps) {
   const latitude = Number.isFinite(Number(branch.latitude))
@@ -57,7 +32,12 @@ export function LocationMapCard({ branch }: LocationMapCardProps) {
   const longitude = Number.isFinite(Number(branch.longitude))
     ? Number(branch.longitude)
     : 106.7009;
-  const center: [number, number] = [latitude, longitude];
+  const center = { lat: latitude, lng: longitude };
+
+  const { isLoaded } = useJsApiLoader({
+    id: "google-map-script",
+    googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY?.trim() ?? "",
+  });
 
   return (
     <Card>
@@ -81,32 +61,25 @@ export function LocationMapCard({ branch }: LocationMapCardProps) {
         </div>
 
         <div className="h-64 w-full rounded-lg overflow-hidden border z-0 relative">
-          <MapContainer
-            center={center}
-            zoom={15}
-            className="h-full w-full"
-            zoomControl={false}
-            scrollWheelZoom
-          >
-            <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-            <MapCenterSync center={center} />
-            <Marker
-              position={center}
-              icon={defaultLeafletIcon}
-              title={`${branch.enterpriseName} - ${branch.name}`}
-            />
-          </MapContainer>
+          {isLoaded ? (
+            <GoogleMap
+              mapContainerStyle={mapContainerStyle}
+              center={center}
+              zoom={15}
+              options={{ zoomControl: false }}
+            >
+              <Marker
+                position={center}
+                title={`${branch.enterpriseName} - ${branch.name}`}
+              />
+            </GoogleMap>
+          ) : (
+            <div className="h-full w-full flex items-center justify-center text-sm text-muted-foreground">
+              Đang tải bản đồ...
+            </div>
+          )}
         </div>
       </CardContent>
-
-      <style>{`
-        .leaflet-container {
-          height: 100%;
-          width: 100%;
-          font-family: inherit;
-          background: #e2e8f0;
-        }
-      `}</style>
     </Card>
   );
 }

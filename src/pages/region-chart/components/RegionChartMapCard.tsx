@@ -5,8 +5,10 @@ import {
   CardHeader,
   CardTitle,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { MapContainer, TileLayer } from "react-leaflet";
+import { GoogleMap, useJsApiLoader } from "@react-google-maps/api";
 import { MapController } from "./DraggableRectangle";
+
+const mapContainerStyle = { width: "100%", height: "100%" };
 
 interface RegionChartMapCardProps {
   title: ReactNode;
@@ -23,25 +25,37 @@ export function RegionChartMapCard({
   heightClassName = "h-[600px]",
   children,
 }: RegionChartMapCardProps) {
+  const { isLoaded } = useJsApiLoader({
+    id: "google-map-script",
+    googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY?.trim() ?? "",
+  });
+
+  const centerObj = { lat: center[0], lng: center[1] };
+
   return (
     <Card className="flex h-full min-h-[500px] flex-col">
       <CardHeader>
         <CardTitle>{title}</CardTitle>
       </CardHeader>
       <CardContent className="relative flex-1 overflow-hidden rounded-b-lg p-0">
-        <MapContainer
-          center={center}
-          zoom={zoom}
-          className={`w-full ${heightClassName}`}
-          scrollWheelZoom
-        >
-          <TileLayer
-            attribution="&copy; OpenStreetMap"
-            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-          />
-          <MapController center={center} />
-          {children}
-        </MapContainer>
+        {isLoaded ? (
+          <div className={`w-full ${heightClassName}`}>
+            <GoogleMap
+              mapContainerStyle={mapContainerStyle}
+              center={centerObj}
+              zoom={zoom}
+            >
+              <MapController center={centerObj} />
+              {children}
+            </GoogleMap>
+          </div>
+        ) : (
+          <div
+            className={`flex w-full items-center justify-center text-sm text-muted-foreground ${heightClassName}`}
+          >
+            Đang tải bản đồ...
+          </div>
+        )}
       </CardContent>
     </Card>
   );

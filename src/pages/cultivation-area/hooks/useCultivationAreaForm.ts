@@ -1,6 +1,5 @@
 import { useMemo, useState } from "react";
 import { useLocation, useRoute } from "wouter";
-import L from "leaflet";
 import booleanPointInPolygon from "@turf/boolean-point-in-polygon";
 import polygonToLine from "@turf/polygon-to-line";
 import nearestPointOnLine from "@turf/nearest-point-on-line";
@@ -26,9 +25,13 @@ import type {
   SubArea,
 } from "../types/types";
 
-const getBoundsFromPoints = (points: L.LatLng[]) => {
-  if (points.length === 0) return L.latLngBounds([0, 0], [0, 0]);
-  return L.latLngBounds(points);
+type LatLng = { lat: number; lng: number };
+
+const getCenterFromPoints = (points: LatLng[]): LatLng => {
+  if (points.length === 0) return { lat: 0, lng: 0 };
+  const lat = points.reduce((sum, p) => sum + p.lat, 0) / points.length;
+  const lng = points.reduce((sum, p) => sum + p.lng, 0) / points.length;
+  return { lat, lng };
 };
 
 const toTurfPolygonFromCoords = (coords: { lat: number; lng: number }[]) => {
@@ -39,7 +42,7 @@ const toTurfPolygonFromCoords = (coords: { lat: number; lng: number }[]) => {
 
 const getNearestPointOnPolygonBoundary = (
   polygonFeature: ReturnType<typeof toTurfPolygonFromCoords>,
-  latlng: L.LatLng,
+  latlng: LatLng,
 ) => {
   if (!polygonFeature) return null;
 
@@ -50,10 +53,10 @@ const getNearestPointOnPolygonBoundary = (
   if (!line) return null;
 
   const snappedPoint = nearestPointOnLine(line, point([latlng.lng, latlng.lat]));
-  return L.latLng(
-    snappedPoint.geometry.coordinates[1],
-    snappedPoint.geometry.coordinates[0],
-  );
+  return {
+    lat: snappedPoint.geometry.coordinates[1],
+    lng: snappedPoint.geometry.coordinates[0],
+  };
 };
 
 const getInitialConfigRecord = (
@@ -91,18 +94,20 @@ export const useCultivationAreaForm = () => {
       (area) => area.id.toString() === (existingArea?.areaId || "").toString(),
     ) || null;
   const initialAreaPoints = initialArea?.coordinates?.length
-    ? initialArea.coordinates.map((coordinate) =>
-        L.latLng(coordinate.lat, coordinate.lng),
-      )
+    ? initialArea.coordinates.map((coordinate) => ({
+        lat: coordinate.lat,
+        lng: coordinate.lng,
+      }))
     : [];
   const initialMapCenter = initialAreaPoints.length
-    ? getBoundsFromPoints(initialAreaPoints).getCenter()
+    ? getCenterFromPoints(initialAreaPoints)
     : initialRegion?.coordinates?.length
-      ? getBoundsFromPoints(
-          initialRegion.coordinates.map((coordinate) =>
-            L.latLng(coordinate.lat, coordinate.lng),
-          ),
-        ).getCenter()
+      ? getCenterFromPoints(
+          initialRegion.coordinates.map((coordinate) => ({
+            lat: coordinate.lat,
+            lng: coordinate.lng,
+          })),
+        )
       : DEFAULT_MAP_CENTER;
 
   const [areaSelectorOpen, setAreaSelectorOpen] = useState(false);
@@ -128,8 +133,8 @@ export const useCultivationAreaForm = () => {
   );
   const [cropSearchTerm, setCropSearchTerm] = useState("");
 
-  const [areaPoints, setAreaPoints] = useState<L.LatLng[]>(initialAreaPoints);
-  const [mapCenter, setMapCenter] = useState<L.LatLng>(initialMapCenter);
+  const [areaPoints, setAreaPoints] = useState<LatLng[]>(initialAreaPoints);
+  const [mapCenter, setMapCenter] = useState<LatLng>(initialMapCenter);
   const [activePointIndex, setActivePointIndex] = useState<number | null>(null);
   const [pointWarnings, setPointWarnings] = useState<
     Record<number, CultivationAreaPointWarning>
@@ -188,7 +193,7 @@ export const useCultivationAreaForm = () => {
     [selectedArea?.id, selectedRegion],
   );
 
-  const validatePoint = (latlng: L.LatLng, index: number) => {
+  const validatePoint = (latlng: LatLng, index: number) => {
     const targetPoint = point([latlng.lng, latlng.lat]);
 
     if (regionPolygonFeature && !booleanPointInPolygon(targetPoint, regionPolygonFeature)) {
@@ -229,7 +234,7 @@ export const useCultivationAreaForm = () => {
 
   const handlePointDrag = (
     index: number,
-    latlng: L.LatLng,
+    latlng: LatLng,
     finalize = false,
   ) => {
     setAreaPoints((previous) => {
@@ -266,25 +271,27 @@ export const useCultivationAreaForm = () => {
     if (!name) setName(area.name);
 
     if (area.coordinates?.length) {
-      const points = area.coordinates.map((coordinate) =>
-        L.latLng(coordinate.lat, coordinate.lng),
-      );
+      const points = area.coordinates.map((coordinate) => ({
+        lat: coordinate.lat,
+        lng: coordinate.lng,
+      }));
       setAreaPoints(points);
       setMapCenter(points[0]);
       return;
     }
 
     if (region.coordinates?.length) {
-      const center = getBoundsFromPoints(
-        region.coordinates.map((coordinate) =>
-          L.latLng(coordinate.lat, coordinate.lng),
-        ),
-      ).getCenter();
+      const center = getCenterFromPoints(
+        region.coordinates.map((coordinate) => ({
+          lat: coordinate.lat,
+          lng: coordinate.lng,
+        })),
+      );
       setMapCenter(center);
       setAreaPoints([
-        L.latLng(center.lat - 0.005, center.lng - 0.005),
-        L.latLng(center.lat + 0.005, center.lng),
-        L.latLng(center.lat - 0.005, center.lng + 0.005),
+        { lat: center.lat - 0.005, lng: center.lng - 0.005 },
+        { lat: center.lat + 0.005, lng: center.lng },
+        { lat: center.lat - 0.005, lng: center.lng + 0.005 },
       ]);
     }
   };

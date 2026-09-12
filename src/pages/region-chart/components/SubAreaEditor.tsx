@@ -8,17 +8,26 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { MapContainer, TileLayer, Rectangle } from "react-leaflet";
-import L from "leaflet";
+import { GoogleMap, Polyline, useJsApiLoader } from "@react-google-maps/api";
 import { type SubArea, LAND_TYPES } from "../constants";
 import { DraggableRectangle } from "./DraggableRectangle";
+
+const mapContainerStyle = { width: "100%", height: "100%" };
+
+const dashedLineIcons = [
+  {
+    icon: { path: "M 0,-1 0,1", strokeOpacity: 1, scale: 3 },
+    offset: "0",
+    repeat: "10px",
+  },
+];
 
 interface SubAreaEditorProps {
   editingSubArea: Partial<SubArea>;
   setEditingSubArea: (val: Partial<SubArea> | null) => void;
-  subAreaBounds: L.LatLngBounds;
-  setSubAreaBounds: (bounds: L.LatLngBounds) => void;
-  currentBounds: L.LatLngBounds;
+  subAreaBounds: google.maps.LatLngBoundsLiteral;
+  setSubAreaBounds: (bounds: google.maps.LatLngBoundsLiteral) => void;
+  currentBounds: google.maps.LatLngBoundsLiteral;
   onSave: () => void;
 }
 
@@ -30,6 +39,24 @@ export const SubAreaEditor = ({
   currentBounds,
   onSave,
 }: SubAreaEditorProps) => {
+  const { isLoaded } = useJsApiLoader({
+    id: "google-map-script",
+    googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY?.trim() ?? "",
+  });
+
+  const center = {
+    lat: (currentBounds.north + currentBounds.south) / 2,
+    lng: (currentBounds.east + currentBounds.west) / 2,
+  };
+
+  const currentOutlinePath = [
+    { lat: currentBounds.south, lng: currentBounds.west },
+    { lat: currentBounds.north, lng: currentBounds.west },
+    { lat: currentBounds.north, lng: currentBounds.east },
+    { lat: currentBounds.south, lng: currentBounds.east },
+    { lat: currentBounds.south, lng: currentBounds.west },
+  ];
+
   return (
     <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm flex items-center justify-center p-4">
       <div className="bg-background border rounded-xl shadow-lg w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh]">
@@ -95,35 +122,34 @@ export const SubAreaEditor = ({
           <div className="space-y-2">
             <Label>Định vị khu vực (trong vùng trồng chính)</Label>
             <div className="h-[300px] border rounded-lg">
-              <MapContainer
-                center={[
-                  currentBounds.getCenter().lat,
-                  currentBounds.getCenter().lng,
-                ]}
-                zoom={14}
-                className="h-full w-full"
-              >
-                <TileLayer
-                  attribution="&copy; OpenStreetMap"
-                  url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                />
-                {/* Parent Outline */}
-                <Rectangle
-                  bounds={currentBounds}
-                  pathOptions={{
-                    color: "blue",
-                    fill: false,
-                    dashArray: "5, 5",
-                  }}
-                />
+              {isLoaded ? (
+                <GoogleMap
+                  mapContainerStyle={mapContainerStyle}
+                  center={center}
+                  zoom={14}
+                >
+                  {/* Parent Outline */}
+                  <Polyline
+                    path={currentOutlinePath}
+                    options={{
+                      strokeOpacity: 0,
+                      icons: dashedLineIcons,
+                      strokeColor: "blue",
+                    }}
+                  />
 
-                {/* Editable Sub Area */}
-                <DraggableRectangle
-                  bounds={subAreaBounds}
-                  setBounds={setSubAreaBounds}
-                  color="green"
-                />
-              </MapContainer>
+                  {/* Editable Sub Area */}
+                  <DraggableRectangle
+                    bounds={subAreaBounds}
+                    setBounds={setSubAreaBounds}
+                    color="green"
+                  />
+                </GoogleMap>
+              ) : (
+                <div className="flex h-full w-full items-center justify-center text-sm text-muted-foreground">
+                  Đang tải bản đồ...
+                </div>
+              )}
             </div>
             <div className="space-y-4">
               <div className="bg-muted p-2 rounded-md text-sm">
@@ -140,30 +166,22 @@ export const SubAreaEditor = ({
                       type="number"
                       className="h-8 text-xs"
                       placeholder="Lat"
-                      value={subAreaBounds.getSouthWest().lat || 0}
+                      value={subAreaBounds.south || 0}
                       onChange={(e) => {
                         const val = parseFloat(e.target.value);
                         if (isNaN(val)) return;
-                        const ne = subAreaBounds.getNorthEast();
-                        const sw = subAreaBounds.getSouthWest();
-                        setSubAreaBounds(
-                          L.latLngBounds(L.latLng(val, sw.lng), ne),
-                        );
+                        setSubAreaBounds({ ...subAreaBounds, south: val });
                       }}
                     />
                     <Input
                       type="number"
                       className="h-8 text-xs"
                       placeholder="Lng"
-                      value={subAreaBounds.getSouthWest().lng || 0}
+                      value={subAreaBounds.west || 0}
                       onChange={(e) => {
                         const val = parseFloat(e.target.value);
                         if (isNaN(val)) return;
-                        const ne = subAreaBounds.getNorthEast();
-                        const sw = subAreaBounds.getSouthWest();
-                        setSubAreaBounds(
-                          L.latLngBounds(L.latLng(sw.lat, val), ne),
-                        );
+                        setSubAreaBounds({ ...subAreaBounds, west: val });
                       }}
                     />
                   </div>
@@ -177,30 +195,22 @@ export const SubAreaEditor = ({
                       type="number"
                       className="h-8 text-xs"
                       placeholder="Lat"
-                      value={subAreaBounds.getNorthEast().lat || 0}
+                      value={subAreaBounds.north || 0}
                       onChange={(e) => {
                         const val = parseFloat(e.target.value);
                         if (isNaN(val)) return;
-                        const sw = subAreaBounds.getSouthWest();
-                        const ne = subAreaBounds.getNorthEast();
-                        setSubAreaBounds(
-                          L.latLngBounds(sw, L.latLng(val, ne.lng)),
-                        );
+                        setSubAreaBounds({ ...subAreaBounds, north: val });
                       }}
                     />
                     <Input
                       type="number"
                       className="h-8 text-xs"
                       placeholder="Lng"
-                      value={subAreaBounds.getSouthWest().lng || 0}
+                      value={subAreaBounds.west || 0}
                       onChange={(e) => {
                         const val = parseFloat(e.target.value);
                         if (isNaN(val)) return;
-                        const sw = subAreaBounds.getSouthWest();
-                        const ne = subAreaBounds.getNorthEast();
-                        setSubAreaBounds(
-                          L.latLngBounds(L.latLng(sw.lat, val), ne),
-                        );
+                        setSubAreaBounds({ ...subAreaBounds, west: val });
                       }}
                     />
                   </div>
@@ -214,30 +224,22 @@ export const SubAreaEditor = ({
                       type="number"
                       className="h-8 text-xs"
                       placeholder="Lat"
-                      value={subAreaBounds.getNorthEast().lat || 0}
+                      value={subAreaBounds.north || 0}
                       onChange={(e) => {
                         const val = parseFloat(e.target.value);
                         if (isNaN(val)) return;
-                        const sw = subAreaBounds.getSouthWest();
-                        const ne = subAreaBounds.getNorthEast();
-                        setSubAreaBounds(
-                          L.latLngBounds(sw, L.latLng(val, ne.lng)),
-                        );
+                        setSubAreaBounds({ ...subAreaBounds, north: val });
                       }}
                     />
                     <Input
                       type="number"
                       className="h-8 text-xs"
                       placeholder="Lng"
-                      value={subAreaBounds.getNorthEast().lng || 0}
+                      value={subAreaBounds.east || 0}
                       onChange={(e) => {
                         const val = parseFloat(e.target.value);
                         if (isNaN(val)) return;
-                        const sw = subAreaBounds.getSouthWest();
-                        const ne = subAreaBounds.getNorthEast();
-                        setSubAreaBounds(
-                          L.latLngBounds(sw, L.latLng(ne.lat, val)),
-                        );
+                        setSubAreaBounds({ ...subAreaBounds, east: val });
                       }}
                     />
                   </div>
@@ -251,30 +253,22 @@ export const SubAreaEditor = ({
                       type="number"
                       className="h-8 text-xs"
                       placeholder="Lat"
-                      value={subAreaBounds.getSouthWest().lat || 0}
+                      value={subAreaBounds.south || 0}
                       onChange={(e) => {
                         const val = parseFloat(e.target.value);
                         if (isNaN(val)) return;
-                        const ne = subAreaBounds.getNorthEast();
-                        const sw = subAreaBounds.getSouthWest();
-                        setSubAreaBounds(
-                          L.latLngBounds(L.latLng(val, sw.lng), ne),
-                        );
+                        setSubAreaBounds({ ...subAreaBounds, south: val });
                       }}
                     />
                     <Input
                       type="number"
                       className="h-8 text-xs"
                       placeholder="Lng"
-                      value={subAreaBounds.getNorthEast().lng || 0}
+                      value={subAreaBounds.east || 0}
                       onChange={(e) => {
                         const val = parseFloat(e.target.value);
                         if (isNaN(val)) return;
-                        const sw = subAreaBounds.getSouthWest();
-                        const ne = subAreaBounds.getNorthEast();
-                        setSubAreaBounds(
-                          L.latLngBounds(sw, L.latLng(ne.lat, val)),
-                        );
+                        setSubAreaBounds({ ...subAreaBounds, east: val });
                       }}
                     />
                   </div>

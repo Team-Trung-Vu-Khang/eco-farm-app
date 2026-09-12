@@ -11,13 +11,16 @@ export interface DeviceConnectionConfig {
   storeAndForward: boolean;
 }
 
+export type IoTDeviceType = "Gateway" | "Sensor" | "Actuator";
+
 export interface IoTDevice {
   id: string;
   imei: string;
   mac: string;
   name: string;
-  perceptionLayerId: string;
-  networkLayerId: string;
+  type?: IoTDeviceType;
+  perceptionLayerId?: string;
+  networkLayerId?: string;
   firmwareVersion: string;
   manufacturer: string;
   status: DeviceStatus;
@@ -35,8 +38,8 @@ export interface IoTDevice {
   // Hierarchy context
   partyId: string;
   farmId: string;
-  fieldId: string;
-  seasonalFieldId: string;
+  fieldId?: string;
+  seasonalFieldId?: string;
 }
 
 export interface MetricData {

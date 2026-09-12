@@ -31,15 +31,12 @@ import {
   Sprout,
 } from "lucide-react";
 import {
-  MapContainer,
-  TileLayer,
+  GoogleMap,
+  InfoWindow,
+  OverlayView,
   Polygon,
-  useMap,
-  Tooltip,
-  Marker,
-} from "react-leaflet";
-import "leaflet/dist/leaflet.css";
-import { divIcon } from "leaflet";
+  useJsApiLoader,
+} from "@react-google-maps/api";
 import { DISTRICTS, PROVINCES } from "../../../../region-chart/constants";
 import styles from "../../styles.module.css";
 import type { CultivationRegionDetails } from "../../useCultivationRegionDetail";
@@ -75,93 +72,76 @@ const getCenterPoint = (item: any): [number, number] | null => {
   return getCoordinatePair(item.centerPoint || item.center);
 };
 
-const RedMarker = () =>
-  divIcon({
-    html: `
-      <div style="position: relative; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center;">
-        <div style="position: absolute; width: 30px; height: 30px; background-color: #ef4444; border-radius: 50%; opacity: 0.3; transform: scale(1.4); animation: pulse 2s infinite;"></div>
-        <div style="position: absolute; width: 14px; height: 14px; background-color: #ef4444; border: 2px solid white; border-radius: 50%; box-shadow: 0 2px 4px rgba(0,0,0,0.3);"></div>
-      </div>
-      <style>
-        @keyframes pulse {
+const mapContainerStyle = { width: "100%", height: "100%" };
+
+const RedCenterMarker = ({ position }: { position: [number, number] }) => (
+  <OverlayView
+    position={{ lat: position[0], lng: position[1] }}
+    mapPaneName={OverlayView.OVERLAY_MOUSE_TARGET}
+  >
+    <div
+      style={{
+        position: "relative",
+        width: 30,
+        height: 30,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        transform: "translate(-50%, -50%)",
+      }}
+    >
+      <div
+        style={{
+          position: "absolute",
+          width: 30,
+          height: 30,
+          backgroundColor: "#ef4444",
+          borderRadius: "50%",
+          opacity: 0.3,
+          transform: "scale(1.4)",
+          animation: "pulse-center-marker 2s infinite",
+        }}
+      />
+      <div
+        style={{
+          position: "absolute",
+          width: 14,
+          height: 14,
+          backgroundColor: "#ef4444",
+          border: "2px solid white",
+          borderRadius: "50%",
+          boxShadow: "0 2px 4px rgba(0,0,0,0.3)",
+        }}
+      />
+      <style>{`
+        @keyframes pulse-center-marker {
           0% { transform: scale(0.95); opacity: 0.5; }
           50% { transform: scale(1.6); opacity: 0; }
           100% { transform: scale(0.95); opacity: 0.5; }
         }
-      </style>
-    `,
-    className: "custom-center-marker",
-    iconSize: [30, 30],
-    iconAnchor: [15, 15],
-  });
+      `}</style>
+    </div>
+  </OverlayView>
+);
 
-const MapController = ({
-  center,
-  zoom,
-}: {
-  center: { lat: number; lng: number };
-  zoom: number;
-}) => {
-  const map = useMap();
-  useEffect(() => {
-    map.setView([center.lat, center.lng], zoom, { animate: true });
-  }, [center, zoom, map]);
-  return null;
-};
-
-const MapResizeListener = () => {
-  const map = useMap();
-  useEffect(() => {
-    if (typeof ResizeObserver === "undefined") return;
-
-    const container = map.getContainer();
-    const observer = new ResizeObserver(() => {
-      const timer = setTimeout(() => {
-        map.invalidateSize();
-      }, 100);
-      return () => clearTimeout(timer);
-    });
-
-    observer.observe(container);
-    return () => {
-      observer.disconnect();
-    };
-  }, [map]);
-
-  return null;
-};
-
-const MapBoundsSync = ({
-  bounds,
-  centerPoint,
-}: {
-  bounds: [number, number][] | null;
-  centerPoint: [number, number] | null;
-}) => {
-  const map = useMap();
-  useEffect(() => {
-    // Invalidate Leaflet map size on render/update to ensure correct drawing of layers/markers
-    map.invalidateSize();
-
-    if (bounds && bounds.length > 0) {
-      map.fitBounds(bounds, { padding: [20, 20] });
-    } else if (centerPoint) {
-      map.setView(centerPoint, 15);
-    }
-
-    // Schedule layout recalculation to run after the CSS transition of Dialog finishes (approx 300ms)
-    const timer = setTimeout(() => {
-      map.invalidateSize();
-      if (bounds && bounds.length > 0) {
-        map.fitBounds(bounds, { padding: [20, 20] });
-      } else if (centerPoint) {
-        map.setView(centerPoint, 15);
-      }
-    }, 300);
-
-    return () => clearTimeout(timer);
-  }, [bounds, centerPoint, map]);
-  return null;
+const applyMapView = (
+  map: google.maps.Map,
+  bounds: [number, number][] | null,
+  centerPoint: [number, number] | null,
+  fallbackCenter: { lat: number; lng: number },
+  fallbackZoom: number,
+) => {
+  if (bounds && bounds.length > 0) {
+    const b = new google.maps.LatLngBounds();
+    bounds.forEach(([lat, lng]) => b.extend({ lat, lng }));
+    map.fitBounds(b, 20);
+  } else if (centerPoint) {
+    map.setCenter({ lat: centerPoint[0], lng: centerPoint[1] });
+    map.setZoom(15);
+  } else {
+    map.setCenter(fallbackCenter);
+    map.setZoom(fallbackZoom);
+  }
 };
 
 export const OverviewTab = ({
@@ -373,7 +353,13 @@ export const OverviewTab = ({
     };
   }, [area, details, regionIndex]);
 
-  const ScopeMapPolygons = () => {
+  const ScopeMapPolygons = ({
+    hoveredKey,
+    setHoveredKey,
+  }: {
+    hoveredKey: string | null;
+    setHoveredKey: (key: string | null) => void;
+  }) => {
     if (!scopeMapData) return null;
 
     // --- CONFIGURATION FLAG ---
@@ -385,6 +371,12 @@ export const OverviewTab = ({
     const showAreas = !RENDER_BY_SCOPE_ONLY || area.scope === "area";
     const showPlots = !RENDER_BY_SCOPE_ONLY || area.scope === "plot";
 
+    const centerOf = (path: [number, number][]) => {
+      const lat = path.reduce((sum, p) => sum + p[0], 0) / path.length;
+      const lng = path.reduce((sum, p) => sum + p[1], 0) / path.length;
+      return { lat, lng };
+    };
+
     return (
       <>
         {showRegions &&
@@ -395,45 +387,52 @@ export const OverviewTab = ({
               .map(getCoordinatePair)
               .filter((p): p is [number, number] => p !== null);
             if (positions.length < 3) return null;
+            const key = `scope-region-${region.id}`;
             return (
-              <Polygon
-                key={`scope-region-${region.id}`}
-                positions={positions}
-                pathOptions={{
-                  color: "#3b82f6",
-                  weight: explicit ? 2.5 : 2,
-                  fillColor: "#3b82f6",
-                  fillOpacity: explicit ? 0.08 : 0,
-                }}
-                eventHandlers={{
-                  click: () => {
-                    focusScopeMapToCoordinates(coords);
-                  },
-                }}
-              >
-                <Tooltip sticky direction="top" opacity={0.95}>
-                  <div
-                    style={{
-                      fontWeight: 600,
-                      fontSize: 12,
-                      lineHeight: "1.4",
-                      color: "#1e293b",
-                    }}
+              <div key={key}>
+                <Polygon
+                  paths={positions.map(([lat, lng]) => ({ lat, lng }))}
+                  options={{
+                    strokeColor: "#3b82f6",
+                    strokeWeight: explicit ? 2.5 : 2,
+                    fillColor: "#3b82f6",
+                    fillOpacity: explicit ? 0.08 : 0,
+                  }}
+                  onClick={() => focusScopeMapToCoordinates(coords)}
+                  onMouseOver={() => setHoveredKey(key)}
+                  onMouseOut={() => setHoveredKey(null)}
+                />
+                {hoveredKey === key && (
+                  <InfoWindow
+                    position={centerOf(positions)}
+                    options={{ disableAutoPan: true }}
+                    onCloseClick={() => setHoveredKey(null)}
                   >
-                    {region.name}
-                  </div>
-                  <div
-                    style={{
-                      fontSize: 10,
-                      color: "#64748b",
-                      textTransform: "uppercase",
-                      letterSpacing: "0.05em",
-                    }}
-                  >
-                    Vùng trồng
-                  </div>
-                </Tooltip>
-              </Polygon>
+                    <div>
+                      <div
+                        style={{
+                          fontWeight: 600,
+                          fontSize: 12,
+                          lineHeight: "1.4",
+                          color: "#1e293b",
+                        }}
+                      >
+                        {region.name}
+                      </div>
+                      <div
+                        style={{
+                          fontSize: 10,
+                          color: "#64748b",
+                          textTransform: "uppercase",
+                          letterSpacing: "0.05em",
+                        }}
+                      >
+                        Vùng trồng
+                      </div>
+                    </div>
+                  </InfoWindow>
+                )}
+              </div>
             );
           })}
 
@@ -445,45 +444,52 @@ export const OverviewTab = ({
               .map(getCoordinatePair)
               .filter((p): p is [number, number] => p !== null);
             if (positions.length < 3) return null;
+            const key = `scope-area-${a.id}`;
             return (
-              <Polygon
-                key={`scope-area-${a.id}`}
-                positions={positions}
-                pathOptions={{
-                  color: "#10b981",
-                  weight: explicit ? 2.5 : 1.75,
-                  fillColor: "#10b981",
-                  fillOpacity: explicit ? 0.12 : 0.06,
-                }}
-                eventHandlers={{
-                  click: () => {
-                    focusScopeMapToCoordinates(coords);
-                  },
-                }}
-              >
-                <Tooltip sticky direction="top" opacity={0.95}>
-                  <div
-                    style={{
-                      fontWeight: 600,
-                      fontSize: 12,
-                      lineHeight: "1.4",
-                      color: "#1e293b",
-                    }}
+              <div key={key}>
+                <Polygon
+                  paths={positions.map(([lat, lng]) => ({ lat, lng }))}
+                  options={{
+                    strokeColor: "#10b981",
+                    strokeWeight: explicit ? 2.5 : 1.75,
+                    fillColor: "#10b981",
+                    fillOpacity: explicit ? 0.12 : 0.06,
+                  }}
+                  onClick={() => focusScopeMapToCoordinates(coords)}
+                  onMouseOver={() => setHoveredKey(key)}
+                  onMouseOut={() => setHoveredKey(null)}
+                />
+                {hoveredKey === key && (
+                  <InfoWindow
+                    position={centerOf(positions)}
+                    options={{ disableAutoPan: true }}
+                    onCloseClick={() => setHoveredKey(null)}
                   >
-                    {a.name}
-                  </div>
-                  <div
-                    style={{
-                      fontSize: 10,
-                      color: "#64748b",
-                      textTransform: "uppercase",
-                      letterSpacing: "0.05em",
-                    }}
-                  >
-                    Khu vực
-                  </div>
-                </Tooltip>
-              </Polygon>
+                    <div>
+                      <div
+                        style={{
+                          fontWeight: 600,
+                          fontSize: 12,
+                          lineHeight: "1.4",
+                          color: "#1e293b",
+                        }}
+                      >
+                        {a.name}
+                      </div>
+                      <div
+                        style={{
+                          fontSize: 10,
+                          color: "#64748b",
+                          textTransform: "uppercase",
+                          letterSpacing: "0.05em",
+                        }}
+                      >
+                        Khu vực
+                      </div>
+                    </div>
+                  </InfoWindow>
+                )}
+              </div>
             );
           })}
 
@@ -495,48 +501,117 @@ export const OverviewTab = ({
               .map(getCoordinatePair)
               .filter((p): p is [number, number] => p !== null);
             if (positions.length < 3) return null;
+            const key = `scope-plot-${p.id}`;
             return (
-              <Polygon
-                key={`scope-plot-${p.id}`}
-                positions={positions}
-                pathOptions={{
-                  color: "#f59e0b",
-                  weight: explicit ? 2.5 : 1.5,
-                  fillColor: "#f59e0b",
-                  fillOpacity: explicit ? 0.18 : 0.08,
-                }}
-                eventHandlers={{
-                  click: () => {
-                    focusScopeMapToCoordinates(coords);
-                  },
-                }}
-              >
-                <Tooltip sticky direction="top" opacity={0.95}>
-                  <div
-                    style={{
-                      fontWeight: 600,
-                      fontSize: 12,
-                      lineHeight: "1.4",
-                      color: "#1e293b",
-                    }}
+              <div key={key}>
+                <Polygon
+                  paths={positions.map(([lat, lng]) => ({ lat, lng }))}
+                  options={{
+                    strokeColor: "#f59e0b",
+                    strokeWeight: explicit ? 2.5 : 1.5,
+                    fillColor: "#f59e0b",
+                    fillOpacity: explicit ? 0.18 : 0.08,
+                  }}
+                  onClick={() => focusScopeMapToCoordinates(coords)}
+                  onMouseOver={() => setHoveredKey(key)}
+                  onMouseOut={() => setHoveredKey(null)}
+                />
+                {hoveredKey === key && (
+                  <InfoWindow
+                    position={centerOf(positions)}
+                    options={{ disableAutoPan: true }}
+                    onCloseClick={() => setHoveredKey(null)}
                   >
-                    {p.name}
-                  </div>
-                  <div
-                    style={{
-                      fontSize: 10,
-                      color: "#64748b",
-                      textTransform: "uppercase",
-                      letterSpacing: "0.05em",
-                    }}
-                  >
-                    Lô đất
-                  </div>
-                </Tooltip>
-              </Polygon>
+                    <div>
+                      <div
+                        style={{
+                          fontWeight: 600,
+                          fontSize: 12,
+                          lineHeight: "1.4",
+                          color: "#1e293b",
+                        }}
+                      >
+                        {p.name}
+                      </div>
+                      <div
+                        style={{
+                          fontSize: 10,
+                          color: "#64748b",
+                          textTransform: "uppercase",
+                          letterSpacing: "0.05em",
+                        }}
+                      >
+                        Lô đất
+                      </div>
+                    </div>
+                  </InfoWindow>
+                )}
+              </div>
             );
           })}
       </>
+    );
+  };
+
+  const ScopeGoogleMap = () => {
+    const { isLoaded } = useJsApiLoader({
+      id: "google-map-script",
+      googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY?.trim() ?? "",
+    });
+    const mapRef = useRef<google.maps.Map | null>(null);
+    const [hoveredKey, setHoveredKey] = useState<string | null>(null);
+
+    useEffect(() => {
+      const map = mapRef.current;
+      if (!map) return;
+      applyMapView(
+        map,
+        scopeMapData?.bounds ?? null,
+        scopeMapData?.centerPoint ?? null,
+        scopeMapView.center,
+        scopeMapView.zoom,
+      );
+    }, [scopeMapData, scopeMapView]);
+
+    useEffect(() => {
+      const map = mapRef.current;
+      if (!map || typeof ResizeObserver === "undefined") return;
+      const observer = new ResizeObserver(() => {
+        google.maps.event.trigger(map, "resize");
+      });
+      observer.observe(map.getDiv());
+      return () => observer.disconnect();
+    }, [isLoaded]);
+
+    if (!isLoaded) {
+      return (
+        <div className="flex h-full w-full items-center justify-center text-sm text-muted-foreground">
+          Đang tải bản đồ...
+        </div>
+      );
+    }
+
+    return (
+      <GoogleMap
+        mapContainerStyle={mapContainerStyle}
+        zoom={scopeMapView.zoom}
+        options={{ zoomControl: false, mapTypeId: "satellite" }}
+        onLoad={(map) => {
+          mapRef.current = map;
+          applyMapView(
+            map,
+            scopeMapData?.bounds ?? null,
+            scopeMapData?.centerPoint ?? null,
+            scopeMapView.center,
+            scopeMapView.zoom,
+          );
+        }}
+      >
+        <ScopeMapPolygons hoveredKey={hoveredKey} setHoveredKey={setHoveredKey} />
+        {scopeMapData?.centerPoint && (
+          <RedCenterMarker position={scopeMapData.centerPoint} />
+        )}
+      </GoogleMap>
     );
   };
 
@@ -915,36 +990,7 @@ export const OverviewTab = ({
           "rounded-xl z-10 min-h-[65vh] h-full w-full overflow-hidden border border-slate-100 bg-slate-50 relative shadow-sm aspect-video",
         )}
       >
-        <MapContainer
-          center={[scopeMapView.center.lat, scopeMapView.center.lng]}
-          zoom={scopeMapView.zoom}
-          className="h-full w-full"
-          zoomControl={false}
-        >
-          <TileLayer url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}" />
-          <MapController
-            center={scopeMapView.center}
-            zoom={scopeMapView.zoom}
-          />
-          <MapResizeListener />
-          <MapBoundsSync
-            bounds={scopeMapData?.bounds ?? null}
-            centerPoint={scopeMapData?.centerPoint ?? null}
-          />
-          <ScopeMapPolygons />
-          {scopeMapData?.centerPoint && (
-            <Marker position={scopeMapData.centerPoint} icon={RedMarker()}>
-              <Tooltip sticky direction="top" opacity={0.95}>
-                <div style={{ fontWeight: 600, fontSize: 12 }}>
-                  {details.region?.name || area.name}
-                </div>
-                <div style={{ fontSize: 10, color: "#64748b" }}>
-                  Tọa độ trung tâm
-                </div>
-              </Tooltip>
-            </Marker>
-          )}
-        </MapContainer>
+        <ScopeGoogleMap />
 
         <button
           type="button"
@@ -964,39 +1010,7 @@ export const OverviewTab = ({
           </DialogHeader>
           <div className="flex flex-col md:flex-row h-full">
             <div className="flex-1 h-[50vh] md:h-auto relative bg-slate-100">
-              <MapContainer
-                center={[scopeMapView.center.lat, scopeMapView.center.lng]}
-                zoom={scopeMapView.zoom}
-                className="h-full w-full"
-                zoomControl={false}
-              >
-                <TileLayer url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}" />
-                <MapController
-                  center={scopeMapView.center}
-                  zoom={scopeMapView.zoom}
-                />
-                <MapResizeListener />
-                <MapBoundsSync
-                  bounds={scopeMapData?.bounds ?? null}
-                  centerPoint={scopeMapData?.centerPoint ?? null}
-                />
-                <ScopeMapPolygons />
-                {scopeMapData?.centerPoint && (
-                  <Marker
-                    position={scopeMapData.centerPoint}
-                    icon={RedMarker()}
-                  >
-                    <Tooltip sticky direction="top" opacity={0.95}>
-                      <div style={{ fontWeight: 600, fontSize: 12 }}>
-                        {details.region?.name || area.name}
-                      </div>
-                      <div style={{ fontSize: 10, color: "#64748b" }}>
-                        Tọa độ trung tâm
-                      </div>
-                    </Tooltip>
-                  </Marker>
-                )}
-              </MapContainer>
+              <ScopeGoogleMap />
             </div>
 
             <div className="md:w-[360px] h-[300px] md:h-full bg-white border-t md:border-t-0 md:border-l border-slate-100 flex flex-col overflow-hidden shrink-0">

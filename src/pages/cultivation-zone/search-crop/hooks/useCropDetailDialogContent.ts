@@ -1,6 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable react-hooks/exhaustive-deps */
-import L from "leaflet";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useParams } from "wouter";
 import useCropDetailStore from "../../../../stores/useCropDetailStore";
@@ -22,8 +21,6 @@ import type {
   TechnicalCrop,
 } from "../components/crop-detail/types";
 
-type LeafletMapInternal = L.Map & { _loaded?: boolean };
-
 type UseCropDetailDialogContentParams = {
   id?: string;
   crop?: CropDetail;
@@ -43,8 +40,8 @@ export function useCropDetailDialogContent({
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [isTaskDetailOpen, setIsTaskDetailOpen] = useState(false);
 
-  const scopeMapRef = useRef<L.Map | null>(null);
-  const expandedScopeMapRef = useRef<L.Map | null>(null);
+  const scopeMapRef = useRef<google.maps.Map | null>(null);
+  const expandedScopeMapRef = useRef<google.maps.Map | null>(null);
   const prevRegionIdRef = useRef<string | null>(null);
 
   const { growthCycles } = useGrowthCycleStore();
@@ -145,13 +142,9 @@ export function useCropDetailDialogContent({
     if (!coordinates?.length) return;
     const map = getActiveScopeMap();
     if (!map) return;
-    const bounds = L.latLngBounds(
-      coordinates.map((coordinate) => [
-        coordinate.lat,
-        coordinate.lng,
-      ] as [number, number]),
-    );
-    map.flyToBounds(bounds, { padding: [40, 40], duration: 1.1 });
+    const bounds = new google.maps.LatLngBounds();
+    coordinates.forEach((coordinate) => bounds.extend(coordinate));
+    map.fitBounds(bounds, 40);
   };
 
   const areaDetailId = useMemo(() => {
@@ -612,48 +605,12 @@ export function useCropDetailDialogContent({
       : scopeMapRef.current;
     if (!targetMap) return;
 
-    const points = coordinates.map((coordinate) => [
-      coordinate.lat,
-      coordinate.lng,
-    ] as [number, number]);
-    const bounds =
-      points.length === 1
-        ? L.latLngBounds(points[0], points[0])
-        : L.latLngBounds(points);
-    const padding = isScopeMapExpanded ? [60, 60] : [40, 40];
+    const bounds = new google.maps.LatLngBounds();
+    coordinates.forEach((coordinate) => bounds.extend(coordinate));
+    const padding = isScopeMapExpanded ? 60 : 40;
 
-    const flyToRegion = () => {
-      targetMap.flyToBounds(bounds, { padding, duration: 0.9 });
-    };
-
-    const mapWithLoaded = targetMap as LeafletMapInternal;
-    if (mapWithLoaded._loaded) {
-      flyToRegion();
-      return;
-    }
-
-    targetMap.once("load", flyToRegion);
-    return () => {
-      targetMap.off("load", flyToRegion);
-    };
+    targetMap.fitBounds(bounds, padding);
   }, [cropGeoRefs.region?.id, isScopeMapExpanded]);
-
-  const cropMarkerIcon = useMemo(() => {
-    if (!activeCrop) return undefined;
-    return L.divIcon({
-      className: "",
-      html: `<div style="
-          width:18px;
-          height:18px;
-          border-radius:9999px;
-          background:#22c55e;
-          border:2px solid #fff;
-          box-shadow:0 0 10px rgba(34,197,94,0.6);
-        "></div>`,
-      iconSize: [18, 18],
-      iconAnchor: [9, 9],
-    });
-  }, [activeCrop?.id]);
 
   const scopeTargetIds = useMemo(() => {
     const regionIds = new Set<string>();
@@ -770,7 +727,6 @@ export function useCropDetailDialogContent({
     setIsScopeMapExpanded,
     focusScopeMapToCoordinates,
     formatFullAddress,
-    cropMarkerIcon,
     regionIndex,
     scopeMapRef,
     expandedScopeMapRef,

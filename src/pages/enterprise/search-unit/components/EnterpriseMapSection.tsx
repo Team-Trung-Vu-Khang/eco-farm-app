@@ -1,20 +1,9 @@
-import React, { useEffect } from "react";
+import React from "react";
 import { Button, Card, cn } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { Layers } from "lucide-react";
-import L from "leaflet";
-import "leaflet/dist/leaflet.css";
-import {
-  MapContainer,
-  Marker,
-  Polygon,
-  Tooltip,
-  TileLayer,
-  useMap,
-} from "react-leaflet";
+import { GoogleMap, InfoWindow, Marker, Polygon, useJsApiLoader } from "@react-google-maps/api";
 
-import defaultMarkerIconUrl from "leaflet/dist/images/marker-icon.png";
-import defaultMarkerIcon2xUrl from "leaflet/dist/images/marker-icon-2x.png";
-import defaultMarkerShadowUrl from "leaflet/dist/images/marker-shadow.png";
+const mapContainerStyle = { width: "100%", height: "100%" };
 
 interface EnterpriseMapSectionProps {
   mapRef: React.MutableRefObject<any>;
@@ -43,29 +32,6 @@ interface EnterpriseMapSectionProps {
   onSelectEnterprise: (enterpriseId: number) => void;
 }
 
-type LeafletMapLike = L.Map & {
-  setCenter?: (center: { lat: number; lng: number }) => void;
-};
-
-const defaultLeafletIcon = L.icon({
-  iconUrl: defaultMarkerIconUrl,
-  iconRetinaUrl: defaultMarkerIcon2xUrl,
-  shadowUrl: defaultMarkerShadowUrl,
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
-  popupAnchor: [1, -34],
-  shadowSize: [41, 41],
-});
-
-const makeImageIcon = (image: string, size: number) =>
-  L.icon({
-    iconUrl: image,
-    iconSize: [size, size],
-    iconAnchor: [size / 2, size],
-    popupAnchor: [0, -size],
-    className: "rounded-full border border-white shadow-lg",
-  });
-
 const getEnterpriseTypeLabel = (type: "enterprise" | "farm" | "cooperative") => {
   if (type === "enterprise") return "Doanh nghiệp";
   if (type === "cooperative") return "Hợp tác xã";
@@ -74,62 +40,22 @@ const getEnterpriseTypeLabel = (type: "enterprise" | "farm" | "cooperative") => 
 
 const toClosedPath = (coords: [number, number][]) => {
   if (!coords || coords.length < 3) return [];
-  const path = coords.map(([lat, lng]) => [lat, lng] as [number, number]);
-  const [firstLat, firstLng] = path[0];
-  const [lastLat, lastLng] = path[path.length - 1];
-  if (firstLat !== lastLat || firstLng !== lastLng) {
-    path.push([firstLat, firstLng]);
+  const path = coords.map(([lat, lng]) => ({ lat, lng }));
+  const first = path[0];
+  const last = path[path.length - 1];
+  if (first.lat !== last.lat || first.lng !== last.lng) {
+    path.push(first);
   }
   return path;
 };
 
-const MapSynchronizer = ({
-  mapRef,
-  center,
-}: {
-  mapRef: React.MutableRefObject<any>;
-  center: { lat: number; lng: number };
-}) => {
-  const map = useMap();
+const makeImageIcon = (image: string, size: number) => ({
+  url: image,
+  scaledSize: new google.maps.Size(size, size),
+  anchor: new google.maps.Point(size / 2, size / 2),
+});
 
-  useEffect(() => {
-    const leafletMap = map as LeafletMapLike;
-
-    const registerMap = () => {
-      if (!leafletMap.setCenter) {
-        leafletMap.setCenter = ({ lat, lng }) => {
-          leafletMap.setView([lat, lng], leafletMap.getZoom());
-        };
-      }
-
-      if (!mapRef.current || mapRef.current !== leafletMap) {
-        mapRef.current = leafletMap;
-      }
-    };
-
-    if ((leafletMap as L.Map & { _loaded?: boolean })._loaded) {
-      registerMap();
-    } else {
-      leafletMap.whenReady(registerMap);
-    }
-
-    return () => {
-      if (mapRef.current === leafletMap) {
-        mapRef.current = null;
-      }
-    };
-  }, [map, mapRef]);
-
-  useEffect(() => {
-    map.setView([center.lat, center.lng], map.getZoom(), {
-      animate: true,
-    });
-  }, [center, map]);
-
-  return null;
-};
-
-const MapControls = ({ mapRef }: { mapRef: React.MutableRefObject<any> }) => {
+const MapControls = ({ mapRef }: { mapRef: React.MutableRefObject<google.maps.Map | null> }) => {
   return (
     <div
       className={cn(
@@ -141,10 +67,10 @@ const MapControls = ({ mapRef }: { mapRef: React.MutableRefObject<any> }) => {
         size="icon"
         className="w-10 h-10 rounded-md bg-white shadow-xl border border-slate-200 hover:bg-slate-50 transition-all group"
         onClick={() => {
-          const map = mapRef.current as LeafletMapLike | null;
+          const map = mapRef.current;
           if (!map) return;
-          const zoom = typeof map.getZoom === "function" ? map.getZoom() : 13;
-          if (typeof map.setZoom === "function") map.setZoom(zoom + 1);
+          const zoom = map.getZoom() ?? 13;
+          map.setZoom(zoom + 1);
         }}
       >
         <span className="text-xl font-bold text-slate-700 group-hover:text-primary">
@@ -156,10 +82,10 @@ const MapControls = ({ mapRef }: { mapRef: React.MutableRefObject<any> }) => {
         size="icon"
         className="w-10 h-10 rounded-md bg-white shadow-xl border border-slate-200 hover:bg-slate-50 transition-all group"
         onClick={() => {
-          const map = mapRef.current as LeafletMapLike | null;
+          const map = mapRef.current;
           if (!map) return;
-          const zoom = typeof map.getZoom === "function" ? map.getZoom() : 13;
-          if (typeof map.setZoom === "function") map.setZoom(zoom - 1);
+          const zoom = map.getZoom() ?? 13;
+          map.setZoom(zoom - 1);
         }}
       >
         <span className="text-xl font-bold text-slate-700 group-hover:text-primary">
@@ -180,116 +106,100 @@ export const EnterpriseMapSection: React.FC<EnterpriseMapSectionProps> = ({
   isDetailOpen,
   onSelectEnterprise,
 }) => {
+  const { isLoaded } = useJsApiLoader({
+    id: "google-map-script",
+    googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY?.trim() ?? "",
+  });
+
+  const [hoveredMarkerId, setHoveredMarkerId] = React.useState<number | null>(null);
+
   return (
     <div className="flex-1 flex flex-col relative bg-slate-100 z-1">
       <div className="flex-1 relative">
-        <MapContainer
-          key={mapRenderKey}
-          center={[mapCurrentCenter.lat, mapCurrentCenter.lng]}
-          zoom={9}
-          className="h-full w-full"
-          zoomControl={false}
-          scrollWheelZoom
-        >
-          <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-          <MapSynchronizer mapRef={mapRef} center={mapCurrentCenter} />
+        {isLoaded ? (
+          <GoogleMap
+            key={mapRenderKey}
+            mapContainerStyle={mapContainerStyle}
+            center={mapCurrentCenter}
+            zoom={9}
+            options={{ zoomControl: false }}
+            onLoad={(map) => {
+              (map as any)._loaded = true;
+              mapRef.current = map;
+            }}
+            onUnmount={() => {
+              mapRef.current = null;
+            }}
+          >
+            {visiblePolygons.map((poly) => {
+              const path = toClosedPath(poly.coordinates);
+              if (path.length === 0) return null;
 
-          {visiblePolygons.map((poly) => {
-            const path = toClosedPath(poly.coordinates);
-            if (path.length === 0) return null;
-
-            return (
-              <Polygon
-                key={poly.id}
-                positions={path}
-                pathOptions={{
-                  color: poly.color,
-                  weight: 2,
-                  fillColor: poly.color,
-                  fillOpacity: 0.2,
-                }}
-                eventHandlers={{
-                  click: () => {
+              return (
+                <Polygon
+                  key={poly.id}
+                  paths={path}
+                  options={{
+                    strokeColor: poly.color,
+                    strokeWeight: 2,
+                    fillColor: poly.color,
+                    fillOpacity: 0.2,
+                  }}
+                  onClick={() => {
                     const url = `/${poly.type}-distribution/detail/${poly.rawId}`;
                     window.open(url, "_blank");
-                  },
-                }}
-              />
-            );
-          })}
+                  }}
+                />
+              );
+            })}
 
-          {enterpriseMarkers.map((marker) => (
-            <Marker
-              key={`enterprise-marker-${marker.id}`}
-              position={[marker.lat, marker.lng]}
-              icon={
-                marker.image
-                  ? makeImageIcon(marker.image, 34)
-                  : defaultLeafletIcon
-              }
-              title={`${marker.code} - ${marker.name}`}
-              eventHandlers={{
-                click: () => onSelectEnterprise(marker.id),
-              }}
-            >
-              <Tooltip
-                direction="top"
-                offset={[0, -18]}
-                opacity={1}
-                sticky={false}
-                className="enterprise-tooltip"
+            {enterpriseMarkers.map((marker) => (
+              <Marker
+                key={`enterprise-marker-${marker.id}`}
+                position={{ lat: marker.lat, lng: marker.lng }}
+                icon={marker.image ? makeImageIcon(marker.image, 34) : undefined}
+                title={`${marker.code} - ${marker.name}`}
+                onMouseOver={() => setHoveredMarkerId(marker.id)}
+                onMouseOut={() =>
+                  setHoveredMarkerId((current) => (current === marker.id ? null : current))
+                }
+                onClick={() => onSelectEnterprise(marker.id)}
               >
-                <div className="min-w-[180px] rounded-md bg-slate-900 px-3 py-2 shadow-xl">
-                  <div className="text-xs font-semibold text-white line-clamp-2">
-                    {marker.name}
-                  </div>
-                  <div className="mt-1 text-[10px] uppercase tracking-wider text-slate-300">
-                    {getEnterpriseTypeLabel(marker.type)}
-                  </div>
-                </div>
-              </Tooltip>
-            </Marker>
-          ))}
+                {hoveredMarkerId === marker.id && (
+                  <InfoWindow
+                    position={{ lat: marker.lat, lng: marker.lng }}
+                    options={{ disableAutoPan: true }}
+                    onCloseClick={() => setHoveredMarkerId(null)}
+                  >
+                    <div className="min-w-[180px] rounded-md bg-slate-900 px-3 py-2">
+                      <div className="text-xs font-semibold text-white line-clamp-2">
+                        {marker.name}
+                      </div>
+                      <div className="mt-1 text-[10px] uppercase tracking-wider text-slate-300">
+                        {getEnterpriseTypeLabel(marker.type)}
+                      </div>
+                    </div>
+                  </InfoWindow>
+                )}
+              </Marker>
+            ))}
 
-          {regionLogoMarkers.map((marker) => (
-            <Marker
-              key={`enterprise-region-logo-${marker.id}`}
-              position={[marker.lat, marker.lng]}
-              icon={
-                marker.image
-                  ? makeImageIcon(marker.image, 30)
-                  : defaultLeafletIcon
-              }
-              title={marker.name}
-            />
-          ))}
+            {regionLogoMarkers.map((marker) => (
+              <Marker
+                key={`enterprise-region-logo-${marker.id}`}
+                position={{ lat: marker.lat, lng: marker.lng }}
+                icon={marker.image ? makeImageIcon(marker.image, 30) : undefined}
+                title={marker.name}
+              />
+            ))}
 
-          <MapControls mapRef={mapRef} />
-        </MapContainer>
-
-        <style>{`
-          .leaflet-container {
-            height: 100%;
-            width: 100%;
-            font-family: inherit;
-            background: #e2e8f0;
-          }
-          .enterprise-tooltip.leaflet-tooltip {
-            background: transparent;
-            border: none;
-            box-shadow: none;
-            padding: 0;
-          }
-          .enterprise-tooltip.leaflet-tooltip::before {
-            border-top-color: #0f172a;
-          }
-          .leaflet-pane,
-          .leaflet-tile,
-          .leaflet-marker-icon,
-          .leaflet-marker-shadow {
-            image-rendering: auto;
-          }
-        `}</style>
+            <MapControls mapRef={mapRef} />
+          </GoogleMap>
+        ) : (
+          <div className="flex h-full w-full items-center justify-center text-sm text-muted-foreground">
+            Đang tải bản đồ...
+          </div>
+        )}
 
         {!isDetailOpen && (
           <div className="absolute top-6 left-1/2 -translate-x-1/2 z-1000 w-max max-w-[90%]">

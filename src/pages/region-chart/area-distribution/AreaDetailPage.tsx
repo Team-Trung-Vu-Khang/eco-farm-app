@@ -6,23 +6,16 @@ import {
   CardHeader,
   CardTitle,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import L from "leaflet";
-import "leaflet/dist/leaflet.css";
+import { GoogleMap, Marker, Polygon, useJsApiLoader } from "@react-google-maps/api";
 import { ChevronLeft, Edit, MapPin } from "lucide-react";
-import { useEffect, useMemo } from "react";
-import {
-  MapContainer,
-  Marker,
-  Polygon,
-  TileLayer,
-  Tooltip,
-  useMap,
-} from "react-leaflet";
+import { useEffect, useMemo, useRef } from "react";
 
 import type { CoordinatePoint, FarmPlotResponse } from "@/features/farm";
-import { getMarkerIcon } from "@/pages/cultivation-zone/cultivation-region/components/mapUtils";
+import { getMarkerIcon } from "@/pages/animal-husbandry-zone/animal-husbandry-region/components/mapUtils";
 import { RegionChartStatusBadge } from "../components/RegionChartStatusBadge";
 import { useAreaDetailPage } from "../hooks/useAreaDetailPage";
+
+const mapContainerStyle = { width: "100%", height: "100%" };
 
 const closePath = (
   points: Array<{
@@ -36,38 +29,22 @@ const closePath = (
   const path = points.map((p) => {
     const lat = p.lat !== undefined ? p.lat : p.latitude;
     const lng = p.lng !== undefined ? p.lng : p.longitude;
-    return [lat || 0, lng || 0] as [number, number];
+    return { lat: lat || 0, lng: lng || 0 };
   });
-  const [firstLat, firstLng] = path[0];
-  const [lastLat, lastLng] = path[path.length - 1];
-  if (firstLat !== lastLat || firstLng !== lastLng) {
-    path.push([firstLat, firstLng]);
+  const first = path[0];
+  const last = path[path.length - 1];
+  if (first.lat !== last.lat || first.lng !== last.lng) {
+    path.push(first);
   }
   return path;
 };
 
-// type AreaPlotLike = {
-//   coordinates?: Array<{ lat: number; lng: number }>;
-// };
-
-const getBoundsFromPolygons = (polygons: [number, number][][]) => {
-  const points = polygons.flat();
-  return points.length > 0 ? L.latLngBounds(points) : null;
-};
-
-const FitBounds = ({ bounds }: { bounds: L.LatLngBounds | null }) => {
-  const map = useMap();
-
-  useEffect(() => {
-    if (bounds && bounds.isValid()) {
-      map.fitBounds(bounds, { padding: [24, 24] });
-    }
-  }, [bounds, map]);
-
-  return null;
-};
-
 const AreaDetailPage = () => {
+  const { isLoaded } = useJsApiLoader({
+    id: "google-map-script",
+    googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY?.trim() ?? "",
+  });
+  const mapRef = useRef<google.maps.Map | null>(null);
   const {
     setLocation,
     area,
@@ -90,10 +67,15 @@ const AreaDetailPage = () => {
       return closePath(p.boundary || p.coordinates || []);
     });
   }, [area?.plots]);
-  const bounds = useMemo(() => {
+
+  useEffect(() => {
+    if (!isLoaded || !mapRef.current) return;
     const polys = [areaPath, ...plotPaths].filter((path) => path.length > 0);
     if (polys.length > 0) {
-      return getBoundsFromPolygons(polys);
+      const bounds = new google.maps.LatLngBounds();
+      polys.flat().forEach((p) => bounds.extend(p));
+      mapRef.current.fitBounds(bounds, 24);
+      return;
     }
     if (
       area?.centerPoint?.latitude !== undefined &&
@@ -101,10 +83,17 @@ const AreaDetailPage = () => {
     ) {
       const lat = area.centerPoint.latitude;
       const lng = area.centerPoint.longitude;
-      return L.latLngBounds([lat - 0.01, lng - 0.01], [lat + 0.01, lng + 0.01]);
+      mapRef.current.fitBounds(
+        {
+          south: lat - 0.01,
+          west: lng - 0.01,
+          north: lat + 0.01,
+          east: lng + 0.01,
+        },
+        24,
+      );
     }
-    return null;
-  }, [areaPath, plotPaths, area]);
+  }, [isLoaded, areaPath, plotPaths, area]);
 
   if (isLoading) {
     return (
@@ -284,70 +273,68 @@ const AreaDetailPage = () => {
             </CardHeader>
             <CardContent className="relative flex-1 overflow-hidden rounded-b-lg p-0">
               <div className="h-[600px] w-full">
-                <MapContainer
-                  center={center}
-                  zoom={15}
-                  className="h-full w-full"
-                  zoomControl={false}
-                  scrollWheelZoom
-                >
-                  <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-                  {bounds && <FitBounds bounds={bounds} />}
-
-                  {coordinates && coordinates.length >= 3 && (
-                    <Polygon
-                      positions={areaPath}
-                      pathOptions={{
-                        color: "#2563eb",
-                        weight: 2,
-                        fillColor: "#2563eb",
-                        fillOpacity: 0.1,
-                      }}
-                    >
-                      <Tooltip direction="top">{area.name}</Tooltip>
-                    </Polygon>
-                  )}
-
-                  {area.centerPoint?.latitude !== undefined &&
-                    area.centerPoint?.longitude !== undefined && (
-                      <Marker
-                        position={[
-                          area.centerPoint.latitude,
-                          area.centerPoint.longitude,
-                        ]}
-                        icon={getMarkerIcon("blue")}
-                      >
-                        <Tooltip direction="top">{area.name}</Tooltip>
-                      </Marker>
+                {isLoaded ? (
+                  <GoogleMap
+                    mapContainerStyle={mapContainerStyle}
+                    center={{ lat: center[0], lng: center[1] }}
+                    zoom={15}
+                    options={{ zoomControl: false }}
+                    onLoad={(map) => {
+                      mapRef.current = map;
+                    }}
+                  >
+                    {coordinates && coordinates.length >= 3 && (
+                      <Polygon
+                        paths={areaPath}
+                        options={{
+                          strokeColor: "#2563eb",
+                          strokeWeight: 2,
+                          fillColor: "#2563eb",
+                          fillOpacity: 0.1,
+                        }}
+                      />
                     )}
 
-                  {area.plots?.map((plot: FarmPlotResponse) => {
-                    const p = plot as FarmPlotResponse & {
-                      coordinates?: CoordinatePoint[];
-                    };
-                    if (
-                      !(p.boundary || p.coordinates) ||
-                      (p.boundary || p.coordinates).length < 3
-                    ) {
-                      return null;
-                    }
+                    {area.centerPoint?.latitude !== undefined &&
+                      area.centerPoint?.longitude !== undefined && (
+                        <Marker
+                          position={{
+                            lat: area.centerPoint.latitude,
+                            lng: area.centerPoint.longitude,
+                          }}
+                          icon={getMarkerIcon("blue")}
+                          title={area.name}
+                        />
+                      )}
 
-                    return (
-                      <Polygon
-                        key={p.id}
-                        positions={closePath(p.boundary || p.coordinates)}
-                        pathOptions={{
-                          color: "#f59e0b",
-                          weight: 2,
-                          fillColor: "#f59e0b",
-                          fillOpacity: 0.3,
-                        }}
-                      >
-                        <Tooltip direction="top">{p.name}</Tooltip>
-                      </Polygon>
-                    );
-                  })}
-                </MapContainer>
+                    {area.plots?.map((plot: FarmPlotResponse) => {
+                      const p = plot as FarmPlotResponse & {
+                        coordinates?: CoordinatePoint[];
+                      };
+                      const points = p.boundary || p.coordinates;
+                      if (!points || points.length < 3) {
+                        return null;
+                      }
+
+                      return (
+                        <Polygon
+                          key={p.id}
+                          paths={closePath(points)}
+                          options={{
+                            strokeColor: "#f59e0b",
+                            strokeWeight: 2,
+                            fillColor: "#f59e0b",
+                            fillOpacity: 0.3,
+                          }}
+                        />
+                      );
+                    })}
+                  </GoogleMap>
+                ) : (
+                  <div className="flex h-full w-full items-center justify-center text-sm text-muted-foreground">
+                    Đang tải bản đồ...
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>

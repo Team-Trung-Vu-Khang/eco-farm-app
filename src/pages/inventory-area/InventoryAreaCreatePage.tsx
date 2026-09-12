@@ -24,50 +24,25 @@ import {
   Plus,
   Trash2,
 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useRoute } from "wouter";
 import useWarehouseStore, {
   type AreaAllocation,
 } from "../../stores/useWarehouseStore";
 
-// Leaflet imports
-import L from "leaflet";
-import "leaflet/dist/leaflet.css";
-import {
-  MapContainer,
-  Marker,
-  TileLayer,
-  useMap,
-  useMapEvents,
-} from "react-leaflet";
+// Google Maps imports
+import { GoogleMap, Marker, useJsApiLoader } from "@react-google-maps/api";
 
-// Leaflet default icon setup to prevent asset resolution errors
-import defaultMarkerIcon2xUrl from "leaflet/dist/images/marker-icon-2x.png";
-import defaultMarkerIconUrl from "leaflet/dist/images/marker-icon.png";
-import defaultMarkerShadowUrl from "leaflet/dist/images/marker-shadow.png";
-
-const defaultLeafletIcon = L.icon({
-  iconUrl: defaultMarkerIconUrl,
-  iconRetinaUrl: defaultMarkerIcon2xUrl,
-  shadowUrl: defaultMarkerShadowUrl,
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
-  popupAnchor: [1, -34],
-  shadowSize: [41, 41],
-});
-
-// Map helper to sync center when inputs change
-const MapCenterSync = ({ center }: { center: [number, number] }) => {
-  const map = useMap();
-  useEffect(() => {
-    map.setView(center, map.getZoom());
-  }, [center, map]);
-  return null;
-};
+const mapContainerStyle = { height: "100%", width: "100%" };
 
 export default function InventoryAreaCreatePage() {
   const { toast } = useToast();
   const [, setLocation] = useLocation();
+  const { isLoaded } = useJsApiLoader({
+    id: "google-map-script",
+    googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY?.trim() ?? "",
+  });
+  const mapRef = useRef<google.maps.Map | null>(null);
   const {
     areas,
     allocations,
@@ -189,18 +164,14 @@ export default function InventoryAreaCreatePage() {
     setLocation("/inventory-area");
   };
 
-  // Click on Leaflet Map to update pin coordinates
-  const MapEvents = () => {
-    useMapEvents({
-      click(e) {
-        setAreaForm((prev) => ({
-          ...prev,
-          latitude: e.latlng.lat,
-          longitude: e.latlng.lng,
-        }));
-      },
-    });
-    return null;
+  // Click on Google Map to update pin coordinates
+  const handleMapClick = (e: google.maps.MapMouseEvent) => {
+    if (!e.latLng) return;
+    setAreaForm((prev) => ({
+      ...prev,
+      latitude: e.latLng!.lat(),
+      longitude: e.latLng!.lng(),
+    }));
   };
 
   const getStorageBadgeColor = (type: string) => {
@@ -237,7 +208,12 @@ export default function InventoryAreaCreatePage() {
     }
   };
 
-  const mapCenter: [number, number] = [areaForm.latitude, areaForm.longitude];
+  const mapCenter = { lat: areaForm.latitude, lng: areaForm.longitude };
+
+  useEffect(() => {
+    if (!mapRef.current) return;
+    mapRef.current.panTo(mapCenter);
+  }, [mapCenter.lat, mapCenter.lng]);
 
   const steps = [
     {
@@ -309,7 +285,7 @@ export default function InventoryAreaCreatePage() {
     },
     {
       id: "gps",
-      title: "Định vị GPS (Bản đồ Leaflet)",
+      title: "Định vị GPS (Bản đồ Google Maps)",
       content: (
         <div className="space-y-4 pt-2">
           <div className="grid grid-cols-2 gap-4">
@@ -340,36 +316,37 @@ export default function InventoryAreaCreatePage() {
             </div>
           </div>
 
-          {/* Fully functional Leaflet Map integration */}
+          {/* Fully functional Google Map integration */}
           <div className="relative h-72 w-full rounded-xl overflow-hidden border border-slate-200 shadow-sm z-0">
-            <MapContainer
-              center={mapCenter}
-              zoom={15}
-              style={{ height: "100%", width: "100%" }}
-            >
-              <TileLayer
-                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-              />
-              <Marker
-                position={mapCenter}
-                icon={defaultLeafletIcon}
-                draggable={true}
-                eventHandlers={{
-                  dragend: (e) => {
-                    const marker = e.target;
-                    const position = marker.getLatLng();
+            {isLoaded ? (
+              <GoogleMap
+                mapContainerStyle={mapContainerStyle}
+                center={mapCenter}
+                zoom={15}
+                options={{ zoomControl: false }}
+                onLoad={(map) => {
+                  mapRef.current = map;
+                }}
+                onClick={handleMapClick}
+              >
+                <Marker
+                  position={mapCenter}
+                  draggable
+                  onDragEnd={(e) => {
+                    if (!e.latLng) return;
                     setAreaForm((prev) => ({
                       ...prev,
-                      latitude: position.lat,
-                      longitude: position.lng,
+                      latitude: e.latLng!.lat(),
+                      longitude: e.latLng!.lng(),
                     }));
-                  },
-                }}
-              />
-              <MapEvents />
-              <MapCenterSync center={mapCenter} />
-            </MapContainer>
+                  }}
+                />
+              </GoogleMap>
+            ) : (
+              <div className="flex h-full w-full items-center justify-center text-sm text-muted-foreground">
+                Đang tải bản đồ...
+              </div>
+            )}
 
             <div className="absolute top-3 left-3 z-10 bg-white/95 backdrop-blur-xs px-3 py-1.5 rounded-lg shadow-sm border text-xs flex items-center gap-1.5 font-medium">
               <MapIcon className="w-3.5 h-3.5 text-primary animate-pulse" />
@@ -444,7 +421,6 @@ export default function InventoryAreaCreatePage() {
                   Tên phân bổ <span className="text-red-500">*</span>
                 </Label>
                 <Input
-                  size="sm"
                   value={newAlloc.name}
                   onChange={(e) =>
                     setNewAlloc({ ...newAlloc, name: e.target.value })
@@ -482,7 +458,6 @@ export default function InventoryAreaCreatePage() {
             <div className="space-y-1">
               <Label className="text-[11px]">Ghi chú/Mô tả</Label>
               <Input
-                size="sm"
                 value={newAlloc.notes}
                 onChange={(e) =>
                   setNewAlloc({ ...newAlloc, notes: e.target.value })

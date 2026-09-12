@@ -14,8 +14,7 @@ import {
   TabsTrigger,
   type Column,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import L from "leaflet";
-import "leaflet/dist/leaflet.css";
+import { GoogleMap, Marker, useJsApiLoader } from "@react-google-maps/api";
 import {
   Download,
   Edit,
@@ -26,14 +25,9 @@ import {
   Target,
   Trees,
 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
-import { MapContainer, Marker, TileLayer, useMap } from "react-leaflet";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useRoute } from "wouter";
 import { MOCK_SEEDS } from "./constants";
-
-import defaultMarkerIcon2xUrl from "leaflet/dist/images/marker-icon-2x.png";
-import defaultMarkerIconUrl from "leaflet/dist/images/marker-icon.png";
-import defaultMarkerShadowUrl from "leaflet/dist/images/marker-shadow.png";
 
 // --- Mock Data ---
 
@@ -47,7 +41,7 @@ interface PlantLocation {
   coordinate: { lat: number; lng: number };
 }
 
-type LatLngTuple = [number, number];
+const mapContainerStyle = { width: "100%", height: "100%" };
 
 const MOCK_DETAIL = {
   id: "dist-1",
@@ -95,26 +89,6 @@ interface HistoryLog {
 
 type HistoryAction = Pick<HistoryLog, "action" | "type" | "details">;
 
-const defaultLeafletIcon = L.icon({
-  iconUrl: defaultMarkerIconUrl,
-  iconRetinaUrl: defaultMarkerIcon2xUrl,
-  shadowUrl: defaultMarkerShadowUrl,
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
-  popupAnchor: [1, -34],
-  shadowSize: [41, 41],
-});
-
-const MapCenterSync = ({ center }: { center: LatLngTuple }) => {
-  const map = useMap();
-
-  useEffect(() => {
-    map.setView(center, map.getZoom(), { animate: true });
-  }, [center, map]);
-
-  return null;
-};
-
 const generateMockHistory = (count: number): HistoryLog[] => {
   const actions: HistoryAction[] = [
     { action: "Tưới nước", type: "care", details: "Tưới nhỏ giọt 30 phút" },
@@ -154,6 +128,11 @@ const DistributionDetailPage = () => {
   const [, setLocation] = useLocation();
   const { getRecordById, deleteRecord } = usePlantDistributionStore();
   const [activeTab, setActiveTab] = useState("overview");
+  const { isLoaded } = useJsApiLoader({
+    id: "google-map-script",
+    googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY?.trim() ?? "",
+  });
+  const mapRef = useRef<google.maps.Map | null>(null);
 
   const distributionId = params?.id;
   const detailData = distributionId ? getRecordById(distributionId) : undefined;
@@ -177,6 +156,14 @@ const DistributionDetailPage = () => {
   }, [detailData]);
 
   const history = useMemo(() => generateMockHistory(15), []);
+
+  const mapCenter = plants[0]?.coordinate
+    ? { lat: plants[0].coordinate.lat, lng: plants[0].coordinate.lng }
+    : { lat: 11.558, lng: 107.134 };
+
+  useEffect(() => {
+    mapRef.current?.panTo(mapCenter);
+  }, [mapCenter.lat, mapCenter.lng]);
 
   const handleBack = () => {
     setLocation("/distribution-detail");
@@ -202,10 +189,6 @@ const DistributionDetailPage = () => {
       </PageWrapper>
     );
   }
-
-  const mapCenter = plants[0]?.coordinate
-    ? ([plants[0].coordinate.lat, plants[0].coordinate.lng] as LatLngTuple)
-    : ([11.558, 107.134] as LatLngTuple);
 
   const plantColumns: Column<PlantLocation>[] = [
     {
@@ -447,25 +430,32 @@ const DistributionDetailPage = () => {
                   </div>
                 </CardHeader>
                 <div className="flex-1 relative z-0">
-                  <MapContainer
-                    center={mapCenter}
-                    zoom={17}
-                    className="h-full w-full"
-                    zoomControl={false}
-                    scrollWheelZoom
-                  >
-                    <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-                    <MapCenterSync center={mapCenter} />
-
-                    {plants.map((plant) => (
-                      <Marker
-                        key={plant.id}
-                        position={[plant.coordinate.lat, plant.coordinate.lng]}
-                        icon={defaultLeafletIcon}
-                        title={`${plant.code} - ${plant.variety}`}
-                      />
-                    ))}
-                  </MapContainer>
+                  {isLoaded ? (
+                    <GoogleMap
+                      mapContainerStyle={mapContainerStyle}
+                      center={mapCenter}
+                      zoom={17}
+                      options={{ zoomControl: false, mapTypeId: "satellite" }}
+                      onLoad={(map) => {
+                        mapRef.current = map;
+                      }}
+                    >
+                      {plants.map((plant) => (
+                        <Marker
+                          key={plant.id}
+                          position={{
+                            lat: plant.coordinate.lat,
+                            lng: plant.coordinate.lng,
+                          }}
+                          title={`${plant.code} - ${plant.variety}`}
+                        />
+                      ))}
+                    </GoogleMap>
+                  ) : (
+                    <div className="flex h-full w-full items-center justify-center text-sm text-muted-foreground">
+                      Đang tải bản đồ...
+                    </div>
+                  )}
                 </div>
               </Card>
             </div>

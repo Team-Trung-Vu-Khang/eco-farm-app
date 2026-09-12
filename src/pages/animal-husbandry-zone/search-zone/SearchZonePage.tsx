@@ -23,8 +23,7 @@ import {
   useToast,
   type Column,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import L from "leaflet";
-import "leaflet/dist/leaflet.css";
+import { GoogleMap, Marker, Polygon, useJsApiLoader } from "@react-google-maps/api";
 import {
   Activity,
   Building2,
@@ -39,14 +38,7 @@ import {
   Target,
   X,
 } from "lucide-react";
-import React, { useCallback, useEffect, useMemo, useState } from "react";
-import {
-  MapContainer,
-  Marker,
-  Polygon,
-  TileLayer,
-  useMap,
-} from "react-leaflet";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useLocation } from "wouter";
 import useCultivationRegionStore, {
   type CultivationRegion,
@@ -63,21 +55,7 @@ import { mapSeedToBreed } from "../animal-husbandry-region/constants";
 
 type LatLngTuple = [number, number];
 
-const MapCenterSync = ({
-  center,
-  zoom,
-}: {
-  center: LatLngTuple;
-  zoom: number;
-}) => {
-  const map = useMap();
-
-  useEffect(() => {
-    map.setView(center, zoom, { animate: true });
-  }, [center, map, zoom]);
-
-  return null;
-};
+const mapContainerStyle = { width: "100%", height: "100%" };
 
 interface AdvancedFilters {
   // Nhóm 1: Thông tin vật nuôi
@@ -1244,34 +1222,25 @@ const SearchZonePage = () => {
                       "lg:col-span-8 rounded-2xl overflow-hidden border-4 border-white bg-white shadow-xl relative min-h-80 lg:min-h-125 transition-all duration-300 ease-in-out",
                     )}
                   >
-                    <MapContainer
+                    <ZoneGoogleMap
+                      regions={selectedCultivationTargets.visibleRegions}
+                      enterprises={enterprises}
+                      selectedUnit={selectedUnit}
+                      targetRegionIds={
+                        selectedCultivationTargets.targetRegionIds
+                      }
+                      targetAreaIds={selectedCultivationTargets.targetAreaIds}
+                      targetPlotIds={selectedCultivationTargets.targetPlotIds}
+                      targetSignature={
+                        selectedCultivationTargets.targetSignature
+                      }
+                      onFocusCoordinates={focusMapToCoordinates}
+                      onSelectUnit={(type, data) =>
+                        setSelectedUnit({ type, data })
+                      }
                       center={[mapCenter.lat, mapCenter.lng]}
                       zoom={mapZoom}
-                      className="h-full w-full"
-                      zoomControl={false}
-                      scrollWheelZoom
-                    >
-                      <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-                      <ZoneMapContent
-                        regions={selectedCultivationTargets.visibleRegions}
-                        enterprises={enterprises}
-                        selectedUnit={selectedUnit}
-                        targetRegionIds={
-                          selectedCultivationTargets.targetRegionIds
-                        }
-                        targetAreaIds={selectedCultivationTargets.targetAreaIds}
-                        targetPlotIds={selectedCultivationTargets.targetPlotIds}
-                        targetSignature={
-                          selectedCultivationTargets.targetSignature
-                        }
-                        onFocusCoordinates={focusMapToCoordinates}
-                        onSelectUnit={(type, data) =>
-                          setSelectedUnit({ type, data })
-                        }
-                        center={[mapCenter.lat, mapCenter.lng]}
-                        zoom={mapZoom}
-                      />
-                    </MapContainer>
+                    />
 
                     {/* Map Controls */}
                     <div className="absolute top-4 right-4 z-[1000]">
@@ -1313,40 +1282,29 @@ const SearchZonePage = () => {
                       <div className="flex h-full">
                         {/* Left: Map */}
                         <div className="flex-1 relative bg-slate-100">
-                          <MapContainer
+                          <ZoneGoogleMap
+                            regions={selectedCultivationTargets.visibleRegions}
+                            enterprises={enterprises}
+                            selectedUnit={selectedUnit}
+                            targetRegionIds={
+                              selectedCultivationTargets.targetRegionIds
+                            }
+                            targetAreaIds={
+                              selectedCultivationTargets.targetAreaIds
+                            }
+                            targetPlotIds={
+                              selectedCultivationTargets.targetPlotIds
+                            }
+                            targetSignature={
+                              selectedCultivationTargets.targetSignature
+                            }
+                            onFocusCoordinates={focusMapToCoordinates}
+                            onSelectUnit={(type, data) =>
+                              setSelectedUnit({ type, data })
+                            }
                             center={[mapCenter.lat, mapCenter.lng]}
                             zoom={mapZoom}
-                            className="h-full w-full"
-                            zoomControl={false}
-                            scrollWheelZoom
-                          >
-                            <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-                            <ZoneMapContent
-                              regions={
-                                selectedCultivationTargets.visibleRegions
-                              }
-                              enterprises={enterprises}
-                              selectedUnit={selectedUnit}
-                              targetRegionIds={
-                                selectedCultivationTargets.targetRegionIds
-                              }
-                              targetAreaIds={
-                                selectedCultivationTargets.targetAreaIds
-                              }
-                              targetPlotIds={
-                                selectedCultivationTargets.targetPlotIds
-                              }
-                              targetSignature={
-                                selectedCultivationTargets.targetSignature
-                              }
-                              onFocusCoordinates={focusMapToCoordinates}
-                              onSelectUnit={(type, data) =>
-                                setSelectedUnit({ type, data })
-                              }
-                              center={[mapCenter.lat, mapCenter.lng]}
-                              zoom={mapZoom}
-                            />
-                          </MapContainer>
+                          />
 
                           {/* Close button */}
                           <button
@@ -2113,8 +2071,6 @@ const ZoneMapContent = ({
   targetSignature,
   onFocusCoordinates,
   onSelectUnit,
-  center,
-  zoom,
 }: {
   regions: Region[];
   enterprises: any[];
@@ -2202,8 +2158,6 @@ const ZoneMapContent = ({
 
   return (
     <>
-      <MapCenterSync center={center} zoom={zoom} />
-
       {/* Owner Logo Markers */}
       {regions.map((region) => {
         const center = getRegionCenter(region.coordinates);
@@ -2219,19 +2173,16 @@ const ZoneMapContent = ({
         return (
           <Marker
             key={`region-owner-${region.id}`}
-            position={[center.lat, center.lng]}
-            icon={L.icon({
-              iconUrl: ownerEnterprise.image,
-              iconSize: [34, 34],
-              iconAnchor: [17, 17],
-              className: "rounded-full border border-white shadow-md",
-            })}
+            position={{ lat: center.lat, lng: center.lng }}
+            icon={{
+              url: ownerEnterprise.image,
+              scaledSize: new google.maps.Size(34, 34),
+              anchor: new google.maps.Point(17, 17),
+            }}
             title={ownerEnterprise.brandName || ownerEnterprise.name}
-            eventHandlers={{
-              click: () => {
-                onFocusCoordinates(region.coordinates);
-                onSelectUnit("region", region);
-              },
+            onClick={() => {
+              onFocusCoordinates(region.coordinates);
+              onSelectUnit("region", region);
             }}
           />
         );
@@ -2245,10 +2196,10 @@ const ZoneMapContent = ({
         return (
           <Polygon
             key={`region-${region.id}`}
-            positions={regionPath}
-            pathOptions={{
-              color: "#3b82f6",
-              weight:
+            paths={regionPath.map(([lat, lng]) => ({ lat, lng }))}
+            options={{
+              strokeColor: "#3b82f6",
+              strokeWeight:
                 selectedUnit?.type === "region" &&
                 selectedUnit.data.id === region.id
                   ? 4
@@ -2258,11 +2209,9 @@ const ZoneMapContent = ({
               fillColor: "#3b82f6",
               fillOpacity: 0.1,
             }}
-            eventHandlers={{
-              click: () => {
-                onFocusCoordinates(region.coordinates);
-                onSelectUnit("region", region);
-              },
+            onClick={() => {
+              onFocusCoordinates(region.coordinates);
+              onSelectUnit("region", region);
             }}
           />
         );
@@ -2287,10 +2236,10 @@ const ZoneMapContent = ({
           return [
             <Polygon
               key={`area-${area.id}`}
-              positions={areaPath}
-              pathOptions={{
-                color: "#10b981",
-                weight:
+              paths={areaPath.map(([lat, lng]) => ({ lat, lng }))}
+              options={{
+                strokeColor: "#10b981",
+                strokeWeight:
                   selectedUnit?.type === "area" &&
                   selectedUnit.data.id === area.id
                     ? 4
@@ -2300,11 +2249,9 @@ const ZoneMapContent = ({
                 fillColor: "#10b981",
                 fillOpacity: isTargetArea ? 0.2 : 0.1,
               }}
-              eventHandlers={{
-                click: () => {
-                  onFocusCoordinates(area.coordinates);
-                  onSelectUnit("area", area);
-                },
+              onClick={() => {
+                onFocusCoordinates(area.coordinates);
+                onSelectUnit("area", area);
               }}
             />,
           ];
@@ -2327,10 +2274,10 @@ const ZoneMapContent = ({
             return [
               <Polygon
                 key={`plot-${plot.id}`}
-                positions={plotPath}
-                pathOptions={{
-                  color: "#f59e0b",
-                  weight:
+                paths={plotPath.map(([lat, lng]) => ({ lat, lng }))}
+                options={{
+                  strokeColor: "#f59e0b",
+                  strokeWeight:
                     selectedUnit?.type === "plot" &&
                     selectedUnit.data.id === plot.id
                       ? 4
@@ -2340,11 +2287,9 @@ const ZoneMapContent = ({
                   fillColor: "#f59e0b",
                   fillOpacity: isTargetPlot ? 0.25 : 0.15,
                 }}
-                eventHandlers={{
-                  click: () => {
-                    onFocusCoordinates(plot.coordinates);
-                    onSelectUnit("plot", plot);
-                  },
+                onClick={() => {
+                  onFocusCoordinates(plot.coordinates);
+                  onSelectUnit("plot", plot);
                 }}
               />,
             ];
@@ -2352,6 +2297,46 @@ const ZoneMapContent = ({
         ),
       )}
     </>
+  );
+};
+
+const ZoneGoogleMap = (
+  props: Parameters<typeof ZoneMapContent>[0],
+) => {
+  const { center, zoom } = props;
+  const { isLoaded } = useJsApiLoader({
+    id: "google-map-script",
+    googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY?.trim() ?? "",
+  });
+  const mapRef = useRef<google.maps.Map | null>(null);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    map.panTo({ lat: center[0], lng: center[1] });
+    map.setZoom(zoom);
+  }, [center, zoom]);
+
+  if (!isLoaded) {
+    return (
+      <div className="flex h-full w-full items-center justify-center text-sm text-muted-foreground">
+        Đang tải bản đồ...
+      </div>
+    );
+  }
+
+  return (
+    <GoogleMap
+      mapContainerStyle={mapContainerStyle}
+      center={{ lat: center[0], lng: center[1] }}
+      zoom={zoom}
+      options={{ zoomControl: false }}
+      onLoad={(map) => {
+        mapRef.current = map;
+      }}
+    >
+      <ZoneMapContent {...props} />
+    </GoogleMap>
   );
 };
 

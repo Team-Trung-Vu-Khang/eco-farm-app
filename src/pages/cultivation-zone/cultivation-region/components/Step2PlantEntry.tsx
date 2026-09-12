@@ -19,7 +19,6 @@ import {
   Sprout,
   Upload,
 } from "lucide-react";
-import { MapContainer } from "react-leaflet";
 import { PlantCard } from "./PlantCard";
 import { AllPlantsMapContent } from "./AllPlantsMapContent";
 import { type PlantEntry } from "./types";
@@ -269,22 +268,17 @@ export const Step2PlantEntry: React.FC<Step2PlantEntryProps> = ({
                   isMapExpanded ? "hidden opacity-0" : "",
                 )}
               >
-                <MapContainer
-                  center={mapCenter}
-                  zoom={17}
-                  style={{ height: "100%", width: "100%" }}
-                >
-                  <AllPlantsMapContent
-                    clickable={true}
-                    plants={plants}
-                    activeId={effectiveActiveId}
-                    geographicalUnits={scopedGeographicalUnits}
-                    setActiveEntryId={handleSetActiveEntry}
-                    onPlantMove={validateAndSnapToUnit}
-                    onAutoAssign={handleAutoAssign}
-                    suggestedCorrection={suggestedCorrection}
-                  />
-                </MapContainer>
+                <AllPlantsMapContent
+                  clickable={true}
+                  plants={plants}
+                  activeId={effectiveActiveId}
+                  geographicalUnits={scopedGeographicalUnits}
+                  setActiveEntryId={handleSetActiveEntry}
+                  onPlantMove={validateAndSnapToUnit}
+                  onAutoAssign={handleAutoAssign}
+                  suggestedCorrection={suggestedCorrection}
+                  mapCenter={mapCenter}
+                />
                 <div className="absolute bottom-4 left-4 z-1000 bg-white/90 backdrop-blur shadow-sm border border-slate-100 px-3 py-1.5 rounded-lg text-[11px] text-slate-500 flex items-center gap-2">
                   <MapPin className="w-3 h-3 text-primary" />
                   Bấm bản đồ hoặc kéo marker để thay đổi vị trí
@@ -390,22 +384,17 @@ export const Step2PlantEntry: React.FC<Step2PlantEntryProps> = ({
                   </Button>
                 </div>
               )}
-              <MapContainer
-                center={mapCenter}
-                zoom={17}
-                style={{ height: "100%", width: "100%" }}
-              >
-                <AllPlantsMapContent
-                  clickable={true}
-                  plants={plants}
-                  activeId={effectiveActiveId}
-                  geographicalUnits={scopedGeographicalUnits}
-                  setActiveEntryId={handleSetActiveEntry}
-                  onPlantMove={validateAndSnapToUnit}
-                  onAutoAssign={handleAutoAssign}
-                  suggestedCorrection={suggestedCorrection}
-                />
-              </MapContainer>
+              <AllPlantsMapContent
+                clickable={true}
+                plants={plants}
+                activeId={effectiveActiveId}
+                geographicalUnits={scopedGeographicalUnits}
+                setActiveEntryId={handleSetActiveEntry}
+                onPlantMove={validateAndSnapToUnit}
+                onAutoAssign={handleAutoAssign}
+                suggestedCorrection={suggestedCorrection}
+                mapCenter={mapCenter}
+              />
             </div>
           </div>
         </DialogContent>

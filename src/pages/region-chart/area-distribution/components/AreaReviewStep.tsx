@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useFormContext } from "react-hook-form";
 import {
   Card,
@@ -12,10 +12,11 @@ import { useRegionById, useRegions } from "@/features/farm/hooks/useRegions";
 import { useCatalog } from "@/features/foundation/hooks/useCatalog";
 import { useOrganizationById } from "@/features/organization/hooks/useOrganizationById";
 import { useSelectedWorkspaceId } from "@/features/workspace";
-import { MapContainer, Polygon, TileLayer, Tooltip } from "react-leaflet";
+import { GoogleMap, InfoWindow, Polygon, useJsApiLoader } from "@react-google-maps/api";
 import L from "leaflet";
-import "leaflet/dist/leaflet.css";
 import { getBoundsFromPoints } from "../utils/map";
+
+const mapContainerStyle = { width: "100%", height: "100%" };
 
 interface AreaReviewStepProps {
   showEnterprise?: boolean;
@@ -24,6 +25,13 @@ interface AreaReviewStepProps {
 export function AreaReviewStep({ showEnterprise = false }: AreaReviewStepProps = {}) {
   const { watch } = useFormContext<AreaFormValues>();
   const formData = watch();
+
+  const { isLoaded } = useJsApiLoader({
+    id: "google-map-script",
+    googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY?.trim() ?? "",
+  });
+  const mapRef = useRef<google.maps.Map | null>(null);
+  const [hoveredPolygon, setHoveredPolygon] = useState<string | null>(null);
 
   const { data: regionsData } = useRegions({
     params: { size: 100 },
@@ -98,6 +106,25 @@ export function AreaReviewStep({ showEnterprise = false }: AreaReviewStepProps =
       : null;
   }, [areaPoints, plotPolygons, regionPoints]);
 
+  useEffect(() => {
+    if (!isLoaded || !mapRef.current || !mapBounds) return;
+    const sw = mapBounds.getSouthWest();
+    const ne = mapBounds.getNorthEast();
+    mapRef.current.fitBounds({
+      south: sw.lat,
+      west: sw.lng,
+      north: ne.lat,
+      east: ne.lng,
+    });
+  }, [isLoaded, mapBounds]);
+
+  const centroidOf = (points: L.LatLng[]) => {
+    if (points.length === 0) return { lat: 0, lng: 0 };
+    const lat = points.reduce((sum, p) => sum + p.lat, 0) / points.length;
+    const lng = points.reduce((sum, p) => sum + p.lng, 0) / points.length;
+    return { lat, lng };
+  };
+
   return (
     <div className="space-y-6">
       <Card>
@@ -171,60 +198,116 @@ export function AreaReviewStep({ showEnterprise = false }: AreaReviewStepProps =
           </div>
           {mapBounds && areaPoints.length >= 3 && (
             <div className="relative mt-5 h-[320px] overflow-hidden rounded-lg border">
-              <MapContainer
-                bounds={mapBounds}
-                className="h-full w-full"
-                zoomControl={false}
-                dragging={false}
-                scrollWheelZoom={false}
-                doubleClickZoom={false}
-                touchZoom={false}
-                keyboard={false}
-                attributionControl={false}
-              >
-                <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-                {regionPoints.length >= 3 && (
-                  <Polygon
-                    positions={regionPoints}
-                    pathOptions={{
-                      color: "#10b981",
-                      fill: false,
-                      weight: 2,
-                      dashArray: "6, 4",
-                    }}
-                  >
-                    <Tooltip sticky>Vùng trồng: {region?.name}</Tooltip>
-                  </Polygon>
-                )}
-                <Polygon
-                  positions={areaPoints}
-                  pathOptions={{
-                    color: "#2563eb",
-                    fillColor: "#2563eb",
-                    fillOpacity: 0.18,
-                    weight: 2.5,
+              {isLoaded ? (
+                <GoogleMap
+                  mapContainerStyle={mapContainerStyle}
+                  center={centroidOf(areaPoints)}
+                  zoom={14}
+                  options={{
+                    zoomControl: false,
+                    draggable: false,
+                    scrollwheel: false,
+                    disableDoubleClickZoom: true,
+                    keyboardShortcuts: false,
+                  }}
+                  onLoad={(map) => {
+                    mapRef.current = map;
                   }}
                 >
-                  <Tooltip sticky>Khu vực đang tạo</Tooltip>
-                </Polygon>
-                {plotPolygons.map(
-                  (plot, index) =>
-                    plot.points.length >= 3 && (
+                  {regionPoints.length >= 3 && (
+                    <>
                       <Polygon
-                        key={plot.id || index}
-                        positions={plot.points}
-                        pathOptions={{
-                          color: "#f59e0b",
-                          fillColor: "#f59e0b",
-                          fillOpacity: 0.24,
-                          weight: 2,
+                        paths={regionPoints}
+                        options={{
+                          strokeColor: "#10b981",
+                          fillOpacity: 0,
+                          strokeWeight: 2,
                         }}
-                      >
-                        <Tooltip sticky>{plot.name}</Tooltip>
-                      </Polygon>
-                    ),
-                )}
-              </MapContainer>
+                        onMouseOver={() => setHoveredPolygon("region")}
+                        onMouseOut={() =>
+                          setHoveredPolygon((current) =>
+                            current === "region" ? null : current,
+                          )
+                        }
+                      />
+                      {hoveredPolygon === "region" && (
+                        <InfoWindow
+                          position={centroidOf(regionPoints)}
+                          options={{ disableAutoPan: true }}
+                          onCloseClick={() => setHoveredPolygon(null)}
+                        >
+                          <div className="text-xs">
+                            Vùng trồng: {region?.name}
+                          </div>
+                        </InfoWindow>
+                      )}
+                    </>
+                  )}
+                  <Polygon
+                    paths={areaPoints}
+                    options={{
+                      strokeColor: "#2563eb",
+                      fillColor: "#2563eb",
+                      fillOpacity: 0.18,
+                      strokeWeight: 2.5,
+                    }}
+                    onMouseOver={() => setHoveredPolygon("area")}
+                    onMouseOut={() =>
+                      setHoveredPolygon((current) =>
+                        current === "area" ? null : current,
+                      )
+                    }
+                  />
+                  {hoveredPolygon === "area" && (
+                    <InfoWindow
+                      position={centroidOf(areaPoints)}
+                      options={{ disableAutoPan: true }}
+                      onCloseClick={() => setHoveredPolygon(null)}
+                    >
+                      <div className="text-xs">Khu vực đang tạo</div>
+                    </InfoWindow>
+                  )}
+                  {plotPolygons.map(
+                    (plot, index) =>
+                      plot.points.length >= 3 && (
+                        <div key={plot.id || index}>
+                          <Polygon
+                            paths={plot.points}
+                            options={{
+                              strokeColor: "#f59e0b",
+                              fillColor: "#f59e0b",
+                              fillOpacity: 0.24,
+                              strokeWeight: 2,
+                            }}
+                            onMouseOver={() =>
+                              setHoveredPolygon(`plot-${plot.id || index}`)
+                            }
+                            onMouseOut={() =>
+                              setHoveredPolygon((current) =>
+                                current === `plot-${plot.id || index}`
+                                  ? null
+                                  : current,
+                              )
+                            }
+                          />
+                          {hoveredPolygon === `plot-${plot.id || index}` && (
+                            <InfoWindow
+                              position={centroidOf(plot.points)}
+                              options={{ disableAutoPan: true }}
+                              onCloseClick={() => setHoveredPolygon(null)}
+                            >
+                              <div className="text-xs">{plot.name}</div>
+                            </InfoWindow>
+                          )}
+                        </div>
+                      ),
+                  )}
+                </GoogleMap>
+              ) : (
+                <div className="flex h-full w-full items-center justify-center text-sm text-muted-foreground">
+                  Đang tải bản đồ...
+                </div>
+              )}
               <div className="pointer-events-none absolute bottom-3 left-3 z-[500] rounded-lg border bg-white/90 px-3 py-2 text-xs shadow-sm backdrop-blur-sm">
                 <div className="flex items-center gap-2"><span className="h-3 w-4 rounded-sm border-2 border-blue-600 bg-blue-500/20" />Khu vực đang tạo</div>
                 {regionPoints.length >= 3 && <div className="mt-1 flex items-center gap-2"><span className="w-4 border-t-2 border-dashed border-emerald-500" />Ranh giới vùng trồng</div>}

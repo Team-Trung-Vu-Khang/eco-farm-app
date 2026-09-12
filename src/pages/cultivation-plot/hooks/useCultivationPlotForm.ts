@@ -1,6 +1,5 @@
 import { useMemo, useState } from "react";
 import { useLocation, useRoute } from "wouter";
-import L from "leaflet";
 import booleanPointInPolygon from "@turf/boolean-point-in-polygon";
 import polygonToLine from "@turf/polygon-to-line";
 import nearestPointOnLine from "@turf/nearest-point-on-line";
@@ -27,9 +26,13 @@ import type {
   SubArea,
 } from "../types/types";
 
-const getBoundsFromPoints = (points: L.LatLng[]) => {
-  if (points.length === 0) return L.latLngBounds([0, 0], [0, 0]);
-  return L.latLngBounds(points);
+type LatLng = { lat: number; lng: number };
+
+const getCenterFromPoints = (points: LatLng[]): LatLng => {
+  if (points.length === 0) return { lat: 0, lng: 0 };
+  const lat = points.reduce((sum, p) => sum + p.lat, 0) / points.length;
+  const lng = points.reduce((sum, p) => sum + p.lng, 0) / points.length;
+  return { lat, lng };
 };
 
 const toTurfPolygonFromCoords = (coords: { lat: number; lng: number }[]) => {
@@ -40,23 +43,23 @@ const toTurfPolygonFromCoords = (coords: { lat: number; lng: number }[]) => {
 
 const getNearestPointOnPolygonBoundary = (
   polygonFeature: ReturnType<typeof toTurfPolygonFromCoords>,
-  latlng: L.LatLng,
+  latlng: LatLng,
 ) => {
   if (!polygonFeature) return null;
   const lineFeature = polygonToLine(polygonFeature);
   const line = "features" in lineFeature ? lineFeature.features[0] : lineFeature;
   if (!line) return null;
   const snappedPoint = nearestPointOnLine(line, point([latlng.lng, latlng.lat]));
-  return L.latLng(
-    snappedPoint.geometry.coordinates[1],
-    snappedPoint.geometry.coordinates[0],
-  );
+  return {
+    lat: snappedPoint.geometry.coordinates[1],
+    lng: snappedPoint.geometry.coordinates[0],
+  };
 };
 
-const getDefaultTriangle = (center: L.LatLng) => [
-  L.latLng(center.lat - 0.001, center.lng - 0.001),
-  L.latLng(center.lat + 0.001, center.lng),
-  L.latLng(center.lat - 0.001, center.lng + 0.001),
+const getDefaultTriangle = (center: LatLng): LatLng[] => [
+  { lat: center.lat - 0.001, lng: center.lng - 0.001 },
+  { lat: center.lat + 0.001, lng: center.lng },
+  { lat: center.lat - 0.001, lng: center.lng + 0.001 },
 ];
 
 export const useCultivationPlotForm = () => {
@@ -83,18 +86,20 @@ export const useCultivationPlotForm = () => {
   const initialPlot =
     initialArea?.plots.find((plot) => plot.id === existingPlotConfig?.plotId) || null;
   const initialPoints = initialPlot?.coordinates?.length
-    ? initialPlot.coordinates.map((coordinate) =>
-        L.latLng(coordinate.lat, coordinate.lng),
-      )
+    ? initialPlot.coordinates.map((coordinate) => ({
+        lat: coordinate.lat,
+        lng: coordinate.lng,
+      }))
     : [];
   const initialMapCenter = initialPoints.length
-    ? getBoundsFromPoints(initialPoints).getCenter()
+    ? getCenterFromPoints(initialPoints)
     : initialArea?.coordinates?.length
-      ? getBoundsFromPoints(
-          initialArea.coordinates.map((coordinate) =>
-            L.latLng(coordinate.lat, coordinate.lng),
-          ),
-        ).getCenter()
+      ? getCenterFromPoints(
+          initialArea.coordinates.map((coordinate) => ({
+            lat: coordinate.lat,
+            lng: coordinate.lng,
+          })),
+        )
       : DEFAULT_PLOT_MAP_CENTER;
 
   const [areaDialogOpen, setAreaDialogOpen] = useState(false);
@@ -122,8 +127,8 @@ export const useCultivationPlotForm = () => {
   );
   const [cropSearchTerm, setCropSearchTerm] = useState("");
 
-  const [plotPoints, setPlotPoints] = useState<L.LatLng[]>(initialPoints);
-  const [mapCenter, setMapCenter] = useState<L.LatLng>(initialMapCenter);
+  const [plotPoints, setPlotPoints] = useState<LatLng[]>(initialPoints);
+  const [mapCenter, setMapCenter] = useState<LatLng>(initialMapCenter);
   const [activePointIndex, setActivePointIndex] = useState<number | null>(null);
   const [pointWarnings, setPointWarnings] = useState<
     Record<number, CultivationPlotPointWarning>
@@ -197,7 +202,7 @@ export const useCultivationPlotForm = () => {
     return Number((area(poly) / 10000).toFixed(4));
   }, [plotPoints]);
 
-  const validatePoint = (latlng: L.LatLng, index: number) => {
+  const validatePoint = (latlng: LatLng, index: number) => {
     const targetPoint = point([latlng.lng, latlng.lat]);
 
     if (areaPolygonFeature && !booleanPointInPolygon(targetPoint, areaPolygonFeature)) {
@@ -237,7 +242,7 @@ export const useCultivationPlotForm = () => {
 
   const handlePointDrag = (
     index: number,
-    latlng: L.LatLng,
+    latlng: LatLng,
     finalize = false,
   ) => {
     setPlotPoints((previous) => {
@@ -275,20 +280,22 @@ export const useCultivationPlotForm = () => {
     if (!name) setName(plot.name);
 
     if (plot.coordinates?.length >= 3) {
-      const points = plot.coordinates.map((coordinate) =>
-        L.latLng(coordinate.lat, coordinate.lng),
-      );
+      const points = plot.coordinates.map((coordinate) => ({
+        lat: coordinate.lat,
+        lng: coordinate.lng,
+      }));
       setPlotPoints(points);
-      setMapCenter(getBoundsFromPoints(points).getCenter());
+      setMapCenter(getCenterFromPoints(points));
       return;
     }
 
     const center = area.coordinates?.length
-      ? getBoundsFromPoints(
-          area.coordinates.map((coordinate) =>
-            L.latLng(coordinate.lat, coordinate.lng),
-          ),
-        ).getCenter()
+      ? getCenterFromPoints(
+          area.coordinates.map((coordinate) => ({
+            lat: coordinate.lat,
+            lng: coordinate.lng,
+          })),
+        )
       : DEFAULT_PLOT_MAP_CENTER;
     setMapCenter(center);
     setPlotPoints(getDefaultTriangle(center));

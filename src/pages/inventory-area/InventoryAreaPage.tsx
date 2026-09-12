@@ -22,42 +22,24 @@ import {
   ThermometerSnowflake,
   Trash2,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
 import useWarehouseStore from "../../stores/useWarehouseStore";
 
-// Leaflet imports
-import L from "leaflet";
-import "leaflet/dist/leaflet.css";
-import { MapContainer, Marker, TileLayer, useMap } from "react-leaflet";
+// Google Maps imports
+import { GoogleMap, Marker, useJsApiLoader } from "@react-google-maps/api";
 
-// Leaflet default icon setup
-import defaultMarkerIcon2xUrl from "leaflet/dist/images/marker-icon-2x.png";
-import defaultMarkerIconUrl from "leaflet/dist/images/marker-icon.png";
-import defaultMarkerShadowUrl from "leaflet/dist/images/marker-shadow.png";
-
-const defaultLeafletIcon = L.icon({
-  iconUrl: defaultMarkerIconUrl,
-  iconRetinaUrl: defaultMarkerIcon2xUrl,
-  shadowUrl: defaultMarkerShadowUrl,
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
-  popupAnchor: [1, -34],
-  shadowSize: [41, 41],
-});
-
-const MapCenterSync = ({ center }: { center: [number, number] }) => {
-  const map = useMap();
-  useEffect(() => {
-    map.setView(center, 15);
-  }, [center, map]);
-  return null;
-};
+const mapContainerStyle = { height: "100%", width: "100%" };
 
 export default function InventoryAreaPage() {
   const { toast } = useToast();
   const [, setLocation] = useLocation();
   const { areas, allocations, deleteArea } = useWarehouseStore();
+  const { isLoaded } = useJsApiLoader({
+    id: "google-map-script",
+    googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY?.trim() ?? "",
+  });
+  const mapRef = useRef<google.maps.Map | null>(null);
 
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedAreaId, setSelectedAreaId] = useState<string | null>(
@@ -72,6 +54,15 @@ export default function InventoryAreaPage() {
   const selectedAllocations = allocations.filter(
     (al) => al.areaId === (selectedArea?.id || ""),
   );
+
+  useEffect(() => {
+    if (!mapRef.current || !selectedArea) return;
+    mapRef.current.setCenter({
+      lat: selectedArea.latitude,
+      lng: selectedArea.longitude,
+    });
+    mapRef.current.setZoom(15);
+  }, [selectedArea?.latitude, selectedArea?.longitude]);
 
   const filteredAreas = areas.filter(
     (a) =>
@@ -329,33 +320,36 @@ export default function InventoryAreaPage() {
                       điểm
                     </h3>
                     <div className="relative h-60 w-full rounded-xl overflow-hidden border shadow-inner z-0">
-                      <MapContainer
-                        center={[selectedArea.latitude, selectedArea.longitude]}
-                        zoom={15}
-                        style={{ height: "100%", width: "100%" }}
-                        zoomControl={false}
-                        doubleClickZoom={false}
-                        scrollWheelZoom={false}
-                        dragging={false}
-                      >
-                        <TileLayer
-                          attribution="&copy; OpenStreetMap contributors"
-                          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                        />
-                        <Marker
-                          position={[
-                            selectedArea.latitude,
-                            selectedArea.longitude,
-                          ]}
-                          icon={defaultLeafletIcon}
-                        />
-                        <MapCenterSync
-                          center={[
-                            selectedArea.latitude,
-                            selectedArea.longitude,
-                          ]}
-                        />
-                      </MapContainer>
+                      {isLoaded ? (
+                        <GoogleMap
+                          mapContainerStyle={mapContainerStyle}
+                          center={{
+                            lat: selectedArea.latitude,
+                            lng: selectedArea.longitude,
+                          }}
+                          zoom={15}
+                          options={{
+                            zoomControl: false,
+                            disableDoubleClickZoom: true,
+                            scrollwheel: false,
+                            draggable: false,
+                          }}
+                          onLoad={(map) => {
+                            mapRef.current = map;
+                          }}
+                        >
+                          <Marker
+                            position={{
+                              lat: selectedArea.latitude,
+                              lng: selectedArea.longitude,
+                            }}
+                          />
+                        </GoogleMap>
+                      ) : (
+                        <div className="flex h-full w-full items-center justify-center text-sm text-muted-foreground">
+                          Đang tải bản đồ...
+                        </div>
+                      )}
                     </div>
                   </div>
                 </CardContent>

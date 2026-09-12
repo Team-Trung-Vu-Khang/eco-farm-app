@@ -15,7 +15,7 @@ import {
   useToast,
   type Column,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import "leaflet/dist/leaflet.css";
+import { GoogleMap, Marker, Polygon, useJsApiLoader } from "@react-google-maps/api";
 import {
   Award,
   Building2,
@@ -31,14 +31,7 @@ import {
   Search,
   ShieldCheck,
 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
-import {
-  CircleMarker,
-  MapContainer,
-  Polygon,
-  TileLayer,
-  useMap,
-} from "react-leaflet";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   AQUACULTURE_IDENTIFICATION_GEO_UNITS,
   AQUACULTURE_IDENTIFICATION_PLANTS,
@@ -91,14 +84,117 @@ const makeClosedPath = (coordinates?: Array<{ lat: number; lng: number }>) => {
   return path;
 };
 
-const MapSync = ({ center, zoom }: { center: LatLngTuple; zoom: number }) => {
-  const map = useMap();
+const mapContainerStyle = { width: "100%", height: "100%" };
+
+const IdentificationGoogleMap = ({
+  center,
+  zoom,
+  regionPath,
+  areaPath,
+  plotPath,
+  markers,
+  onMarkerClick,
+}: {
+  center: LatLngTuple;
+  zoom: number;
+  regionPath: LatLngTuple[];
+  areaPath: LatLngTuple[];
+  plotPath: LatLngTuple[];
+  markers: SearchRecord[];
+  onMarkerClick: (record: SearchRecord) => void;
+}) => {
+  const { isLoaded } = useJsApiLoader({
+    id: "google-map-script",
+    googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY?.trim() ?? "",
+  });
+  const mapRef = useRef<google.maps.Map | null>(null);
 
   useEffect(() => {
-    map.setView(center, zoom, { animate: true });
-  }, [center, map, zoom]);
+    const map = mapRef.current;
+    if (!map) return;
+    map.panTo({ lat: center[0], lng: center[1] });
+    map.setZoom(zoom);
+  }, [center, zoom]);
 
-  return null;
+  if (!isLoaded) {
+    return (
+      <div className="flex h-full w-full items-center justify-center text-sm text-muted-foreground">
+        Đang tải bản đồ...
+      </div>
+    );
+  }
+
+  const markerColor = (status: SearchStatus) =>
+    status === "healthy"
+      ? "#16a34a"
+      : status === "monitoring"
+        ? "#d97706"
+        : "#dc2626";
+
+  return (
+    <GoogleMap
+      mapContainerStyle={mapContainerStyle}
+      center={{ lat: center[0], lng: center[1] }}
+      zoom={zoom}
+      options={{ zoomControl: false }}
+      onLoad={(map) => {
+        mapRef.current = map;
+      }}
+    >
+      {regionPath.length > 0 ? (
+        <Polygon
+          paths={regionPath.map(([lat, lng]) => ({ lat, lng }))}
+          options={{
+            strokeColor: "#3b82f6",
+            strokeWeight: 3,
+            fillColor: "#3b82f6",
+            fillOpacity: 0.1,
+          }}
+        />
+      ) : null}
+      {areaPath.length > 0 ? (
+        <Polygon
+          paths={areaPath.map(([lat, lng]) => ({ lat, lng }))}
+          options={{
+            strokeColor: "#22c55e",
+            strokeWeight: 2,
+            fillColor: "#22c55e",
+            fillOpacity: 0.15,
+          }}
+        />
+      ) : null}
+      {plotPath.length > 0 ? (
+        <Polygon
+          paths={plotPath.map(([lat, lng]) => ({ lat, lng }))}
+          options={{
+            strokeColor: "#f97316",
+            strokeWeight: 1.5,
+            fillColor: "#f97316",
+            fillOpacity: 0.2,
+          }}
+        />
+      ) : null}
+
+      {markers.map((record) => (
+        <Marker
+          key={record.id}
+          position={{
+            lat: record.coordinate.lat,
+            lng: record.coordinate.lng,
+          }}
+          icon={{
+            path: google.maps.SymbolPath.CIRCLE,
+            scale: 8,
+            fillColor: markerColor(record.healthStatus),
+            fillOpacity: 0.8,
+            strokeColor: markerColor(record.healthStatus),
+            strokeWeight: 2,
+          }}
+          onClick={() => onMarkerClick(record)}
+        />
+      ))}
+    </GoogleMap>
+  );
 };
 
 const AQUACULTURE_SEARCH_RECORDS: SearchRecord[] = [
@@ -525,27 +621,31 @@ const SearchCropPage = () => {
       const matchesSearch =
         record.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         record.code.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        record.regionName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        record.areaName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (record.regionName ?? "")
+          .toLowerCase()
+          .includes(searchQuery.toLowerCase()) ||
+        (record.areaName ?? "")
+          .toLowerCase()
+          .includes(searchQuery.toLowerCase()) ||
         record.species.toLowerCase().includes(searchQuery.toLowerCase());
 
       const matchesSpecies =
-        advancedFilters.species?.length > 0
-          ? advancedFilters.species.includes(record.species)
+        (advancedFilters.species?.length ?? 0) > 0
+          ? (advancedFilters.species ?? []).includes(record.species)
           : true;
       const matchesStatus =
-        advancedFilters.status?.length > 0
-          ? advancedFilters.status.includes(record.healthStatus)
+        (advancedFilters.status?.length ?? 0) > 0
+          ? (advancedFilters.status ?? []).includes(record.healthStatus)
           : true;
       const matchesAge = advancedFilters.age
         ? Math.abs(Number(record.ageValue || 0) - advancedFilters.age) <= 6
         : true;
       const matchesRegion =
         selectedRegionIds.length > 0
-          ? selectedRegionIds.includes(record.cultivationRegionId)
+          ? selectedRegionIds.includes(String(record.cultivationRegionId))
           : true;
       const matchesCertification =
-        advancedFilters.certifications?.length > 0
+        (advancedFilters.certifications?.length ?? 0) > 0
           ? record.certifications.some((cert) =>
               advancedFilters.certifications?.includes(cert),
             )
@@ -719,19 +819,19 @@ const SearchCropPage = () => {
       {
         key: "code",
         label: "Mã hiệu",
-        render: (value: string) => (
+        render: (value: unknown) => (
           <span className="font-bold text-slate-800 bg-slate-100 px-2 py-1 rounded-lg text-xs">
-            {value}
+            {String(value)}
           </span>
         ),
       },
       {
         key: "name",
         label: "Tên & Loại",
-        render: (value: string, item: SearchRecord) => (
+        render: (value: unknown, item: SearchRecord) => (
           <div>
             <div className="font-black text-slate-800 text-sm leading-tight">
-              {value}
+              {String(value)}
             </div>
             <div className="text-[10px] text-slate-500 font-bold uppercase tracking-tight">
               {item.species}
@@ -742,30 +842,33 @@ const SearchCropPage = () => {
       {
         key: "plantedDate",
         label: "Ngày ghi nhận",
-        render: (value: string) => (
+        render: (value: unknown) => (
           <span className="text-xs font-bold text-slate-600">
-            {new Date(value).toLocaleDateString("vi-VN")}
+            {new Date(String(value)).toLocaleDateString("vi-VN")}
           </span>
         ),
       },
       {
         key: "coordinate",
         label: "Tọa độ",
-        render: (value: SearchRecord["coordinate"]) => (
-          <code className="text-[11px] bg-slate-50 px-2 py-1 rounded-md text-slate-500 border border-slate-100">
-            {value.lat.toFixed(6)}, {value.lng.toFixed(6)}
-          </code>
-        ),
+        render: (value: unknown) => {
+          const coordinate = value as SearchRecord["coordinate"];
+          return (
+            <code className="text-[11px] bg-slate-50 px-2 py-1 rounded-md text-slate-500 border border-slate-100">
+              {coordinate.lat.toFixed(6)}, {coordinate.lng.toFixed(6)}
+            </code>
+          );
+        },
       },
       {
         key: "areaName",
         label: "Khu vực",
-        render: (value: string) => (
+        render: (value: unknown) => (
           <Badge
             variant="outline"
             className="text-[10px] border-slate-200 text-slate-500 font-bold"
           >
-            {value}
+            {String(value)}
           </Badge>
         ),
       },
@@ -1130,85 +1233,18 @@ const SearchCropPage = () => {
                           isRecordDialogOpen && "opacity-0",
                         )}
                       >
-                        <MapContainer
+                        <IdentificationGoogleMap
                           center={mapView.center}
                           zoom={mapView.zoom}
-                          className="h-full w-full"
-                          zoomControl={false}
-                          scrollWheelZoom
-                        >
-                          <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-                          <MapSync
-                            center={mapView.center}
-                            zoom={mapView.zoom}
-                          />
-                          {regionPath.length > 0 ? (
-                            <Polygon
-                              positions={regionPath}
-                              pathOptions={{
-                                color: "#3b82f6",
-                                weight: 3,
-                                fillColor: "#3b82f6",
-                                fillOpacity: 0.1,
-                              }}
-                            />
-                          ) : null}
-                          {areaPath.length > 0 ? (
-                            <Polygon
-                              positions={areaPath}
-                              pathOptions={{
-                                color: "#22c55e",
-                                weight: 2,
-                                fillColor: "#22c55e",
-                                fillOpacity: 0.15,
-                              }}
-                            />
-                          ) : null}
-                          {plotPath.length > 0 ? (
-                            <Polygon
-                              positions={plotPath}
-                              pathOptions={{
-                                color: "#f97316",
-                                weight: 1.5,
-                                fillColor: "#f97316",
-                                fillOpacity: 0.2,
-                              }}
-                            />
-                          ) : null}
-
-                          {mapMarkers.map((record) => (
-                            <CircleMarker
-                              key={record.id}
-                              center={[
-                                record.coordinate.lat,
-                                record.coordinate.lng,
-                              ]}
-                              radius={8}
-                              pathOptions={{
-                                color:
-                                  record.healthStatus === "healthy"
-                                    ? "#16a34a"
-                                    : record.healthStatus === "monitoring"
-                                      ? "#d97706"
-                                      : "#dc2626",
-                                fillColor:
-                                  record.healthStatus === "healthy"
-                                    ? "#16a34a"
-                                    : record.healthStatus === "monitoring"
-                                      ? "#d97706"
-                                      : "#dc2626",
-                                fillOpacity: 0.8,
-                                weight: 2,
-                              }}
-                              eventHandlers={{
-                                click: () => {
-                                  setActiveRecord(record);
-                                  setIsRecordDialogOpen(true);
-                                },
-                              }}
-                            />
-                          ))}
-                        </MapContainer>
+                          regionPath={regionPath}
+                          areaPath={areaPath}
+                          plotPath={plotPath}
+                          markers={mapMarkers}
+                          onMarkerClick={(record) => {
+                            setActiveRecord(record);
+                            setIsRecordDialogOpen(true);
+                          }}
+                        />
 
                         <div
                           onClick={() => setIsMapExpanded(true)}
@@ -1299,67 +1335,18 @@ const SearchCropPage = () => {
             {selectedRegion && (
               <div className="flex h-full w-full overflow-hidden">
                 <div className="flex-1 relative bg-white border-r">
-                  <MapContainer
+                  <IdentificationGoogleMap
                     center={mapView.center}
                     zoom={mapView.zoom}
-                    className="h-full w-full"
-                    zoomControl={false}
-                    scrollWheelZoom
-                  >
-                    <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-                    <MapSync center={mapView.center} zoom={mapView.zoom} />
-                    {regionPath.length > 0 ? (
-                      <Polygon
-                        positions={regionPath}
-                        pathOptions={{
-                          color: "#3b82f6",
-                          weight: 3,
-                          fillColor: "#3b82f6",
-                          fillOpacity: 0.1,
-                        }}
-                      />
-                    ) : null}
-                    {areaPath.length > 0 ? (
-                      <Polygon
-                        positions={areaPath}
-                        pathOptions={{
-                          color: "#22c55e",
-                          weight: 2,
-                          fillColor: "#22c55e",
-                          fillOpacity: 0.15,
-                        }}
-                      />
-                    ) : null}
-                    {mapMarkers.map((record) => (
-                      <CircleMarker
-                        key={record.id}
-                        center={[record.coordinate.lat, record.coordinate.lng]}
-                        radius={8}
-                        pathOptions={{
-                          color:
-                            record.healthStatus === "healthy"
-                              ? "#16a34a"
-                              : record.healthStatus === "monitoring"
-                                ? "#d97706"
-                                : "#dc2626",
-                          fillColor:
-                            record.healthStatus === "healthy"
-                              ? "#16a34a"
-                              : record.healthStatus === "monitoring"
-                                ? "#d97706"
-                                : "#dc2626",
-                          fillOpacity: 0.8,
-                          weight: 2,
-                        }}
-                        eventHandlers={{
-                          click: () => {
-                            setActiveRecord(record);
-                            setIsRecordDialogOpen(true);
-                          },
-                        }}
-                      />
-                    ))}
-                  </MapContainer>
+                    regionPath={regionPath}
+                    areaPath={areaPath}
+                    plotPath={[]}
+                    markers={mapMarkers}
+                    onMarkerClick={(record) => {
+                      setActiveRecord(record);
+                      setIsRecordDialogOpen(true);
+                    }}
+                  />
                   <div
                     className="p-3 rounded-xl cursor-pointer absolute top-4 right-4 z-1000 bg-white/90 backdrop-blur-sm shadow-xl hover:bg-white transition-colors"
                     onClick={() => setIsMapExpanded(false)}
@@ -1443,15 +1430,6 @@ const SearchCropPage = () => {
           onOpenChange={setIsRecordDialogOpen}
           record={activeRecord}
         />
-
-        <style>{`
-          .leaflet-container {
-            height: 100%;
-            width: 100%;
-            font-family: inherit;
-            background: #e2e8f0;
-          }
-        `}</style>
       </div>
     </PageWrapper>
   );

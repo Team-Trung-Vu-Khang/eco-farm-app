@@ -1,5 +1,4 @@
 import { Tabs, TabsList, TabsTrigger } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import "leaflet/dist/leaflet.css";
 import type { CropDetail } from "../../constants";
 import { useCropDetailDialogContent } from "../hooks/useCropDetailDialogContent";
 import TaskDetailDialog from "../../../task/components/TaskDetailDialog";
@@ -35,7 +34,6 @@ export const CropDetailDialogContent = ({
     setIsScopeMapExpanded,
     focusScopeMapToCoordinates,
     formatFullAddress,
-    cropMarkerIcon,
     regionIndex,
     scopeMapRef,
     expandedScopeMapRef,
@@ -101,7 +99,6 @@ export const CropDetailDialogContent = ({
         setIsScopeMapExpanded={setIsScopeMapExpanded}
         focusScopeMapToCoordinates={focusScopeMapToCoordinates}
         formatFullAddress={formatFullAddress}
-        cropMarkerIcon={cropMarkerIcon}
         regionIndex={regionIndex}
         scopeMapRef={scopeMapRef}
         expandedScopeMapRef={expandedScopeMapRef}

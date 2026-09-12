@@ -1,10 +1,9 @@
-import { Rectangle, Marker, useMap } from "react-leaflet";
-import L from "leaflet";
+import { Marker, Rectangle, useGoogleMap } from "@react-google-maps/api";
 import { useEffect } from "react";
 
 interface DraggableRectangleProps {
-  bounds: L.LatLngBoundsExpression;
-  setBounds: (b: L.LatLngBounds) => void;
+  bounds: google.maps.LatLngBoundsLiteral;
+  setBounds: (b: google.maps.LatLngBoundsLiteral) => void;
   color?: string;
 }
 
@@ -13,75 +12,66 @@ export const DraggableRectangle = ({
   setBounds,
   color = "blue",
 }: DraggableRectangleProps) => {
-  // Ensure we have a LatLngBounds object
-  const boundsObj =
-    bounds instanceof L.LatLngBounds ? bounds : L.latLngBounds(bounds as any);
-  const sw = boundsObj.getSouthWest();
-  const ne = boundsObj.getNorthEast();
+  const { north, south, east, west } = bounds;
 
-  const nw = L.latLng(ne.lat, sw.lng);
-  const se = L.latLng(sw.lat, ne.lng);
+  const sw = { lat: south, lng: west };
+  const ne = { lat: north, lng: east };
+  const nw = { lat: north, lng: west };
+  const se = { lat: south, lng: east };
 
-  const handleDragSW = (e: any) => {
-    const newLatLng = e.target.getLatLng();
-    setBounds(L.latLngBounds(newLatLng, ne));
+  const handleDragSW = (e: google.maps.MapMouseEvent) => {
+    if (!e.latLng) return;
+    setBounds({ south: e.latLng.lat(), west: e.latLng.lng(), north, east });
   };
 
-  const handleDragNE = (e: any) => {
-    const newLatLng = e.target.getLatLng();
-    setBounds(L.latLngBounds(sw, newLatLng));
+  const handleDragNE = (e: google.maps.MapMouseEvent) => {
+    if (!e.latLng) return;
+    setBounds({ south, west, north: e.latLng.lat(), east: e.latLng.lng() });
   };
 
-  const handleDragNW = (e: any) => {
-    const newLatLng = e.target.getLatLng();
+  const handleDragNW = (e: google.maps.MapMouseEvent) => {
+    if (!e.latLng) return;
     // NW drag -> SE fixed
-    setBounds(L.latLngBounds(se, newLatLng));
+    setBounds({ south, east, north: e.latLng.lat(), west: e.latLng.lng() });
   };
 
-  const handleDragSE = (e: any) => {
-    const newLatLng = e.target.getLatLng();
+  const handleDragSE = (e: google.maps.MapMouseEvent) => {
+    if (!e.latLng) return;
     // SE drag -> NW fixed
-    setBounds(L.latLngBounds(nw, newLatLng));
+    setBounds({ north, west, south: e.latLng.lat(), east: e.latLng.lng() });
   };
 
   return (
     <>
-      <Rectangle bounds={bounds} pathOptions={{ color: color }} />
+      <Rectangle
+        bounds={bounds}
+        options={{ strokeColor: color, fillOpacity: 0.1 }}
+      />
       {/* SW */}
-      <Marker
-        position={sw}
-        draggable={true}
-        eventHandlers={{ drag: handleDragSW }}
-      />
+      <Marker position={sw} draggable onDrag={handleDragSW} />
       {/* NE */}
-      <Marker
-        position={ne}
-        draggable={true}
-        eventHandlers={{ drag: handleDragNE }}
-      />
+      <Marker position={ne} draggable onDrag={handleDragNE} />
       {/* NW */}
-      <Marker
-        position={nw}
-        draggable={true}
-        eventHandlers={{ drag: handleDragNW }}
-      />
+      <Marker position={nw} draggable onDrag={handleDragNW} />
       {/* SE */}
-      <Marker
-        position={se}
-        draggable={true}
-        eventHandlers={{ drag: handleDragSE }}
-      />
+      <Marker position={se} draggable onDrag={handleDragSE} />
     </>
   );
 };
 
-export const MapController = ({ center }: { center: L.LatLngExpression }) => {
-  const map = useMap();
+export const MapController = ({
+  center,
+}: {
+  center: { lat: number; lng: number };
+}) => {
+  const map = useGoogleMap();
 
   useEffect(() => {
+    if (!map) return;
     // Keep the current zoom level instead of forcing a default so manual zooms persist
     const currentZoom = map.getZoom();
-    map.flyTo(center, currentZoom);
+    map.panTo(center);
+    if (currentZoom !== undefined) map.setZoom(currentZoom);
   }, [center, map]);
 
   return null;

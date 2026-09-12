@@ -31,15 +31,9 @@ import {
   User,
   X,
 } from "lucide-react";
-import type { ReactNode } from "react";
-import {
-  MapContainer,
-  Marker,
-  Polygon,
-  TileLayer,
-  Tooltip as LeafletTooltip,
-} from "react-leaflet";
-import L from "leaflet";
+import { GoogleMap, InfoWindow, OverlayView, Polygon, useJsApiLoader } from "@react-google-maps/api";
+import type { ReactNode, RefObject } from "react";
+import { useState } from "react";
 import styles from "../styles.module.css";
 import type {
   Coordinate,
@@ -236,99 +230,126 @@ const ScopeMapPolygons = ({
   CropDetailOverviewProps,
   "scopeMapData" | "formatFullAddress" | "focusScopeMapToCoordinates" | "regionIndex"
 >) => {
+  const [hoveredKey, setHoveredKey] = useState<string | null>(null);
+
   if (!scopeMapData) return null;
 
-  const handleClick = (coordinates?: Coordinate[]) => (event: L.LeafletEvent) => {
-    L.DomEvent.stopPropagation(event);
-    focusScopeMapToCoordinates(coordinates);
+  const centerOf = (coordinates: Coordinate[]) => {
+    const lat = coordinates.reduce((sum, p) => sum + p.lat, 0) / coordinates.length;
+    const lng = coordinates.reduce((sum, p) => sum + p.lng, 0) / coordinates.length;
+    return { lat, lng };
   };
 
   return (
     <>
       {scopeMapData.regions.map(({ region, explicit }) => {
         if (!region.coordinates || region.coordinates.length < 3) return null;
+        const key = `scope-region-${region.id}`;
 
         return (
-          <Polygon
-            key={`scope-region-${region.id}`}
-            positions={region.coordinates.map((item) => [item.lat, item.lng])}
-            pathOptions={{
-              color: "#3b82f6",
-              weight: explicit ? 2.5 : 2,
-              fillColor: "#3b82f6",
-              fillOpacity: explicit ? 0.08 : 0,
-              dashArray: explicit ? undefined : "6, 6",
-            }}
-            eventHandlers={{ click: handleClick(region.coordinates) }}
-          >
-            <LeafletTooltip sticky>
-              <ScopeTooltip
-                title="Vùng trồng"
-                titleClassName="border-blue-100 text-blue-600"
-                name={`${region.code}: ${region.name}`}
-                area={region.area}
-                address={formatFullAddress(region)}
-              />
-            </LeafletTooltip>
-          </Polygon>
+          <div key={key}>
+            <Polygon
+              paths={region.coordinates}
+              options={{
+                strokeColor: "#3b82f6",
+                strokeWeight: explicit ? 2.5 : 2,
+                fillColor: "#3b82f6",
+                fillOpacity: explicit ? 0.08 : 0,
+              }}
+              onClick={() => focusScopeMapToCoordinates(region.coordinates)}
+              onMouseOver={() => setHoveredKey(key)}
+              onMouseOut={() => setHoveredKey(null)}
+            />
+            {hoveredKey === key && (
+              <InfoWindow
+                position={centerOf(region.coordinates)}
+                options={{ disableAutoPan: true }}
+                onCloseClick={() => setHoveredKey(null)}
+              >
+                <ScopeTooltip
+                  title="Vùng trồng"
+                  titleClassName="border-blue-100 text-blue-600"
+                  name={`${region.code}: ${region.name}`}
+                  area={region.area}
+                  address={formatFullAddress(region)}
+                />
+              </InfoWindow>
+            )}
+          </div>
         );
       })}
 
       {scopeMapData.areas.map(({ area, explicit }) => {
         if (!area.coordinates || area.coordinates.length < 3) return null;
+        const key = `scope-area-${area.id}`;
 
         return (
-          <Polygon
-            key={`scope-area-${area.id}`}
-            positions={area.coordinates.map((item) => [item.lat, item.lng])}
-            pathOptions={{
-              color: "#10b981",
-              weight: explicit ? 2.5 : 1.75,
-              fillColor: "#10b981",
-              fillOpacity: explicit ? 0.12 : 0.06,
-              dashArray: explicit ? undefined : "4, 6",
-            }}
-            eventHandlers={{ click: handleClick(area.coordinates) }}
-          >
-            <LeafletTooltip sticky>
-              <ScopeTooltip
-                title="Khu vực"
-                titleClassName="border-emerald-100 text-emerald-600"
-                name={`${area.code}: ${area.name}`}
-                area={area.area}
-                address={formatFullAddress(regionIndex.areaById.get(String(area.id))?.region)}
-              />
-            </LeafletTooltip>
-          </Polygon>
+          <div key={key}>
+            <Polygon
+              paths={area.coordinates}
+              options={{
+                strokeColor: "#10b981",
+                strokeWeight: explicit ? 2.5 : 1.75,
+                fillColor: "#10b981",
+                fillOpacity: explicit ? 0.12 : 0.06,
+              }}
+              onClick={() => focusScopeMapToCoordinates(area.coordinates)}
+              onMouseOver={() => setHoveredKey(key)}
+              onMouseOut={() => setHoveredKey(null)}
+            />
+            {hoveredKey === key && (
+              <InfoWindow
+                position={centerOf(area.coordinates)}
+                options={{ disableAutoPan: true }}
+                onCloseClick={() => setHoveredKey(null)}
+              >
+                <ScopeTooltip
+                  title="Khu vực"
+                  titleClassName="border-emerald-100 text-emerald-600"
+                  name={`${area.code}: ${area.name}`}
+                  area={area.area}
+                  address={formatFullAddress(regionIndex.areaById.get(String(area.id))?.region)}
+                />
+              </InfoWindow>
+            )}
+          </div>
         );
       })}
 
       {scopeMapData.plots.map(({ plot, explicit }) => {
         if (!plot.coordinates || plot.coordinates.length < 3) return null;
+        const key = `scope-plot-${plot.id}`;
 
         return (
-          <Polygon
-            key={`scope-plot-${plot.id}`}
-            positions={plot.coordinates.map((item) => [item.lat, item.lng])}
-            pathOptions={{
-              color: "#f59e0b",
-              weight: explicit ? 2.25 : 1.5,
-              fillColor: "#f59e0b",
-              fillOpacity: explicit ? 0.22 : 0.12,
-              dashArray: explicit ? undefined : "3, 7",
-            }}
-            eventHandlers={{ click: handleClick(plot.coordinates) }}
-          >
-            <LeafletTooltip sticky>
-              <ScopeTooltip
-                title="Lô đất"
-                titleClassName="border-amber-100 text-amber-600"
-                name={`${plot.code}: ${plot.name}`}
-                area={plot.area}
-                address={formatFullAddress(regionIndex.plotById.get(String(plot.id))?.region)}
-              />
-            </LeafletTooltip>
-          </Polygon>
+          <div key={key}>
+            <Polygon
+              paths={plot.coordinates}
+              options={{
+                strokeColor: "#f59e0b",
+                strokeWeight: explicit ? 2.25 : 1.5,
+                fillColor: "#f59e0b",
+                fillOpacity: explicit ? 0.22 : 0.12,
+              }}
+              onClick={() => focusScopeMapToCoordinates(plot.coordinates)}
+              onMouseOver={() => setHoveredKey(key)}
+              onMouseOut={() => setHoveredKey(null)}
+            />
+            {hoveredKey === key && (
+              <InfoWindow
+                position={centerOf(plot.coordinates)}
+                options={{ disableAutoPan: true }}
+                onCloseClick={() => setHoveredKey(null)}
+              >
+                <ScopeTooltip
+                  title="Lô đất"
+                  titleClassName="border-amber-100 text-amber-600"
+                  name={`${plot.code}: ${plot.name}`}
+                  area={plot.area}
+                  address={formatFullAddress(regionIndex.plotById.get(String(plot.id))?.region)}
+                />
+              </InfoWindow>
+            )}
+          </div>
         );
       })}
     </>
@@ -380,21 +401,85 @@ const ScopeTooltip = ({
 
 const CropMarker = ({
   activeCrop,
-  cropMarkerIcon,
-}: Pick<CropDetailOverviewProps, "activeCrop" | "cropMarkerIcon">) => {
+}: Pick<CropDetailOverviewProps, "activeCrop">) => {
   if (!activeCrop.coordinate) return null;
 
   return (
-    <Marker
-      position={[activeCrop.coordinate.lat, activeCrop.coordinate.lng]}
-      icon={cropMarkerIcon}
+    <OverlayView
+      position={{ lat: activeCrop.coordinate.lat, lng: activeCrop.coordinate.lng }}
+      mapPaneName={OverlayView.OVERLAY_MOUSE_TARGET}
     >
-      <LeafletTooltip direction="top" offset={[0, -10]}>
-        <div className="text-[10px] font-bold text-primary">
+      <div
+        style={{
+          position: "relative",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          transform: "translate(-50%, -100%)",
+        }}
+      >
+        <div className="mb-1 whitespace-nowrap rounded-md bg-white/90 px-1.5 py-0.5 text-[10px] font-bold text-primary shadow-sm">
           {activeCrop.code || activeCrop.name}
         </div>
-      </LeafletTooltip>
-    </Marker>
+        <div
+          style={{
+            width: 18,
+            height: 18,
+            borderRadius: "9999px",
+            background: "#22c55e",
+            border: "2px solid #fff",
+            boxShadow: "0 0 10px rgba(34,197,94,0.6)",
+          }}
+        />
+      </div>
+    </OverlayView>
+  );
+};
+
+const mapContainerStyle = { width: "100%", height: "100%" };
+
+const ScopeGoogleMap = ({
+  mapRef,
+  bounds,
+  padding,
+  children,
+}: {
+  mapRef: RefObject<google.maps.Map | null>;
+  bounds: [number, number][] | null;
+  padding: number;
+  children: ReactNode;
+}) => {
+  const { isLoaded } = useJsApiLoader({
+    id: "google-map-script",
+    googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY?.trim() ?? "",
+  });
+
+  if (!isLoaded) {
+    return (
+      <div className="flex h-full w-full items-center justify-center text-sm text-muted-foreground">
+        Đang tải bản đồ...
+      </div>
+    );
+  }
+
+  return (
+    <GoogleMap
+      mapContainerStyle={mapContainerStyle}
+      zoom={13}
+      options={{ mapTypeId: "satellite" }}
+      onLoad={(map) => {
+        mapRef.current = map;
+        if (bounds && bounds.length > 0) {
+          const googleBounds = new google.maps.LatLngBounds();
+          bounds.forEach(([lat, lng]) => googleBounds.extend({ lat, lng }));
+          map.fitBounds(googleBounds, padding);
+        } else {
+          map.setCenter({ lat: 11.53, lng: 106.88 });
+        }
+      }}
+    >
+      {children}
+    </GoogleMap>
   );
 };
 
@@ -411,7 +496,6 @@ export const CropDetailOverviewTab = ({
   setIsScopeMapExpanded,
   focusScopeMapToCoordinates,
   formatFullAddress,
-  cropMarkerIcon,
   regionIndex,
   scopeMapRef,
   expandedScopeMapRef,
@@ -671,23 +755,15 @@ export const CropDetailOverviewTab = ({
             "relative z-10 aspect-video h-full min-h-[65vh] w-full overflow-hidden rounded-xl border border-slate-100 bg-slate-50 shadow-sm",
           )}
         >
-          <MapContainer
-            ref={scopeMapRef}
-            center={[11.53, 106.88]}
-            zoom={13}
-            bounds={scopeMapBounds ?? undefined}
-            boundsOptions={{ padding: [40, 40] }}
-            style={{ height: "100%", width: "100%" }}
-          >
-            <TileLayer url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}" />
+          <ScopeGoogleMap mapRef={scopeMapRef} bounds={scopeMapBounds} padding={40}>
             <ScopeMapPolygons
               scopeMapData={scopeMapData}
               formatFullAddress={formatFullAddress}
               focusScopeMapToCoordinates={focusScopeMapToCoordinates}
               regionIndex={regionIndex}
             />
-            <CropMarker activeCrop={activeCrop} cropMarkerIcon={cropMarkerIcon} />
-          </MapContainer>
+            <CropMarker activeCrop={activeCrop} />
+          </ScopeGoogleMap>
 
           <button
             type="button"
@@ -706,23 +782,19 @@ export const CropDetailOverviewTab = ({
             </DialogHeader>
             <div className="flex h-full">
               <div className="relative flex-1 bg-slate-100">
-                <MapContainer
-                  ref={expandedScopeMapRef}
-                  center={[11.53, 106.88]}
-                  zoom={13}
-                  bounds={scopeMapBounds ?? undefined}
-                  boundsOptions={{ padding: [60, 60] }}
-                  style={{ height: "100%", width: "100%" }}
+                <ScopeGoogleMap
+                  mapRef={expandedScopeMapRef}
+                  bounds={scopeMapBounds}
+                  padding={60}
                 >
-                  <TileLayer url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}" />
                   <ScopeMapPolygons
                     scopeMapData={scopeMapData}
                     formatFullAddress={formatFullAddress}
                     focusScopeMapToCoordinates={focusScopeMapToCoordinates}
                     regionIndex={regionIndex}
                   />
-                  <CropMarker activeCrop={activeCrop} cropMarkerIcon={cropMarkerIcon} />
-                </MapContainer>
+                  <CropMarker activeCrop={activeCrop} />
+                </ScopeGoogleMap>
 
                 <button
                   type="button"

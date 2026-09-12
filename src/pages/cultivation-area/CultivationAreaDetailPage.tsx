@@ -7,8 +7,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import L from "leaflet";
-import "leaflet/dist/leaflet.css";
+import { GoogleMap, Polygon, useJsApiLoader } from "@react-google-maps/api";
 import {
   Building2,
   Calendar,
@@ -23,17 +22,11 @@ import {
   Sprout,
   User,
 } from "lucide-react";
-import { MapContainer, Polygon, TileLayer, useMap } from "react-leaflet";
 import { Link } from "wouter";
 
 import { useCultivationAreaDetailPage } from "./hooks/useCultivationAreaDetailPage";
 
-// Map component to fly to the area
-const MapController = ({ center }: { center: L.LatLngExpression }) => {
-  const map = useMap();
-  map.setView(center, 16);
-  return null;
-};
+const mapContainerStyle = { width: "100%", height: "100%" };
 
 const CultivationAreaDetailPage = () => {
   const {
@@ -49,6 +42,11 @@ const CultivationAreaDetailPage = () => {
     goBack,
     goToEdit,
   } = useCultivationAreaDetailPage();
+
+  const { isLoaded } = useJsApiLoader({
+    id: "google-map-script",
+    googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY?.trim() ?? "",
+  });
 
   if (!data) {
     return (
@@ -81,29 +79,33 @@ const CultivationAreaDetailPage = () => {
         <div className="xl:col-span-2 space-y-6">
           <Card className="overflow-hidden border-none shadow-xl rounded-2xl">
             <div className="h-[400px] relative">
-              <MapContainer
-                center={center}
-                zoom={16}
-                className="h-full w-full"
-                zoomControl={false}
-              >
-                <TileLayer url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}" />
-                <MapController center={center} />
-                {geometry?.coordinates && (
-                  <Polygon
-                    positions={geometry.coordinates.map((coordinate) => [
-                      coordinate.lat,
-                      coordinate.lng,
-                    ])}
-                    pathOptions={{
-                      color: "#10b981",
-                      weight: 3,
-                      fillColor: "#10b981",
-                      fillOpacity: 0.15,
-                    }}
-                  />
-                )}
-              </MapContainer>
+              {isLoaded ? (
+                <GoogleMap
+                  mapContainerStyle={mapContainerStyle}
+                  center={center}
+                  zoom={16}
+                  options={{ zoomControl: false, mapTypeId: "satellite" }}
+                >
+                  {geometry?.coordinates && (
+                    <Polygon
+                      paths={geometry.coordinates.map((coordinate) => ({
+                        lat: coordinate.lat,
+                        lng: coordinate.lng,
+                      }))}
+                      options={{
+                        strokeColor: "#10b981",
+                        strokeWeight: 3,
+                        fillColor: "#10b981",
+                        fillOpacity: 0.15,
+                      }}
+                    />
+                  )}
+                </GoogleMap>
+              ) : (
+                <div className="h-full w-full flex items-center justify-center text-sm text-muted-foreground">
+                  Đang tải bản đồ...
+                </div>
+              )}
 
               <div className="absolute top-4 right-4 z-400 bg-white/90 backdrop-blur-md p-3 rounded-xl shadow-lg border border-slate-200">
                 <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">
