@@ -4,9 +4,8 @@ import {
   CardHeader,
   CardTitle,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { MapContainer, Polygon, TileLayer, Tooltip } from "react-leaflet";
+import { GoogleMap, Marker, Polygon, useJsApiLoader } from "@react-google-maps/api";
 import L from "leaflet";
-import "leaflet/dist/leaflet.css";
 import type { RegionFormValues } from "../data/region-form.schema";
 import { useAddressOptions } from "@/features/master-data/hooks/useAddressOptions";
 import { useCatalog } from "@/features/foundation/hooks/useCatalog";
@@ -15,7 +14,15 @@ import { useOrganizationById } from "@/features/organization/hooks/useOrganizati
 import { useSelectedWorkspaceId } from "@/features/workspace";
 import { useFormContext } from "react-hook-form";
 import { useMemo } from "react";
-import { getBoundsFromPoints } from "../utils";
+
+const mapContainerStyle = { width: "100%", height: "100%" };
+
+const centroidOf = (points: L.LatLng[]) => {
+  if (points.length === 0) return { lat: 0, lng: 0 };
+  const lat = points.reduce((sum, p) => sum + p.lat, 0) / points.length;
+  const lng = points.reduce((sum, p) => sum + p.lng, 0) / points.length;
+  return { lat, lng };
+};
 
 interface RegionReviewStepProps {
   showEnterprise?: boolean;
@@ -26,6 +33,11 @@ export const RegionReviewStep = ({
 }: RegionReviewStepProps = {}) => {
   const { watch } = useFormContext<RegionFormValues>();
   const formData = watch();
+
+  const { isLoaded } = useJsApiLoader({
+    id: "google-map-script",
+    googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY?.trim() ?? "",
+  });
 
   const { items: lands } = useCatalog("soil-types");
   const { items: terrains } = useCatalog("terrain-features");
@@ -248,61 +260,79 @@ export const RegionReviewStep = ({
         <CardContent className="p-0">
           {regionPoints.length >= 3 ? (
             <div className="relative h-[300px] w-full overflow-hidden">
-              <MapContainer
-                bounds={getBoundsFromPoints(regionPoints).pad(0.15)}
-                style={{ height: "100%", width: "100%" }}
-                zoomControl={false}
-                dragging={false}
-                scrollWheelZoom={false}
-                doubleClickZoom={false}
-                touchZoom={false}
-                keyboard={false}
-                attributionControl={false}
-              >
-                <TileLayer url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}" />
-
-                <Polygon
-                  positions={regionPoints.map(
-                    (point) => [point.lat, point.lng] as [number, number],
-                  )}
-                  pathOptions={{
-                    color: "#10b981",
-                    fillColor: "#10b981",
-                    fillOpacity: 0.15,
-                    weight: 2.5,
-                    dashArray: "6 4",
+              {isLoaded ? (
+                <GoogleMap
+                  mapContainerStyle={mapContainerStyle}
+                  center={centroidOf(regionPoints)}
+                  zoom={15}
+                  mapTypeId="satellite"
+                  options={{
+                    zoomControl: false,
+                    draggable: false,
+                    scrollwheel: false,
+                    disableDoubleClickZoom: true,
+                    keyboardShortcuts: false,
+                    gestureHandling: "none",
                   }}
-                />
+                  onLoad={(map) => {
+                    const bounds = new google.maps.LatLngBounds();
+                    regionPoints.forEach((p) =>
+                      bounds.extend({ lat: p.lat, lng: p.lng }),
+                    );
+                    map.fitBounds(bounds, 20);
+                  }}
+                >
+                  <Polygon
+                    paths={regionPoints}
+                    options={{
+                      strokeColor: "#10b981",
+                      fillColor: "#10b981",
+                      fillOpacity: 0.15,
+                      strokeWeight: 2.5,
+                    }}
+                  />
 
-                {subAreas
-                  .filter(
-                    (subArea) =>
-                      subArea.coordinates && subArea.coordinates.length >= 3,
-                  )
-                  .map((subArea, index) => (
-                    <Polygon
-                      key={subArea.id || index}
-                      positions={subArea.coordinates!.map(
-                        (coordinate) =>
-                          [coordinate.lat, coordinate.lng] as [number, number],
-                      )}
-                      pathOptions={{
-                        color: "#f59e0b",
-                        fillColor: "#f59e0b",
-                        fillOpacity: 0.25,
-                        weight: 2,
-                      }}
-                    >
-                      <Tooltip
-                        permanent
-                        direction="center"
-                        className="text-[10px] font-bold"
-                      >
-                        {subArea.name || `Khu ${index + 1}`}
-                      </Tooltip>
-                    </Polygon>
-                  ))}
-              </MapContainer>
+                  {subAreas
+                    .filter(
+                      (subArea) =>
+                        subArea.coordinates && subArea.coordinates.length >= 3,
+                    )
+                    .map((subArea, index) => {
+                      const subAreaPoints = subArea.coordinates!.map(
+                        (coordinate) => L.latLng(coordinate.lat, coordinate.lng),
+                      );
+                      return (
+                        <div key={subArea.id || index}>
+                          <Polygon
+                            paths={subAreaPoints}
+                            options={{
+                              strokeColor: "#f59e0b",
+                              fillColor: "#f59e0b",
+                              fillOpacity: 0.25,
+                              strokeWeight: 2,
+                            }}
+                          />
+                          <Marker
+                            position={centroidOf(subAreaPoints)}
+                            label={{
+                              text: subArea.name || `Khu ${index + 1}`,
+                              fontSize: "10px",
+                              fontWeight: "bold",
+                            }}
+                            icon={{
+                              url: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=",
+                              scaledSize: new google.maps.Size(1, 1),
+                            }}
+                          />
+                        </div>
+                      );
+                    })}
+                </GoogleMap>
+              ) : (
+                <div className="flex h-full w-full items-center justify-center text-sm text-muted-foreground">
+                  Đang tải bản đồ...
+                </div>
+              )}
 
               <div className="pointer-events-none absolute bottom-3 left-3 z-[500] flex flex-col gap-1.5 rounded-xl border border-slate-100 bg-white/90 px-3 py-2 text-[11px] font-semibold shadow-md backdrop-blur-sm">
                 <div className="flex items-center gap-1.5">

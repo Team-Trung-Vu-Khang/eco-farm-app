@@ -7,49 +7,40 @@ import {
   CardTitle,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import L from "leaflet";
-import "leaflet/dist/leaflet.css";
 import { ChevronLeft, Edit } from "lucide-react";
-import { useEffect } from "react";
-import {
-  MapContainer,
-  Marker,
-  Polygon,
-  TileLayer,
-  Tooltip,
-  useMap,
-} from "react-leaflet";
+import { useEffect, useRef, useState } from "react";
+import { GoogleMap, InfoWindow, Marker, Polygon, useJsApiLoader } from "@react-google-maps/api";
 
-import { getMarkerIcon } from "@/pages/cultivation-zone/cultivation-region/components/mapUtils";
+import { getMarkerIcon } from "@/pages/animal-husbandry-zone/animal-husbandry-region/components/mapUtils";
 import { RegionChartStatusBadge } from "../components/RegionChartStatusBadge";
 import { LAND_TYPES } from "../constants";
 import { useRegionDetailPage } from "../hooks/useRegionDetailPage";
 
+const mapContainerStyle = { width: "100%", height: "100%" };
+
 const closePath = (points: { lat: number; lng: number }[]) => {
   if (!points || points.length < 3) return [];
-  const path = points.map((p) => [p.lat, p.lng] as [number, number]);
-  const [firstLat, firstLng] = path[0];
-  const [lastLat, lastLng] = path[path.length - 1];
-  if (firstLat !== lastLat || firstLng !== lastLng) {
-    path.push([firstLat, firstLng]);
+  const path = points.map((p) => ({ lat: p.lat, lng: p.lng }));
+  const first = path[0];
+  const last = path[path.length - 1];
+  if (first.lat !== last.lat || first.lng !== last.lng) {
+    path.push({ lat: first.lat, lng: first.lng });
   }
   return path;
 };
 
-const getBoundsFromPolygons = (polygons: [number, number][][]) => {
+const getBoundsFromPolygons = (polygons: { lat: number; lng: number }[][]) => {
   const points = polygons.flat();
-  return points.length > 0 ? L.latLngBounds(points) : null;
+  return points.length > 0
+    ? L.latLngBounds(points.map((p) => L.latLng(p.lat, p.lng)))
+    : null;
 };
 
-const FitBounds = ({ bounds }: { bounds: L.LatLngBounds | null }) => {
-  const map = useMap();
-
-  useEffect(() => {
-    if (bounds && bounds.isValid()) {
-      map.fitBounds(bounds, { padding: [24, 24] });
-    }
-  }, [bounds, map]);
-
-  return null;
+const centroidOf = (points: { lat: number; lng: number }[]) => {
+  if (points.length === 0) return { lat: 0, lng: 0 };
+  const lat = points.reduce((sum, p) => sum + p.lat, 0) / points.length;
+  const lng = points.reduce((sum, p) => sum + p.lng, 0) / points.length;
+  return { lat, lng };
 };
 
 const RegionDetailPage = () => {
@@ -65,6 +56,13 @@ const RegionDetailPage = () => {
     navigateToDetail,
     crops,
   } = useRegionDetailPage();
+
+  const { isLoaded } = useJsApiLoader({
+    id: "google-map-script",
+    googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY?.trim() ?? "",
+  });
+  const mapRef = useRef<google.maps.Map | null>(null);
+  const [hoveredPolygon, setHoveredPolygon] = useState<string | null>(null);
 
   const mainCropsText = (crops || [])
     .filter((c) => c.role === "MAIN")
@@ -82,6 +80,16 @@ const RegionDetailPage = () => {
   const bounds = getBoundsFromPolygons(
     [regionPath, ...subAreaPaths].filter((path) => path.length > 0),
   );
+
+  useEffect(() => {
+    if (!isLoaded || !mapRef.current || !bounds || !bounds.isValid()) return;
+    const sw = bounds.getSouthWest();
+    const ne = bounds.getNorthEast();
+    mapRef.current.fitBounds(
+      { south: sw.lat, west: sw.lng, north: ne.lat, east: ne.lng },
+      24,
+    );
+  }, [isLoaded, bounds]);
 
   if (isLoading) {
     return (
@@ -254,64 +262,104 @@ const RegionDetailPage = () => {
             </CardHeader>
             <CardContent className="relative flex-1 overflow-hidden rounded-b-lg p-0">
               <div className="h-[600px] w-full">
-                <MapContainer
-                  center={center}
-                  zoom={14}
-                  className="h-full w-full"
-                  zoomControl={false}
-                  scrollWheelZoom
-                >
-                  <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-                  {bounds && <FitBounds bounds={bounds} />}
-
-                  {region.coordinates && region.coordinates.length > 0 && (
-                    <Polygon
-                      positions={regionPath}
-                      pathOptions={{
-                        color: "#2563eb",
-                        weight: 2,
-                        fillColor: "#2563eb",
-                        fillOpacity: 0.1,
-                      }}
-                    >
-                      <Tooltip direction="right">{region.name}</Tooltip>
-                    </Polygon>
-                  )}
-
-                  {region.centerPoint?.latitude !== undefined &&
-                    region.centerPoint?.longitude !== undefined && (
-                      <Marker
-                        position={[
-                          region.centerPoint.latitude,
-                          region.centerPoint.longitude,
-                        ]}
-                        icon={getMarkerIcon("blue")}
-                      >
-                        <Tooltip direction="top">{region.name}</Tooltip>
-                      </Marker>
+                {isLoaded ? (
+                  <GoogleMap
+                    mapContainerStyle={mapContainerStyle}
+                    center={
+                      center
+                        ? { lat: center[0], lng: center[1] }
+                        : { lat: 0, lng: 0 }
+                    }
+                    zoom={14}
+                    options={{ zoomControl: false }}
+                    onLoad={(map) => {
+                      mapRef.current = map;
+                    }}
+                  >
+                    {region.coordinates && region.coordinates.length > 0 && (
+                      <>
+                        <Polygon
+                          paths={regionPath}
+                          options={{
+                            strokeColor: "#2563eb",
+                            strokeWeight: 2,
+                            fillColor: "#2563eb",
+                            fillOpacity: 0.1,
+                          }}
+                          onMouseOver={() => setHoveredPolygon("region")}
+                          onMouseOut={() =>
+                            setHoveredPolygon((current) =>
+                              current === "region" ? null : current,
+                            )
+                          }
+                        />
+                        {hoveredPolygon === "region" && (
+                          <InfoWindow
+                            position={centroidOf(regionPath)}
+                            options={{ disableAutoPan: true }}
+                            onCloseClick={() => setHoveredPolygon(null)}
+                          >
+                            <div className="text-xs">{region.name}</div>
+                          </InfoWindow>
+                        )}
+                      </>
                     )}
 
-                  {region.subAreas?.map((sub) => {
-                    if (!sub.coordinates || sub.coordinates.length < 3) {
-                      return null;
-                    }
+                    {region.centerPoint?.latitude !== undefined &&
+                      region.centerPoint?.longitude !== undefined && (
+                        <Marker
+                          position={{
+                            lat: region.centerPoint.latitude,
+                            lng: region.centerPoint.longitude,
+                          }}
+                          icon={getMarkerIcon("blue")}
+                          title={region.name}
+                        />
+                      )}
 
-                    return (
-                      <Polygon
-                        key={sub.id}
-                        positions={closePath(sub.coordinates)}
-                        pathOptions={{
-                          color: "#16a34a",
-                          weight: 2,
-                          fillColor: "#16a34a",
-                          fillOpacity: 0.08,
-                        }}
-                      >
-                        <Tooltip direction="right">{sub.name}</Tooltip>
-                      </Polygon>
-                    );
-                  })}
-                </MapContainer>
+                    {region.subAreas?.map((sub) => {
+                      if (!sub.coordinates || sub.coordinates.length < 3) {
+                        return null;
+                      }
+                      const subPath = closePath(sub.coordinates);
+
+                      return (
+                        <div key={sub.id}>
+                          <Polygon
+                            paths={subPath}
+                            options={{
+                              strokeColor: "#16a34a",
+                              strokeWeight: 2,
+                              fillColor: "#16a34a",
+                              fillOpacity: 0.08,
+                            }}
+                            onMouseOver={() =>
+                              setHoveredPolygon(`sub-${sub.id}`)
+                            }
+                            onMouseOut={() =>
+                              setHoveredPolygon((current) =>
+                                current === `sub-${sub.id}` ? null : current,
+                              )
+                            }
+                          />
+                          {hoveredPolygon === `sub-${sub.id}` && (
+                            <InfoWindow
+                              position={centroidOf(subPath)}
+                              options={{ disableAutoPan: true }}
+                              onCloseClick={() => setHoveredPolygon(null)}
+                            >
+                              <div className="text-xs">{sub.name}</div>
+                            </InfoWindow>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </GoogleMap>
+                ) : (
+                  <div className="flex h-full w-full items-center justify-center text-sm text-muted-foreground">
+                    Đang tải bản đồ...
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>

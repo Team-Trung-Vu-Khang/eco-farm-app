@@ -24,20 +24,12 @@ import {
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import booleanPointInPolygon from "@turf/boolean-point-in-polygon";
 import { point, polygon } from "@turf/helpers";
+import { GoogleMap, Marker, Polygon, Polyline, useJsApiLoader } from "@react-google-maps/api";
+import { getMarkerIcon as getGoogleMarkerIcon } from "@/pages/animal-husbandry-zone/animal-husbandry-region/components/mapUtils";
 import L from "leaflet";
-import "leaflet/dist/leaflet.css";
 import { Edit, Maximize2, Plus, Trash2, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useForm, useFormContext } from "react-hook-form";
-import {
-  MapContainer,
-  Marker,
-  Polygon,
-  Polyline,
-  TileLayer,
-  Tooltip,
-  useMap,
-} from "react-leaflet";
 import readXlsxFile from "read-excel-file";
 import { z } from "zod";
 
@@ -51,10 +43,12 @@ import {
 
 import { useCatalog } from "@/features/foundation/hooks/useCatalog";
 
+const mapContainerStyle = { width: "100%", height: "100%" };
+
 interface RegionSubAreaStepProps {
-  customIcon: L.Icon;
-  activeIcon: L.Icon;
-  invalidIcon: L.Icon;
+  customIcon?: unknown;
+  activeIcon?: unknown;
+  invalidIcon?: unknown;
 }
 
 const subAreaFormSchema = z.object({
@@ -82,9 +76,6 @@ interface SubAreaLayoutProps {
   subAreaPoints: L.LatLng[];
   isDraggingSubAreaPoint: boolean;
   lands: any[];
-  customIcon: L.Icon;
-  activeIcon: L.Icon;
-  invalidIcon: L.Icon;
   setEditingSubArea: (val: any) => void;
   removeSubAreaPoint: (index: number) => void;
   handleSubAreaPointInputChange: (
@@ -410,36 +401,44 @@ const SubAreaEditForm = ({
   );
 };
 
-const FitBoundsOnce = ({
-  points,
-  fitTrigger,
-}: {
-  points: L.LatLng[];
-  fitTrigger?: number;
-}) => {
-  const map = useMap();
-  const hasFitRef = useRef(false);
+const useFitBoundsOnce = (
+  mapRef: React.MutableRefObject<google.maps.Map | null>,
+  isLoaded: boolean,
+  regionPoints: L.LatLng[],
+  subAreaPoints: L.LatLng[],
+  fitTrigger: number | undefined,
+) => {
+  const hasFitRegionRef = useRef(false);
+  const hasFitSubAreaRef = useRef(false);
 
   useEffect(() => {
-    if (points.length > 0 && !hasFitRef.current) {
-      const bounds = L.latLngBounds(points);
-      if (bounds.isValid()) {
-        map.fitBounds(bounds, { padding: [40, 40] });
-        hasFitRef.current = true;
-      }
+    if (!isLoaded || !mapRef.current) return;
+    if (regionPoints.length > 0 && !hasFitRegionRef.current) {
+      const bounds = new google.maps.LatLngBounds();
+      regionPoints.forEach((p) => bounds.extend({ lat: p.lat, lng: p.lng }));
+      mapRef.current.fitBounds(bounds, 40);
+      hasFitRegionRef.current = true;
     }
-  }, [points, map]);
+  }, [isLoaded, regionPoints]);
 
   useEffect(() => {
-    if (points.length > 0 && fitTrigger) {
-      const bounds = L.latLngBounds(points);
-      if (bounds.isValid()) {
-        map.fitBounds(bounds, { padding: [40, 40] });
-      }
+    if (!isLoaded || !mapRef.current) return;
+    if (subAreaPoints.length > 0 && !hasFitSubAreaRef.current) {
+      const bounds = new google.maps.LatLngBounds();
+      subAreaPoints.forEach((p) => bounds.extend({ lat: p.lat, lng: p.lng }));
+      mapRef.current.fitBounds(bounds, 40);
+      hasFitSubAreaRef.current = true;
     }
-  }, [fitTrigger, points, map]);
+  }, [isLoaded, subAreaPoints]);
 
-  return null;
+  useEffect(() => {
+    if (!isLoaded || !mapRef.current) return;
+    if (subAreaPoints.length > 0 && fitTrigger) {
+      const bounds = new google.maps.LatLngBounds();
+      subAreaPoints.forEach((p) => bounds.extend({ lat: p.lat, lng: p.lng }));
+      mapRef.current.fitBounds(bounds, 40);
+    }
+  }, [isLoaded, fitTrigger, subAreaPoints]);
 };
 
 const SubAreaLayout = ({
@@ -452,9 +451,6 @@ const SubAreaLayout = ({
   subAreaWarningForDisplay,
   subAreaPoints,
   lands,
-  customIcon,
-  activeIcon,
-  invalidIcon,
   setEditingSubArea,
   removeSubAreaPoint,
   handleSubAreaPointInputChange,
@@ -471,142 +467,156 @@ const SubAreaLayout = ({
   handleDownloadSampleExcel,
   subAreaMapFitTrigger,
 }: SubAreaLayoutProps) => {
-  // Leaflet mutates marker LatLng objects while dragging. Convert them to
-  // immutable tuples so the outline always receives the latest coordinates.
-  const editablePolygonPositions = subAreaPoints.map(
-    (point) => [point.lat, point.lng] as L.LatLngTuple,
+  const mapRef = useRef<google.maps.Map | null>(null);
+  const { isLoaded } = useJsApiLoader({
+    id: "google-map-script",
+    googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY?.trim() ?? "",
+  });
+
+  useFitBoundsOnce(mapRef, isLoaded, regionPoints, subAreaPoints, subAreaMapFitTrigger);
+
+  useEffect(() => {
+    if (!isLoaded || !mapRef.current) return;
+    const map = mapRef.current;
+    const timer = window.setTimeout(
+      () => google.maps.event.trigger(map, "resize"),
+      200,
+    );
+    return () => window.clearTimeout(timer);
+  }, [isLoaded]);
+
+  const customMarkerIcon = useMemo(
+    () => (isLoaded ? getGoogleMarkerIcon("orange") : undefined),
+    [isLoaded],
   );
-  const editablePolygonKey = editablePolygonPositions
-    .map(([lat, lng]) => `${lat}:${lng}`)
-    .join("|");
+  const activeMarkerIcon = useMemo(
+    () => (isLoaded ? getGoogleMarkerIcon("green") : undefined),
+    [isLoaded],
+  );
+  const invalidMarkerIcon = useMemo(
+    () => (isLoaded ? getGoogleMarkerIcon("red") : undefined),
+    [isLoaded],
+  );
 
   return (
     <div className="flex flex-col md:flex-row flex-1 min-h-0 gap-4 p-4 w-full">
       <div className="relative z-0 w-full flex-1 min-h-[500px] md:min-h-[600px] overflow-hidden rounded-lg border">
-        <MapContainer
-          center={[center.lat, center.lng]}
-          zoom={14}
-          className="h-full w-full"
-        >
-          <FitBoundsOnce points={regionPoints} />
-          <FitBoundsOnce
-            points={subAreaPoints}
-            fitTrigger={subAreaMapFitTrigger}
-          />
-          <TileLayer
-            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-          />
-
-          <Polygon
-            positions={regionPoints}
-            pathOptions={{
-              color: "blue",
-              fill: false,
-              dashArray: "5, 5",
+        {isLoaded ? (
+          <GoogleMap
+            mapContainerStyle={mapContainerStyle}
+            center={{ lat: center.lat, lng: center.lng }}
+            zoom={14}
+            onLoad={(map) => {
+              mapRef.current = map;
             }}
-          />
+          >
+            <Polygon
+              paths={regionPoints}
+              options={{
+                strokeColor: "blue",
+                fillColor: "transparent",
+                strokeWeight: 2,
+              }}
+            />
 
-          {subAreas.map((subArea) => {
-            if (editingSubArea && subArea.id === editingSubArea.id) return null;
-            if (!subArea.coordinates || subArea.coordinates.length < 3)
-              return null;
+            {subAreas.map((subArea) => {
+              if (editingSubArea && subArea.id === editingSubArea.id)
+                return null;
+              if (!subArea.coordinates || subArea.coordinates.length < 3)
+                return null;
 
-            const positions = subArea.coordinates.map(
-              (coordinate: Record<string, number>) =>
-                L.latLng(coordinate.lat, coordinate.lng),
-            );
+              const positions = subArea.coordinates.map(
+                (coordinate: Record<string, number>) =>
+                  L.latLng(coordinate.lat, coordinate.lng),
+              );
 
-            return (
-              <Polygon
-                key={subArea.id}
-                positions={positions}
-                pathOptions={{ color: "green", weight: 2 }}
-                eventHandlers={{
-                  click: () => onLoadSubAreaForEdit(subArea),
-                }}
-              />
-            );
-          })}
+              return (
+                <Polygon
+                  key={subArea.id}
+                  paths={positions}
+                  options={{ strokeColor: "green", strokeWeight: 2 }}
+                  onClick={() => onLoadSubAreaForEdit(subArea)}
+                />
+              );
+            })}
 
-          {editingSubArea && (
-            <>
-              <Polygon
-                key={editablePolygonKey}
-                positions={editablePolygonPositions}
-                pathOptions={{
-                  color: "#22c55e",
-                  weight: 2,
-                  fillOpacity: 0.2,
-                }}
-              />
-
-              {subAreaPoints.map((point, index) => {
-                const isActive = activeSubAreaPointIndex === index;
-                const isInvalid = !!subAreaPointWarnings[index];
-                const markerIcon = isInvalid
-                  ? invalidIcon
-                  : isActive
-                    ? activeIcon
-                    : customIcon;
-
-                return (
-                  <Marker
-                    key={`sub-point-${index}`}
-                    position={point}
-                    draggable={true}
-                    icon={markerIcon}
-                    eventHandlers={{
-                      click: () => onSubAreaPointSelect(index, point),
-                      dragstart: (event) =>
-                        handleSubAreaPointDrag(
-                          index,
-                          event.target.getLatLng(),
-                          {
-                            finalize: false,
-                          },
-                        ),
-                      drag: (event) =>
-                        handleSubAreaPointDrag(
-                          index,
-                          event.target.getLatLng(),
-                          {
-                            finalize: false,
-                          },
-                        ),
-                      dragend: (event) =>
-                        handleSubAreaPointDrag(
-                          index,
-                          event.target.getLatLng(),
-                          {
-                            finalize: true,
-                          },
-                        ),
-                    }}
-                  >
-                    <Tooltip sticky direction="top" className="z-1000">
-                      Điểm {index + 1}
-                    </Tooltip>
-                  </Marker>
-                );
-              })}
-
-              {subAreaWarningForDisplay && (
-                <Polyline
-                  positions={[
-                    subAreaWarningForDisplay.invalidLatLng,
-                    subAreaWarningForDisplay.suggestedLatLng,
-                  ]}
-                  pathOptions={{
-                    color: "red",
-                    weight: 2,
-                    dashArray: "6, 6",
+            {editingSubArea && (
+              <>
+                <Polygon
+                  paths={subAreaPoints}
+                  options={{
+                    strokeColor: "#22c55e",
+                    fillColor: "#22c55e",
+                    strokeWeight: 2,
+                    fillOpacity: 0.2,
                   }}
                 />
-              )}
-            </>
-          )}
-        </MapContainer>
+
+                {subAreaPoints.map((point, index) => {
+                  const isActive = activeSubAreaPointIndex === index;
+                  const isInvalid = !!subAreaPointWarnings[index];
+                  const markerIcon = isInvalid
+                    ? invalidMarkerIcon
+                    : isActive
+                      ? activeMarkerIcon
+                      : customMarkerIcon;
+
+                  return (
+                    <Marker
+                      key={`sub-point-${index}`}
+                      position={point}
+                      draggable
+                      icon={markerIcon}
+                      title={`Điểm ${index + 1}`}
+                      onClick={() => onSubAreaPointSelect(index, point)}
+                      onDragStart={(event) => {
+                        if (!event.latLng) return;
+                        handleSubAreaPointDrag(
+                          index,
+                          L.latLng(event.latLng.lat(), event.latLng.lng()),
+                          { finalize: false },
+                        );
+                      }}
+                      onDrag={(event) => {
+                        if (!event.latLng) return;
+                        handleSubAreaPointDrag(
+                          index,
+                          L.latLng(event.latLng.lat(), event.latLng.lng()),
+                          { finalize: false },
+                        );
+                      }}
+                      onDragEnd={(event) => {
+                        if (!event.latLng) return;
+                        handleSubAreaPointDrag(
+                          index,
+                          L.latLng(event.latLng.lat(), event.latLng.lng()),
+                          { finalize: true },
+                        );
+                      }}
+                    />
+                  );
+                })}
+
+                {subAreaWarningForDisplay && (
+                  <Polyline
+                    path={[
+                      subAreaWarningForDisplay.invalidLatLng,
+                      subAreaWarningForDisplay.suggestedLatLng,
+                    ]}
+                    options={{
+                      strokeColor: "red",
+                      strokeWeight: 2,
+                    }}
+                  />
+                )}
+              </>
+            )}
+          </GoogleMap>
+        ) : (
+          <div className="flex h-full w-full items-center justify-center text-sm text-muted-foreground">
+            Đang tải bản đồ...
+          </div>
+        )}
       </div>
 
       <div className="flex h-[450px] md:h-full md:w-75 shrink-0 flex-col overflow-hidden rounded-lg border bg-slate-50">
@@ -736,7 +746,7 @@ const isSelfIntersecting = (points: L.LatLng[]) => {
 
 const isOverlappingAny = (newPoints: L.LatLng[], existingSubs: any[]) => {
   const newPoly = toTurfPolygonFromCoords(
-    newPoints.map((p) => ({ lat: p.lat, lng: p.lng })),
+    newPoints.map((p: L.LatLng) => ({ lat: p.lat, lng: p.lng })),
   );
   if (!newPoly) return false;
 
@@ -782,11 +792,10 @@ const isOverlappingAny = (newPoints: L.LatLng[], existingSubs: any[]) => {
   return false;
 };
 
-export const RegionSubAreaStep = ({
-  customIcon,
-  activeIcon,
-  invalidIcon,
-}: RegionSubAreaStepProps) => {
+// `customIcon`/`activeIcon`/`invalidIcon` (Leaflet L.Icon from the caller) are
+// accepted but unused now that this component renders its own Google Maps
+// marker icons internally.
+export const RegionSubAreaStep = (_props: RegionSubAreaStepProps) => {
   const { watch, setValue } = useFormContext();
   const { toast } = useToast();
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -1182,7 +1191,7 @@ export const RegionSubAreaStep = ({
     const sizeLng = Math.max(width * 0.15, 0.0005);
 
     const regionPoly = toTurfPolygonFromCoords(
-      regionPoints.map((p) => ({ lat: p.lat, lng: p.lng })),
+      regionPoints.map((p: L.LatLng) => ({ lat: p.lat, lng: p.lng })),
     );
 
     const currentSubs = watch("subAreas") || [];
@@ -1285,7 +1294,7 @@ export const RegionSubAreaStep = ({
       return;
     }
 
-    const fullCoords = subAreaPoints.map((p) => ({ lat: p.lat, lng: p.lng }));
+    const fullCoords = subAreaPoints.map((p: L.LatLng) => ({ lat: p.lat, lng: p.lng }));
 
     const updatedSub = {
       ...editingSubArea,
@@ -1510,9 +1519,6 @@ export const RegionSubAreaStep = ({
             isDraggingSubAreaPoint={isDraggingSubAreaPoint}
             regionArea={regionArea}
             lands={lands}
-            customIcon={customIcon}
-            activeIcon={activeIcon}
-            invalidIcon={invalidIcon}
             setEditingSubArea={setEditingSubArea}
             removeSubAreaPoint={removeSubAreaPoint}
             handleSubAreaPointInputChange={handleSubAreaPointInputChange}
@@ -1549,10 +1555,7 @@ export const RegionSubAreaStep = ({
                 isDraggingSubAreaPoint={isDraggingSubAreaPoint}
                 regionArea={regionArea}
                 lands={lands}
-                customIcon={customIcon}
-                activeIcon={activeIcon}
-                invalidIcon={invalidIcon}
-                setEditingSubArea={setEditingSubArea}
+                            setEditingSubArea={setEditingSubArea}
                 removeSubAreaPoint={removeSubAreaPoint}
                 handleSubAreaPointInputChange={handleSubAreaPointInputChange}
                 handleAddSubAreaPoint={handleAddSubAreaPoint}

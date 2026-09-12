@@ -1,4 +1,5 @@
 import { useAreaById } from "@/features/farm/hooks/useAreas";
+import { getMarkerIcon as getGoogleMarkerIcon } from "@/pages/animal-husbandry-zone/animal-husbandry-region/components/mapUtils";
 import {
   Button,
   Card,
@@ -12,21 +13,11 @@ import {
 import booleanPointInPolygon from "@turf/boolean-point-in-polygon";
 import { point, polygon } from "@turf/helpers";
 import * as turf from "@turf/turf";
+import { GoogleMap, InfoWindow, Marker, Polygon, Polyline, useJsApiLoader } from "@react-google-maps/api";
 import L from "leaflet";
-import "leaflet/dist/leaflet.css";
 import { Maximize2, Plus, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useFormContext } from "react-hook-form";
-import {
-  MapContainer,
-  Marker,
-  Polygon,
-  Polyline,
-  TileLayer,
-  Tooltip,
-  useMap,
-  useMapEvents,
-} from "react-leaflet";
 import readXlsxFile from "read-excel-file";
 import type { PlotFormValues } from "../data/plot-form.schema";
 import {
@@ -36,6 +27,8 @@ import {
   toTurfPolygonFromCoords,
   type PointWarning,
 } from "../utils";
+
+const mapContainerStyle = { width: "100%", height: "100%" };
 
 const isSegmentsIntersecting = (
   p1: L.LatLng,
@@ -75,74 +68,46 @@ const isSelfIntersecting = (points: L.LatLng[]) => {
 };
 
 interface PlotMapStepProps {
-  customIcon: L.Icon;
-  activeIcon: L.Icon;
-  invalidIcon: L.Icon;
+  customIcon?: unknown;
+  activeIcon?: unknown;
+  invalidIcon?: unknown;
   editingPlotId?: string | number | null;
 }
 
-const MapClickHandler = ({
-  onClick,
-}: {
-  onClick: (latlng: L.LatLng) => void;
-}) => {
-  useMapEvents({
-    click(event) {
-      onClick(event.latlng);
-    },
-  });
-  return null;
-};
-
-const FitBoundsOnce = ({
-  points,
-  areaPoints,
-  fitTrigger,
-}: {
-  points: L.LatLng[];
-  areaPoints: L.LatLng[];
-  fitTrigger?: number;
-}) => {
-  const map = useMap();
+const useFitBoundsOnce = (
+  mapRef: React.MutableRefObject<google.maps.Map | null>,
+  isLoaded: boolean,
+  points: L.LatLng[],
+  areaPoints: L.LatLng[],
+  fitTrigger: number | undefined,
+) => {
   const hasFitRef = useRef(false);
 
   useEffect(() => {
+    if (!isLoaded || !mapRef.current) return;
+    const map = mapRef.current;
+
     if (points.length > 0 && !hasFitRef.current) {
-      const bounds = L.latLngBounds(points);
-      if (bounds.isValid()) {
-        map.fitBounds(bounds, { padding: [40, 40] });
-        hasFitRef.current = true;
-      }
+      const bounds = new google.maps.LatLngBounds();
+      points.forEach((p) => bounds.extend({ lat: p.lat, lng: p.lng }));
+      map.fitBounds(bounds, 40);
+      hasFitRef.current = true;
     } else if (areaPoints.length > 0 && !hasFitRef.current) {
-      const bounds = L.latLngBounds(areaPoints);
-      if (bounds.isValid()) {
-        map.fitBounds(bounds, { padding: [40, 40] });
-        hasFitRef.current = true;
-      }
+      const bounds = new google.maps.LatLngBounds();
+      areaPoints.forEach((p) => bounds.extend({ lat: p.lat, lng: p.lng }));
+      map.fitBounds(bounds, 40);
+      hasFitRef.current = true;
     }
-  }, [points, areaPoints, map]);
+  }, [isLoaded, points, areaPoints]);
 
   useEffect(() => {
+    if (!isLoaded || !mapRef.current) return;
     if (points.length > 0 && fitTrigger) {
-      const bounds = L.latLngBounds(points);
-      if (bounds.isValid()) {
-        map.fitBounds(bounds, { padding: [40, 40] });
-      }
+      const bounds = new google.maps.LatLngBounds();
+      points.forEach((p) => bounds.extend({ lat: p.lat, lng: p.lng }));
+      mapRef.current.fitBounds(bounds, 40);
     }
-  }, [fitTrigger, points, map]);
-
-  return null;
-};
-
-const RefreshMapSize = () => {
-  const map = useMap();
-
-  useEffect(() => {
-    const frame = requestAnimationFrame(() => map.invalidateSize());
-    return () => cancelAnimationFrame(frame);
-  }, [map]);
-
-  return null;
+  }, [isLoaded, fitTrigger, points]);
 };
 
 // ── Map Layout Sub-component ───────────────────────────────────────────────────
@@ -158,9 +123,6 @@ interface MapLayoutProps {
   activePersistentWarning: PointWarning | null;
   plotWarningForDisplay: PointWarning | null;
   isDraggingPoint: boolean;
-  customIcon: L.Icon;
-  activeIcon: L.Icon;
-  invalidIcon: L.Icon;
   editingPlotId?: string | number | null;
   onMarkerSelect: (index: number, point: L.LatLng) => void;
   onPointDrag: (
@@ -196,9 +158,6 @@ const MapLayout = ({
   activePersistentWarning,
   plotWarningForDisplay,
   isDraggingPoint,
-  customIcon,
-  activeIcon,
-  invalidIcon,
   editingPlotId,
   onMarkerSelect,
   onPointDrag,
@@ -208,133 +167,212 @@ const MapLayout = ({
   onPointInputChange,
   onAddPoint,
   onImportExcel,
-  onDownloadSample,
   fileInputRef,
   fitTrigger,
   boundaryWarning,
 }: MapLayoutProps) => {
+  const mapRef = useRef<google.maps.Map | null>(null);
+  const { isLoaded } = useJsApiLoader({
+    id: "google-map-script",
+    googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY?.trim() ?? "",
+  });
+
+  useFitBoundsOnce(mapRef, isLoaded, currentPoints, areaPolygon, fitTrigger);
+
+  useEffect(() => {
+    if (!isLoaded || !mapRef.current) return;
+    const map = mapRef.current;
+    const frame = window.requestAnimationFrame(() =>
+      google.maps.event.trigger(map, "resize"),
+    );
+    const timer = window.setTimeout(
+      () => google.maps.event.trigger(map, "resize"),
+      200,
+    );
+    return () => {
+      window.cancelAnimationFrame(frame);
+      window.clearTimeout(timer);
+    };
+  }, [isLoaded]);
+
+  const [hoveredPolygon, setHoveredPolygon] = useState<string | null>(null);
+
+  const centroidOf = (points: L.LatLng[]) => {
+    if (points.length === 0) return { lat: 0, lng: 0 };
+    const lat = points.reduce((sum, p) => sum + p.lat, 0) / points.length;
+    const lng = points.reduce((sum, p) => sum + p.lng, 0) / points.length;
+    return { lat, lng };
+  };
+
+  const customMarkerIcon = useMemo(
+    () => (isLoaded ? getGoogleMarkerIcon("orange") : undefined),
+    [isLoaded],
+  );
+  const activeMarkerIcon = useMemo(
+    () => (isLoaded ? getGoogleMarkerIcon("green") : undefined),
+    [isLoaded],
+  );
+  const invalidMarkerIcon = useMemo(
+    () => (isLoaded ? getGoogleMarkerIcon("red") : undefined),
+    [isLoaded],
+  );
+
   return (
     <div className="grid h-full w-full flex-1 grid-cols-1 gap-4 overflow-y-auto p-4 md:grid-cols-[minmax(0,1fr)_300px] md:overflow-hidden">
       <div className="relative z-0 min-h-[450px] min-w-0 overflow-hidden rounded-lg border md:min-h-0">
-        <MapContainer
-          center={[center.lat, center.lng]}
-          zoom={17}
-          className="h-full w-full"
-        >
-          <TileLayer
-            attribution="&copy; OpenStreetMap"
-            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-          />
+        {isLoaded ? (
+          <GoogleMap
+            mapContainerStyle={mapContainerStyle}
+            center={{ lat: center.lat, lng: center.lng }}
+            zoom={17}
+            onLoad={(map) => {
+              mapRef.current = map;
+            }}
+          >
+            {areaPolygon.length > 0 && (
+              <>
+                <Polygon
+                  paths={areaPolygon}
+                  options={{
+                    strokeColor: "blue",
+                    fillColor: "transparent",
+                    strokeWeight: 2,
+                  }}
+                  onMouseOver={() => setHoveredPolygon("area")}
+                  onMouseOut={() =>
+                    setHoveredPolygon((current) =>
+                      current === "area" ? null : current,
+                    )
+                  }
+                />
+                {hoveredPolygon === "area" && (
+                  <InfoWindow
+                    position={centroidOf(areaPolygon)}
+                    options={{ disableAutoPan: true }}
+                    onCloseClick={() => setHoveredPolygon(null)}
+                  >
+                    <div className="text-xs">{selectedAreaName} (Khu vực)</div>
+                  </InfoWindow>
+                )}
+              </>
+            )}
 
-          {areaPolygon.length > 0 && (
+            {existingPlots.map((plot) => {
+              if (!plot.boundary || plot.boundary.length < 3) return null;
+              if (editingPlotId && String(plot.id) === String(editingPlotId)) {
+                return null;
+              }
+
+              const positions = plot.boundary.map((b: any) => ({
+                lat: b.latitude || 0,
+                lng: b.longitude || 0,
+              }));
+
+              return (
+                <div key={`existing-plot-${plot.id}`}>
+                  <Polygon
+                    paths={positions}
+                    options={{
+                      strokeColor: "gray",
+                      strokeWeight: 1,
+                      fillOpacity: 0,
+                    }}
+                    onMouseOver={() =>
+                      setHoveredPolygon(`existing-${plot.id}`)
+                    }
+                    onMouseOut={() =>
+                      setHoveredPolygon((current) =>
+                        current === `existing-${plot.id}` ? null : current,
+                      )
+                    }
+                  />
+                  {hoveredPolygon === `existing-${plot.id}` && (
+                    <InfoWindow
+                      position={centroidOf(
+                        positions.map((p: any) => L.latLng(p.lat, p.lng)),
+                      )}
+                      options={{ disableAutoPan: true }}
+                      onCloseClick={() => setHoveredPolygon(null)}
+                    >
+                      <div className="text-xs">{plot.name} (Lô sẵn có)</div>
+                    </InfoWindow>
+                  )}
+                </div>
+              );
+            })}
+
             <Polygon
-              positions={areaPolygon}
-              pathOptions={{
-                color: "blue",
-                fill: false,
-                dashArray: "5, 5",
-              }}
-            >
-              <Tooltip sticky direction="top">
-                {selectedAreaName} (Khu vực)
-              </Tooltip>
-            </Polygon>
-          )}
-
-          {existingPlots.map((plot) => {
-            if (!plot.boundary || plot.boundary.length < 3) return null;
-            if (editingPlotId && String(plot.id) === String(editingPlotId)) {
-              return null;
-            }
-
-            const positions = plot.boundary.map((b: any) =>
-              L.latLng(b.latitude || 0, b.longitude || 0),
-            );
-
-            return (
-              <Polygon
-                key={`existing-plot-${plot.id}`}
-                positions={positions}
-                pathOptions={{
-                  color: "gray",
-                  weight: 1,
-                  dashArray: "4, 4",
-                  fillOpacity: 0,
-                }}
-              >
-                <Tooltip sticky direction="top">
-                  {plot.name} (Lô sẵn có)
-                </Tooltip>
-              </Polygon>
-            );
-          })}
-
-          <Polygon
-            positions={currentPoints}
-            pathOptions={{ color: "orange", fillOpacity: 0.2 }}
-          />
-
-          {currentPoints.map((point, index) => {
-            const isActive = activePointIndex === index;
-            const isInvalid = !!pointWarnings[index];
-            const markerIcon = isInvalid
-              ? invalidIcon
-              : isActive
-                ? activeIcon
-                : customIcon;
-
-            return (
-              <Marker
-                key={`pt-${index}`}
-                position={point}
-                draggable={true}
-                icon={markerIcon}
-                eventHandlers={{
-                  click: () => onMarkerSelect(index, point),
-                  dragstart: (event) =>
-                    onPointDrag(index, event.target.getLatLng(), {
-                      finalize: false,
-                    }),
-                  drag: (event) =>
-                    onPointDrag(index, event.target.getLatLng(), {
-                      finalize: false,
-                    }),
-                  dragend: (event) =>
-                    onPointDrag(index, event.target.getLatLng(), {
-                      finalize: true,
-                    }),
-                }}
-              >
-                <Tooltip sticky direction="top" className="z-1000">
-                  Điểm {index + 1}
-                </Tooltip>
-              </Marker>
-            );
-          })}
-
-          {plotWarningForDisplay && (
-            <Polyline
-              positions={[
-                plotWarningForDisplay.invalidLatLng,
-                plotWarningForDisplay.suggestedLatLng,
-              ]}
-              pathOptions={{
-                color: "red",
-                weight: 2,
-                dashArray: "6, 6",
+              paths={currentPoints}
+              options={{
+                strokeColor: "orange",
+                fillColor: "orange",
+                fillOpacity: 0.2,
               }}
             />
-          )}
 
-          {/* <MapClickHandler onClick={onMapClick} /> */}
+            {currentPoints.map((point, index) => {
+              const isActive = activePointIndex === index;
+              const isInvalid = !!pointWarnings[index];
+              const markerIcon = isInvalid
+                ? invalidMarkerIcon
+                : isActive
+                  ? activeMarkerIcon
+                  : customMarkerIcon;
 
-          <FitBoundsOnce
-            points={currentPoints}
-            areaPoints={areaPolygon}
-            fitTrigger={fitTrigger}
-          />
-          <RefreshMapSize />
-        </MapContainer>
+              return (
+                <Marker
+                  key={`pt-${index}`}
+                  position={point}
+                  draggable
+                  icon={markerIcon}
+                  title={`Điểm ${index + 1}`}
+                  onClick={() => onMarkerSelect(index, point)}
+                  onDragStart={(event) => {
+                    if (!event.latLng) return;
+                    onPointDrag(
+                      index,
+                      L.latLng(event.latLng.lat(), event.latLng.lng()),
+                      { finalize: false },
+                    );
+                  }}
+                  onDrag={(event) => {
+                    if (!event.latLng) return;
+                    onPointDrag(
+                      index,
+                      L.latLng(event.latLng.lat(), event.latLng.lng()),
+                      { finalize: false },
+                    );
+                  }}
+                  onDragEnd={(event) => {
+                    if (!event.latLng) return;
+                    onPointDrag(
+                      index,
+                      L.latLng(event.latLng.lat(), event.latLng.lng()),
+                      { finalize: true },
+                    );
+                  }}
+                />
+              );
+            })}
+
+            {plotWarningForDisplay && (
+              <Polyline
+                path={[
+                  plotWarningForDisplay.invalidLatLng,
+                  plotWarningForDisplay.suggestedLatLng,
+                ]}
+                options={{
+                  strokeColor: "red",
+                  strokeWeight: 2,
+                }}
+              />
+            )}
+          </GoogleMap>
+        ) : (
+          <div className="flex h-full w-full items-center justify-center text-sm text-muted-foreground">
+            Đang tải bản đồ...
+          </div>
+        )}
 
         {activePersistentWarning && !isDraggingPoint && selectedAreaId && (
           <div className="pointer-events-none absolute inset-x-0 top-4 z-1000 flex justify-center">
@@ -469,13 +507,10 @@ const MapLayout = ({
   );
 };
 
-// ── Main PlotMapStep Component ──────────────────────────────────────────────────
-export const PlotMapStep = ({
-  customIcon,
-  activeIcon,
-  invalidIcon,
-  editingPlotId,
-}: PlotMapStepProps) => {
+// `customIcon`/`activeIcon`/`invalidIcon` (Leaflet L.Icon from the caller) are
+// accepted but unused now that this component renders its own Google Maps
+// marker icons internally.
+export const PlotMapStep = ({ editingPlotId }: PlotMapStepProps) => {
   const { watch, setValue, setError, clearErrors } =
     useFormContext<PlotFormValues>();
   const { toast } = useToast();
@@ -1065,9 +1100,6 @@ export const PlotMapStep = ({
             activePersistentWarning={activePersistentWarning}
             plotWarningForDisplay={plotWarningForDisplay}
             isDraggingPoint={isDraggingPoint}
-            customIcon={customIcon}
-            activeIcon={activeIcon}
-            invalidIcon={invalidIcon}
             editingPlotId={editingPlotId}
             onMarkerSelect={setActivePointIndex}
             onPointDrag={handlePointDrag}
@@ -1102,9 +1134,6 @@ export const PlotMapStep = ({
                 activePersistentWarning={activePersistentWarning}
                 plotWarningForDisplay={plotWarningForDisplay}
                 isDraggingPoint={isDraggingPoint}
-                customIcon={customIcon}
-                activeIcon={activeIcon}
-                invalidIcon={invalidIcon}
                 editingPlotId={editingPlotId}
                 onMarkerSelect={setActivePointIndex}
                 onPointDrag={handlePointDrag}

@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useFormContext } from "react-hook-form";
 import {
   Card,
@@ -7,14 +7,15 @@ import {
   CardTitle,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { Layers, MapPin } from "lucide-react";
-import { MapContainer, Polygon, TileLayer } from "react-leaflet";
+import { GoogleMap, InfoWindow, Polygon, useJsApiLoader } from "@react-google-maps/api";
 import L from "leaflet";
-import "leaflet/dist/leaflet.css";
 import type { PlotFormValues } from "../data/plot-form.schema";
 import { getBoundsFromPoints } from "../utils";
 import { useRegions } from "@/features/farm/hooks/useRegions";
 import { useAreaById } from "@/features/farm/hooks/useAreas";
 import useEnterpriseStore from "@/stores/useEnterpriseStore";
+
+const mapContainerStyle = { width: "100%", height: "100%" };
 
 interface PlotReviewStepProps {
   showEnterprise?: boolean;
@@ -40,6 +41,13 @@ export const PlotReviewStep = ({ showEnterprise = false }: PlotReviewStepProps =
     enabled: !!areaId,
   });
 
+  const { isLoaded } = useJsApiLoader({
+    id: "google-map-script",
+    googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY?.trim() ?? "",
+  });
+  const mapRef = useRef<google.maps.Map | null>(null);
+  const [hoveredPolygon, setHoveredPolygon] = useState<string | null>(null);
+
   const selectedEnterpriseName = useMemo(() => {
     return enterprises.find((e) => e.id === enterpriseId)?.name || "—";
   }, [enterprises, enterpriseId]);
@@ -62,6 +70,25 @@ export const PlotReviewStep = ({ showEnterprise = false }: PlotReviewStepProps =
     if (allPoints.length === 0) return null;
     return getBoundsFromPoints(allPoints);
   }, [areaPolygon, currentPoints]);
+
+  useEffect(() => {
+    if (!isLoaded || !mapRef.current || !mapBounds) return;
+    const sw = mapBounds.getSouthWest();
+    const ne = mapBounds.getNorthEast();
+    mapRef.current.fitBounds({
+      south: sw.lat,
+      west: sw.lng,
+      north: ne.lat,
+      east: ne.lng,
+    });
+  }, [isLoaded, mapBounds]);
+
+  const centroidOf = (points: L.LatLng[]) => {
+    if (points.length === 0) return { lat: 0, lng: 0 };
+    const lat = points.reduce((sum, p) => sum + p.lat, 0) / points.length;
+    const lng = points.reduce((sum, p) => sum + p.lng, 0) / points.length;
+    return { lat, lng };
+  };
 
   return (
     <div className="space-y-5">
@@ -170,30 +197,67 @@ export const PlotReviewStep = ({ showEnterprise = false }: PlotReviewStepProps =
       {mapBounds && (
         <Card className="overflow-hidden border-none shadow-sm">
           <div className="h-[300px] w-full">
-            <MapContainer
-              bounds={mapBounds}
-              zoomControl={false}
-              attributionControl={false}
-              className="h-full w-full"
-            >
-              <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-              {areaPolygon.length > 0 && (
-                <Polygon
-                  positions={areaPolygon}
-                  pathOptions={{
-                    color: "blue",
-                    fill: false,
-                    dashArray: "4, 4",
-                  }}
-                />
-              )}
-              {currentPoints.length > 0 && (
-                <Polygon
-                  positions={currentPoints}
-                  pathOptions={{ color: "orange", fillOpacity: 0.15 }}
-                />
-              )}
-            </MapContainer>
+            {isLoaded ? (
+              <GoogleMap
+                mapContainerStyle={mapContainerStyle}
+                center={centroidOf(
+                  currentPoints.length > 0 ? currentPoints : areaPolygon,
+                )}
+                zoom={16}
+                options={{
+                  zoomControl: false,
+                  draggable: false,
+                  scrollwheel: false,
+                  disableDoubleClickZoom: true,
+                  keyboardShortcuts: false,
+                }}
+                onLoad={(map) => {
+                  mapRef.current = map;
+                }}
+              >
+                {areaPolygon.length > 0 && (
+                  <>
+                    <Polygon
+                      paths={areaPolygon}
+                      options={{
+                        strokeColor: "blue",
+                        fillOpacity: 0,
+                        strokeWeight: 2,
+                      }}
+                      onMouseOver={() => setHoveredPolygon("area")}
+                      onMouseOut={() =>
+                        setHoveredPolygon((current) =>
+                          current === "area" ? null : current,
+                        )
+                      }
+                    />
+                    {hoveredPolygon === "area" && (
+                      <InfoWindow
+                        position={centroidOf(areaPolygon)}
+                        options={{ disableAutoPan: true }}
+                        onCloseClick={() => setHoveredPolygon(null)}
+                      >
+                        <div className="text-xs">{selectedArea?.name}</div>
+                      </InfoWindow>
+                    )}
+                  </>
+                )}
+                {currentPoints.length > 0 && (
+                  <Polygon
+                    paths={currentPoints}
+                    options={{
+                      strokeColor: "orange",
+                      fillColor: "orange",
+                      fillOpacity: 0.15,
+                    }}
+                  />
+                )}
+              </GoogleMap>
+            ) : (
+              <div className="flex h-full w-full items-center justify-center text-sm text-muted-foreground">
+                Đang tải bản đồ...
+              </div>
+            )}
           </div>
         </Card>
       )}

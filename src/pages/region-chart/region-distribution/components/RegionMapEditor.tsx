@@ -8,24 +8,19 @@ import {
   DialogContent,
   useToast,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import { GoogleMap, InfoWindow, Marker, Polygon, useJsApiLoader } from "@react-google-maps/api";
+import { getMarkerIcon as getGoogleMarkerIcon } from "@/pages/animal-husbandry-zone/animal-husbandry-region/components/mapUtils";
 import L from "leaflet";
-import "leaflet/dist/leaflet.css";
 import { Maximize2, Plus, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useFormContext } from "react-hook-form";
-import {
-  MapContainer,
-  Marker,
-  Polygon,
-  TileLayer,
-  Tooltip,
-  useMap,
-} from "react-leaflet";
 import readXlsxFile from "read-excel-file";
 import { getBoundsFromPoints } from "../utils";
 
+const mapContainerStyle = { width: "100%", height: "100%" };
+
 interface RegionMapEditorProps {
-  markerIcon: L.Icon;
+  markerIcon?: unknown;
 }
 
 const DEFAULT_POINTS = [
@@ -47,7 +42,6 @@ const buildSquareAround = (lat: number, lng: number) => [
 interface MapLayoutProps {
   center: L.LatLng;
   regionPoints: L.LatLng[];
-  markerIcon: L.Icon;
   isFullscreen: boolean;
   setIsFullscreen: (val: boolean) => void;
   handlePointDrag: (index: number, latlng: L.LatLng) => void;
@@ -65,49 +59,38 @@ interface MapLayoutProps {
   mapFitTrigger: number;
 }
 
-const FitBoundsOnce = ({
-  points,
-  fitTrigger,
-}: {
-  points: L.LatLng[];
-  fitTrigger?: number;
-}) => {
-  const map = useMap();
+const useFitBoundsOnce = (
+  mapRef: React.MutableRefObject<google.maps.Map | null>,
+  isLoaded: boolean,
+  points: L.LatLng[],
+  fitTrigger: number | undefined,
+) => {
   const hasFitRef = useRef(false);
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      map.invalidateSize();
-    }, 200);
-    return () => clearTimeout(timer);
-  }, [map]);
-
-  useEffect(() => {
+    if (!isLoaded || !mapRef.current) return;
+    const map = mapRef.current;
     if (points.length > 0 && !hasFitRef.current) {
-      const bounds = L.latLngBounds(points);
-      if (bounds.isValid()) {
-        map.fitBounds(bounds, { padding: [40, 40] });
-        hasFitRef.current = true;
-      }
+      const bounds = new google.maps.LatLngBounds();
+      points.forEach((p) => bounds.extend({ lat: p.lat, lng: p.lng }));
+      map.fitBounds(bounds, 40);
+      hasFitRef.current = true;
     }
-  }, [points, map]);
+  }, [isLoaded, points]);
 
   useEffect(() => {
+    if (!isLoaded || !mapRef.current) return;
     if (points.length > 0 && fitTrigger) {
-      const bounds = L.latLngBounds(points);
-      if (bounds.isValid()) {
-        map.fitBounds(bounds, { padding: [40, 40] });
-      }
+      const bounds = new google.maps.LatLngBounds();
+      points.forEach((p) => bounds.extend({ lat: p.lat, lng: p.lng }));
+      mapRef.current.fitBounds(bounds, 40);
     }
-  }, [fitTrigger, points, map]);
-
-  return null;
+  }, [isLoaded, fitTrigger, points]);
 };
 
 const MapLayout = ({
   center,
   regionPoints,
-  markerIcon,
   handlePointDrag,
   handlePointDragEnd,
   removePoint,
@@ -120,48 +103,91 @@ const MapLayout = ({
   mapFitTrigger,
 }: MapLayoutProps) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const mapRef = useRef<google.maps.Map | null>(null);
+  const { isLoaded } = useJsApiLoader({
+    id: "google-map-script",
+    googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY?.trim() ?? "",
+  });
+
+  useFitBoundsOnce(mapRef, isLoaded, regionPoints, mapFitTrigger);
+
+  useEffect(() => {
+    if (!isLoaded || !mapRef.current) return;
+    const map = mapRef.current;
+    const timer = window.setTimeout(
+      () => google.maps.event.trigger(map, "resize"),
+      200,
+    );
+    return () => window.clearTimeout(timer);
+  }, [isLoaded]);
+
+  const markerIcon = useMemo(
+    () => (isLoaded ? getGoogleMarkerIcon("blue") : undefined),
+    [isLoaded],
+  );
+
   return (
     <div className="flex flex-col md:flex-row flex-1 min-h-0 gap-4 p-4 w-full">
       <div className="relative z-0 w-full flex-1 min-h-[500px] md:min-h-[600px] overflow-hidden rounded-lg border">
-        <MapContainer
-          center={[center.lat, center.lng]}
-          zoom={14}
-          className="z-0 h-full w-full"
-        >
-          <FitBoundsOnce points={regionPoints} fitTrigger={mapFitTrigger} />
-          <TileLayer
-            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-          />
-
-          <Polygon
-            positions={regionPoints}
-            pathOptions={{ color: "blue", fillOpacity: 0.1 }}
+        {isLoaded ? (
+          <GoogleMap
+            mapContainerStyle={mapContainerStyle}
+            center={{ lat: center.lat, lng: center.lng }}
+            zoom={14}
+            onLoad={(map) => {
+              mapRef.current = map;
+            }}
           >
-            {justChanged && (
-              <Tooltip permanent sticky direction="top">
-                Đã tự động điều chỉnh sắp xếp các điểm để phù hợp đường bao
-              </Tooltip>
-            )}
-          </Polygon>
-
-          {regionPoints.map((point, index) => (
-            <Marker
-              key={`point-${index}`}
-              position={point}
-              draggable={true}
-              icon={markerIcon}
-              eventHandlers={{
-                drag: (event) => {
-                  handlePointDrag(index, event.target.getLatLng());
-                },
-                dragend: () => {
-                  handlePointDragEnd();
-                },
+            <Polygon
+              paths={regionPoints}
+              options={{
+                strokeColor: "blue",
+                fillColor: "blue",
+                fillOpacity: 0.1,
               }}
             />
-          ))}
-        </MapContainer>
+            {justChanged && regionPoints.length > 0 && (
+              <InfoWindow
+                position={{
+                  lat:
+                    regionPoints.reduce((sum, p) => sum + p.lat, 0) /
+                    regionPoints.length,
+                  lng:
+                    regionPoints.reduce((sum, p) => sum + p.lng, 0) /
+                    regionPoints.length,
+                }}
+                options={{ disableAutoPan: true }}
+              >
+                <div className="text-xs font-medium">
+                  Đã tự động điều chỉnh sắp xếp các điểm để phù hợp đường bao
+                </div>
+              </InfoWindow>
+            )}
+
+            {regionPoints.map((point, index) => (
+              <Marker
+                key={`point-${index}`}
+                position={point}
+                draggable
+                icon={markerIcon}
+                onDrag={(event) => {
+                  if (!event.latLng) return;
+                  handlePointDrag(
+                    index,
+                    L.latLng(event.latLng.lat(), event.latLng.lng()),
+                  );
+                }}
+                onDragEnd={() => {
+                  handlePointDragEnd();
+                }}
+              />
+            ))}
+          </GoogleMap>
+        ) : (
+          <div className="flex h-full w-full items-center justify-center text-sm text-muted-foreground">
+            Đang tải bản đồ...
+          </div>
+        )}
       </div>
 
       <div className="flex h-[450px] md:h-full md:w-75 shrink-0 flex-col overflow-hidden rounded-lg border bg-slate-50">
@@ -296,7 +322,9 @@ const isSelfIntersecting = (points: L.LatLng[]) => {
   return false;
 };
 
-export const RegionMapEditor = ({ markerIcon }: RegionMapEditorProps) => {
+// `markerIcon` (a Leaflet L.Icon from the caller) is accepted but unused now
+// that this component renders its own Google Maps marker icon internally.
+export const RegionMapEditor = (_props: RegionMapEditorProps) => {
   const { watch, setValue } = useFormContext();
   const centerPoint = watch("centerPoint");
   // Present only when editing an existing region (loaded via reset()); used
@@ -692,7 +720,6 @@ export const RegionMapEditor = ({ markerIcon }: RegionMapEditorProps) => {
           <MapLayout
             center={center}
             regionPoints={regionPoints}
-            markerIcon={markerIcon}
             isFullscreen={isFullscreen}
             setIsFullscreen={setIsFullscreen}
             handlePointDrag={handlePointDrag}
@@ -716,8 +743,7 @@ export const RegionMapEditor = ({ markerIcon }: RegionMapEditorProps) => {
               <MapLayout
                 center={center}
                 regionPoints={regionPoints}
-                markerIcon={markerIcon}
-                isFullscreen={isFullscreen}
+                    isFullscreen={isFullscreen}
                 setIsFullscreen={setIsFullscreen}
                 handlePointDrag={handlePointDrag}
                 handlePointDragEnd={handlePointDragEnd}

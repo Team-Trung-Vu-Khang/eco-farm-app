@@ -1,13 +1,6 @@
 import { useMemo, useCallback, useState, useRef, useEffect } from "react";
 import { useFormContext } from "react-hook-form";
-import {
-  MapContainer,
-  Marker,
-  TileLayer,
-  useMap,
-  useMapEvents,
-} from "react-leaflet";
-import L from "leaflet";
+import { GoogleMap, Marker, useJsApiLoader } from "@react-google-maps/api";
 import {
   Input,
   Button,
@@ -17,12 +10,11 @@ import {
   DialogContent,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { Search, Maximize2 } from "lucide-react";
-import { getMarkerIcon } from "@/pages/cultivation-zone/cultivation-region/components/mapUtils";
 import { useDebounce } from "@/shared/hooks/useDebounce";
 import { searchAddress } from "@/shared/lib/googleGeocode";
 import type { RegionFormValues } from "../data/region-form.schema";
 
-const customIcon = getMarkerIcon("blue");
+const mapContainerStyle = { width: "100%", height: "100%" };
 
 const DEFAULT_CENTER: [number, number] = [11.54, 106.895];
 
@@ -31,23 +23,6 @@ const formatCoordinate = (value: number | string | undefined) => {
   const parsed = typeof value === "number" ? value : Number(value);
   if (Number.isNaN(parsed)) return "--";
   return parsed.toFixed(6);
-};
-
-const ChangeView = ({ center }: { center: [number, number] }) => {
-  const map = useMap();
-  useEffect(() => {
-    map.setView(center, map.getZoom());
-  }, [center, map]);
-  return null;
-};
-
-const MapEvents = ({ onChange }: { onChange: (latlng: L.LatLng) => void }) => {
-  useMapEvents({
-    click(e) {
-      onChange(e.latlng);
-    },
-  });
-  return null;
 };
 
 interface SearchResult {
@@ -66,9 +41,8 @@ interface PickerContentProps {
   searchResults: SearchResult[];
   onSelectResult: (item: SearchResult) => void;
   markerPosition: [number, number];
-  markerRef: React.RefObject<L.Marker | null>;
-  handleMarkerDrag: () => void;
-  handleMapClick: (latlng: L.LatLng) => void;
+  handleMapPick: (lat: number, lng: number) => void;
+  isLoaded: boolean;
   lat: number | string | undefined;
   lng: number | string | undefined;
 }
@@ -82,12 +56,12 @@ const PickerContent = ({
   searchResults,
   onSelectResult,
   markerPosition,
-  markerRef,
-  handleMarkerDrag,
-  handleMapClick,
+  handleMapPick,
+  isLoaded,
   lat,
   lng,
 }: PickerContentProps) => {
+  const center = { lat: markerPosition[0], lng: markerPosition[1] };
   return (
     <div
       className={`space-y-4 ${
@@ -162,7 +136,7 @@ const PickerContent = ({
         </div>
       </div>
 
-      {/* Leaflet Map Picker */}
+      {/* Google Map Picker */}
       <div
         className={`space-y-2 ${isLarge ? "flex-1 flex flex-col min-h-0" : ""}`}
       >
@@ -174,27 +148,30 @@ const PickerContent = ({
             isLarge ? "flex-1 min-h-[350px]" : "h-72"
           }`}
         >
-          <MapContainer
-            center={markerPosition}
-            zoom={12}
-            className="w-full h-full"
-          >
-            <TileLayer
-              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-            />
-            <ChangeView center={markerPosition} />
-            <MapEvents onChange={handleMapClick} />
-            <Marker
-              position={markerPosition}
-              icon={customIcon}
-              draggable={true}
-              ref={markerRef}
-              eventHandlers={{
-                dragend: handleMarkerDrag,
+          {isLoaded ? (
+            <GoogleMap
+              mapContainerStyle={mapContainerStyle}
+              center={center}
+              zoom={12}
+              onClick={(event) => {
+                if (!event.latLng) return;
+                handleMapPick(event.latLng.lat(), event.latLng.lng());
               }}
-            />
-          </MapContainer>
+            >
+              <Marker
+                position={center}
+                draggable
+                onDragEnd={(event) => {
+                  if (!event.latLng) return;
+                  handleMapPick(event.latLng.lat(), event.latLng.lng());
+                }}
+              />
+            </GoogleMap>
+          ) : (
+            <div className="flex h-full w-full items-center justify-center text-sm text-muted-foreground">
+              Đang tải bản đồ...
+            </div>
+          )}
         </div>
       </div>
     </div>
@@ -233,41 +210,17 @@ export const CenterPointMapPicker = () => {
       : DEFAULT_CENTER;
   }, [lat, lng]);
 
-  const markerRef = useRef<L.Marker>(null);
-  const markerRefLarge = useRef<L.Marker>(null);
+  const { isLoaded } = useJsApiLoader({
+    id: "google-map-script",
+    googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY?.trim() ?? "",
+  });
 
-  const handleMarkerDrag = useCallback(() => {
-    const marker = markerRef.current;
-    if (marker != null) {
-      const latlng = marker.getLatLng();
-      setValue("centerPoint.lat", parseFloat(latlng.lat.toFixed(6)), {
+  const handleMapPick = useCallback(
+    (pickedLat: number, pickedLng: number) => {
+      setValue("centerPoint.lat", parseFloat(pickedLat.toFixed(6)), {
         shouldValidate: true,
       });
-      setValue("centerPoint.lng", parseFloat(latlng.lng.toFixed(6)), {
-        shouldValidate: true,
-      });
-    }
-  }, [setValue]);
-
-  const handleMarkerDragLarge = useCallback(() => {
-    const marker = markerRefLarge.current;
-    if (marker != null) {
-      const latlng = marker.getLatLng();
-      setValue("centerPoint.lat", parseFloat(latlng.lat.toFixed(6)), {
-        shouldValidate: true,
-      });
-      setValue("centerPoint.lng", parseFloat(latlng.lng.toFixed(6)), {
-        shouldValidate: true,
-      });
-    }
-  }, [setValue]);
-
-  const handleMapClick = useCallback(
-    (latlng: L.LatLng) => {
-      setValue("centerPoint.lat", parseFloat(latlng.lat.toFixed(6)), {
-        shouldValidate: true,
-      });
-      setValue("centerPoint.lng", parseFloat(latlng.lng.toFixed(6)), {
+      setValue("centerPoint.lng", parseFloat(pickedLng.toFixed(6)), {
         shouldValidate: true,
       });
     },
@@ -377,9 +330,8 @@ export const CenterPointMapPicker = () => {
         searchResults={searchResults}
         onSelectResult={handleSelectResult}
         markerPosition={markerPosition}
-        markerRef={markerRef}
-        handleMarkerDrag={handleMarkerDrag}
-        handleMapClick={handleMapClick}
+        handleMapPick={handleMapPick}
+        isLoaded={isLoaded}
         lat={lat}
         lng={lng}
       />
@@ -401,9 +353,8 @@ export const CenterPointMapPicker = () => {
               searchResults={searchResults}
               onSelectResult={handleSelectResult}
               markerPosition={markerPosition}
-              markerRef={markerRefLarge}
-              handleMarkerDrag={handleMarkerDragLarge}
-              handleMapClick={handleMapClick}
+              handleMapPick={handleMapPick}
+              isLoaded={isLoaded}
               lat={lat}
               lng={lng}
             />
