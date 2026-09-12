@@ -44,16 +44,11 @@ export function useCultivationZoneCreateForm(
       (zoneData.productionSubjectVariants ?? []).forEach((v) => {
         if (!v.id) return;
         varietyLabels[String(v.id)] = v.name || "";
-        const cId = v.productionSubject?.id || v.crop?.id;
-        if (cId) varietyCropMap[String(v.id)] = String(cId);
       });
 
       (zoneData.subjectVariants ?? []).forEach((s) => {
-        const vId = s.cropVariety?.id || s.subjectVariant?.id || s.id;
-        if (!vId) return;
-        varietyLabels[String(vId)] = s.cropVariety?.name || s.subjectVariant?.name || s.name || "";
-        const cId = s.productionSubject?.id || s.crop?.id || s.productionSubjectId;
-        if (cId) varietyCropMap[String(vId)] = String(cId);
+        if (!s.id) return;
+        varietyLabels[String(s.id)] = s.subjectVariantName || "";
       });
 
       reset({
@@ -96,11 +91,7 @@ export function useCultivationZoneCreateForm(
         // Load seedIds from subjectVariants (owner seeds) if present
         seedIds: (zoneData.subjectVariants ?? []).map((s) => s.id),
         // Crop IDs from metadataJson (set by previous form saves)
-        cropIds:
-          (zoneData.metadataJson?.selectedCropIds as string[]) ||
-          (zoneData.subjectVariants ?? []).map((s) =>
-            (s.productionSubject?.id || s.crop?.id || 0).toString(),
-          ).filter((id) => id !== "0"),
+        cropIds: (zoneData.metadataJson?.selectedCropIds as string[]) || [],
         cropSeedToggles:
           (zoneData.metadataJson?.cropSeedToggles as Record<string, boolean>) || {},
         // Load varietyIds: prefer productionSubjectVariants (Foundation), fallback subjectVariants
@@ -109,9 +100,9 @@ export function useCultivationZoneCreateForm(
             (id) => id > 0,
           ).length > 0
             ? (zoneData.productionSubjectVariants ?? []).map((v) => v.id)
-            : (zoneData.subjectVariants ?? []).map(
-                (s) => s.cropVariety?.id || s.subjectVariant?.id || 0,
-              ).filter((id) => id > 0),
+            : (zoneData.subjectVariants ?? []).map((s) => s.id).filter(
+                (id) => id > 0,
+              ),
         useSpecificSeeds: (zoneData.subjectVariants ?? []).length > 0,
         varietyLabels,
         varietyCropMap,

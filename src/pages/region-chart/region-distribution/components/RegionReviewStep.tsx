@@ -406,11 +406,15 @@ export const RegionReviewStep = ({
                       <p className="text-sm font-semibold text-slate-700">
                         {subArea.name || `Khu ${index + 1}`}
                       </p>
-                      {subArea.plots && subArea.plots.length > 0 && (
-                        <p className="text-[11px] text-slate-400">
-                          {subArea.plots.length} lô
-                        </p>
-                      )}
+                      <p className="text-[11px] text-slate-400">
+                        {lands.find(
+                          (land) =>
+                            String(land.id || land.code) ===
+                            String(subArea.landType),
+                        )?.name || "Chưa chọn loại đất"}
+                        {subArea.plots && subArea.plots.length > 0 &&
+                          ` · ${subArea.plots.length} lô`}
+                      </p>
                     </div>
                   </div>
                   <span className="rounded-lg border border-slate-100 bg-white px-2 py-0.5 text-xs font-bold text-slate-400">

@@ -53,8 +53,18 @@ const EMPTY_SOIL: SoilData = {
   lastTested: "Chưa có dữ liệu",
 };
 
-const FARM_BANNER_IMAGE =
-  "https://images.unsplash.com/photo-1464226184884-fa280b87c399?w=1200&q=80&auto=format&fit=crop";
+// One banner photo per level so the fallback image (when the entity has no
+// properties.image/coverImage of its own) at least hints at the scale of
+// what's selected, instead of always showing the same close-up produce shot.
+const FARM_BANNER_IMAGE_BY_LEVEL: Record<SelectedEntity["level"], string> = {
+  zone: "https://images.unsplash.com/photo-1560493676-04071c5f467b?w=1200&q=80&auto=format&fit=crop",
+  area: "https://images.unsplash.com/photo-1523741543316-beb7fc7023d8?w=1200&q=80&auto=format&fit=crop",
+  plot: "https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=1200&q=80&auto=format&fit=crop",
+  plant:
+    "https://images.unsplash.com/photo-1523348837708-15d4a09cfac2?w=1200&q=80&auto=format&fit=crop",
+  "soil-cluster":
+    "https://images.unsplash.com/photo-1523741543316-beb7fc7023d8?w=1200&q=80&auto=format&fit=crop",
+};
 
 const formatLastTested = (value: string) => {
   const parsed = dayjs(value);
@@ -163,12 +173,32 @@ export const SidebarDetail: React.FC<SidebarDetailProps> = ({
     : currentSoil;
   const detailTitle =
     selectedEntity.properties?.name || selectedEntity.type || "Thông tin farm";
+
+  // locationInfo is reverse-geocoded from the entity's own centroid, so its
+  // field matching the entity's own level just echoes detailTitle back. Only
+  // look at levels *above* the current one so the subtitle shows real parent
+  // context instead of repeating the title.
+  const parentLocationName = (() => {
+    switch (selectedEntity.level) {
+      case "area":
+        return selectedEntity.locationInfo?.zoneName;
+      case "plot":
+        return (
+          selectedEntity.locationInfo?.areaName ||
+          selectedEntity.locationInfo?.zoneName
+        );
+      case "plant":
+        return (
+          selectedEntity.locationInfo?.plotName ||
+          selectedEntity.locationInfo?.areaName ||
+          selectedEntity.locationInfo?.zoneName
+        );
+      default:
+        return undefined;
+    }
+  })();
   const detailSubtitle =
-    selectedEntity.locationInfo?.plotName ||
-    selectedEntity.locationInfo?.areaName ||
-    selectedEntity.locationInfo?.zoneName ||
-    selectedEntity.properties?.code ||
-    "Bản đồ nông nghiệp";
+    parentLocationName || selectedEntity.properties?.code || "Bản đồ nông nghiệp";
   const detailAddress =
     selectedEntity.properties?.address ||
     selectedEntity.properties?.note ||
@@ -177,15 +207,24 @@ export const SidebarDetail: React.FC<SidebarDetailProps> = ({
       selectedEntity.locationInfo?.areaName,
       selectedEntity.locationInfo?.zoneName,
     ]
-      .filter(Boolean)
+      .filter((name) => name && name !== detailTitle)
       .join(" • ") ||
     "Đang cập nhật địa chỉ";
   const detailImage =
     selectedEntity.properties?.image ||
     selectedEntity.properties?.coverImage ||
-    FARM_BANNER_IMAGE;
+    FARM_BANNER_IMAGE_BY_LEVEL[selectedEntity.level];
   const detailMapsUrl = buildGoogleMapsUrl(selectedEntity);
   const soilCluster = selectedEntity.soilCluster;
+
+  // The children drilldown only makes sense above the leaf level, and its
+  // label should describe what's being listed at the current level.
+  const childrenSectionLabel =
+    selectedEntity.level === "zone"
+      ? "Khu vực phân bổ"
+      : selectedEntity.level === "area"
+        ? "Lô phân bổ"
+        : null;
 
   // Zone/area entities carry soilType/terrainFeature but no elevation; plots
   // carry elevation but no soilType/terrainFeature. Show whichever the API
@@ -264,7 +303,7 @@ export const SidebarDetail: React.FC<SidebarDetailProps> = ({
                 alt={detailTitle}
                 className="h-full w-full object-cover"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/20 to-transparent" />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/45 to-black/10" />
 
               <div className="absolute left-4 top-4 flex items-center gap-2">
                 <Button
@@ -291,17 +330,20 @@ export const SidebarDetail: React.FC<SidebarDetailProps> = ({
                   <span className="rounded-full bg-white/15 px-2.5 py-1 text-[11px] font-medium backdrop-blur-sm">
                     {selectedEntity.properties?.code || "N/A"}
                   </span>
-                  {selectedEntity.locationInfo?.zoneName && (
-                    <span className="rounded-full bg-white/15 px-2.5 py-1 text-[11px] font-medium backdrop-blur-sm">
-                      {selectedEntity.locationInfo.zoneName}
-                    </span>
-                  )}
+                  {selectedEntity.locationInfo?.zoneName &&
+                    selectedEntity.locationInfo.zoneName !== detailTitle && (
+                      <span className="rounded-full bg-white/15 px-2.5 py-1 text-[11px] font-medium backdrop-blur-sm">
+                        {selectedEntity.locationInfo.zoneName}
+                      </span>
+                    )}
                 </div>
-                <h3 className="mt-3 text-2xl font-semibold leading-tight">
+                <h3 className="mt-3 text-2xl font-semibold leading-tight drop-shadow-[0_1px_3px_rgba(0,0,0,0.8)]">
                   {detailTitle}
                 </h3>
-                <p className="mt-1 text-sm text-white/85">{detailSubtitle}</p>
-                <p className="mt-1 max-w-[95%] text-xs leading-5 text-white/70">
+                <p className="mt-1 text-sm text-white/90 drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">
+                  {detailSubtitle}
+                </p>
+                <p className="mt-1 max-w-[95%] text-xs leading-5 text-white/80 drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">
                   {detailAddress}
                 </p>
               </div>
@@ -376,95 +418,50 @@ export const SidebarDetail: React.FC<SidebarDetailProps> = ({
             <TabsContent value="overview" className="m-0">
               <div className="space-y-4">
                 <div className="rounded-2xl bg-white/70 p-4">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <div className="text-[10px] uppercase tracking-[0.18em] text-slate-500">
-                        {getLevelLabel(selectedEntity.level)}
-                      </div>
-                      <div className="truncate text-lg font-semibold text-slate-900">
-                        {detailTitle}
-                      </div>
-                      <div className="mt-1 text-sm text-slate-500">
-                        {detailSubtitle}
-                      </div>
-                    </div>
-                    <div className="shrink-0 rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-700">
-                      {selectedEntity.type}
-                    </div>
-                  </div>
-
-                  <div className="mt-3 flex flex-col gap-2">
+                  <div className="flex flex-col gap-2">
                     <InfoLine label="Địa chỉ" value={detailAddress} />
-                    <InfoLine
-                      label="Khu vực hiện tại"
-                      value={
-                        selectedEntity.locationInfo?.areaName ||
-                        selectedEntity.locationInfo?.zoneName ||
-                        detailSubtitle
-                      }
-                    />
-                  </div>
-
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    <span className="inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-700">
-                      <span className="text-[10px] uppercase tracking-wide text-slate-500">
-                        Mã số
-                      </span>
-                      {selectedEntity.properties?.code || "N/A"}
-                    </span>
-                    <span className="inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-700">
-                      <span className="text-[10px] uppercase tracking-wide text-slate-500">
-                        Diện tích
-                      </span>
-                      {selectedEntity.properties?.area
-                        ? `${selectedEntity.properties.area} ha`
-                        : "N/A"}
-                    </span>
-                    {extraDetailFields.map((field) => (
-                      <span
-                        key={field.label}
-                        className="inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-700"
-                      >
-                        <span className="text-[10px] uppercase tracking-wide text-slate-500">
-                          {field.label}
-                        </span>
-                        {field.value}
-                      </span>
-                    ))}
-                  </div>
-
-                  <div className="mt-4 space-y-2">
-                    <div className="text-sm font-medium text-slate-700">
-                      Danh sách bên dưới
-                    </div>
-                    {selectedEntity.children?.length ? (
-                      <div className="space-y-2">
-                        {selectedEntity.children.map((item) => (
-                          <button
-                            key={item.key}
-                            onClick={() => onSelectChild(item)}
-                            className="flex w-full items-start justify-between gap-3 rounded-2xl bg-slate-50 px-3 py-3 text-left transition-colors hover:bg-slate-100"
-                          >
-                            <div className="min-w-0">
-                              <div className="text-sm font-medium text-slate-900">
-                                {item.title}
-                              </div>
-                              <div className="text-xs text-slate-500">
-                                {item.subtitle || getLevelLabel(item.level)}
-                              </div>
-                            </div>
-                            <span className="shrink-0 rounded-full bg-white px-2.5 py-1 text-[11px] font-medium text-slate-600">
-                              {getLevelLabel(item.level)}
-                            </span>
-                          </button>
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="rounded-xl bg-slate-50/70 px-3 py-3 text-sm text-slate-500">
-                        Chưa có danh sách con để hiển thị.
-                      </div>
+                    {parentLocationName && (
+                      <InfoLine
+                        label="Khu vực hiện tại"
+                        value={parentLocationName}
+                      />
                     )}
                   </div>
+
+                  {childrenSectionLabel && (
+                    <div className="mt-4 space-y-2">
+                      <div className="text-sm font-medium text-slate-700">
+                        {childrenSectionLabel}
+                      </div>
+                      {selectedEntity.children?.length ? (
+                        <div className="space-y-2">
+                          {selectedEntity.children.map((item) => (
+                            <button
+                              key={item.key}
+                              onClick={() => onSelectChild(item)}
+                              className="flex w-full items-start justify-between gap-3 rounded-2xl bg-slate-50 px-3 py-3 text-left transition-colors hover:bg-slate-100"
+                            >
+                              <div className="min-w-0">
+                                <div className="text-sm font-medium text-slate-900">
+                                  {item.title}
+                                </div>
+                                <div className="text-xs text-slate-500">
+                                  {item.subtitle || getLevelLabel(item.level)}
+                                </div>
+                              </div>
+                              <span className="shrink-0 rounded-full bg-white px-2.5 py-1 text-[11px] font-medium text-slate-600">
+                                {getLevelLabel(item.level)}
+                              </span>
+                            </button>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="rounded-xl bg-slate-50/70 px-3 py-3 text-sm text-slate-500">
+                          Chưa có danh sách con để hiển thị.
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
             </TabsContent>
