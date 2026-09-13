@@ -99,29 +99,35 @@ export function StageMaterialPicker({
         const rawBasicName = v.unitBase?.name || "kg";
         const basicName =
           rawBasicName.replace(/\s*\([^)]*\)/g, "").trim() || rawBasicName;
-        const packTypeName = v.packagingType?.name || "Quy cách";
-        const packQty = v.quantity || 1;
-        const specLabel = `${packTypeName} ${packQty} ${basicName}`;
+        const hasPackagingSpec = Boolean(
+          v.packagingType && v.packagingType.name && (v.quantity ?? 0) > 0,
+        );
 
-        options.push({
-          key: `pack-${idx}-${v.unitBase?.id ?? 0}`,
-          label: specLabel,
-          unitMode: "PACKAGING",
-          unitLabel: packTypeName,
-          unitBaseId: v.unitBase?.id,
-          packagingSpecLabel: specLabel,
-        });
+        if (hasPackagingSpec) {
+          const packTypeName = v.packagingType?.name || "Quy cách";
+          const packQty = v.quantity || 1;
+          const specLabel = `${packTypeName} ${packQty} ${basicName}`;
 
-        options.push({
-          key: `basic-${idx}-${v.unitBase?.id ?? 0}`,
-          label: basicName,
-          unitMode: "BASIC",
-          unitLabel: basicName,
-          unitBaseId: v.unitBase?.id,
-          packagingSpecLabel: undefined,
-        });
+          options.push({
+            key: `pack-${idx}-${v.unitBase?.id ?? 0}`,
+            label: specLabel,
+            unitMode: "PACKAGING",
+            unitLabel: packTypeName,
+            unitBaseId: v.unitBase?.id,
+            packagingSpecLabel: specLabel,
+          });
+        } else {
+          options.push({
+            key: `basic-${idx}-${v.unitBase?.id ?? 0}`,
+            label: basicName,
+            unitMode: "BASIC",
+            unitLabel: basicName,
+            unitBaseId: v.unitBase?.id,
+            packagingSpecLabel: undefined,
+          });
+        }
       });
-      return options;
+      if (options.length > 0) return options;
     }
 
     return [
@@ -146,7 +152,12 @@ export function StageMaterialPicker({
       defaultUnitKey = "equipment";
     } else if (item.packagingVariants && item.packagingVariants.length > 0) {
       const v = item.packagingVariants[0];
-      defaultUnitKey = `pack-0-${v.unitBase?.id ?? 0}`;
+      const hasPackagingSpec = Boolean(
+        v.packagingType && v.packagingType.name && (v.quantity ?? 0) > 0,
+      );
+      defaultUnitKey = hasPackagingSpec
+        ? `pack-0-${v.unitBase?.id ?? 0}`
+        : `basic-0-${v.unitBase?.id ?? 0}`;
     } else {
       defaultUnitKey = "basic-default";
     }
@@ -413,7 +424,8 @@ export function StageMaterialPicker({
 
         {selectedMaterial && (!qty || !selectedUnitOption) && (
           <p className="text-[11px] font-semibold text-amber-700 bg-amber-50 p-2 rounded-lg border border-amber-200/80">
-            * Bạn đã chọn vật tư. Vui lòng nhập số lượng, chọn đơn vị tính và nhấn "Thêm vật tư" bên dưới để hoàn tất cấp phát.
+            * Bạn đã chọn vật tư. Vui lòng nhập số lượng, chọn đơn vị tính và
+            nhấn "Thêm vật tư" bên dưới để hoàn tất cấp phát.
           </p>
         )}
 

@@ -4,7 +4,8 @@ import type {
   SupplyItemResponse,
   SupplyType,
 } from "@/features/farm-supply/types";
-import { useQuery } from "@tanstack/react-query";
+import { useInfiniteQuery } from "@tanstack/react-query";
+import { useMemo } from "react";
 import { useDebounce } from "./useDebounce";
 
 export type SupplyTypeOption = {
@@ -60,7 +61,7 @@ export function useRemoteSupplySearch(
 ) {
   const debouncedSearch = useDebounce(searchValue.trim(), 300);
 
-  const query = useQuery({
+  const query = useInfiniteQuery({
     queryKey: [
       "plan-growth",
       "remote-supply-search",
@@ -68,22 +69,44 @@ export function useRemoteSupplySearch(
       type,
       debouncedSearch,
     ] as const,
-    queryFn: () =>
+    queryFn: ({ pageParam = 0 }) =>
       farmSupplyApi.list(type, {
         domainCode,
         status: "active",
         keyword: debouncedSearch || undefined,
-        page: 0,
+        page: pageParam,
         size: 20,
       }),
+    getNextPageParam: (lastPage) => {
+      if (!lastPage || lastPage.last || !lastPage.content) {
+        return undefined;
+      }
+      const pageNum = typeof lastPage.page === "number" ? lastPage.page : 0;
+      if (lastPage.totalPages && pageNum >= lastPage.totalPages - 1) {
+        return undefined;
+      }
+      return pageNum + 1;
+    },
+    initialPageParam: 0,
     staleTime: 30_000,
     refetchOnWindowFocus: false,
   });
 
+  const items = useMemo(
+    () => query.data?.pages.flatMap((page) => page.content) ?? [],
+    [query.data],
+  );
+
+  const totalElements = query.data?.pages[0]?.totalElements ?? 0;
+
   return {
-    items: query.data?.content ?? [],
+    items,
+    totalElements,
     isLoading: query.isLoading,
     isFetching: query.isFetching,
+    isFetchingNextPage: query.isFetchingNextPage,
+    hasNextPage: query.hasNextPage,
+    fetchNextPage: query.fetchNextPage,
     isError: query.isError,
   };
 }
