@@ -1,4 +1,4 @@
-import { keepPreviousData, useQuery, useQueryClient } from "@tanstack/react-query";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { useSelectedWorkspaceId } from "@/features/workspace";
 import { farmDailyDiaryApi } from "../api/farm-daily-diary.api";
 import type {
@@ -29,46 +29,20 @@ export function useFarmDailyDiaryEntries({
   enabled = true,
 }: UseFarmDailyDiaryEntriesOptions = {}) {
   const workspaceId = useSelectedWorkspaceId();
-  const queryClient = useQueryClient();
 
   return useQuery<PageResponseFarmDailyDiaryEntryResponse, Error>({
     queryKey: farmDailyDiaryKeys.list(workspaceId, params),
-    queryFn: async () => {
+    queryFn: () => {
       if (workspaceId === null || workspaceId === undefined || workspaceId === "") {
         throw new Error("Missing workspace id for daily diary entries");
       }
-      const queryKey = farmDailyDiaryKeys.list(workspaceId, params);
-      const previousData =
-        queryClient.getQueryData<PageResponseFarmDailyDiaryEntryResponse>(
-          queryKey,
-        );
-      const serverData = await farmDailyDiaryApi.list(params);
-
-      if (previousData?.content?.length) {
-        const missingOptimisticItems = previousData.content.filter(
-          (cachedItem) =>
-            !serverData.content.some(
-              (serverItem) => String(serverItem.id) === String(cachedItem.id),
-            ),
-        );
-        if (missingOptimisticItems.length > 0) {
-          return {
-            ...serverData,
-            content: [...missingOptimisticItems, ...serverData.content],
-            totalElements:
-              (serverData.totalElements ?? 0) + missingOptimisticItems.length,
-          };
-        }
-      }
-      return serverData;
+      return farmDailyDiaryApi.list(params);
     },
     enabled:
       enabled &&
       workspaceId !== null &&
       workspaceId !== undefined &&
       workspaceId !== "",
-    staleTime: 60 * 1000,
-    refetchOnWindowFocus: false,
     placeholderData: keepPreviousData,
   });
 }
