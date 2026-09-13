@@ -366,7 +366,7 @@ export function UpdateHistoryTable({
       },
       {
         key: "purpose",
-        label: "Mục đích & Nội dung",
+        label: "Loại công việc & Nội dung",
         render: (_val, row) => {
           const purposeConfig = PURPOSE_MAP[row.purpose] || {
             label: row.purpose,
@@ -390,7 +390,7 @@ export function UpdateHistoryTable({
       },
       {
         key: "lines",
-        label: "Công việc phát sinh",
+        label: "Công việc thực hiện",
         render: (_val, row) => {
           const linesCount = row.lines?.length ?? 0;
           if (linesCount === 0) {
@@ -524,7 +524,6 @@ export function UpdateHistoryTable({
     ? (dailyColumns as any)
     : (plannedEntryColumns as any);
   const dataToUse = isDaily ? dailyEntries : (plannedEntries ?? []);
-
 
   return (
     <DataTable

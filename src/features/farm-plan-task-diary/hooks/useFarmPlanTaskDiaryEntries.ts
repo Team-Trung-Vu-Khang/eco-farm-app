@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { farmPlanTaskDiaryApi } from "../api/farm-plan-task-diary.api";
 import type {
   PlanTaskDiaryQueryParams,
@@ -27,9 +27,34 @@ export function useFarmPlanTaskDiaryEntries({
   params,
   enabled = true,
 }: UseFarmPlanTaskDiaryEntriesOptions = {}) {
+  const queryClient = useQueryClient();
+
   const queryResult = useQuery<PlanTaskDiaryEntryPageResponse, Error>({
     queryKey: farmPlanTaskDiaryKeys.list(params),
-    queryFn: () => farmPlanTaskDiaryApi.list(params),
+    queryFn: async () => {
+      const queryKey = farmPlanTaskDiaryKeys.list(params);
+      const previousData =
+        queryClient.getQueryData<PlanTaskDiaryEntryPageResponse>(queryKey);
+      const serverData = await farmPlanTaskDiaryApi.list(params);
+
+      if (previousData?.content?.length) {
+        const missingOptimisticItems = previousData.content.filter(
+          (cachedItem) =>
+            !serverData.content.some(
+              (serverItem) => String(serverItem.id) === String(cachedItem.id),
+            ),
+        );
+        if (missingOptimisticItems.length > 0) {
+          return {
+            ...serverData,
+            content: [...missingOptimisticItems, ...serverData.content],
+            totalElements:
+              (serverData.totalElements ?? 0) + missingOptimisticItems.length,
+          };
+        }
+      }
+      return serverData;
+    },
     enabled,
     staleTime: 60 * 1000,
     refetchOnWindowFocus: false,
