@@ -287,7 +287,7 @@ export function DiaryAdvancedFilterPanel({
   if (!isOpen) return null;
 
   return (
-    <div className="relative z-30 mt-2 overflow-visible rounded-xl border border-slate-200 bg-white shadow-md animate-in slide-in-from-top-2 duration-200">
+    <div className="relative mt-2 overflow-visible rounded-xl border border-slate-200 bg-white shadow-md animate-in slide-in-from-top-2 duration-200 z-0">
       <div className="px-6 py-4 bg-slate-50/80 border-b border-slate-200 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Filter size={18} className="text-green-600" />
