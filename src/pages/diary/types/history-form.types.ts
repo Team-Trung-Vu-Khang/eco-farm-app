@@ -62,6 +62,7 @@ export interface HistoryFormContentProps {
 
 export interface RawSupplyLineItem {
   id: number;
+  supplyItemName?: string;
   supplyItem?: { name: string };
   name?: string;
   quantity?: number;

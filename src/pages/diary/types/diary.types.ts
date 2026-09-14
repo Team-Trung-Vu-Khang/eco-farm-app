@@ -24,6 +24,8 @@ export interface MockTaskSupplyLine {
   plannedQty: string;
   actualQty?: string;
   unit: string;
+  supplyItemName?: string;
+  supplyItem?: { id?: number; name?: string; code?: string };
 }
 
 export interface MockTaskItem {

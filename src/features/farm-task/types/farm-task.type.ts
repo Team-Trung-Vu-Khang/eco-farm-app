@@ -58,6 +58,12 @@ export interface FarmTaskSupplyLineResponse {
   quantity: number;
   displayOrder: number;
   quantityActualTotal: number;
+  supplyItemId?: number;
+  supplyItemName?: string;
+  name?: string;
+  unit?: string;
+  unitName?: string;
+  unitBaseId?: number;
 }
 
 export interface FarmTaskSourceWorkItemRef {
@@ -122,6 +128,7 @@ export interface FarmTaskResponse {
   recurrence: FarmTaskRecurrenceResponse;
   supplyLines: FarmTaskSupplyLineResponse[];
   status: FarmTaskStatus;
+  progressPercent?: number;
   displayOrder?: number;
   createdAt?: string;
   updatedAt?: string;

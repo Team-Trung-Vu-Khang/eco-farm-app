@@ -222,7 +222,11 @@ export function HistoryFormContent({
           stageId: line.name,
           materialType: catalogItem?.typeLabel || "Vật tư khác",
           materialName:
-            catalogItem?.name || s.name || `Vật tư #${s.supplyItemId}`,
+            s.supplyItemName ||
+            catalogItem?.name ||
+            s.supplyItem?.name ||
+            s.name ||
+            `Vật tư #${s.supplyItemId}`,
           quantity: String(s.quantityActual ?? 0),
           actualQuantity: String(s.quantityActual ?? 0),
           unit: catalogItem?.unit || s.unit || "kg",
@@ -511,17 +515,13 @@ export function HistoryFormContent({
         id: Date.now() + idx,
         stageId: taskItem.name,
         materialType: "Kế hoạch",
-        materialName: s.supplyItem?.name || `Vật tư #${s.id}`,
+        materialName:
+          s.supplyItemName || s.supplyItem?.name || s.name || `Vật tư #${s.id}`,
         quantity: String(qtyVal),
         actualQuantity: String(qtyVal),
-        unit:
-          s.unitBase?.name ||
-          (s as { unit?: string; unitName?: string }).unit ||
-          (s as { unit?: string; unitName?: string }).unitName ||
-          "",
-        supplyItemId:
-          s.supplyItem?.id || (s as { supplyItemId?: number }).supplyItemId,
-        unitBaseId: s.unitBase?.id || (s as { unitBaseId?: number }).unitBaseId,
+        unit: s.unitBase?.name || s.unit || s.unitName || "",
+        supplyItemId: s.supplyItem?.id || s.supplyItemId,
+        unitBaseId: s.unitBase?.id || s.unitBaseId,
         isPlanned: true,
       };
     });
@@ -533,10 +533,9 @@ export function HistoryFormContent({
 
     const resolvedWorkType = isHarvestTask ? "harvest" : "cultivation";
 
-    const taskItemWithProgress = taskItem as { progressPercent?: number };
     const initialProgress =
-      typeof taskItemWithProgress.progressPercent === "number"
-        ? taskItemWithProgress.progressPercent
+      typeof taskItem.progressPercent === "number"
+        ? taskItem.progressPercent
         : taskItem.status === "DONE"
           ? 100
           : 0;
@@ -1414,13 +1413,9 @@ export function HistoryFormContent({
                             stageTasks.forEach((taskItem, tIdx) => {
                               const taskName = taskItem.name;
                               newTaskNames.push(taskName);
-                              const taskItemWithProgress = taskItem as {
-                                progressPercent?: number;
-                              };
                               const taskProgress =
-                                typeof taskItemWithProgress.progressPercent ===
-                                "number"
-                                  ? taskItemWithProgress.progressPercent
+                                typeof taskItem.progressPercent === "number"
+                                  ? taskItem.progressPercent
                                   : taskItem.status === "DONE"
                                     ? 100
                                     : 0;
@@ -1448,31 +1443,21 @@ export function HistoryFormContent({
                                     stageId: taskName,
                                     materialType: "Kế hoạch",
                                     materialName:
-                                      s.supplyItem?.name || `Vật tư #${s.id}`,
+                                      s.supplyItemName ||
+                                      s.supplyItem?.name ||
+                                      s.name ||
+                                      `Vật tư #${s.id}`,
                                     quantity: String(qtyVal),
                                     actualQuantity: String(qtyVal),
                                     unit:
                                       s.unitBase?.name ||
-                                      (
-                                        s as {
-                                          unit?: string;
-                                          unitName?: string;
-                                        }
-                                      ).unit ||
-                                      (
-                                        s as {
-                                          unit?: string;
-                                          unitName?: string;
-                                        }
-                                      ).unitName ||
+                                      s.unit ||
+                                      s.unitName ||
                                       "",
                                     supplyItemId:
-                                      s.supplyItem?.id ||
-                                      (s as { supplyItemId?: number })
-                                        .supplyItemId,
+                                      s.supplyItem?.id || s.supplyItemId,
                                     unitBaseId:
-                                      s.unitBase?.id ||
-                                      (s as { unitBaseId?: number }).unitBaseId,
+                                      s.unitBase?.id || s.unitBaseId,
                                     isPlanned: true,
                                   });
                                 },

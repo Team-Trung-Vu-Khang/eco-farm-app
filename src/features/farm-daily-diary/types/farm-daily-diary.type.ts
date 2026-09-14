@@ -37,8 +37,12 @@ export interface SupplyUsageResponse {
   supplyItemId: number;
   unitBaseId: number;
   quantityActual: number;
+  supplyItemName?: string;
+  supplyItem?: { id?: number; name?: string; code?: string };
   name?: string;
   unit?: string;
+  unitName?: string;
+  unitBase?: { id?: number; name?: string; code?: string };
 }
 
 export interface SupplyUsageRequest {
@@ -109,7 +113,7 @@ export interface DailyDiaryLineRequest {
 }
 
 export interface HarvestItemResponse {
-  targetType: "ZONE" | "ZONE_SUBJECT_VARIANT";
+  targetType: "ZONE" | "ZONE_SUBJECT_VARIANT" | string;
   targetId: number;
   quantity: number;
   unitBaseId: number;
@@ -117,6 +121,9 @@ export interface HarvestItemResponse {
   targetName?: string;
   productionSubjectCode?: string | null;
   productionSubjectName?: string | null;
+  unit?: string;
+  unitName?: string;
+  unitBase?: { id?: number; name?: string; code?: string };
 }
 
 export interface HarvestItemRequest {

@@ -175,20 +175,19 @@ export default function UpdateHistoryDetailPage() {
 
     const suppliesList = (dailyDiaryDetail.lines || []).flatMap((line) =>
       (line.supplies || []).map((s) => {
-        const item = s as typeof s & {
-          unitName?: string;
-          unitBase?: { name?: string };
-          unitBaseId?: number;
-        };
         const unitName =
           s.unit ||
-          item.unitName ||
-          item.unitBase?.name ||
-          (item.unitBaseId ? baseUnitMap.get(item.unitBaseId) : "") ||
+          s.unitName ||
+          s.unitBase?.name ||
+          (s.unitBaseId ? baseUnitMap.get(s.unitBaseId) : "") ||
           "";
         return {
           id: String(s.supplyItemId),
-          name: s.name || `Vật tư #${s.supplyItemId}`,
+          name:
+            s.supplyItemName ||
+            s.supplyItem?.name ||
+            s.name ||
+            (s.supplyItemId ? `Vật tư #${s.supplyItemId}` : ""),
           actualQty: String(s.quantityActual ?? 0),
           unit: unitName,
         };
@@ -196,16 +195,10 @@ export default function UpdateHistoryDetailPage() {
     );
 
     const harvestList = (dailyDiaryDetail.harvestItems || []).map((h) => {
-      const item = h as typeof h & {
-        unit?: string;
-        unitName?: string;
-        unitBase?: { name?: string };
-        unitBaseId?: number;
-      };
       const unitName =
-        item.unit ||
-        item.unitName ||
-        item.unitBase?.name ||
+        h.unit ||
+        h.unitName ||
+        h.unitBase?.name ||
         (h.unitBaseId ? baseUnitMap.get(h.unitBaseId) : "") ||
         "";
       return {
@@ -307,20 +300,16 @@ export default function UpdateHistoryDetailPage() {
     if (!realFarmTask) return undefined;
 
     const defaultSupplies = (realFarmTask.supplyLines || []).map((s) => {
-      const item = s as typeof s & {
-        unit?: string;
-        unitName?: string;
-        unitBaseId?: number;
-      };
       const unitName =
         s.unitBase?.name ||
-        item.unit ||
-        item.unitName ||
-        (item.unitBaseId ? baseUnitMap.get(item.unitBaseId) : "") ||
+        s.unit ||
+        s.unitName ||
+        (s.unitBaseId ? baseUnitMap.get(s.unitBaseId) : "") ||
         "";
       return {
         id: String(s.supplyItem?.id || s.id),
-        name: s.supplyItem?.name || `Vật tư #${s.id}`,
+        name:
+          s.supplyItemName || s.supplyItem?.name || s.name || `Vật tư #${s.id}`,
         actualQty: String(s.quantityActualTotal ?? s.quantity ?? 0),
         unit: unitName,
       };
@@ -330,19 +319,16 @@ export default function UpdateHistoryDetailPage() {
       const entryFirstLine = entry.lines?.[0];
       const entrySupplies = (entry.lines || []).flatMap((line) =>
         (line.supplies || []).map((s) => {
-          const item = s as typeof s & {
-            unitName?: string;
-            unitBaseId?: number;
-          };
           const unitName =
             s.unit ||
             s.unitBase?.name ||
-            item.unitName ||
-            (item.unitBaseId ? baseUnitMap.get(item.unitBaseId) : "") ||
+            s.unitName ||
+            (s.unitBaseId ? baseUnitMap.get(s.unitBaseId) : "") ||
             "";
           return {
             id: String(s.supplyItemId || s.id),
             name:
+              s.supplyItemName ||
               s.supplyItem?.name ||
               s.name ||
               `Vật tư #${s.supplyItemId || s.id}`,
@@ -377,16 +363,10 @@ export default function UpdateHistoryDetailPage() {
           "Ghi nhận nhật ký kế hoạch",
         supplies: entrySupplies.length > 0 ? entrySupplies : defaultSupplies,
         harvestDetails: (entry.harvestItems || []).map((h) => {
-          const item = h as typeof h & {
-            unit?: string;
-            unitName?: string;
-            unitBase?: { name?: string };
-            unitBaseId?: number;
-          };
           const unitName =
-            item.unit ||
-            item.unitName ||
-            item.unitBase?.name ||
+            h.unit ||
+            h.unitName ||
+            h.unitBase?.name ||
             (h.unitBaseId ? baseUnitMap.get(h.unitBaseId) : "") ||
             "";
           return {

@@ -34,7 +34,8 @@ export function toWorkflowScopeRegionOptions(
   >();
 
   scopes.forEach((scope) => {
-    const region = scope.region ?? scope.area?.region ?? scope.plot?.area?.region;
+    const region =
+      scope.region ?? scope.area?.region ?? scope.plot?.area?.region;
     if (!region) return;
 
     let regionObj = regionMap.get(region.id);
@@ -132,7 +133,7 @@ export function toRegionOptions(apiRegions: FarmRegionResponse[]) {
 export function mapSupplyLineItem(s: RawSupplyLineItem) {
   return {
     id: s.id,
-    name: s.supplyItem?.name || s.name || `Vật tư #${s.id}`,
+    name: s.supplyItemName || s.supplyItem?.name || s.name || `Vật tư #${s.id}`,
     plannedQty: String(s.quantity ?? s.plannedQty ?? 0),
     actualQty: String(s.quantity ?? s.actualQty ?? 0),
     unit: s.unitBase?.name || s.unit || "kg",
@@ -264,16 +265,15 @@ export function extractCropSubjectVariants(
 ): import("../types/history-form.types").CropSubjectVariantItem[] {
   if (!zones || zones.length === 0) return [];
 
-  const items: import("../types/history-form.types").CropSubjectVariantItem[] = [];
+  const items: import("../types/history-form.types").CropSubjectVariantItem[] =
+    [];
   const seenKey = new Set<string>();
 
   zones.forEach((zone) => {
     const zoneName = zone.name ?? `Vùng canh tác #${zone.id}`;
     const firstScope = zone.scopes?.[0];
     const regionName =
-      firstScope?.region?.name ??
-      firstScope?.area?.region?.name ??
-      zoneName;
+      firstScope?.region?.name ?? firstScope?.area?.region?.name ?? zoneName;
 
     // 1. Process Foundation Catalog variants (productionSubjectVariants)
     (zone.productionSubjectVariants || []).forEach((v) => {
@@ -327,4 +327,3 @@ export function extractCropSubjectVariants(
 
   return items;
 }
-
