@@ -467,3 +467,292 @@ export const upcomingTasks = [
   },
 ];
 
+// Top 20 Farmers harvest yield share (for Admin view donut chart) + Others group
+export interface FarmerHarvestItem {
+  id: string;
+  name: string;
+  value: number; // Percentage %
+  yieldTons: number; // Volume in tons
+}
+
+export const top20FarmersHarvestShare: FarmerHarvestItem[] = [
+  { id: "f1", name: "HTX Sầu riêng Monthon Phong Điền", value: 16.5, yieldTons: 185 },
+  { id: "f2", name: "Nông hộ Nguyễn Văn A (Bến Tre)", value: 12.0, yieldTons: 135 },
+  { id: "f3", name: "HTX Mít Thái Bình Minh", value: 9.5, yieldTons: 106 },
+  { id: "f4", name: "Nông hộ Trần Thị B (Vĩnh Long)", value: 8.2, yieldTons: 92 },
+  { id: "f5", name: "Nông hộ Lê Văn C (Tiền Giang)", value: 6.8, yieldTons: 76 },
+  { id: "f6", name: "Nông hộ Phạm Văn D (Đồng Tháp)", value: 5.4, yieldTons: 60 },
+  { id: "f7", name: "HTX Sầu riêng Krông Pắc", value: 4.8, yieldTons: 54 },
+  { id: "f8", name: "Nông hộ Võ Văn E (Đắk Lắk)", value: 4.2, yieldTons: 47 },
+  { id: "f9", name: "Nông hộ Đỗ Thị F (Lâm Đồng)", value: 3.6, yieldTons: 40 },
+  { id: "f10", name: "Nông hộ Bùi Văn G (Gia Lai)", value: 3.1, yieldTons: 35 },
+  { id: "f11", name: "Nông hộ Ngô Thị H (Đắk Nông)", value: 2.8, yieldTons: 31 },
+  { id: "f12", name: "HTX Cây ăn quả Châu Thành", value: 2.5, yieldTons: 28 },
+  { id: "f13", name: "Nông hộ Đặng Văn I (Cần Thơ)", value: 2.2, yieldTons: 25 },
+  { id: "f14", name: "Nông hộ Trịnh Thị K (Hậu Giang)", value: 1.9, yieldTons: 21 },
+  { id: "f15", name: "Nông hộ Vũ Văn L (Tây Ninh)", value: 1.7, yieldTons: 19 },
+  { id: "f16", name: "Nông hộ Dương Thị M (Bình Dương)", value: 1.5, yieldTons: 17 },
+  { id: "f17", name: "Nông hộ Lý Văn N (Đồng Nai)", value: 1.3, yieldTons: 15 },
+  { id: "f18", name: "Nông hộ Hồ Thị P (Bình Phước)", value: 1.1, yieldTons: 12 },
+  { id: "f19", name: "Nông hộ Mai Văn Q (Long An)", value: 1.0, yieldTons: 11 },
+  { id: "f20", name: "Nông hộ Đào Thị R (An Giang)", value: 0.9, yieldTons: 10 },
+  { id: "f_others", name: "Khác (các nông hộ nhỏ lẻ)", value: 11.6, yieldTons: 131 },
+];
+
+export const HARVEST_COLORS = [
+  "#10b981", "#059669", "#047857", "#065f46", "#14b8a6",
+  "#0d9488", "#0f766e", "#0284c7", "#0369a1", "#1d4ed8",
+  "#1e40af", "#4f46e5", "#4338ca", "#7c3aed", "#6d28d9",
+  "#8b5cf6", "#a855f7", "#9333ea", "#c026d3", "#d946ef",
+  "#94a3b8" // Color for "Khác"
+];
+
+// Farmer Zone hierarchy tree data (for Farmer View: Vùng -> Khu vực -> Lô)
+export interface FarmerPlot {
+  id: string;
+  name: string;
+  areaHa: number;
+  sickTrees: number;
+  treatingTrees: number;
+  status: "Active" | "Pending" | "Maintaining";
+}
+
+export interface FarmerArea {
+  id: string;
+  name: string;
+  areaHa: number;
+  plots: FarmerPlot[];
+  sickTrees: number;
+  treatingTrees: number;
+}
+
+export interface FarmerZone {
+  id: string;
+  name: string;
+  description: string;
+  totalAreaHa: number;
+  areas: FarmerArea[];
+  status: string;
+  coordinates: { lat: number; lng: number };
+}
+
+export const farmerZoneTreeData: FarmerZone[] = [
+  {
+    id: "zone-1",
+    name: "Vùng canh tác sầu riêng công nghệ cao 3",
+    description: "Phạm vi địa lý: Vùng Bình Phước Alpha",
+    totalAreaHa: 125,
+    status: "Hoạt động",
+    coordinates: { lat: 11.7516, lng: 106.9038 },
+    areas: [
+      {
+        id: "area-a",
+        name: "Khu A - Sầu riêng Monthon",
+        areaHa: 45,
+        sickTrees: 18,
+        treatingTrees: 8,
+        plots: [
+          {
+            id: "plot-a1",
+            name: "Lô A1 - Monthon (25 ha)",
+            areaHa: 25,
+            sickTrees: 10,
+            treatingTrees: 4,
+            status: "Active",
+          },
+          {
+            id: "plot-a2",
+            name: "Lô A2 - Ri6 (20 ha)",
+            areaHa: 20,
+            sickTrees: 8,
+            treatingTrees: 4,
+            status: "Active",
+          },
+        ],
+      },
+      {
+        id: "area-b",
+        name: "Khu B - Sầu riêng Ri6",
+        areaHa: 50,
+        sickTrees: 22,
+        treatingTrees: 12,
+        plots: [
+          {
+            id: "plot-b1",
+            name: "Lô B1 - Ri6 (30 ha)",
+            areaHa: 30,
+            sickTrees: 14,
+            treatingTrees: 8,
+            status: "Active",
+          },
+          {
+            id: "plot-b2",
+            name: "Lô B2 - Dona (20 ha)",
+            areaHa: 20,
+            sickTrees: 8,
+            treatingTrees: 4,
+            status: "Active",
+          },
+        ],
+      },
+      {
+        id: "area-c",
+        name: "Khu Phức hợp Nông nghiệp C",
+        areaHa: 30,
+        sickTrees: 15,
+        treatingTrees: 5,
+        plots: [
+          {
+            id: "plot-c1",
+            name: "Lô C1 - Thử nghiệm (15 ha)",
+            areaHa: 15,
+            sickTrees: 9,
+            treatingTrees: 3,
+            status: "Active",
+          },
+          {
+            id: "plot-c2",
+            name: "Lô C2 - Giống mới (15 ha)",
+            areaHa: 15,
+            sickTrees: 6,
+            treatingTrees: 2,
+            status: "Active",
+          },
+        ],
+      },
+    ],
+  },
+  {
+    id: "zone-2",
+    name: "Vùng trồng Sầu riêng Ri6 Krông Pắc",
+    description: "Phạm vi địa lý: Đắk Lắk Beta",
+    totalAreaHa: 85,
+    status: "Hoạt động",
+    coordinates: { lat: 12.6667, lng: 108.2333 },
+    areas: [
+      {
+        id: "area-d",
+        name: "Khu D1 - Sầu riêng Ri6 Xuất khẩu",
+        areaHa: 45,
+        sickTrees: 8,
+        treatingTrees: 3,
+        plots: [
+          {
+            id: "plot-d1",
+            name: "Lô D1-01 (25 ha)",
+            areaHa: 25,
+            sickTrees: 5,
+            treatingTrees: 2,
+            status: "Active",
+          },
+          {
+            id: "plot-d2",
+            name: "Lô D1-02 (20 ha)",
+            areaHa: 20,
+            sickTrees: 3,
+            treatingTrees: 1,
+            status: "Active",
+          },
+        ],
+      },
+      {
+        id: "area-e",
+        name: "Khu D2 - Sầu riêng Dona Tây Nguyên",
+        areaHa: 40,
+        sickTrees: 12,
+        treatingTrees: 5,
+        plots: [
+          {
+            id: "plot-e1",
+            name: "Lô D2-01 (20 ha)",
+            areaHa: 20,
+            sickTrees: 7,
+            treatingTrees: 3,
+            status: "Active",
+          },
+          {
+            id: "plot-e2",
+            name: "Lô D2-02 (20 ha)",
+            areaHa: 20,
+            sickTrees: 5,
+            treatingTrees: 2,
+            status: "Active",
+          },
+        ],
+      },
+    ],
+  },
+  {
+    id: "zone-3",
+    name: "Vùng canh tác Mít Thái Bình Minh",
+    description: "Phạm vi địa lý: Vĩnh Long Gamma",
+    totalAreaHa: 60,
+    status: "Hoạt động",
+    coordinates: { lat: 10.0381, lng: 105.8118 },
+    areas: [
+      {
+        id: "area-f",
+        name: "Khu F1 - Mít Thái Siêu Mớm",
+        areaHa: 60,
+        sickTrees: 5,
+        treatingTrees: 2,
+        plots: [
+          {
+            id: "plot-f1",
+            name: "Lô F1-01 (30 ha)",
+            areaHa: 30,
+            sickTrees: 3,
+            treatingTrees: 1,
+            status: "Active",
+          },
+          {
+            id: "plot-f2",
+            name: "Lô F1-02 (30 ha)",
+            areaHa: 30,
+            sickTrees: 2,
+            treatingTrees: 1,
+            status: "Active",
+          },
+        ],
+      },
+    ],
+  },
+  {
+    id: "zone-4",
+    name: "Vùng trồng Xoài Hòa Lộc Cao Lãnh",
+    description: "Phạm vi địa lý: Đồng Tháp Delta",
+    totalAreaHa: 90,
+    status: "Hoạt động",
+    coordinates: { lat: 10.4602, lng: 105.6339 },
+    areas: [
+      {
+        id: "area-g",
+        name: "Khu G1 - Xoài Cát Hòa Lộc VietGAP",
+        areaHa: 90,
+        sickTrees: 14,
+        treatingTrees: 6,
+        plots: [
+          {
+            id: "plot-g1",
+            name: "Lô G1-01 (45 ha)",
+            areaHa: 45,
+            sickTrees: 8,
+            treatingTrees: 3,
+            status: "Active",
+          },
+          {
+            id: "plot-g2",
+            name: "Lô G1-02 (45 ha)",
+            areaHa: 45,
+            sickTrees: 6,
+            treatingTrees: 3,
+            status: "Active",
+          },
+        ],
+      },
+    ],
+  },
+];
+
+
+

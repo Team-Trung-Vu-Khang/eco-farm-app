@@ -68,11 +68,21 @@ const getCoordinatePair = (c: any): [number, number] | null => {
 };
 const getBoundaryPoints = (item: any): any[] | undefined => {
   if (!item) return undefined;
-  return item.boundary || item.coordinates;
+  const raw = item.boundary || item.coordinates;
+  if (!raw) return undefined;
+  if (typeof raw === "string") {
+    try {
+      const parsed = JSON.parse(raw);
+      return Array.isArray(parsed) && parsed.length > 0 ? parsed : undefined;
+    } catch {
+      return undefined;
+    }
+  }
+  return Array.isArray(raw) && raw.length > 0 ? raw : undefined;
 };
 const getCenterPoint = (item: any): [number, number] | null => {
   if (!item) return null;
-  return getCoordinatePair(item.centerPoint || item.center);
+  return getCoordinatePair(item.centerPoint || item.center || item);
 };
 
 const RedMarker = () =>
@@ -342,23 +352,26 @@ export const OverviewTab = ({
     const bounds = allCoords.length > 0 ? allCoords : null;
 
     let centerPoint: [number, number] | null = null;
-    if (allCoords.length === 0) {
-      for (const r of regionsToRender) {
-        const cp = getCenterPoint(r.region);
+    for (const r of regionsToRender) {
+      const cp = getCenterPoint(r.region);
+      if (cp) {
+        centerPoint = cp;
+        break;
+      }
+    }
+    if (!centerPoint) {
+      for (const a of areasToRender) {
+        const cp = getCenterPoint(a.area);
         if (cp) {
           centerPoint = cp;
           break;
         }
       }
-      if (!centerPoint) {
-        for (const a of areasToRender) {
-          const cp = getCenterPoint(a.area);
-          if (cp) {
-            centerPoint = cp;
-            break;
-          }
-        }
-      }
+    }
+    if (!centerPoint && allCoords.length > 0) {
+      const sumLat = allCoords.reduce((acc, curr) => acc + curr[0], 0);
+      const sumLng = allCoords.reduce((acc, curr) => acc + curr[1], 0);
+      centerPoint = [sumLat / allCoords.length, sumLng / allCoords.length];
     }
 
     return {
