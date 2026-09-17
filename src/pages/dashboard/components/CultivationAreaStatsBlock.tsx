@@ -1,7 +1,7 @@
 import { StatsCard } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { MapPin, TrendingUp } from "lucide-react";
 
-import { DashboardZoneNode } from "../hooks/useDashboardData";
+import type { DashboardZoneNode } from "../hooks/useDashboardData";
 
 interface CultivationAreaStatsBlockProps {
   zoneTreeData?: DashboardZoneNode[];

@@ -1,8 +1,6 @@
 import { AdminOrgStatsBlock } from "../components/AdminOrgStatsBlock";
-import { CultivationAreaStatsBlock } from "../components/CultivationAreaStatsBlock";
-import { CropStatsBlock } from "../components/CropStatsBlock";
-import { TaskStatsBlock } from "../components/TaskStatsBlock";
-import { FarmerHarvestShareChart } from "../components/FarmerHarvestShareChart";
+import { AdminActiveFarmerReportBlock } from "../components/AdminActiveFarmerReportBlock";
+import { CropVarietyHarvestBlock } from "../components/CropVarietyHarvestBlock";
 import { RecentDiaryEntries } from "../components/RecentDiaryEntries";
 import { UpcomingTasks } from "../components/UpcomingTasks";
 import type { DashboardZoneNode } from "../hooks/useDashboardData";
@@ -25,33 +23,19 @@ interface AdminDashboardViewProps {
   isLoading?: boolean;
 }
 
-export function AdminDashboardView({
-  zoneTreeData,
-  cropHealthMetrics,
-  taskStats,
-  isLoading,
-}: AdminDashboardViewProps) {
+export function AdminDashboardView({ isLoading }: AdminDashboardViewProps) {
   return (
     <div className="space-y-6">
       {/* 1. Organizations (Admin view) */}
       <AdminOrgStatsBlock isLoading={isLoading} />
 
-      {/* 2. Cultivation Area Summary */}
-      <CultivationAreaStatsBlock
-        zoneTreeData={zoneTreeData}
-        isLoading={isLoading}
-      />
+      {/* 2. Admin Active Farmer Report Block (Donut chart, CSV downloads, Top 20 Active Farmers) */}
+      <AdminActiveFarmerReportBlock />
 
-      {/* 3. Crop Stats (Tổng cây, Đang bệnh, Đang điều trị) */}
-      <CropStatsBlock data={cropHealthMetrics} isLoading={isLoading} />
+      {/* 3. Donut Chart & Top Farmers Chart: Sản lượng thu hoạch theo Giống cây trồng */}
+      <CropVarietyHarvestBlock />
 
-      {/* 4. Task Stats (Đã hoàn thành, Đang triển khai, Chờ triển khai) */}
-      <TaskStatsBlock data={taskStats} isLoading={isLoading} />
-
-      {/* 5. Donut Chart: Tỷ lệ sản lượng thu hoạch theo nông hộ (Top 20 + Khác) */}
-      <FarmerHarvestShareChart />
-
-      {/* 6. Recent Diary Entries & Upcoming Tasks Row */}
+      {/* 4. Recent Diary Entries & Upcoming Tasks Row */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <RecentDiaryEntries />
         <UpcomingTasks />
@@ -59,3 +43,4 @@ export function AdminDashboardView({
     </div>
   );
 }
+

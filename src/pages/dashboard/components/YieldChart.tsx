@@ -3,6 +3,7 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
+  Badge,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { TrendingUp } from "lucide-react";
 import {
@@ -19,54 +20,73 @@ import { yieldData } from "../constants";
 
 export function YieldChart() {
   return (
-    <Card className="lg:col-span-2">
-      <CardHeader>
-        <CardTitle className="font-display flex items-center gap-2">
-          <TrendingUp className="w-5 h-5 text-primary" />
-          Sản lượng thu hoạch (tấn)
-        </CardTitle>
+    <Card className="lg:col-span-2 shadow-sm border-slate-200/80 rounded-2xl overflow-hidden bg-white">
+      <CardHeader className="pb-3 border-b border-slate-100 bg-slate-50/50 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center border border-emerald-200/80 shrink-0 shadow-2xs">
+            <TrendingUp className="w-5 h-5" />
+          </div>
+          <div>
+            <CardTitle className="font-bold text-base text-slate-800 leading-tight">
+              Sản lượng thu hoạch (tấn)
+            </CardTitle>
+            <p className="text-xs text-slate-500 font-medium mt-0.5">
+              Diễn biến sản lượng thu hoạch 12 tháng gần nhất (T10/2025 -
+              T09/2026)
+            </p>
+          </div>
+        </div>
+        <Badge className="bg-emerald-100 text-emerald-800 border-emerald-200 text-xs font-bold shrink-0 self-start sm:self-auto">
+          12 Tháng gần nhất (Đến T09/2026)
+        </Badge>
       </CardHeader>
-      <CardContent>
-        <div className="h-75">
-          <ResponsiveContainer width="100%" height={300}>
+      <CardContent className="pt-5 pb-4">
+        <div className="h-[300px] w-full">
+          <ResponsiveContainer width="100%" height="100%">
             <LineChart
               data={yieldData}
-              margin={{ top: 5, right: 5, left: -20, bottom: 0 }}
+              margin={{ top: 10, right: 15, left: 0, bottom: 5 }}
             >
               <CartesianGrid
                 strokeDasharray="3 3"
-                stroke="hsl(140, 15%, 88%)"
+                stroke="#e2e8f0"
                 vertical={false}
               />
               <XAxis
                 dataKey="month"
-                stroke="hsl(140, 10%, 45%)"
+                stroke="#64748b"
                 fontSize={11}
                 tickLine={false}
-                axisLine={false}
-                dy={10}
+                axisLine={{ stroke: "#e2e8f0" }}
+                dy={8}
               />
               <YAxis
-                stroke="hsl(140, 10%, 45%)"
+                stroke="#64748b"
                 fontSize={11}
                 tickLine={false}
                 axisLine={false}
-                dx={-10}
+                dx={-5}
+                unit=" tấn"
               />
               <Tooltip
+                wrapperStyle={{ zIndex: 1000 }}
                 contentStyle={{
-                  backgroundColor: "hsl(0, 0%, 100%)",
-                  border: "1px solid hsl(140, 15%, 88%)",
-                  borderRadius: "8px",
+                  backgroundColor: "#ffffff",
+                  border: "1px solid #cbd5e1",
+                  borderRadius: "12px",
                   fontSize: "12px",
+                  fontWeight: 600,
+                  boxShadow: "0 10px 15px -3px rgba(0,0,0,0.1)",
+                  zIndex: 1000,
                 }}
+                formatter={(val: number, name: string) => [`${val} Tấn`, name]}
               />
               <Legend
                 verticalAlign="bottom"
                 height={36}
                 iconType="circle"
                 formatter={(value: string) => (
-                  <span className="text-sm font-medium text-slate-600 ml-1">
+                  <span className="text-xs font-semibold text-slate-700 ml-1">
                     {value}
                   </span>
                 )}
@@ -74,29 +94,44 @@ export function YieldChart() {
               <Line
                 type="monotone"
                 dataKey="monthon"
-                name="Monthon"
-                stroke="hsl(142, 70%, 45%)"
-                strokeWidth={2}
-                dot={{ r: 3, fill: "white", strokeWidth: 2 }}
-                activeDot={{ r: 5 }}
+                name="Sầu riêng Monthon"
+                stroke="#10b981"
+                strokeWidth={2.5}
+                dot={{
+                  r: 4,
+                  fill: "#ffffff",
+                  stroke: "#10b981",
+                  strokeWidth: 2,
+                }}
+                activeDot={{ r: 6 }}
               />
               <Line
                 type="monotone"
                 dataKey="ri6"
-                name="Ri6"
-                stroke="hsl(142, 60%, 25%)"
-                strokeWidth={2}
-                dot={{ r: 3, fill: "white", strokeWidth: 2 }}
-                activeDot={{ r: 5 }}
+                name="Sầu riêng Ri6"
+                stroke="#047857"
+                strokeWidth={2.5}
+                dot={{
+                  r: 4,
+                  fill: "#ffffff",
+                  stroke: "#047857",
+                  strokeWidth: 2,
+                }}
+                activeDot={{ r: 6 }}
               />
               <Line
                 type="monotone"
                 dataKey="dona"
-                name="Dona"
-                stroke="hsl(142, 50%, 95%)"
-                strokeWidth={2}
-                dot={{ r: 3, fill: "white", strokeWidth: 2 }}
-                activeDot={{ r: 5 }}
+                name="Sầu riêng Dona"
+                stroke="#f59e0b"
+                strokeWidth={2.5}
+                dot={{
+                  r: 4,
+                  fill: "#ffffff",
+                  stroke: "#f59e0b",
+                  strokeWidth: 2,
+                }}
+                activeDot={{ r: 6 }}
               />
             </LineChart>
           </ResponsiveContainer>

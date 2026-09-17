@@ -1,78 +1,26 @@
-import { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
-  Badge,
-  Button,
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import {
-  MapPin,
-  Maximize2,
-  Activity,
-  Stethoscope,
-  Layers,
-  ChevronDown,
-  Search,
-  Check,
-  X,
-  ChevronRight,
-  Building2,
-} from "lucide-react";
-import {
-  MapContainer,
-  TileLayer,
-  Polygon,
-  Marker,
-  Tooltip,
-  useMap,
-} from "react-leaflet";
+import { MapPin, Maximize2, Layers, ChevronDown, X } from "lucide-react";
+import { MapContainer, TileLayer, Polygon, Marker, Tooltip } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
-import { divIcon } from "leaflet";
 import { useLocation } from "wouter";
 import type { DashboardZoneNode } from "../hooks/useDashboardData";
-import { farmerZoneTreeData } from "../constants";
-import { GeographyScopeTree } from "./GeographyScopeTree";
 
-const RedMarker = () =>
-  divIcon({
-    html: `
-      <div style="position: relative; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center;">
-        <div style="position: absolute; width: 30px; height: 30px; background-color: #ef4444; border-radius: 50%; opacity: 0.3; transform: scale(1.4); animation: pulse 2s infinite;"></div>
-        <div style="position: absolute; width: 14px; height: 14px; background-color: #ef4444; border: 2px solid white; border-radius: 50%; box-shadow: 0 2px 4px rgba(0,0,0,0.3);"></div>
-      </div>
-      <style>
-        @keyframes pulse {
-          0% { transform: scale(0.95); opacity: 0.5; }
-          50% { transform: scale(1.6); opacity: 0; }
-          100% { transform: scale(0.95); opacity: 0.5; }
-        }
-      </style>
-    `,
-    className: "custom-center-marker",
-    iconSize: [30, 30],
-    iconAnchor: [15, 15],
-  });
-
-const MapBoundsSync = ({
-  bounds,
-  centerPoint,
-}: {
-  bounds: [number, number][] | null;
-  centerPoint: [number, number] | null;
-}) => {
-  const map = useMap();
-  useEffect(() => {
-    map.invalidateSize();
-    if (bounds && bounds.length > 0) {
-      map.fitBounds(bounds, { padding: [20, 20] });
-    } else if (centerPoint) {
-      map.setView(centerPoint, 15);
-    }
-  }, [bounds, centerPoint, map]);
-  return null;
-};
+import {
+  RedMarker,
+  MapChildLayers,
+  MapBoundsSync,
+} from "./FarmerZoneMapChildLayers";
+import {
+  FarmerZoneMapUnitDetailPanel,
+  type SelectedUnitState,
+} from "./FarmerZoneMapUnitDetailPanel";
+import { FarmerZoneSelectionModal } from "./FarmerZoneSelectionModal";
 
 interface FarmerZoneMapBlockProps {
   zoneTreeData?: DashboardZoneNode[];
@@ -91,10 +39,9 @@ export function FarmerZoneMapBlock({
   const [searchZoneQuery, setSearchZoneQuery] = useState("");
   const [isZoneDialogOpen, setIsZoneDialogOpen] = useState(false);
   const [isMapExpanded, setIsMapExpanded] = useState(false);
-  const [selectedUnit, setSelectedUnit] = useState<{
-    type: "region" | "area" | "plot";
-    data: any;
-  } | null>(null);
+  const [selectedUnit, setSelectedUnit] = useState<SelectedUnitState | null>(
+    null,
+  );
 
   useEffect(() => {
     if (
@@ -112,11 +59,11 @@ export function FarmerZoneMapBlock({
 
     let path = "";
     if (selectedUnit.type === "region") {
-      path = `/cultivation-region/${numericId}`;
+      path = `/region-distribution/detail/${numericId}`;
     } else if (selectedUnit.type === "area") {
-      path = `/cultivation-area/${numericId}`;
+      path = `/area-distribution/detail/${numericId}`;
     } else if (selectedUnit.type === "plot") {
-      path = `/cultivation-plot/${numericId}`;
+      path = `/plot-distribution/detail/${numericId}`;
     }
 
     if (path) {
@@ -207,101 +154,19 @@ export function FarmerZoneMapBlock({
       </div>
 
       {/* Modal Dialog for Zone Selection */}
-      <Dialog open={isZoneDialogOpen} onOpenChange={setIsZoneDialogOpen}>
-        <DialogContent className="max-w-xl w-[92vw] rounded-3xl p-6 bg-white shadow-2xl border-none">
-          <DialogHeader className="pb-3 border-b">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center border border-emerald-200">
-                <Layers className="w-5 h-5" />
-              </div>
-              <div>
-                <DialogTitle className="text-lg font-bold text-slate-800">
-                  Chọn Vùng Canh Tác Nông Hộ
-                </DialogTitle>
-                <p className="text-xs text-slate-500 mt-0.5">
-                  Danh sách tất cả các vùng canh tác thuộc quyền sở hữu của Nông
-                  hộ
-                </p>
-              </div>
-            </div>
-          </DialogHeader>
+      <FarmerZoneSelectionModal
+        isOpen={isZoneDialogOpen}
+        onOpenChange={setIsZoneDialogOpen}
+        searchZoneQuery={searchZoneQuery}
+        onSearchChange={setSearchZoneQuery}
+        filteredZones={filteredZones}
+        selectedZone={selectedZone}
+        onSelectZone={handleSelectZone}
+      />
 
-          <div className="space-y-4 pt-2">
-            {/* Search input in Dialog */}
-            <div className="relative">
-              <Search className="absolute left-3.5 top-3 h-4 w-4 text-slate-400" />
-              <input
-                type="text"
-                placeholder="Tìm kiếm theo tên vùng, mô tả..."
-                value={searchZoneQuery}
-                onChange={(e) => setSearchZoneQuery(e.target.value)}
-                className="w-full text-xs bg-slate-50 pl-10 pr-4 py-2.5 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all font-medium"
-              />
-            </div>
-
-            {/* Zone List Grid */}
-            <div className="max-h-[360px] overflow-y-auto space-y-2.5 pr-1 divide-y divide-slate-100">
-              {filteredZones.length > 0 ? (
-                filteredZones.map((zone) => {
-                  const isSelected = zone.id === selectedZone.id;
-                  return (
-                    <button
-                      key={zone.id}
-                      onClick={() => handleSelectZone(zone.id)}
-                      className={`w-full flex items-center justify-between p-3.5 rounded-2xl text-left transition-all border pt-3.5 first:pt-3.5 ${
-                        isSelected
-                          ? "bg-emerald-50/80 border-emerald-500 shadow-sm"
-                          : "bg-white hover:bg-slate-50 border-slate-200/80"
-                      }`}
-                    >
-                      <div className="flex items-start gap-3 min-w-0">
-                        <div
-                          className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 mt-0.5 ${
-                            isSelected
-                              ? "bg-emerald-600 text-white"
-                              : "bg-slate-100 text-slate-500"
-                          }`}
-                        >
-                          <Building2 className="w-4 h-4" />
-                        </div>
-                        <div className="min-w-0 pr-2">
-                          <div
-                            className={`text-xs font-bold ${isSelected ? "text-emerald-950" : "text-slate-800"}`}
-                          >
-                            {zone.name}
-                          </div>
-                          <div className="text-[11px] text-slate-500 mt-1 flex items-center gap-3">
-                            <span>{zone.description}</span>
-                            <span className="font-semibold text-slate-700 bg-slate-100 px-1.5 py-0.5 rounded border">
-                              {zone.totalAreaHa} ha
-                            </span>
-                            <span className="text-emerald-700 font-medium">
-                              {zone.areas.length} khu vực
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                      {isSelected && (
-                        <span className="w-6 h-6 rounded-full bg-emerald-600 text-white flex items-center justify-center shrink-0 ml-2">
-                          <Check className="w-3.5 h-3.5" />
-                        </span>
-                      )}
-                    </button>
-                  );
-                })
-              ) : (
-                <div className="py-8 text-center text-xs text-slate-400 italic">
-                  Không tìm thấy vùng canh tác phù hợp
-                </div>
-              )}
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Main Grid: Map Area & Detail Panel with FIXED HEIGHT h-[480px] lg:h-[640px] */}
+      {/* Main Grid: Map Area & Detail Panel */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 h-auto lg:h-[640px]">
-        {/* Left Column (lg:col-span-8): Map Area with fixed height */}
+        {/* Left Column (lg:col-span-8): Map Area */}
         <div className="lg:col-span-8 rounded-2xl overflow-hidden border-4 border-white bg-white shadow-xl relative h-[480px] lg:h-[640px] flex flex-col z-0">
           <MapContainer
             center={activeCenter}
@@ -312,18 +177,26 @@ export function FarmerZoneMapBlock({
             <TileLayer url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}" />
             <MapBoundsSync bounds={activeBounds} centerPoint={activeCenter} />
 
+            {/* Render Zone Main Boundary */}
             {activeBounds && activeBounds.length > 0 && (
               <Polygon
                 positions={activeBounds}
                 pathOptions={{
                   color: "#10b981",
                   fillColor: "#10b981",
-                  fillOpacity: 0.25,
-                  weight: 2,
+                  fillOpacity: 0.15,
+                  weight: 2.5,
                 }}
               />
             )}
 
+            {/* Render Child Areas & Plots Boundaries and Markers */}
+            <MapChildLayers
+              zone={selectedZone}
+              onSelectUnit={(type, data) => setSelectedUnit({ type, data })}
+            />
+
+            {/* Render Main Center Marker */}
             {activeCenter && (
               <Marker position={activeCenter} icon={RedMarker()}>
                 <Tooltip sticky direction="top" opacity={0.95}>
@@ -352,11 +225,11 @@ export function FarmerZoneMapBlock({
           {/* Map Legend Overlay */}
           <div className="absolute bottom-4 left-4 z-10 bg-white/95 backdrop-blur-md p-3 rounded-2xl shadow-xl border border-white/60 space-y-2 text-xs">
             <div className="flex items-center gap-2 font-bold text-slate-700">
-              <div className="w-3 h-3 rounded-sm bg-blue-500/20 border border-blue-500" />
+              <div className="w-3 h-3 rounded-sm bg-emerald-500/20 border border-emerald-500" />
               <span>Vùng trồng (Zone)</span>
             </div>
             <div className="flex items-center gap-2 font-bold text-slate-700">
-              <div className="w-3 h-3 rounded-sm bg-emerald-500/20 border border-emerald-500" />
+              <div className="w-3 h-3 rounded-sm bg-blue-500/20 border border-blue-500" />
               <span>Khu vực (Area)</span>
             </div>
             <div className="flex items-center gap-2 font-bold text-slate-700">
@@ -388,18 +261,28 @@ export function FarmerZoneMapBlock({
                     centerPoint={activeCenter}
                   />
 
+                  {/* Render Zone Main Boundary */}
                   {activeBounds && activeBounds.length > 0 && (
                     <Polygon
                       positions={activeBounds}
                       pathOptions={{
                         color: "#10b981",
                         fillColor: "#10b981",
-                        fillOpacity: 0.25,
-                        weight: 2,
+                        fillOpacity: 0.15,
+                        weight: 2.5,
                       }}
                     />
                   )}
 
+                  {/* Render Child Areas & Plots Boundaries and Markers */}
+                  <MapChildLayers
+                    zone={selectedZone}
+                    onSelectUnit={(type, data) =>
+                      setSelectedUnit({ type, data })
+                    }
+                  />
+
+                  {/* Render Main Center Marker */}
                   {activeCenter && (
                     <Marker position={activeCenter} icon={RedMarker()}>
                       <Tooltip sticky direction="top" opacity={0.95}>
@@ -422,258 +305,26 @@ export function FarmerZoneMapBlock({
               </div>
 
               {/* Fullscreen Sidebar Tree */}
-              <div className="w-[420px] bg-white border-l border-slate-200 p-4 overflow-y-auto space-y-4 shrink-0">
-                <div className="flex items-center justify-between border-b pb-2.5 mb-3">
-                  <div className="flex items-center gap-2">
-                    <Layers className="w-4 h-4 text-emerald-600" />
-                    <span className="font-bold text-xs uppercase tracking-widest text-slate-700">
-                      Phạm vi địa lý cây trồng
-                    </span>
-                  </div>
-                  {selectedUnit && (
-                    <Badge
-                      variant="outline"
-                      className="text-[10px] font-bold bg-emerald-50 text-emerald-700 border-emerald-200"
-                    >
-                      Đang xem chi tiết
-                    </Badge>
-                  )}
-                </div>
-
-                {selectedUnit ? (
-                  <div className="animate-in fade-in duration-200 space-y-4">
-                    {/* Unit Type Badge & Code */}
-                    <div className="flex items-center justify-between">
-                      <Badge
-                        className={`uppercase font-bold px-2.5 py-1 text-[10px] ${
-                          selectedUnit.type === "region"
-                            ? "bg-blue-500 text-white"
-                            : selectedUnit.type === "area"
-                              ? "bg-emerald-500 text-white"
-                              : "bg-orange-500 text-white"
-                        }`}
-                      >
-                        {selectedUnit.type === "region"
-                          ? "Vùng trồng"
-                          : selectedUnit.type === "area"
-                            ? "Khu vực"
-                            : "Lô"}
-                      </Badge>
-                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-                        {selectedUnit.data.id || "N/A"}
-                      </span>
-                    </div>
-
-                    <h3 className="text-lg font-bold text-slate-800 leading-tight">
-                      {selectedUnit.data.name}
-                    </h3>
-
-                    {/* Grid Stats: Area (ha) & Status */}
-                    <div className="grid grid-cols-2 gap-3">
-                      <div className="bg-slate-50 p-3 rounded-2xl border border-slate-100">
-                        <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">
-                          Diện tích
-                        </p>
-                        <p className="text-base font-bold text-slate-800">
-                          {selectedUnit.data.areaHa ||
-                            selectedUnit.data.totalAreaHa ||
-                            0}{" "}
-                          ha
-                        </p>
-                      </div>
-                      <div className="bg-slate-50 p-3 rounded-2xl border border-slate-100">
-                        <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">
-                          Trạng thái
-                        </p>
-                        <p className="text-sm font-bold text-emerald-600">
-                          {selectedUnit.data.status || "Active"}
-                        </p>
-                      </div>
-                    </div>
-
-                    {/* Health Indicators (Sick & Treating trees) */}
-                    <div className="bg-slate-50/80 p-3 rounded-2xl border border-slate-100 space-y-2">
-                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-                        Chỉ số sức khỏe cây trồng
-                      </p>
-                      <div className="grid grid-cols-2 gap-2 text-xs">
-                        <div className="flex items-center gap-1.5 text-red-600 bg-red-50 border border-red-200 px-2 py-1.5 rounded-xl font-semibold">
-                          <Activity className="w-3.5 h-3.5 shrink-0" />
-                          <span>
-                            Bệnh: {selectedUnit.data.sickTrees || 0} cây
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-1.5 text-amber-700 bg-amber-50 border border-amber-200 px-2 py-1.5 rounded-xl font-semibold">
-                          <Stethoscope className="w-3.5 h-3.5 shrink-0" />
-                          <span>
-                            Điều trị: {selectedUnit.data.treatingTrees || 0} cây
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Action Buttons */}
-                    <div className="space-y-2 pt-2">
-                      <Button
-                        variant="outline"
-                        className="w-full rounded-xl font-bold text-xs h-9"
-                        onClick={() => setSelectedUnit(null)}
-                      >
-                        Quay lại Cây địa lý
-                      </Button>
-                      <Button
-                        className="w-full rounded-xl font-bold text-xs h-10 bg-emerald-600 hover:bg-emerald-700 text-white shadow-md"
-                        onClick={handleNavigateToDetail}
-                      >
-                        Xem quản lý chi tiết
-                        <ChevronRight className="w-4 h-4 ml-1" />
-                      </Button>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    <GeographyScopeTree
-                      zone={selectedZone}
-                      selectedUnit={selectedUnit}
-                      onSelectUnit={(type, data) =>
-                        setSelectedUnit({ type, data })
-                      }
-                    />
-                    <p className="text-[11px] text-slate-400 italic text-center pt-1">
-                      Chọn một đơn vị trên cây phạm vi để xem chi tiết
-                    </p>
-                  </div>
-                )}
+              <div className="w-[420px] bg-white border-l border-slate-200 p-4 overflow-y-auto shrink-0">
+                <FarmerZoneMapUnitDetailPanel
+                  selectedZone={selectedZone}
+                  selectedUnit={selectedUnit}
+                  onSelectUnit={setSelectedUnit}
+                  onNavigateToDetail={handleNavigateToDetail}
+                />
               </div>
             </div>
           </DialogContent>
         </Dialog>
 
-        {/* Right Column (lg:col-span-4): FIXED HEIGHT h-[480px] lg:h-[640px] Detail Panel */}
+        {/* Right Column (lg:col-span-4): Detail Panel */}
         <div className="lg:col-span-4 bg-white rounded-2xl shadow-xl border-4 border-white h-[480px] lg:h-[640px] flex flex-col overflow-hidden p-4">
-          {/* Fixed Header Inside Panel */}
-          <div className="flex items-center justify-between border-b pb-2.5 mb-3 shrink-0">
-            <div className="flex items-center gap-2">
-              <Layers className="w-4 h-4 text-emerald-600" />
-              <span className="font-bold text-xs uppercase tracking-widest text-slate-700">
-                Phạm vi địa lý cây trồng
-              </span>
-            </div>
-            {selectedUnit && (
-              <Badge
-                variant="outline"
-                className="text-[10px] font-bold bg-emerald-50 text-emerald-700 border-emerald-200"
-              >
-                Đang xem chi tiết
-              </Badge>
-            )}
-          </div>
-
-          {/* Internal Scrollable Content Container */}
-          <div className="flex-1 overflow-y-auto split-scrollbar pr-1 space-y-4">
-            {selectedUnit ? (
-              <div className="animate-in fade-in duration-200 space-y-4">
-                {/* Unit Type Badge & Code */}
-                <div className="flex items-center justify-between">
-                  <Badge
-                    className={`uppercase font-bold px-2.5 py-1 text-[10px] ${
-                      selectedUnit.type === "region"
-                        ? "bg-blue-500 text-white"
-                        : selectedUnit.type === "area"
-                          ? "bg-emerald-500 text-white"
-                          : "bg-orange-500 text-white"
-                    }`}
-                  >
-                    {selectedUnit.type === "region"
-                      ? "Vùng trồng"
-                      : selectedUnit.type === "area"
-                        ? "Khu vực"
-                        : "Lô"}
-                  </Badge>
-                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-                    {selectedUnit.data.id || "N/A"}
-                  </span>
-                </div>
-
-                <h3 className="text-lg font-bold text-slate-800 leading-tight">
-                  {selectedUnit.data.name}
-                </h3>
-
-                {/* Grid Stats: Area (ha) & Status */}
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="bg-slate-50 p-3 rounded-2xl border border-slate-100">
-                    <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">
-                      Diện tích
-                    </p>
-                    <p className="text-base font-bold text-slate-800">
-                      {selectedUnit.data.areaHa ||
-                        selectedUnit.data.totalAreaHa ||
-                        0}{" "}
-                      ha
-                    </p>
-                  </div>
-                  <div className="bg-slate-50 p-3 rounded-2xl border border-slate-100">
-                    <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">
-                      Trạng thái
-                    </p>
-                    <p className="text-sm font-bold text-emerald-600">
-                      {selectedUnit.data.status || "Active"}
-                    </p>
-                  </div>
-                </div>
-
-                {/* Health Indicators (Sick & Treating trees) */}
-                <div className="bg-slate-50/80 p-3 rounded-2xl border border-slate-100 space-y-2">
-                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-                    Chỉ số sức khỏe cây trồng
-                  </p>
-                  <div className="grid grid-cols-2 gap-2 text-xs">
-                    <div className="flex items-center gap-1.5 text-red-600 bg-red-50 border border-red-200 px-2 py-1.5 rounded-xl font-semibold">
-                      <Activity className="w-3.5 h-3.5 shrink-0" />
-                      <span>Bệnh: {selectedUnit.data.sickTrees || 0} cây</span>
-                    </div>
-                    <div className="flex items-center gap-1.5 text-amber-700 bg-amber-50 border border-amber-200 px-2 py-1.5 rounded-xl font-semibold">
-                      <Stethoscope className="w-3.5 h-3.5 shrink-0" />
-                      <span>
-                        Điều trị: {selectedUnit.data.treatingTrees || 0} cây
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Action Buttons */}
-                <div className="space-y-2 pt-2">
-                  <Button
-                    variant="outline"
-                    className="w-full rounded-xl font-bold text-xs h-9"
-                    onClick={() => setSelectedUnit(null)}
-                  >
-                    Quay lại Cây địa lý
-                  </Button>
-                  <Button
-                    className="w-full rounded-xl font-bold text-xs h-10 bg-emerald-600 hover:bg-emerald-700 text-white shadow-md"
-                    onClick={handleNavigateToDetail}
-                  >
-                    Xem quản lý chi tiết
-                    <ChevronRight className="w-4 h-4 ml-1" />
-                  </Button>
-                </div>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {/* Geography Scope Tree */}
-                <GeographyScopeTree
-                  zone={selectedZone}
-                  selectedUnit={selectedUnit}
-                  onSelectUnit={(type, data) => setSelectedUnit({ type, data })}
-                />
-
-                <p className="text-[11px] text-slate-400 italic text-center pt-1">
-                  Chọn một đơn vị trên cây phạm vi để xem chi tiết
-                </p>
-              </div>
-            )}
-          </div>
+          <FarmerZoneMapUnitDetailPanel
+            selectedZone={selectedZone}
+            selectedUnit={selectedUnit}
+            onSelectUnit={setSelectedUnit}
+            onNavigateToDetail={handleNavigateToDetail}
+          />
         </div>
       </div>
     </div>

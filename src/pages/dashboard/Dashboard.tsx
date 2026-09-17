@@ -8,7 +8,8 @@ import { Building2, UserCheck, RefreshCw } from "lucide-react";
 
 export default function Dashboard() {
   const [roleView, setRoleView] = useState<"admin" | "farmer">("admin");
-  const { zoneTreeData, cropHealthMetrics, taskStats, isLoading, refetchAll } = useDashboardData();
+  const { zoneTreeData, cropHealthMetrics, taskStats, isLoading, refetchAll } =
+    useDashboardData();
 
   return (
     <PageWrapper
@@ -16,9 +17,6 @@ export default function Dashboard() {
       description="Tổng quan hệ thống quản lý nông trại"
     >
       <div className="space-y-6">
-        {/* 1. Khối Cảnh báo di chuyển lên vị trí trên cùng theo yêu cầu */}
-        <DashboardAlerts />
-
         {/* Công tắc chuyển đổi Role View cho mục đích kiểm thử */}
         <div className="flex items-center justify-between bg-slate-100/80 p-2 rounded-xl border border-slate-200">
           <div className="flex items-center gap-2 px-2">
@@ -32,7 +30,9 @@ export default function Dashboard() {
               className="p-2 rounded-lg text-slate-500 hover:text-emerald-600 hover:bg-white transition-all border border-transparent hover:border-slate-200"
               title="Tải lại dữ liệu API"
             >
-              <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? "animate-spin text-emerald-600" : ""}`} />
+              <RefreshCw
+                className={`w-3.5 h-3.5 ${isLoading ? "animate-spin text-emerald-600" : ""}`}
+              />
             </button>
             <div className="flex items-center bg-white p-1 rounded-lg border shadow-sm gap-1">
               <button
@@ -60,6 +60,9 @@ export default function Dashboard() {
             </div>
           </div>
         </div>
+
+        {/* 1. Khối Cảnh báo di chuyển lên vị trí trên cùng theo yêu cầu */}
+        {roleView === "admin" ? <></> : <DashboardAlerts />}
 
         {/* 2. Render View tương ứng với Role View với dữ liệu API thực tế */}
         {roleView === "admin" ? (
