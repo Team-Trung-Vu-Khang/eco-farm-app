@@ -473,12 +473,7 @@ export const CropCard = ({
                     selectedSeedIds={selectedSeedIds}
                     isChecked={selectedVarietyIds.includes(variety.id)}
                     onToggle={(checked) =>
-                      onToggleVariety(
-                        variety.id,
-                        variety.name,
-                        checked,
-                        cropId,
-                      )
+                      onToggleVariety(variety.id, variety.name, checked, cropId)
                     }
                     onSelectSeeds={(newSeedIds, allSeedsOfVariety, idNameMap) =>
                       onSelectSeedsForVariety(
@@ -962,9 +957,7 @@ export const ZoneConfigurationStep: React.FC<ZoneConfigurationStepProps> = ({
                     <Fish
                       className={cn(
                         "w-3.5 h-3.5 transition-colors",
-                        !useSpecificSeeds
-                          ? "text-cyan-600"
-                          : "text-slate-400",
+                        !useSpecificSeeds ? "text-cyan-600" : "text-slate-400",
                       )}
                     />
                     <span
@@ -1013,9 +1006,7 @@ export const ZoneConfigurationStep: React.FC<ZoneConfigurationStepProps> = ({
                     <Fish
                       className={cn(
                         "w-3.5 h-3.5 transition-colors",
-                        useSpecificSeeds
-                          ? "text-cyan-600"
-                          : "text-slate-400",
+                        useSpecificSeeds ? "text-cyan-600" : "text-slate-400",
                       )}
                     />
                   </div>

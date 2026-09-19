@@ -1,0 +1,402 @@
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import {
+  Button,
+  Checkbox,
+  cn,
+  Input,
+} from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import {
+  CalendarDays,
+  ChevronDown,
+  Filter,
+  HeartPulse,
+  Layers,
+  MapPin,
+  Search,
+  X,
+} from "lucide-react";
+import { z } from "zod";
+
+const dateFilterSchema = z
+  .object({
+    fromDate: z.string().optional(),
+    toDate: z.string().optional(),
+  })
+  .superRefine((data, ctx) => {
+    if (data.fromDate && data.toDate) {
+      const start = new Date(data.fromDate);
+      const end = new Date(data.toDate);
+      if (start > end) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Từ ngày phải nhỏ hơn hoặc bằng Đến ngày",
+          path: ["fromDate"],
+        });
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Đến ngày phải lớn hơn hoặc bằng Từ ngày",
+          path: ["toDate"],
+        });
+      }
+    }
+  });
+
+export interface Option {
+  id: string;
+  name: string;
+}
+
+export interface HealthDiaryFilters {
+  methodTypes: string[];
+  statuses: string[];
+  zoneIds: string[];
+  fromDate: string;
+  toDate: string;
+}
+
+interface MultiSelectFieldProps {
+  options: Option[];
+  selectedValues: string[];
+  onToggle: (value: string) => void;
+  placeholder?: string;
+  disabled?: boolean;
+}
+
+function MultiSelectField({
+  options,
+  selectedValues,
+  onToggle,
+  placeholder = "Tất cả",
+  disabled = false,
+}: MultiSelectFieldProps) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleOutsideClick = (event: MouseEvent) => {
+      if (!containerRef.current?.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleOutsideClick);
+    return () => document.removeEventListener("mousedown", handleOutsideClick);
+  }, []);
+
+  const filteredOptions = useMemo(() => {
+    if (!searchTerm.trim()) return options;
+    const q = searchTerm.toLowerCase();
+    return options.filter((o) => o.name.toLowerCase().includes(q));
+  }, [options, searchTerm]);
+
+  const selectedTextLabel = disabled
+    ? placeholder
+    : selectedValues.length === 1
+      ? options.find((o) => o.id === selectedValues[0])?.name || placeholder
+      : selectedValues.length
+        ? `Đã chọn ${selectedValues.length}`
+        : placeholder;
+
+  return (
+    <div ref={containerRef} className="relative">
+      <button
+        type="button"
+        disabled={disabled}
+        title={selectedTextLabel}
+        className={`flex h-10 w-full items-center justify-between rounded-md border px-3 text-left text-sm shadow-2xs transition-colors ${
+          disabled
+            ? "border-slate-200 bg-slate-100 text-slate-400 cursor-not-allowed opacity-70"
+            : selectedValues.length
+              ? "border-emerald-300 bg-emerald-50/40 font-bold text-emerald-800 cursor-pointer"
+              : "border-slate-200 bg-white text-slate-500 hover:border-slate-300 cursor-pointer"
+        }`}
+        onClick={() => {
+          if (disabled) return;
+          setIsOpen((open) => !open);
+        }}
+      >
+        <span className="truncate pr-2 min-w-0 font-medium text-xs">
+          {selectedTextLabel}
+        </span>
+        <ChevronDown size={16} className="text-slate-400 shrink-0" />
+      </button>
+
+      {isOpen && !disabled && (
+        <div className="absolute left-0 z-50 mt-1 max-h-72 min-w-[280px] sm:min-w-[320px] max-w-[480px] w-max overflow-hidden rounded-md border border-slate-200 bg-white shadow-lg flex flex-col">
+          <div className="p-1.5 border-b border-slate-100 bg-slate-50 sticky top-0 z-10 flex items-center gap-1.5">
+            <Search size={14} className="text-slate-400 ml-1.5 shrink-0" />
+            <input
+              type="text"
+              placeholder="Tìm kiếm..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full text-xs bg-transparent py-1 px-1 text-slate-800 focus:outline-none placeholder:text-slate-400"
+              autoFocus
+            />
+            {searchTerm && (
+              <button
+                type="button"
+                onClick={() => setSearchTerm("")}
+                className="text-slate-400 hover:text-slate-600 p-0.5"
+              >
+                <X size={12} />
+              </button>
+            )}
+          </div>
+
+          <div className="overflow-y-auto max-h-48 p-1">
+            {filteredOptions.length === 0 && (
+              <p className="px-3 py-2 text-xs text-slate-400 italic text-center">
+                {searchTerm
+                  ? "Không tìm thấy kết quả"
+                  : "Không có lựa chọn phù hợp"}
+              </p>
+            )}
+            {filteredOptions.map((opt) => {
+              const isSelected = selectedValues.includes(opt.id);
+              return (
+                <button
+                  key={opt.id}
+                  type="button"
+                  title={opt.name}
+                  className={cn(
+                    "flex w-full items-start gap-2 rounded px-3 py-2 text-left text-xs hover:bg-slate-50 transition-colors cursor-pointer",
+                    isSelected && "bg-emerald-50 text-emerald-700 font-bold",
+                  )}
+                  onClick={() => onToggle(opt.id)}
+                >
+                  <Checkbox checked={isSelected} className="mt-0.5 shrink-0" />
+                  <span className="break-words whitespace-normal leading-snug flex-1">
+                    {opt.name}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {!disabled && selectedValues.length > 0 && (
+        <div className="mt-2 flex flex-wrap gap-1">
+          {selectedValues.map((val) => {
+            const opt = options.find((o) => o.id === val);
+            const badgeLabel = opt?.name || val;
+            return (
+              <span
+                key={val}
+                title={badgeLabel}
+                className="inline-flex items-center gap-1 rounded-md bg-emerald-50 px-2 py-0.5 text-[11px] font-bold text-emerald-700 border border-emerald-200 shadow-2xs max-w-full"
+              >
+                <span className="truncate max-w-[200px]">{badgeLabel}</span>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onToggle(val);
+                  }}
+                  className="rounded-full hover:bg-emerald-200 p-0.5 text-emerald-700 transition-colors cursor-pointer shrink-0"
+                  title="Xóa lựa chọn này"
+                >
+                  <X size={11} />
+                </button>
+              </span>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+export interface HealthDiaryAdvancedFilterPanelProps {
+  isOpen: boolean;
+  filters: HealthDiaryFilters;
+  onToggleFilter: (
+    key: "methodTypes" | "statuses" | "zoneIds",
+    value: string,
+  ) => void;
+  onDateChange: (key: "fromDate" | "toDate", value: string) => void;
+  onReset: () => void;
+  onApply: () => void;
+  resultCount: number;
+  methodTypeOptions: Option[];
+  statusOptions: Option[];
+  zoneOptions: Option[];
+}
+
+export function HealthDiaryAdvancedFilterPanel({
+  isOpen,
+  filters,
+  onToggleFilter,
+  onDateChange,
+  onReset,
+  onApply,
+  resultCount,
+  methodTypeOptions,
+  statusOptions,
+  zoneOptions,
+}: HealthDiaryAdvancedFilterPanelProps) {
+  const dateValidation = useMemo(() => {
+    const parseResult = dateFilterSchema.safeParse({
+      fromDate: filters.fromDate,
+      toDate: filters.toDate,
+    });
+
+    if (parseResult.success) {
+      return { fromDateError: null, toDateError: null, isValid: true };
+    }
+
+    const issues = parseResult.error.issues;
+    const fromDateError =
+      issues.find((issue) => issue.path.includes("fromDate"))?.message || null;
+    const toDateError =
+      issues.find((issue) => issue.path.includes("toDate"))?.message || null;
+
+    return { fromDateError, toDateError, isValid: false };
+  }, [filters.fromDate, filters.toDate]);
+
+  const handleApply = () => {
+    if (!dateValidation.isValid) return;
+    onApply();
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="relative mt-2 overflow-visible rounded-xl border border-slate-200 bg-white shadow-md animate-in slide-in-from-top-2 duration-200 z-0">
+      <div className="px-6 py-4 bg-slate-50/80 border-b border-slate-200 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Filter size={18} className="text-emerald-600" />
+          <h4 className="font-black text-sm uppercase tracking-widest text-slate-800">
+            Cấu hình bộ lọc nâng cao
+          </h4>
+        </div>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={onReset}
+          className="text-emerald-700 hover:text-emerald-800 font-bold text-xs uppercase tracking-wider px-2 hover:bg-emerald-50 rounded-lg cursor-pointer"
+        >
+          Xóa tất cả bộ lọc
+        </Button>
+      </div>
+
+      <div className="p-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 items-start">
+        {/* 1. Phương thức cập nhật */}
+        <div className="space-y-2">
+          <div className="flex items-center gap-1.5 text-slate-500 ml-1">
+            <Layers size={14} className="text-emerald-600" />
+            <span className="text-[10px] font-black uppercase tracking-widest">
+              Phương thức cập nhật
+            </span>
+          </div>
+          <MultiSelectField
+            options={methodTypeOptions}
+            selectedValues={filters.methodTypes}
+            onToggle={(v) => onToggleFilter("methodTypes", v)}
+            placeholder="Tất cả phương thức..."
+          />
+        </div>
+
+        {/* 2. Tình trạng sức khỏe */}
+        <div className="space-y-2">
+          <div className="flex items-center gap-1.5 text-slate-500 ml-1">
+            <HeartPulse size={14} className="text-emerald-600" />
+            <span className="text-[10px] font-black uppercase tracking-widest">
+              Tình trạng sức khỏe
+            </span>
+          </div>
+          <MultiSelectField
+            options={statusOptions}
+            selectedValues={filters.statuses}
+            onToggle={(v) => onToggleFilter("statuses", v)}
+            placeholder="Tất cả tình trạng..."
+          />
+        </div>
+
+        {/* 3. Vùng canh tác */}
+        <div className="space-y-2">
+          <div className="flex items-center gap-1.5 text-slate-500 ml-1">
+            <MapPin size={14} className="text-emerald-600" />
+            <span className="text-[10px] font-black uppercase tracking-widest">
+              Vùng canh tác
+            </span>
+          </div>
+          <MultiSelectField
+            options={zoneOptions}
+            selectedValues={filters.zoneIds}
+            onToggle={(v) => onToggleFilter("zoneIds", v)}
+            placeholder="Tất cả vùng canh tác..."
+          />
+        </div>
+
+        {/* 4. Từ ngày */}
+        <div className="space-y-2">
+          <div className="flex items-center gap-1.5 text-slate-500 ml-1">
+            <CalendarDays size={14} className="text-emerald-600" />
+            <span className="text-[10px] font-black uppercase tracking-widest">
+              Từ ngày
+            </span>
+          </div>
+          <Input
+            type="date"
+            className={cn(
+              "h-10 bg-white border-slate-200 text-xs font-medium",
+              dateValidation.fromDateError &&
+                "border-red-500 focus:border-red-500 focus:ring-1 focus:ring-red-500",
+            )}
+            value={filters.fromDate}
+            onChange={(e) => onDateChange("fromDate", e.target.value)}
+          />
+          {dateValidation.fromDateError && (
+            <p className="text-[10px] font-semibold text-red-500 ml-1 mt-0.5">
+              {dateValidation.fromDateError}
+            </p>
+          )}
+        </div>
+
+        {/* 5. Đến ngày */}
+        <div className="space-y-2">
+          <div className="flex items-center gap-1.5 text-slate-500 ml-1">
+            <CalendarDays size={14} className="text-emerald-600" />
+            <span className="text-[10px] font-black uppercase tracking-widest">
+              Đến ngày
+            </span>
+          </div>
+          <Input
+            type="date"
+            className={cn(
+              "h-10 bg-white border-slate-200 text-xs font-medium",
+              dateValidation.toDateError &&
+                "border-red-500 focus:border-red-500 focus:ring-1 focus:ring-red-500",
+            )}
+            value={filters.toDate}
+            onChange={(e) => onDateChange("toDate", e.target.value)}
+          />
+          {dateValidation.toDateError && (
+            <p className="text-[10px] font-semibold text-red-500 ml-1 mt-0.5">
+              {dateValidation.toDateError}
+            </p>
+          )}
+        </div>
+      </div>
+
+      <div className="px-6 py-4 border-t border-slate-100 bg-slate-50/60 flex items-center justify-between gap-4 rounded-b-xl">
+        <p className="text-xs text-slate-500 font-medium">
+          Dựa trên các bộ lọc đã chọn, hệ thống tìm thấy{" "}
+          <span className="text-emerald-700 font-black px-2 py-0.5 bg-white rounded-md border border-slate-200 shadow-2xs">
+            {resultCount}
+          </span>{" "}
+          nhật ký sức khỏe phù hợp.
+        </p>
+        <Button
+          disabled={!dateValidation.isValid}
+          className="h-10 px-8 rounded-xl font-bold bg-green-600 hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed text-white shadow-md shadow-green-600/20 cursor-pointer shrink-0"
+          onClick={handleApply}
+        >
+          Áp dụng
+        </Button>
+      </div>
+    </div>
+  );
+}

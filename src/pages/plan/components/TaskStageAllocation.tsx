@@ -22,7 +22,7 @@ import {
   Textarea,
   cn,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { vi } from "date-fns/locale";
+import { vi } from "date-fns/locale/vi";
 import {
   CalendarIcon,
   CheckCircle2,

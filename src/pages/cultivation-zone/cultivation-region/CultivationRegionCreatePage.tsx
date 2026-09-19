@@ -37,18 +37,62 @@ const CultivationRegionCreatePage = () => {
     },
   });
 
-  const { reset, handleSubmit, control } = form;
+  const { reset, handleSubmit, control, watch } = form;
   const { isEditMode, handleComplete, handleCancel, isSubmitting } =
     useCultivationZoneCreateForm(reset);
 
-  // Validation for step 2 — farmingMethodId required, seeds validation check
-  const [farmingMethodId, isSeedSelectionValid] = useWatch({
+  const formValues = watch();
+  console.log("formValues", formValues);
+
+  // Validation for Step 1 & Step 2
+  const [
+    name,
+    selections,
+    farmingMethodId,
+    isSeedSelectionValid,
+    healthUpdateMethod,
+    cropIds,
+    varietyIds,
+    useSpecificSeeds,
+    varietySeedMap,
+  ] = useWatch({
     control,
-    name: ["farmingMethodId", "isSeedSelectionValid"],
+    name: [
+      "name",
+      "selections",
+      "farmingMethodId",
+      "isSeedSelectionValid",
+      "healthUpdateMethod",
+      "cropIds",
+      "varietyIds",
+      "useSpecificSeeds",
+      "varietySeedMap",
+    ],
   });
 
+  const step1Valid = !!name?.trim() && (selections?.length ?? 0) > 0;
+
+  const hasCrops = (cropIds?.length ?? 0) > 0;
+  const hasVarieties = (varietyIds?.length ?? 0) > 0;
+
+  const allVarietiesHaveSeeds =
+    !useSpecificSeeds ||
+    (hasVarieties &&
+      varietyIds.every((vId: number) => {
+        const vSeeds = (varietySeedMap as Record<string, number[]>)?.[
+          String(vId)
+        ];
+        return Array.isArray(vSeeds) && vSeeds.length > 0;
+      }));
+
   const step2Valid =
-    !!farmingMethodId && farmingMethodId > 0 && isSeedSelectionValid !== false;
+    !!farmingMethodId &&
+    farmingMethodId > 0 &&
+    !!healthUpdateMethod &&
+    hasCrops &&
+    hasVarieties &&
+    allVarietiesHaveSeeds &&
+    isSeedSelectionValid !== false;
 
   const steps: Step[] = [
     {
@@ -56,6 +100,7 @@ const CultivationRegionCreatePage = () => {
       title: "Thông tin chung",
       description: "Nhập thông tin cơ bản của vùng canh tác",
       content: <ZoneGeneralInfoStep />,
+      isValid: step1Valid,
     },
     {
       id: "configuration",

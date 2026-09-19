@@ -1,8 +1,5 @@
 import React, { useState, useMemo } from "react";
-import {
-  type TreeNode,
-  mockGeneralStats,
-} from "../../constants/mockReportData";
+import type { TreeNode } from "../../constants/mockReportData";
 import { Card, CardContent } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { Map, Grid, Sprout, Beef, Fish } from "lucide-react";
 import { GeographicalSidebar } from "./GeographicalSidebar";
@@ -10,10 +7,16 @@ import { HealthSection } from "./HealthSection";
 import { MaterialSection } from "./MaterialSection";
 import { OperationsSection } from "./OperationsSection";
 import { PersonnelSection } from "./PersonnelSection";
+import { useGeoSummary } from "@/features/farm/hooks/useFarmReport";
 
 interface OverviewMasterDashboardProps {
   domainType: "crops" | "livestock" | "aqua";
 }
+
+/** Skeleton block for loading state */
+const StatSkeleton = () => (
+  <span className="inline-block w-12 h-7 bg-slate-100 rounded animate-pulse" />
+);
 
 export const OverviewMasterDashboard: React.FC<
   OverviewMasterDashboardProps
@@ -21,6 +24,18 @@ export const OverviewMasterDashboard: React.FC<
   const [selectedLocation, setSelectedLocation] = useState<TreeNode | null>(
     null,
   );
+
+  const { regionCount, areaCount, plotCount, isLoading: geoLoading } = useGeoSummary();
+
+  /** Derive { regionId?, areaId?, plotId? } from the selected sidebar node */
+  const locationFilter = useMemo(() => {
+    if (!selectedLocation?.numericId) return {};
+    if (selectedLocation.type === "region")
+      return { regionId: selectedLocation.numericId };
+    if (selectedLocation.type === "area")
+      return { areaId: selectedLocation.numericId };
+    return { plotId: selectedLocation.numericId };
+  }, [selectedLocation]);
 
   const cardLabels = useMemo(() => {
     switch (domainType) {
@@ -52,7 +67,7 @@ export const OverviewMasterDashboard: React.FC<
 
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
-      {/* 1. Top Summary Stats Cards */}
+      {/* 1. Top Summary Stats Cards — API: /api/farm/dashboard/geo-summary */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Card className="border border-slate-100 shadow-xs relative overflow-hidden bg-white rounded-xl">
           <CardContent className="p-5 flex items-center justify-between">
@@ -61,7 +76,7 @@ export const OverviewMasterDashboard: React.FC<
                 {cardLabels.card1}
               </p>
               <p className="text-3xl font-display font-extrabold text-slate-800">
-                {mockGeneralStats.regionsCount}
+                {geoLoading ? <StatSkeleton /> : (regionCount ?? "—")}
               </p>
               <p className="text-xs text-slate-400 font-medium">
                 Vùng canh tác trọng điểm
@@ -80,7 +95,7 @@ export const OverviewMasterDashboard: React.FC<
                 Phân bổ khu vực
               </p>
               <p className="text-3xl font-display font-extrabold text-slate-800">
-                {mockGeneralStats.areasCount}
+                {geoLoading ? <StatSkeleton /> : (areaCount ?? "—")}
               </p>
               <p className="text-xs text-slate-400 font-medium">
                 Phân khu chức năng
@@ -99,7 +114,7 @@ export const OverviewMasterDashboard: React.FC<
                 {cardLabels.card3}
               </p>
               <p className="text-3xl font-display font-extrabold text-slate-800">
-                {mockGeneralStats.plotsCount}
+                {geoLoading ? <StatSkeleton /> : (plotCount ?? "—")}
               </p>
               <p className="text-xs text-slate-400 font-medium">
                 {cardLabels.card3Desc}
@@ -114,7 +129,7 @@ export const OverviewMasterDashboard: React.FC<
 
       {/* 2. 2-column layout (Sidebar & Content) */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-        {/* Geographical Sidebar (Left Column) */}
+        {/* Geographical Sidebar (Left Column) — real API */}
         <div className="lg:col-span-3 lg:sticky lg:top-6 shrink-0">
           <GeographicalSidebar
             selectedLocation={selectedLocation}
@@ -124,14 +139,18 @@ export const OverviewMasterDashboard: React.FC<
 
         {/* Main Dashboard Content (Right Column) */}
         <div className="lg:col-span-9 space-y-6">
-          {/* Section 1: Crops/Livestock/Aqua list with internal BarCharts */}
+          {/* Section 1: Variants list with card reports */}
           <HealthSection
             selectedLocation={selectedLocation}
             domainType={domainType}
+            locationFilter={locationFilter}
           />
 
           {/* Section 2: Material Consumption Grid 2x2 */}
-          <MaterialSection selectedLocation={selectedLocation} />
+          <MaterialSection
+            selectedLocation={selectedLocation}
+            locationFilter={locationFilter}
+          />
 
           {/* Section 3: Operations (Plans & Tasks) Tabs Indicator */}
           <OperationsSection selectedLocation={selectedLocation} />

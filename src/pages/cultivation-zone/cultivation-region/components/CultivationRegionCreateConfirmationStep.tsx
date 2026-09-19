@@ -1,6 +1,7 @@
 import {
   CheckCircle2,
   Droplets,
+  HeartPulse,
   Layers,
   Leaf,
   MapPin,
@@ -39,6 +40,7 @@ type Props = {
   }>;
   farmingMethodId: string;
   irrigationMethodId: string;
+  healthUpdateMethod?: "ZONE_SCOPE" | "INDIVIDUAL_PLANT";
   farmingMethods: Array<{ id: string; name: string }>;
   irrigationSystems: Array<{ id: string; name: string }>;
   cropSummary: CropSummaryItem[];
@@ -54,6 +56,7 @@ export const CultivationRegionCreateConfirmationStep = ({
   selectedCerts,
   farmingMethodId,
   irrigationMethodId,
+  healthUpdateMethod = "ZONE_SCOPE",
   farmingMethods,
   irrigationSystems,
   cropSummary,
@@ -99,24 +102,24 @@ export const CultivationRegionCreateConfirmationStep = ({
                 {selectedManagers.length > 0 && (
                   <tr className="border-b border-slate-100">
                     <td className="py-3 px-4 text-muted-foreground">
-                      Nhân sự chịu trách nhiệm
+                      Người quản lý
                     </td>
                     <td className="py-3 px-4">
-                      <div className="flex flex-wrap gap-3">
+                      <div className="flex flex-wrap gap-2">
                         {selectedManagers.map((manager) => (
                           <div
                             key={manager.id}
-                            className="flex items-center gap-2 bg-slate-50/50 pr-3 rounded-full border border-slate-100 h-8"
+                            className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-full px-3 py-1"
                           >
-                            <div className="w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center text-[10px] font-bold overflow-hidden shrink-0">
+                            <div className="w-5 h-5 rounded-full bg-slate-200 flex items-center justify-center overflow-hidden text-[10px] font-bold text-slate-600">
                               {manager.avatar ? (
                                 <img
                                   src={manager.avatar}
-                                  alt={manager.fullName}
+                                  alt=""
                                   className="w-full h-full object-cover"
                                 />
                               ) : (
-                                manager.fullName.charAt(0)
+                                manager.fullName.substring(0, 1)
                               )}
                             </div>
                             <span className="font-medium text-xs">
@@ -168,11 +171,15 @@ export const CultivationRegionCreateConfirmationStep = ({
               >
                 <MapPin className="w-4 h-4 text-slate-400" />
                 <div className="flex flex-col">
-                  <span className="text-[10px] text-muted-foreground uppercase leading-none">
-                    {entity.type}
-                  </span>
-                  <span className="font-medium text-slate-900">
+                  <span className="font-medium text-slate-800 text-xs">
                     {entity.name}
+                  </span>
+                  <span className="text-[10px] text-muted-foreground">
+                    {entity.type === "region"
+                      ? "Vùng"
+                      : entity.type === "area"
+                        ? `Khu vực (${entity.regionName})`
+                        : `Thửa (${entity.areaName} - ${entity.regionName})`}
                   </span>
                 </div>
               </div>
@@ -183,13 +190,11 @@ export const CultivationRegionCreateConfirmationStep = ({
         <Card className="border-slate-200 shadow-sm overflow-hidden">
           <div className="bg-slate-50 border-b p-4 flex items-center gap-2">
             <Sprout className="w-4 h-4 text-slate-500" />
-            <h4 className="font-semibold text-slate-800">
-              Cấu hình canh tác áp dụng
-            </h4>
+            <h4 className="font-semibold text-slate-800">Cấu hình canh tác</h4>
           </div>
           <div className="p-6 space-y-6">
-            {/* Farming method + Irrigation */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {/* Farming method + Irrigation + Health Update Method */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 flex items-start gap-3">
                 <div className="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center text-green-600 shrink-0">
                   <ScrollText className="w-5 h-5" />
@@ -222,6 +227,22 @@ export const CultivationRegionCreateConfirmationStep = ({
                         Chưa chọn
                       </span>
                     )}
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 flex items-start gap-3">
+                <div className="w-10 h-10 rounded-lg bg-emerald-100 flex items-center justify-center text-emerald-600 shrink-0">
+                  <HeartPulse className="w-5 h-5" />
+                </div>
+                <div>
+                  <div className="text-xs text-muted-foreground uppercase tracking-wider font-semibold mb-1">
+                    Cập nhật sức khỏe
+                  </div>
+                  <div className="font-bold text-slate-900">
+                    {healthUpdateMethod === "INDIVIDUAL_PLANT"
+                      ? "Cá thể từng cây trồng"
+                      : "Phạm vi vùng trồng"}
                   </div>
                 </div>
               </div>

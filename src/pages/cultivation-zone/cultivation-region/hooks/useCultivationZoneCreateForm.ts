@@ -91,21 +91,29 @@ export function useCultivationZoneCreateForm(
         // Load seedIds from subjectVariants (owner seeds) if present
         seedIds: (zoneData.subjectVariants ?? []).map((s) => s.id),
         // Crop IDs from metadataJson (set by previous form saves)
-        cropIds: (zoneData.metadataJson?.selectedCropIds as string[]) || [],
+        cropIds:
+          (zoneData.metadataJson?.selectedCropIds as string[]) ||
+          (zoneData.metadataJson?.cropIds as string[]) ||
+          [],
         cropSeedToggles:
-          (zoneData.metadataJson?.cropSeedToggles as Record<string, boolean>) || {},
+          (zoneData.metadataJson?.cropSeedToggles as Record<string, boolean>) ||
+          {},
         // Load varietyIds: prefer productionSubjectVariants (Foundation), fallback subjectVariants
         varietyIds:
-          (zoneData.productionSubjectVariants ?? []).map((v) => v.id).filter(
-            (id) => id > 0,
-          ).length > 0
+          (zoneData.productionSubjectVariants ?? [])
+            .map((v) => v.id)
+            .filter((id) => id > 0).length > 0
             ? (zoneData.productionSubjectVariants ?? []).map((v) => v.id)
-            : (zoneData.subjectVariants ?? []).map((s) => s.id).filter(
-                (id) => id > 0,
-              ),
+            : (zoneData.subjectVariants ?? [])
+                .map((s) => s.id)
+                .filter((id) => id > 0),
         useSpecificSeeds: (zoneData.subjectVariants ?? []).length > 0,
         varietyLabels,
         varietyCropMap,
+        healthUpdateMethod:
+          (zoneData.metadataJson?.healthUpdateMethod as
+            | "ZONE_SCOPE"
+            | "INDIVIDUAL_PLANT") || "ZONE_SCOPE",
         certificateIds: (zoneData.certificates ?? []).map((c) => c.id),
         personnelIds: (zoneData.personnel ?? []).map((p) => p.id),
         notes: zoneData.notes ?? "",
@@ -128,6 +136,7 @@ export function useCultivationZoneCreateForm(
         cropSeedToggles: {},
         varietyIds: [],
         useSpecificSeeds: false,
+        healthUpdateMethod: "ZONE_SCOPE",
         certificateIds: [],
         personnelIds: [],
         notes: "",
@@ -146,7 +155,11 @@ export function useCultivationZoneCreateForm(
     setIsSubmitting(true);
     try {
       // Build variant payload — mutually exclusive per API spec
-      const buildVariantPayload = (useSpecific: boolean, seedIds: number[], varietyIds: number[]) => {
+      const buildVariantPayload = (
+        useSpecific: boolean,
+        seedIds: number[],
+        varietyIds: number[],
+      ) => {
         if (useSpecific) {
           // User selected owner seeds → subjectVariantIds
           return { subjectVariantIds: seedIds };
@@ -156,7 +169,9 @@ export function useCultivationZoneCreateForm(
         }
       };
 
-      const seedIds = (data.seedIds ?? []).map(Number).filter((id) => !isNaN(id) && id > 0);
+      const seedIds = (data.seedIds ?? [])
+        .map(Number)
+        .filter((id) => !isNaN(id) && id > 0);
       const varietyIds = (data.varietyIds ?? []).filter((id) => id > 0);
 
       const request: FarmCultivationZoneRequest = {
@@ -200,6 +215,9 @@ export function useCultivationZoneCreateForm(
           ...(zoneData?.metadataJson ?? {}),
           enterpriseId: data.enterpriseId,
           formType: isDetailMode ? "advanced" : "basic",
+          selectedCropIds: data.cropIds,
+          cropIds: data.cropIds,
+          healthUpdateMethod: data.healthUpdateMethod || "ZONE_SCOPE",
         },
       };
 

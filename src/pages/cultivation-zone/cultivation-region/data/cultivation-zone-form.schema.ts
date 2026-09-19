@@ -47,6 +47,13 @@ export const cultivationZoneFormSchema = z.object({
   varietySeedMap: z.record(z.array(z.number())).optional(),
   seedLabels: z.record(z.string()).optional(),
 
+  /** Phương thức cập nhật tình trạng sức khỏe vùng trồng — bắt buộc */
+  healthUpdateMethod: z
+    .enum(["ZONE_SCOPE", "INDIVIDUAL_PLANT"], {
+      message: "Vui lòng chọn phương thức cập nhật tình trạng sức khỏe",
+    })
+    .default("ZONE_SCOPE"),
+
   /** Chứng nhận — tuỳ chọn */
   certificateIds: z.array(z.number().int().positive()).optional(),
 

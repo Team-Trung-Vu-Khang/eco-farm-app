@@ -7,17 +7,27 @@ import { ReportPageContainer } from "./pages/reports/ReportPageContainer";
 import { AdminReportPage } from "./pages/reports/AdminReportPage";
 
 const DashboardPage = lazy(() => import("./pages/dashboard/Dashboard"));
-const HistoryCreatePage = lazy(
-  () => import("./pages/diary/HistoryCreatePage"),
-);
+const HistoryCreatePage = lazy(() => import("./pages/diary/HistoryCreatePage"));
 const HistoryPage = lazy(() => import("./pages/diary/HistoryPage"));
 const PlanDiaryPage = lazy(() => import("./pages/diary/PlanDiaryPage"));
-const PlanDiaryDetailPage = lazy(() => import("./pages/diary/PlanDiaryDetailPage"));
+const PlanDiaryDetailPage = lazy(
+  () => import("./pages/diary/PlanDiaryDetailPage"),
+);
 const UpdateHistoryPage = lazy(() => import("./pages/diary/UpdateHistoryPage"));
 const UpdateHistoryDetailPage = lazy(
   () => import("./pages/diary/UpdateHistoryDetailPage"),
 );
 const DiaryLookupPage = lazy(() => import("./pages/diary/DiaryLookupPage"));
+
+const HealthDiaryUpdatePage = lazy(
+  () => import("./pages/health-diary/HealthDiaryUpdatePage"),
+);
+const HealthDiaryHistoryPage = lazy(
+  () => import("./pages/health-diary/HealthDiaryHistoryPage"),
+);
+const HealthDiaryDetailPage = lazy(
+  () => import("./pages/health-diary/HealthDiaryDetailPage"),
+);
 
 const PlanHistoryPage = () => <UpdateHistoryPage scope="PLANNED" />;
 const DailyHistoryPage = () => <UpdateHistoryPage scope="AD_HOC" />;
@@ -2004,6 +2014,17 @@ function Router() {
         <Route path="/iot-device/:id" component={IoTDeviceDetailPage} />
         <Route path="/map-iot-device" component={IoTMapViewPage} />
 
+        {/* Health Diary Routes */}
+        <Route path="/diary/health" component={HealthDiaryUpdatePage} />
+        <Route
+          path="/diary/health-history"
+          component={HealthDiaryHistoryPage}
+        />
+        <Route
+          path="/diary/health-detail/:recordId"
+          component={HealthDiaryDetailPage}
+        />
+
         {/* History Routes */}
         <Route path="/history" component={HistoryPage} />
         <Route path="/diary/incident" component={HistoryCreatePage} />
@@ -2011,8 +2032,14 @@ function Router() {
         <Route path="/diary/daily-history" component={DailyHistoryPage} />
         <Route path="/diary/plan/:taskId" component={PlanDiaryDetailPage} />
         <Route path="/diary/plan" component={PlanDiaryPage} />
-        <Route path="/diary/update/:taskId" component={UpdateHistoryDetailPage} />
-        <Route path="/diary/detail/:taskId" component={UpdateHistoryDetailPage} />
+        <Route
+          path="/diary/update/:taskId"
+          component={UpdateHistoryDetailPage}
+        />
+        <Route
+          path="/diary/detail/:taskId"
+          component={UpdateHistoryDetailPage}
+        />
         <Route path="/diary/update" component={PlanHistoryPage} />
         <Route path="/diary/lookup" component={DiaryLookupPage} />
 

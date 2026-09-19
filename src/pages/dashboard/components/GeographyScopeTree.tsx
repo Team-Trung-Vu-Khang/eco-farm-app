@@ -1,16 +1,22 @@
 import { MapPin, Layers, Target, ExternalLink } from "lucide-react";
-import { cn } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import { cn, Checkbox } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 
 interface GeographyScopeTreeProps {
   zone: any;
-  selectedUnit: { type: "region" | "area" | "plot"; data: any } | null;
-  onSelectUnit: (type: "region" | "area" | "plot", data: any) => void;
+  selectedUnit?: { type: "region" | "area" | "plot"; data: any } | null;
+  onSelectUnit?: (type: "region" | "area" | "plot", data: any) => void;
+  enableCheckboxes?: boolean;
+  selectedUnitIds?: string[];
+  onToggleUnitId?: (id: string, node: any) => void;
 }
 
 export const GeographyScopeTree = ({
   zone,
-  selectedUnit,
-  onSelectUnit,
+  selectedUnit = null,
+  onSelectUnit = () => {},
+  enableCheckboxes = false,
+  selectedUnitIds = [],
+  onToggleUnitId = () => {},
 }: GeographyScopeTreeProps) => {
   if (!zone) return null;
 
@@ -62,16 +68,30 @@ export const GeographyScopeTree = ({
         <button
           type="button"
           className={cn(
-            "flex flex-col relative z-10 w-full text-left rounded-xl p-2.5 hover:bg-white transition-all border",
+            "flex flex-col relative z-10 w-full text-left rounded-xl p-2.5 hover:bg-white transition-all border cursor-pointer",
             !isRoot && "-mx-2",
             isPlotActive
               ? "bg-white border-emerald-500 shadow-sm ring-2 ring-emerald-500/20"
               : "bg-white/60 border-slate-100 text-slate-700",
           )}
-          onClick={() => onSelectUnit("plot", plot)}
+          onClick={() => {
+            onSelectUnit("plot", plot);
+            if (enableCheckboxes) {
+              onToggleUnitId(String(plot.id), plot);
+            }
+          }}
         >
           {/* Line 1: Icon & Name */}
           <div className="flex items-center gap-3 w-full">
+            {enableCheckboxes && (
+              <div onClick={(e) => e.stopPropagation()}>
+                <Checkbox
+                  checked={selectedUnitIds.includes(String(plot.id))}
+                  onCheckedChange={() => onToggleUnitId(String(plot.id), plot)}
+                  className="shrink-0"
+                />
+              </div>
+            )}
             <div
               className={cn(
                 "w-8 h-8 rounded-lg border flex items-center justify-center shadow-xs shrink-0",
@@ -100,42 +120,11 @@ export const GeographyScopeTree = ({
             </button>
           </div>
 
-          {/* Line 2: Minimalist Meta Row */}
+          {/* Line 2: Minimalist Meta Row (DT only) */}
           <div className="flex flex-wrap items-center gap-2.5 mt-2 pl-11 w-full text-[11px] text-slate-500 font-medium">
             <span className="font-semibold text-slate-700 bg-slate-100 border border-slate-200 px-1.5 py-0.5 rounded-md text-[10px]">
               DT: {plot.areaHa || 0} ha
             </span>
-            {plot.isCountable !== false ? (
-              <>
-                {(plot.sickTrees || 0) > 0 && (
-                  <span className="inline-flex items-center gap-1 font-semibold text-red-600">
-                    <span className="w-1.5 h-1.5 rounded-full bg-red-500 shrink-0" />
-                    {plot.sickTrees} cây bệnh
-                  </span>
-                )}
-                {(plot.treatingTrees || 0) > 0 && (
-                  <span className="inline-flex items-center gap-1 font-semibold text-amber-600">
-                    <span className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0" />
-                    {plot.treatingTrees} cây đang điều trị
-                  </span>
-                )}
-              </>
-            ) : (
-              <>
-                {(plot.hasPestWarning || (plot.sickTrees || 0) > 0) && (
-                  <span className="inline-flex items-center gap-1 font-semibold text-red-600">
-                    <span className="w-1.5 h-1.5 rounded-full bg-red-500 shrink-0" />
-                    Phát hiện sâu bệnh
-                  </span>
-                )}
-                {(plot.isTreatingPest || (plot.treatingTrees || 0) > 0) && (
-                  <span className="inline-flex items-center gap-1 font-semibold text-amber-600">
-                    <span className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0" />
-                    Đang điều trị
-                  </span>
-                )}
-              </>
-            )}
           </div>
         </button>
       </div>
@@ -146,21 +135,6 @@ export const GeographyScopeTree = ({
     const isAreaActive =
       selectedUnit?.type === "area" &&
       String(selectedUnit.data?.id) === String(area.id);
-
-    const areaSick =
-      area.sickTrees ||
-      area.plots?.reduce(
-        (pAcc: number, p: any) => pAcc + (p.sickTrees || 0),
-        0,
-      ) ||
-      0;
-    const areaTreating =
-      area.treatingTrees ||
-      area.plots?.reduce(
-        (pAcc: number, p: any) => pAcc + (p.treatingTrees || 0),
-        0,
-      ) ||
-      0;
 
     const plots = area.plots || [];
 
@@ -173,16 +147,30 @@ export const GeographyScopeTree = ({
         <button
           type="button"
           className={cn(
-            "flex flex-col relative z-10 w-full text-left rounded-xl p-2.5 hover:bg-white transition-all border",
+            "flex flex-col relative z-10 w-full text-left rounded-xl p-2.5 hover:bg-white transition-all border cursor-pointer",
             !isRoot && "-mx-2",
             isAreaActive
               ? "bg-white border-emerald-500 shadow-sm ring-2 ring-emerald-500/20"
               : "bg-white/80 border-slate-200/70",
           )}
-          onClick={() => onSelectUnit("area", area)}
+          onClick={() => {
+            onSelectUnit("area", area);
+            if (enableCheckboxes) {
+              onToggleUnitId(String(area.id), area);
+            }
+          }}
         >
           {/* Line 1: Icon & Name */}
           <div className="flex items-center gap-3 w-full">
+            {enableCheckboxes && (
+              <div onClick={(e) => e.stopPropagation()}>
+                <Checkbox
+                  checked={selectedUnitIds.includes(String(area.id))}
+                  onCheckedChange={() => onToggleUnitId(String(area.id), area)}
+                  className="shrink-0"
+                />
+              </div>
+            )}
             <div
               className={cn(
                 "w-8 h-8 rounded-lg border flex items-center justify-center shadow-xs shrink-0",
@@ -211,42 +199,11 @@ export const GeographyScopeTree = ({
             </button>
           </div>
 
-          {/* Line 2: Minimalist Meta Row */}
+          {/* Line 2: Minimalist Meta Row (DT only) */}
           <div className="flex flex-wrap items-center gap-2.5 mt-2 pl-11 w-full text-[11px] text-slate-500 font-medium">
             <span className="font-semibold text-slate-700 bg-slate-100 border border-slate-200 px-1.5 py-0.5 rounded-md text-[10px]">
               DT: {area.totalAreaHa || area.areaHa || 0} ha
             </span>
-            {area.isCountable !== false ? (
-              <>
-                {areaSick > 0 && (
-                  <span className="inline-flex items-center gap-1 font-semibold text-red-600">
-                    <span className="w-1.5 h-1.5 rounded-full bg-red-500 shrink-0" />
-                    {areaSick} cây bệnh
-                  </span>
-                )}
-                {areaTreating > 0 && (
-                  <span className="inline-flex items-center gap-1 font-semibold text-amber-600">
-                    <span className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0" />
-                    {areaTreating} cây đang điều trị
-                  </span>
-                )}
-              </>
-            ) : (
-              <>
-                {(area.hasPestWarning || areaSick > 0) && (
-                  <span className="inline-flex items-center gap-1 font-semibold text-red-600">
-                    <span className="w-1.5 h-1.5 rounded-full bg-red-500 shrink-0" />
-                    Phát hiện sâu bệnh
-                  </span>
-                )}
-                {(area.isTreatingPest || areaTreating > 0) && (
-                  <span className="inline-flex items-center gap-1 font-semibold text-amber-600">
-                    <span className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0" />
-                    Đang điều trị
-                  </span>
-                )}
-              </>
-            )}
           </div>
         </button>
 
@@ -281,44 +238,37 @@ export const GeographyScopeTree = ({
             selectedUnit?.type === "region" &&
             String(selectedUnit.data?.id) === String(scopeNode.id);
 
-          const scopeSick = (scopeNode.areas || []).reduce(
-            (acc: number, a: any) =>
-              acc +
-              (a.sickTrees ||
-                a.plots?.reduce(
-                  (pAcc: number, p: any) => pAcc + (p.sickTrees || 0),
-                  0,
-                ) ||
-                0),
-            0,
-          );
-          const scopeTreating = (scopeNode.areas || []).reduce(
-            (acc: number, a: any) =>
-              acc +
-              (a.treatingTrees ||
-                a.plots?.reduce(
-                  (pAcc: number, p: any) => pAcc + (p.treatingTrees || 0),
-                  0,
-                ) ||
-                0),
-            0,
-          );
-
           return (
             <div key={scopeNode.id} className="relative">
               {/* Level 1: Scope (Vùng địa lý) */}
               <button
                 type="button"
                 className={cn(
-                  "flex flex-col relative z-10 w-full text-left rounded-xl p-2.5 hover:bg-white transition-all border",
+                  "flex flex-col relative z-10 w-full text-left rounded-xl p-2.5 hover:bg-white transition-all border cursor-pointer",
                   isScopeActive
                     ? "bg-white border-emerald-500 shadow-sm ring-2 ring-emerald-500/20"
                     : "bg-white/90 border-slate-200/80",
                 )}
-                onClick={() => onSelectUnit("region", scopeNode)}
+                onClick={() => {
+                  onSelectUnit("region", scopeNode);
+                  if (enableCheckboxes) {
+                    onToggleUnitId(String(scopeNode.id), scopeNode);
+                  }
+                }}
               >
                 {/* Line 1: Icon & Name */}
                 <div className="flex items-center gap-3 w-full">
+                  {enableCheckboxes && (
+                    <div onClick={(e) => e.stopPropagation()}>
+                      <Checkbox
+                        checked={selectedUnitIds.includes(String(scopeNode.id))}
+                        onCheckedChange={() =>
+                          onToggleUnitId(String(scopeNode.id), scopeNode)
+                        }
+                        className="shrink-0"
+                      />
+                    </div>
+                  )}
                   <div
                     className={cn(
                       "w-8 h-8 rounded-lg border flex items-center justify-center shadow-xs shrink-0",
@@ -347,42 +297,11 @@ export const GeographyScopeTree = ({
                   </button>
                 </div>
 
-                {/* Line 2: Minimalist Meta Row */}
+                {/* Line 2: Minimalist Meta Row (DT only) */}
                 <div className="flex flex-wrap items-center gap-2.5 mt-2 pl-11 w-full text-[11px] text-slate-500 font-medium">
                   <span className="font-semibold text-slate-700 bg-slate-100 border border-slate-200 px-1.5 py-0.5 rounded-md text-[10px]">
                     DT: {scopeNode.totalAreaHa || 0} ha
                   </span>
-                  {scopeNode.isCountable !== false ? (
-                    <>
-                      {scopeSick > 0 && (
-                        <span className="inline-flex items-center gap-1 font-semibold text-red-600">
-                          <span className="w-1.5 h-1.5 rounded-full bg-red-500 shrink-0" />
-                          {scopeSick} cây bệnh
-                        </span>
-                      )}
-                      {scopeTreating > 0 && (
-                        <span className="inline-flex items-center gap-1 font-semibold text-amber-600">
-                          <span className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0" />
-                          {scopeTreating} cây đang điều trị
-                        </span>
-                      )}
-                    </>
-                  ) : (
-                    <>
-                      {(scopeNode.hasPestWarning || scopeSick > 0) && (
-                        <span className="inline-flex items-center gap-1 font-semibold text-red-600">
-                          <span className="w-1.5 h-1.5 rounded-full bg-red-500 shrink-0" />
-                          Phát hiện sâu bệnh
-                        </span>
-                      )}
-                      {(scopeNode.isTreatingPest || scopeTreating > 0) && (
-                        <span className="inline-flex items-center gap-1 font-semibold text-amber-600">
-                          <span className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0" />
-                          Đang điều trị
-                        </span>
-                      )}
-                    </>
-                  )}
                 </div>
               </button>
 

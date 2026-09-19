@@ -36,11 +36,10 @@ export function AdminDashboardView({ isLoading }: AdminDashboardViewProps) {
       <CropVarietyHarvestBlock />
 
       {/* 4. Recent Diary Entries & Upcoming Tasks Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      {/* <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <RecentDiaryEntries />
         <UpcomingTasks />
-      </div>
+      </div> */}
     </div>
   );
 }
-

@@ -221,6 +221,7 @@ export const ZoneReviewStep = () => {
       selectedCerts={mappedCerts}
       farmingMethodId={String(formValues.farmingMethodId)}
       irrigationMethodId={String(formValues.rearingMethodId ?? "")}
+      healthUpdateMethod={formValues.healthUpdateMethod}
       farmingMethods={mappedFarmingMethods}
       irrigationSystems={mappedIrrigationSystems}
       cropSummary={cropSummary}

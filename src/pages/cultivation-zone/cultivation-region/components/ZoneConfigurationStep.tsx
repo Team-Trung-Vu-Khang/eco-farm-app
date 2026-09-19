@@ -18,12 +18,20 @@ import {
   Checkbox,
   Switch,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { CheckCircle2, Leaf, Search, Sprout } from "lucide-react";
+import {
+  CheckCircle2,
+  Leaf,
+  Search,
+  Sprout,
+  HeartPulse,
+  MapPin,
+} from "lucide-react";
 import { useState, useMemo, useEffect, useCallback } from "react";
 import {
   useProductionMethods,
   useMethodApplications,
   useCropVarieties,
+  useProductionSubjects,
 } from "@/features/foundation";
 import { useSeeds } from "@/features/farm/hooks/useSeeds";
 import { useRearingMethods } from "@/features/master-data/hooks/useRearingMethods";
@@ -251,6 +259,12 @@ export const VarietyItem = ({
   onToggle,
   onValidityChange,
 }: VarietyItemProps) => {
+  const { watch } = useFormContext();
+  const varietySeedMap = watch("varietySeedMap") || {};
+  const seedLabels = watch("seedLabels") || {};
+  const seedsForVarietyFromMap: number[] =
+    varietySeedMap[String(varietyId)] || [];
+
   const { items: seeds } = useSeeds({
     params: {
       foundationSubjectVariantId: varietyId,
@@ -264,19 +278,14 @@ export const VarietyItem = ({
     return seeds.filter((s) => selectedSeedIds.includes(s.id));
   }, [seeds, selectedSeedIds]);
 
+  const hasSelectedSeeds =
+    seedsForVarietyFromMap.length > 0 || selectedSeedsForThisVariety.length > 0;
+
   const isValid = useMemo(() => {
     return (
-      !isChecked ||
-      !showSeedSelection ||
-      !useSpecificSeeds ||
-      selectedSeedsForThisVariety.length > 0
+      !isChecked || !showSeedSelection || !useSpecificSeeds || hasSelectedSeeds
     );
-  }, [
-    isChecked,
-    showSeedSelection,
-    useSpecificSeeds,
-    selectedSeedsForThisVariety,
-  ]);
+  }, [isChecked, showSeedSelection, useSpecificSeeds, hasSelectedSeeds]);
 
   useEffect(() => {
     onValidityChange(varietyId, isValid);
@@ -322,18 +331,35 @@ export const VarietyItem = ({
 
       {isChecked && showSeedSelection && useSpecificSeeds && (
         <div className="flex flex-wrap gap-2 pl-7 pt-1">
-          {selectedSeedsForThisVariety.length > 0 ? (
-            selectedSeedsForThisVariety.map((seed) => (
-              <Badge
-                key={seed.id}
-                variant="outline"
-                className="bg-white border-slate-200 text-slate-600 text-[10px] py-0.5 px-2 rounded flex items-center gap-1 shadow-xs cursor-pointer hover:border-green-300 transition-all"
-                onClick={() => setDialogOpen(true)}
-              >
-                <div className="w-1 h-1 rounded-full bg-green-500" />
-                <span>{seed.name}</span>
-              </Badge>
-            ))
+          {hasSelectedSeeds ? (
+            seedsForVarietyFromMap.length > 0 ? (
+              seedsForVarietyFromMap.map((sId: number) => {
+                const label = seedLabels[String(sId)] || `Hạt giống #${sId}`;
+                return (
+                  <Badge
+                    key={sId}
+                    variant="outline"
+                    className="bg-white border-slate-200 text-slate-600 text-[10px] py-0.5 px-2 rounded flex items-center gap-1 shadow-xs cursor-pointer hover:border-green-300 transition-all"
+                    onClick={() => setDialogOpen(true)}
+                  >
+                    <div className="w-1 h-1 rounded-full bg-green-500" />
+                    <span>{label}</span>
+                  </Badge>
+                );
+              })
+            ) : (
+              selectedSeedsForThisVariety.map((seed) => (
+                <Badge
+                  key={seed.id}
+                  variant="outline"
+                  className="bg-white border-slate-200 text-slate-600 text-[10px] py-0.5 px-2 rounded flex items-center gap-1 shadow-xs cursor-pointer hover:border-green-300 transition-all"
+                  onClick={() => setDialogOpen(true)}
+                >
+                  <div className="w-1 h-1 rounded-full bg-green-500" />
+                  <span>{seed.name}</span>
+                </Badge>
+              ))
+            )
           ) : (
             <span className="text-[11px] text-red-500 italic font-semibold flex items-center gap-1">
               ⚠️ Bắt buộc chọn hạt giống cụ thể
@@ -451,6 +477,11 @@ export const CropCard = ({
           </div>
         ) : varieties.length > 0 ? (
           <div className="space-y-3 pt-1">
+            {!varieties.some((v) => selectedVarietyIds.includes(v.id)) && (
+              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-50 border border-amber-200 text-amber-800 text-[11px] font-semibold">
+                <span>⚠️ Bắt buộc chọn ít nhất 1 giống cây trồng</span>
+              </div>
+            )}
             {/* Search input */}
             {varieties.length > 4 && (
               <div className="relative">
@@ -555,10 +586,6 @@ export const ZoneConfigurationStep: React.FC<ZoneConfigurationStepProps> = ({
     return Object.values(invalidVarieties).some((invalid) => invalid);
   }, [invalidVarieties]);
 
-  useEffect(() => {
-    setValue("isSeedSelectionValid", !hasInvalidVarieties);
-  }, [hasInvalidVarieties, setValue]);
-
   // ─── Reference data ────────────────────────────────────────────────────
   const {
     items: farmingMethods,
@@ -599,6 +626,17 @@ export const ZoneConfigurationStep: React.FC<ZoneConfigurationStepProps> = ({
     [watchedCropIds],
   );
 
+  // Master fallback: fetch all foundation production subjects
+  const { items: allProductionSubjects } = useProductionSubjects({
+    params: { domainCode: "CROP", size: 100, status: "active" },
+  });
+
+  // Master fallback: fetch all foundation varieties to resolve parent subjectId for varietyIds
+  const { items: allFoundationVarieties } = useCropVarieties({
+    params: { size: 100, status: "active", domainCode: "CROP" },
+    enabled: selectedVarietyIds.length > 0,
+  });
+
   const { items: methodApplications, loading: fmcLoading } =
     useMethodApplications({
       params: {
@@ -619,6 +657,7 @@ export const ZoneConfigurationStep: React.FC<ZoneConfigurationStepProps> = ({
   const subjects = useMemo<SeedSubjectGroup[]>(() => {
     const mergedMap = new Map<number, SeedSubjectGroup>();
 
+    // 1. Merge subjects & variants from methodApplications
     activeMethodApps.forEach((app) => {
       (app.subjects ?? []).forEach((subj) => {
         if (!subj.subjectId) return;
@@ -646,14 +685,140 @@ export const ZoneConfigurationStep: React.FC<ZoneConfigurationStepProps> = ({
       });
     });
 
+    // 2. Fallback merge from allProductionSubjects if activeMethodApps is empty or incomplete
+    allProductionSubjects.forEach((subj) => {
+      if (!subj.id) return;
+      if (!mergedMap.has(subj.id)) {
+        mergedMap.set(subj.id, {
+          subjectId: subj.id,
+          subjectName: subj.name,
+          subjectCode: subj.code,
+          variants: [],
+        });
+      }
+    });
+
     return Array.from(mergedMap.values());
-  }, [activeMethodApps]);
+  }, [activeMethodApps, allProductionSubjects]);
 
   const selectedCrops = useMemo(() => {
     return subjects.filter((s) =>
       selectedCropIds.includes(String(s.subjectId)),
     );
   }, [subjects, selectedCropIds]);
+
+  // Auto-infer parent cropIds from selectedVarietyIds and available subjects / foundation varieties
+  useEffect(() => {
+    if (selectedVarietyIds.length === 0) return;
+
+    const currentCropIdsSet = new Set<string>(selectedCropIds);
+    let hasNewCrops = false;
+
+    // A. Infer from subjects
+    subjects.forEach((subj) => {
+      const subjIdStr = String(subj.subjectId);
+      if (!currentCropIdsSet.has(subjIdStr)) {
+        const hasSelectedVariety = subj.variants.some((v) =>
+          selectedVarietyIds.includes(v.id),
+        );
+        if (hasSelectedVariety) {
+          currentCropIdsSet.add(subjIdStr);
+          hasNewCrops = true;
+        }
+      }
+    });
+
+    // B. Infer from allFoundationVarieties
+    allFoundationVarieties.forEach((variety) => {
+      if (selectedVarietyIds.includes(variety.id)) {
+        const parentId = variety.subjectId ?? variety.subject?.id;
+        if (parentId) {
+          const parentIdStr = String(parentId);
+          if (!currentCropIdsSet.has(parentIdStr)) {
+            currentCropIdsSet.add(parentIdStr);
+            hasNewCrops = true;
+          }
+        }
+      }
+    });
+
+    if (hasNewCrops) {
+      setValue("cropIds", Array.from(currentCropIdsSet), {
+        shouldValidate: true,
+      });
+    }
+  }, [
+    subjects,
+    allFoundationVarieties,
+    selectedVarietyIds,
+    selectedCropIds,
+    setValue,
+  ]);
+
+  useEffect(() => {
+    // 1. Must have at least 1 crop selected
+    if (!selectedCropIds || selectedCropIds.length === 0) {
+      setValue("isSeedSelectionValid", false);
+      return;
+    }
+
+    // 2. Must have at least 1 variety selected
+    if (selectedVarietyIds.length === 0) {
+      setValue("isSeedSelectionValid", false);
+      return;
+    }
+
+    // 3. Every selected crop MUST have at least 1 variety checked
+    const varietyCropMap: Record<string, string> =
+      watch("varietyCropMap") || {};
+    const allCropsHaveVarieties = selectedCropIds.every((cropIdStr) => {
+      const cropIdNum = parseInt(cropIdStr, 10);
+      const cropGroup = subjects.find((s) => s.subjectId === cropIdNum);
+      const variants = cropGroup?.variants ?? [];
+
+      if (variants.length > 0) {
+        return variants.some((v) => selectedVarietyIds.includes(v.id));
+      }
+
+      const mappedVarietyIds = Object.entries(varietyCropMap)
+        .filter(([_, cId]) => String(cId) === cropIdStr)
+        .map(([vId]) => Number(vId));
+
+      const foundationVarietyIds = allFoundationVarieties
+        .filter((v) => (v.subjectId ?? v.subject?.id) === cropIdNum)
+        .map((v) => v.id);
+
+      const combined = Array.from(
+        new Set([...mappedVarietyIds, ...foundationVarietyIds]),
+      );
+      if (combined.length > 0) {
+        return combined.some((vId) => selectedVarietyIds.includes(vId));
+      }
+
+      return true;
+    });
+
+    if (!allCropsHaveVarieties) {
+      setValue("isSeedSelectionValid", false);
+      return;
+    }
+
+    // 4. Check if any VarietyItem declared invalid (e.g. missing seeds when useSpecificSeeds is true)
+    if (hasInvalidVarieties) {
+      setValue("isSeedSelectionValid", false);
+      return;
+    }
+
+    setValue("isSeedSelectionValid", true);
+  }, [
+    selectedCropIds,
+    selectedVarietyIds,
+    subjects,
+    allFoundationVarieties,
+    hasInvalidVarieties,
+    setValue,
+    watch,
+  ]);
 
   const availableCropOptions = useMemo(() => {
     const list = subjects.filter(
@@ -1092,6 +1257,128 @@ export const ZoneConfigurationStep: React.FC<ZoneConfigurationStepProps> = ({
           </CardContent>
         </Card>
       )}
+
+      {/* ── Health Update Method Option ── */}
+      <Card className="border-none shadow-md bg-white">
+        <CardHeader className="pb-3 border-b bg-linear-to-r from-green-50/50 to-white">
+          <CardTitle className="flex items-center gap-2 text-base">
+            <div className="w-8 h-8 rounded-lg bg-green-100 flex items-center justify-center">
+              <HeartPulse className="w-4 h-4 text-green-600" />
+            </div>
+            <span>Phương thức cập nhật tình trạng sức khỏe vùng trồng</span>
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="pt-6">
+          <Controller
+            control={control}
+            name="healthUpdateMethod"
+            defaultValue="ZONE_SCOPE"
+            render={({ field }) => (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Option 1: Phạm vi vùng trồng */}
+                <div
+                  onClick={() => field.onChange("ZONE_SCOPE")}
+                  className={cn(
+                    "flex justify-center items-center gap-3.5 p-4 rounded-xl border-2 cursor-pointer transition-all bg-white relative",
+                    field.value === "ZONE_SCOPE"
+                      ? "border-emerald-500 bg-emerald-50/30 shadow-xs ring-1 ring-emerald-500/20"
+                      : "border-slate-200 hover:border-slate-300 hover:bg-slate-50/50",
+                  )}
+                >
+                  <div
+                    className={cn(
+                      "w-10 h-10 rounded-lg flex items-center justify-center shrink-0 border transition-colors",
+                      field.value === "ZONE_SCOPE"
+                        ? "bg-emerald-100 border-emerald-200 text-emerald-700"
+                        : "bg-slate-100 border-slate-200 text-slate-500",
+                    )}
+                  >
+                    <MapPin className="w-5 h-5" />
+                  </div>
+                  <div className="flex-1 min-w-0 pr-5">
+                    <div
+                      className={cn(
+                        "text-sm font-bold",
+                        field.value === "ZONE_SCOPE"
+                          ? "text-emerald-900"
+                          : "text-slate-800",
+                      )}
+                    >
+                      Phạm vi vùng trồng
+                    </div>
+                    {/* <p className="text-xs text-slate-500 mt-1 leading-relaxed">
+                      Theo dõi và cập nhật nhật ký sức khỏe tổng thể theo diện
+                      tích / phạm vi vùng trồng.
+                    </p> */}
+                  </div>
+                  <div
+                    className={cn(
+                      "w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all",
+                      field.value === "ZONE_SCOPE"
+                        ? "bg-emerald-600 border-emerald-600"
+                        : "border-slate-300",
+                    )}
+                  >
+                    {field.value === "ZONE_SCOPE" && (
+                      <CheckCircle2 className="w-4 h-4 text-white" />
+                    )}
+                  </div>
+                </div>
+
+                {/* Option 2: Cá thể từng cây trồng */}
+                <div
+                  onClick={() => field.onChange("INDIVIDUAL_PLANT")}
+                  className={cn(
+                    "flex items-center gap-3.5 p-4 rounded-xl border-2 cursor-pointer transition-all bg-white relative",
+                    field.value === "INDIVIDUAL_PLANT"
+                      ? "border-emerald-500 bg-emerald-50/30 shadow-xs ring-1 ring-emerald-500/20"
+                      : "border-slate-200 hover:border-slate-300 hover:bg-slate-50/50",
+                  )}
+                >
+                  <div
+                    className={cn(
+                      "w-10 h-10 rounded-lg flex items-center justify-center shrink-0 border transition-colors",
+                      field.value === "INDIVIDUAL_PLANT"
+                        ? "bg-emerald-100 border-emerald-200 text-emerald-700"
+                        : "bg-slate-100 border-slate-200 text-slate-500",
+                    )}
+                  >
+                    <Sprout className="w-5 h-5" />
+                  </div>
+                  <div className="flex-1 min-w-0 pr-5">
+                    <div
+                      className={cn(
+                        "text-sm font-bold",
+                        field.value === "INDIVIDUAL_PLANT"
+                          ? "text-emerald-900"
+                          : "text-slate-800",
+                      )}
+                    >
+                      Cá thể từng cây trồng
+                    </div>
+                    {/* <p className="text-xs text-slate-500 mt-1 leading-relaxed">
+                      Theo dõi chi tiết tình trạng sức khỏe và nhật ký riêng
+                      theo từng mã cá thể cây.
+                    </p> */}
+                  </div>
+                  <div
+                    className={cn(
+                      "w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all",
+                      field.value === "INDIVIDUAL_PLANT"
+                        ? "bg-emerald-600 border-emerald-600"
+                        : "border-slate-300",
+                    )}
+                  >
+                    {field.value === "INDIVIDUAL_PLANT" && (
+                      <CheckCircle2 className="w-4 h-4 text-white" />
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+          />
+        </CardContent>
+      </Card>
     </div>
   );
 };

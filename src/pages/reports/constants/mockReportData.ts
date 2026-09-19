@@ -61,9 +61,12 @@ export interface ConsumptionDetail {
 
 export interface TreeNode {
   id: string;
+  /** Numeric primary key from the real API (regionId / areaId / plotId) */
+  numericId?: number;
   name: string;
   type: "region" | "area" | "plot";
-  consumption: ConsumptionDetail;
+  /** Mock-only: consumption aggregates. Optional so real-API nodes don't need it. */
+  consumption?: ConsumptionDetail;
   children?: TreeNode[];
   standard?: "VietGAP" | "GlobalGAP" | "Organic";
   status?: "Active" | "Inactive";
