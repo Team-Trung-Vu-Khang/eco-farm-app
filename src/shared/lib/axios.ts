@@ -40,7 +40,13 @@ apiClient.interceptors.request.use(
       config.headers.Authorization = `Bearer ${token}`;
     }
 
-    if (workspaceId && !config.headers["X-Workspace-Id"]) {
+    // Skip X-Workspace-Id header if skipWorkspaceHeader is explicitly set
+    const skipWorkspace = Boolean(config.headers?.skipWorkspaceHeader);
+
+    if (skipWorkspace) {
+      delete config.headers["X-Workspace-Id"];
+      delete config.headers.skipWorkspaceHeader;
+    } else if (workspaceId && !config.headers["X-Workspace-Id"]) {
       config.headers["X-Workspace-Id"] = workspaceId;
     }
 

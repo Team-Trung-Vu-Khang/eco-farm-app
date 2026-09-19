@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useMemo } from "react";
 import {
   Card,
   CardContent,
@@ -14,6 +14,9 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
+  Alert,
+  AlertTitle,
+  AlertDescription,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import {
   Activity,
@@ -25,6 +28,8 @@ import {
   CheckCircle2,
   Clock,
   FileCheck2,
+  Loader2,
+  ShieldAlert,
 } from "lucide-react";
 import {
   PieChart,
@@ -34,97 +39,193 @@ import {
   Tooltip as RechartsTooltip,
 } from "recharts";
 import {
-  top20ActiveFarmersData,
-  inactiveFarmersData,
-  type Top20ActiveFarmerItem,
-} from "../constants";
+  useAdminActiveFarmersReport,
+  useAdminExportActiveFarmersJob,
+} from "@/features/farm/hooks/useAdminDashboard";
+import type { ActiveFarmerItem } from "@/features/farm/types/admin-dashboard.type";
 
-const MONTH_OPTIONS = [
-  { value: "2026-09", label: "Tháng 09/2026" },
-  { value: "2026-08", label: "Tháng 08/2026" },
-  { value: "2026-07", label: "Tháng 07/2026" },
-  { value: "2026-06", label: "Tháng 06/2026" },
-  { value: "2026-05", label: "Tháng 05/2026" },
-  { value: "2026-04", label: "Tháng 04/2026" },
-  { value: "2026-03", label: "Tháng 03/2026" },
-  { value: "2026-02", label: "Tháng 02/2026" },
-  { value: "2026-01", label: "Tháng 01/2026" },
-  { value: "2025-12", label: "Tháng 12/2025" },
-  { value: "2025-11", label: "Tháng 11/2025" },
-  { value: "2025-10", label: "Tháng 10/2025" },
-];
+import dayjs from "dayjs";
 
-const ACTIVE_PIE_DATA = [
-  { name: "Active (Đạt chuẩn)", value: 126, color: "#10b981" }, // Emerald
-  { name: "Không Active (Chưa đạt)", value: 24, color: "#cbd5e1" }, // Slate
-];
+function generateRecentMonthsOptions(count = 12) {
+  const options = [];
+  let current = dayjs();
+  for (let i = 0; i < count; i++) {
+    const value = current.format("YYYY-MM");
+    const label = `Tháng ${current.format("MM/YYYY")}`;
+    options.push({ value, label });
+    current = current.subtract(1, "month");
+  }
+  return options;
+}
+
+function formatLatestDiaryText(
+  latestDiary: any,
+  latestDiaryType?: string | null,
+): string {
+  if (!latestDiary) return "Chưa có nhật ký trong tháng";
+
+  if (
+    latestDiary.lines &&
+    Array.isArray(latestDiary.lines) &&
+    latestDiary.lines.length > 0
+  ) {
+    const taskNames = latestDiary.lines
+      .map((l: any) => l.task?.name || l.taskName || l.title || l.purpose)
+      .filter(Boolean);
+    if (taskNames.length > 0) {
+      return taskNames.join(" & ");
+    }
+  }
+
+  if (latestDiary.purpose) return latestDiary.purpose;
+  if (latestDiary.code) return `Nhật ký ${latestDiary.code}`;
+
+  return latestDiaryType === "DAILY"
+    ? "Nhật ký hằng ngày"
+    : "Nhật ký công việc";
+}
 
 export function AdminActiveFarmerReportBlock() {
-  const [selectedMonth, setSelectedMonth] = useState("2026-09");
+  const monthOptions = useMemo(() => generateRecentMonthsOptions(12), []);
+  const [selectedMonth, setSelectedMonth] = useState(
+    () => monthOptions[0]?.value || dayjs().format("YYYY-MM"),
+  );
 
-  // CSV Exporter Helper Function
-  const exportToCSV = (filename: string, rows: object[]) => {
-    if (!rows || !rows.length) return;
-    const separator = ",";
-    const keys = Object.keys(rows[0]);
-    const csvContent =
-      "\uFEFF" + // BOM for UTF-8 Excel support
-      keys.join(separator) +
-      "\n" +
-      rows
-        .map((row: any) =>
-          keys
-            .map((k) => {
-              let cell = row[k] === null || row[k] === undefined ? "" : row[k];
-              cell = cell.toString().replace(/"/g, '""');
-              if (cell.search(/("|,|\n)/g) >= 0) {
-                cell = `"${cell}"`;
-              }
-              return cell;
-            })
-            .join(separator),
-        )
-        .join("\n");
+  const { data, isLoading, error } = useAdminActiveFarmersReport({
+    month: selectedMonth,
+    size: 20,
+  });
 
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.setAttribute("href", url);
-    link.setAttribute("download", `${filename}_${selectedMonth}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+  const { startExport, isExporting, createError, jobStatusData, resetExport } =
+    useAdminExportActiveFarmersJob();
+
+  // Watch jobStatusData for auto download when DONE
+  useEffect(() => {
+    if (jobStatusData?.status === "DONE" && jobStatusData.fileUrl) {
+      const link = document.createElement("a");
+      link.href = jobStatusData.fileUrl;
+      link.target = "_blank";
+      link.download = jobStatusData.fileName || "active-farmers-report.xlsx";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      resetExport();
+    }
+  }, [jobStatusData, resetExport]);
+
+  const isForbidden = (error as any)?.response?.status === 403;
+
+  if (isForbidden) {
+    return (
+      <Alert
+        variant="destructive"
+        className="bg-amber-50 border-amber-200 text-amber-900 rounded-2xl p-4"
+      >
+        <ShieldAlert className="w-5 h-5 text-amber-600 shrink-0" />
+        <div>
+          <AlertTitle className="font-bold text-sm text-amber-800">
+            Không có quyền truy cập báo cáo Active Farmers (403 Forbidden)
+          </AlertTitle>
+          <AlertDescription className="text-xs text-amber-700 mt-0.5">
+            Tính năng này yêu cầu quyền Admin hệ thống (MEVI_ADMIN /
+            MEVI_SUPER_ADMIN).
+          </AlertDescription>
+        </div>
+      </Alert>
+    );
+  }
+
+  const summary = data?.summary ?? {
+    totalCount: 0,
+    activeCount: 0,
+    inactiveCount: 0,
+    activePercent: 0,
   };
 
-  const handleDownloadActiveTop20 = () => {
-    const formattedData = top20ActiveFarmersData.map((f) => ({
-      "Xếp hạng": f.rank,
-      "Mã Nông trại (Farm ID)": f.farmId,
-      "Tên Nông hộ / HTX": f.farmerName,
-      "Địa bàn": f.location,
-      "Ngày hoạt động gần nhất": f.lastActiveDate,
-      "Loại hoạt động chính": f.activityType,
-      "Số lượt nhập nhật ký vật tư": f.validDiaryUpdatesCount,
-      "Số ngày hoạt động": f.activeDaysCount,
-      "Tần suất hoạt động": f.frequency,
-      "Trạng thái": "Active (Đạt chuẩn)",
-    }));
-    exportToCSV("Danh_Sach_Top20_Nong_Ho_Active", formattedData);
+  const criteria = data?.criteria ?? { minActiveDays: 2, minSupplyEntries: 1 };
+  const items = data?.items ?? [];
+  const dataThrough = data?.dataThrough;
+
+  const pieChartData = [
+    {
+      name: "Active (Đạt chuẩn)",
+      value: summary.activeCount,
+      color: "#10b981",
+    },
+    {
+      name: "Không Active (Chưa đạt)",
+      value: summary.inactiveCount,
+      color: "#cbd5e1",
+    },
+  ];
+
+  const handleExportTop20Active = async () => {
+    try {
+      await startExport({
+        month: selectedMonth,
+        status: "ACTIVE",
+        limit: 20,
+        format: "xlsx",
+        fileName: `top20-active-farmers-${selectedMonth}`,
+        columns: [
+          { key: "rank", header: "Hạng" },
+          { key: "code", header: "Mã Nông trại" },
+          { key: "name", header: "Tên Nông hộ / HTX" },
+          { key: "organizationType", header: "Loại hình" },
+          { key: "province", header: "Tỉnh / Thành" },
+          { key: "district", header: "Quận / Huyện" },
+          { key: "status", header: "Trạng thái" },
+          { key: "diaryCount", header: "Số nhật ký" },
+          { key: "supplyEntryCount", header: "Số lượt vật tư" },
+          { key: "activeDays", header: "Số ngày hoạt động" },
+          { key: "lastActiveDate", header: "Ngày hoạt động gần nhất" },
+          { key: "entriesPerWeek", header: "Tần suất (lượt/tuần)" },
+        ],
+        i18n: {
+          "status.ACTIVE": "Đang hoạt động",
+          "status.INACTIVE": "Chưa hoạt động",
+          "organizationType.ENTERPRISE": "Doanh nghiệp",
+          "organizationType.COOPERATIVE": "Hợp tác xã",
+          "organizationType.FARM_HOUSEHOLD": "Nông hộ",
+        },
+      });
+    } catch (err: any) {
+      console.error("Failed to start export top 20 active job", err);
+    }
   };
 
-  const handleDownloadInactive = () => {
-    const formattedData = inactiveFarmersData.map((f) => ({
-      "Mã Nông trại (Farm ID)": f.farmId,
-      "Tên Nông hộ / HTX": f.farmerName,
-      "Địa bàn": f.location,
-      "Số điện thoại liên hệ": f.phone,
-      "Ngày cập nhật gần nhất": f.lastActiveDate,
-      "Lý do chưa Active": f.reason,
-      "Ghi chú cho đội Mevi":
-        "Cần gọi điện đôn đốc nhập dữ liệu vật tư thực tế",
-    }));
-    exportToCSV("Danh_Sach_Nong_Ho_Chua_Active_Can_Thuc_Day", formattedData);
+  const handleExportInactive = async () => {
+    try {
+      await startExport({
+        month: selectedMonth,
+        status: "INACTIVE",
+        format: "xlsx",
+        fileName: `inactive-farmers-${selectedMonth}`,
+        columns: [
+          { key: "code", header: "Mã Nông trại" },
+          { key: "name", header: "Tên Nông hộ / HTX" },
+          { key: "organizationType", header: "Loại hình" },
+          { key: "province", header: "Tỉnh / Thành" },
+          { key: "district", header: "Quận / Huyện" },
+          { key: "status", header: "Trạng thái" },
+          { key: "diaryCount", header: "Số nhật ký" },
+          { key: "activeDays", header: "Số ngày hoạt động" },
+          { key: "lastActiveDate", header: "Ngày hoạt động gần nhất" },
+        ],
+        i18n: {
+          "status.ACTIVE": "Đang hoạt động",
+          "status.INACTIVE": "Chưa hoạt động",
+          "organizationType.ENTERPRISE": "Doanh nghiệp",
+          "organizationType.COOPERATIVE": "Hợp tác xã",
+          "organizationType.FARM_HOUSEHOLD": "Nông hộ",
+        },
+      });
+    } catch (err: any) {
+      console.error("Failed to start export inactive job", err);
+    }
   };
+
+  const isBusyConflict = (createError as any)?.response?.status === 409;
 
   return (
     <Card className="shadow-sm border-slate-200/80 rounded-2xl overflow-hidden bg-white">
@@ -151,16 +252,24 @@ export function AdminActiveFarmerReportBlock() {
                       </p>
                       <ul className="list-disc pl-4 space-y-1 text-[11px]">
                         <li>
-                          Có <strong>≥ 2 ngày</strong> hoạt động cập nhật khác
-                          nhau trong tháng.
+                          Có <strong>≥ {criteria.minActiveDays} ngày</strong>{" "}
+                          hoạt động cập nhật khác nhau trong tháng.
                         </li>
                         <li>
-                          Có <strong>≥ 1 lần</strong> nhập dữ liệu thực tế (số
-                          liệu sử dụng vật tư: phân bón, thuốc BVTV...).
+                          Có <strong>≥ {criteria.minSupplyEntries} lần</strong>{" "}
+                          nhập dữ liệu thực tế (vật tư phân bón, thuốc BVTV...).
                         </li>
                       </ul>
                     </TooltipContent>
                   </Tooltip>
+                  {dataThrough && (
+                    <Badge
+                      variant="outline"
+                      className="text-[10px] font-semibold bg-white text-slate-500 border-slate-200"
+                    >
+                      Dữ liệu đến ngày {dataThrough}
+                    </Badge>
+                  )}
                 </div>
                 <p className="text-xs text-slate-500 font-medium">
                   Theo dõi mức độ tuân thủ cập nhật nhật ký &amp; minh chứng vật
@@ -169,7 +278,7 @@ export function AdminActiveFarmerReportBlock() {
               </div>
             </div>
 
-            {/* Month Selector sitting on the Left side */}
+            {/* Month Selector */}
             <div className="shrink-0 sm:ml-1">
               <Select
                 value={selectedMonth}
@@ -180,7 +289,7 @@ export function AdminActiveFarmerReportBlock() {
                   <SelectValue placeholder="Chọn tháng" />
                 </SelectTrigger>
                 <SelectContent>
-                  {MONTH_OPTIONS.map((m) => (
+                  {monthOptions.map((m) => (
                     <SelectItem
                       key={m.value}
                       value={m.value}
@@ -194,31 +303,54 @@ export function AdminActiveFarmerReportBlock() {
             </div>
           </div>
 
-          {/* Right Side: The 2 CSV Action Buttons */}
+          {/* Right Side: The 2 Export Action Buttons */}
           <div className="flex items-center gap-2 shrink-0 justify-start sm:justify-end">
             <Button
               variant="outline"
               size="sm"
-              onClick={handleDownloadActiveTop20}
-              className="text-xs font-semibold h-8 border-slate-200 hover:border-emerald-500 hover:text-emerald-700 hover:bg-emerald-50 text-slate-700 rounded-lg gap-1.5 cursor-pointer shadow-2xs"
-              title="Tải về danh sách Top 20 Nông hộ Active (.CSV)"
+              disabled={isExporting}
+              onClick={handleExportTop20Active}
+              className="text-xs font-semibold h-8 border-slate-200 hover:border-emerald-500 hover:text-emerald-700 hover:bg-emerald-50 text-slate-700 rounded-lg gap-1.5 cursor-pointer shadow-2xs disabled:opacity-60"
+              title="Tải về file Excel danh sách Top 20 Nông hộ Active"
             >
-              <Download className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-              <span>Tải Top 20 Active (.CSV)</span>
+              {isExporting ? (
+                <Loader2 className="w-3.5 h-3.5 text-emerald-600 animate-spin shrink-0" />
+              ) : (
+                <Download className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+              )}
+              <span>
+                {isExporting
+                  ? "Đang xuất file..."
+                  : "Tải Top 20 Active (.XLSX)"}
+              </span>
             </Button>
 
             <Button
               variant="outline"
               size="sm"
-              onClick={handleDownloadInactive}
-              className="text-xs font-semibold h-8 border-amber-200 bg-amber-50/50 hover:bg-amber-100 hover:border-amber-300 text-amber-800 rounded-lg gap-1.5 cursor-pointer shadow-2xs"
-              title="Tải về danh sách Nông hộ chưa Active để đội Mevi đôn đốc (.CSV)"
+              disabled={isExporting}
+              onClick={handleExportInactive}
+              className="text-xs font-semibold h-8 border-amber-200 bg-amber-50/50 hover:bg-amber-100 hover:border-amber-300 text-amber-800 rounded-lg gap-1.5 cursor-pointer shadow-2xs disabled:opacity-60"
+              title="Tải về file Excel danh sách Nông hộ chưa Active để đội Mevi đôn đốc"
             >
-              <Download className="w-3.5 h-3.5 text-amber-600 shrink-0" />
-              <span>Tải DS Inactive (.CSV)</span>
+              {isExporting ? (
+                <Loader2 className="w-3.5 h-3.5 text-amber-600 animate-spin shrink-0" />
+              ) : (
+                <Download className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+              )}
+              <span>
+                {isExporting ? "Đang xuất..." : "Tải DS Inactive (.XLSX)"}
+              </span>
             </Button>
           </div>
         </div>
+
+        {isBusyConflict && (
+          <div className="mt-2 text-xs text-amber-800 bg-amber-100 p-2 rounded-lg font-medium">
+            ⚠️ Hệ thống đang xử lý một yêu cầu xuất dữ liệu khác. Vui lòng chờ
+            vài giây rồi thử lại.
+          </div>
+        )}
       </CardHeader>
 
       <CardContent className="pt-5 pb-6">
@@ -228,11 +360,13 @@ export function AdminActiveFarmerReportBlock() {
             <div className="flex items-center justify-between border-b border-slate-200/60 pb-2.5">
               <span className="text-xs font-bold uppercase tracking-wider text-slate-700">
                 Tỷ lệ Active{" "}
-                {MONTH_OPTIONS.find((m) => m.value === selectedMonth)?.label ||
+                {monthOptions.find((m) => m.value === selectedMonth)?.label ||
                   `Tháng ${selectedMonth}`}
               </span>
               <Badge className="bg-emerald-100 text-emerald-800 border-emerald-200 text-[10px] font-bold">
-                84.0% Active
+                {isLoading
+                  ? "..."
+                  : `${summary.activePercent.toFixed(1)}% Active`}
               </Badge>
             </div>
 
@@ -241,7 +375,7 @@ export function AdminActiveFarmerReportBlock() {
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
-                    data={ACTIVE_PIE_DATA}
+                    data={pieChartData}
                     cx="50%"
                     cy="50%"
                     innerRadius={52}
@@ -249,15 +383,23 @@ export function AdminActiveFarmerReportBlock() {
                     paddingAngle={3}
                     dataKey="value"
                   >
-                    {ACTIVE_PIE_DATA.map((entry, index) => (
+                    {pieChartData.map((entry, index) => (
                       <Cell key={`cell-active-${index}`} fill={entry.color} />
                     ))}
                   </Pie>
                   <RechartsTooltip
-                    formatter={(val: number, name: string) => [
-                      `${val} Hộ (${((val / 150) * 100).toFixed(1)}%)`,
-                      name,
-                    ]}
+                    formatter={(val: unknown, name: unknown) => {
+                      const numVal =
+                        typeof val === "number" ? val : Number(val) || 0;
+                      const percentStr =
+                        summary.totalCount > 0
+                          ? ((numVal / summary.totalCount) * 100).toFixed(1)
+                          : "0";
+                      return [
+                        `${numVal} Hộ (${percentStr}%)`,
+                        String(name ?? ""),
+                      ];
+                    }}
                     wrapperStyle={{ zIndex: 1000 }}
                     contentStyle={{
                       backgroundColor: "#ffffff",
@@ -276,7 +418,7 @@ export function AdminActiveFarmerReportBlock() {
                   Tổng nông hộ
                 </span>
                 <span className="text-xl font-black text-slate-800 leading-none mt-0.5">
-                  150
+                  {isLoading ? "..." : summary.totalCount}
                 </span>
                 <span className="text-[10px] font-semibold text-emerald-600 mt-0.5">
                   đơn vị giám sát
@@ -291,113 +433,143 @@ export function AdminActiveFarmerReportBlock() {
                   <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
                   Active đạt chuẩn
                 </span>
-                <span className="font-bold text-slate-900">126 hộ (84%)</span>
+                <span className="font-bold text-slate-900">
+                  {summary.activeCount} hộ ({summary.activePercent.toFixed(1)}%)
+                </span>
               </div>
               <div className="flex items-center justify-between text-slate-600 font-medium">
                 <span className="flex items-center gap-1 text-slate-500">
                   <Clock className="w-3.5 h-3.5 text-slate-400" />
                   Chưa Active
                 </span>
-                <span className="font-bold text-amber-700">24 hộ (16%)</span>
+                <span className="font-bold text-amber-700">
+                  {summary.inactiveCount} hộ (
+                  {(100 - summary.activePercent).toFixed(1)}%)
+                </span>
               </div>
 
               <div className="pt-2 border-t border-slate-100 text-[11px] text-slate-500 font-medium leading-relaxed bg-slate-50 p-2 rounded-lg">
-                💡 <strong>Điều kiện Active:</strong> ≥ 2 ngày hoạt động/tháng
-                &amp; ≥ 1 lần nhập số liệu vật tư thực tế.
+                💡 <strong>Điều kiện Active:</strong> ≥ {criteria.minActiveDays}{" "}
+                ngày hoạt động/tháng &amp; ≥ {criteria.minSupplyEntries} lần
+                nhập số liệu vật tư thực tế.
               </div>
             </div>
           </div>
 
-          {/* RIGHT COLUMN (lg:col-span-8): Top 20 Active Farmers List & Details */}
+          {/* RIGHT COLUMN (lg:col-span-8): Top 20 Active Farmers List */}
           <div className="lg:col-span-8 space-y-3">
             <div className="flex items-center justify-between text-xs font-bold text-slate-600 uppercase tracking-wider px-1">
               <div className="flex items-center gap-2">
                 <Award className="w-4 h-4 text-amber-500" />
-                <span>Xếp hạng Top 20 Nông hộ Active nhất trong tháng</span>
+                <span>Xếp hạng Top Nông hộ Active nhất trong tháng</span>
               </div>
               <span className="text-[11px] font-semibold text-slate-400">
-                20 Hộ dẫn đầu
+                {items.length} Hộ dẫn đầu
               </span>
             </div>
 
-            <div className="space-y-2.5 max-h-[460px] overflow-y-auto pr-1">
-              {top20ActiveFarmersData.map((farmer: Top20ActiveFarmerItem) => {
-                const isTop1 = farmer.rank === 1;
-                const isTop2 = farmer.rank === 2;
-                const isTop3 = farmer.rank === 3;
+            {isLoading ? (
+              <div className="p-12 text-center text-slate-400 text-xs bg-slate-50 rounded-2xl border border-dashed border-slate-200">
+                <Loader2 className="w-6 h-6 animate-spin text-emerald-600 mx-auto mb-2" />
+                Đang tải danh sách Active Farmers...
+              </div>
+            ) : items.length === 0 ? (
+              <div className="p-8 text-center text-slate-400 text-xs bg-slate-50 rounded-2xl border border-dashed border-slate-200">
+                Không có dữ liệu nông hộ Active cho tháng {selectedMonth}.
+              </div>
+            ) : (
+              <div className="space-y-2.5 max-h-[460px] overflow-y-auto pr-1">
+                {items.map((farmer: ActiveFarmerItem, idx: number) => {
+                  const rankNum = farmer.rank ?? idx + 1;
+                  const isTop1 = rankNum === 1;
+                  const isTop2 = rankNum === 2;
+                  const isTop3 = rankNum === 3;
 
-                return (
-                  <div
-                    key={farmer.id}
-                    className="bg-white border border-slate-200/80 hover:border-emerald-300 rounded-xl p-3 shadow-2xs transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:shadow-xs"
-                  >
-                    {/* Left: Rank & Farm ID & Name & Location & Last Active Date & Activity */}
-                    <div className="flex items-start gap-3 min-w-0 flex-1">
-                      {/* Rank Badge */}
-                      <span
-                        className={`w-7 h-7 rounded-lg text-xs font-black flex items-center justify-center shrink-0 border mt-0.5 ${
-                          isTop1
-                            ? "bg-amber-400 text-amber-950 border-amber-500 shadow-2xs"
-                            : isTop2
-                              ? "bg-slate-200 text-slate-800 border-slate-300"
-                              : isTop3
-                                ? "bg-amber-700 text-amber-100 border-amber-800"
-                                : "bg-slate-100 text-slate-600 border-slate-200"
-                        }`}
-                      >
-                        {farmer.rank}
-                      </span>
+                  const locationText =
+                    [farmer.province, farmer.district]
+                      .filter(Boolean)
+                      .join(", ") || "Chưa cập nhật địa bàn";
 
-                      <div className="min-w-0 space-y-1">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <span className="text-[10px] font-bold font-mono text-emerald-700 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded-md">
-                            {farmer.farmId}
-                          </span>
-                          <h4 className="text-xs font-bold text-slate-800 truncate leading-snug">
-                            {farmer.farmerName}
-                          </h4>
-                          <span className="flex items-center gap-0.5 text-[11px] text-slate-500">
-                            <MapPin className="w-3 h-3 text-slate-400 shrink-0" />
-                            {farmer.location}
-                          </span>
+                  const latestActivityText = formatLatestDiaryText(
+                    farmer.latestDiary,
+                    farmer.latestDiaryType,
+                  );
+
+                  return (
+                    <div
+                      key={farmer.workspaceId}
+                      className="bg-white border border-slate-200/80 hover:border-emerald-300 rounded-xl p-3 shadow-2xs transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:shadow-xs"
+                    >
+                      {/* Left: Rank & Farm ID & Name & Location & Last Active Date & Activity */}
+                      <div className="flex items-start gap-3 min-w-0 flex-1">
+                        {/* Rank Badge */}
+                        <span
+                          className={`w-7 h-7 rounded-lg text-xs font-black flex items-center justify-center shrink-0 border mt-0.5 ${
+                            isTop1
+                              ? "bg-amber-400 text-amber-950 border-amber-500 shadow-2xs"
+                              : isTop2
+                                ? "bg-slate-200 text-slate-800 border-slate-300"
+                                : isTop3
+                                  ? "bg-amber-700 text-amber-100 border-amber-800"
+                                  : "bg-slate-100 text-slate-600 border-slate-200"
+                          }`}
+                        >
+                          {rankNum}
+                        </span>
+
+                        <div className="min-w-0 space-y-1">
+                          <div className="flex flex-wrap items-center gap-2">
+                            {farmer.code && (
+                              <span className="text-[10px] font-bold font-mono text-emerald-700 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded-md">
+                                {farmer.code}
+                              </span>
+                            )}
+                            <h4 className="text-xs font-bold text-slate-800 truncate leading-snug">
+                              {farmer.name}
+                            </h4>
+                            <span className="flex items-center gap-0.5 text-[11px] text-slate-500">
+                              <MapPin className="w-3 h-3 text-slate-400 shrink-0" />
+                              {locationText}
+                            </span>
+                          </div>
+
+                          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-slate-600 font-medium">
+                            <span>
+                              Hoạt động gần nhất:{" "}
+                              <strong className="text-slate-800 font-mono">
+                                {farmer.lastActiveDate || "—"}
+                              </strong>
+                            </span>
+                            <span>•</span>
+                            <span className="text-emerald-700 font-semibold truncate max-w-[240px]">
+                              {latestActivityText}
+                            </span>
+                          </div>
                         </div>
+                      </div>
 
-                        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-slate-600 font-medium">
-                          <span>
-                            Hoạt động gần nhất:{" "}
-                            <strong className="text-slate-800 font-mono">
-                              {farmer.lastActiveDate}
-                            </strong>
-                          </span>
-                          <span>•</span>
-                          <span className="text-emerald-700 font-semibold truncate max-w-[240px]">
-                            {farmer.activityType}
-                          </span>
+                      {/* Right Stats */}
+                      <div className="flex items-center justify-between sm:justify-end gap-3 shrink-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-100 text-right">
+                        <div className="space-y-0.5">
+                          <div className="flex items-center gap-1 text-xs font-black text-slate-800 justify-end">
+                            <FileCheck2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                            <span>{farmer.diaryCount} lần nhật ký</span>
+                          </div>
+                          <div className="text-[11px] text-slate-500 font-medium">
+                            <strong className="text-slate-700">
+                              {farmer.activeDays} ngày
+                            </strong>{" "}
+                            hoạt động
+                            {farmer.entriesPerWeek != null &&
+                              ` (${farmer.entriesPerWeek.toFixed(1)} lượt/tuần)`}
+                          </div>
                         </div>
                       </div>
                     </div>
-
-                    {/* Right Stats: Required 3 fields (Valid diary updates, Active days, Frequency) */}
-                    <div className="flex items-center justify-between sm:justify-end gap-3 shrink-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-100 text-right">
-                      <div className="space-y-0.5">
-                        <div className="flex items-center gap-1 text-xs font-black text-slate-800 justify-end">
-                          <FileCheck2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                          <span>
-                            {farmer.validDiaryUpdatesCount} lần nhật ký
-                          </span>
-                        </div>
-                        <div className="text-[11px] text-slate-500 font-medium">
-                          <strong className="text-slate-700">
-                            {farmer.activeDaysCount} ngày
-                          </strong>{" "}
-                          hoạt động ({farmer.frequency})
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
         </div>
       </CardContent>

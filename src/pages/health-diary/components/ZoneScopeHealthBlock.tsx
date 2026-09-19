@@ -2,13 +2,14 @@ import React, { useState, useMemo } from "react";
 import {
   Badge,
   Button,
+  Card,
   cn,
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { ChevronDown, Layers, MapPin, Maximize2, X } from "lucide-react";
+import { ChevronDown, Layers, MapPin, Maximize2, Sparkles, X } from "lucide-react";
 import {
   MapContainer,
   TileLayer,
@@ -186,6 +187,66 @@ export const ZoneScopeHealthBlock: React.FC<ZoneScopeHealthBlockProps> = ({
       ...formData,
     });
   };
+
+  const isZoneSelected = Boolean(selectedZone && selectedZone.id);
+
+  if (!isZoneSelected) {
+    return (
+      <Card className="border border-amber-200/80 bg-linear-to-b from-amber-50/40 via-white to-white rounded-2xl shadow-xs overflow-hidden p-6 sm:p-10 text-center space-y-6">
+        <div className="relative inline-flex items-center justify-center">
+          <div className="w-16 h-16 rounded-2xl bg-amber-100 text-amber-700 flex items-center justify-center shadow-xs animate-bounce">
+            <MapPin className="w-8 h-8 text-amber-600" />
+          </div>
+        </div>
+
+        <div className="max-w-md mx-auto space-y-2">
+          <h3 className="text-base font-extrabold text-slate-900 flex items-center justify-center gap-2">
+            <span>Chưa chọn Vùng canh tác</span>
+          </h3>
+          <p className="text-xs text-slate-600 leading-relaxed">
+            Vui lòng chọn một <strong className="text-emerald-700 font-bold">Vùng canh tác</strong> ở góc trên trang trước. Sau đó hệ thống mới hiển thị bản đồ địa lý và biểu mẫu cập nhật sức khỏe phạm vi vùng.
+          </p>
+        </div>
+
+        {/* Visual Step Guidance */}
+        <div className="max-w-md mx-auto bg-slate-50/80 border border-slate-200/80 rounded-xl p-4 text-left space-y-3">
+          <div className="flex items-center gap-2 text-xs font-bold text-slate-700 pb-2 border-b border-slate-200/60">
+            <Sparkles className="w-4 h-4 text-emerald-600" />
+            <span>Các bước thực hiện:</span>
+          </div>
+          <div className="space-y-2.5 text-xs">
+            <div className="flex items-start gap-2.5 p-2 rounded-lg bg-amber-50 border border-amber-200 text-amber-900">
+              <span className="w-5 h-5 rounded-full bg-amber-600 text-white flex items-center justify-center font-bold text-[10px] shrink-0 mt-0.5">
+                1
+              </span>
+              <div>
+                <p className="font-extrabold text-slate-900">Chọn Vùng canh tác ở góc trên</p>
+                <p className="text-[11px] text-amber-800">Cần chọn vùng để đồng bộ bản đồ địa lý</p>
+              </div>
+            </div>
+            <div className="flex items-start gap-2.5 opacity-60 px-2">
+              <span className="w-5 h-5 rounded-full bg-slate-300 text-slate-700 flex items-center justify-center font-bold text-[10px] shrink-0 mt-0.5">
+                2
+              </span>
+              <div>
+                <p className="font-bold text-slate-800">Chọn phạm vi vùng / khu vực / lô cần cập nhật</p>
+                <p className="text-[11px] text-slate-500">Bấm trực tiếp trên bản đồ hoặc danh sách bên phải</p>
+              </div>
+            </div>
+            <div className="flex items-start gap-2.5 opacity-60 px-2">
+              <span className="w-5 h-5 rounded-full bg-slate-300 text-slate-700 flex items-center justify-center font-bold text-[10px] shrink-0 mt-0.5">
+                3
+              </span>
+              <div>
+                <p className="font-bold text-slate-800">Gửi thông tin nhật ký sức khỏe phạm vi vùng</p>
+                <p className="text-[11px] text-slate-500">Cập nhật chỉ số sức khỏe, ảnh và ghi chú</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </Card>
+    );
+  }
 
   return (
     <div className="space-y-5">
