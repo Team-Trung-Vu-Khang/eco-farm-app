@@ -7,20 +7,29 @@ interface CropStatsBlockProps {
     healthyTrees: number;
     sickTrees: number;
     treatingTrees: number;
-  };
+  } | null;
   isLoading?: boolean;
 }
 
 export function CropStatsBlock({ data, isLoading }: CropStatsBlockProps) {
-  const total = data?.totalTrees ? data.totalTrees.toLocaleString("vi-VN") : "15.420";
-  const sick = data?.sickTrees !== undefined ? data.sickTrees.toLocaleString("vi-VN") : "350";
-  const treating = data?.treatingTrees !== undefined ? data.treatingTrees.toLocaleString("vi-VN") : "270";
+  const hasSummary = data !== null && data !== undefined;
+
+  const total = hasSummary ? data.totalTrees.toLocaleString("vi-VN") : "—";
+  const sick = hasSummary ? data.sickTrees.toLocaleString("vi-VN") : "—";
+  const treating = hasSummary ? data.treatingTrees.toLocaleString("vi-VN") : "—";
 
   return (
     <div className="space-y-2">
-      <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
-        Cây trồng
-      </h2>
+      <div className="flex items-center justify-between">
+        <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
+          Cây trồng
+        </h2>
+        {!hasSummary && !isLoading && (
+          <span className="text-xs text-amber-600 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-md font-medium">
+            Chưa khởi tạo dữ liệu cây trồng
+          </span>
+        )}
+      </div>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <StatsCard
           title="Tổng cây trồng canh tác"

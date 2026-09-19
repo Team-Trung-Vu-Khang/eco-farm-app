@@ -4,7 +4,7 @@ import { useCultivationZones } from "@/features/farm/hooks/useCultivationZones";
 import { useRegions, regionKeys } from "@/features/farm/hooks/useRegions";
 import { regionApi, areaApi } from "@/features/farm/api/farm.api";
 import { areaKeys } from "@/features/farm/hooks/useAreas";
-import { useWorkspaceProductionHealthMetric } from "@/features/farm/hooks/useProductionHealthMetrics";
+import { useFarmProductionHealth } from "@/features/farm/hooks/useFarmDashboard";
 import { useFarmTaskStats } from "@/features/farm-task/hooks/useFarmTasks";
 
 export interface DashboardPlotNode {
@@ -131,7 +131,7 @@ export function useDashboardData() {
     params: { page: 0, size: 50 },
   });
   const regionsQuery = useRegions({ params: { page: 0, size: 50 } });
-  const healthMetricQuery = useWorkspaceProductionHealthMetric();
+  const healthMetricQuery = useFarmProductionHealth();
 
   // Directly fetch task statistics from GET /api/farm/tasks/stats
   const taskStatsQuery = useFarmTaskStats();
@@ -819,15 +819,19 @@ export function useDashboardData() {
     detailedAreaMap,
   ]);
 
-  // Aggregate health metrics from API
+  // Aggregate health metrics from GET /api/farm/dashboard/production-health API
   const cropHealthMetrics = useMemo(() => {
-    const data = healthMetricQuery.data;
-    return {
-      totalTrees: data?.totalTrees || 15420,
-      healthyTrees: data?.healthyTrees || 14800,
-      sickTrees: data?.sickTrees || 350,
-      treatingTrees: data?.treatingTrees || 270,
-    };
+    const summary = healthMetricQuery.data?.summary;
+    if (summary === null) return null;
+    if (summary) {
+      return {
+        totalTrees: summary.totalCount,
+        healthyTrees: summary.healthyCount,
+        sickTrees: summary.pestCount,
+        treatingTrees: summary.treatingCount,
+      };
+    }
+    return undefined;
   }, [healthMetricQuery.data]);
 
   // Aggregate task statistics from GET /api/farm/tasks/stats response
