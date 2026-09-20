@@ -4,10 +4,16 @@ import { useToast } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { useDebounce } from "@/shared/hooks/useDebounce";
 import { plantIdentificationColumns } from "../data/plantIdentificationColumns";
 import type { Plant } from "@/pages/region-chart/constants";
+import type { FarmPlantHealthStatus } from "@/features/farm";
 import {
   usePlantIdentifications,
   usePlantIdentificationMutations,
 } from "@/features/farm";
+import { useCropVarieties } from "@/features/foundation";
+import {
+  PLANT_HEALTH_STATUS_LABELS,
+  PLANT_HEALTH_STATUS_OPTIONS,
+} from "../components/types";
 import { mapApiPlantToFrontend } from "../utils/plantMapper";
 
 export { mapApiPlantToFrontend };
@@ -25,20 +31,51 @@ export const usePlantIdentificationListPage = () => {
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleteItem, setDeleteItem] = useState<Plant | null>(null);
 
+  const [productionSubjectVariantId, setProductionSubjectVariantId] =
+    useState("");
+  const [healthStatus, setHealthStatus] = useState("");
+
   const handleSearch = (value: string) => {
     setSearch(value);
     setCurrentIndex(1);
   };
 
   const handleFilterChange = (key: string, value: string) => {
-    if (key === "status") {
-      setStatus(value);
-      setCurrentIndex(1);
-    }
+    // DataTable gửi "all" khi người dùng bỏ chọn
+    const next = value === "all" ? "" : value;
+
+    if (key === "status") setStatus(value);
+    else if (key === "productionSubjectVariantId")
+      setProductionSubjectVariantId(next);
+    else if (key === "healthStatus") setHealthStatus(next);
+    else return;
+
+    setCurrentIndex(1);
   };
 
-  const filters = useMemo(() => {
-    return [
+  // Danh mục giống cây cho dropdown lọc
+  const { items: foundationVarieties } = useCropVarieties({
+    params: { domainCode: "CROP", status: "active", size: 100 },
+  });
+
+  const filters = useMemo(
+    () => [
+      {
+        key: "productionSubjectVariantId",
+        label: "Giống cây",
+        options: foundationVarieties.map((variety) => ({
+          label: variety.name || `Giống #${variety.id}`,
+          value: String(variety.id),
+        })),
+      },
+      {
+        key: "healthStatus",
+        label: "Hiện trạng sức khỏe",
+        options: PLANT_HEALTH_STATUS_OPTIONS.map((value) => ({
+          label: PLANT_HEALTH_STATUS_LABELS[value],
+          value,
+        })),
+      },
       {
         key: "status",
         label: "Trạng thái",
@@ -48,8 +85,9 @@ export const usePlantIdentificationListPage = () => {
           { label: "Đã lưu trữ", value: "archived" },
         ],
       },
-    ];
-  }, []);
+    ],
+    [foundationVarieties],
+  );
 
   const {
     items,
@@ -57,11 +95,18 @@ export const usePlantIdentificationListPage = () => {
     loading: isLoading,
   } = usePlantIdentifications({
     params: {
+      // Bắt buộc: thiếu thì API trả lẫn cả vật nuôi và thủy sản
       domainCode: "CROP",
       keyword: debouncedSearch.trim() || undefined,
       status: status === "all" ? undefined : (status as any),
       page: Math.max(currentIndex - 1, 0),
       size: pageSize,
+      productionSubjectVariantId: productionSubjectVariantId
+        ? Number(productionSubjectVariantId)
+        : undefined,
+      healthStatus: (healthStatus || undefined) as
+        | FarmPlantHealthStatus
+        | undefined,
     },
   });
 
@@ -88,6 +133,7 @@ export const usePlantIdentificationListPage = () => {
     filters,
     handleFilterChange,
     handleSearch,
+
     handleView,
     handleEdit,
     handleDelete: (item: Plant) => {

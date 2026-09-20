@@ -1,6 +1,15 @@
-import { Card, CardContent } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import {
+  Badge,
+  Card,
+  CardContent,
+  cn,
+} from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { Trees } from "lucide-react";
 import type { Plant } from "../../../../region-chart/constants";
+import {
+  PLANT_HEALTH_STATUS_LABELS,
+  PLANT_HEALTH_STATUS_STYLES,
+} from "../types";
 
 type Props = {
   plant: Plant;
@@ -11,6 +20,13 @@ export const PlantIdentificationIdentityCard = ({
   plant,
   formattedAge,
 }: Props) => {
+  // Cây tạo trước 2026-09-20 không có giống / hiện trạng
+  const { variantName, variantKind, healthStatus } = plant as Plant & {
+    variantName?: string;
+    variantKind?: "production" | "subject";
+    healthStatus?: string;
+  };
+
   return (
     <Card className="border-none shadow-sm bg-white overflow-hidden rounded-2xl">
       <CardContent className="p-6">
@@ -19,12 +35,38 @@ export const PlantIdentificationIdentityCard = ({
             <Trees className="w-12 h-12" />
           </div>
           <div className="flex-1 space-y-4">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between gap-3">
               <h2 className="text-2xl font-bold text-slate-900 font-mono">
                 {plant.code}
               </h2>
+              {healthStatus ? (
+                <Badge
+                  variant="outline"
+                  className={cn(
+                    "shrink-0 text-xs font-semibold",
+                    PLANT_HEALTH_STATUS_STYLES[healthStatus] ??
+                      "border-slate-200 bg-slate-50 text-slate-600",
+                  )}
+                >
+                  {PLANT_HEALTH_STATUS_LABELS[healthStatus] ?? healthStatus}
+                </Badge>
+              ) : (
+                <span className="shrink-0 text-xs italic text-slate-400">
+                  Chưa đánh giá sức khỏe
+                </span>
+              )}
             </div>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4 pt-2">
+              <div className="space-y-1">
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                  {variantKind === "subject" ? "Hạt giống" : "Giống cây"}
+                </p>
+                <p className="text-sm font-semibold">
+                  {variantName || (
+                    <span className="italic text-slate-400">Chưa có giống</span>
+                  )}
+                </p>
+              </div>
               <div className="space-y-1">
                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
                   Ngày trồng

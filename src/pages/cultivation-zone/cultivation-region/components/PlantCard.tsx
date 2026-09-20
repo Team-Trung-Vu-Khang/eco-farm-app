@@ -22,14 +22,21 @@ import {
 } from "lucide-react";
 import * as turf from "@turf/turf";
 import useRegionStore from "../../../../stores/useRegionStore";
-import type { AgeUnit, PlantEntry } from "./types";
+import {
+  PLANT_HEALTH_STATUS_LABELS,
+  PLANT_HEALTH_STATUS_OPTIONS,
+  type AgeUnit,
+  type PlantEntry,
+  type PlantHealthStatus,
+  type VarietyOption,
+} from "./types";
 
 interface PlantCardProps {
   plant: PlantEntry;
   index: number;
   geographicalUnits: any[];
   /** Giống / hạt giống của vùng canh tác chọn ở bước 1 */
-  varietyOptions?: Array<{ id: string; name: string; code?: string }>;
+  varietyOptions?: VarietyOption[];
   onUpdate: (partial: Partial<PlantEntry>) => void;
   onRemove: () => void;
   canRemove: boolean;
@@ -395,10 +402,18 @@ export const PlantCard = ({
           {/* Info grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2 sm:col-span-2">
-              <Label className="text-xs">Giống / Hạt giống</Label>
+              <Label className="text-xs">
+                Giống / Hạt giống <span className="text-red-500">*</span>
+              </Label>
               <Select
                 value={plant.varietyId ?? ""}
-                onValueChange={(val) => onUpdate({ varietyId: val })}
+                onValueChange={(val) =>
+                  onUpdate({
+                    varietyId: val,
+                    variantKind: varietyOptions.find((o) => o.id === val)
+                      ?.variantKind,
+                  })
+                }
                 disabled={varietyOptions.length === 0}
               >
                 <SelectTrigger>
@@ -415,6 +430,33 @@ export const PlantCard = ({
                     <SelectItem key={option.id} value={option.id}>
                       {option.name}
                       {option.code ? ` (${option.code})` : ""}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {!plant.varietyId && (
+                <p className="text-xs text-red-500">
+                  {varietyOptions.length === 0
+                    ? "Vùng canh tác chưa cấu hình giống — không thể lưu cây trồng."
+                    : "Vui lòng chọn giống cây hoặc hạt giống."}
+                </p>
+              )}
+            </div>
+            <div className="space-y-2 sm:col-span-2">
+              <Label className="text-xs">Hiện trạng sức khỏe</Label>
+              <Select
+                value={plant.healthStatus ?? ""}
+                onValueChange={(val) =>
+                  onUpdate({ healthStatus: val as PlantHealthStatus })
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Chưa đánh giá" />
+                </SelectTrigger>
+                <SelectContent>
+                  {PLANT_HEALTH_STATUS_OPTIONS.map((value) => (
+                    <SelectItem key={value} value={value}>
+                      {PLANT_HEALTH_STATUS_LABELS[value]}
                     </SelectItem>
                   ))}
                 </SelectContent>

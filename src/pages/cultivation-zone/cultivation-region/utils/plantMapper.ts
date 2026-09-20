@@ -1,4 +1,5 @@
 import type {
+  FarmPlantHealthStatus,
   FarmPlantIdentificationRequest,
   FarmPlantIdentificationResponse,
 } from "@/features/farm";
@@ -58,7 +59,16 @@ export const mapApiPlantToFrontend = (
       p.productionZone?.id?.toString() ||
       p.cultivationZone?.id?.toString() ||
       "",
-    varietyId: (p.metadataJson?.varietyId as string) || "",
+    // Ưu tiên hạt giống (cụ thể hơn), fallback về giống cây
+    varietyId: p.subjectVariant?.id
+      ? String(p.subjectVariant.id)
+      : p.productionSubjectVariant?.id
+        ? String(p.productionSubjectVariant.id)
+        : "",
+    variantKind: p.subjectVariant?.id ? "subject" : "production",
+    healthStatus: p.healthStatus ?? undefined,
+    variantName:
+      p.subjectVariant?.name || p.productionSubjectVariant?.name || "",
   };
 };
 
@@ -105,6 +115,16 @@ export const mapFrontendPlantToApiRequest = (
     ? Number((p as any).cultivationRegionId)
     : undefined;
 
+  const rawVariantId = (p as any).varietyId;
+  const variantId = rawVariantId ? Number(rawVariantId) : undefined;
+  const variantKind = (p as any).variantKind as
+    | "production"
+    | "subject"
+    | undefined;
+  const healthStatus = (p as any).healthStatus as
+    | FarmPlantHealthStatus
+    | undefined;
+
   return {
     ...(isUpdate ? { code: p.code || undefined } : {}),
     location: {
@@ -122,9 +142,12 @@ export const mapFrontendPlantToApiRequest = (
     notes: p.note || undefined,
     status: "active",
     domainCode: "CROP",
-    // API chưa có trường riêng cho giống — lưu kèm metadata để giữ lựa chọn
-    metadataJson: (p as any).varietyId
-      ? { varietyId: String((p as any).varietyId) }
-      : undefined,
+    // API yêu cầu ít nhất một trong hai: Giống cây hoặc Hạt giống
+    ...(variantId
+      ? variantKind === "subject"
+        ? { subjectVariantId: variantId }
+        : { productionSubjectVariantId: variantId }
+      : {}),
+    ...(healthStatus ? { healthStatus } : {}),
   };
 };

@@ -1,20 +1,59 @@
 import { CodeBadge } from "@/components/CodeBadge";
+import { Badge, cn } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { Link } from "wouter";
 import { MapPin } from "lucide-react";
 import type { Plant } from "@/pages/region-chart/constants";
+import {
+  PLANT_HEALTH_STATUS_LABELS,
+  PLANT_HEALTH_STATUS_STYLES,
+} from "../components/types";
 
 export const plantIdentificationColumns = [
   {
     key: "code",
     label: "Mã định danh",
-    render: (value: string, row: Plant) => (
-      <Link
-        href={`/plant-identification/${row.id}`}
-        className="cursor-pointer"
-      >
-        <CodeBadge value={value || `PI-${row.id}`} />
+    render: (value: unknown, row: Plant) => (
+      <Link href={`/plant-identification/${row.id}`} className="cursor-pointer">
+        <CodeBadge value={(value as string) || `PI-${row.id}`} />
       </Link>
     ),
+  },
+  {
+    key: "variantName",
+    label: "Tên & Giống",
+    // Response không trả tên loại cây, chỉ có tên giống / hạt giống
+    render: (_: unknown, row: any) =>
+      row.variantName ? (
+        <div>
+          <div className="text-sm font-semibold text-slate-800">
+            {row.variantName}
+          </div>
+          <div className="text-[10px] uppercase tracking-wide text-slate-400">
+            {row.variantKind === "subject" ? "Hạt giống" : "Giống cây"}
+          </div>
+        </div>
+      ) : (
+        <span className="text-xs italic text-slate-400">Chưa có giống</span>
+      ),
+  },
+  {
+    key: "healthStatus",
+    label: "Hiện trạng",
+    render: (_: unknown, row: any) =>
+      row.healthStatus ? (
+        <Badge
+          variant="outline"
+          className={cn(
+            "text-[10px] font-semibold",
+            PLANT_HEALTH_STATUS_STYLES[row.healthStatus] ??
+              "border-slate-200 bg-slate-50 text-slate-600",
+          )}
+        >
+          {PLANT_HEALTH_STATUS_LABELS[row.healthStatus] ?? row.healthStatus}
+        </Badge>
+      ) : (
+        <span className="text-xs italic text-slate-400">Chưa đánh giá</span>
+      ),
   },
   {
     key: "productionZone",
@@ -69,7 +108,7 @@ export const plantIdentificationColumns = [
   {
     key: "height",
     label: "C.Cao (m)",
-    render: (value: string) => value || "—",
+    render: (value: unknown) => (value as string) || "—",
   },
   {
     key: "ageValue",
@@ -99,12 +138,12 @@ export const plantIdentificationColumns = [
   {
     key: "note",
     label: "Ghi chú",
-    render: (value: string) => (
+    render: (value: unknown) => (
       <span
         className="text-muted-foreground italic text-xs block max-w-50 truncate"
-        title={value}
+        title={value as string}
       >
-        {value || "—"}
+        {(value as string) || "—"}
       </span>
     ),
   },
