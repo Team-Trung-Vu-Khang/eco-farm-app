@@ -150,6 +150,7 @@ export const useCultivationRegionDetail = (id?: string | null) => {
       .filter(Boolean);
 
     return {
+      healthUpdateMode: areaData.healthUpdateMode,
       id: String(areaData.id),
       name: areaData.name ?? "",
       scope: (() => {
