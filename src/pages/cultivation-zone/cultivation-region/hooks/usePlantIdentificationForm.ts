@@ -1,23 +1,23 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { useForm, useFieldArray } from "react-hook-form";
+import {
+  areaApi,
+  plotApi,
+  regionApi,
+  useCultivationZoneById,
+  useCultivationZones,
+} from "@/features/farm";
+import { areaKeys } from "@/features/farm/hooks/useAreas";
+import { plotKeys } from "@/features/farm/hooks/usePlots";
+import { regionKeys } from "@/features/farm/hooks/useRegions";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
+import { useQueries } from "@tanstack/react-query";
 import * as turf from "@turf/turf";
-import { useMemo, useState, useEffect } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useFieldArray, useForm } from "react-hook-form";
+import { z } from "zod";
 import usePlantStore from "../../../../stores/usePlantStore";
 import { type Plant } from "../../../region-chart/constants";
 import { type PlantEntry, makeEmptyPlant } from "../components/types";
-import {
-  useCultivationZones,
-  useCultivationZoneById,
-  regionApi,
-  areaApi,
-  plotApi,
-} from "@/features/farm";
-import { useQueries } from "@tanstack/react-query";
-import { regionKeys } from "@/features/farm/hooks/useRegions";
-import { areaKeys } from "@/features/farm/hooks/useAreas";
-import { plotKeys } from "@/features/farm/hooks/usePlots";
 
 /** Convert API boundary (latitude/longitude) → map coords ({lat,lng}) */
 function boundaryToCoords(
@@ -168,12 +168,10 @@ export const usePlantIdentificationForm = ({
   };
 
   // ---- Fetch Cultivation Zones from API ----
-  const {
-    items: apiCultivationRegions,
-    loading: isLoadingCultivationRegions,
-  } = useCultivationZones({
-    params: { domainCode: "CROP" },
-  });
+  const { items: apiCultivationRegions, loading: isLoadingCultivationRegions } =
+    useCultivationZones({
+      params: { domainCode: "CROP" },
+    });
   const filteredCultivationRegions = apiCultivationRegions;
 
   const selectedCultivationRegion = useMemo(() => {
@@ -641,16 +639,24 @@ export const usePlantIdentificationForm = ({
   );
 
   const selectedCropsData: any[] = useMemo(() => {
+    // Ưu tiên giống Foundation, sau đó hạt giống owner, cuối cùng là seeds (legacy)
     const list =
+      cultivationRegionDetail?.productionSubjectVariants ||
       cultivationRegionDetail?.subjectVariants ||
       cultivationRegionDetail?.seeds ||
       [];
     return list.map((item: any) => ({
       ...item,
       cropVarietyCode:
-        item.cropVarietyCode || item.subjectVariantCode || item.varietyCode,
+        item.cropVarietyCode ||
+        item.subjectVariantCode ||
+        item.varietyCode ||
+        item.code,
       cropVarietyName:
-        item.cropVarietyName || item.subjectVariantName || item.varietyName,
+        item.cropVarietyName ||
+        item.subjectVariantName ||
+        item.varietyName ||
+        item.name,
       cropName: item.cropName || item.productionSubjectName || item.crop,
     }));
   }, [cultivationRegionDetail]);

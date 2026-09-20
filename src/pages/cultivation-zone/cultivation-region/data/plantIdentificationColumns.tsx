@@ -1,3 +1,4 @@
+import { CodeBadge } from "@/components/CodeBadge";
 import { Link } from "wouter";
 import { MapPin } from "lucide-react";
 import type { Plant } from "@/pages/region-chart/constants";
@@ -9,9 +10,9 @@ export const plantIdentificationColumns = [
     render: (value: string, row: Plant) => (
       <Link
         href={`/plant-identification/${row.id}`}
-        className="font-mono font-bold text-primary hover:underline cursor-pointer"
+        className="cursor-pointer"
       >
-        {value || `PI-${row.id}`}
+        <CodeBadge value={value || `PI-${row.id}`} />
       </Link>
     ),
   },

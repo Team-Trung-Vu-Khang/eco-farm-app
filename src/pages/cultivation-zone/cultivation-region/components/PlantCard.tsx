@@ -22,7 +22,7 @@ import {
 } from "lucide-react";
 import * as turf from "@turf/turf";
 import useRegionStore from "../../../../stores/useRegionStore";
-import type { PlantEntry } from "./types";
+import type { AgeUnit, PlantEntry } from "./types";
 
 interface PlantCardProps {
   plant: PlantEntry;
@@ -416,7 +416,7 @@ export const PlantCard = ({
                 />
                 <Select
                   value={plant.ageUnit}
-                  onValueChange={(val) => onUpdate({ ageUnit: val })}
+                  onValueChange={(val) => onUpdate({ ageUnit: val as AgeUnit })}
                 >
                   <SelectTrigger className="w-28">
                     <SelectValue />

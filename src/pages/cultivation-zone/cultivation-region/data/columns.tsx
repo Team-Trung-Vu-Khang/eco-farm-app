@@ -1,3 +1,4 @@
+import { CodeBadge } from "@/components/CodeBadge";
 import type { Column } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { Badge } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { Link } from "wouter";
@@ -25,9 +26,7 @@ export const getCultivationRegionColumns =
       label: "Mã",
       render: (_, row) => (
         <Link href={`/cultivation-region/${row.id}`}>
-          <span className="font-mono text-xs text-primary hover:underline">
-            {row.code || `#${row.id}`}
-          </span>
+          <CodeBadge value={row.code || `#${row.id}`} />
         </Link>
       ),
     },

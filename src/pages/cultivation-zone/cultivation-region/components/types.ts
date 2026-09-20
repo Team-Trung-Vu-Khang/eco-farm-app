@@ -14,11 +14,14 @@ export interface GeographicalSelection {
   areaName?: string;
 }
 
+/** Đơn vị tuổi cây — khớp với plantEntrySchema (Zod enum) */
+export type AgeUnit = "days" | "months" | "years";
+
 export interface PlantEntry {
   entryId: string;
   height: string;
   ageValue: string;
-  ageUnit: string;
+  ageUnit: AgeUnit;
   plantedDate: string;
   note: string;
   plotId: string;

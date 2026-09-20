@@ -3,8 +3,8 @@ import {
   usePlantIdentificationById,
   usePlantIdentificationMutations,
 } from "@/features/farm";
-import { useToast } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { Trees } from "lucide-react";
+import { Button, useToast } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import { ChevronLeft, Trees } from "lucide-react";
 import { useMemo } from "react";
 import { useLocation, useParams } from "wouter";
 import PlantIdentificationForm from "./components/PlantIdentificationForm";
@@ -74,6 +74,15 @@ const PlantIdentificationEditPage = () => {
     <PageWrapper
       title={`Chỉnh sửa: ${plant.code}`}
       description="Cập nhật thông tin định danh và thông số sinh trưởng"
+      actions={
+        <Button
+          variant="outline"
+          onClick={() => setLocation("/plant-identification")}
+        >
+          <ChevronLeft className="mr-2 h-4 w-4" />
+          Quay lại
+        </Button>
+      }
     >
       <PlantIdentificationForm
         initialData={plant}
