@@ -9,7 +9,6 @@ export default function TeamEditPage() {
     control,
     errors,
     clearErrors,
-    departmentOptions,
     leaderOptions,
     handleSubmit,
     goBack,
@@ -57,7 +56,6 @@ export default function TeamEditPage() {
           control={control}
           errors={errors}
           clearErrors={clearErrors}
-          departmentOptions={departmentOptions}
           leaderOptions={leaderOptions}
         />
       </div>

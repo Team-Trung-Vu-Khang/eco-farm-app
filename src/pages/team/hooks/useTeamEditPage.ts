@@ -1,5 +1,4 @@
 import {
-  useFarmDepartments,
   useFarmPersonnel,
   useFarmTeamById,
   useFarmTeamMutations,
@@ -15,6 +14,7 @@ import {
   teamFormSchema,
   type TeamFormValues,
 } from "../data/team-form.schema";
+import { getApiErrorMessage } from "@/shared/lib/api-error";
 
 export function useTeamEditPage() {
   const [, setLocation] = useLocation();
@@ -32,22 +32,10 @@ export function useTeamEditPage() {
 
   const { updateTeam } = useFarmTeamMutations(parsedWorkspaceId);
 
-  const farmDepartmentsQuery = useFarmDepartments({
-    workspaceId: parsedWorkspaceId,
-    params: { onlyOwner: true, size: 100 },
-  });
-
   const farmPersonnelQuery = useFarmPersonnel({
     workspaceId: parsedWorkspaceId,
     params: { size: 100 },
   });
-
-  const departmentOptions = useMemo(() => {
-    return farmDepartmentsQuery.items.map((d) => ({
-      label: d.name,
-      value: `${d.id}_${d.source}`,
-    }));
-  }, [farmDepartmentsQuery.items]);
 
   const leaderOptions = useMemo(() => {
     return farmPersonnelQuery.items.map((p) => ({
@@ -72,18 +60,10 @@ export function useTeamEditPage() {
       reset({
         code: team.code ?? "",
         name: team.name ?? "",
-        department: (() => {
-          if (typeof team.department === "object" && team.department?.id) {
-            const found = farmDepartmentsQuery.items.find(
-              (d) => d.id === team.department.id,
-            );
-            if (found) {
-              return String(found.id);
-            }
-            return String(team.department.id);
-          }
-          return "";
-        })(),
+        department:
+          typeof team.department === "object" && team.department?.id
+            ? String(team.department.id)
+            : "",
         leader:
           typeof team.leader === "object" && team.leader?.id
             ? String(team.leader.id)
@@ -92,7 +72,7 @@ export function useTeamEditPage() {
         status: (team.status as any) ?? "active",
       });
     }
-  }, [team, reset, farmDepartmentsQuery.items]);
+  }, [team, reset]);
 
   const onSubmit = async (values: TeamFormValues) => {
     try {
@@ -125,7 +105,7 @@ export function useTeamEditPage() {
     } catch (error) {
       toast({
         title: "Không thể cập nhật",
-        description: error instanceof Error ? error.message : "Đã xảy ra lỗi",
+        description: getApiErrorMessage(error),
         variant: "destructive",
       });
     }
@@ -135,7 +115,6 @@ export function useTeamEditPage() {
     control,
     errors,
     clearErrors,
-    departmentOptions,
     leaderOptions,
     isTeamLoading,
     goBack: () => setLocation(`/team/${id}`),

@@ -5,7 +5,6 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-  Combobox,
   Input,
   Label,
   Textarea,
@@ -15,12 +14,12 @@ import { useState } from "react";
 import { Controller, type Control, type FieldErrors } from "react-hook-form";
 import type { TeamFormValues } from "../data/team-form.schema";
 import { LeaderSelectorDialog } from "./LeaderSelectorDialog";
+import { DepartmentRemoteCombobox } from "./DepartmentRemoteCombobox";
 
 interface TeamFormCardProps {
   control: Control<TeamFormValues>;
   errors: FieldErrors<TeamFormValues>;
   clearErrors: (name?: any) => void;
-  departmentOptions?: { label: string; value: string }[];
   leaderOptions?: { label: string; value: string }[];
   isEdit?: boolean;
 }
@@ -29,7 +28,6 @@ export function TeamFormCard({
   control,
   errors,
   clearErrors,
-  departmentOptions = [],
   leaderOptions = [],
   isEdit = false,
 }: TeamFormCardProps) {
@@ -139,16 +137,12 @@ export function TeamFormCard({
               control={control}
               name="department"
               render={({ field }) => (
-                <Combobox
-                  options={departmentOptions}
+                <DepartmentRemoteCombobox
                   value={field.value ?? ""}
                   onChange={(value) => {
                     clearErrors("department");
                     field.onChange(value);
                   }}
-                  placeholder="Chọn phòng ban"
-                  searchPlaceholder="Tìm phòng ban..."
-                  emptyText="Không tìm thấy phòng ban"
                 />
               )}
             />

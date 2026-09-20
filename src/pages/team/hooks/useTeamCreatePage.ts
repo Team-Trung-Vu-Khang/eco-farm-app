@@ -1,5 +1,4 @@
 import {
-  useFarmDepartments,
   useFarmPersonnel,
   useFarmTeamMutations,
 } from "@/features/master-data";
@@ -14,6 +13,7 @@ import {
   teamFormSchema,
   type TeamFormValues,
 } from "../data/team-form.schema";
+import { getApiErrorMessage } from "@/shared/lib/api-error";
 
 export function useTeamCreatePage() {
   const [, setLocation] = useLocation();
@@ -24,22 +24,10 @@ export function useTeamCreatePage() {
 
   const { createTeam } = useFarmTeamMutations(parsedWorkspaceId);
 
-  const farmDepartmentsQuery = useFarmDepartments({
-    workspaceId: parsedWorkspaceId,
-    params: { onlyOwner: true, size: 100 },
-  });
-
   const farmPersonnelQuery = useFarmPersonnel({
     workspaceId: parsedWorkspaceId,
     params: { size: 100 },
   });
-
-  const departmentOptions = useMemo(() => {
-    return farmDepartmentsQuery.items.map((d) => ({
-      label: d.name,
-      value: String(d.id),
-    }));
-  }, [farmDepartmentsQuery.items]);
 
   const leaderOptions = useMemo(() => {
     return farmPersonnelQuery.items.map((p) => ({
@@ -85,7 +73,7 @@ export function useTeamCreatePage() {
     } catch (error) {
       toast({
         title: "Không thể tạo",
-        description: error instanceof Error ? error.message : "Đã xảy ra lỗi",
+        description: getApiErrorMessage(error),
         variant: "destructive",
       });
     }
@@ -95,7 +83,6 @@ export function useTeamCreatePage() {
     control,
     errors,
     clearErrors,
-    departmentOptions,
     leaderOptions,
     goBack: () => setLocation("/team"),
     isSubmitting: createTeam.isPending,

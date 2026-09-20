@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
-  Combobox,
   Button,
   FormDialog,
   Input,
@@ -27,12 +26,12 @@ import {
 } from "../data/position-form.schema";
 import { emptyPositionFormData } from "../data/constants";
 import type { PositionItem, PositionRecord } from "../types";
+import { PositionGroupRemoteCombobox } from "./PositionGroupRemoteCombobox";
 
 interface OwnerPositionFormDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   editItem: PositionItem | null;
-  groupOptions: { label: string; value: string }[];
   onSubmit: (data: PositionFormValues) => Promise<void> | void;
 }
 
@@ -88,7 +87,6 @@ export function OwnerPositionFormDialog({
   open,
   onOpenChange,
   editItem,
-  groupOptions,
   onSubmit,
 }: OwnerPositionFormDialogProps) {
   const { toast } = useToast();
@@ -246,16 +244,12 @@ export function OwnerPositionFormDialog({
             control={control}
             name="positionGroupId"
             render={({ field }) => (
-              <Combobox
-                options={groupOptions}
+              <PositionGroupRemoteCombobox
                 value={field.value}
                 onChange={(value) => {
                   clearErrors("positionGroupId");
                   field.onChange(value);
                 }}
-                placeholder="Chọn nhóm chức vụ"
-                searchPlaceholder="Tìm nhóm chức vụ..."
-                emptyText="Không tìm thấy nhóm chức vụ"
               />
             )}
           />

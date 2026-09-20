@@ -19,7 +19,6 @@ const POSITION_FILTER_STATUS_OPTIONS = [
 const OwnerPositionPage = () => {
   const {
     positions,
-    groupOptions,
     loading,
     error,
     response,
@@ -99,7 +98,6 @@ const OwnerPositionPage = () => {
         open={formOpen}
         onOpenChange={setFormOpen}
         editItem={editItem}
-        groupOptions={groupOptions}
         onSubmit={handleSubmit}
       />
 
