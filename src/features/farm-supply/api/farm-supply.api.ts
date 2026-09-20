@@ -13,6 +13,7 @@ const SUPPLY_PATHS: Record<SupplyType, string> = {
   fertilizer: "fertilizers",
   material: "materials",
   equipment: "equipment", // singular!
+  biological: "biological-products",
 };
 
 export const farmSupplyApi = {
@@ -119,7 +120,11 @@ export const farmSupplyApi = {
 
   getClassificationGroups: (type: SupplyType, classification?: string) => {
     const catalog =
-      type === "equipment" ? "equipment-tool-groups" : `${type}-groups`;
+      type === "equipment"
+        ? "equipment-tool-groups"
+        : type === "biological"
+          ? "biological-product-groups"
+          : `${type}-groups`;
     return apiClient
       .get<PageResponse<any>>(`/api/master-data/${catalog}`, {
         params: { status: "active", page: 0, size: 100, classification, domainCode: "CROP" },

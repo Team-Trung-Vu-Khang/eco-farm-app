@@ -1,13 +1,17 @@
-import { Badge, type Column } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { originOptions, applicationStageOptions } from "./constants";
 import { CodeBadge } from "@/components/CodeBadge";
 import { formatPackagingVariantText } from "@/features/farm-supply";
+import { Badge, type Column } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import { originOptions } from "./constants";
 
 export const getBiologicalProductColumns = (
   onView: (id: number) => void,
 ): Column<any>[] => [
   { key: "code", label: "Mã", render: (value) => <CodeBadge value={value} /> },
-  { key: "sku", label: "Mã SKU", render: (value) => <CodeBadge value={value} /> },
+  {
+    key: "sku",
+    label: "Mã SKU",
+    render: (value) => <CodeBadge value={value} />,
+  },
   {
     key: "name",
     label: "Tên chế phẩm sinh học",
@@ -54,23 +58,11 @@ export const getBiologicalProductColumns = (
         row.biologicalProductOriginGroup ||
         originOptions.find((o: any) => o.id === row.originId)?.label ||
         "N/A";
-      const stage =
-        row.classifications?.find(
-          (c: any) => c.classification === "effect_stage",
-        )?.group?.name ||
-        row.applicationStage ||
-        applicationStageOptions.find(
-          (s: any) => s.id === row.applicationStageId,
-        )?.label ||
-        "N/A";
 
       return (
         <div className="flex gap-1 flex-col">
           <Badge variant="outline" className="w-fit text-[10px] py-0 px-1.5">
             {origin}
-          </Badge>
-          <Badge variant="secondary" className="w-fit text-[10px] py-0 px-1.5">
-            {stage}
           </Badge>
         </div>
       );
@@ -113,7 +105,9 @@ export const getBiologicalProductColumns = (
     label: "Đóng gói / Đơn vị",
     render: (_, row) => {
       const specs =
-        row.packagingVariants?.map((pv: any) => formatPackagingVariantText(pv)).filter(Boolean) || [];
+        row.packagingVariants
+          ?.map((pv: any) => formatPackagingVariantText(pv))
+          .filter(Boolean) || [];
       return specs.length > 0 ? (
         <span
           className="text-xs block max-w-[180px] truncate"
@@ -157,8 +151,7 @@ export const getBiologicalProductColumns = (
     render: (val) => {
       if (!val) return <span className="text-muted-foreground text-xs">—</span>;
       const num = Number(val);
-      if (isNaN(num))
-        return <span className="text-xs">{String(val)}</span>;
+      if (isNaN(num)) return <span className="text-xs">{String(val)}</span>;
       return (
         <span className="text-xs font-semibold text-slate-700">
           {num.toLocaleString("vi-VN")} đ

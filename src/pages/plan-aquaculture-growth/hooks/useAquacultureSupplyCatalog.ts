@@ -38,6 +38,7 @@ const AQUACULTURE_SUPPLY_TYPE_OPTIONS: AquacultureSupplyTypeOption[] = [
 const DEFAULT_UNITS: Record<AquacultureSupplyType, string[]> = {
   medicine: ["chai", "gói", "lít", "ml", "can"],
   fertilizer: ["kg", "bao", "tấn", "lít", "chai"],
+  biological: ["kg", "gói", "chai", "lít", "ml"],
   material: ["cái", "bộ", "cuộn", "thùng", "bao"],
   equipment: ["cái", "bộ", "đôi", "chiếc", "máy"],
 };

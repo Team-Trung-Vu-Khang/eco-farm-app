@@ -1,22 +1,15 @@
-import { useEffect, useState } from "react";
+import { safeConvertLexicalToHtml } from "@/utils/commons";
 import { Badge, Card, CardContent } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import {
-  CheckCircle2,
-  FileText,
   AlarmClock,
   Building2,
+  CheckCircle2,
+  FileText,
   Package,
   ShieldAlert,
-  BookOpen,
 } from "lucide-react";
-import { safeConvertLexicalToHtml } from "@/utils/commons";
-import {
-  suppliers,
-  nutritionalContentOptions,
-  originOptions,
-  applicationStageOptions,
-  physicalFormOptions,
-} from "../../data/constants";
+import { useEffect, useState } from "react";
+import { suppliers } from "../../data/constants";
 import type { BiologicalProductFormData } from "../../types/types";
 
 interface BiologicalProductConfirmationStepProps {
@@ -99,7 +92,10 @@ export const BiologicalProductConfirmationStep = ({
                 label="Nhóm hoạt chất sinh học"
                 value={formData.nutritionalComponents}
               />
-              <Row label="Dạng chế phẩm" value={formData.biologicalProductType} />
+              <Row
+                label="Dạng chế phẩm"
+                value={formData.biologicalProductType}
+              />
               <Row label="Hình thái vật lý" value={formData.physicalForm} />
 
               {formData.mainIngredients && (
@@ -158,10 +154,7 @@ export const BiologicalProductConfirmationStep = ({
                 label="Giai đoạn tác động"
                 value={formData.applicationStage}
               />
-              <Row
-                label="Hạn sử dụng"
-                value={formData.shelfLife}
-              />
+              <Row label="Hạn sử dụng" value={formData.shelfLife} />
               {formData.targetCrops && formData.targetCrops.length > 0 && (
                 <div className="col-span-2">
                   <span className="text-muted-foreground text-sm">
@@ -317,7 +310,10 @@ export const BiologicalProductConfirmationStep = ({
                 label="Nhà nhập khẩu / Đăng ký"
                 value={formData.importerRegistrant?.name}
               />
-              <Row label="Nhà phân phối chính" value={formData.distributor?.name} />
+              <Row
+                label="Nhà phân phối chính"
+                value={formData.distributor?.name}
+              />
               <Row label="Giá tham khảo" value={formData.referencePrice} />
 
               {formData.packagingSpecs &&
@@ -341,33 +337,37 @@ export const BiologicalProductConfirmationStep = ({
                 )}
 
               {/* Lô kho */}
-              {(formData.supplierDetails?.length ?? 0) > 0 && (
-                <div className="col-span-2 mt-2">
-                  <span className="text-muted-foreground block mb-2">
-                    Đăng ký tồn kho ban đầu:
-                  </span>
-                  <div className="space-y-1">
-                    {formData.supplierDetails?.map((item, idx) => {
-                      const sup = suppliers.find(
-                        (s) => s.id === item.supplierId,
-                      );
-                      return (
-                        <div
-                          key={idx}
-                          className="flex justify-between p-2 rounded bg-slate-50 text-xs border border-slate-100"
-                        >
-                          <span className="font-medium text-slate-700">
-                            {sup?.name || item.supplierId}
-                          </span>
-                          <span className="text-slate-600">
-                            {item.quantity} {item.unit} ({item.packaging})
-                          </span>
-                        </div>
-                      );
-                    })}
+              {
+                //@ts-expect-error
+                (formData?.supplierDetails?.length ?? 0) > 0 && (
+                  <div className="col-span-2 mt-2">
+                    <span className="text-muted-foreground block mb-2">
+                      Đăng ký tồn kho ban đầu:
+                    </span>
+                    <div className="space-y-1">
+                      {//@ts-expect-error
+                      formData?.supplierDetails?.map((item, idx) => {
+                        const sup = suppliers.find(
+                          (s) => s.id === item.supplierId,
+                        );
+                        return (
+                          <div
+                            key={idx}
+                            className="flex justify-between p-2 rounded bg-slate-50 text-xs border border-slate-100"
+                          >
+                            <span className="font-medium text-slate-700">
+                              {sup?.name || item.supplierId}
+                            </span>
+                            <span className="text-slate-600">
+                              {item.quantity} {item.unit} ({item.packaging})
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
                   </div>
-                </div>
-              )}
+                )
+              }
             </div>
           </CardContent>
         </Card>

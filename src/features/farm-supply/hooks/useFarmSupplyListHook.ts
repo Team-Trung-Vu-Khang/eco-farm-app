@@ -27,7 +27,9 @@ export function getSupplyBasePath(
           ? `${splash}fertilizer`
           : type === "material"
             ? `${splash}material`
-            : `${splash}equipment`;
+            : type === "biological"
+              ? `${splash}biological-product`
+              : `${splash}equipment`;
 
     const domainPrefix =
       domainCode === "CROP" ? "" : domainCode === "LIVESTOCK" ? "/ah-" : "/aq-";
@@ -49,7 +51,9 @@ export function getSupplyBasePath(
         ? "/fertilizer"
         : type === "material"
           ? "/material"
-          : "/equipment";
+          : type === "biological"
+            ? "/biological-product"
+            : "/equipment";
 
   return `${domainPrefix}${typeSuffix}`;
 }

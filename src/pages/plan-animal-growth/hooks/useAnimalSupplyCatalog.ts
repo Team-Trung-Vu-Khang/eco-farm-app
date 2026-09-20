@@ -40,6 +40,7 @@ const ANIMAL_SUPPLY_TYPE_OPTIONS: AnimalSupplyTypeOption[] = [
 
 const DEFAULT_UNITS: Record<AnimalSupplyType, string[]> = {
   medicine: ["chai", "gói", "lít", "ml", "can"],
+  biological: ["kg", "gói", "chai", "lít", "ml"],
   material: ["cái", "bộ", "cuộn", "thùng", "bao"],
   equipment: ["cái", "bộ", "đôi", "chiếc", "máy"],
 };

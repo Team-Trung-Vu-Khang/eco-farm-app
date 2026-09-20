@@ -98,7 +98,6 @@ export default function BiologicalProductPage() {
             ],
           },
         ]}
-        manualFiltering
         onView={handleView}
         onEdit={handleEdit}
         onDelete={handleDelete}
