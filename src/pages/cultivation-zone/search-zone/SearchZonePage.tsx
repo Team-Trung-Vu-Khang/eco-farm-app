@@ -49,17 +49,18 @@ import {
   useMap,
 } from "react-leaflet";
 import { useLocation } from "wouter";
-import useCultivationRegionStore, {
-  type CultivationRegion,
-} from "../../../stores/useCultivationRegionStore";
-import useEnterpriseStore from "../../../stores/useEnterpriseStore";
-import useRegionStore from "../../../stores/useRegionStore";
+import type { CultivationRegion } from "../../../stores/useCultivationRegionStore";
 import {
   LAND_TYPES,
   type Coordinate,
   type Region,
 } from "../../region-chart/constants";
-import { CultivationRegionDetailView } from "../cultivation-region/CultivationRegionDetailPage";
+import {
+  mockSearchZoneCultivationRegions,
+  mockSearchZoneDetailRecords,
+  mockSearchZoneEnterprises,
+  mockSearchZoneRegions,
+} from "./searchZone.mock";
 
 type LatLngTuple = [number, number];
 
@@ -101,9 +102,9 @@ interface AdvancedFilters {
 
 const SearchZonePage = () => {
   const { toast } = useToast();
-  const { enterprises } = useEnterpriseStore();
-  const { regions } = useRegionStore();
-  const { areas: cultivationRegions } = useCultivationRegionStore();
+  const enterprises = mockSearchZoneEnterprises;
+  const regions = mockSearchZoneRegions;
+  const cultivationRegions = mockSearchZoneCultivationRegions;
 
   const [mapCenter, setMapCenter] = useState<{ lat: number; lng: number }>({
     lat: 11.53,
@@ -854,84 +855,84 @@ const SearchZonePage = () => {
 
   return (
     <PageWrapper title="Tìm kiếm vùng canh tác">
-      <div className="h-[calc(100vh-64px)] flex flex-col bg-slate-50">
+      <div className="min-h-[calc(100vh-64px)] flex flex-col bg-slate-50">
         {/* TOP HEADER: Simple Search (Matched to temp.ts) */}
-        <div className="bg-white border-b p-4 z-40 shadow-sm rounded-md">
-          <div className="w-full flex flex-col md:flex-row gap-4 items-center justify-between">
-            <div className="relative flex-1 w-full">
-              <Search className="absolute left-3 top-2.5 h-5 w-5 text-muted-foreground" />
-              <Input
-                placeholder="Tìm kiếm vùng canh tác theo tên, đối tượng áp dụng..."
-                className="pl-10 rounded-xl border-slate-200 focus:ring-primary h-10"
-                value={searchQuery}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                  setSearchQuery(e.target.value)
-                }
-              />
-            </div>
-            <div className="flex gap-2 w-full md:w-auto">
-              <Button
-                variant={isAdvancedSearchOpen ? "default" : "outline"}
-                className="gap-2 rounded-xl"
-                onClick={() => setIsAdvancedSearchOpen(!isAdvancedSearchOpen)}
-              >
-                <Filter className="h-4 w-4" />
-                Tìm kiếm nâng cao
-                {activeFilterCount > 0 && (
-                  <Badge variant="secondary" className="ml-1 px-1 h-5 min-w-5">
-                    {activeFilterCount}
-                  </Badge>
-                )}
-              </Button>
-              <Button className="rounded-xl px-6" onClick={handleSearch}>
-                Tìm kiếm
-              </Button>
-            </div>
-          </div>
-
-          <div className="relative overflow-hidden rounded-xl border border-green-200 bg-linear-to-r from-green-50 via-white to-green-50 p-5 shadow-sm mt-4">
-            <div className="relative z-10 flex items-center gap-4">
-              <div className="w-12 h-12 rounded-xl bg-white shadow-sm border border-green-100 flex items-center justify-center text-green-600 shrink-0">
-                <Layers className="w-6 h-6" />
+        <div className="bg-white border-b rounded-md p-4 z-40 shadow-sm">
+          <div className="max-w-7xl mx-auto space-y-4">
+            <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
+              <div className="relative flex-1 w-full">
+                <Search className="absolute left-3 top-2.5 h-5 w-5 text-muted-foreground" />
+                <Input
+                  placeholder="Tìm kiếm vùng canh tác theo tên, đối tượng áp dụng..."
+                  className="pl-10 border-slate-200 focus:ring-primary shadow-sm bg-slate-50/50"
+                  value={searchQuery}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                    setSearchQuery(e.target.value)
+                  }
+                />
               </div>
-              <div>
-                <h3 className="text-base font-bold text-green-900 uppercase tracking-wide">
-                  Kết quả tìm kiếm
-                </h3>
-                <p className="text-sm text-green-700/80 font-medium">
-                  Đã tìm thấy{" "}
-                  <span className="text-green-600 font-black px-1.5 py-0.5 bg-white rounded-md border border-green-100 shadow-xs">
-                    {totalCultivationRegions}
-                  </span>{" "}
-                  vùng canh tác phù hợp với tiêu chí của bạn.
-                </p>
+
+              <div className="flex gap-2 w-full md:w-auto">
+                <Button
+                  variant={isAdvancedSearchOpen ? "default" : "outline"}
+                  onClick={() => setIsAdvancedSearchOpen(!isAdvancedSearchOpen)}
+                >
+                  <Filter className="h-4 w-4" />
+                  <span>Bộ lọc nâng cao</span>
+                  {activeFilterCount > 0 && (
+                    <span className="text-primary bg-white rounded text-xs w-5 h-5 flex items-center justify-center">
+                      {activeFilterCount}
+                    </span>
+                  )}
+                </Button>
+                <Button className="font-bold" onClick={handleSearch}>
+                  Tìm kiếm
+                </Button>
               </div>
             </div>
-            <div className="absolute top-0 right-0 -mt-4 -mr-4 w-32 h-32 bg-green-500/10 rounded-full blur-2xl" />
-          </div>
 
-          {/* ADVANCED SEARCH PANEL: Grouped Layout (Matched to temp.ts Card style) */}
-          {isAdvancedSearchOpen && (
-            <div className="bg-white z-30 animate-in slide-in-from-top-2 duration-200 mt-4">
-              <div className="w-full">
-                <Card className="border-none shadow-none">
-                  <CardHeader className="bg-slate-50 border rounded-t-xl pb-4">
+            <div className="relative overflow-hidden rounded-xl border border-green-200 bg-linear-to-r from-green-50 via-white to-green-50 p-5 shadow-sm mt-4">
+              <div className="relative z-10 flex items-center gap-4">
+                <div className="w-12 h-12 rounded-xl bg-white shadow-sm border border-green-100 flex items-center justify-center text-green-600 shrink-0">
+                  <Layers className="w-6 h-6" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-green-900 uppercase tracking-wide">
+                    Kết quả tìm kiếm
+                  </h3>
+                  <p className="text-sm text-green-700/80 font-medium">
+                    Đã tìm thấy{" "}
+                    <span className="text-green-600 font-black px-1.5 py-0.5 bg-white rounded-md border border-green-100 shadow-xs">
+                      {totalCultivationRegions}
+                    </span>{" "}
+                    vùng canh tác phù hợp với tiêu chí của bạn.
+                  </p>
+                </div>
+              </div>
+              <div className="absolute top-0 right-0 -mt-4 -mr-4 w-32 h-32 bg-green-500/10 rounded-full blur-2xl" />
+            </div>
+
+            {/* ADVANCED SEARCH PANEL: Grouped Layout */}
+            {isAdvancedSearchOpen && (
+              <div className="pt-2 animate-in slide-in-from-top-2 duration-200">
+                <Card className="bg-white rounded-xl border border-slate-100 shadow-md overflow-hidden">
+                  <CardHeader className="px-6 py-4 bg-slate-50/50 border-b">
                     <div className="flex items-center justify-between">
-                      <CardTitle className="text-lg font-bold flex items-center gap-2">
-                        <Filter className="h-5 w-5 text-primary" />
+                      <CardTitle className="flex items-center gap-2 text-primary font-black uppercase tracking-widest text-sm">
+                        <Filter size={18} />
                         Bộ lọc nâng cao
                       </CardTitle>
                       <Button
                         variant="ghost"
                         size="sm"
                         onClick={() => setAdvancedFilters({})}
-                        className="text-primary hover:text-primary/80 font-semibold"
+                        className="text-primary hover:text-primary/80 text-xs font-bold"
                       >
-                        Xóa tất cả bộ lọc
+                        Xóa tất cả
                       </Button>
                     </div>
                   </CardHeader>
-                  <CardContent className="p-6 border border-t-0 rounded-b-xl space-y-8 bg-white">
+                  <CardContent className="p-6 space-y-8 bg-white">
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                       {/* Nhóm 1: Thông tin cây trồng */}
                       <div className="space-y-4">
@@ -1130,8 +1131,8 @@ const SearchZonePage = () => {
                   </CardContent>
                 </Card>
               </div>
-            </div>
-          )}
+            )}
+          </div>
         </div>
 
         <div className="flex-1 flex relative">
@@ -1191,7 +1192,7 @@ const SearchZonePage = () => {
           </div>
 
           {/* RIGHT CONTENT: Map (Top) & DataTable (Bottom) */}
-          <div className="flex-1 flex flex-col bg-slate-50 relative p-6 space-y-6 overflow-hidden overflow-y-auto split-scrollbar">
+          <div className="flex-1 flex flex-col bg-slate-50 relative p-6 space-y-6 overflow-y-auto split-scrollbar">
             {!selectedEnterpriseId ? (
               <div className="flex-1 flex flex-col items-center justify-center opacity-40">
                 <div className="w-32 h-32 rounded-full bg-white shadow-xl flex items-center justify-center mb-6">
@@ -1650,8 +1651,8 @@ const SearchZonePage = () => {
                           </div>
                         </div>
                         {selectedCultivationRegion && (
-                          <CultivationRegionDetailView
-                            id={selectedCultivationRegion.id}
+                          <MockCultivationRegionDetailView
+                            zone={selectedCultivationRegion}
                           />
                         )}
                       </div>
@@ -2004,7 +2005,7 @@ const SearchZonePage = () => {
                 </div>
 
                 {/* Bottom Section: Cultivation Region DataTable */}
-                <div className="flex-1 bg-white rounded-xl overflow-hidden flex flex-col">
+                <div className="bg-white rounded-xl flex flex-col min-h-120">
                   <div className="flex items-center justify-between px-2  bg-slate-50/50 border-b ">
                     <div className="p-4 font-black text-xs uppercase tracking-widest text-slate-500">
                       Danh sách vùng canh tác
@@ -2013,7 +2014,7 @@ const SearchZonePage = () => {
                       {filteredCultivationRegions.length} vùng canh tác
                     </Badge>
                   </div>
-                  <div className="flex-1 overflow-hidden p-4">
+                  <div className="flex-1 overflow-auto p-4 split-scrollbar">
                     <DataTable
                       columns={columns}
                       data={filteredCultivationRegions}
@@ -2032,6 +2033,96 @@ const SearchZonePage = () => {
     </PageWrapper>
   );
 };
+
+const MockCultivationRegionDetailView = ({
+  zone,
+}: {
+  zone: CultivationRegion;
+}) => {
+  const detail =
+    mockSearchZoneDetailRecords[
+      zone.id as keyof typeof mockSearchZoneDetailRecords
+    ];
+
+  const infoRows = [
+    { label: "Đơn vị sở hữu", value: detail?.owner || zone.enterpriseId },
+    { label: "Quy mô", value: detail?.areaText || "Đang cập nhật" },
+    { label: "Phương thức canh tác", value: detail?.farmingMethod || zone.farmingMethodId },
+    { label: "Tưới tiêu", value: detail?.irrigation || zone.irrigationMethodId },
+    { label: "Ngày tạo", value: zone.createdAt },
+    { label: "Trạng thái", value: zone.status === "active" ? "Hoạt động" : "Ngưng hoạt động" },
+  ];
+
+  return (
+    <div className="space-y-6">
+      <div className="rounded-xl border bg-slate-50 p-5">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-widest text-slate-400">
+              Mock data local
+            </p>
+            <h2 className="mt-1 text-2xl font-bold text-slate-900">
+              {zone.name}
+            </h2>
+            <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
+              {zone.note}
+            </p>
+          </div>
+          <Badge className={zone.status === "active" ? "bg-primary" : ""}>
+            {zone.status === "active" ? "Hoạt động" : "Ngưng hoạt động"}
+          </Badge>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+        {infoRows.map((item) => (
+          <div key={item.label} className="rounded-lg border bg-white p-4">
+            <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
+              {item.label}
+            </p>
+            <p className="mt-2 text-sm font-semibold text-slate-800">
+              {item.value}
+            </p>
+          </div>
+        ))}
+      </div>
+
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <MockDetailList title="Cây trồng" items={detail?.crops || zone.selectedCrops} />
+        <MockDetailList title="Chứng nhận" items={detail?.certifications || zone.certificateIds} />
+        <MockDetailList title="Nhân sự phụ trách" items={detail?.managers || zone.managerIds} />
+        <MockDetailList title="Kế hoạch đang chạy" items={detail?.activePlans || []} />
+        <MockDetailList title="Thiết bị giám sát" items={detail?.devices || []} />
+        <MockDetailList title="Phạm vi áp dụng" items={[zone.targetName]} />
+      </div>
+    </div>
+  );
+};
+
+const MockDetailList = ({
+  title,
+  items,
+}: {
+  title: string;
+  items: readonly string[];
+}) => (
+  <div className="rounded-xl border bg-white p-5">
+    <h3 className="text-xs font-black uppercase tracking-widest text-slate-500">
+      {title}
+    </h3>
+    <div className="mt-4 flex flex-wrap gap-2">
+      {items.length ? (
+        items.map((item) => (
+          <Badge key={item} variant="outline" className="bg-slate-50">
+            {item}
+          </Badge>
+        ))
+      ) : (
+        <span className="text-sm text-slate-400">Chưa có dữ liệu</span>
+      )}
+    </div>
+  </div>
+);
 
 const GeographyScopeTree = ({
   scopeTree,

@@ -9,6 +9,10 @@ import useGrowthCycleStore from "../../../../stores/useGrowthCycleStore";
 import usePersonnelStore from "../../../../stores/usePersonnelStore";
 import usePlanStore, { type Plan } from "../../../../stores/usePlanStore";
 import useRegionStore from "../../../../stores/useRegionStore";
+import {
+  buildMockAreaFromCrop,
+  buildMockDetailsFromCrop,
+} from "../utils/mockCropDetail";
 import useTaskStore, { type Task } from "../../../../stores/useTaskStore";
 import { DISTRICTS, PROVINCES } from "../../../region-chart/constants";
 import type { CropDetail } from "../constants";
@@ -185,7 +189,20 @@ export function useCropDetailDialogContent({
     return resolvedId;
   }, [activeCrop, cultivationAreas, cropGeoRefs, resolvedId]);
 
-  const { area, details } = useCultivationRegionDetail(areaDetailId);
+  const { area: apiArea, details: apiDetails } =
+    useCultivationRegionDetail(areaDetailId);
+
+  // Dữ liệu demo: khi không có vùng canh tác nào khớp với cây, dựng area/details
+  // ngay từ MOCK_CROPS để dialog vẫn hiển thị thay vì báo không tìm thấy.
+  const area = useMemo(
+    () => apiArea ?? (activeCrop ? buildMockAreaFromCrop(activeCrop) : null),
+    [apiArea, activeCrop],
+  );
+  const details = useMemo(
+    () =>
+      apiDetails ?? (activeCrop ? buildMockDetailsFromCrop(activeCrop) : null),
+    [apiDetails, activeCrop],
+  );
 
   const technicalCrops = details?.technicalConfig?.crops || [];
 

@@ -517,7 +517,7 @@ const SearchCropPage = () => {
 
   return (
     <PageWrapper title="Tìm kiếm & Truy xuất nguồn gốc">
-      <div className="h-[calc(100vh-64px)] flex flex-col bg-slate-50">
+      <div className="min-h-[calc(100vh-64px)] flex flex-col bg-slate-50">
         {/* TOP HEADER: Search & Advanced Search */}
         <div className="bg-white border-b rounded-md p-4 z-40 shadow-sm">
           <div className="max-w-7xl mx-auto space-y-4">
@@ -926,7 +926,7 @@ const SearchCropPage = () => {
           </div>
 
           {/* RIGHT CONTENT: Map & Plant List */}
-          <div className="flex-1 flex flex-col bg-slate-50 relative p-6 space-y-6">
+          <div className="flex-1 flex flex-col bg-slate-50 relative p-6 space-y-6 overflow-y-auto split-scrollbar">
             {!selectedRegionId ? (
               <div className="flex-1 flex flex-col items-center justify-center opacity-40">
                 <div className="w-32 h-32 rounded-full bg-white shadow-xl flex items-center justify-center mb-6">
@@ -937,7 +937,7 @@ const SearchCropPage = () => {
                 </h3>
               </div>
             ) : (
-              <div className="flex-1 flex flex-col overflow-hidden">
+              <div className="flex-1 flex flex-col">
                 {(() => {
                   const currentRegion = regions.find(
                     (r) => r.id === selectedRegionId,
@@ -947,11 +947,11 @@ const SearchCropPage = () => {
                   );
 
                   return (
-                    <div className="flex-1 flex flex-col overflow-hidden">
-                      <div className="flex-1 flex flex-col overflow-hidden">
+                    <div className="flex-1 flex flex-col">
+                      <div className="flex-1 flex flex-col">
                         {(() => {
                           return (
-                            <div className="flex-1 flex flex-col gap-6 overflow-hidden">
+                            <div className="flex-1 flex flex-col gap-6">
                               {/* Enterprise Header inside Plants View */}
                               <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-100 flex items-center justify-between">
                                 <div className="flex items-center gap-4">
@@ -1057,11 +1057,11 @@ const SearchCropPage = () => {
                                   )}
                                 </div>
                               </div>
-                              <div className="flex-1 bg-white rounded-xl overflow-hidden flex flex-col">
+                              <div className="bg-white rounded-xl flex flex-col min-h-120">
                                 <div className="p-4 bg-slate-50/50 border-b font-black text-xs uppercase tracking-widest text-slate-500">
                                   Danh sách cây trồng
                                 </div>
-                                <div className="flex-1 overflow-hidden p-4">
+                                <div className="flex-1 overflow-auto p-4 split-scrollbar">
                                   <DataTable
                                     columns={
                                       [
