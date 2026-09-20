@@ -6,6 +6,7 @@ import {
   TabsList,
   TabsTrigger,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import dayjs from "dayjs";
 import {
   Activity,
   ArrowLeft,
@@ -17,15 +18,10 @@ import {
   Route,
   Share2,
 } from "lucide-react";
-import dayjs from "dayjs";
 import React from "react";
 
 import type { FarmProductionHealthMetricResponse } from "@/features/farm/types/farm.type";
-import type {
-  DrilldownItem,
-  SelectedEntity,
-  SoilData,
-} from "../types/types";
+import type { DrilldownItem, SelectedEntity, SoilData } from "../types/types";
 import { buildGoogleMapsUrl } from "../utils/utils";
 
 interface SidebarDetailProps {
@@ -197,19 +193,9 @@ export const SidebarDetail: React.FC<SidebarDetailProps> = ({
         return undefined;
     }
   })();
-  const detailSubtitle =
-    parentLocationName || selectedEntity.properties?.code || "Bản đồ nông nghiệp";
+
   const detailAddress =
-    selectedEntity.properties?.address ||
-    selectedEntity.properties?.note ||
-    [
-      selectedEntity.locationInfo?.plotName,
-      selectedEntity.locationInfo?.areaName,
-      selectedEntity.locationInfo?.zoneName,
-    ]
-      .filter((name) => name && name !== detailTitle)
-      .join(" • ") ||
-    "Đang cập nhật địa chỉ";
+    selectedEntity.properties?.address || selectedEntity.properties?.note;
   const detailImage =
     selectedEntity.properties?.image ||
     selectedEntity.properties?.coverImage ||
@@ -297,7 +283,7 @@ export const SidebarDetail: React.FC<SidebarDetailProps> = ({
       <ScrollArea className="flex-1">
         <div className="pb-4">
           <div className="overflow-hidden">
-            <div className="relative h-48">
+            <div className="relative h-56">
               <img
                 src={detailImage}
                 alt={detailTitle}
@@ -340,9 +326,6 @@ export const SidebarDetail: React.FC<SidebarDetailProps> = ({
                 <h3 className="mt-3 text-2xl font-semibold leading-tight drop-shadow-[0_1px_3px_rgba(0,0,0,0.8)]">
                   {detailTitle}
                 </h3>
-                <p className="mt-1 text-sm text-white/90 drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">
-                  {detailSubtitle}
-                </p>
                 <p className="mt-1 max-w-[95%] text-xs leading-5 text-white/80 drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">
                   {detailAddress}
                 </p>
@@ -418,16 +401,6 @@ export const SidebarDetail: React.FC<SidebarDetailProps> = ({
             <TabsContent value="overview" className="m-0">
               <div className="space-y-4">
                 <div className="rounded-2xl bg-white/70 p-4">
-                  <div className="flex flex-col gap-2">
-                    <InfoLine label="Địa chỉ" value={detailAddress} />
-                    {parentLocationName && (
-                      <InfoLine
-                        label="Khu vực hiện tại"
-                        value={parentLocationName}
-                      />
-                    )}
-                  </div>
-
                   {childrenSectionLabel && (
                     <div className="mt-4 space-y-2">
                       <div className="text-sm font-medium text-slate-700">
