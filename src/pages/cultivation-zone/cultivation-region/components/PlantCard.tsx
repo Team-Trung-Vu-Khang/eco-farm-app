@@ -28,6 +28,8 @@ interface PlantCardProps {
   plant: PlantEntry;
   index: number;
   geographicalUnits: any[];
+  /** Giống / hạt giống của vùng canh tác chọn ở bước 1 */
+  varietyOptions?: Array<{ id: string; name: string; code?: string }>;
   onUpdate: (partial: Partial<PlantEntry>) => void;
   onRemove: () => void;
   canRemove: boolean;
@@ -38,6 +40,7 @@ export const PlantCard = ({
   plant,
   index,
   geographicalUnits,
+  varietyOptions = [],
   onUpdate,
   onRemove,
   canRemove,
@@ -391,6 +394,32 @@ export const PlantCard = ({
 
           {/* Info grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-2 sm:col-span-2">
+              <Label className="text-xs">Giống / Hạt giống</Label>
+              <Select
+                value={plant.varietyId ?? ""}
+                onValueChange={(val) => onUpdate({ varietyId: val })}
+                disabled={varietyOptions.length === 0}
+              >
+                <SelectTrigger>
+                  <SelectValue
+                    placeholder={
+                      varietyOptions.length === 0
+                        ? "Vùng canh tác chưa có giống"
+                        : "Chọn giống"
+                    }
+                  />
+                </SelectTrigger>
+                <SelectContent>
+                  {varietyOptions.map((option) => (
+                    <SelectItem key={option.id} value={option.id}>
+                      {option.name}
+                      {option.code ? ` (${option.code})` : ""}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
             <div className="space-y-2">
               <Label htmlFor={`height-${plant.entryId}`} className="text-xs">
                 Chiều cao (m)

@@ -1,8 +1,8 @@
-import type { Plant } from "@/pages/region-chart/constants";
 import type {
   FarmPlantIdentificationRequest,
   FarmPlantIdentificationResponse,
 } from "@/features/farm";
+import type { Plant } from "@/pages/region-chart/constants";
 
 type CultivationPlant = Plant & Record<string, any>;
 
@@ -31,7 +31,7 @@ export const mapApiPlantToFrontend = (
     code: p.code || "",
     name: p.code || String(p.id),
     type: "Cây trồng",
-    status: p.status,
+    status: p.status as any,
     height: p.height !== undefined && p.height !== null ? String(p.height) : "",
     ageValue,
     ageUnit,
@@ -58,6 +58,7 @@ export const mapApiPlantToFrontend = (
       p.productionZone?.id?.toString() ||
       p.cultivationZone?.id?.toString() ||
       "",
+    varietyId: (p.metadataJson?.varietyId as string) || "",
   };
 };
 
@@ -121,5 +122,9 @@ export const mapFrontendPlantToApiRequest = (
     notes: p.note || undefined,
     status: "active",
     domainCode: "CROP",
+    // API chưa có trường riêng cho giống — lưu kèm metadata để giữ lựa chọn
+    metadataJson: (p as any).varietyId
+      ? { varietyId: String((p as any).varietyId) }
+      : undefined,
   };
 };

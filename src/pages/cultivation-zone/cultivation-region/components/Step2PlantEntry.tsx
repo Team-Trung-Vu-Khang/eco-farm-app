@@ -30,6 +30,8 @@ interface Step2PlantEntryProps {
   removePlant: (id: string) => void;
   updatePlant: (id: string, partial: Partial<PlantEntry>) => void;
   scopedGeographicalUnits: any[];
+  /** Giống / hạt giống của vùng canh tác chọn ở bước 1 */
+  varietyOptions?: Array<{ id: string; name: string; code?: string }>;
   initialData: any;
   isImportOpen: boolean;
   setIsImportOpen: (open: boolean) => void;
@@ -55,6 +57,7 @@ export const Step2PlantEntry: React.FC<Step2PlantEntryProps> = ({
   removePlant,
   updatePlant,
   scopedGeographicalUnits,
+  varietyOptions,
   initialData,
   setIsImportOpen,
   isMapExpanded,
@@ -150,6 +153,7 @@ export const Step2PlantEntry: React.FC<Step2PlantEntryProps> = ({
               plant={plant}
               index={idx}
               geographicalUnits={scopedGeographicalUnits}
+              varietyOptions={varietyOptions}
               onUpdate={(partial) => updatePlant(plant.entryId, partial)}
               onRemove={() => removePlant(plant.entryId)}
               canRemove

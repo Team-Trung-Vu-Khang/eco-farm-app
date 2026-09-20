@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { StepperForm, type Step } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import { useMemo } from "react";
 import { useLocation } from "wouter";
 import { type Plant } from "../../../region-chart/constants";
 import { ImportPlantDialog } from "./ImportPlantDialog";
@@ -59,6 +60,17 @@ const PlantIdentificationForm = ({
     plotsByArea,
   } = usePlantIdentificationForm({ initialData, initialList, onSubmit });
 
+  // Giống / hạt giống của vùng canh tác chọn ở bước 1, dùng cho select ở bước 2
+  const varietyOptions = useMemo(
+    () =>
+      selectedCropsData.map((crop: any) => ({
+        id: String(crop.id),
+        name: crop.cropVarietyName || crop.cropName || `Giống #${crop.id}`,
+        code: crop.cropVarietyCode,
+      })),
+    [selectedCropsData],
+  );
+
   const steps: Step[] = [
     {
       id: "selection",
@@ -99,6 +111,7 @@ const PlantIdentificationForm = ({
           removePlant={removePlant}
           updatePlant={updatePlant}
           scopedGeographicalUnits={scopedGeographicalUnits}
+          varietyOptions={varietyOptions}
           initialData={initialData}
           isImportOpen={isImportOpen}
           setIsImportOpen={setIsImportOpen}
