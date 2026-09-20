@@ -1,3 +1,4 @@
+import { CodeBadge } from "@/components/CodeBadge";
 import { useFileUpload } from "@/features/storage";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
@@ -17,7 +18,16 @@ import {
   SelectValue,
   Textarea,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { Check, Eye, Plus, Search, Trash2, Upload, X } from "lucide-react";
+import {
+  Check,
+  Eye,
+  Phone,
+  Plus,
+  Search,
+  Trash2,
+  Upload,
+  X,
+} from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useFieldArray, useForm } from "react-hook-form";
 import {
@@ -84,7 +94,10 @@ function OrganizationSelectorPopover({
     }
   }, [open, selectedOrganizationIds]);
 
-  const filteredOrganizations = useMemo(() => {
+  /** Số tổ chức hiện sẵn khi chưa nhập từ khoá — buộc người dùng tìm kiếm */
+  const PREVIEW_LIMIT = 2;
+
+  const matchedOrganizations = useMemo(() => {
     const query = searchTerm.toLowerCase().trim();
     if (!query) return organizations;
 
@@ -95,6 +108,16 @@ function OrganizationSelectorPopover({
       return searchable.includes(query);
     });
   }, [organizations, searchTerm]);
+
+  const hasSearchTerm = searchTerm.trim().length > 0;
+
+  const filteredOrganizations = hasSearchTerm
+    ? matchedOrganizations
+    : matchedOrganizations.slice(0, PREVIEW_LIMIT);
+
+  const hiddenCount = hasSearchTerm
+    ? 0
+    : matchedOrganizations.length - filteredOrganizations.length;
 
   const selectedOrganizations = organizations.filter((org) =>
     tempSelectedIds.includes(org.id),
@@ -133,32 +156,36 @@ function OrganizationSelectorPopover({
       <PopoverContent
         align="start"
         sideOffset={8}
-        className="z-50 w-[min(92vw,44rem)] rounded-2xl border border-slate-200 bg-white p-0 shadow-2xl"
+        className="z-50 w-[min(92vw,40rem)] rounded-2xl border border-slate-200 bg-white p-0 shadow-2xl"
       >
-        <div className="border-b bg-slate-50 px-5 py-4">
-          <div className="flex items-center gap-2 text-base font-semibold text-slate-900">
-            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-primary/10 text-primary">
+        <div className="border-b bg-slate-50 px-4 py-3">
+          <div className="flex items-center gap-2 text-sm font-semibold text-slate-900">
+            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10 text-primary">
               <Search className="h-4 w-4" />
             </div>
             Chọn tổ chức cấp chứng nhận
           </div>
-          <p className="mt-1 text-sm text-slate-500">
+          <p className="mt-1 text-xs text-slate-500">
             Tìm kiếm và chọn một hoặc nhiều tổ chức phù hợp để cấp chứng nhận.
           </p>
         </div>
 
-        <div className="border-b bg-white px-5 py-4">
+        <div className="border-b bg-white px-4 py-3">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 z-10 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               value={searchTerm}
               onChange={(event) => setSearchTerm(event.target.value)}
               placeholder="Tìm theo tên tổ chức, mã tổ chức..."
-              className="h-11 rounded-xl border-slate-200 bg-slate-50 pl-10 transition-all focus:bg-white"
+              className="h-9 rounded-lg border-slate-200 bg-slate-50 pl-10 text-sm transition-all focus:bg-white"
             />
           </div>
-          <div className="mt-3 flex items-center justify-between gap-3 text-xs text-muted-foreground">
-            <span>{filteredOrganizations.length} kết quả</span>
+          <div className="mt-2 flex items-center justify-between gap-3 text-xs text-muted-foreground">
+            <span>
+              {hasSearchTerm
+                ? `${filteredOrganizations.length} kết quả`
+                : `Hiển thị ${filteredOrganizations.length}/${matchedOrganizations.length} tổ chức`}
+            </span>
             <span className="flex items-center gap-1 rounded-full bg-primary/10 px-2 py-1 text-primary">
               <Check className="h-3 w-3" />
               Đã chọn {selectedOrganizations.length} tổ chức
@@ -166,8 +193,8 @@ function OrganizationSelectorPopover({
           </div>
         </div>
 
-        <ScrollArea className="max-h-[60vh] min-h-0 flex-1">
-          <div className="grid gap-3 p-5 sm:grid-cols-2">
+        <ScrollArea className="max-h-[45vh] min-h-0 flex-1">
+          <div className="grid gap-2 p-4 sm:grid-cols-2">
             {filteredOrganizations.map((org) => {
               const selected = tempSelectedIds.includes(org.id);
 
@@ -177,7 +204,7 @@ function OrganizationSelectorPopover({
                   type="button"
                   onClick={() => toggleOrganization(org.id)}
                   className={[
-                    "group flex items-start gap-4 rounded-2xl border bg-white p-4 text-left transition-all hover:border-primary/30 hover:shadow-md",
+                    "group flex items-start gap-3 rounded-xl border bg-white p-3 text-left transition-all hover:border-primary/30 hover:shadow-sm",
                     selected
                       ? "border-primary/40 bg-primary/5 shadow-sm"
                       : "border-slate-200",
@@ -196,28 +223,21 @@ function OrganizationSelectorPopover({
 
                   <div className="min-w-0 flex-1">
                     <div className="min-w-0">
-                      <h3 className="truncate text-sm font-bold text-slate-900">
+                      <h3 className="truncate text-sm font-semibold text-slate-900">
                         {org.name}
                       </h3>
-                      <p className="mt-1 line-clamp-2 text-xs text-slate-500">
+                      <p className="mt-0.5 line-clamp-1 text-xs text-slate-500">
                         {org.description || "Không có mô tả"}
                       </p>
                     </div>
 
-                    <div className="mt-3 flex flex-wrap items-center gap-2">
-                      <Badge
-                        variant="secondary"
-                        className="bg-slate-100 text-slate-700"
-                      >
-                        {org.code}
-                      </Badge>
+                    <div className="mt-2 flex flex-wrap items-center gap-2">
+                      <CodeBadge value={org.code} />
                       {org.phone ? (
-                        <Badge
-                          variant="secondary"
-                          className="bg-slate-100 text-slate-700"
-                        >
+                        <span className="flex items-center gap-1 text-xs text-slate-500">
+                          <Phone className="h-3 w-3 shrink-0" />
                           {org.phone}
-                        </Badge>
+                        </span>
                       ) : null}
                     </div>
                   </div>
@@ -231,10 +251,17 @@ function OrganizationSelectorPopover({
                 Không tìm thấy tổ chức phù hợp
               </div>
             )}
+
+            {hiddenCount > 0 && (
+              <div className="col-span-full flex items-center justify-center gap-2 rounded-2xl border border-dashed border-slate-200 bg-slate-50 py-4 text-xs text-muted-foreground">
+                <Search className="h-3.5 w-3.5 text-slate-400" />
+                Còn {hiddenCount} tổ chức khác — nhập từ khoá để tìm
+              </div>
+            )}
           </div>
         </ScrollArea>
 
-        <div className="flex items-center justify-end gap-2 border-t bg-white px-5 py-4">
+        <div className="flex items-center justify-end gap-2 border-t bg-white px-4 py-3">
           <Button
             type="button"
             variant="ghost"
@@ -267,7 +294,8 @@ function buildDefaultValues(editItem: Certificate | null): StandardFormInput {
       organizationIds: [],
       description: "",
       status: "active",
-      documents: [createEmptyDocument()],
+      // Tài liệu là tuỳ chọn — để trống, người dùng bấm "Thêm tài liệu" khi cần
+      documents: [],
     };
   }
 
@@ -284,18 +312,23 @@ function buildDefaultValues(editItem: Certificate | null): StandardFormInput {
           fileUrl: document.fileUrl ?? "",
           fileName: document.fileName ?? "",
         }))
-      : [
-          {
-            type: editItem.contentType === "file" ? "pdf" : ("editor" as const),
-            name: "Tài liệu",
-            content: editItem.content ?? "",
-            fileUrl: editItem.fileUrl ?? "",
-            fileName:
-              editItem.contentType === "file"
-                ? getFileNameFromUrl(editItem.fileUrl ?? "")
-                : "",
-          },
-        ];
+      : // Dữ liệu cũ lưu nội dung trực tiếp trên tiêu chuẩn; chỉ dựng tài liệu
+        // khi thực sự có nội dung, tránh tạo tài liệu rỗng không hợp lệ.
+        editItem.content || editItem.fileUrl
+        ? [
+            {
+              type:
+                editItem.contentType === "file" ? "pdf" : ("editor" as const),
+              name: "Tài liệu",
+              content: editItem.content ?? "",
+              fileUrl: editItem.fileUrl ?? "",
+              fileName:
+                editItem.contentType === "file"
+                  ? getFileNameFromUrl(editItem.fileUrl ?? "")
+                  : "",
+            },
+          ]
+        : [];
 
   return {
     code: editItem.code ?? "",
@@ -716,6 +749,11 @@ export function StandardFormDialog({
             </div>
 
             <div className="space-y-4">
+              {fields.length === 0 && (
+                <p className="rounded-xl border border-dashed bg-slate-50 py-6 text-center text-sm italic text-slate-400">
+                  Chưa có tài liệu nào
+                </p>
+              )}
               {fields.map((field, index) => {
                 const doc = watchedDocuments?.[index];
                 const isPdf = doc?.type === "pdf";
@@ -738,7 +776,6 @@ export function StandardFormDialog({
                         onClick={() => remove(index)}
                         className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-red-200 text-red-600 transition-colors hover:bg-red-50"
                         aria-label={`Xóa tài liệu ${index + 1}`}
-                        disabled={fields.length === 1}
                       >
                         <Trash2 className="h-4 w-4" />
                       </button>

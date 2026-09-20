@@ -34,7 +34,8 @@ export const standardDocumentFormSchema = z
 export const standardFormSchema = z.object({
   code: z.string().trim().min(1, "Vui lòng nhập mã tiêu chuẩn."),
   name: z.string().trim().min(1, "Vui lòng nhập tên tiêu chuẩn."),
-  stampUrl: z.string().trim().min(1, "Vui lòng tải dấu mộc."),
+  // Dấu mộc là tuỳ chọn, giống tài liệu đính kèm
+  stampUrl: z.string().trim().default(""),
   validityMonths: z.coerce
     .number()
     .int("Thời hạn hiệu lực phải là số nguyên.")
@@ -44,9 +45,8 @@ export const standardFormSchema = z.object({
   status: z.enum(STANDARD_FORM_STATUSES, {
     message: "Vui lòng chọn trạng thái.",
   }),
-  documents: z
-    .array(standardDocumentFormSchema)
-    .min(1, "Vui lòng thêm ít nhất một tài liệu."),
+  // Tài liệu là tuỳ chọn; nếu có thêm thì từng tài liệu vẫn phải hợp lệ
+  documents: z.array(standardDocumentFormSchema).default([]),
 });
 
 export type StandardDocumentFormInput = z.input<typeof standardDocumentFormSchema>;
