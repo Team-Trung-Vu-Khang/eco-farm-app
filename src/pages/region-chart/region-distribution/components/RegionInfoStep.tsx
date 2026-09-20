@@ -15,12 +15,12 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-  Combobox,
   MultiSelect,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import AddressSearchInput from "@/components/AddressSearchInput";
 import { OrganizationSelector } from "@/pages/cultivation-zone/cultivation-region/components";
 import { useFormContext } from "react-hook-form";
+import { AddressRemoteCombobox } from "@/components/AddressRemoteCombobox";
 import { useAddressOptions } from "@/features/master-data/hooks/useAddressOptions";
 import { useCatalog } from "@/features/foundation/hooks/useCatalog";
 import { useProductionSubjects } from "@/features/foundation/hooks/useProductionSubjects";
@@ -54,8 +54,8 @@ export const RegionInfoStep = ({
   const { control, setValue, watch } = useFormContext<RegionFormValues>();
   const provinceId = watch("provinceId");
   const centerPoint = watch("centerPoint");
-  const { provinces, wards, isLoadingProvinces, isLoadingWards } =
-    useAddressOptions(provinceId);
+  // Vẫn cần danh sách đầy đủ để dò theo tên khi tự điền địa chỉ từ doanh nghiệp
+  const { provinces, wards } = useAddressOptions(provinceId);
 
   const [pendingWardName, setPendingWardName] = useState<string | null>(null);
 
@@ -210,20 +210,15 @@ export const RegionInfoStep = ({
               <FormItem>
                 <FormLabel required>Tỉnh / Thành phố</FormLabel>
                 <FormControl>
-                  <Combobox
-                    options={provinces.map((p) => ({
-                      value: p.code,
-                      label: p.name,
-                    }))}
+                  <AddressRemoteCombobox
+                    type="province"
                     value={field.value ?? ""}
                     onChange={(val) => {
                       field.onChange(val);
                       setValue("wardId", ""); // Reset ward when province changes
                     }}
-                    disabled={isLoadingProvinces}
                     placeholder="Chọn Tỉnh / Thành phố"
-                    searchPlaceholder="Tìm kiếm..."
-                    className="w-full"
+                    searchPlaceholder="Tìm Tỉnh / Thành phố..."
                   />
                 </FormControl>
                 <FormMessage />
@@ -238,17 +233,18 @@ export const RegionInfoStep = ({
               <FormItem>
                 <FormLabel required>Phường / Xã</FormLabel>
                 <FormControl>
-                  <Combobox
-                    options={wards.map((w) => ({
-                      value: w.code,
-                      label: w.name,
-                    }))}
+                  <AddressRemoteCombobox
+                    type="ward"
                     value={field.value ?? ""}
                     onChange={field.onChange}
-                    disabled={!provinceId || isLoadingWards}
-                    placeholder="Chọn Phường / Xã"
-                    searchPlaceholder="Tìm kiếm..."
-                    className="w-full"
+                    provinceCode={provinceId}
+                    disabled={!provinceId}
+                    placeholder={
+                      provinceId
+                        ? "Chọn Phường / Xã"
+                        : "Chọn Tỉnh / Thành phố trước"
+                    }
+                    searchPlaceholder="Tìm Phường / Xã..."
                   />
                 </FormControl>
                 <FormMessage />
