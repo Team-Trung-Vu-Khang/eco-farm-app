@@ -10,6 +10,7 @@ import {
   formatLegalDate,
   type LegalIdentificationRecord,
 } from "../data/constants";
+import { CodeBadge } from "@/components/CodeBadge";
 
 function getFileCount(record: LegalIdentificationRecord) {
   return LEGAL_FILE_GROUPS.reduce(
@@ -82,9 +83,7 @@ export function LegalIdentificationTable({
       key: "code",
       render: (_, item) => (
         <div className="space-y-1">
-          <div className="font-mono text-sm font-semibold text-slate-900">
-            {item.code}
-          </div>
+          <CodeBadge value={item.code} />
           <div className="text-[11px] text-slate-500">{item.ownerName}</div>
         </div>
       ),

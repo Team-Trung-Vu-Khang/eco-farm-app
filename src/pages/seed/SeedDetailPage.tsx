@@ -9,6 +9,7 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
+  cn,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import {
   ArrowLeft,
@@ -27,6 +28,13 @@ import {
 } from "lucide-react";
 import { useMemo } from "react";
 import { Link, useParams } from "wouter";
+import { CodeBadge } from "@/components/CodeBadge";
+
+const SEED_STATUS_LABELS: Record<string, string> = {
+  active: "Hoạt động",
+  inactive: "Ngừng hoạt động",
+  archived: "Đã lưu trữ",
+};
 
 export default function SeedDetailPage() {
   const { id } = useParams();
@@ -47,10 +55,11 @@ export default function SeedDetailPage() {
       }
       return `${seed?.avgYieldFrom} - ${seed?.avgYieldTo} tấn/ha`;
     }
-    return "N/A";
+    return "Chưa cập nhật";
   }, [seed?.avgYieldFrom, seed?.avgYieldTo]);
 
   const description = (seed?.metadataJson?.description as string) || "";
+  const isActiveSeed = (seed?.status ?? "active") === "active";
 
   const editorDoc = useMemo(() => {
     return seed?.documents?.find((doc) => doc.documentType === "editor");
@@ -155,9 +164,19 @@ export default function SeedDetailPage() {
                   )}
                   {/* Badge Overlay */}
                   <div className="absolute top-4 left-4 bg-white/90 backdrop-blur-md px-3 py-1.5 rounded-md shadow-lg border border-white/50 flex items-center gap-1.5">
-                    <div className="w-2 h-2 rounded-md bg-green-500 animate-pulse" />
-                    <span className="text-xs font-bold text-green-700 uppercase tracking-wider">
-                      {seed.status || "Active"}
+                    <div
+                      className={cn(
+                        "w-2 h-2 rounded-full",
+                        isActiveSeed ? "bg-green-500" : "bg-slate-400",
+                      )}
+                    />
+                    <span
+                      className={cn(
+                        "text-xs font-bold tracking-wide",
+                        isActiveSeed ? "text-green-700" : "text-slate-600",
+                      )}
+                    >
+                      {SEED_STATUS_LABELS[seed.status ?? ""] ?? "Hoạt động"}
                     </span>
                   </div>
                 </div>
@@ -168,12 +187,10 @@ export default function SeedDetailPage() {
             <div className="flex-1 space-y-8 pt-2">
               <div>
                 <div className="flex items-center gap-3 mb-3 flex-wrap">
-                  <Badge className="bg-green-100 text-green-700 hover:bg-green-200 border-none px-3 py-1 rounded-md text-xs font-bold uppercase tracking-wider font-mono">
-                    {seed.code || seed.cropVariety?.code || "N/A"}
-                  </Badge>
+                  <CodeBadge value={seed.code || seed.cropVariety?.code} />
                   <span className="text-sm font-medium text-slate-400 flex items-center gap-1">
                     <Leaf className="w-3.5 h-3.5" />
-                    {seed.crop?.name || "N/A"}
+                    {seed.crop?.name || "Chưa phân loại"}
                   </span>
                   {seed.name &&
                     seed.cropVariety?.name &&
@@ -188,8 +205,8 @@ export default function SeedDetailPage() {
                   {seed.name || seed.cropVariety?.name || "Hạt giống"}
                 </h1>
                 <p className="text-lg text-slate-500 font-medium max-w-2xl leading-relaxed">
-                  Thông tin năng suất, khả năng nảy mầm và nguồn gốc chi tiết
-                  của giống cây trồng.
+                  {description ||
+                    "Thông tin năng suất, khả năng nảy mầm và nguồn gốc của giống cây trồng."}
                 </p>
               </div>
 
@@ -201,7 +218,7 @@ export default function SeedDetailPage() {
                   </p>
                   <div className="flex items-center gap-2 font-bold text-slate-700">
                     <MapPin className="w-4 h-4 text-blue-500" />
-                    {seed.origin || "N/A"}
+                    {seed.origin || "Chưa cập nhật"}
                   </div>
                 </div>
                 <div className="bg-white/60 backdrop-blur-sm p-4 rounded-2xl border border-white/50 shadow-sm hover:shadow-md transition-all">
@@ -210,7 +227,9 @@ export default function SeedDetailPage() {
                   </p>
                   <div className="flex items-center gap-2 font-bold text-green-700">
                     <Sprout className="w-4 h-4 text-green-500" />
-                    {seed.germinationRate ? `${seed.germinationRate}%` : "N/A"}
+                    {seed.germinationRate
+                      ? `${seed.germinationRate}%`
+                      : "Chưa cập nhật"}
                   </div>
                 </div>
                 <div className="bg-white/60 backdrop-blur-sm p-4 rounded-2xl border border-white/50 shadow-sm hover:shadow-md transition-all">
@@ -219,7 +238,7 @@ export default function SeedDetailPage() {
                   </p>
                   <div className="flex items-center gap-2 font-bold text-blue-700">
                     <CheckCircle2 className="w-4 h-4 text-blue-500" />
-                    {seed.purityRate ? `${seed.purityRate}%` : "N/A"}
+                    {seed.purityRate ? `${seed.purityRate}%` : "Chưa cập nhật"}
                   </div>
                 </div>
               </div>
@@ -262,7 +281,7 @@ export default function SeedDetailPage() {
                           <span className="text-3xl font-black text-green-600 leading-none">
                             {seed.germinationRate
                               ? `${seed.germinationRate}%`
-                              : "N/A"}
+                              : "Chưa cập nhật"}
                           </span>
                         </div>
                         <p className="text-slate-500 text-sm">
@@ -286,7 +305,9 @@ export default function SeedDetailPage() {
                           Độ sạch
                         </h4>
                         <span className="text-3xl font-black text-blue-600 leading-none">
-                          {seed.purityRate ? `${seed.purityRate}%` : "N/A"}
+                          {seed.purityRate
+                            ? `${seed.purityRate}%`
+                            : "Chưa cập nhật"}
                         </span>
                       </div>
                       <div className="w-full bg-slate-200 rounded-md h-2 mb-3">
@@ -433,7 +454,9 @@ export default function SeedDetailPage() {
                       )}
                     </div>
                     <h2 className="text-xl font-bold leading-tight mb-2">
-                      {organization?.name || seed.supplier?.name || "N/A"}
+                      {organization?.name ||
+                        seed.supplier?.name ||
+                        "Chưa có nhà cung cấp"}
                     </h2>
                     <Badge className="bg-white/10 hover:bg-white/20 text-green-300 border-none">
                       {organization?.organizationType?.name ||

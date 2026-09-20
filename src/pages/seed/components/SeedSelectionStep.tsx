@@ -1,8 +1,7 @@
-import { useCatalog, useCropVarieties } from "@/features/foundation";
+import { useCropVarieties } from "@/features/foundation";
 import {
   Button,
   cn,
-  Combobox,
   FormControl,
   FormField,
   FormItem,
@@ -16,6 +15,7 @@ import { useState } from "react";
 import { useFormContext } from "react-hook-form";
 import type { CreateSeedFormValues } from "../schemas/createSeedSchema";
 import { CropSelectorDialog } from "./CropSelectorDialog";
+import { CropGroupRemoteCombobox } from "./CropGroupRemoteCombobox";
 
 export function SeedSelectionStep() {
   const { watch, setValue, control, getValues } =
@@ -27,8 +27,6 @@ export function SeedSelectionStep() {
   console.log("selectedCropGroup", selectedCropGroup);
 
   const [isCropDialogOpen, setIsCropDialogOpen] = useState(false);
-
-  const { items: cropGroups } = useCatalog("crop-groups");
 
   const { items: varieties } = useCropVarieties({
     params: { cropId: Number(selectedCrop), domainCode: "CROP" },
@@ -57,12 +55,7 @@ export function SeedSelectionStep() {
                   Nhóm cây trồng <span className="text-red-500">*</span>
                 </FormLabel>
                 <FormControl>
-                  <Combobox
-                    options={cropGroups.map((group) => ({
-                      value: String(group.id),
-                      label: group.name,
-                    }))}
-                    placeholder="Chọn nhóm cây"
+                  <CropGroupRemoteCombobox
                     value={field.value}
                     onChange={(value) => {
                       const safeValue = value ?? "";
