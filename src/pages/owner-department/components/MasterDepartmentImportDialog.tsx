@@ -17,6 +17,7 @@ import {
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { Search, ShieldAlert } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { getApiErrorMessage } from "@/shared/lib/api-error";
 
 interface MasterDepartmentImportDialogProps {
   open: boolean;
@@ -182,10 +183,9 @@ export function MasterDepartmentImportDialog({
       onImportSuccess();
       onOpenChange(false);
     } catch (err) {
-      const message = err instanceof Error ? err.message : "Đã xảy ra lỗi";
       toast({
         title: "Không thể thêm phòng ban mẫu",
-        description: message,
+        description: getApiErrorMessage(err),
         variant: "destructive",
       });
     } finally {

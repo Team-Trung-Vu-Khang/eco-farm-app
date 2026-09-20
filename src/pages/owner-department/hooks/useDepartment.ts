@@ -10,6 +10,7 @@ import { useSelectedWorkspaceId } from "@/features/workspace";
 import type { DepartmentFormValues } from "../data/department-form.schema";
 import { type DepartmentItem } from "../types/types";
 import { useDebounce } from "@/shared/hooks/useDebounce";
+import { getApiErrorMessage } from "@/shared/lib/api-error";
 
 const DEFAULT_PAGE_SIZE = 10;
 const ALL_STATUS = "all" as const;
@@ -126,12 +127,9 @@ export function useDepartment() {
 
       setFormOpen(false);
     } catch (error) {
-      const message =
-        error instanceof Error ? error.message : "Đã xảy ra lỗi không xác định";
-
       toast({
         title: editItem ? "Không thể cập nhật" : "Không thể thêm",
-        description: message,
+        description: getApiErrorMessage(error),
         variant: "destructive",
       });
     }
@@ -146,14 +144,9 @@ export function useDepartment() {
           description: "Đã xóa phòng ban",
         });
       } catch (error) {
-        const message =
-          error instanceof Error
-            ? error.message
-            : "Đã xảy ra lỗi không xác định";
-
         toast({
           title: "Không thể xóa",
-          description: message,
+          description: getApiErrorMessage(error),
           variant: "destructive",
         });
       }

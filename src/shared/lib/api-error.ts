@@ -73,6 +73,8 @@ const fieldLabelByPath: Record<string, string> = {
   fullName: "Họ và tên",
   name: "Tên",
   code: "Mã",
+  description: "Mô tả",
+  displayOrder: "Thứ tự hiển thị",
   phone: "Số điện thoại",
   email: "Email",
   province: "Tỉnh / Thành phố",
