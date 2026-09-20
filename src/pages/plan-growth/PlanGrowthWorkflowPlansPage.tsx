@@ -1,5 +1,8 @@
 import PageWrapper from "@/components/PageWrapper";
-import { useFarmPlans, useFarmWorkflowById } from "@/features/farm-workflow/hooks";
+import {
+  useFarmPlans,
+  useFarmWorkflowById,
+} from "@/features/farm-workflow/hooks";
 import type { FarmPlanStatus } from "@/features/farm-workflow/types/farm-workflow.type";
 import {
   Button,
@@ -108,14 +111,14 @@ export default function PlanGrowthWorkflowPlansPage({
               Quay lại
             </Button>
           </Link>
-          {!isUnassigned && (
+          {/* {!isUnassigned && (
             <Link href={`${basePath}/create/workflow/${workflowId}`}>
               <Button className="h-9 px-3">
                 <Workflow className="mr-2 h-4 w-4" />
                 Mở workflow
               </Button>
             </Link>
-          )}
+          )} */}
         </div>
       }
     >

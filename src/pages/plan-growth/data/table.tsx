@@ -195,7 +195,9 @@ export function createWorkflowColumns({
       render: (value, item) => (
         <div className="space-y-1">
           <div className="font-semibold text-slate-900">{value as string}</div>
-          <div className="text-xs text-slate-500">{item.description || "—"}</div>
+          <div className="text-xs text-slate-500">
+            {item.description || "—"}
+          </div>
         </div>
       ),
     },
@@ -286,13 +288,13 @@ export function createWorkflowColumns({
               <Eye className="mr-2 h-4 w-4" />
               Chi tiết
             </DropdownMenuItem>
-            <DropdownMenuItem
+            {/* <DropdownMenuItem
               disabled={item.id === UNASSIGNED_WORKFLOW_ID}
               onClick={() => onOpenWorkflow(item)}
             >
               <Workflow className="mr-2 h-4 w-4" />
               Workflow
-            </DropdownMenuItem>
+            </DropdownMenuItem> */}
             <DropdownMenuItem
               disabled={item.id === UNASSIGNED_WORKFLOW_ID}
               onClick={() => onClone(item)}

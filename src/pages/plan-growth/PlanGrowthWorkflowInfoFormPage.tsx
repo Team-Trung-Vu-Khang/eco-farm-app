@@ -43,7 +43,11 @@ import {
   usePlanWorkflowDraftStore,
   type DiagramInfoRecord,
 } from "./hooks/usePlanWorkflowDraftStore";
-import type { GeographicalSelection, GrowthCycleSelection, Plan } from "./types";
+import type {
+  GeographicalSelection,
+  GrowthCycleSelection,
+  Plan,
+} from "./types";
 import type { GrowthCycle } from "../growth-cycle/types/types";
 import {
   getFallbackPlans,
@@ -143,7 +147,10 @@ export default function PlanGrowthWorkflowInfoFormPage() {
   const systemSeasonsQuery = useInfiniteQuery({
     queryKey: ["workflow-seasons", "system", seasonQueryParams],
     queryFn: ({ pageParam }) =>
-      systemGrowthCycleSeasonApi.list({ ...seasonQueryParams, page: pageParam }),
+      systemGrowthCycleSeasonApi.list({
+        ...seasonQueryParams,
+        page: pageParam,
+      }),
     initialPageParam: 0,
     getNextPageParam: (lastPage: any) =>
       lastPage.last ? undefined : Number(lastPage.page) + 1,
@@ -151,8 +158,12 @@ export default function PlanGrowthWorkflowInfoFormPage() {
   const growthCycles = useMemo(() => {
     const byId = new Map<number, any>();
     [
-      ...systemSeasonsQuery.data?.pages.flatMap((page: any) => page.content || []) || [],
-      ...userSeasonsQuery.data?.pages.flatMap((page: any) => page.content || []) || [],
+      ...(systemSeasonsQuery.data?.pages.flatMap(
+        (page: any) => page.content || [],
+      ) || []),
+      ...(userSeasonsQuery.data?.pages.flatMap(
+        (page: any) => page.content || [],
+      ) || []),
     ].forEach((season) => {
       if (season?.id != null) byId.set(Number(season.id), season);
     });
@@ -164,12 +175,16 @@ export default function PlanGrowthWorkflowInfoFormPage() {
     userSeasonsQuery.isFetchingNextPage ||
     systemSeasonsQuery.isFetchingNextPage;
   const seasonsHaveMore =
-    Boolean(userSeasonsQuery.hasNextPage) || Boolean(systemSeasonsQuery.hasNextPage);
+    Boolean(userSeasonsQuery.hasNextPage) ||
+    Boolean(systemSeasonsQuery.hasNextPage);
   const loadMoreSeasons = () => {
     if (userSeasonsQuery.hasNextPage && !userSeasonsQuery.isFetchingNextPage) {
       void userSeasonsQuery.fetchNextPage();
     }
-    if (systemSeasonsQuery.hasNextPage && !systemSeasonsQuery.isFetchingNextPage) {
+    if (
+      systemSeasonsQuery.hasNextPage &&
+      !systemSeasonsQuery.isFetchingNextPage
+    ) {
       void systemSeasonsQuery.fetchNextPage();
     }
   };
@@ -430,19 +445,23 @@ export default function PlanGrowthWorkflowInfoFormPage() {
       });
       // Route with the persisted workflow id so the canvas page's URL keeps
       // reflecting which workflow is open (bookmarkable/reload-safe).
-      setLocation(`${WORKFLOW_PATH}/${record.id}`);
+      // setLocation(`${WORKFLOW_PATH}/${record.id}`);
+      setLocation(`/plan-growth`);
     } catch (error) {
       toast({
         variant: "destructive",
         title: "Lỗi",
-        description: getApiErrorMessage(error) || "Không thể lưu sơ đồ quy trình",
+        description:
+          getApiErrorMessage(error) || "Không thể lưu sơ đồ quy trình",
       });
     }
   };
 
   return (
     <PageWrapper
-      title={isEdit ? "Chỉnh sửa thông tin vụ mùa" : "Khởi tạo thông tin vụ mới"}
+      title={
+        isEdit ? "Chỉnh sửa thông tin vụ mùa" : "Khởi tạo thông tin vụ mới"
+      }
       description="Mô tả thông tin canh tác áp dụng cho vụ mùa trồng trọt này"
       actions={
         <div className="flex flex-wrap gap-2">
