@@ -49,15 +49,20 @@ const MaterialLookupPage: FC = () => {
   const renderDetailView = () => {
     if (!selectedItem) return null;
 
+    const detailItem = {
+      ...selectedItem.originalData,
+      ...selectedItem.rawSupplyItem,
+    };
+
     switch (selectedItem.category) {
       case "Pesticide":
-        return <PesticideDetailView item={selectedItem.originalData} />;
+        return <PesticideDetailView item={detailItem} />;
       case "Fertilizer":
-        return <FertilizerDetailView item={selectedItem.originalData} />;
+        return <FertilizerDetailView item={detailItem} />;
       case "Material":
-        return <MaterialDetailView item={selectedItem.originalData} />;
+        return <MaterialDetailView item={detailItem} />;
       case "Equipment":
-        return <EquipmentDetailView item={selectedItem.originalData} />;
+        return <EquipmentDetailView item={detailItem} />;
       default:
         return null;
     }
