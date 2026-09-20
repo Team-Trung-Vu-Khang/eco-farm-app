@@ -1,5 +1,5 @@
-import PageWrapper from "@/components/PageWrapper";
 import { CodeBadge } from "@/components/CodeBadge";
+import PageWrapper from "@/components/PageWrapper";
 import {
   Badge,
   Button,
@@ -117,7 +117,11 @@ export function GenericPage({
   const _columns: Column<GenericItem>[] = React.useMemo(() => {
     return (
       columns || [
-        { key: "code", label: "Mã", render: (value: any) => <CodeBadge value={value} /> },
+        {
+          key: "code",
+          label: "Mã",
+          render: (value: any) => <CodeBadge value={value} />,
+        },
         ...(enableImage
           ? [
               {
@@ -139,7 +143,7 @@ export function GenericPage({
         {
           key: "status",
           label: "Trạng thái",
-          render: (value) => (
+          render: (value: any) => (
             <Badge variant={value === "active" ? "default" : "secondary"}>
               {value === "active" ? "Hoạt động" : "Không hoạt động"}
             </Badge>
