@@ -1,6 +1,5 @@
-import PageWrapper from "@/components/PageWrapper";
 import treeMarkerIcon from "@/assets/tree.webp";
-import useGroupCropStore from "@/stores/useGroupCropStore";
+import PageWrapper from "@/components/PageWrapper";
 import {
   Badge,
   Button,
@@ -177,7 +176,6 @@ const MapContent = ({
 
 interface AdvancedFilters {
   // Group 1: Crop Info
-  cropNames?: string[];
   varieties?: string[];
   seedTypes?: string[];
   age?: number;
@@ -189,9 +187,6 @@ interface AdvancedFilters {
   // Group 3: Certifications
   certifications?: string[];
 }
-
-// Hierarchical View State
-type SearchView = "regions" | "crops" | "plants";
 
 const getRegionStatusBadge = (status: string) => {
   const config = {
@@ -239,7 +234,7 @@ const RegionListItem = ({
   onClick,
 }: {
   region: Region;
-  enterprises: Array<{ id: string | number; name?: string }>;
+  enterprises: any[];
   filteredCrops: CropDetail[];
   isActive: boolean;
   onClick: () => void;
@@ -331,7 +326,6 @@ const SearchCropPage = () => {
   const { crops } = useCropDetailStore();
   const { regions } = useRegionStore();
   const { enterprises } = useEnterpriseStore();
-  const { groupCrops } = useGroupCropStore();
 
   const [searchQuery, setSearchQuery] = useState("");
   const [activeCropInDialog, setActiveCropInDialog] =
@@ -346,15 +340,17 @@ const SearchCropPage = () => {
 
   const [currentView, setCurrentView] = useState<SearchView>("regions");
   const [selectedRegionId, setSelectedRegionId] = useState<number | null>(null);
-  const [selectedCropGroup, setSelectedCropGroup] = useState<{
-    name: string;
-    variety: string;
-  } | null>(null);
 
-  const cropGroupOptions = groupCrops.map((gc) => ({
-    value: gc.name,
-    label: gc.name,
-  }));
+  const handleViewRegion = (regionId: number) => {
+    setSelectedRegionId(regionId);
+    setCurrentView("plants");
+
+    const plantsInRegion = filteredCrops.filter((c) => c.regionId === regionId);
+    if (plantsInRegion.length > 0) {
+      const firstPlant = plantsInRegion[0];
+      setActiveCropInDialog(firstPlant);
+    }
+  };
 
   const varietyOptions = Array.from(new Set(crops.map((c) => c.variety))).map(
     (v) => ({
@@ -380,11 +376,6 @@ const SearchCropPage = () => {
     const matchesStatus =
       advancedFilters.status && advancedFilters.status.length > 0
         ? advancedFilters.status.includes(crop.status)
-        : true;
-
-    const matchesCropName =
-      advancedFilters.cropNames && advancedFilters.cropNames.length > 0
-        ? advancedFilters.cropNames.includes(crop.groupCropName)
         : true;
 
     const matchesVariety =
@@ -419,7 +410,6 @@ const SearchCropPage = () => {
     return (
       matchesSearch &&
       matchesStatus &&
-      matchesCropName &&
       matchesVariety &&
       matchesSeedType &&
       matchesAge &&
@@ -435,35 +425,17 @@ const SearchCropPage = () => {
     });
   };
 
-  const handleViewRegion = (regionId: number) => {
-    setSelectedRegionId(regionId);
-    setCurrentView("plants");
-
-    // Auto-select first plant in this region
-    const plantsInRegion = filteredCrops.filter((c) => c.regionId === regionId);
-    if (plantsInRegion.length > 0) {
-      const firstPlant = plantsInRegion[0];
-      setActiveCropInDialog(firstPlant);
-      setSelectedCropGroup({
-        name: firstPlant.name,
-        variety: firstPlant.variety,
-      });
-    }
-  };
-
   const clearFilters = () => {
     setAdvancedFilters({});
     setSearchQuery("");
     setCurrentView("regions");
     setSelectedRegionId(null);
-    setSelectedCropGroup(null);
   };
 
   const resetToRegionsView = () => {
     if (currentView !== "regions") {
       setCurrentView("regions");
       setSelectedRegionId(null);
-      setSelectedCropGroup(null);
     }
   };
 
@@ -489,16 +461,8 @@ const SearchCropPage = () => {
       };
     }
 
-    if (!selectedRegionId) {
-      return {
-        center: [11.53, 106.88] as LatLngTuple,
-        zoom: 15,
-      };
-    }
-
-    const firstCrop = filteredCrops.find(
-      (c) => c.regionId === selectedRegionId,
-    );
+    // Chưa chọn cây: canh theo cây đầu tiên trong kết quả tìm kiếm
+    const firstCrop = filteredCrops[0];
     if (!firstCrop) {
       return {
         center: [11.53, 106.88] as LatLngTuple,
@@ -604,40 +568,6 @@ const SearchCropPage = () => {
                       </div>
 
                       <div className="space-y-4">
-                        <div className="space-y-1.5">
-                          <div className="flex justify-between items-center">
-                            <Label className="text-xs font-bold text-slate-600">
-                              Nhóm cây trồng
-                            </Label>
-                            {advancedFilters.cropNames?.length ? (
-                              <button
-                                onClick={() =>
-                                  setAdvancedFilters({
-                                    ...advancedFilters,
-                                    cropNames: [],
-                                  })
-                                }
-                                className="text-[10px] text-primary font-bold hover:underline"
-                              >
-                                Xóa
-                              </button>
-                            ) : null}
-                          </div>
-                          <Combobox
-                            options={cropGroupOptions}
-                            value={advancedFilters.cropNames?.[0] || ""}
-                            onChange={(v) => {
-                              setAdvancedFilters({
-                                ...advancedFilters,
-                                cropNames: [v],
-                              });
-                              resetToRegionsView();
-                            }}
-                            placeholder="Chọn nhóm cây..."
-                            className="w-full"
-                          />
-                        </div>
-
                         <div className="space-y-1.5">
                           <div className="flex justify-between items-center">
                             <Label className="text-xs font-bold text-slate-600">
@@ -941,12 +871,11 @@ const SearchCropPage = () => {
             ) : (
               <div className="flex flex-col space-y-6">
                 {(() => {
+                  // Bản đồ & panel bám theo cây đang chọn thay vì vùng đã chọn
                   const currentRegion = regions.find(
-                    (r) => r.id === selectedRegionId,
+                    (r) => r.id === activeCropInDialog?.regionId,
                   );
-                  const cropsInThisRegion = filteredCrops.filter(
-                    (c) => c.regionId === selectedRegionId,
-                  );
+                  const cropsInThisRegion = filteredCrops;
 
                   return (
                     <div className="flex flex-col space-y-6">
@@ -965,15 +894,14 @@ const SearchCropPage = () => {
                                   </div>
                                   <div>
                                     <h2 className="font-black text-lg text-slate-800">
-                                      {enterprises.find(
-                                        (e) =>
-                                          String(e.id) ===
-                                          String(currentRegion?.enterpriseId),
-                                      )?.name || "Đơn vị sở hữu"}
+                                      {activeCropInDialog
+                                        ? activeCropInDialog.name
+                                        : "Kết quả tìm kiếm cây trồng"}
                                     </h2>
                                     <p className="text-xs text-slate-400 font-bold uppercase tracking-widest">
-                                      Đang xem: {selectedCropGroup?.name} (
-                                      {selectedCropGroup?.variety})
+                                      {activeCropInDialog
+                                        ? `${activeCropInDialog.variety} · ${activeCropInDialog.regionName}`
+                                        : "Chọn một cây trong danh sách để xem chi tiết"}
                                     </p>
                                   </div>
                                 </div>
@@ -995,11 +923,11 @@ const SearchCropPage = () => {
                                   <MapContainer
                                     center={mapView.center}
                                     zoom={mapView.zoom}
-                                    className="h-full w-full"
+                                    className="h-full w-full z-0"
                                     zoomControl={false}
                                     scrollWheelZoom
                                   >
-                                    <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+                                    <TileLayer url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}" />
                                     <MapContent
                                       currentRegion={currentRegion}
                                       cropsInThisRegion={cropsInThisRegion}
@@ -1012,7 +940,7 @@ const SearchCropPage = () => {
                                   </MapContainer>
                                   <div
                                     onClick={() => setIsMapExpanded(true)}
-                                    className="p-3 rounded-xl cursor-pointer absolute top-4 right-4 z-1000 bg-white/90 backdrop-blur-sm shadow-xl hover:bg-white transition-colors"
+                                    className="p-3 rounded-xl cursor-pointer absolute top-4 right-4 z-1 bg-white/90 backdrop-blur-sm shadow-xl hover:bg-white transition-colors"
                                   >
                                     <Maximize2 size={20} />
                                   </div>
@@ -1044,9 +972,10 @@ const SearchCropPage = () => {
                                       </div>
                                       <Button
                                         className="w-full h-11 rounded-xl font-black shadow-lg shadow-primary/20 mt-4 gap-2"
-                                        onClick={() =>
-                                          setIsCropDetailOpen(true)
-                                        }
+                                        onClick={() => {
+                                          setIsMapExpanded(false);
+                                          setIsCropDetailOpen(true);
+                                        }}
                                       >
                                         <Maximize2 size={16} />
                                         Xem chi tiết
@@ -1089,6 +1018,23 @@ const SearchCropPage = () => {
                                               </div>
                                               <div className="text-[10px] text-slate-500 font-bold uppercase tracking-tight">
                                                 {item.variety}
+                                              </div>
+                                            </div>
+                                          ),
+                                        },
+                                        {
+                                          key: "regionName",
+                                          label: "Vùng trồng",
+                                          render: (
+                                            value: string,
+                                            item: CropDetail,
+                                          ) => (
+                                            <div>
+                                              <div className="text-xs font-bold text-slate-700">
+                                                {value}
+                                              </div>
+                                              <div className="text-[10px] text-slate-400">
+                                                {item.areaName}
                                               </div>
                                             </div>
                                           ),
@@ -1176,7 +1122,7 @@ const SearchCropPage = () => {
                     zoomControl={false}
                     scrollWheelZoom
                   >
-                    <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+                    <TileLayer url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}" />
                     <MapContent
                       currentRegion={regions.find(
                         (r) => r.id === selectedRegionId,
@@ -1247,7 +1193,10 @@ const SearchCropPage = () => {
 
                         <Button
                           className="w-full h-12 rounded-2xl font-black shadow-xl shadow-primary/20 gap-2 mt-4"
-                          onClick={() => setIsCropDetailOpen(true)}
+                          onClick={() => {
+                            setIsMapExpanded(false);
+                            setIsCropDetailOpen(true);
+                          }}
                         >
                           <Maximize2 size={18} />
                           XEM CHI TIẾT CÂY TRỒNG

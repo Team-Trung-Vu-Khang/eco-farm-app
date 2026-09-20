@@ -1,12 +1,18 @@
-import { useEffect } from "react";
 import { Card } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { MapPin } from "lucide-react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
-import { MapContainer, Marker, TileLayer, Tooltip, useMap } from "react-leaflet";
+import { MapPin } from "lucide-react";
+import { useEffect } from "react";
+import {
+  MapContainer,
+  Marker,
+  TileLayer,
+  Tooltip,
+  useMap,
+} from "react-leaflet";
 
-import defaultMarkerIconUrl from "leaflet/dist/images/marker-icon.png";
 import defaultMarkerIcon2xUrl from "leaflet/dist/images/marker-icon-2x.png";
+import defaultMarkerIconUrl from "leaflet/dist/images/marker-icon.png";
 import defaultMarkerShadowUrl from "leaflet/dist/images/marker-shadow.png";
 
 import { WORK_TYPE_CONFIG } from "../../constants/lookup.constants";
@@ -24,7 +30,13 @@ const defaultLeafletIcon = L.icon({
 
 const DEFAULT_CENTER = { lat: 11.05, lng: 107.15 };
 
-function MapRecenter({ center, zoom }: { center: { lat: number; lng: number }; zoom: number }) {
+function MapRecenter({
+  center,
+  zoom,
+}: {
+  center: { lat: number; lng: number };
+  zoom: number;
+}) {
   const map = useMap();
   useEffect(() => {
     map.setView([center.lat, center.lng], zoom, { animate: true });
@@ -56,7 +68,7 @@ export function DiaryMapSection({
           zoomControl={false}
           scrollWheelZoom
         >
-          <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+          <TileLayer url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}" />
           <MapRecenter center={center} zoom={zoom} />
 
           {entries.map((entry) => {
@@ -73,7 +85,12 @@ export function DiaryMapSection({
                   click: () => onSelectEntry(entry.id),
                 }}
               >
-                <Tooltip direction="top" offset={[0, -34]} opacity={1} className="diary-tooltip">
+                <Tooltip
+                  direction="top"
+                  offset={[0, -34]}
+                  opacity={1}
+                  className="diary-tooltip"
+                >
                   <div className="min-w-[180px] rounded-md bg-slate-900 px-3 py-2 shadow-xl">
                     <div className="text-[10px] font-bold text-white/60 uppercase tracking-wider">
                       {workType.label}

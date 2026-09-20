@@ -4,7 +4,6 @@ import {
   CardTitle,
   CardContent,
   Input,
-  Combobox,
   FormControl,
   FormField,
   FormItem,
@@ -13,25 +12,11 @@ import {
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { useFormContext } from "react-hook-form";
 import type { PersonnelFormValues } from "../data/personnel-form.schema";
-import { useAddressOptions } from "@/features/master-data";
-import { useMemo } from "react";
+import { AddressRemoteCombobox } from "@/components/AddressRemoteCombobox";
 
 export function ContactAddressCard() {
-  const { control, watch } = useFormContext<PersonnelFormValues>();
+  const { control, watch, setValue } = useFormContext<PersonnelFormValues>();
   const province = watch("province");
-
-  const { provinces, wards, isLoadingProvinces, isLoadingWards } =
-    useAddressOptions(province);
-
-  const provinceOptions = useMemo(
-    () => provinces.map((p) => ({ value: p.code, label: p.name })),
-    [provinces],
-  );
-
-  const wardOptions = useMemo(
-    () => wards.map((w) => ({ value: w.code, label: w.name })),
-    [wards],
-  );
 
   return (
     <Card>
@@ -47,14 +32,16 @@ export function ContactAddressCard() {
               <FormItem>
                 <FormLabel>Tỉnh / Thành phố</FormLabel>
                 <FormControl>
-                  <Combobox
-                    options={provinceOptions}
+                  <AddressRemoteCombobox
+                    type="province"
                     value={field.value ?? ""}
-                    onChange={field.onChange}
-                    disabled={isLoadingProvinces}
+                    onChange={(value) => {
+                      field.onChange(value);
+                      // Đổi tỉnh thì phường/xã cũ không còn hợp lệ
+                      setValue("ward", "");
+                    }}
                     placeholder="Chọn Tỉnh/Thành"
                     searchPlaceholder="Tìm Tỉnh/Thành..."
-                    className="w-full"
                   />
                 </FormControl>
                 <FormMessage />
@@ -68,14 +55,16 @@ export function ContactAddressCard() {
               <FormItem>
                 <FormLabel>Phường / Xã</FormLabel>
                 <FormControl>
-                  <Combobox
-                    options={wardOptions}
+                  <AddressRemoteCombobox
+                    type="ward"
                     value={field.value ?? ""}
                     onChange={field.onChange}
-                    disabled={isLoadingWards || !province}
-                    placeholder="Chọn Phường/Xã"
+                    provinceCode={province}
+                    disabled={!province}
+                    placeholder={
+                      province ? "Chọn Phường/Xã" : "Chọn Tỉnh/Thành trước"
+                    }
                     searchPlaceholder="Tìm Phường/Xã..."
-                    className="w-full"
                   />
                 </FormControl>
                 <FormMessage />

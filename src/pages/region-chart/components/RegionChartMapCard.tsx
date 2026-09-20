@@ -1,10 +1,10 @@
-import type { ReactNode } from "react";
 import {
   Card,
   CardContent,
   CardHeader,
   CardTitle,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import type { ReactNode } from "react";
 import { MapContainer, TileLayer } from "react-leaflet";
 import { MapController } from "./DraggableRectangle";
 
@@ -37,7 +37,7 @@ export function RegionChartMapCard({
         >
           <TileLayer
             attribution="&copy; OpenStreetMap"
-            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+            url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
           />
           <MapController center={center} />
           {children}

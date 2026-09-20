@@ -1,27 +1,29 @@
-import { useMemo } from "react";
-import { useFormContext } from "react-hook-form";
+import { useRegionById, useRegions } from "@/features/farm/hooks/useRegions";
+import { useCatalog } from "@/features/foundation/hooks/useCatalog";
+import { useOrganizationById } from "@/features/organization/hooks/useOrganizationById";
+import { useSelectedWorkspaceId } from "@/features/workspace";
 import {
   Card,
   CardContent,
   CardHeader,
   CardTitle,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { MapPin, Check, Layers, AlertCircle } from "lucide-react";
-import type { AreaFormValues } from "../data/area-form.schema";
-import { useRegionById, useRegions } from "@/features/farm/hooks/useRegions";
-import { useCatalog } from "@/features/foundation/hooks/useCatalog";
-import { useOrganizationById } from "@/features/organization/hooks/useOrganizationById";
-import { useSelectedWorkspaceId } from "@/features/workspace";
-import { MapContainer, Polygon, TileLayer, Tooltip } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
+import { AlertCircle, Check, Layers, MapPin } from "lucide-react";
+import { useMemo } from "react";
+import { useFormContext } from "react-hook-form";
+import { MapContainer, Polygon, TileLayer, Tooltip } from "react-leaflet";
+import type { AreaFormValues } from "../data/area-form.schema";
 import { getBoundsFromPoints } from "../utils/map";
 
 interface AreaReviewStepProps {
   showEnterprise?: boolean;
 }
 
-export function AreaReviewStep({ showEnterprise = false }: AreaReviewStepProps = {}) {
+export function AreaReviewStep({
+  showEnterprise = false,
+}: AreaReviewStepProps = {}) {
   const { watch } = useFormContext<AreaFormValues>();
   const formData = watch();
 
@@ -71,9 +73,12 @@ export function AreaReviewStep({ showEnterprise = false }: AreaReviewStepProps =
       (region?.boundary || [])
         .filter(
           (coordinate) =>
-            coordinate.latitude !== undefined && coordinate.longitude !== undefined,
+            coordinate.latitude !== undefined &&
+            coordinate.longitude !== undefined,
         )
-        .map((coordinate) => L.latLng(coordinate.latitude!, coordinate.longitude!)),
+        .map((coordinate) =>
+          L.latLng(coordinate.latitude!, coordinate.longitude!),
+        ),
     [region?.boundary],
   );
   const plotPolygons = useMemo(
@@ -182,7 +187,7 @@ export function AreaReviewStep({ showEnterprise = false }: AreaReviewStepProps =
                 keyboard={false}
                 attributionControl={false}
               >
-                <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+                <TileLayer url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}" />
                 {regionPoints.length >= 3 && (
                   <Polygon
                     positions={regionPoints}
@@ -226,8 +231,16 @@ export function AreaReviewStep({ showEnterprise = false }: AreaReviewStepProps =
                 )}
               </MapContainer>
               <div className="pointer-events-none absolute bottom-3 left-3 z-[500] rounded-lg border bg-white/90 px-3 py-2 text-xs shadow-sm backdrop-blur-sm">
-                <div className="flex items-center gap-2"><span className="h-3 w-4 rounded-sm border-2 border-blue-600 bg-blue-500/20" />Khu vực đang tạo</div>
-                {regionPoints.length >= 3 && <div className="mt-1 flex items-center gap-2"><span className="w-4 border-t-2 border-dashed border-emerald-500" />Ranh giới vùng trồng</div>}
+                <div className="flex items-center gap-2">
+                  <span className="h-3 w-4 rounded-sm border-2 border-blue-600 bg-blue-500/20" />
+                  Khu vực đang tạo
+                </div>
+                {regionPoints.length >= 3 && (
+                  <div className="mt-1 flex items-center gap-2">
+                    <span className="w-4 border-t-2 border-dashed border-emerald-500" />
+                    Ranh giới vùng trồng
+                  </div>
+                )}
               </div>
             </div>
           )}

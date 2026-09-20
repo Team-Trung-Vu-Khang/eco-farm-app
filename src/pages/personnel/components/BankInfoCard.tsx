@@ -5,7 +5,6 @@ import {
   CardDescription,
   CardContent,
   Input,
-  Combobox,
   FormControl,
   FormField,
   FormItem,
@@ -14,26 +13,11 @@ import {
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { CreditCard } from "lucide-react";
 import { useFormContext } from "react-hook-form";
-import { useMemo } from "react";
-import { useMasterData } from "@/features/master-data";
 import type { PersonnelFormValues } from "../data/personnel-form.schema";
+import { BankRemoteCombobox } from "./BankRemoteCombobox";
 
 export function BankInfoCard() {
   const { control } = useFormContext<PersonnelFormValues>();
-
-  const { items: banks } = useMasterData("banks", {
-    params: { status: "active", size: 100 },
-  });
-
-  const bankOptions = useMemo(() => {
-    return banks.map((bank) => ({
-      id: bank.id,
-      bin: (bank.attributes as any)?.bin || bank.code,
-      label: bank.name,
-      image: bank.logoUrl,
-      value: bank.code,
-    }));
-  }, [banks]);
 
   return (
     <Card>
@@ -53,13 +37,9 @@ export function BankInfoCard() {
               <FormItem>
                 <FormLabel>Ngân hàng</FormLabel>
                 <FormControl>
-                  <Combobox
-                    options={bankOptions}
+                  <BankRemoteCombobox
                     value={field.value ?? ""}
                     onChange={field.onChange}
-                    placeholder="Chọn ngân hàng..."
-                    searchPlaceholder="Tìm tên ngân hàng..."
-                    className="w-full"
                   />
                 </FormControl>
                 <FormMessage />

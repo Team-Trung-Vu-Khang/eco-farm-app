@@ -120,7 +120,7 @@ export function CertificateRegionScopeMap({
           zoomControl={false}
           scrollWheelZoom
         >
-          <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+          <TileLayer url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}" />
           <MapSync activeBoundary={activeRegion?.boundary ?? null} />
 
           {activeRegion?.boundary.length >= 3 ? (

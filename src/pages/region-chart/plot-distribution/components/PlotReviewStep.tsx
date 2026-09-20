@@ -1,26 +1,28 @@
-import { useMemo } from "react";
-import { useFormContext } from "react-hook-form";
+import { useAreaById } from "@/features/farm/hooks/useAreas";
+import { useRegions } from "@/features/farm/hooks/useRegions";
+import useEnterpriseStore from "@/stores/useEnterpriseStore";
 import {
   Card,
   CardContent,
   CardHeader,
   CardTitle,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { Layers, MapPin } from "lucide-react";
-import { MapContainer, Polygon, TileLayer } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
+import { Layers, MapPin } from "lucide-react";
+import { useMemo } from "react";
+import { useFormContext } from "react-hook-form";
+import { MapContainer, Polygon, TileLayer } from "react-leaflet";
 import type { PlotFormValues } from "../data/plot-form.schema";
 import { getBoundsFromPoints } from "../utils";
-import { useRegions } from "@/features/farm/hooks/useRegions";
-import { useAreaById } from "@/features/farm/hooks/useAreas";
-import useEnterpriseStore from "@/stores/useEnterpriseStore";
 
 interface PlotReviewStepProps {
   showEnterprise?: boolean;
 }
 
-export const PlotReviewStep = ({ showEnterprise = false }: PlotReviewStepProps = {}) => {
+export const PlotReviewStep = ({
+  showEnterprise = false,
+}: PlotReviewStepProps = {}) => {
   const { watch } = useFormContext<PlotFormValues>();
   const enterpriseId = watch("enterpriseId");
   const regionId = watch("regionId");
@@ -54,7 +56,9 @@ export const PlotReviewStep = ({ showEnterprise = false }: PlotReviewStepProps =
 
   const areaPolygon = useMemo(() => {
     if (!selectedArea || !selectedArea.boundary) return [];
-    return selectedArea.boundary.map((b) => L.latLng(b.latitude || 0, b.longitude || 0));
+    return selectedArea.boundary.map((b) =>
+      L.latLng(b.latitude || 0, b.longitude || 0),
+    );
   }, [selectedArea]);
 
   const mapBounds = useMemo(() => {
@@ -131,12 +135,13 @@ export const PlotReviewStep = ({ showEnterprise = false }: PlotReviewStepProps =
         </CardHeader>
         <CardContent className="px-5 py-5">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4 md:grid-cols-3">
-
             <div className="space-y-0.5">
               <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
                 Tên lô
               </p>
-              <p className="text-sm font-semibold text-slate-700">{name || "—"}</p>
+              <p className="text-sm font-semibold text-slate-700">
+                {name || "—"}
+              </p>
             </div>
             <div className="space-y-0.5">
               <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
@@ -176,7 +181,7 @@ export const PlotReviewStep = ({ showEnterprise = false }: PlotReviewStepProps =
               attributionControl={false}
               className="h-full w-full"
             >
-              <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+              <TileLayer url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}" />
               {areaPolygon.length > 0 && (
                 <Polygon
                   positions={areaPolygon}

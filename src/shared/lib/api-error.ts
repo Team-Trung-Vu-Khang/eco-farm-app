@@ -64,8 +64,86 @@ function normalizeFieldErrors(value: unknown): ApiFieldErrors {
   ) as ApiFieldErrors;
 }
 
+/**
+ * Nhãn tiếng Việt của các trường hay bị backend trả về trong `fieldErrors`.
+ * Khoá viết ở dạng không chỉ số, vd. `bankAccounts[0].accountNumber` tra bằng
+ * `bankAccounts.accountNumber`.
+ */
+const fieldLabelByPath: Record<string, string> = {
+  fullName: "Họ và tên",
+  name: "Tên",
+  code: "Mã",
+  description: "Mô tả",
+  displayOrder: "Thứ tự hiển thị",
+  standardType: "Loại tiêu chuẩn",
+  organization: "Tổ chức cấp",
+  issuedDate: "Ngày cấp",
+  expiryDate: "Ngày hết hạn",
+  fileUrl: "Tệp đính kèm",
+  attachments: "Tài liệu đính kèm",
+  phone: "Số điện thoại",
+  email: "Email",
+  province: "Tỉnh / Thành phố",
+  ward: "Phường / Xã",
+  address: "Địa chỉ",
+  personalTaxCode: "Mã số thuế cá nhân",
+  taxAddress: "Địa chỉ thuế",
+  taxCode: "Mã số thuế",
+  avatarUrl: "Ảnh đại diện",
+  status: "Trạng thái",
+  departmentId: "Phòng ban",
+  departmentType: "Phòng ban",
+  positionId: "Chức vụ",
+  positionType: "Chức vụ",
+  teamIds: "Đội / Nhóm",
+  "bankAccounts.bankId": "Ngân hàng",
+  "bankAccounts.bankCode": "Ngân hàng",
+  "bankAccounts.bankName": "Ngân hàng",
+  "bankAccounts.accountNumber": "Số tài khoản",
+  "bankAccounts.accountHolder": "Chủ tài khoản",
+  "bankAccounts.branch": "Chi nhánh ngân hàng",
+};
+
+/** `bankAccounts[0].accountNumber` -> `bankAccounts.accountNumber` */
+const stripIndexes = (path: string) => path.replace(/\[\d+\]/g, "");
+
+export function getFieldLabel(path: string): string {
+  const normalized = stripIndexes(path);
+
+  return (
+    fieldLabelByPath[normalized] ??
+    // Chưa khai báo: lấy đoạn cuối cho ngắn thay vì in cả đường dẫn
+    fieldLabelByPath[normalized.split(".").pop() ?? ""] ??
+    normalized
+  );
+}
+
 export function getFieldErrorMessage(reason: string): string {
   return fieldMessageByKey[reason] ?? "Giá trị không hợp lệ.";
+}
+
+/**
+ * Gộp toàn bộ `fieldErrors` thành các dòng đọc được, vd.
+ * "Số tài khoản: Trường này là bắt buộc."
+ */
+export function getApiFieldErrorLines(error: unknown): string[] {
+  const { fieldErrors } = getApiErrorDetails(error);
+
+  return Object.entries(fieldErrors).map(
+    ([field, reason]) =>
+      `${getFieldLabel(field)}: ${getFieldErrorMessage(reason)}`,
+  );
+}
+
+/**
+ * Thông báo hoàn chỉnh để đưa thẳng vào toast: ưu tiên liệt kê lỗi từng trường,
+ * nếu không có thì dùng message chung. Nhiều lỗi ngăn bằng " • " vì toast
+ * render plain text, ký tự xuống dòng sẽ bị gộp lại.
+ */
+export function getApiErrorMessage(error: unknown): string {
+  const lines = getApiFieldErrorLines(error);
+
+  return lines.length > 0 ? lines.join(" • ") : getApiErrorDetails(error).message;
 }
 
 export function getApiErrorDetails(error: unknown): ApiErrorDetails {

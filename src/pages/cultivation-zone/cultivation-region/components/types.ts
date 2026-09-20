@@ -27,6 +27,8 @@ export interface PlantEntry {
   plotId: string;
   coordinate: Coordinate;
   isInvalidBoundary?: boolean;
+  /** Giống / hạt giống của cây, kế thừa từ vùng canh tác đã chọn ở bước 1 */
+  varietyId?: string;
 }
 
 export const makeEmptyPlant = (lat = 11.548, lng = 106.896): PlantEntry => ({

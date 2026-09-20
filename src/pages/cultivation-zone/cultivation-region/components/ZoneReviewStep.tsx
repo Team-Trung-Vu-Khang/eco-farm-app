@@ -6,7 +6,10 @@ import { useMasterData, useFarmPersonnel } from "@/features/master-data";
 import { useSelectedWorkspaceId } from "@/features/workspace";
 import { CultivationRegionCreateConfirmationStep } from "./CultivationRegionCreateConfirmationStep";
 import { useMemo } from "react";
-import { useMethodApplications } from "@/features/foundation";
+import {
+  useMethodApplications,
+  useProductionSubjects,
+} from "@/features/foundation";
 
 export const ZoneReviewStep = () => {
   const { watch } = useFormContext<CultivationZoneFormValues>();
@@ -46,6 +49,12 @@ export const ZoneReviewStep = () => {
     );
   }, [methodApplications, selectedFarmingMethodId]);
 
+  // Fallback giống ZoneConfigurationStep: cây trồng có thể được chọn từ danh mục
+  // foundation chứ không chỉ từ methodApplications.
+  const { items: allProductionSubjects } = useProductionSubjects({
+    params: { domainCode: "CROP", size: 100, status: "active" },
+  });
+
   // Build a map: subjectId → { name, code, variants: {variantId → {name, code}} }
   const subjectMap = useMemo(() => {
     const map: Record<
@@ -75,8 +84,20 @@ export const ZoneReviewStep = () => {
         });
       });
     });
+
+    // Bổ sung cây trồng từ danh mục foundation (không thuộc phương pháp canh
+    // tác đã chọn) để tên không rơi về "Cây trồng #id".
+    allProductionSubjects.forEach((subj) => {
+      if (!subj.id || map[subj.id]) return;
+      map[subj.id] = {
+        name: subj.name || "",
+        code: subj.code || "",
+        variants: {},
+      };
+    });
+
     return map;
-  }, [activeMethodApps]);
+  }, [activeMethodApps, allProductionSubjects]);
 
   const selectedCropIds: number[] = useMemo(
     () => (formValues.cropIds ?? []).map(Number).filter(Boolean),

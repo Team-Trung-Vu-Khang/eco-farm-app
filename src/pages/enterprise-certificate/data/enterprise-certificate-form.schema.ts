@@ -15,6 +15,10 @@ const enterpriseCertificateBasicInfoSchema = z.object({
   name: z.string().trim().min(1, "Vui lòng nhập tên chứng nhận."),
   standardType: z.string().trim().min(1, "Vui lòng chọn loại tiêu chuẩn."),
   organization: z.string().trim().min(1, "Vui lòng chọn tổ chức cấp."),
+  farmerId: z.string().trim().min(1, "Vui lòng chọn nông hộ."),
+  farmerName: z.string().trim().min(1, "Vui lòng chọn nông hộ."),
+  farmerCode: z.string().trim().default(""),
+  farmerType: z.string().trim().default("farm"),
 });
 
 const enterpriseCertificateTimingSchema = z.object({
@@ -161,6 +165,10 @@ export const defaultEnterpriseCertificateFormValues: EnterpriseCertificateFormVa
     name: "",
     standardType: "",
     organization: "",
+    farmerId: "",
+    farmerName: "",
+    farmerCode: "",
+    farmerType: "farm",
     issuedDate: "",
     expiryDate: "",
     entityType: "workspace",

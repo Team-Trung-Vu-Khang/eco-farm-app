@@ -1,8 +1,9 @@
+import { CodeBadge } from "@/components/CodeBadge";
 import type { Column } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import type { Plot, Region, SubArea } from "../constants";
+import type { Plot, Region } from "../constants";
 import type { FarmAreaResponse } from "@/features/farm/types/farm.type";
 import { RegionChartStatusBadge } from "../components/RegionChartStatusBadge";
-import { Hash, MapPinned, Mountain, Ruler, Trees } from "lucide-react";
+import { MapPinned, Mountain, Ruler, Trees } from "lucide-react";
 
 export function createRegionDistributionColumns(
   onOpenDetail: (id: number) => void,
@@ -12,12 +13,9 @@ export function createRegionDistributionColumns(
       key: "code",
       label: "Mã vùng",
       render: (value, row) => (
-        <span
-          onClick={() => onOpenDetail(row.id)}
-          className="cursor-pointer font-medium text-primary hover:underline"
-        >
-          {value}
-        </span>
+        <button type="button" onClick={() => onOpenDetail(row.id)}>
+          <CodeBadge value={value} />
+        </button>
       ),
     },
     { key: "name", label: "Tên vùng" },
@@ -55,12 +53,9 @@ export function createAreaDistributionColumns(
       key: "code",
       label: "Mã khu vực",
       render: (value, row) => (
-        <span
-          className="cursor-pointer font-medium text-primary hover:underline"
-          onClick={() => onOpenDetail(row.id)}
-        >
-          {value as string}
-        </span>
+        <button type="button" onClick={() => onOpenDetail(row.id)}>
+          <CodeBadge value={value} />
+        </button>
       ),
     },
     { key: "name", label: "Tên khu vực" },
@@ -90,12 +85,9 @@ export function createPlotDistributionColumns(
       key: "code",
       label: "Mã lô",
       render: (value, row) => (
-        <span
-          className="cursor-pointer font-medium text-primary hover:underline"
-          onClick={() => onOpenDetail(row.id)}
-        >
-          {value}
-        </span>
+        <button type="button" onClick={() => onOpenDetail(row.id)}>
+          <CodeBadge value={value} />
+        </button>
       ),
     },
     { key: "name", label: "Tên lô" },
@@ -118,70 +110,67 @@ export function createPlotDistributionRichColumns(
       key: "code",
       label: "Mã lô",
       render: (value, row) => (
-        <button
-          type="button"
-          className="flex items-center gap-1.5 rounded-md border bg-muted/40 px-2 py-1 font-mono text-xs font-bold text-muted-foreground transition-colors hover:border-primary/40 hover:text-primary cursor-pointer"
-          onClick={() => onOpenDetail(row.id)}
-        >
-          <Hash className="h-3 w-3 opacity-60" />
-          {value}
+        <button type="button" onClick={() => onOpenDetail(row.id)}>
+          <CodeBadge value={value} />
         </button>
       ),
     },
     {
       key: "name",
       label: "Tên lô",
-      render: (value: string) => (
+      render: (value) => (
         <div className="flex items-center gap-2">
           <Trees className="h-4 w-4 text-green-600" />
-          <span className="font-bold text-foreground">{value}</span>
+          <span className="font-bold text-foreground">{value as string}</span>
         </div>
       ),
     },
     {
       key: "regionName",
       label: "Vùng trồng",
-      render: (value: string) => (
+      render: (value) => (
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <MapPinned className="h-4 w-4 text-primary" />
-          <span className="line-clamp-2">{value}</span>
+          <span className="line-clamp-2">{value as string}</span>
         </div>
       ),
     },
     {
       key: "areaName",
       label: "Khu vực",
-      render: (value: string) => (
+      render: (value) => (
         <span className="rounded-full bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-700">
-          {value}
+          {value as string}
         </span>
       ),
     },
     {
       key: "area",
       label: "Diện tích (ha)",
-      render: (value: number) => (
+      render: (value) => (
         <div className="flex items-center gap-1.5 text-sm font-medium">
           <Ruler className="h-4 w-4 text-emerald-600" />
-          {value}
+          {value as number}
         </div>
       ),
     },
     {
       key: "altitude",
       label: "Độ cao",
-      render: (value: number) => (
+      render: (value) => (
         <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
           <Mountain className="h-4 w-4 text-slate-500" />
-          {value} m
+          {value as number} m
         </div>
       ),
     },
     {
       key: "contour",
       label: "Đường bình độ",
-      render: (value: string) => (
-        <span className="text-sm text-muted-foreground">{value || "-"}</span>
+      render: (value) => (
+        <span className="text-sm text-muted-foreground">
+          {(value as string) || "-"}
+        </span>
       ),
     },
   ];

@@ -505,7 +505,7 @@ const PlotLayout = ({
         >
           <TileLayer
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+            url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
           />
 
           <Polygon
@@ -637,8 +637,9 @@ const PlotLayout = ({
                         <span>{plot.acreage} ha</span>
                         <span className="flex items-center gap-1">
                           •{" "}
-                          {lands.find((l) => l.id === plot.landType)?.name ||
-                            "Chưa chọn đất"}
+                          {lands.find(
+                            (l) => String(l.id) === String(plot.landType),
+                          )?.name || "Chưa chọn đất"}
                         </span>
                       </div>
                     </div>
@@ -709,6 +710,8 @@ export const AreaPlotsStep = ({
   const coordinates = watch("coordinates") || [];
   const plots: any[] = watch("plots") || [];
   const regionArea = watch("acreage") || 0;
+  // Loại đất của khu vực (step 1, field `soilType`) — lô mới kế thừa từ đây
+  const areaLandType = watch("soilType") || "";
 
   const regionPoints = useMemo(
     () => coordinates.map((c: any) => L.latLng(c.lat, c.lng)),
@@ -826,6 +829,15 @@ export const AreaPlotsStep = ({
     });
   };
 
+  /** Chỉ dời điểm, bỏ qua toàn bộ kiểm tra hình học — dùng khi đang kéo. */
+  const movePlotPoint = (index: number, latlng: L.LatLng) => {
+    setPlotPoints((prev) => {
+      const next = [...prev];
+      next[index] = latlng;
+      return next;
+    });
+  };
+
   const setPlotPointWithValidation = (
     index: number,
     latlng: L.LatLng,
@@ -833,11 +845,7 @@ export const AreaPlotsStep = ({
   ) => {
     const { persist = true, preview = false } = options || {};
 
-    setPlotPoints((prev) => {
-      const next = [...prev];
-      next[index] = latlng;
-      return next;
-    });
+    movePlotPoint(index, latlng);
 
     const clearPreview = () => {
       if (preview) {
@@ -930,9 +938,17 @@ export const AreaPlotsStep = ({
     options?: { finalize?: boolean },
   ) => {
     setActivePlotPointIndex(index);
+
+    // Trong lúc kéo chỉ dời điểm: các phép turf.js (kiểm tra trong/ngoài vùng,
+    // tìm điểm hợp lệ gần nhất) chạy mỗi sự kiện drag sẽ làm khựng bản đồ.
+    if (!options?.finalize) {
+      movePlotPoint(index, latlng);
+      return;
+    }
+
     setPlotPointWithValidation(index, latlng, {
-      persist: options?.finalize ?? false,
-      preview: !(options?.finalize ?? false),
+      persist: true,
+      preview: false,
     });
     if (options?.finalize) {
       setActivePlotDragWarning(null);
@@ -1172,7 +1188,7 @@ export const AreaPlotsStep = ({
       coordinates: [],
       name: "Lô mới",
       id: `sub-${Date.now()}`,
-      landType: "",
+      landType: areaLandType,
     };
 
     setEditingPlot(newSub);

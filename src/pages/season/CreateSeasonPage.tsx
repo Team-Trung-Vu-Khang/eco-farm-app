@@ -13,18 +13,9 @@ import {
   Button,
   Card,
   CardContent,
-  Tabs,
-  TabsList,
-  TabsTrigger,
   useToast,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import {
-  ArrowLeft,
-  Fish,
-  Loader2,
-  PawPrint,
-  TreeDeciduous,
-} from "lucide-react";
+import { ArrowLeft, Loader2 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import { useLocation } from "wouter";
@@ -126,6 +117,8 @@ export default function CreateSeasonPage() {
     [watchedStages],
   );
 
+  // Giữ lại cho khi mở lại tab Vụ nuôi / Thủy sản
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const handleDomainChange = (domain: "CROP" | "LIVESTOCK" | "AQUACULTURE") => {
     setSelectedDomain(domain);
     reset({
@@ -333,7 +326,10 @@ export default function CreateSeasonPage() {
           </div>
         </div>
 
-        <Tabs
+        {/* Tạm ẩn Vụ nuôi & Thủy sản — chỉ còn Vụ mùa nên bỏ luôn thanh tab.
+            Mở lại: bỏ comment khối dưới và khôi phục import Tabs/TabsList/
+            TabsTrigger, TreeDeciduous, PawPrint, Fish. */}
+        {/* <Tabs
           value={selectedDomain}
           onValueChange={(val) => handleDomainChange(val as any)}
           className="w-auto"
@@ -352,7 +348,7 @@ export default function CreateSeasonPage() {
               Thủy sản
             </TabsTrigger>
           </TabsList>
-        </Tabs>
+        </Tabs> */}
       </div>
 
       <Card>

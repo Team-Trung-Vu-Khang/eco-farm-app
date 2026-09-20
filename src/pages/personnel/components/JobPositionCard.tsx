@@ -36,6 +36,7 @@ export function JobPositionCard() {
   const { items: departmentOptionsList } = useFarmDepartmentOptions({
     workspaceId: parsedWorkspaceId,
     params: {
+      onlyOwner: true,
       size: 100,
     },
   });
@@ -43,6 +44,7 @@ export function JobPositionCard() {
   const { items: positionOptionsList } = useFarmPositionOptions({
     workspaceId: parsedWorkspaceId,
     params: {
+      onlyOwner: true,
       size: 100,
     },
   });

@@ -8,10 +8,9 @@ import {
   type PositionResponsibilityDocumentType,
   useFarmPositionMutations,
   useFarmPositions,
-  useMasterData,
 } from "../../../features/master-data";
 
-import { AxiosError } from "axios";
+import { getApiErrorMessage } from "@/shared/lib/api-error";
 import type { PositionFormData, PositionItem, PositionRecord } from "../types";
 
 const DEFAULT_PAGE_SIZE = 10;
@@ -119,14 +118,6 @@ export function useOwnerPositionPage() {
     },
   });
 
-  const positionGroupQuery = useMasterData("position-groups", {
-    params: {
-      status: "active",
-      page: 0,
-      size: 100,
-    },
-  });
-
   const { createPosition, updatePosition, deletePosition } =
     useFarmPositionMutations(parsedWorkspaceId);
 
@@ -136,15 +127,6 @@ export function useOwnerPositionPage() {
         mapPositionRecordToItem(item as PositionRecord),
       ),
     [positionsQuery.items],
-  );
-
-  const groupOptions = useMemo(
-    () =>
-      positionGroupQuery.items.map((group) => ({
-        label: group.name,
-        value: String(group.id),
-      })),
-    [positionGroupQuery.items],
   );
 
   const handleSearch = (value: string) => {
@@ -203,14 +185,9 @@ export function useOwnerPositionPage() {
 
       setFormOpen(false);
     } catch (error) {
-      const message =
-        error instanceof AxiosError
-          ? error?.response?.data?.message
-          : "Đã xảy ra lỗi không xác định";
-
       toast({
         title: editItem ? "Không thể cập nhật" : "Không thể thêm",
-        description: message,
+        description: getApiErrorMessage(error),
         variant: "destructive",
       });
     }
@@ -229,12 +206,9 @@ export function useOwnerPositionPage() {
         description: "Đã xóa chức vụ",
       });
     } catch (error) {
-      const message =
-        error instanceof Error ? error.message : "Đã xảy ra lỗi không xác định";
-
       toast({
         title: "Không thể xóa",
-        description: message,
+        description: getApiErrorMessage(error),
         variant: "destructive",
       });
     }
@@ -244,9 +218,8 @@ export function useOwnerPositionPage() {
 
   return {
     positions,
-    groupOptions,
-    loading: positionsQuery.loading || positionGroupQuery.loading,
-    error: positionsQuery.error || positionGroupQuery.error,
+    loading: positionsQuery.loading,
+    error: positionsQuery.error,
     response: positionsQuery.response,
     handleSearch,
     handleFilterChange,

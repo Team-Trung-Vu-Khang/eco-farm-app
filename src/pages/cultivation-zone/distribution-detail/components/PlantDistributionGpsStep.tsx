@@ -1,3 +1,4 @@
+import treeMarkerIcon from "@/assets/tree.webp";
 import {
   Badge,
   Button,
@@ -11,14 +12,13 @@ import "leaflet/dist/leaflet.css";
 import { Edit2, Layers, Navigation } from "lucide-react";
 import { useEffect, useMemo } from "react";
 import { MapContainer, Marker, TileLayer, useMap } from "react-leaflet";
-import { MOCK_SEEDS } from "../constants";
 import type {
   DistributionMethod,
   PlantEntry,
   PlantLocation,
   RowConfig,
 } from "../constants";
-import treeMarkerIcon from "@/assets/tree.webp";
+import { MOCK_SEEDS } from "../constants";
 type Props = {
   distributionMethod: DistributionMethod;
   plantEntries: PlantEntry[];
@@ -73,10 +73,7 @@ export const PlantDistributionGpsStep = ({
   }, [plantLocations, selectedPlantId]);
 
   const mapCenter: [number, number] = activePlantLocation
-    ? [
-        activePlantLocation.coordinate.lat,
-        activePlantLocation.coordinate.lng,
-      ]
+    ? [activePlantLocation.coordinate.lat, activePlantLocation.coordinate.lng]
     : [11.558, 107.134];
 
   return (
@@ -139,7 +136,7 @@ export const PlantDistributionGpsStep = ({
                 zoomControl={false}
                 scrollWheelZoom
               >
-                <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+                <TileLayer url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}" />
                 <MapCenterSync center={mapCenter} />
 
                 {plantLocations.map((location) => {

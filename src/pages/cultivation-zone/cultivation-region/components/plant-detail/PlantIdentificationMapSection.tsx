@@ -1,4 +1,4 @@
-import type { Plant } from "../../../../region-chart/constants";
+import treeMarkerIcon from "@/assets/tree.webp";
 import {
   Button,
   Card,
@@ -9,8 +9,14 @@ import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { MapPin, Maximize2 } from "lucide-react";
 import { useEffect, useMemo } from "react";
-import { MapContainer, Marker, Polygon, TileLayer, useMap } from "react-leaflet";
-import treeMarkerIcon from "@/assets/tree.webp";
+import {
+  MapContainer,
+  Marker,
+  Polygon,
+  TileLayer,
+  useMap,
+} from "react-leaflet";
+import type { Plant } from "../../../../region-chart/constants";
 
 type Props = {
   plant: Plant;
@@ -122,9 +128,11 @@ export const PlantIdentificationMapSection = ({
           scrollWheelZoom
           zoomControl={false}
         >
-          <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+          <TileLayer url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}" />
           <MapBoundsSync
-            paths={[plotPath, areaPath, regionPath].filter((path) => path.length > 0)}
+            paths={[plotPath, areaPath, regionPath].filter(
+              (path) => path.length > 0,
+            )}
             center={mapCenter}
           />
 

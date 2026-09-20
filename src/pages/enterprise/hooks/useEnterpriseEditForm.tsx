@@ -20,7 +20,7 @@ import {
 import { useUploadStorageFile } from "@/features/storage/hooks/useUploadStorageFile";
 import { useSelectedWorkspaceId } from "@/features/workspace";
 import { parseVietQR } from "@/utils/commons";
-import { getApiErrorDetails, getFirstApiFieldError } from "@/shared/lib/api-error";
+import { getApiErrorMessage } from "@/shared/lib/api-error";
 import readXlsxFile from "read-excel-file";
 import { EnterpriseBankAccountsStep } from "../components/steps/EnterpriseBankAccountsStep";
 import { EnterpriseBasicInfoStep } from "../components/steps/EnterpriseBasicInfoStep";
@@ -62,12 +62,9 @@ export function useEnterpriseEditForm() {
       setLocation("/enterprise");
     },
     onError: (error) => {
-      const fieldError = getFirstApiFieldError(error);
       toast({
         title: "Lỗi",
-        description: fieldError
-          ? `${fieldError.field}: ${fieldError.message}`
-          : getApiErrorDetails(error).message,
+        description: getApiErrorMessage(error),
         variant: "destructive",
       });
     },

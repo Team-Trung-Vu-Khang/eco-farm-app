@@ -49,17 +49,20 @@ import {
   useMap,
 } from "react-leaflet";
 import { useLocation } from "wouter";
-import useCultivationRegionStore, {
-  type CultivationRegion,
-} from "../../../stores/useCultivationRegionStore";
-import useEnterpriseStore from "../../../stores/useEnterpriseStore";
-import useRegionStore from "../../../stores/useRegionStore";
+import type { CultivationRegion } from "../../../stores/useCultivationRegionStore";
 import {
   LAND_TYPES,
   type Coordinate,
   type Region,
 } from "../../region-chart/constants";
-import { CultivationRegionDetailView } from "../cultivation-region/CultivationRegionDetailPage";
+import CultivationRegionDetailBody from "../cultivation-region/CultivationRegionDetailBody";
+import type { CultivationRegionDetails } from "../cultivation-region/useCultivationRegionDetail";
+import {
+  mockSearchZoneCultivationRegions,
+  mockSearchZoneDetailRecords,
+  mockSearchZoneEnterprises,
+  mockSearchZoneRegions,
+} from "./searchZone.mock";
 
 type LatLngTuple = [number, number];
 
@@ -101,9 +104,9 @@ interface AdvancedFilters {
 
 const SearchZonePage = () => {
   const { toast } = useToast();
-  const { enterprises } = useEnterpriseStore();
-  const { regions } = useRegionStore();
-  const { areas: cultivationRegions } = useCultivationRegionStore();
+  const enterprises = mockSearchZoneEnterprises;
+  const regions = mockSearchZoneRegions;
+  const cultivationRegions = mockSearchZoneCultivationRegions;
 
   const [mapCenter, setMapCenter] = useState<{ lat: number; lng: number }>({
     lat: 11.53,
@@ -854,84 +857,84 @@ const SearchZonePage = () => {
 
   return (
     <PageWrapper title="Tìm kiếm vùng canh tác">
-      <div className="h-[calc(100vh-64px)] flex flex-col bg-slate-50">
+      <div className="min-h-[calc(100vh-64px)] flex flex-col bg-slate-50">
         {/* TOP HEADER: Simple Search (Matched to temp.ts) */}
-        <div className="bg-white border-b p-4 z-40 shadow-sm rounded-md">
-          <div className="w-full flex flex-col md:flex-row gap-4 items-center justify-between">
-            <div className="relative flex-1 w-full">
-              <Search className="absolute left-3 top-2.5 h-5 w-5 text-muted-foreground" />
-              <Input
-                placeholder="Tìm kiếm vùng canh tác theo tên, đối tượng áp dụng..."
-                className="pl-10 rounded-xl border-slate-200 focus:ring-primary h-10"
-                value={searchQuery}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                  setSearchQuery(e.target.value)
-                }
-              />
-            </div>
-            <div className="flex gap-2 w-full md:w-auto">
-              <Button
-                variant={isAdvancedSearchOpen ? "default" : "outline"}
-                className="gap-2 rounded-xl"
-                onClick={() => setIsAdvancedSearchOpen(!isAdvancedSearchOpen)}
-              >
-                <Filter className="h-4 w-4" />
-                Tìm kiếm nâng cao
-                {activeFilterCount > 0 && (
-                  <Badge variant="secondary" className="ml-1 px-1 h-5 min-w-5">
-                    {activeFilterCount}
-                  </Badge>
-                )}
-              </Button>
-              <Button className="rounded-xl px-6" onClick={handleSearch}>
-                Tìm kiếm
-              </Button>
-            </div>
-          </div>
-
-          <div className="relative overflow-hidden rounded-xl border border-green-200 bg-linear-to-r from-green-50 via-white to-green-50 p-5 shadow-sm mt-4">
-            <div className="relative z-10 flex items-center gap-4">
-              <div className="w-12 h-12 rounded-xl bg-white shadow-sm border border-green-100 flex items-center justify-center text-green-600 shrink-0">
-                <Layers className="w-6 h-6" />
+        <div className="bg-white border-b rounded-md p-4 z-40 shadow-sm">
+          <div className="max-w-7xl mx-auto space-y-4">
+            <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
+              <div className="relative flex-1 w-full">
+                <Search className="absolute left-3 top-2.5 h-5 w-5 text-muted-foreground" />
+                <Input
+                  placeholder="Tìm kiếm vùng canh tác theo tên, đối tượng áp dụng..."
+                  className="pl-10 border-slate-200 focus:ring-primary shadow-sm bg-slate-50/50"
+                  value={searchQuery}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                    setSearchQuery(e.target.value)
+                  }
+                />
               </div>
-              <div>
-                <h3 className="text-base font-bold text-green-900 uppercase tracking-wide">
-                  Kết quả tìm kiếm
-                </h3>
-                <p className="text-sm text-green-700/80 font-medium">
-                  Đã tìm thấy{" "}
-                  <span className="text-green-600 font-black px-1.5 py-0.5 bg-white rounded-md border border-green-100 shadow-xs">
-                    {totalCultivationRegions}
-                  </span>{" "}
-                  vùng canh tác phù hợp với tiêu chí của bạn.
-                </p>
+
+              <div className="flex gap-2 w-full md:w-auto">
+                <Button
+                  variant={isAdvancedSearchOpen ? "default" : "outline"}
+                  onClick={() => setIsAdvancedSearchOpen(!isAdvancedSearchOpen)}
+                >
+                  <Filter className="h-4 w-4" />
+                  <span>Bộ lọc nâng cao</span>
+                  {activeFilterCount > 0 && (
+                    <span className="text-primary bg-white rounded text-xs w-5 h-5 flex items-center justify-center">
+                      {activeFilterCount}
+                    </span>
+                  )}
+                </Button>
+                <Button className="font-bold" onClick={handleSearch}>
+                  Tìm kiếm
+                </Button>
               </div>
             </div>
-            <div className="absolute top-0 right-0 -mt-4 -mr-4 w-32 h-32 bg-green-500/10 rounded-full blur-2xl" />
-          </div>
 
-          {/* ADVANCED SEARCH PANEL: Grouped Layout (Matched to temp.ts Card style) */}
-          {isAdvancedSearchOpen && (
-            <div className="bg-white z-30 animate-in slide-in-from-top-2 duration-200 mt-4">
-              <div className="w-full">
-                <Card className="border-none shadow-none">
-                  <CardHeader className="bg-slate-50 border rounded-t-xl pb-4">
+            <div className="relative overflow-hidden rounded-xl border border-green-200 bg-linear-to-r from-green-50 via-white to-green-50 p-5 shadow-sm mt-4">
+              <div className="relative z-10 flex items-center gap-4">
+                <div className="w-12 h-12 rounded-xl bg-white shadow-sm border border-green-100 flex items-center justify-center text-green-600 shrink-0">
+                  <Layers className="w-6 h-6" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-green-900 uppercase tracking-wide">
+                    Kết quả tìm kiếm
+                  </h3>
+                  <p className="text-sm text-green-700/80 font-medium">
+                    Đã tìm thấy{" "}
+                    <span className="text-green-600 font-black px-1.5 py-0.5 bg-white rounded-md border border-green-100 shadow-xs">
+                      {totalCultivationRegions}
+                    </span>{" "}
+                    vùng canh tác phù hợp với tiêu chí của bạn.
+                  </p>
+                </div>
+              </div>
+              <div className="absolute top-0 right-0 -mt-4 -mr-4 w-32 h-32 bg-green-500/10 rounded-full blur-2xl" />
+            </div>
+
+            {/* ADVANCED SEARCH PANEL: Grouped Layout */}
+            {isAdvancedSearchOpen && (
+              <div className="pt-2 animate-in slide-in-from-top-2 duration-200">
+                <Card className="bg-white rounded-xl border border-slate-100 shadow-md overflow-hidden">
+                  <CardHeader className="px-6 py-4 bg-slate-50/50 border-b">
                     <div className="flex items-center justify-between">
-                      <CardTitle className="text-lg font-bold flex items-center gap-2">
-                        <Filter className="h-5 w-5 text-primary" />
+                      <CardTitle className="flex items-center gap-2 text-primary font-black uppercase tracking-widest text-sm">
+                        <Filter size={18} />
                         Bộ lọc nâng cao
                       </CardTitle>
                       <Button
                         variant="ghost"
                         size="sm"
                         onClick={() => setAdvancedFilters({})}
-                        className="text-primary hover:text-primary/80 font-semibold"
+                        className="text-primary hover:text-primary/80 text-xs font-bold"
                       >
-                        Xóa tất cả bộ lọc
+                        Xóa tất cả
                       </Button>
                     </div>
                   </CardHeader>
-                  <CardContent className="p-6 border border-t-0 rounded-b-xl space-y-8 bg-white">
+                  <CardContent className="p-6 space-y-8 bg-white">
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                       {/* Nhóm 1: Thông tin cây trồng */}
                       <div className="space-y-4">
@@ -1130,8 +1133,8 @@ const SearchZonePage = () => {
                   </CardContent>
                 </Card>
               </div>
-            </div>
-          )}
+            )}
+          </div>
         </div>
 
         <div className="flex-1 flex relative">
@@ -1191,7 +1194,7 @@ const SearchZonePage = () => {
           </div>
 
           {/* RIGHT CONTENT: Map (Top) & DataTable (Bottom) */}
-          <div className="flex-1 flex flex-col bg-slate-50 relative p-6 space-y-6 overflow-hidden overflow-y-auto split-scrollbar">
+          <div className="flex-1 flex flex-col bg-slate-50 relative p-6 space-y-6 overflow-y-auto split-scrollbar">
             {!selectedEnterpriseId ? (
               <div className="flex-1 flex flex-col items-center justify-center opacity-40">
                 <div className="w-32 h-32 rounded-full bg-white shadow-xl flex items-center justify-center mb-6">
@@ -1240,7 +1243,7 @@ const SearchZonePage = () => {
                       zoomControl={false}
                       scrollWheelZoom
                     >
-                      <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+                      <TileLayer url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}" />
                       <ZoneMapContent
                         regions={selectedCultivationTargets.visibleRegions}
                         enterprises={enterprises}
@@ -1310,7 +1313,7 @@ const SearchZonePage = () => {
                             zoomControl={false}
                             scrollWheelZoom
                           >
-                            <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+                            <TileLayer url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}" />
                             <ZoneMapContent
                               regions={
                                 selectedCultivationTargets.visibleRegions
@@ -1645,13 +1648,28 @@ const SearchZonePage = () => {
                           </div>
                           <div>
                             <DialogTitle className="text-xl font-bold text-slate-800">
-                              Chi tiết vùng trồng
+                              Hồ sơ vùng trồng
                             </DialogTitle>
                           </div>
                         </div>
                         {selectedCultivationRegion && (
-                          <CultivationRegionDetailView
-                            id={selectedCultivationRegion.id}
+                          <CultivationRegionDetailBody
+                            area={selectedCultivationRegion}
+                            details={buildMockCultivationRegionDetails(
+                              selectedCultivationRegion,
+                              enterprises,
+                              regionIndex,
+                            )}
+                            onBack={() =>
+                              setIsCultivationRegionDetailOpen(false)
+                            }
+                            onEdit={() => {
+                              toast({
+                                title: "Dữ liệu mock",
+                                description:
+                                  "Trang tìm kiếm vùng canh tác đang dùng dữ liệu mock local.",
+                              });
+                            }}
                           />
                         )}
                       </div>
@@ -2004,7 +2022,7 @@ const SearchZonePage = () => {
                 </div>
 
                 {/* Bottom Section: Cultivation Region DataTable */}
-                <div className="flex-1 bg-white rounded-xl overflow-hidden flex flex-col">
+                <div className="bg-white rounded-xl flex flex-col min-h-120">
                   <div className="flex items-center justify-between px-2  bg-slate-50/50 border-b ">
                     <div className="p-4 font-black text-xs uppercase tracking-widest text-slate-500">
                       Danh sách vùng canh tác
@@ -2013,7 +2031,7 @@ const SearchZonePage = () => {
                       {filteredCultivationRegions.length} vùng canh tác
                     </Badge>
                   </div>
-                  <div className="flex-1 overflow-hidden p-4">
+                  <div className="flex-1 overflow-auto p-4 split-scrollbar">
                     <DataTable
                       columns={columns}
                       data={filteredCultivationRegions}
@@ -2031,6 +2049,213 @@ const SearchZonePage = () => {
       </div>
     </PageWrapper>
   );
+};
+
+const buildMockCultivationRegionDetails = (
+  zone: CultivationRegion,
+  enterprises: any[],
+  regionIndex: {
+    regionById: Map<string, Region>;
+    areaById: Map<string, { area: any; region: Region }>;
+    plotById: Map<string, { plot: any; area: any; region: Region }>;
+  },
+): CultivationRegionDetails => {
+  const detail =
+    mockSearchZoneDetailRecords[
+      zone.id as keyof typeof mockSearchZoneDetailRecords
+    ];
+  const enterprise = enterprises.find(
+    (item) => String(item.id) === String(zone.enterpriseId),
+  );
+  const selectedEntities = zone.targetIds.map((id) => {
+    const region = regionIndex.regionById.get(String(id));
+    if (region) {
+      return {
+        id: String(region.id),
+        type: "Vùng trồng",
+        typeCode: "region",
+        name: region.name,
+        regionId: String(region.id),
+      };
+    }
+
+    const areaHit = regionIndex.areaById.get(String(id));
+    if (areaHit) {
+      return {
+        id: String(areaHit.area.id),
+        type: "Khu vực",
+        typeCode: "area",
+        name: areaHit.area.name,
+        regionId: String(areaHit.region.id),
+        regionName: areaHit.region.name,
+        areaId: String(areaHit.area.id),
+      };
+    }
+
+    const plotHit = regionIndex.plotById.get(String(id));
+    if (plotHit) {
+      return {
+        id: String(plotHit.plot.id),
+        type: "Lô đất",
+        typeCode: "plot",
+        name: plotHit.plot.name,
+        regionId: String(plotHit.region.id),
+        regionName: plotHit.region.name,
+        areaId: String(plotHit.area.id),
+        areaName: plotHit.area.name,
+      };
+    }
+
+    return {
+      id,
+      type: zone.scope,
+      typeCode: zone.scope,
+      name: id,
+    };
+  });
+
+  const groupedSelections = selectedEntities.reduce<Record<string, any>>(
+    (groups, entity) => {
+      const regionId = String(entity.regionId || entity.id);
+      const region =
+        regionIndex.regionById.get(regionId) ||
+        regionIndex.areaById.get(String(entity.areaId))?.region ||
+        regionIndex.plotById.get(String(entity.id))?.region;
+      const regionKey = regionId || "mock-region";
+
+      if (!groups[regionKey]) {
+        groups[regionKey] = {
+          region: region || {
+            id: regionKey,
+            name: entity.regionName || entity.name,
+          },
+          areas: {},
+        };
+      }
+
+      const areaKey = String(entity.areaId || "region-only");
+      if (!groups[regionKey].areas[areaKey]) {
+        groups[regionKey].areas[areaKey] = {
+          area: entity.areaId
+            ? regionIndex.areaById.get(String(entity.areaId))?.area || {
+                id: entity.areaId,
+                name: entity.areaName,
+              }
+            : null,
+          entities: [],
+        };
+      }
+      groups[regionKey].areas[areaKey].entities.push(entity);
+      return groups;
+    },
+    {},
+  );
+
+  const totalArea = selectedEntities.reduce((sum, entity) => {
+    const region = regionIndex.regionById.get(String(entity.id));
+    const area = regionIndex.areaById.get(String(entity.id))?.area;
+    const plot = regionIndex.plotById.get(String(entity.id))?.plot;
+    return sum + Number(region?.area || area?.area || plot?.area || 0);
+  }, 0);
+
+  const personnel = (detail?.managers || zone.managerIds).map(
+    (name, index) => ({
+      id: index + 1,
+      fullName: name,
+      avatarUrl: null,
+      positionName: index === 0 ? "Quản lý vùng" : "Kỹ thuật viên",
+      positionCode: index === 0 ? "MANAGER" : "TECH",
+      phone: `09${index + 1}0 000 00${index + 1}`,
+    }),
+  );
+
+  const crops = (detail?.crops || zone.selectedCrops).map((name, index) => ({
+    id: `crop-${zone.id}-${index + 1}`,
+    name,
+    crop: name.split(" ")[0] || name,
+    selectedSeeds: [
+      {
+        id: `seed-${index + 1}`,
+        name: `${name} - giống mock`,
+      },
+    ],
+  }));
+
+  const certificates = (detail?.certifications || zone.certificateIds).map(
+    (name, index) => ({
+      id: index + 1,
+      code: name,
+      name,
+    }),
+  );
+
+  return {
+    managers: personnel,
+    personnel,
+    certificates,
+    selectedCerts: certificates,
+    regionStats: {
+      total: 76,
+      healthy: 68,
+      treating: 6,
+      diseased: 2,
+    },
+    region:
+      selectedEntities[0]?.regionId != null
+        ? regionIndex.regionById.get(String(selectedEntities[0].regionId)) ||
+          null
+        : null,
+    selectedEntities,
+    groupedSelections,
+    totalArea: Number(totalArea.toFixed(1)),
+    enterprise: enterprise
+      ? {
+          ...enterprise,
+          code: enterprise.code || enterprise.id,
+          name: enterprise.brandName || enterprise.name,
+        }
+      : null,
+    entityConfigs: selectedEntities.map((entity) => ({
+      entity,
+      farmingMethod: {
+        id: zone.farmingMethodId,
+        name: detail?.farmingMethod || zone.farmingMethodId,
+      },
+      irrigationMethod: {
+        id: zone.irrigationMethodId,
+        name: detail?.irrigation || zone.irrigationMethodId,
+      },
+      crops,
+    })),
+    technicalConfig: {
+      farmingMethod: {
+        id: zone.farmingMethodId,
+        name: detail?.farmingMethod || zone.farmingMethodId,
+      },
+      irrigationMethod: {
+        id: zone.irrigationMethodId,
+        name: detail?.irrigation || zone.irrigationMethodId,
+      },
+      crops,
+    },
+    harvestStats: {
+      totalVolume: 128,
+      lastVolume: 18,
+      lastChange: 8,
+      avgVolume: 16,
+      avgChange: 4,
+    },
+    harvestBatches: [
+      {
+        id: `harvest-${zone.id}-1`,
+        date: "2026-08-25",
+        volume: 18,
+        quality: "Loại A",
+        staff: personnel[0]?.fullName || "Nhân sự mock",
+        notes: "Dữ liệu mock phục vụ màn tra cứu.",
+      },
+    ],
+  };
 };
 
 const GeographyScopeTree = ({

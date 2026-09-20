@@ -78,12 +78,23 @@ export const mapFarmCertificateRecordToFormData = (
   const regionTargetSource = record.targetRegion ?? targetRegions[0];
   const regionTargetIds = targetRegions.map((item) => toNumericId(item.id));
   const regionTargetNames = targetRegions.map((item) => item.name);
+  const farmerId = toNumericId(readMetadataValue(record.metadataJson ?? undefined, "farmerId"));
+  const farmerName =
+    readMetadataValue(record.metadataJson ?? undefined, "farmerName") ?? "";
+  const farmerCode =
+    readMetadataValue(record.metadataJson ?? undefined, "farmerCode") ?? "";
+  const farmerType =
+    readMetadataValue(record.metadataJson ?? undefined, "farmerType") ?? "farm";
 
   return {
     code: record.code,
     name: record.name,
     standardType: record.agricultureCertificate?.code ?? record.standardType ?? "",
     organization: record.issuer?.name ?? record.organization ?? "",
+    farmerId,
+    farmerName: String(farmerName),
+    farmerCode: String(farmerCode),
+    farmerType: String(farmerType),
     issuedDate: record.issuedDate,
     expiryDate: record.expiryDate,
     entityType: targetType,
@@ -220,7 +231,12 @@ export const buildFarmCertificatePayload = (
     ...(targetIds ? { targetIds } : {}),
     displayOrder: 1,
     documents,
-    metadataJson: null,
+    metadataJson: {
+      farmerId: formData.farmerId || undefined,
+      farmerName: formData.farmerName || undefined,
+      farmerCode: formData.farmerCode || undefined,
+      farmerType: formData.farmerType || undefined,
+    },
   };
 };
 

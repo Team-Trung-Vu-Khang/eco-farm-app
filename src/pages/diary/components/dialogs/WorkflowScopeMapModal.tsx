@@ -1,4 +1,3 @@
-import React, { useEffect, useMemo, useState } from "react";
 import {
   Badge,
   Dialog,
@@ -6,6 +5,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import L from "leaflet";
+import "leaflet/dist/leaflet.css";
+import { useEffect, useMemo, useState } from "react";
 import {
   MapContainer,
   Marker,
@@ -14,7 +16,6 @@ import {
   Tooltip,
   useMap,
 } from "react-leaflet";
-import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { Maximize2, MapPin, Layers, Loader2 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
@@ -338,7 +339,7 @@ export function WorkflowScopeMapModal({
       >
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
         />
         <MapSync boundary={boundary} centerPoint={effectiveCenterPoint} />
 

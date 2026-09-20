@@ -454,7 +454,7 @@ const AnimalDistributionDetailPage = () => {
                     zoomControl={false}
                     scrollWheelZoom
                   >
-                    <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+                    <TileLayer url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}" />
                     <MapCenterSync center={mapCenter} />
 
                     {animals.map((animal) => (

@@ -142,10 +142,7 @@ const MapUpdater = ({
 }) => {
   const map = useMap();
   useEffect(() => {
-    const targetPoint = map.project(
-      L.latLng(center[0], center[1]),
-      zoom,
-    );
+    const targetPoint = map.project(L.latLng(center[0], center[1]), zoom);
     const shiftedLatLng = map.unproject(
       targetPoint.add(L.point(FOCUS_PIXEL_OFFSET_X, 0)),
       zoom,
@@ -1068,8 +1065,7 @@ const MapContent = () => {
               moisture:
                 healthMetric.soilMoisturePct ?? localSoil?.moisture ?? 0,
               nitrogen: healthMetric.nitrogen ?? localSoil?.nitrogen ?? 0,
-              phosphorus:
-                healthMetric.phosphorus ?? localSoil?.phosphorus ?? 0,
+              phosphorus: healthMetric.phosphorus ?? localSoil?.phosphorus ?? 0,
               potassium: healthMetric.potassium ?? localSoil?.potassium ?? 0,
               organicMatter:
                 healthMetric.organicMatterPct ?? localSoil?.organicMatter ?? 0,
@@ -1181,15 +1177,16 @@ const MapContent = () => {
   // Zones/areas without a drawn boundary fall back to a Point feature (see
   // buildScopeFeature); render those as a colored pin instead of Leaflet's
   // default blue marker so they still read as that layer's color.
-  const makeScopePointToLayer = (color: string) => (_feature: Feature, latlng: L.LatLng) =>
-    L.circleMarker(latlng, {
-      radius: 9,
-      fillColor: color,
-      color: "white",
-      weight: 2,
-      opacity: 1,
-      fillOpacity: 0.9,
-    });
+  const makeScopePointToLayer =
+    (color: string) => (_feature: Feature, latlng: L.LatLng) =>
+      L.circleMarker(latlng, {
+        radius: 9,
+        fillColor: color,
+        color: "white",
+        weight: 2,
+        opacity: 1,
+        fillOpacity: 0.9,
+      });
   const zonePointToLayer = makeScopePointToLayer(zoneStyle.color);
   const areaPointToLayer = makeScopePointToLayer(areaStyle.color);
 
@@ -1358,6 +1355,10 @@ const MapContent = () => {
             className="h-full w-full"
             style={{ background: "#f0f0f0" }}
           >
+            <TileLayer
+              attribution="Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community"
+              url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
+            />
             <MapUpdater center={mapCenter} zoom={mapZoom} />
             <ZoomListener onChange={onZoomChange} />
             <LayerVisibilitySync
@@ -1366,19 +1367,6 @@ const MapContent = () => {
               }
             />
             <LayersControl position="topright">
-              <LayersControl.BaseLayer checked name="Bản đồ chuẩn">
-                <TileLayer
-                  attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                  url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                />
-              </LayersControl.BaseLayer>
-              <LayersControl.BaseLayer name="Vệ tinh">
-                <TileLayer
-                  attribution="Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community"
-                  url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
-                />
-              </LayersControl.BaseLayer>
-
               <LayersControl.Overlay
                 checked={visibleLayers.zone}
                 name="Vùng trồng"

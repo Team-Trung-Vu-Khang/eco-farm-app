@@ -223,7 +223,7 @@ const MapLayout = ({
         >
           <TileLayer
             attribution="&copy; OpenStreetMap"
-            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+            url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
           />
 
           {areaPolygon.length > 0 && (

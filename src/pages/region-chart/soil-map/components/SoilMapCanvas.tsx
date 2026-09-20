@@ -9,7 +9,11 @@ import {
   useMap,
   useMapEvents,
 } from "react-leaflet";
-import type { SelectedSoilFeature, SoilGeoCollection, SoilMetric } from "../types";
+import type {
+  SelectedSoilFeature,
+  SoilGeoCollection,
+  SoilMetric,
+} from "../types";
 import {
   createFeatureStyle,
   createSelectedFeature,
@@ -136,7 +140,8 @@ export function SoilMapCanvas({
       <div className="mb-1 flex justify-between text-[10px] font-medium">
         <span>{METRIC_CONFIG[activeMetric].range[0]}</span>
         <span>
-          {METRIC_CONFIG[activeMetric].range[1]} {METRIC_CONFIG[activeMetric].unit}
+          {METRIC_CONFIG[activeMetric].range[1]}{" "}
+          {METRIC_CONFIG[activeMetric].unit}
         </span>
       </div>
       <div className="relative h-3 w-full overflow-hidden rounded-full border border-black/5">
@@ -164,7 +169,7 @@ export function SoilMapCanvas({
         <LayersControl.BaseLayer checked name="Bản đồ chuẩn">
           <TileLayer
             attribution="&copy; Check"
-            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+            url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
           />
         </LayersControl.BaseLayer>
         <LayersControl.BaseLayer name="Vệ tinh">
@@ -177,7 +182,11 @@ export function SoilMapCanvas({
               key={`zone-${activeMetric}`}
               data={zoneCollection}
               style={(feature) =>
-                createFeatureStyle(activeMetric, soilDataMap, feature?.properties)
+                createFeatureStyle(
+                  activeMetric,
+                  soilDataMap,
+                  feature?.properties,
+                )
               }
               onEachFeature={onEachFeature}
             />
@@ -190,7 +199,11 @@ export function SoilMapCanvas({
               key={`area-${activeMetric}`}
               data={areaCollection}
               style={(feature) =>
-                createFeatureStyle(activeMetric, soilDataMap, feature?.properties)
+                createFeatureStyle(
+                  activeMetric,
+                  soilDataMap,
+                  feature?.properties,
+                )
               }
               onEachFeature={onEachFeature}
             />
@@ -203,7 +216,11 @@ export function SoilMapCanvas({
               key={`plot-${activeMetric}`}
               data={plotCollection}
               style={(feature) =>
-                createFeatureStyle(activeMetric, soilDataMap, feature?.properties)
+                createFeatureStyle(
+                  activeMetric,
+                  soilDataMap,
+                  feature?.properties,
+                )
               }
               onEachFeature={onEachFeature}
             />

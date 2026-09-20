@@ -30,6 +30,7 @@ import {
   mapStandardRecordToOption,
   mapRegionRecordToArea,
 } from "../utils";
+import { getApiErrorMessage } from "@/shared/lib/api-error";
 
 export function useEnterpriseCertificateStepperForm() {
   const { toast } = useToast();
@@ -195,12 +196,9 @@ export function useEnterpriseCertificateStepperForm() {
       setShowConfirmDialog(false);
       setLocation("/enterprise-certificate");
     } catch (error) {
-      const message =
-        error instanceof Error ? error.message : "Đã xảy ra lỗi không xác định";
-
       toast({
         title: isEdit ? "Không thể cập nhật" : "Không thể thêm",
-        description: message,
+        description: getApiErrorMessage(error),
         variant: "destructive",
       });
     } finally {

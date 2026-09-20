@@ -42,6 +42,7 @@ export const plantEntrySchema = z.object({
     lng: z.number(),
   }),
   isInvalidBoundary: z.boolean().optional(),
+  varietyId: z.string().optional(),
 });
 
 export const plantFormSchema = z.object({
@@ -92,6 +93,7 @@ export const usePlantIdentificationForm = ({
           plotId: initialData.plotId || "",
           coordinate: initialData.coordinate || { lat: 11.548, lng: 106.896 },
           isInvalidBoundary: false,
+          varietyId: (initialData as any).varietyId || "",
         },
       ];
     }
@@ -106,6 +108,7 @@ export const usePlantIdentificationForm = ({
         plotId: item.plotId || "",
         coordinate: item.coordinate || { lat: 11.548, lng: 106.896 },
         isInvalidBoundary: false,
+        varietyId: (item as any).varietyId || "",
       }));
     }
     return [makeEmptyPlant()];
@@ -661,6 +664,30 @@ export const usePlantIdentificationForm = ({
     }));
   }, [cultivationRegionDetail]);
 
+  /** Giống đầu tiên của vùng canh tác — dùng làm giá trị mặc định cho cây mới */
+  const defaultVarietyId = useMemo(() => {
+    const first = selectedCropsData[0];
+    return first?.id != null ? String(first.id) : "";
+  }, [selectedCropsData]);
+
+  // selectedCropsData về sau khi cây đã được tạo (hoặc đổi vùng canh tác):
+  // điền giống mặc định cho những cây chưa chọn.
+  useEffect(() => {
+    if (!defaultVarietyId) return;
+
+    const currentPlants = getValues("plants") || [];
+    if (currentPlants.length === 0) return;
+    if (currentPlants.every((plant) => plant.varietyId)) return;
+
+    setValue(
+      "plants",
+      currentPlants.map((plant) =>
+        plant.varietyId ? plant : { ...plant, varietyId: defaultVarietyId },
+      ),
+      { shouldDirty: false },
+    );
+  }, [defaultVarietyId, getValues, setValue]);
+
   const handleSetActiveEntry = (id: string) => {
     setActiveEntryId(id);
     setTimeout(() => {
@@ -736,6 +763,8 @@ export const usePlantIdentificationForm = ({
       plotId: unit ? unit.id : "",
       coordinate: { lat, lng },
       isInvalidBoundary: false,
+      // Mặc định lấy giống đầu tiên của vùng canh tác, người dùng đổi sau
+      varietyId: defaultVarietyId,
     });
   };
 
@@ -974,6 +1003,8 @@ export const usePlantIdentificationForm = ({
         plotId: autoPlotId,
         coordinate: coord,
         isInvalidBoundary: invalid,
+        // Giống chọn trong hộp thoại import, fallback về giống đầu của vùng
+        varietyId: item.varietyId || defaultVarietyId,
       };
     });
 

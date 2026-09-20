@@ -14,7 +14,10 @@ export const farmDepartmentKeys = {
     [...farmDepartmentKeys.all(), "list", params ?? {}, workspaceId] as const,
   detail: (id: number, workspaceId?: number) =>
     [...farmDepartmentKeys.all(), "detail", id, workspaceId] as const,
-  options: (params?: { page?: number; size?: number }, workspaceId?: number) =>
+  options: (
+    params?: { onlyOwner?: boolean; page?: number; size?: number },
+    workspaceId?: number,
+  ) =>
     [
       ...farmDepartmentKeys.all(),
       "options",
@@ -86,7 +89,7 @@ export function useFarmDepartmentOptions({
   workspaceId,
   enabled = true,
 }: {
-  params?: { page?: number; size?: number };
+  params?: { onlyOwner?: boolean; page?: number; size?: number };
   workspaceId?: number;
   enabled?: boolean;
 } = {}) {

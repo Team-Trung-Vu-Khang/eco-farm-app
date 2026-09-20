@@ -36,7 +36,7 @@ export const CropDetailDialog = ({
             </div>
             <div>
               <DialogTitle className="text-xl font-bold text-slate-800">
-                Chi tiết cây trồng: {crop?.name}
+                Hồ sơ cây trồng: {crop?.name}
               </DialogTitle>
             </div>
           </div>
