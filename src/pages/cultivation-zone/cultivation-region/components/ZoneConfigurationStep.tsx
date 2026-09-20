@@ -626,10 +626,16 @@ export const ZoneConfigurationStep: React.FC<ZoneConfigurationStepProps> = ({
     [watchedCropIds],
   );
 
-  // Master fallback: fetch all foundation production subjects
-  const { items: allProductionSubjects } = useProductionSubjects({
-    params: { domainCode: "CROP", size: 100, status: "active" },
-  });
+  // Master fallback: cây trồng foundation, lọc theo từ khoá trên API
+  const { items: allProductionSubjects, isFetching: isSearchingSubjects } =
+    useProductionSubjects({
+      params: {
+        domainCode: "CROP",
+        keyword: debouncedCropSearch.trim() || undefined,
+        size: 20,
+        status: "active",
+      },
+    });
 
   // Master fallback: fetch all foundation varieties to resolve parent subjectId for varietyIds
   const { items: allFoundationVarieties } = useCropVarieties({
@@ -747,12 +753,44 @@ export const ZoneConfigurationStep: React.FC<ZoneConfigurationStepProps> = ({
         shouldValidate: true,
       });
     }
+
+    // Khôi phục luôn varietyCropMap: map này chỉ được ghi khi người dùng tự tick
+    // giống, nên khi mở form sửa nó rỗng và bước xác nhận không nhóm được giống
+    // theo cây trồng ("0 giống đã chọn").
+    const currentMap: Record<string, string> =
+      (watch("varietyCropMap") as Record<string, string>) ?? {};
+    const restoredMap = { ...currentMap };
+    let hasNewMapping = false;
+
+    const linkVariety = (varietyId: number, cropId: number | string) => {
+      const key = String(varietyId);
+      if (restoredMap[key]) return;
+      restoredMap[key] = String(cropId);
+      hasNewMapping = true;
+    };
+
+    subjects.forEach((subj) => {
+      subj.variants.forEach((v) => {
+        if (selectedVarietyIds.includes(v.id)) linkVariety(v.id, subj.subjectId);
+      });
+    });
+
+    allFoundationVarieties.forEach((variety) => {
+      if (!selectedVarietyIds.includes(variety.id)) return;
+      const parentId = variety.subjectId ?? variety.subject?.id;
+      if (parentId) linkVariety(variety.id, parentId);
+    });
+
+    if (hasNewMapping) {
+      setValue("varietyCropMap", restoredMap, { shouldDirty: false });
+    }
   }, [
     subjects,
     allFoundationVarieties,
     selectedVarietyIds,
     selectedCropIds,
     setValue,
+    watch,
   ]);
 
   useEffect(() => {
@@ -821,22 +859,22 @@ export const ZoneConfigurationStep: React.FC<ZoneConfigurationStepProps> = ({
   ]);
 
   const availableCropOptions = useMemo(() => {
-    const list = subjects.filter(
-      (s) => !selectedCropIds.includes(String(s.subjectId)),
-    );
     const keyword = debouncedCropSearch.toLowerCase().trim();
-    const filtered = keyword
-      ? list.filter(
-          (s) =>
-            s.subjectName?.toLowerCase().includes(keyword) ||
-            s.subjectCode?.toLowerCase().includes(keyword),
-        )
-      : list;
 
-    return filtered.map((s) => ({
-      label: s.subjectName || "",
-      value: String(s.subjectId),
-    }));
+    return subjects
+      .filter((s) => !selectedCropIds.includes(String(s.subjectId)))
+      // Nhóm từ methodApplications nằm sẵn trong bộ nhớ nên vẫn phải lọc tay;
+      // riêng allProductionSubjects đã được API lọc theo cùng từ khoá.
+      .filter(
+        (s) =>
+          !keyword ||
+          s.subjectName?.toLowerCase().includes(keyword) ||
+          s.subjectCode?.toLowerCase().includes(keyword),
+      )
+      .map((s) => ({
+        label: s.subjectName || "",
+        value: String(s.subjectId),
+      }));
   }, [subjects, selectedCropIds, debouncedCropSearch]);
 
   const handleSelectCrop = (cropIdStr: string) => {
@@ -1213,7 +1251,7 @@ export const ZoneConfigurationStep: React.FC<ZoneConfigurationStepProps> = ({
                     onChange={handleSelectCrop}
                     onSearch={setCropSearch}
                     placeholder="Tìm kiếm và chọn cây trồng..."
-                    loading={fmcLoading}
+                    loading={fmcLoading || isSearchingSubjects}
                     emptyText="  Không tồn tại dữ liệu cây trồng  "
                     clearable={false}
                   />
