@@ -138,22 +138,6 @@ export default function SimpleFertilizerForm({
 
   return (
     <div className="max-w-2xl mx-auto space-y-6 pb-24">
-      {/* Banner info */}
-      <div className="flex items-start gap-4 p-4 bg-green-50 text-green-900 rounded-xl border border-green-100">
-        <div className="bg-white p-2 rounded-full shadow-sm shrink-0">
-          <Leaf className="w-6 h-6 text-green-600" />
-        </div>
-        <div>
-          <h3 className="font-semibold">Thông tin cơ bản</h3>
-          <p className="text-sm text-green-700 mt-0.5">
-            Nhập nhanh những thông tin cần thiết nhất. Bật{" "}
-            <span className="font-bold">Thông tin chuyên sâu</span> để khai báo
-            đầy đủ thành phần, hướng dẫn sử dụng, an toàn pháp lý và nhà cung
-            cấp.
-          </p>
-        </div>
-      </div>
-
       {/* ── Hình ảnh ── */}
       <div className="space-y-3">
         <Label className="flex items-center gap-1.5">

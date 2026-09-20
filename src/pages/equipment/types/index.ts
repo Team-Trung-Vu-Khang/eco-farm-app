@@ -42,6 +42,14 @@ export interface Equipment {
   referencePrice?: string;
   packagingSpecs?: string[];
   hashtags?: string[];
+  documents?: {
+    id?: number;
+    documentType: string;
+    fileUrl?: string;
+    fileName?: string;
+    content?: string;
+    fileObj?: File | null;
+  }[];
 }
 
 export interface SupplierDetail {
@@ -93,4 +101,12 @@ export interface EquipmentFormData {
   referencePrice: string;
   packagingSpecs: string[];
   hashtags: string[];
+  documents?: {
+    id?: number;
+    documentType: string;
+    fileUrl?: string;
+    fileName?: string;
+    content?: string;
+    fileObj?: File | null;
+  }[];
 }

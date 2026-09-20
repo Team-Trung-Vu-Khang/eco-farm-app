@@ -1,13 +1,26 @@
+export interface MockWorkflowScopeItem {
+  scopeType?: "REGION" | "AREA" | "PLOT";
+  scopeId?: number;
+  region?: { id?: number; code?: string; name?: string };
+  area?: { id?: number; code?: string; name?: string };
+  plot?: { id?: number; code?: string; name?: string };
+}
+
 export interface MockWorkflowItem {
-  id: string;
-  code: string;
-  name: string;
-  domainCode: string;
+  id: string | number;
+  code?: string;
+  name?: string;
+  domainCode?: string;
   scopeType?: "REGION" | "AREA" | "PLOT";
   scopeName?: string;
+  scopeId?: number;
+  regionId?: number;
+  areaId?: number;
+  plotId?: number;
   boundary?: [number, number][];
   centerPoint?: [number, number];
-  scopes?: unknown[];
+  scopes?: MockWorkflowScopeItem[];
+  [key: string]: any;
 }
 
 export interface MockPlanItem {

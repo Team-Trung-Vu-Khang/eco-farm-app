@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState } from "react";
 import {
   Search,
   Layers,
@@ -9,6 +9,7 @@ import {
   Loader2,
 } from "lucide-react";
 import { useRegions } from "@/features/farm/hooks/useRegions";
+import { useDebounce } from "@/shared/hooks/useDebounce";
 import { useQuery } from "@tanstack/react-query";
 import { regionApi, areaApi } from "@/features/farm/api/farm.api";
 import type { TreeNode } from "../../constants/mockReportData";
@@ -170,12 +171,18 @@ export const GeographicalSidebar: React.FC<GeographicalSidebarProps> = ({
   onSelectLocation,
 }) => {
   const [treeSearchQuery, setTreeSearchQuery] = useState("");
+  const debouncedSearchQuery = useDebounce(treeSearchQuery.trim(), 400);
+
   const [expandedRegions, setExpandedRegions] = useState<
     Record<number, boolean>
   >({});
 
   const { data: regionsData, isLoading: regionsLoading } = useRegions({
-    params: { status: "ACTIVE", size: 100 },
+    params: {
+      status: "ACTIVE",
+      size: 100,
+      keyword: debouncedSearchQuery || undefined,
+    },
   });
 
   const regions = regionsData?.content ?? [];
@@ -183,13 +190,6 @@ export const GeographicalSidebar: React.FC<GeographicalSidebarProps> = ({
   const toggleRegion = (regionId: number) => {
     setExpandedRegions((prev) => ({ ...prev, [regionId]: !prev[regionId] }));
   };
-
-  /** Filter regions/areas by search query (client-side on name) */
-  const filteredRegions = useMemo(() => {
-    if (!treeSearchQuery.trim()) return regions;
-    const q = treeSearchQuery.toLowerCase();
-    return regions.filter((r) => r.name?.toLowerCase().includes(q));
-  }, [regions, treeSearchQuery]);
 
   return (
     <div className="flex flex-col h-full bg-white border border-slate-100 rounded-xl p-4 space-y-4">
@@ -237,16 +237,16 @@ export const GeographicalSidebar: React.FC<GeographicalSidebarProps> = ({
               <Loader2 className="w-4 h-4 animate-spin" />
               <span className="text-xs">Đang tải...</span>
             </div>
-          ) : filteredRegions.length === 0 ? (
+          ) : regions.length === 0 ? (
             <p className="text-xs text-slate-400 text-center py-4">
-              {treeSearchQuery
+              {debouncedSearchQuery
                 ? "Không tìm thấy địa điểm"
                 : "Chưa có vùng trồng nào"}
             </p>
           ) : (
-            filteredRegions.map((region) => {
+            regions.map((region) => {
               const regionNodeId = `region-${region.id}`;
-              const isExpanded = treeSearchQuery
+              const isExpanded = debouncedSearchQuery
                 ? true
                 : !!expandedRegions[region.id];
               const isSelected = selectedLocation?.id === regionNodeId;
@@ -269,7 +269,7 @@ export const GeographicalSidebar: React.FC<GeographicalSidebarProps> = ({
                   selectedLocation={selectedLocation}
                   onSelectLocation={onSelectLocation}
                   onToggle={() => toggleRegion(region.id)}
-                  searchActive={!!treeSearchQuery}
+                  searchActive={!!debouncedSearchQuery}
                 />
               );
             })

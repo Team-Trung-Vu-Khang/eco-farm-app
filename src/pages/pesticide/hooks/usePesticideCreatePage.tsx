@@ -26,9 +26,12 @@ import { useImageUploadWithCache } from "@/features/storage/hooks/useImageUpload
 export function usePesticideCreatePage() {
   const queryClient = useQueryClient();
   const [location, setLocation] = useLocation();
-  const [matchFarm, paramsFarm] = useRoute("/cultivation-material/pesticide/:id/edit");
+  const [matchFarm, paramsFarm] = useRoute(
+    "/cultivation-material/pesticide/:id/edit",
+  );
   const [matchAdmin, paramsAdmin] = useRoute("/admin/pesticide/:id/edit");
-  const isEdit = (matchFarm || matchAdmin) && !!(paramsFarm?.id || paramsAdmin?.id);
+  const isEdit =
+    (matchFarm || matchAdmin) && !!(paramsFarm?.id || paramsAdmin?.id);
   const params = paramsFarm || paramsAdmin;
   const scope = matchAdmin || location.startsWith("/admin") ? "admin" : "farm";
   const { toast } = useToast();
@@ -251,10 +254,28 @@ export function usePesticideCreatePage() {
         toxicityDescription: formData.toxicityInfo || undefined,
         protectiveMeasures: formData.protectiveMeasures || undefined,
         poisoningTreatment: firstAidHtml || undefined,
+
+        // Documents mapping
+        documents:
+          formData.technicalDocType === "editor" && formData.technicalDocContent
+            ? [
+                {
+                  documentType: "MANUAL",
+                  fileName: "HUONG_DAN_SU_DUNG.md",
+                  content: formData.technicalDocContent,
+                  displayOrder: 0,
+                },
+              ]
+            : (formData as any).documents || undefined,
       };
 
       if (isEdit && params?.id) {
-        await farmSupplyApi.update("medicine", Number(params.id), payload, scope);
+        await farmSupplyApi.update(
+          "medicine",
+          Number(params.id),
+          payload,
+          scope,
+        );
         toast({
           title: "Thành công",
           description: "Đã cập nhật thông tin thành công",
@@ -266,8 +287,14 @@ export function usePesticideCreatePage() {
           description: "Đã thêm mới thuốc bảo vệ thực vật",
         });
       }
-      queryClient.invalidateQueries({ queryKey: [scope === "admin" ? "admin-supplies" : "farm-supplies"] });
-      setLocation(scope === "admin" ? "/admin/pesticide" : "/cultivation-material/pesticide");
+      queryClient.invalidateQueries({
+        queryKey: [scope === "admin" ? "admin-supplies" : "farm-supplies"],
+      });
+      setLocation(
+        scope === "admin"
+          ? "/admin/pesticide"
+          : "/cultivation-material/pesticide",
+      );
     } catch (err: any) {
       if (err.response?.status === 409) {
         toast({
@@ -368,7 +395,12 @@ export function usePesticideCreatePage() {
     steps,
     loading,
     submitting,
-    goBack: () => setLocation(scope === "admin" ? "/admin/pesticide" : "/cultivation-material/pesticide"),
+    goBack: () =>
+      setLocation(
+        scope === "admin"
+          ? "/admin/pesticide"
+          : "/cultivation-material/pesticide",
+      ),
     handleComplete: () => setConfirmOpen(true),
     handleConfirmSubmit,
   };

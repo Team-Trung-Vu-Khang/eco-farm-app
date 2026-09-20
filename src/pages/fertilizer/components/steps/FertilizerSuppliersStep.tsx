@@ -243,7 +243,9 @@ export const FertilizerSuppliersStep = ({
         {/* Cấu hình Đơn vị Vật tư */}
         <div className="space-y-4">
           <div className="flex flex-wrap items-center gap-2">
-            <span className="text-xs font-semibold text-slate-500">Chế độ cấu hình:</span>
+            <span className="text-xs font-semibold text-slate-500">
+              Chế độ cấu hình:
+            </span>
             <div className="inline-flex items-center p-1 bg-slate-100 rounded-xl text-xs font-medium">
               <button
                 type="button"
@@ -364,7 +366,7 @@ export const FertilizerSuppliersStep = ({
           </div>
 
           {/* Quick presets */}
-          <div className="space-y-1">
+          {/* <div className="space-y-1">
             <p className="text-xs text-muted-foreground">Gợi ý phổ biến:</p>
             <div className="flex flex-wrap gap-1.5">
               {packagingUnitOptions.slice(0, 8).map((preset) => {
@@ -394,7 +396,7 @@ export const FertilizerSuppliersStep = ({
                 );
               })}
             </div>
-          </div>
+          </div> */}
 
           {/* Tags list */}
           {formData.packagingSpecs && formData.packagingSpecs.length > 0 && (
@@ -464,12 +466,8 @@ export const FertilizerSuppliersStep = ({
         title="Chọn nhà phân phối"
         isMulti={false}
         returnById
-        selectedItems={
-          formData.distributor ? [formData.distributor] : []
-        }
-        onConfirmItems={(items) =>
-          updateField("distributor", items[0] || null)
-        }
+        selectedItems={formData.distributor ? [formData.distributor] : []}
+        onConfirmItems={(items) => updateField("distributor", items[0] || null)}
       />
     </div>
   );

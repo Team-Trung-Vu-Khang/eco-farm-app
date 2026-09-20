@@ -202,8 +202,8 @@ const FertilizerDetailPage = () => {
           <Card className="overflow-hidden border-none shadow-md bg-white">
             <div className="bg-linear-to-r from-green-50/50 to-emerald-50/50 p-6 flex flex-col md:flex-row gap-6 items-start">
               <div className="w-24 h-24 bg-white rounded-xl shadow-sm border p-2 flex items-center justify-center shrink-0">
-                {item?.metadataJson?.imageUrl ? (
-                  <img src={item.metadataJson.imageUrl} />
+                {item?.metadataJson?.imageUrl || item.imageUrl ? (
+                  <img src={item.metadataJson.imageUrl || item.imageUrl} />
                 ) : item.originId === "organic" ? (
                   <Leaf className="w-12 h-12 text-green-500" />
                 ) : item.originId === "biological" ? (

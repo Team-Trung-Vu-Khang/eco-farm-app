@@ -24,15 +24,18 @@ export interface MaterialItem {
   manufacturer?: string;
   toxicityClass?: WHOClass;
   phi?: number;
-  originalData: any; // The original object from store
+  source?: "MASTER" | "OWNER";
+  rawSupplyItem?: any;
+  originalData: any; // The original object from store or transformed API response
 }
 
 export interface MaterialFilters {
   search: string;
   categories: MaterialCategory[];
   status: ("active" | "inactive" | "maintenance")[];
-  toxicity: WHOClass[];
+  toxicityGroupIds: number[];
   phiRange: [number, number];
+  onlyOwner: boolean;
 }
 
 // Re-export specific types from stores for convenience in detail views

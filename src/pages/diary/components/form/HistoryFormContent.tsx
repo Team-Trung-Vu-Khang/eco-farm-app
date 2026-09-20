@@ -14,7 +14,7 @@ import {
   useCreateFarmPlanTaskDiaryEntry,
   type PlanTaskDiaryLineRequest,
 } from "@/features/farm-plan-task-diary";
-import type { DomainCode } from "@/features/farm-supply/types";
+import type { DomainCode, SupplyType } from "@/features/farm-supply/types";
 import { useFarmTaskById, useFarmTasks } from "@/features/farm-task/hooks";
 import { useFarmPlans, useFarmWorkflows } from "@/features/farm-workflow/hooks";
 import type { FarmWorkflowScopeResponse } from "@/features/farm-workflow/types/farm-workflow.type";
@@ -125,6 +125,7 @@ export function HistoryFormContent({
     selectedStages: [],
     materialAllocations: [],
   });
+  const [existingPhotos, setExistingPhotos] = useState<PhotoRequest[]>([]);
 
   const [workflowSearchQuery, setWorkflowSearchQuery] = useState("");
   const debouncedWorkflowSearch = useDebounce(workflowSearchQuery, 300);
@@ -265,12 +266,25 @@ export function HistoryFormContent({
     );
 
     setWorkTaskDetails(newTaskDetails);
+
+    if (detail.photos && Array.isArray(detail.photos)) {
+      const loadedPhotos: PhotoRequest[] = detail.photos.map((p) => ({
+        objectKey: p.objectKey,
+        fileUrl: p.fileUrl,
+        fileName: p.fileName || "Ảnh đã tải lên",
+        mimeType: p.mimeType,
+        sizeBytes: p.sizeBytes,
+        thumbnail: p.thumbnail,
+      }));
+      setExistingPhotos(loadedPhotos);
+    }
+
     setFormData((prev) => ({
       ...prev,
       regimenId: String(detail.workflowId ?? prev.regimenId),
       workType,
       harvestScope,
-      harvestTargets: newHarvestDetails.map((d) => d.targetId),
+      harvestTargets: newHarvestDetails.map((d) => String(d.targetId)),
       description: detail.description || "",
       startDate: detail.lines?.[0]?.startDate || prev.startDate,
       endDate: detail.lines?.[0]?.endDate || prev.endDate,
@@ -823,6 +837,10 @@ export function HistoryFormContent({
     }));
   };
 
+  const removeExistingPhoto = (index: number) => {
+    setExistingPhotos((prev) => prev.filter((_, i) => i !== index));
+  };
+
   const handleSubmitForm = async () => {
     setErrors({});
 
@@ -948,10 +966,7 @@ export function HistoryFormContent({
         const matchedTask = availableTasks.find(
           (t) => t.name === stName || String(t.id) === detail?.id,
         );
-        const isNewStageTask =
-          Boolean(detail?.isNewStage) ||
-          !plannedStages.includes(stName) ||
-          !matchedTask;
+        const isNewStageTask = !plannedStages.includes(stName) || !matchedTask;
         const taskId = isNewStageTask
           ? undefined
           : (matchedTask?.id ?? (Number(detail?.id) || undefined));
@@ -1052,16 +1067,17 @@ export function HistoryFormContent({
         // Upload images in parallel with caching to prevent duplicate uploads
         const uploadedPhotos = await uploadPhotosInParallel(
           formData.images || [],
-          workspaceId,
+          Number(workspaceId),
           uploadCacheRef.current,
         );
+        const combinedPhotos = [...existingPhotos, ...uploadedPhotos];
 
         const finalPayload = {
           planId,
           stageId,
           submittedByPersonnelId: undefined,
           description: formData.description || null,
-          photos: uploadedPhotos.length > 0 ? uploadedPhotos : undefined,
+          photos: combinedPhotos.length > 0 ? combinedPhotos : undefined,
           lines,
           harvestItems: harvestItems.length > 0 ? harvestItems : undefined,
         };
@@ -1214,9 +1230,10 @@ export function HistoryFormContent({
       // Upload images in parallel with caching to prevent duplicate uploads
       const uploadedPhotos = await uploadPhotosInParallel(
         formData.images || [],
-        workspaceId,
+        Number(workspaceId),
         uploadCacheRef.current,
       );
+      const combinedPhotos = [...existingPhotos, ...uploadedPhotos];
 
       // Build payload and submit
       const finalPayload = {
@@ -1224,7 +1241,7 @@ export function HistoryFormContent({
         seasonId,
         purpose,
         description: formData.description || null,
-        photos: uploadedPhotos.length > 0 ? uploadedPhotos : undefined,
+        photos: combinedPhotos.length > 0 ? combinedPhotos : undefined,
         lines: lines.length > 0 ? lines : undefined,
         harvestItems: harvestItems.length > 0 ? harvestItems : undefined,
       };
@@ -1456,8 +1473,7 @@ export function HistoryFormContent({
                                       "",
                                     supplyItemId:
                                       s.supplyItem?.id || s.supplyItemId,
-                                    unitBaseId:
-                                      s.unitBase?.id || s.unitBaseId,
+                                    unitBaseId: s.unitBase?.id || s.unitBaseId,
                                     isPlanned: true,
                                   });
                                 },
@@ -1527,10 +1543,7 @@ export function HistoryFormContent({
 
                   {/* Card chi tiết thông tin công việc dự kiến đã chọn */}
                   {selectedTask && (
-                    <PlannedTaskDetailCard
-                      task={selectedTask}
-                      planObjective={selectedPlan?.objective}
-                    />
+                    <PlannedTaskDetailCard task={selectedTask} />
                   )}
                 </div>
               )}
@@ -1767,26 +1780,62 @@ export function HistoryFormContent({
                   </div>
                 </div>
 
-                {/* Danh sách ảnh đã chọn */}
-                {formData.images.length > 0 && (
-                  <div className="grid grid-cols-4 gap-2.5 pt-2">
+                {/* Danh sách ảnh (ảnh đã có từ trước & ảnh mới chọn) */}
+                {(existingPhotos.length > 0 || formData.images.length > 0) && (
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 pt-2">
+                    {/* Ảnh đã có từ trước */}
+                    {existingPhotos.map((photo, idx) => {
+                      const imgUrl = photo.fileUrl || photo.thumbnail?.fileUrl;
+                      const fileName = photo.fileName || `Ảnh #${idx + 1}`;
+                      return (
+                        <div
+                          key={`existing-photo-${photo.objectKey || idx}`}
+                          className="group relative h-24 rounded-xl overflow-hidden border border-emerald-300 bg-white shadow-2xs"
+                        >
+                          <img
+                            src={imgUrl}
+                            alt={fileName}
+                            className="h-full w-full object-cover"
+                          />
+                          <div className="absolute top-1.5 left-1.5 bg-emerald-600/90 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-md shadow-xs z-10">
+                            Ảnh đã có
+                          </div>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              removeExistingPhoto(idx);
+                            }}
+                            className="absolute top-1 right-1 h-5 w-5 rounded-full bg-slate-900/80 text-white flex items-center justify-center hover:bg-red-600 transition-colors z-10"
+                            title="Xóa ảnh này"
+                          >
+                            <X className="h-3 w-3" />
+                          </button>
+                        </div>
+                      );
+                    })}
+
+                    {/* Ảnh mới tải lên */}
                     {formData.images.map((file, idx) => (
                       <div
-                        key={`${file.name}-${idx}`}
-                        className="group relative h-20 rounded-xl overflow-hidden border border-slate-200 bg-white shadow-2xs"
+                        key={`new-image-${file.name}-${idx}`}
+                        className="group relative h-24 rounded-xl overflow-hidden border border-slate-200 bg-white shadow-2xs"
                       >
                         <img
                           src={URL.createObjectURL(file)}
                           alt={file.name}
                           className="h-full w-full object-cover"
                         />
+                        <div className="absolute top-1.5 left-1.5 bg-blue-600/90 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-md shadow-xs z-10">
+                          Ảnh mới
+                        </div>
                         <button
                           type="button"
                           onClick={(e) => {
                             e.stopPropagation();
                             removeImage(idx);
                           }}
-                          className="absolute top-1 right-1 h-5 w-5 rounded-full bg-slate-900/80 text-white flex items-center justify-center hover:bg-red-600 transition-colors"
+                          className="absolute top-1 right-1 h-5 w-5 rounded-full bg-slate-900/80 text-white flex items-center justify-center hover:bg-red-600 transition-colors z-10"
                           title="Xóa ảnh này"
                         >
                           <X className="h-3 w-3" />

@@ -16,14 +16,50 @@ import {
 } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
-import { Maximize2, MapPin, Layers } from "lucide-react";
+import { Maximize2, MapPin, Layers, Loader2 } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { regionApi, areaApi, plotApi } from "@/features/farm/api/farm.api";
+import type {
+  FarmWorkflowResponse,
+  FarmWorkflowScopeResponse,
+} from "@/features/farm-workflow/types/farm-workflow.type";
 import type { MockWorkflowItem } from "../../types/diary.types";
 
 type LatLngTuple = [number, number];
 
+export type WorkflowScopeInput =
+  | MockWorkflowItem
+  | FarmWorkflowResponse
+  | (Record<string, unknown> & {
+      scopes?: Array<Record<string, unknown>>;
+      scopeType?: "REGION" | "AREA" | "PLOT";
+      boundary?: Array<
+        | [number, number]
+        | { latitude?: number; longitude?: number; lat?: number; lng?: number }
+      >;
+      centerPoint?:
+        | [number, number]
+        | { latitude?: number; longitude?: number; lat?: number; lng?: number };
+    })
+  | null;
+
+type CenterPointInput = {
+  latitude: number;
+  longitude: number;
+};
+
 interface WorkflowScopeMapModalProps {
-  workflow?: MockWorkflowItem | null;
+  workflow?: WorkflowScopeInput;
 }
+
+interface GeoPointObject {
+  latitude?: number;
+  longitude?: number;
+  lat?: number;
+  lng?: number;
+}
+
+type GeoPointInput = [number, number] | GeoPointObject | null | undefined;
 
 const DEFAULT_CENTER: LatLngTuple = [10.762072, 106.661672];
 
@@ -82,31 +118,218 @@ export function WorkflowScopeMapModal({
 }: WorkflowScopeMapModalProps) {
   const [isFullscreenOpen, setIsFullscreenOpen] = useState(false);
 
-  if (!workflow) return null;
+  // 1. Resolve active scope item and type
+  const scopeItem: FarmWorkflowScopeResponse | Record<string, unknown> | null =
+    useMemo(() => {
+      if (!workflow) return null;
+      if (
+        "scopes" in workflow &&
+        Array.isArray(workflow.scopes) &&
+        workflow.scopes.length > 0
+      ) {
+        return workflow.scopes[0] as FarmWorkflowScopeResponse;
+      }
+      if (
+        "scope" in workflow &&
+        workflow.scope &&
+        typeof workflow.scope === "object"
+      ) {
+        return workflow.scope as Record<string, unknown>;
+      }
+      return null;
+    }, [workflow]);
 
-  const boundary = workflow.boundary as LatLngTuple[] | undefined;
-
-  // Calculate effective center point (from workflow centerPoint, or average boundary, or default)
-  const effectiveCenterPoint: LatLngTuple = useMemo(() => {
-    if (
-      workflow.centerPoint &&
-      Array.isArray(workflow.centerPoint) &&
-      workflow.centerPoint.length === 2
-    ) {
-      return workflow.centerPoint as LatLngTuple;
+  const resolvedScopeType: "REGION" | "AREA" | "PLOT" = useMemo(() => {
+    if (scopeItem && "scopeType" in scopeItem && scopeItem.scopeType) {
+      return scopeItem.scopeType as "REGION" | "AREA" | "PLOT";
     }
-    if (boundary && boundary.length > 0) {
+    if (workflow && "scopeType" in workflow && workflow.scopeType) {
+      return workflow.scopeType as "REGION" | "AREA" | "PLOT";
+    }
+    if (scopeItem && "plot" in scopeItem && scopeItem.plot) return "PLOT";
+    if (workflow && "plotId" in workflow && workflow.plotId) return "PLOT";
+    if (scopeItem && "area" in scopeItem && scopeItem.area) return "AREA";
+    if (workflow && "areaId" in workflow && workflow.areaId) return "AREA";
+    return "REGION";
+  }, [scopeItem, workflow]);
+
+  const targetId: number | string | undefined = useMemo(() => {
+    if (!scopeItem && !workflow) return undefined;
+
+    const itemObj = (scopeItem || {}) as Record<string, unknown>;
+    const wfObj = (workflow || {}) as Record<string, unknown>;
+
+    const getRegionId = () => {
+      const regionObj = itemObj.region as { id?: number } | undefined;
+      return (
+        regionObj?.id ??
+        (itemObj.scopeId as number | undefined) ??
+        (wfObj.regionId as number | undefined) ??
+        (wfObj.scopeId as number | undefined) ??
+        (typeof wfObj.id === "number" ? wfObj.id : undefined)
+      );
+    };
+
+    const getAreaId = () => {
+      const areaObj = itemObj.area as { id?: number } | undefined;
+      return (
+        areaObj?.id ??
+        (itemObj.scopeId as number | undefined) ??
+        (wfObj.areaId as number | undefined) ??
+        (wfObj.scopeId as number | undefined)
+      );
+    };
+
+    const getPlotId = () => {
+      const plotObj = itemObj.plot as { id?: number } | undefined;
+      return (
+        plotObj?.id ??
+        (itemObj.scopeId as number | undefined) ??
+        (wfObj.plotId as number | undefined) ??
+        (wfObj.scopeId as number | undefined)
+      );
+    };
+
+    if (resolvedScopeType === "REGION") return getRegionId();
+    if (resolvedScopeType === "AREA") return getAreaId();
+    if (resolvedScopeType === "PLOT") return getPlotId();
+    return (
+      (itemObj.scopeId as number | undefined) ??
+      (wfObj.scopeId as number | undefined)
+    );
+  }, [scopeItem, workflow, resolvedScopeType]);
+
+  const scopeDisplayName: string = useMemo(() => {
+    const itemObj = (scopeItem || {}) as Record<string, unknown>;
+    const wfObj = (workflow || {}) as Record<string, unknown>;
+
+    const regionName = (itemObj.region as { name?: string } | undefined)?.name;
+    const areaName = (itemObj.area as { name?: string } | undefined)?.name;
+    const plotName = (itemObj.plot as { name?: string } | undefined)?.name;
+    const fallbackName =
+      (wfObj.scopeName as string | undefined) ||
+      (wfObj.name as string | undefined);
+
+    if (resolvedScopeType === "REGION")
+      return regionName || fallbackName || "Vùng trồng";
+    if (resolvedScopeType === "AREA")
+      return areaName || fallbackName || "Khu vực";
+    if (resolvedScopeType === "PLOT")
+      return plotName || fallbackName || "Lô đất";
+    return fallbackName || "Phạm vi canh tác";
+  }, [scopeItem, workflow, resolvedScopeType]);
+
+  // 2. Query geo-entity by scopeType and targetId
+  const { data: geoEntity, isLoading: isGeoLoading } = useQuery({
+    queryKey: ["farm", "scope-geo-detail", resolvedScopeType, targetId],
+    queryFn: async () => {
+      if (!targetId || !resolvedScopeType) return null;
+      const numId = Number(targetId);
+      if (isNaN(numId)) return null;
+
+      if (resolvedScopeType === "REGION") {
+        return regionApi.getById(numId);
+      }
+      if (resolvedScopeType === "AREA") {
+        return areaApi.getById(numId);
+      }
+      if (resolvedScopeType === "PLOT") {
+        return plotApi.getById(numId);
+      }
+      return null;
+    },
+    enabled: Boolean(targetId && resolvedScopeType),
+    staleTime: 5 * 60 * 1000,
+  });
+
+  // 3. Extract boundary points safely without any
+  const boundary: LatLngTuple[] = useMemo(() => {
+    const geoObj = geoEntity as { boundary?: GeoPointInput[] } | null;
+    const wfObj = workflow as { boundary?: GeoPointInput[] } | null;
+    const rawBoundary = geoObj?.boundary || wfObj?.boundary;
+
+    if (!rawBoundary || !Array.isArray(rawBoundary)) return [];
+
+    return rawBoundary
+      .map((point: GeoPointInput): LatLngTuple | null => {
+        if (Array.isArray(point) && point.length >= 2) {
+          const lat = Number(point[0]);
+          const lng = Number(point[1]);
+          if (!isNaN(lat) && !isNaN(lng)) return [lat, lng];
+        }
+        if (point && typeof point === "object" && !Array.isArray(point)) {
+          const lat = point.latitude ?? point.lat;
+          const lng = point.longitude ?? point.lng;
+          if (
+            typeof lat === "number" &&
+            typeof lng === "number" &&
+            !isNaN(lat) &&
+            !isNaN(lng)
+          ) {
+            return [lat, lng];
+          }
+        }
+        return null;
+      })
+      .filter((point): point is LatLngTuple => Boolean(point));
+  }, [geoEntity, workflow]);
+
+  // 4. Determine effective center point safely without any
+  const effectiveCenterPoint: LatLngTuple = useMemo(() => {
+    const geoObj = geoEntity as { centerPoint?: CenterPointInput } | null;
+    const wfObj = workflow as { centerPoint?: CenterPointInput } | null;
+
+    const extractPoint = (input?: CenterPointInput): LatLngTuple | null => {
+      if (!input) return null;
+      if (Array.isArray(input) && input.length >= 2) {
+        const lat = Number(input[0]);
+        const lng = Number(input[1]);
+        if (!isNaN(lat) && !isNaN(lng)) return [lat, lng];
+      }
+      if (typeof input === "object" && !Array.isArray(input)) {
+        const lat = input.latitude;
+        const lng = input.longitude;
+        if (
+          typeof lat === "number" &&
+          typeof lng === "number" &&
+          !isNaN(lat) &&
+          !isNaN(lng)
+        ) {
+          return [lat, lng];
+        }
+      }
+      return null;
+    };
+
+    const entityCenter = extractPoint(geoObj?.centerPoint);
+    if (entityCenter) return entityCenter;
+
+    const wfCenter = extractPoint(wfObj?.centerPoint);
+    if (wfCenter) return wfCenter;
+
+    if (boundary.length > 0) {
       const sumLat = boundary.reduce((acc, curr) => acc + curr[0], 0);
       const sumLng = boundary.reduce((acc, curr) => acc + curr[1], 0);
       return [sumLat / boundary.length, sumLng / boundary.length];
     }
+
     return DEFAULT_CENTER;
-  }, [workflow, boundary]);
+  }, [geoEntity, workflow, boundary]);
+
+  if (!workflow) return null;
 
   const renderMapContent = (heightClass = "h-56") => (
     <div
       className={`relative w-full ${heightClass} rounded-xl overflow-hidden border border-slate-200 shadow-inner group z-0`}
     >
+      {/* Loading Overlay */}
+      {isGeoLoading && (
+        <div className="absolute inset-0 z-[1001] bg-white/70 backdrop-blur-xs flex flex-col items-center justify-center gap-2 text-emerald-700 font-bold text-xs">
+          <Loader2 className="h-6 w-6 animate-spin text-emerald-600" />
+          <span>Đang tải tọa độ ranh giới...</span>
+        </div>
+      )}
+
       <MapContainer
         center={effectiveCenterPoint}
         zoom={15}
@@ -132,12 +355,12 @@ export function WorkflowScopeMapModal({
           >
             <Tooltip sticky direction="center" opacity={0.95}>
               <div className="font-bold text-xs text-slate-900">
-                {workflow.scopeName || workflow.name}
+                {scopeDisplayName}
               </div>
               <div className="text-[10px] text-emerald-700 font-semibold">
-                {workflow.scopeType === "REGION"
+                {resolvedScopeType === "REGION"
                   ? "Vùng canh tác"
-                  : workflow.scopeType === "AREA"
+                  : resolvedScopeType === "AREA"
                     ? "Khu vực canh tác"
                     : "Lô đất canh tác"}
               </div>
@@ -145,11 +368,11 @@ export function WorkflowScopeMapModal({
           </Polygon>
         )}
 
-        {/* Center Point Red Marker with Tooltip (matching OverviewTab.tsx) */}
+        {/* Center Point Red Marker with Tooltip */}
         <Marker position={effectiveCenterPoint} icon={RedMarker()}>
           <Tooltip sticky direction="top" opacity={0.95}>
             <div style={{ fontWeight: 600, fontSize: 12 }}>
-              {workflow.scopeName || workflow.name}
+              {scopeDisplayName}
             </div>
             <div style={{ fontSize: 10, color: "#64748b" }}>
               Tọa độ trung tâm
@@ -173,16 +396,16 @@ export function WorkflowScopeMapModal({
         <div className="flex items-center gap-2 truncate">
           <MapPin className="h-4 w-4 text-emerald-600 shrink-0" />
           <span className="text-xs font-extrabold text-slate-900 truncate">
-            {workflow.scopeName || workflow.name}
+            {scopeDisplayName}
           </span>
         </div>
         <Badge
           variant="outline"
           className="text-[10px] uppercase font-bold bg-emerald-50 text-emerald-700 border-emerald-200 shrink-0 px-2 py-0.5"
         >
-          {workflow.scopeType === "REGION"
+          {resolvedScopeType === "REGION"
             ? "Vùng trồng"
-            : workflow.scopeType === "AREA"
+            : resolvedScopeType === "AREA"
               ? "Khu vực"
               : "Lô đất"}
         </Badge>
@@ -212,11 +435,18 @@ export function WorkflowScopeMapModal({
           <DialogHeader className="p-4 px-6 bg-slate-50 border-b shrink-0 flex flex-row items-center justify-between">
             <DialogTitle className="flex items-center gap-2 text-base font-extrabold text-slate-900">
               <MapPin className="h-5 w-5 text-emerald-600" />
-              Bản đồ phạm vi: {workflow.scopeName || workflow.name}
+              Bản đồ phạm vi: {scopeDisplayName}
             </DialogTitle>
           </DialogHeader>
 
           <div className="flex-1 w-full relative z-0">
+            {isGeoLoading && (
+              <div className="absolute inset-0 z-[1001] bg-white/70 backdrop-blur-xs flex flex-col items-center justify-center gap-2 text-emerald-700 font-bold text-xs">
+                <Loader2 className="h-6 w-6 animate-spin text-emerald-600" />
+                <span>Đang tải tọa độ ranh giới...</span>
+              </div>
+            )}
+
             <MapContainer
               center={effectiveCenterPoint}
               zoom={15}
@@ -224,7 +454,7 @@ export function WorkflowScopeMapModal({
               className="w-full h-full z-0"
             >
               <TileLayer
-                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+                attribution='&copy; <a href="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />'
                 url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
               />
               <MapSync boundary={boundary} centerPoint={effectiveCenterPoint} />
@@ -244,7 +474,7 @@ export function WorkflowScopeMapModal({
               <Marker position={effectiveCenterPoint} icon={RedMarker()}>
                 <Tooltip sticky direction="top" opacity={0.95}>
                   <div style={{ fontWeight: 600, fontSize: 12 }}>
-                    {workflow.scopeName || workflow.name}
+                    {scopeDisplayName}
                   </div>
                   <div style={{ fontSize: 10, color: "#64748b" }}>
                     Tọa độ trung tâm

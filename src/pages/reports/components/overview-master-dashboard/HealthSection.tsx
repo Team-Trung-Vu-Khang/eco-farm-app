@@ -34,7 +34,6 @@ import {
   useProductionVariants,
   useVariantCard,
 } from "@/features/farm/hooks/useFarmReport";
-import type { VariantCardResponse } from "@/features/farm/types/farm-report.type";
 import { useDebounce } from "@/shared/hooks/useDebounce";
 
 // ─── Domain → API domainCode mapping ─────────────────────────────────────────

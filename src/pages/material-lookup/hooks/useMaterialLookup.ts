@@ -1,153 +1,196 @@
 import { useState, useMemo, useEffect } from "react";
-import usePesticideStore from "../../../stores/usePesticideStore";
-import useFertilizerStore from "../../../stores/useFertilizerStore";
-import useMaterialStore from "../../../stores/useMaterialStore";
-import useEquipmentStore from "../../../stores/useEquipmentStore";
-import type { MaterialItem, MaterialFilters } from "../types/types";
+import { useQuery } from "@tanstack/react-query";
+import { farmSupplyApi } from "@/features/farm-supply/api/farm-supply.api";
+import type {
+  SupplyItemResponse,
+  SupplyQueryParams,
+} from "@/features/farm-supply/types";
+import type {
+  MaterialItem,
+  MaterialFilters,
+  MaterialCategory,
+} from "../types/types";
+
+// NOTE: Hardcoding domainCode to "CROP" as configured for current cultivation scope.
+const DEFAULT_DOMAIN_CODE = "CROP";
 
 export function useMaterialLookup() {
-  const pesticides = usePesticideStore((state) => state.pesticides);
-  const fertilizers = useFertilizerStore((state) => state.fertilizers);
-  const materialsFromStore = useMaterialStore((state) => state.materials);
-  const equipments = useEquipmentStore((state) => state.equipments);
-
-  // Unified materials list
-  const unifiedMaterials = useMemo(() => {
-    const list: MaterialItem[] = [];
-
-    // Map Pesticides
-    pesticides.forEach((p) => {
-      list.push({
-        id: `pesticide-${p.id}`,
-        originalId: p.id,
-        code: p.code,
-        name: p.name,
-        category: "Pesticide",
-        subCategory: p.group,
-        status: p.status,
-        createdAt: p.createdAt,
-        manufacturer: p.origin,
-        // Toxicity mapped if available, or default
-        toxicityClass: "III",
-        phi: 7,
-        originalData: p,
-      });
-    });
-
-    // Map Fertilizers
-    fertilizers.forEach((f) => {
-      list.push({
-        id: `fertilizer-${f.id}`,
-        originalId: f.id,
-        code: f.code,
-        name: f.name,
-        category: "Fertilizer",
-        subCategory: f.type,
-        status: f.status,
-        createdAt: f.createdAt,
-        manufacturer: "N/A",
-        originalData: f,
-      });
-    });
-
-    // Map Materials
-    materialsFromStore.forEach((m) => {
-      list.push({
-        id: `material-${m.id}`,
-        originalId: m.id,
-        code: m.code,
-        name: m.name,
-        category: "Material",
-        subCategory: m.type,
-        status: m.status,
-        createdAt: m.createdAt,
-        manufacturer: "N/A",
-        originalData: m,
-      });
-    });
-
-    // Map Equipment
-    equipments.forEach((e) => {
-      list.push({
-        id: `equipment-${e.id}`,
-        originalId: e.id,
-        code: e.code,
-        name: e.name,
-        category: "Equipment",
-        subCategory: e.type,
-        status: e.status,
-        createdAt: e.createdAt,
-        manufacturer: "N/A",
-        originalData: e,
-      });
-    });
-
-    return list;
-  }, [pesticides, fertilizers, materialsFromStore, equipments]);
-
   const [tempFilters, setTempFilters] = useState<MaterialFilters>({
     search: "",
     categories: ["Equipment", "Fertilizer", "Pesticide", "Material"],
     status: ["active", "inactive"],
-    toxicity: ["I", "II", "III", "IV"],
+    toxicityGroupIds: [],
     phiRange: [0, 60],
+    onlyOwner: false,
   });
 
   const [appliedFilters, setAppliedFilters] =
     useState<MaterialFilters>(tempFilters);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+
+  // Debounce search input (300ms)
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setAppliedFilters((prev) => {
+        if (prev.search === tempFilters.search) return prev;
+        return { ...prev, search: tempFilters.search };
+      });
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [tempFilters.search]);
 
   // Pagination state
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
 
-  const filteredMaterials = useMemo(() => {
-    return unifiedMaterials.filter((item) => {
-      const matchSearch =
-        item.name.toLowerCase().includes(appliedFilters.search.toLowerCase()) ||
-        item.code.toLowerCase().includes(appliedFilters.search.toLowerCase());
+  // Translate frontend category selections to backend supplyType query parameter
+  const supplyTypeParam = useMemo(() => {
+    const cats = appliedFilters.categories;
+    if (cats.length === 1) {
+      if (cats[0] === "Pesticide") return "medicine";
+      if (cats[0] === "Fertilizer") return "fertilizer";
+      if (cats[0] === "Material") return "material";
+      if (cats[0] === "Equipment") return "equipment";
+    }
+    // If all 4 or multiple categories selected, omit supplyType to query across all supply types
+    return undefined;
+  }, [appliedFilters.categories]);
 
-      const matchCategory = appliedFilters.categories.includes(item.category);
-      const matchStatus = appliedFilters.status.includes(item.status);
+  // Construct query parameters for GET /api/farm/supplies
+  const queryParams: SupplyQueryParams = useMemo(() => {
+    const params: SupplyQueryParams = {
+      domainCode: DEFAULT_DOMAIN_CODE,
+      supplyType: supplyTypeParam,
+      page: page - 1, // API is 0-indexed
+      size: pageSize,
+    };
 
-      // Toxicity and PHI only apply to pesticides for now in this mock/store logic
-      let matchToxicity = true;
-      let matchPhi = true;
-      if (item.category === "Pesticide") {
-        matchToxicity = appliedFilters.toxicity.includes(
-          item.toxicityClass || "IV",
-        );
-        matchPhi =
-          (item.phi || 0) >= appliedFilters.phiRange[0] &&
-          (item.phi || 0) <= appliedFilters.phiRange[1];
-      }
+    if (appliedFilters.search.trim()) {
+      params.keyword = appliedFilters.search.trim();
+    }
 
-      return (
-        matchSearch && matchCategory && matchStatus && matchToxicity && matchPhi
-      );
+    if (appliedFilters.onlyOwner) {
+      params.onlyOwner = true;
+    }
+
+    // Status filter: if only single status selected
+    if (appliedFilters.status.length === 1) {
+      const s = appliedFilters.status[0];
+      if (s === "active") params.status = "active";
+      if (s === "inactive") params.status = "inactive";
+    }
+
+    // PHI range filter
+    if (appliedFilters.phiRange) {
+      params.phiFromDays = appliedFilters.phiRange[0];
+      params.phiToDays = appliedFilters.phiRange[1];
+    }
+
+    // Toxicity group classification filter (must be provided together according to API validation)
+    if (
+      appliedFilters.toxicityGroupIds &&
+      appliedFilters.toxicityGroupIds.length > 0
+    ) {
+      params.classification = "toxicity";
+      params.classificationGroupIds = appliedFilters.toxicityGroupIds;
+    }
+
+    return params;
+  }, [
+    supplyTypeParam,
+    appliedFilters.search,
+    appliedFilters.onlyOwner,
+    appliedFilters.status,
+    appliedFilters.phiRange,
+    appliedFilters.toxicityGroupIds,
+    page,
+    pageSize,
+  ]);
+
+  // Execute GET /api/farm/supplies query
+  const { data, isLoading, isFetching } = useQuery({
+    queryKey: ["farm-supplies-lookup", queryParams],
+    queryFn: () => farmSupplyApi.listAllSupplies(queryParams),
+    staleTime: 60_000,
+  });
+
+  // Map backend PageResponse<SupplyItemResponse> to MaterialItem[]
+  const materials: MaterialItem[] = useMemo(() => {
+    if (!data?.content) return [];
+
+    return data.content.map((item: SupplyItemResponse) => {
+      let category: MaterialCategory = "Material";
+      if (item.supplyType === "medicine") category = "Pesticide";
+      else if (item.supplyType === "fertilizer") category = "Fertilizer";
+      else if (item.supplyType === "material") category = "Material";
+      else if (item.supplyType === "equipment") category = "Equipment";
+
+      const subCategory =
+        item.classifications?.[0]?.group?.name ||
+        (category === "Pesticide"
+          ? "Thuốc BVTV"
+          : category === "Fertilizer"
+            ? "Phân bón"
+            : category === "Equipment"
+              ? "Thiết bị"
+              : "Vật tư");
+
+      const codeStr = item.code || item.sku || `SUP-${item.id}`;
+      const manufacturerStr =
+        item.manufacturer || item.manufacturerOrganization?.name || "N/A";
+      const createdAtStr = item.createdAt
+        ? item.createdAt.substring(0, 10)
+        : "N/A";
+
+      return {
+        id: `${item.supplyType}-${item.id}`,
+        originalId: item.id,
+        code: codeStr,
+        name: item.name,
+        category,
+        subCategory,
+        status: item.status === "archived" ? "inactive" : (item.status as any),
+        createdAt: createdAtStr,
+        manufacturer: manufacturerStr,
+        toxicityClass: "III",
+        phi: item.profile?.withdrawalPeriodDays || 7,
+        source: item.source,
+        rawSupplyItem: item,
+        originalData: {
+          id: item.id,
+          code: codeStr,
+          name: item.name,
+          type: subCategory,
+          group: subCategory,
+          status: item.status,
+          createdAt: createdAtStr,
+          origin: manufacturerStr,
+          form: item.profile?.usageMethod || "Dạng lỏng/bột",
+          actionType: item.profile?.moaGroupCode || "N/A",
+          activeIngredient: item.profile?.activeIngredient || "N/A",
+          maintainanceInterval:
+            item.profile?.maintenanceSchedule || "6 tháng/lần",
+          description: item.description || "Chưa có mô tả",
+        },
+      };
     });
-  }, [unifiedMaterials, appliedFilters]);
+  }, [data]);
+
+  const totalCount = data?.totalElements ?? 0;
+  const totalPages = data?.totalPages ?? 0;
 
   // Reset page when filters change
   useEffect(() => {
     setPage(1);
   }, [appliedFilters]);
 
-  const totalCount = filteredMaterials.length;
-  const totalPages = Math.ceil(totalCount / pageSize);
-
-  const paginatedMaterials = useMemo(() => {
-    const start = (page - 1) * pageSize;
-    return filteredMaterials.slice(start, start + pageSize);
-  }, [filteredMaterials, page, pageSize]);
-
-  const applyFilters = () => {
-    setIsLoading(true);
-    setTimeout(() => {
-      setAppliedFilters(tempFilters);
-      setIsLoading(false);
-    }, 300);
+  const applyFilters = (customFilters?: MaterialFilters) => {
+    if (customFilters) {
+      setTempFilters(customFilters);
+      setAppliedFilters(customFilters);
+    } else {
+      setAppliedFilters({ ...tempFilters });
+    }
   };
 
   const resetFilters = () => {
@@ -155,8 +198,9 @@ export function useMaterialLookup() {
       search: "",
       categories: ["Equipment", "Fertilizer", "Pesticide", "Material"],
       status: ["active", "inactive"],
-      toxicity: ["I", "II", "III", "IV"],
+      toxicityGroupIds: [],
       phiRange: [0, 60],
+      onlyOwner: false,
     };
     setTempFilters(defaultFilters);
     setAppliedFilters(defaultFilters);
@@ -169,22 +213,22 @@ export function useMaterialLookup() {
   };
 
   const selectAll = () => {
-    if (selectedIds.length === filteredMaterials.length) {
+    if (selectedIds.length === materials.length) {
       setSelectedIds([]);
     } else {
-      setSelectedIds(filteredMaterials.map((m) => m.id));
+      setSelectedIds(materials.map((m) => m.id));
     }
   };
 
   return {
-    materials: paginatedMaterials,
+    materials,
     totalCount,
     totalPages,
     page,
     pageSize,
     setPage,
     setPageSize,
-    isLoading,
+    isLoading: isLoading || isFetching,
     tempFilters,
     setTempFilters,
     applyFilters,

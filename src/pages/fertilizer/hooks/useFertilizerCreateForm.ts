@@ -227,6 +227,38 @@ export function useFertilizerCreateForm() {
         )
         .filter((id): id is number => id !== undefined);
 
+      // Process documents upload with cache
+      const documentsPayload: any[] = [];
+      if (formData.documents && formData.documents.length > 0) {
+        for (let i = 0; i < formData.documents.length; i++) {
+          const doc = formData.documents[i] as any;
+          let fileUrl = doc.fileUrl || "";
+          const fileToUpload = doc.file || doc.fileObj;
+          if (fileToUpload) {
+            const blobUrl =
+              doc.fileUrl || (doc.file ? URL.createObjectURL(doc.file) : "");
+            const uploadedUrl = await uploadImage(
+              blobUrl,
+              fileToUpload,
+              "fertilizer",
+            );
+            if (uploadedUrl) {
+              fileUrl = uploadedUrl;
+            }
+          }
+          if (fileUrl || doc.content) {
+            documentsPayload.push({
+              id: doc.id,
+              documentType: doc.documentType || "MANUAL",
+              fileName: doc.fileName || doc.name || "Tài liệu hướng dẫn",
+              fileUrl: fileUrl || undefined,
+              content: doc.content || undefined,
+              displayOrder: i,
+            });
+          }
+        }
+      }
+
       const generatedSku =
         formData.code?.trim() ||
         `PB-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
@@ -291,7 +323,7 @@ export function useFertilizerCreateForm() {
         protectiveMeasures: formData.protectiveMeasures || undefined,
         poisoningTreatment: firstAidHtml || undefined,
 
-        documents: formData.documents || [],
+        documents: documentsPayload.length > 0 ? documentsPayload : undefined,
       };
 
       if (isEdit && params?.id) {

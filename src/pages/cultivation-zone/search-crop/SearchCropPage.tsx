@@ -517,7 +517,7 @@ const SearchCropPage = () => {
 
   return (
     <PageWrapper title="Tìm kiếm & Truy xuất nguồn gốc">
-      <div className="h-[calc(100vh-64px)] flex flex-col bg-slate-50">
+      <div className="min-h-screen flex flex-col bg-slate-50 space-y-6 pb-12">
         {/* TOP HEADER: Search & Advanced Search */}
         <div className="bg-white border-b rounded-md p-4 z-40 shadow-sm">
           <div className="max-w-7xl mx-auto space-y-4">
@@ -857,7 +857,7 @@ const SearchCropPage = () => {
         </div>
 
         {/* MAIN BODY: Sidebar | Content */}
-        <div className="flex-1 flex relative">
+        <div className="flex-1 flex gap-6 items-start relative px-2">
           {/* Sidebar Toggle Button (Visible when collapsed) */}
           {isSidebarCollapsed && (
             <button
@@ -872,8 +872,10 @@ const SearchCropPage = () => {
           {/* LEFT SIDEBAR: Region List */}
           <div
             className={cn(
-              "bg-white border-r flex flex-col z-30 shadow-[4px_0_24px_-12px_rgba(0,0,0,0.05)] transition-all duration-300 ease-in-out",
-              isSidebarCollapsed ? "w-0 opacity-0" : "w-85 lg:w-100",
+              "bg-white border rounded-xl flex flex-col z-30 shadow-sm transition-all duration-300 ease-in-out sticky top-4 max-h-[calc(100vh-32px)] shrink-0 overflow-hidden",
+              isSidebarCollapsed
+                ? "w-0 opacity-0 border-none p-0"
+                : "w-85 lg:w-100",
             )}
           >
             <div className="p-4 border-b bg-slate-50/50 flex items-center justify-between min-w-60">
@@ -926,9 +928,9 @@ const SearchCropPage = () => {
           </div>
 
           {/* RIGHT CONTENT: Map & Plant List */}
-          <div className="flex-1 flex flex-col bg-slate-50 relative p-6 space-y-6">
+          <div className="flex-1 flex flex-col space-y-6 min-w-0 bg-slate-50 relative">
             {!selectedRegionId ? (
-              <div className="flex-1 flex flex-col items-center justify-center opacity-40">
+              <div className="h-full min-h-[400px] flex flex-col items-center justify-center opacity-40">
                 <div className="w-32 h-32 rounded-full bg-white shadow-xl flex items-center justify-center mb-6">
                   <MapPin size={64} className="text-slate-200" />
                 </div>
@@ -937,7 +939,7 @@ const SearchCropPage = () => {
                 </h3>
               </div>
             ) : (
-              <div className="flex-1 flex flex-col overflow-hidden">
+              <div className="flex flex-col space-y-6">
                 {(() => {
                   const currentRegion = regions.find(
                     (r) => r.id === selectedRegionId,
@@ -947,11 +949,11 @@ const SearchCropPage = () => {
                   );
 
                   return (
-                    <div className="flex-1 flex flex-col overflow-hidden">
-                      <div className="flex-1 flex flex-col overflow-hidden">
+                    <div className="flex flex-col space-y-6">
+                      <div className="flex flex-col space-y-6">
                         {(() => {
                           return (
-                            <div className="flex-1 flex flex-col gap-6 overflow-hidden">
+                            <div className="flex flex-col gap-6">
                               {/* Enterprise Header inside Plants View */}
                               <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-100 flex items-center justify-between">
                                 <div className="flex items-center gap-4">
@@ -1057,11 +1059,11 @@ const SearchCropPage = () => {
                                   )}
                                 </div>
                               </div>
-                              <div className="flex-1 bg-white rounded-xl overflow-hidden flex flex-col">
+                              <div className="bg-white rounded-xl border border-slate-100 shadow-sm flex flex-col">
                                 <div className="p-4 bg-slate-50/50 border-b font-black text-xs uppercase tracking-widest text-slate-500">
                                   Danh sách cây trồng
                                 </div>
-                                <div className="flex-1 overflow-hidden p-4">
+                                <div className="p-4 overflow-x-auto">
                                   <DataTable
                                     columns={
                                       [

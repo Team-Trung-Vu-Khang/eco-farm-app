@@ -142,22 +142,6 @@ export default function SimpleMaterialForm({
 
   return (
     <div className="max-w-2xl mx-auto space-y-6 pb-24">
-      {/* Banner info */}
-      <div className="flex items-start gap-4 p-4 bg-slate-50 text-slate-900 rounded-xl border border-slate-200">
-        <div className="bg-white p-2 rounded-full shadow-sm shrink-0">
-          <Hammer className="w-6 h-6 text-slate-600" />
-        </div>
-        <div>
-          <h3 className="font-semibold">Thông tin cơ bản</h3>
-          <p className="text-sm text-slate-600 mt-0.5">
-            Nhập nhanh những thông tin cần thiết nhất. Bật{" "}
-            <span className="font-bold">Thông tin chuyên sâu</span> để khai báo
-            đầy đủ mức độ công nghệ, nhà cung cấp và quy cách đóng gói.
-          </p>
-        </div>
-      </div>
-
-      {/* ── Hình ảnh ── */}
       <div className="space-y-3">
         <Label className="flex items-center gap-1.5">
           <ImageIcon className="w-4 h-4 text-slate-400" />
@@ -205,7 +189,6 @@ export default function SimpleMaterialForm({
           </label>
         )}
       </div>
-
       {/* ── Thông tin chung ── */}
       <div className="space-y-4 rounded-xl border bg-white p-6 shadow-sm">
         <h3 className="flex items-center gap-2 text-lg font-semibold">
@@ -245,7 +228,6 @@ export default function SimpleMaterialForm({
           />
         </div>
       </div>
-
       {/* ── Phân loại kỹ thuật ── */}
       <div className="space-y-4 rounded-xl border bg-white p-6 shadow-sm">
         <h3 className="flex items-center gap-2 text-lg font-semibold">
@@ -296,7 +278,6 @@ export default function SimpleMaterialForm({
           </div>
         </div>
       </div>
-
       {/* Card: Hashtags */}
       <div className="bg-white p-6 rounded-xl shadow-sm border space-y-4">
         <h3 className="font-semibold text-lg flex items-center gap-2">
@@ -362,7 +343,6 @@ export default function SimpleMaterialForm({
           </div>
         </div>
       </div>
-
       {/* ── Cấu hình Đơn vị Vật tư ── */}
       <div className="space-y-4 rounded-xl border bg-white p-6 shadow-sm">
         <h3 className="flex items-center gap-2 text-lg font-semibold">
@@ -551,7 +531,6 @@ export default function SimpleMaterialForm({
           )}
         </div>
       </div>
-
       {/* ── Info card ── */}
       <Card className="bg-amber-50/50 border-amber-100">
         <CardContent className="p-4 flex items-start gap-2">
@@ -563,7 +542,6 @@ export default function SimpleMaterialForm({
           </p>
         </CardContent>
       </Card>
-
       {/* ── Sticky footer ── */}
       <div className="sticky bottom-0 left-0 right-0 flex items-center justify-between gap-3 bg-white/95 backdrop-blur border-t border-slate-100 pt-4 pb-2 -mx-4 px-4">
         <Button type="button" variant="outline" onClick={goBack}>

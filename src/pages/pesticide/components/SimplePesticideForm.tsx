@@ -178,21 +178,6 @@ export default function SimplePesticideForm({
 
   return (
     <div className="max-w-2xl mx-auto space-y-6 pb-24">
-      {/* Banner info */}
-      <div className="flex items-start gap-4 p-4 bg-blue-50 text-blue-900 rounded-xl border border-blue-100">
-        <div className="bg-white p-2 rounded-full shadow-sm shrink-0">
-          <Shield className="w-6 h-6 text-blue-600" />
-        </div>
-        <div>
-          <h3 className="font-semibold">Thông tin cơ bản</h3>
-          <p className="text-sm text-blue-700 mt-0.5">
-            Nhập nhanh những thông tin cần thiết nhất. Bật{" "}
-            <span className="font-bold">Thông tin chuyên sâu</span> để khai báo
-            đầy đủ hoạt chất, liều lượng, pháp lý và nhà cung cấp.
-          </p>
-        </div>
-      </div>
-
       {/* ── Hình ảnh ── */}
       <div className="space-y-3">
         <Label className="flex items-center gap-1.5">
@@ -352,7 +337,9 @@ export default function SimplePesticideForm({
                   min={1}
                   placeholder="Số lượng"
                   value={formData.quantity}
-                  onChange={(e) => onFormFieldChange("quantity", e.target.value)}
+                  onChange={(e) =>
+                    onFormFieldChange("quantity", e.target.value)
+                  }
                 />
               </div>
 

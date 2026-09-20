@@ -1,5 +1,8 @@
 import PageWrapper from "@/components/PageWrapper";
-import { formatPackagingVariantText, isBaseUnitOnlyVariant } from "@/features/farm-supply";
+import {
+  formatPackagingVariantText,
+  isBaseUnitOnlyVariant,
+} from "@/features/farm-supply";
 import {
   Badge,
   Button,
@@ -75,7 +78,9 @@ function InfoRow({
 }
 
 const PesticideDetailPage = () => {
-  const [matchFarm, paramsFarm] = useRoute("/cultivation-material/pesticide/:id");
+  const [matchFarm, paramsFarm] = useRoute(
+    "/cultivation-material/pesticide/:id",
+  );
   const [matchAdmin, paramsAdmin] = useRoute("/admin/pesticide/:id");
   const params = paramsFarm || paramsAdmin;
   const matchAdminActive = !!matchAdmin;
@@ -103,7 +108,13 @@ const PesticideDetailPage = () => {
             Không tìm thấy thông tin thuốc BVTV.
           </p>
           <Button
-            onClick={() => setLocation(matchAdminActive ? "/admin/pesticide" : "/cultivation-material/pesticide")}
+            onClick={() =>
+              setLocation(
+                matchAdminActive
+                  ? "/admin/pesticide"
+                  : "/cultivation-material/pesticide",
+              )
+            }
           >
             Quay lại danh sách
           </Button>
@@ -125,7 +136,7 @@ const PesticideDetailPage = () => {
               setLocation(
                 matchAdminActive
                   ? `/admin/pesticide/${id}/edit`
-                  : `/cultivation-material/pesticide/${id}/edit`
+                  : `/cultivation-material/pesticide/${id}/edit`,
               )
             }
           >
@@ -139,7 +150,13 @@ const PesticideDetailPage = () => {
         <Button
           variant="ghost"
           size="sm"
-          onClick={() => setLocation(matchAdminActive ? "/admin/pesticide" : "/cultivation-material/pesticide")}
+          onClick={() =>
+            setLocation(
+              matchAdminActive
+                ? "/admin/pesticide"
+                : "/cultivation-material/pesticide",
+            )
+          }
           className="gap-2 pl-0 text-muted-foreground hover:text-primary"
         >
           <ChevronLeft className="w-4 h-4" />
@@ -470,7 +487,11 @@ const PesticideDetailPage = () => {
                         );
                       })
                     : item.packagingSpecs?.map((spec) => (
-                        <Badge key={spec} variant="outline" className="text-xs px-2.5 py-1 flex items-center gap-1.5 bg-slate-50">
+                        <Badge
+                          key={spec}
+                          variant="outline"
+                          className="text-xs px-2.5 py-1 flex items-center gap-1.5 bg-slate-50"
+                        >
                           <Package className="w-3.5 h-3.5 text-slate-500 shrink-0" />
                           {spec}
                         </Badge>

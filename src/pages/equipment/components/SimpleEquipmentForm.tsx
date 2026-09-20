@@ -212,21 +212,6 @@ export default function SimpleEquipmentForm({
 
   return (
     <div className="max-w-2xl mx-auto space-y-6 pb-24">
-      {/* Banner info */}
-      <div className="flex items-start gap-4 p-4 bg-slate-50 text-slate-900 rounded-xl border border-slate-200">
-        <div className="bg-white p-2 rounded-full shadow-sm shrink-0">
-          <Wrench className="w-6 h-6 text-slate-600" />
-        </div>
-        <div>
-          <h3 className="font-semibold">Thông tin cơ bản</h3>
-          <p className="text-sm text-slate-600 mt-0.5">
-            Nhập nhanh những thông tin cần thiết nhất. Bật{" "}
-            <span className="font-bold">Thông tin chuyên sâu</span> để khai báo
-            đầy đủ thông số kỹ thuật, xuất xứ và cung ứng.
-          </p>
-        </div>
-      </div>
-
       {/* ── Hình ảnh ── */}
       <div className="space-y-3">
         <Label className="flex items-center gap-1.5">

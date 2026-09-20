@@ -16,9 +16,24 @@ const SUPPLY_PATHS: Record<SupplyType, string> = {
 };
 
 export const farmSupplyApi = {
-  list: (type: SupplyType, params?: SupplyQueryParams, scope: "admin" | "farm" = "farm") => {
+  listAllSupplies: (params?: SupplyQueryParams) => {
+    return apiClient
+      .get<PageResponse<SupplyItemResponse>>("/api/farm/supplies", {
+        params,
+      })
+      .then((r) => r.data);
+  },
+
+  list: (
+    type: SupplyType,
+    params?: SupplyQueryParams,
+    scope: "admin" | "farm" = "farm",
+  ) => {
     const path = SUPPLY_PATHS[type];
-    const url = scope === "admin" ? `/api/admin/master-data/${path}` : `/api/farm/supplies/${path}`;
+    const url =
+      scope === "admin"
+        ? `/api/admin/master-data/${path}`
+        : `/api/farm/supplies/${path}`;
     return apiClient
       .get<PageResponse<SupplyItemResponse>>(url, {
         params,
@@ -42,25 +57,39 @@ export const farmSupplyApi = {
     return apiClient.get<SupplyItemResponse>(url).then((r) => r.data);
   },
 
-  create: (type: SupplyType, data: SupplyItemRequest, scope: "admin" | "farm" = "farm") => {
+  create: (
+    type: SupplyType,
+    data: SupplyItemRequest,
+    scope: "admin" | "farm" = "farm",
+  ) => {
     const path = SUPPLY_PATHS[type];
-    const url = scope === "admin" ? `/api/admin/master-data/${path}` : `/api/farm/supplies/${path}`;
-    return apiClient
-      .post<SupplyItemResponse>(url, data)
-      .then((r) => r.data);
+    const url =
+      scope === "admin"
+        ? `/api/admin/master-data/${path}`
+        : `/api/farm/supplies/${path}`;
+    return apiClient.post<SupplyItemResponse>(url, data).then((r) => r.data);
   },
 
-  update: (type: SupplyType, id: number, data: SupplyItemRequest, scope: "admin" | "farm" = "farm") => {
+  update: (
+    type: SupplyType,
+    id: number,
+    data: SupplyItemRequest,
+    scope: "admin" | "farm" = "farm",
+  ) => {
     const path = SUPPLY_PATHS[type];
-    const url = scope === "admin" ? `/api/admin/master-data/${path}/${id}` : `/api/farm/supplies/${path}/${id}`;
-    return apiClient
-      .put<SupplyItemResponse>(url, data)
-      .then((r) => r.data);
+    const url =
+      scope === "admin"
+        ? `/api/admin/master-data/${path}/${id}`
+        : `/api/farm/supplies/${path}/${id}`;
+    return apiClient.put<SupplyItemResponse>(url, data).then((r) => r.data);
   },
 
   delete: (type: SupplyType, id: number, scope: "admin" | "farm" = "farm") => {
     const path = SUPPLY_PATHS[type];
-    const url = scope === "admin" ? `/api/admin/master-data/${path}/${id}` : `/api/farm/supplies/${path}/${id}`;
+    const url =
+      scope === "admin"
+        ? `/api/admin/master-data/${path}/${id}`
+        : `/api/farm/supplies/${path}/${id}`;
     return apiClient.delete(url);
   },
 
@@ -88,14 +117,12 @@ export const farmSupplyApi = {
       .then((r) => r.data?.content ?? []);
   },
 
-  getClassificationGroups: (type: SupplyType) => {
+  getClassificationGroups: (type: SupplyType, classification?: string) => {
     const catalog =
-      type === "equipment"
-        ? "equipment-tool-groups"
-        : `${type}-groups`;
+      type === "equipment" ? "equipment-tool-groups" : `${type}-groups`;
     return apiClient
       .get<PageResponse<any>>(`/api/master-data/${catalog}`, {
-        params: { status: "active", page: 0, size: 100 },
+        params: { status: "active", page: 0, size: 100, classification, domainCode: "CROP" },
       })
       .then((r) => r.data?.content ?? []);
   },

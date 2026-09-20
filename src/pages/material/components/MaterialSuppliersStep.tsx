@@ -119,10 +119,7 @@ export default function MaterialSuppliersStep({
     setPackaging("");
   };
 
-  const removeTag = (
-    field: "packagingSpecs",
-    value: string,
-  ) => {
+  const removeTag = (field: "packagingSpecs", value: string) => {
     const current = formData[field] || [];
     onFormFieldChange(
       field,
@@ -258,7 +255,9 @@ export default function MaterialSuppliersStep({
         {/* Mode switch on separate line */}
         <div className="space-y-4">
           <div className="flex flex-wrap items-center gap-2">
-            <span className="text-xs font-semibold text-slate-500">Chế độ cấu hình:</span>
+            <span className="text-xs font-semibold text-slate-500">
+              Chế độ cấu hình:
+            </span>
             <div className="inline-flex items-center p-1 bg-slate-100 rounded-xl text-xs font-medium">
               <button
                 type="button"
@@ -377,7 +376,7 @@ export default function MaterialSuppliersStep({
           </div>
 
           {/* Presets */}
-          <div className="space-y-1 pt-2">
+          {/* <div className="space-y-1 pt-2">
             <p className="text-xs text-muted-foreground">Gợi ý phổ biến:</p>
             <div className="flex flex-wrap gap-1.5">
               {packagingSpecsPresets.map((preset) => {
@@ -407,7 +406,7 @@ export default function MaterialSuppliersStep({
                 );
               })}
             </div>
-          </div>
+          </div> */}
 
           {/* Tags list */}
           {packagingSpecsArr.length > 0 && (
@@ -447,7 +446,9 @@ export default function MaterialSuppliersStep({
         title="Chọn nhà sản xuất / Xuất xứ"
         isMulti={false}
         returnById
-        selectedItems={formData.manufacturerOrigin ? [formData.manufacturerOrigin] : []}
+        selectedItems={
+          formData.manufacturerOrigin ? [formData.manufacturerOrigin] : []
+        }
         onConfirmItems={(items) =>
           onFormFieldChange("manufacturerOrigin", items[0] || null)
         }
@@ -461,7 +462,9 @@ export default function MaterialSuppliersStep({
         title="Chọn nhà nhập khẩu / Đăng ký"
         isMulti={false}
         returnById
-        selectedItems={formData.importerRegistrant ? [formData.importerRegistrant] : []}
+        selectedItems={
+          formData.importerRegistrant ? [formData.importerRegistrant] : []
+        }
         onConfirmItems={(items) =>
           onFormFieldChange("importerRegistrant", items[0] || null)
         }

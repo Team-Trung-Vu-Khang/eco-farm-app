@@ -1,5 +1,8 @@
 import PageWrapper from "@/components/PageWrapper";
-import { formatPackagingVariantText, isBaseUnitOnlyVariant } from "@/features/farm-supply";
+import {
+  formatPackagingVariantText,
+  isBaseUnitOnlyVariant,
+} from "@/features/farm-supply";
 import {
   Badge,
   Button,
@@ -21,12 +24,13 @@ import {
   Building2,
 } from "lucide-react";
 import { useLocation, useRoute } from "wouter";
-import useMaterialStore from "../../stores/useMaterialStore";
 import { getMaterialGroupLabel } from "../material/data/constants";
 import { useFarmSupplyDetailHook } from "@/features/farm-supply/hooks/useFarmSupplyDetailHook";
 
 const AhMaterialDetailPage = () => {
-  const [matchFarm, paramsFarm] = useRoute("/animal-husbandry-material/material/:id");
+  const [matchFarm, paramsFarm] = useRoute(
+    "/animal-husbandry-material/material/:id",
+  );
   const [matchAdmin, paramsAdmin] = useRoute("/admin/ah-material/:id");
   const params = paramsFarm || paramsAdmin;
   const matchAdminActive = !!matchAdmin;
@@ -54,7 +58,13 @@ const AhMaterialDetailPage = () => {
             Không tìm thấy thông tin vật tư.
           </p>
           <Button
-            onClick={() => setLocation(matchAdminActive ? "/admin/ah-material" : "/animal-husbandry-material/material")}
+            onClick={() =>
+              setLocation(
+                matchAdminActive
+                  ? "/admin/ah-material"
+                  : "/animal-husbandry-material/material",
+              )
+            }
           >
             Quay lại danh sách
           </Button>
@@ -74,7 +84,7 @@ const AhMaterialDetailPage = () => {
               setLocation(
                 matchAdminActive
                   ? `/admin/ah-material/${id}/edit`
-                  : `/animal-husbandry-material/material/${id}/edit`
+                  : `/animal-husbandry-material/material/${id}/edit`,
               )
             }
           >
@@ -88,7 +98,13 @@ const AhMaterialDetailPage = () => {
         <Button
           variant="ghost"
           size="sm"
-          onClick={() => setLocation(matchAdminActive ? "/admin/ah-material" : "/animal-husbandry-material/material")}
+          onClick={() =>
+            setLocation(
+              matchAdminActive
+                ? "/admin/ah-material"
+                : "/animal-husbandry-material/material",
+            )
+          }
           className="gap-2 pl-0 text-muted-foreground hover:text-primary"
         >
           <ChevronLeft className="w-4 h-4" />
@@ -103,10 +119,10 @@ const AhMaterialDetailPage = () => {
           <Card className="overflow-hidden border-none shadow-md bg-white">
             <div className="bg-linear-to-r from-blue-50 to-cyan-50 p-6 flex flex-col md:flex-row gap-6 items-start">
               <div className="w-24 h-24 bg-white rounded-xl shadow-sm border p-2 flex items-center justify-center shrink-0 overflow-hidden">
-                {item.metadataJson.imageUrl ? (
+                {item.metadataJson.imageUrl || item.imageUrl ? (
                   <img
                     alt={item.name}
-                    src={item.metadataJson.imageUrl}
+                    src={item.metadataJson.imageUrl || item.imageUrl}
                     className="w-full h-full object-cover rounded-lg"
                   />
                 ) : (
@@ -191,30 +207,30 @@ const AhMaterialDetailPage = () => {
               </CardHeader>
               <CardContent className="pt-6 space-y-4 text-sm">
                 {item.manufacturerOrganization && (
-                    <div>
-                      <span className="text-muted-foreground block text-xs mb-1.5">
-                        Nhà sản xuất / Xuất xứ:
-                      </span>
-                      <div className="flex flex-wrap gap-1.5">
-                        <Badge variant="outline" className="bg-slate-50">
-                          {item.manufacturerOrganization.name}
-                        </Badge>
-                      </div>
+                  <div>
+                    <span className="text-muted-foreground block text-xs mb-1.5">
+                      Nhà sản xuất / Xuất xứ:
+                    </span>
+                    <div className="flex flex-wrap gap-1.5">
+                      <Badge variant="outline" className="bg-slate-50">
+                        {item.manufacturerOrganization.name}
+                      </Badge>
                     </div>
-                  )}
+                  </div>
+                )}
 
                 {item.importerOrganization && (
-                    <div className="border-t pt-4">
-                      <span className="text-muted-foreground block text-xs mb-1.5">
-                        Nhà nhập khẩu / Đăng ký:
-                      </span>
-                      <div className="flex flex-wrap gap-1.5">
-                        <Badge variant="outline" className="bg-slate-50">
-                          {item.importerOrganization.name}
-                        </Badge>
-                      </div>
+                  <div className="border-t pt-4">
+                    <span className="text-muted-foreground block text-xs mb-1.5">
+                      Nhà nhập khẩu / Đăng ký:
+                    </span>
+                    <div className="flex flex-wrap gap-1.5">
+                      <Badge variant="outline" className="bg-slate-50">
+                        {item.importerOrganization.name}
+                      </Badge>
                     </div>
-                  )}
+                  </div>
+                )}
 
                 {item.distributorOrganization && (
                   <div className="border-t pt-4">
@@ -229,20 +245,24 @@ const AhMaterialDetailPage = () => {
                   </div>
                 )}
 
-                {((item.packagingVariants && item.packagingVariants.length > 0) ||
+                {((item.packagingVariants &&
+                  item.packagingVariants.length > 0) ||
                   (item.packagingSpecs && item.packagingSpecs.length > 0)) && (
                   <div className="border-t pt-4">
                     <span className="text-muted-foreground block text-xs font-semibold mb-2">
                       Cấu hình Đơn vị / Quy cách đóng gói:
                     </span>
                     <div className="flex flex-wrap gap-2">
-                      {item.packagingVariants && item.packagingVariants.length > 0
+                      {item.packagingVariants &&
+                      item.packagingVariants.length > 0
                         ? item.packagingVariants.map((v, idx) => {
                             const isBaseUnitOnly = isBaseUnitOnlyVariant(v);
                             return (
                               <Badge
                                 key={idx}
-                                variant={isBaseUnitOnly ? "outline" : "secondary"}
+                                variant={
+                                  isBaseUnitOnly ? "outline" : "secondary"
+                                }
                                 className={`text-xs px-2.5 py-1 flex items-center gap-1.5 ${
                                   isBaseUnitOnly
                                     ? "bg-blue-50/70 border-blue-200 text-blue-800"
@@ -262,7 +282,11 @@ const AhMaterialDetailPage = () => {
                             );
                           })
                         : item.packagingSpecs?.map((tag) => (
-                            <Badge key={tag} variant="secondary" className="text-xs px-2.5 py-1 flex items-center gap-1.5">
+                            <Badge
+                              key={tag}
+                              variant="secondary"
+                              className="text-xs px-2.5 py-1 flex items-center gap-1.5"
+                            >
                               <Package className="w-3.5 h-3.5 text-slate-500 shrink-0" />
                               {tag}
                             </Badge>

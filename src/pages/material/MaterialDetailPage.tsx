@@ -118,10 +118,10 @@ const MaterialDetailPage = () => {
           <Card className="overflow-hidden border-none shadow-md bg-white">
             <div className="bg-linear-to-r from-orange-50 to-amber-50 p-6 flex flex-col md:flex-row gap-6 items-start">
               <div className="w-24 h-24 bg-white rounded-xl shadow-sm border p-2 flex items-center justify-center shrink-0 overflow-hidden">
-                {item.metadataJson.imageUrl ? (
+                {item.metadataJson.imageUrl || item.imageUrl ? (
                   <img
                     alt={item.name}
-                    src={item.metadataJson.imageUrl}
+                    src={item.metadataJson.imageUrl || item.imageUrl}
                     className="w-full h-full object-cover rounded-lg"
                   />
                 ) : (

@@ -253,8 +253,13 @@ export interface SupplyItemResponse {
 
 export interface SupplyQueryParams {
   domainCode?: DomainCode;
+  supplyType?: SupplyType;
   keyword?: string;
   status?: MasterDataStatus;
+  classification?: string;
+  classificationGroupIds?: number[];
+  phiFromDays?: number;
+  phiToDays?: number;
   page?: number;
   size?: number;
   onlyOwner?: boolean;

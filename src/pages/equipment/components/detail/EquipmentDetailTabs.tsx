@@ -35,7 +35,8 @@ function DetailRow({ label, value }: { label: string; value?: string | number | 
 
 export const InfoTab = ({ item }: { item: Equipment }) => {
   const machineTypeArr = Array.isArray(item.machineType) ? item.machineType : [];
-  const packagingSpecsArr = Array.isArray(item.packagingSpecs) ? item.packagingSpecs : [];
+  const rawNotes = (item as any).profile?.packagingNotes || item.packagingSpecs;
+  const packagingSpecsArr = Array.isArray(rawNotes) ? rawNotes : [];
 
   return (
     <div className="space-y-6">

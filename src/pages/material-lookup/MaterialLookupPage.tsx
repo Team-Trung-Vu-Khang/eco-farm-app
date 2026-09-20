@@ -1,9 +1,9 @@
 import PageWrapper from "@/components/PageWrapper";
-import { cn, useToast } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import { useToast } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { useState, type FC } from "react";
 import { AdvancedFilterPanel } from "./components/AdvancedFilterPanel";
 import { CategorySidebar } from "./components/CategorySidebar";
-import { DetailPanel } from "./components/DetailPanel";
+import { MaterialDetailDialog } from "./components/MaterialDetailDialog";
 import { EquipmentDetailView } from "./components/details/EquipmentDetailView";
 import { FertilizerDetailView } from "./components/details/FertilizerDetailView";
 import { MaterialDetailView } from "./components/details/MaterialDetailView";
@@ -25,6 +25,7 @@ const MaterialLookupPage: FC = () => {
     page,
     pageSize,
     setPage,
+    setPageSize,
     isLoading,
     tempFilters,
     setTempFilters,
@@ -43,7 +44,6 @@ const MaterialLookupPage: FC = () => {
   const handleItemClick = (item: MaterialItem) => {
     setSelectedItem(item);
     setIsDetailOpen(true);
-    setIsSidebarCollapsed(true);
   };
 
   const renderDetailView = () => {
@@ -63,20 +63,30 @@ const MaterialLookupPage: FC = () => {
     }
   };
 
-  const detailUrl = selectedItem
-    ? `/${selectedItem.category.toLowerCase()}/${selectedItem.originalId}`
-    : null;
+  const getDetailUrl = (item: MaterialItem | null) => {
+    if (!item || item.source === "MASTER") return null;
+    const catPath =
+      item.category === "Pesticide"
+        ? "pesticide"
+        : item.category === "Fertilizer"
+          ? "fertilizer"
+          : item.category === "Equipment"
+            ? "equipment"
+            : "material";
+    return `/cultivation-material/${catPath}/${item.originalId}`;
+  };
+
+  const detailUrl = getDetailUrl(selectedItem);
 
   return (
     <PageWrapper title="Hệ thống tra cứu vật tư">
-      <div className="flex h-[calc(100vh-64px)] overflow-hidden bg-slate-50 font-sans">
+      <div className="flex bg-slate-50 font-sans">
         <CategorySidebar
           isCollapsed={isSidebarCollapsed}
           onToggle={() => setIsSidebarCollapsed(true)}
           currentCategories={tempFilters.categories}
           onCategoryChange={(cats) => {
-            setTempFilters({ ...tempFilters, categories: cats });
-            applyFilters();
+            applyFilters({ ...tempFilters, categories: cats });
           }}
           categories={CATEGORIES}
         />
@@ -98,8 +108,8 @@ const MaterialLookupPage: FC = () => {
               <AdvancedFilterPanel
                 filters={tempFilters}
                 onChange={setTempFilters}
-                onApply={() => {
-                  applyFilters();
+                onApply={(updatedFilters) => {
+                  applyFilters(updatedFilters || tempFilters);
                   setIsAdvancedFilterOpen(false);
                 }}
                 onReset={resetFilters}
@@ -110,36 +120,31 @@ const MaterialLookupPage: FC = () => {
 
           <ResultsSummary totalCount={totalCount} />
 
-          <div className="flex-1 overflow-hidden p-6 flex gap-6">
-            <div
-              className={cn(
-                "flex-1 transition-all duration-500 ease-in-out",
-                isDetailOpen ? "w-2/3" : "w-full",
-              )}
-            >
-              <MaterialTable
-                materials={materials}
-                isLoading={isLoading}
-                selectedIds={selectedIds}
-                onToggleSelection={toggleIdSelection}
-                onSelectAll={selectAll}
-                onRowClick={handleItemClick}
-                page={page}
-                totalPages={totalPages}
-                pageSize={pageSize}
-                totalCount={totalCount}
-                onPageChange={setPage}
-              />
-            </div>
-
-            <DetailPanel
-              isOpen={isDetailOpen}
-              onClose={() => setIsDetailOpen(false)}
-              detailUrl={detailUrl}
-            >
-              {renderDetailView()}
-            </DetailPanel>
+          <div className="p-6">
+            <MaterialTable
+              materials={materials}
+              isLoading={isLoading}
+              selectedIds={selectedIds}
+              onToggleSelection={toggleIdSelection}
+              onSelectAll={selectAll}
+              onRowClick={handleItemClick}
+              page={page}
+              totalPages={totalPages}
+              pageSize={pageSize}
+              totalCount={totalCount}
+              onPageChange={setPage}
+              onPageSizeChange={setPageSize}
+            />
           </div>
+
+          <MaterialDetailDialog
+            isOpen={isDetailOpen}
+            onClose={() => setIsDetailOpen(false)}
+            selectedItem={selectedItem}
+            detailUrl={detailUrl}
+          >
+            {renderDetailView()}
+          </MaterialDetailDialog>
 
           <FloatingActionBar
             selectedCount={selectedIds.length}

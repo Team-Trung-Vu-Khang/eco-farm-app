@@ -92,7 +92,7 @@ function MultiSelectField({
         : placeholder;
 
   return (
-    <div ref={containerRef} className="relative">
+    <div ref={containerRef} className={cn("relative", isOpen && "z-50")}>
       <button
         type="button"
         disabled={disabled}
@@ -116,7 +116,7 @@ function MultiSelectField({
       </button>
 
       {isOpen && !disabled && (
-        <div className="absolute left-0 z-50 mt-1 max-h-72 min-w-[280px] sm:min-w-[340px] max-w-[480px] w-max overflow-hidden rounded-md border border-slate-200 bg-white shadow-lg flex flex-col">
+        <div className="absolute left-0 z-[100] mt-1 max-h-72 min-w-[280px] sm:min-w-[340px] max-w-[480px] w-max overflow-hidden rounded-md border border-slate-200 bg-white shadow-xl flex flex-col">
           {/* Thanh tìm kiếm trực tiếp trong dropdown */}
           <div className="p-1.5 border-b border-slate-100 bg-slate-50 sticky top-0 z-10 flex items-center gap-1.5">
             <Search size={14} className="text-slate-400 ml-1.5 shrink-0" />
@@ -287,7 +287,7 @@ export function DiaryAdvancedFilterPanel({
   if (!isOpen) return null;
 
   return (
-    <div className="relative mt-2 overflow-visible rounded-xl border border-slate-200 bg-white shadow-md animate-in slide-in-from-top-2 duration-200 z-0">
+    <div className="relative mt-2 overflow-visible rounded-xl border border-slate-200 bg-white shadow-md animate-in slide-in-from-top-2 duration-200 z-30">
       <div className="px-6 py-4 bg-slate-50/80 border-b border-slate-200 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Filter size={18} className="text-green-600" />

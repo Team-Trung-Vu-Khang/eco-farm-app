@@ -1,4 +1,5 @@
 import { type FC } from "react";
+import { useQuery } from "@tanstack/react-query";
 import {
   Card,
   CardContent,
@@ -8,14 +9,24 @@ import {
   Label,
   Checkbox,
   Slider,
+  Switch,
+  Skeleton,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { Filter, X, ShieldAlert, Clock, Activity } from "lucide-react";
-import type { MaterialFilters, WHOClass } from "../types/types";
+import {
+  Filter,
+  X,
+  ShieldAlert,
+  Clock,
+  Activity,
+  Database,
+} from "lucide-react";
+import { farmSupplyApi } from "@/features/farm-supply/api/farm-supply.api";
+import type { MaterialFilters } from "../types/types";
 
 interface AdvancedFilterPanelProps {
   filters: MaterialFilters;
   onChange: (filters: MaterialFilters) => void;
-  onApply: () => void;
+  onApply: (filters?: MaterialFilters) => void;
   onReset: () => void;
   onClose: () => void;
 }
@@ -27,6 +38,14 @@ export const AdvancedFilterPanel: FC<AdvancedFilterPanelProps> = ({
   onReset,
   onClose,
 }) => {
+  // Fetch toxicity classification groups dynamically from Master Data API
+  const { data: toxicityGroups, isLoading: isLoadingToxicity } = useQuery({
+    queryKey: ["medicine-toxicity-groups"],
+    queryFn: () =>
+      farmSupplyApi.getClassificationGroups("medicine", "toxicity"),
+    staleTime: 300_000,
+  });
+
   const toggleStatus = (status: "active" | "inactive" | "maintenance") => {
     const newStatus = filters.status.includes(status)
       ? filters.status.filter((s) => s !== status)
@@ -34,11 +53,12 @@ export const AdvancedFilterPanel: FC<AdvancedFilterPanelProps> = ({
     onChange({ ...filters, status: newStatus });
   };
 
-  const toggleToxicity = (tier: WHOClass) => {
-    const newTox = filters.toxicity.includes(tier)
-      ? filters.toxicity.filter((t) => t !== tier)
-      : [...filters.toxicity, tier];
-    onChange({ ...filters, toxicity: newTox });
+  const toggleToxicityGroup = (groupId: number) => {
+    const currentIds = filters.toxicityGroupIds || [];
+    const newIds = currentIds.includes(groupId)
+      ? currentIds.filter((id) => id !== groupId)
+      : [...currentIds, groupId];
+    onChange({ ...filters, toxicityGroupIds: newIds });
   };
 
   return (
@@ -71,7 +91,37 @@ export const AdvancedFilterPanel: FC<AdvancedFilterPanelProps> = ({
           </div>
         </CardHeader>
         <CardContent className="p-8 space-y-8">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+            {/* Data Source Section */}
+            <div className="space-y-4">
+              <div className="flex items-center gap-2 text-indigo-600">
+                <Database className="h-4 w-4" />
+                <h4 className="font-black text-xs uppercase tracking-widest">
+                  Nguồn dữ liệu
+                </h4>
+              </div>
+              <div className="flex items-center justify-between p-3 rounded-xl border border-slate-200 bg-slate-50/50">
+                <div className="space-y-0.5">
+                  <Label
+                    htmlFor="onlyOwner-switch"
+                    className="text-xs font-bold text-slate-700 cursor-pointer"
+                  >
+                    Chỉ vật tư cá nhân
+                  </Label>
+                  <p className="text-[10px] text-slate-400">
+                    Bật để chỉ hiển thị vật tư trang trại tạo
+                  </p>
+                </div>
+                <Switch
+                  id="onlyOwner-switch"
+                  checked={filters.onlyOwner ?? false}
+                  onCheckedChange={(checked) =>
+                    onChange({ ...filters, onlyOwner: checked })
+                  }
+                />
+              </div>
+            </div>
+
             {/* Status Section */}
             <div className="space-y-4">
               <div className="flex items-center gap-2 text-primary">
@@ -108,35 +158,44 @@ export const AdvancedFilterPanel: FC<AdvancedFilterPanelProps> = ({
               <div className="flex items-center gap-2 text-red-500">
                 <ShieldAlert className="h-4 w-4" />
                 <h4 className="font-black text-xs uppercase tracking-widest">
-                  Độ độc (Pesticide)
+                  Độ độc (Thuốc BVTV)
                 </h4>
               </div>
-              <div className="grid grid-cols-2 gap-3">
-                {(["I", "II", "III", "IV"] as WHOClass[]).map((tier) => (
-                  <button
-                    key={tier}
-                    onClick={() => toggleToxicity(tier)}
-                    className={`flex items-center justify-between p-3 rounded-xl border transition-all ${
-                      filters.toxicity.includes(tier)
-                        ? "bg-slate-900 border-slate-900 text-white shadow-lg"
-                        : "bg-white border-slate-200 text-slate-600 hover:border-slate-300"
-                    }`}
-                  >
-                    <span className="text-xs font-black">Class {tier}</span>
-                    <div
-                      className={`w-2 h-2 rounded-full ${
-                        tier === "I"
-                          ? "bg-red-500"
-                          : tier === "II"
-                            ? "bg-orange-500"
-                            : tier === "III"
-                              ? "bg-blue-500"
-                              : "bg-emerald-500"
-                      }`}
-                    />
-                  </button>
-                ))}
-              </div>
+              {isLoadingToxicity ? (
+                <div className="space-y-2">
+                  <Skeleton className="h-9 w-full rounded-xl bg-slate-100" />
+                  <Skeleton className="h-9 w-full rounded-xl bg-slate-100" />
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 gap-2">
+                  {toxicityGroups?.map((group: any) => {
+                    const isSelected = (
+                      filters.toxicityGroupIds || []
+                    ).includes(group.id);
+                    return (
+                      <button
+                        key={group.id}
+                        type="button"
+                        onClick={() => toggleToxicityGroup(group.id)}
+                        className={`flex items-center justify-between p-2.5 rounded-xl border text-left transition-all ${
+                          isSelected
+                            ? "bg-slate-900 border-slate-900 text-white shadow-md"
+                            : "bg-white border-slate-200 text-slate-700 hover:border-slate-300"
+                        }`}
+                      >
+                        <span className="text-xs font-bold truncate">
+                          {group.name || group.code}
+                        </span>
+                        <div
+                          className={`w-2 h-2 rounded-full shrink-0 ${
+                            isSelected ? "bg-emerald-400" : "bg-slate-300"
+                          }`}
+                        />
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
             </div>
 
             {/* PHI Section */}
@@ -167,7 +226,10 @@ export const AdvancedFilterPanel: FC<AdvancedFilterPanelProps> = ({
           </div>
 
           <div className="flex justify-end pt-6 border-t">
-            <Button className="rounded-md font-black" onClick={onApply}>
+            <Button
+              className="rounded-md font-black"
+              onClick={() => onApply(filters)}
+            >
               Áp dụng bộ lọc
             </Button>
           </div>

@@ -80,7 +80,9 @@ export default function PesticideSuppliersStep({
       : PACKAGING_OPTIONS;
 
   const unitList =
-    baseUnits && baseUnits.length > 0 ? baseUnits.map((u) => u.name) : MEASURE_UNIT_OPTIONS;
+    baseUnits && baseUnits.length > 0
+      ? baseUnits.map((u) => u.name)
+      : MEASURE_UNIT_OPTIONS;
 
   const [configMode, setConfigMode] = useState<"SPEC" | "BASE_UNIT">("SPEC");
   const [quantity, setQuantity] = useState("");
@@ -260,7 +262,9 @@ export default function PesticideSuppliersStep({
 
           {/* Mode switch on separate line */}
           <div className="flex flex-wrap items-center gap-2">
-            <span className="text-xs font-semibold text-slate-500">Chế độ cấu hình:</span>
+            <span className="text-xs font-semibold text-slate-500">
+              Chế độ cấu hình:
+            </span>
             <div className="inline-flex items-center p-1 bg-slate-100 rounded-xl text-xs font-medium">
               <button
                 type="button"
@@ -381,7 +385,7 @@ export default function PesticideSuppliersStep({
           </div>
 
           {/* Quick-select gợi ý phổ biến */}
-          <div className="space-y-1">
+          {/* <div className="space-y-1">
             <p className="text-xs text-muted-foreground">Gợi ý phổ biến:</p>
             <div className="flex flex-wrap gap-1.5">
               {packagingUnitOptions.slice(0, 10).map((preset) => (
@@ -407,7 +411,7 @@ export default function PesticideSuppliersStep({
                 </button>
               ))}
             </div>
-          </div>
+          </div> */}
 
           {/* Tags đã thêm */}
           {formData.packagingSpecs.length > 0 && (
@@ -477,9 +481,7 @@ export default function PesticideSuppliersStep({
         title="Chọn nhà phân phối"
         isMulti={false}
         returnById
-        selectedItems={
-          formData.distributor ? [formData.distributor] : []
-        }
+        selectedItems={formData.distributor ? [formData.distributor] : []}
         onConfirmItems={(items) =>
           onFormFieldChange("distributor", items[0] || null)
         }

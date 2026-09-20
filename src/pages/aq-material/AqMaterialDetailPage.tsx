@@ -1,5 +1,8 @@
 import PageWrapper from "@/components/PageWrapper";
-import { formatPackagingVariantText, isBaseUnitOnlyVariant } from "@/features/farm-supply";
+import {
+  formatPackagingVariantText,
+  isBaseUnitOnlyVariant,
+} from "@/features/farm-supply";
 import { useFarmSupplyDetailHook } from "@/features/farm-supply/hooks/useFarmSupplyDetailHook";
 import {
   Badge,
@@ -113,10 +116,10 @@ const AqMaterialDetailPage = () => {
           <Card className="overflow-hidden border-none shadow-md bg-white">
             <div className="bg-linear-to-r from-teal-50 to-cyan-50 p-6 flex flex-col md:flex-row gap-6 items-start">
               <div className="w-24 h-24 bg-white rounded-xl shadow-sm border p-2 flex items-center justify-center shrink-0 overflow-hidden">
-                {item.metadataJson.imageUrl ? (
+                {item.metadataJson.imageUrl || item.imageUrl ? (
                   <img
                     alt={item.name}
-                    src={item.metadataJson.imageUrl}
+                    src={item.metadataJson.imageUrl || item.imageUrl}
                     className="w-full h-full object-cover rounded-lg"
                   />
                 ) : (
@@ -238,20 +241,24 @@ const AqMaterialDetailPage = () => {
                   </div>
                 )}
 
-                {((item.packagingVariants && item.packagingVariants.length > 0) ||
+                {((item.packagingVariants &&
+                  item.packagingVariants.length > 0) ||
                   (item.packagingSpecs && item.packagingSpecs.length > 0)) && (
                   <div className="border-t pt-4">
                     <span className="text-muted-foreground block text-xs font-semibold mb-2">
                       Cấu hình Đơn vị / Quy cách đóng gói:
                     </span>
                     <div className="flex flex-wrap gap-2">
-                      {item.packagingVariants && item.packagingVariants.length > 0
+                      {item.packagingVariants &&
+                      item.packagingVariants.length > 0
                         ? item.packagingVariants.map((v, idx) => {
                             const isBaseUnitOnly = isBaseUnitOnlyVariant(v);
                             return (
                               <Badge
                                 key={idx}
-                                variant={isBaseUnitOnly ? "outline" : "secondary"}
+                                variant={
+                                  isBaseUnitOnly ? "outline" : "secondary"
+                                }
                                 className={`text-xs px-2.5 py-1 flex items-center gap-1.5 ${
                                   isBaseUnitOnly
                                     ? "bg-blue-50/70 border-blue-200 text-blue-800"
@@ -271,7 +278,11 @@ const AqMaterialDetailPage = () => {
                             );
                           })
                         : item.packagingSpecs?.map((tag) => (
-                            <Badge key={tag} variant="secondary" className="text-xs px-2.5 py-1 flex items-center gap-1.5">
+                            <Badge
+                              key={tag}
+                              variant="secondary"
+                              className="text-xs px-2.5 py-1 flex items-center gap-1.5"
+                            >
                               <Package className="w-3.5 h-3.5 text-slate-500 shrink-0" />
                               {tag}
                             </Badge>

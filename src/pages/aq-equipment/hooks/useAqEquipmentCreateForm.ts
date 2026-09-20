@@ -189,6 +189,44 @@ export function useAqEquipmentCreateForm() {
         "equipment",
       );
 
+      // Process documents upload
+      const documentsPayload: any[] = [];
+      if (formData.documents && formData.documents.length > 0) {
+        for (let i = 0; i < formData.documents.length; i++) {
+          const doc = formData.documents[i];
+          let fileUrl = doc.fileUrl || "";
+          if (doc.fileObj) {
+            const uploadedUrl = await uploadImage(
+              doc.fileUrl || "",
+              doc.fileObj,
+              "equipment",
+            );
+            if (uploadedUrl) {
+              fileUrl = uploadedUrl;
+            }
+          }
+          if (fileUrl || doc.content) {
+            documentsPayload.push({
+              documentType: doc.documentType || "MANUAL",
+              fileName: doc.fileName || "Tài liệu kỹ thuật",
+              fileUrl: fileUrl || undefined,
+              content: doc.content || undefined,
+              displayOrder: i,
+            });
+          }
+        }
+      } else if (
+        formData.technicalDocType === "editor" &&
+        formData.technicalDocContent
+      ) {
+        documentsPayload.push({
+          documentType: "MANUAL",
+          fileName: "HUONG_DAN_SU_DUNG.md",
+          content: formData.technicalDocContent,
+          displayOrder: 0,
+        });
+      }
+
       const payload: any = {
         name: formData.machineName,
         sku: generatedSku,
@@ -210,7 +248,9 @@ export function useAqEquipmentCreateForm() {
           packagingTypes,
           baseUnits,
         ),
+        packagingNotes: formData.packagingSpecs || [],
         classifications,
+        documents: documentsPayload.length > 0 ? documentsPayload : undefined,
 
         // Profile details
         model: formData.model || undefined,
@@ -353,13 +393,19 @@ function mapResponseToEquipment(item: any): any {
     importerRegistrant: item.importerOrganization || null,
     distributor: item.distributorOrganization || null,
     referencePrice: item.referencePrice || "",
-    packagingSpecs: formatPackagingSpecs(item.packagingVariants) || [],
+    packagingSpecs:
+      profile.packagingNotes && profile.packagingNotes.length > 0
+        ? profile.packagingNotes
+        : formatPackagingSpecs(item.packagingVariants) || [],
     hashtags: item.hashtags || [],
     status: item.status || "active",
     description: item.description || "",
     formType: item.metadataJson?.formType || "basic",
-    technicalDocType: "file",
-    technicalDocContent: "",
+    technicalDocType:
+      profile.documents?.some((d: any) => d.content) ? "editor" : "file",
+    technicalDocContent:
+      profile.documents?.find((d: any) => d.content)?.content || "",
+    documents: profile.documents || [],
     supplierDetails: [],
   };
 }

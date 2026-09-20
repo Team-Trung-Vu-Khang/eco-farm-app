@@ -38,10 +38,7 @@ export function formatPackagingVariantText(
     return qty ? `${qty} ${pkgName}` : `${pkgName}`;
   }
   if (hasUnit) {
-    const unitDisplay = variant.unitBase?.name && variant.unitBase?.code && variant.unitBase.name !== variant.unitBase.code
-      ? `${variant.unitBase.name} (${variant.unitBase.code})`
-      : unitName;
-    return qty ? `${qty} ${unitDisplay}` : `${unitDisplay}`;
+    return qty ? `${qty} ${unitName}` : `${unitName}`;
   }
   return qty ? `${qty}` : "";
 }

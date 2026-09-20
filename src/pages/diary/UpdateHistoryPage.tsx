@@ -367,7 +367,7 @@ export default function UpdateHistoryPage({
         </div>
 
         {/* ── SEARCH & ADVANCED FILTER HEADER ── */}
-        <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm space-y-4">
+        <div className="relative z-30 bg-white border border-slate-200 rounded-2xl p-4 shadow-sm space-y-4">
           <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
             <div className="relative flex-1 w-full group">
               <Search

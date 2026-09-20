@@ -56,11 +56,15 @@ export const FertilizerUsageStep = ({
 
   const handleFiles = (files: File[]) => {
     const newDocs = files.map((file) => ({
+      fileName: file.name,
       name: file.name,
       size: file.size,
       file: file,
+      fileObj: file,
+      fileUrl: URL.createObjectURL(file),
+      documentType: "MANUAL",
     }));
-    updateField("documents", [...formData.documents, ...newDocs]);
+    updateField("documents", [...(formData.documents || []), ...newDocs]);
   };
 
   const { data: apiSubjects } = useQuery({
@@ -177,7 +181,9 @@ export const FertilizerUsageStep = ({
           <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mb-4 text-primary">
             <Upload className="w-6 h-6" />
           </div>
-          <p className="font-medium text-slate-900">Tải lên tài liệu hướng dẫn</p>
+          <p className="font-medium text-slate-900">
+            Tải lên tài liệu hướng dẫn
+          </p>
           <p className="text-sm text-muted-foreground mt-1">
             Kéo thả file vào đây hoặc click để chọn (PDF, DOCX)
           </p>
@@ -193,27 +199,32 @@ export const FertilizerUsageStep = ({
 
         {formData.documents && formData.documents.length > 0 && (
           <div className="space-y-2 mt-4">
-            {formData.documents.map((doc, idx) => (
+            {formData.documents.map((doc: any, idx: number) => (
               <div
                 key={idx}
                 className="flex items-center justify-between p-3 border rounded-lg bg-slate-50"
               >
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center text-red-600">
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center text-red-600 shrink-0">
                     <FileText className="w-5 h-5" />
                   </div>
-                  <div>
-                    <div className="font-medium text-sm">{doc.name}</div>
+                  <div className="min-w-0">
+                    <div className="font-medium text-sm truncate">
+                      {doc.fileName || doc.name || doc.fileUrl?.split("/").pop() || `Tài liệu ${idx + 1}`}
+                    </div>
                     <div className="text-xs text-muted-foreground">
-                      {(doc.size / (1024 * 1024)).toFixed(2)} MB
+                      {doc.size
+                        ? `${(doc.size / (1024 * 1024)).toFixed(2)} MB`
+                        : "Tài liệu đính kèm"}
                     </div>
                   </div>
                 </div>
                 <Button
+                  type="button"
                   variant="ghost"
                   size="sm"
                   onClick={() => handleRemoveDoc(idx)}
-                  className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                  className="text-red-500 hover:text-red-700 hover:bg-red-50 shrink-0"
                 >
                   <X className="w-4 h-4" />
                 </Button>
