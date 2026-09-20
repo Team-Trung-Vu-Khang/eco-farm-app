@@ -98,17 +98,22 @@ export function AddressRemoteCombobox({
 
     const selectedItem = selectedOptions.find((item) => item.code === value);
 
+    // Không tra được tên thì bỏ qua luôn, thay vì chèn một mục có nhãn là mã
+    // (vd. "00691") — API tìm kiếm chỉ khớp theo tên nên không phải lúc nào
+    // cũng tra ra được mục đang chọn.
+    if (!selectedItem) {
+      return mappedOptions;
+    }
+
     return [
       {
         value,
-        label: selectedItem ? getLabel(selectedItem) : value,
-        keywords: selectedItem
-          ? [
-              selectedItem.code,
-              selectedItem.name,
-              selectedItem.fullName,
-            ].filter((keyword): keyword is string => Boolean(keyword))
-          : [value],
+        label: getLabel(selectedItem),
+        keywords: [
+          selectedItem.code,
+          selectedItem.name,
+          selectedItem.fullName,
+        ].filter((keyword): keyword is string => Boolean(keyword)),
       },
       ...mappedOptions,
     ];
