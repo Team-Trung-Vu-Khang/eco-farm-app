@@ -20,38 +20,53 @@ import {
 import { z } from "zod";
 import type { SoilData } from "../types/types";
 
+/**
+ * Ô nhập số cho form thổ nhưỡng.
+ *
+ * Không dùng `z.coerce.number()`: nó ép chuỗi rỗng thành 0 và validate lọt,
+ * khiến số 0 bị ghi đè lại vào ô mỗi khi người dùng xoá trắng.
+ */
+const numberField = (
+  refine?: (schema: z.ZodNumber) => z.ZodNumber,
+) => {
+  const base = z.number({
+    error: (issue) =>
+      issue.input === undefined ? "Vui lòng nhập giá trị" : "Phải là số",
+  });
+
+  return z.preprocess((value) => {
+    if (typeof value !== "string") return value;
+    if (value.trim() === "") return undefined;
+    const parsed = Number(value);
+    return Number.isNaN(parsed) ? value : parsed;
+  }, refine ? refine(base) : base);
+};
+
 const soilFormSchema = z.object({
-  ph: z.coerce
-    .number({ error: "Phải là số" })
-    .min(0, "Từ 0")
-    .max(14, "Tối đa 14"),
-  moisture: z.coerce
-    .number({ error: "Phải là số" })
-    .min(0, "Từ 0")
-    .max(100, "Tối đa 100"),
-  nitrogen: z.coerce.number({ error: "Phải là số" }).min(0, "Không được âm"),
-  phosphorus: z.coerce.number({ error: "Phải là số" }).min(0, "Không được âm"),
-  potassium: z.coerce.number({ error: "Phải là số" }).min(0, "Không được âm"),
-  organicMatter: z.coerce
-    .number({ error: "Phải là số" })
-    .min(0, "Từ 0")
-    .max(100, "Tối đa 100"),
-  temperature: z.coerce.number({ error: "Phải là số" }),
-  compaction: z.coerce.number({ error: "Phải là số" }).min(0, "Không được âm"),
+  ph: numberField((s) => s.min(0, "Từ 0").max(14, "Tối đa 14")),
+  moisture: numberField((s) => s.min(0, "Từ 0").max(100, "Tối đa 100")),
+  nitrogen: numberField((s) => s.min(0, "Không được âm")),
+  phosphorus: numberField((s) => s.min(0, "Không được âm")),
+  potassium: numberField((s) => s.min(0, "Không được âm")),
+  organicMatter: numberField((s) => s.min(0, "Từ 0").max(100, "Tối đa 100")),
+  temperature: numberField(),
+  compaction: numberField((s) => s.min(0, "Không được âm")),
 });
 
 type SoilFormInput = z.input<typeof soilFormSchema>;
 type SoilFormOutput = z.output<typeof soilFormSchema>;
 
+// Để trống thay vì 0: người dùng thấy placeholder gợi ý và không phải xoá số 0
+// có sẵn trước khi nhập.
 const DEFAULT_VALUES: SoilFormInput = {
-  ph: 0,
-  moisture: 0,
-  nitrogen: 0,
-  phosphorus: 0,
-  potassium: 0,
-  organicMatter: 0,
-  temperature: 0,
-  compaction: 0,
+  ph: "",
+  moisture: "",
+  nitrogen: "",
+  phosphorus: "",
+  potassium: "",
+  organicMatter: "",
+  temperature: "",
+  compaction: "",
 };
 
 interface SoilEditDialogProps {
@@ -98,7 +113,7 @@ const SoilNumberField: React.FC<SoilNumberFieldProps> = ({
             onChange={(e) => field.onChange(e.target.value)}
             onBlur={field.onBlur}
           />
-          {fieldState.error?.message && fieldState.error.message !== "0" && (
+          {fieldState.error?.message && (
             <p className="text-xs text-red-500">{fieldState.error.message}</p>
           )}
         </>
