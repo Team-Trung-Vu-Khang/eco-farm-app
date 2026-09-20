@@ -10,7 +10,7 @@ import { useFileUpload } from "@/features/storage/hooks/useFileUpload";
 import { useSelectedWorkspaceId } from "@/features/workspace";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useToast } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { AxiosError } from "axios";
+import { getApiErrorMessage } from "@/shared/lib/api-error";
 import { useEffect, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { useLocation } from "wouter";
@@ -254,10 +254,7 @@ export function usePersonnelForm(id?: number) {
     } catch (error) {
       toast({
         title: "Không thể lưu",
-        description:
-          error instanceof AxiosError
-            ? error?.response?.data.message
-            : "Đã xảy ra lỗi",
+        description: getApiErrorMessage(error),
         variant: "destructive",
       });
     }

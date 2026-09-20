@@ -24,7 +24,7 @@ import { EnterpriseContactsStep } from "../components/steps/EnterpriseContactsSt
 import { EnterpriseDocumentsStep } from "../components/steps/EnterpriseDocumentsStep";
 
 import { parseVietQR } from "@/utils/commons";
-import { getApiErrorDetails, getFirstApiFieldError } from "@/shared/lib/api-error";
+import { getApiErrorMessage } from "@/shared/lib/api-error";
 import type { BankAccount, Branch, Contact } from "../data/constants";
 import { getDefaultOrganizationImage } from "../data/default-organization-images";
 import {
@@ -92,12 +92,9 @@ export function useEnterpriseCreateForm() {
       setLocation("/enterprise");
     },
     onError: (error) => {
-      const fieldError = getFirstApiFieldError(error);
       toast({
         title: "Lỗi",
-        description: fieldError
-          ? `${fieldError.field}: ${fieldError.message}`
-          : getApiErrorDetails(error).message,
+        description: getApiErrorMessage(error),
         variant: "destructive",
       });
     },
