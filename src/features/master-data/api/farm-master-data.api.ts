@@ -65,7 +65,10 @@ export const farmDepartmentApi = {
       headers: getHeaders(workspaceId),
     }).then(() => undefined),
 
-  options: (params?: { page?: number; size?: number }, workspaceId?: number) =>
+  options: (
+    params?: { onlyOwner?: boolean; page?: number; size?: number },
+    workspaceId?: number,
+  ) =>
     apiClient
       .get<FarmPageResponse<DepartmentOptionResponse>>(`${BASE}/departments/options`, {
         params,
@@ -122,7 +125,10 @@ export const farmPositionApi = {
       headers: getHeaders(workspaceId),
     }),
 
-  options: (params?: { page?: number; size?: number }, workspaceId?: number) =>
+  options: (
+    params?: { onlyOwner?: boolean; page?: number; size?: number },
+    workspaceId?: number,
+  ) =>
     apiClient
       .get<FarmPageResponse<PositionOptionResponse>>(`${BASE}/positions/options`, {
         params,

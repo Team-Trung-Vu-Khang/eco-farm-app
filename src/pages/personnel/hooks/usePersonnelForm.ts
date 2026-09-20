@@ -36,12 +36,12 @@ export function usePersonnelForm(id?: number) {
   const { items: departmentOptions, loading: departmentsLoading } =
     useFarmDepartmentOptions({
       workspaceId: parsedWorkspaceId,
-      params: { size: 100 },
+      params: { onlyOwner: true, size: 100 },
     });
   const { items: positionOptions, loading: positionsLoading } =
     useFarmPositionOptions({
       workspaceId: parsedWorkspaceId,
-      params: { size: 100 },
+      params: { onlyOwner: true, size: 100 },
     });
 
   const { data: personnel, isLoading: isPersonnelLoading } =
@@ -69,18 +69,13 @@ export function usePersonnelForm(id?: number) {
     name: string | undefined,
     options: Array<{ id: number; name: string; source: string }>,
   ) => {
-    if (id && source) {
-      return buildOptionValue(source, id);
+    // options chỉ chứa bản OWNER (API lọc bằng onlyOwner).
+    if (id && source === "OWNER") {
+      const matched = options.find((item) => item.id === id);
+      if (matched) return buildOptionValue(matched.source, matched.id);
     }
 
-    if (id) {
-      const matchedById = options.find((item) => item.id === id);
-      if (matchedById) {
-        return buildOptionValue(matchedById.source, matchedById.id);
-      }
-      return String(id);
-    }
-
+    // Dữ liệu cũ trỏ sang bản MASTER (id khác) — dò lại theo tên để lấy bản OWNER.
     if (name) {
       const matchedByName = options.find(
         (item) => item.name.toLowerCase() === name.toLowerCase(),
@@ -88,8 +83,10 @@ export function usePersonnelForm(id?: number) {
       if (matchedByName) {
         return buildOptionValue(matchedByName.source, matchedByName.id);
       }
-      return name;
     }
+
+    // Options chưa tải xong: giữ lựa chọn đã lưu để không mất dữ liệu.
+    if (id && source) return buildOptionValue(source, id);
 
     return "";
   };
@@ -151,7 +148,11 @@ export function usePersonnelForm(id?: number) {
         bankBranch: personnel.bankAccounts?.[0]?.branch || "",
       });
     }
-  }, [personnel, methods, departmentOptions, positionOptions]);
+    // Dùng độ dài thay cho chính mảng: `items` là tham chiếu mới sau mỗi render
+    // nên đưa thẳng vào deps sẽ khiến reset chạy lặp, xoá dữ liệu đang nhập dở.
+    // Vẫn reset lại đúng một lần khi options tải xong để khớp đúng phòng ban/chức vụ.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [personnel, methods, departmentOptions.length, positionOptions.length]);
 
   const onSubmit = async (values: PersonnelFormValues) => {
     let finalAvatarUrl = values.avatarUrl;

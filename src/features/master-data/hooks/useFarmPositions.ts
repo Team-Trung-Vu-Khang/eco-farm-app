@@ -14,7 +14,10 @@ export const farmPositionKeys = {
     [...farmPositionKeys.all(), "list", params ?? {}, workspaceId] as const,
   detail: (id: number, workspaceId?: number) =>
     [...farmPositionKeys.all(), "detail", id, workspaceId] as const,
-  options: (params?: { page?: number; size?: number }, workspaceId?: number) =>
+  options: (
+    params?: { onlyOwner?: boolean; page?: number; size?: number },
+    workspaceId?: number,
+  ) =>
     [...farmPositionKeys.all(), "options", params ?? {}, workspaceId] as const,
   masterData: (
     params?: { keyword?: string; used?: boolean; page?: number; size?: number },
@@ -74,7 +77,7 @@ export function useFarmPositionOptions({
   workspaceId,
   enabled = true,
 }: {
-  params?: { page?: number; size?: number };
+  params?: { onlyOwner?: boolean; page?: number; size?: number };
   workspaceId?: number;
   enabled?: boolean;
 } = {}) {
