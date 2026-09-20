@@ -41,6 +41,17 @@ const PlantIdentificationListPage = () => {
         </Link>
       }
     >
+      {/* Cùng nguồn totalElements với footer phân trang của DataTable */}
+      {!isLoading && (
+        <p className="mb-3 text-sm text-slate-500">
+          Đã tìm thấy{" "}
+          <span className="font-bold text-primary">
+            {response?.totalElements ?? 0}
+          </span>{" "}
+          cây trồng
+        </p>
+      )}
+
       <DataTable
         data={plants}
         columns={columns}

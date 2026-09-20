@@ -410,6 +410,24 @@ export interface CultivationZoneQueryParams {
 
 // ─── Plant Identification ───────────────────────────────────────────────────
 
+/**
+ * Hiện trạng sức khỏe cây trồng. `null` = chưa đánh giá.
+ * TREATING và DEAD hiện chưa hiển thị trên UI nhưng API vẫn nhận.
+ */
+export type FarmPlantHealthStatus =
+  | "HEALTHY"
+  | "PEST"
+  | "HARVESTED"
+  | "TREATING"
+  | "DEAD";
+
+/** Giống cây (danh mục gốc) hoặc hạt giống (của workspace) gắn với cây trồng */
+export interface PlantVariantRef {
+  id: number;
+  code?: string;
+  name?: string;
+}
+
 export interface FarmPlantIdentificationRequest {
   code?: string;
   location: FarmCultivationZoneScopeRequest;
@@ -426,6 +444,12 @@ export interface FarmPlantIdentificationRequest {
   displayOrder?: number;
   metadataJson?: Record<string, unknown>;
   domainCode?: "CROP" | "LIVESTOCK" | "AQUACULTURE";
+  /** Giống cây — bắt buộc nếu không gửi `subjectVariantId` */
+  productionSubjectVariantId?: number;
+  /** Hạt giống — bắt buộc nếu không gửi `productionSubjectVariantId` */
+  subjectVariantId?: number;
+  /** Không gửi hoặc gửi null khi sửa đều giữ nguyên giá trị hiện có */
+  healthStatus?: FarmPlantHealthStatus;
 }
 
 export interface FarmPlantIdentificationResponse {
@@ -448,6 +472,12 @@ export interface FarmPlantIdentificationResponse {
   createdAt?: string;
   domainCode?: "CROP" | "LIVESTOCK" | "AQUACULTURE";
   updatedAt?: string;
+  /** Cây tạo trước 2026-09-20 có giá trị null */
+  productionSubjectVariant?: PlantVariantRef | null;
+  /** Null khi cây chỉ gắn giống cây, không gắn hạt giống */
+  subjectVariant?: PlantVariantRef | null;
+  /** Null nghĩa là chưa đánh giá */
+  healthStatus?: FarmPlantHealthStatus | null;
 }
 
 export interface PlantIdentificationQueryParams {
@@ -455,11 +485,26 @@ export interface PlantIdentificationQueryParams {
   areaId?: number;
   plotId?: number;
   cultivationZoneId?: number;
+  productionZoneId?: number;
+  /** Tìm theo mã cây, code/tên giống cây, code/tên hạt giống */
   keyword?: string;
   status?: string;
   domainCode?: "CROP" | "LIVESTOCK" | "AQUACULTURE";
   page?: number;
   size?: number;
+  /** Lọc theo Giống cây */
+  productionSubjectVariantId?: number;
+  /** Lọc theo Hạt giống */
+  subjectVariantId?: number;
+  healthStatus?: FarmPlantHealthStatus;
+  /** Id loại chứng nhận, OR trong danh sách */
+  agricultureCertificateIds?: number[];
+  /** Tuổi tối thiểu tính bằng NGÀY (UI nhập tháng/năm thì tự quy đổi) */
+  durationDaysFrom?: number;
+  /** Tuổi tối đa tính bằng NGÀY */
+  durationDaysTo?: number;
+  /** Nhiều vùng canh tác (OR) */
+  productionZoneIds?: number[];
 }
 
 // ─── Production Health Metrics ──────────────────────────────────────────────

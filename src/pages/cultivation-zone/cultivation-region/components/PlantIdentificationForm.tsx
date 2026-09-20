@@ -67,6 +67,7 @@ const PlantIdentificationForm = ({
         id: String(crop.id),
         name: crop.cropVarietyName || crop.cropName || `Giống #${crop.id}`,
         code: crop.cropVarietyCode,
+        variantKind: crop.variantKind as "production" | "subject" | undefined,
       })),
     [selectedCropsData],
   );
@@ -103,7 +104,10 @@ const PlantIdentificationForm = ({
       description: "Thêm từng cây trồng, chọn vị trí và điền thông tin",
       // Optional step — user may proceed without adding any plant.
       // Plants that are added must still have a valid plot/boundary.
-      isValid: plants.every((p) => p.plotId && !p.isInvalidBoundary),
+      // Mỗi cây phải có vị trí hợp lệ và một Giống cây / Hạt giống (API bắt buộc)
+      isValid: plants.every(
+        (p) => p.plotId && !p.isInvalidBoundary && p.varietyId,
+      ),
       content: (
         <Step2PlantEntry
           plants={plants as any}

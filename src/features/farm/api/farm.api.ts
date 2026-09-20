@@ -416,12 +416,34 @@ export const cultivationZoneApi = {
 
 // ─── Plant Identification API ────────────────────────────────────────────────
 
+/**
+ * API nhận danh sách id dạng `ids=1,2` (axios mặc định gửi `ids[]=1&ids[]=2`),
+ * nên phẳng hoá mảng thành chuỗi phân tách bằng dấu phẩy trước khi gửi.
+ */
+const withCsvArrayParams = <T extends Record<string, unknown>>(
+  params?: T,
+): Record<string, unknown> | undefined => {
+  if (!params) return params;
+
+  return Object.fromEntries(
+    Object.entries(params)
+      .filter(([, value]) => value !== undefined && value !== null)
+      .map(([key, value]) => [
+        key,
+        Array.isArray(value) ? value.join(",") : value,
+      ])
+      .filter(([, value]) => value !== ""),
+  );
+};
+
 export const plantIdentificationApi = {
   list: (params?: PlantIdentificationQueryParams) =>
     apiClient
       .get<
         PageResponse<FarmPlantIdentificationResponse>
-      >(FARM_ENDPOINTS.plantIdentifications, { params })
+      >(FARM_ENDPOINTS.plantIdentifications, {
+        params: withCsvArrayParams(params),
+      })
       .then((r) => {
         if (r.data?.content) {
           r.data.content = r.data.content.map(normalizePlantIdentification);

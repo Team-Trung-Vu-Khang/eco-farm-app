@@ -22,7 +22,7 @@ import {
 import { MapContainer } from "react-leaflet";
 import { PlantCard } from "./PlantCard";
 import { AllPlantsMapContent } from "./AllPlantsMapContent";
-import { type PlantEntry } from "./types";
+import { type PlantEntry, type VarietyOption } from "./types";
 
 interface Step2PlantEntryProps {
   plants: PlantEntry[];
@@ -31,7 +31,7 @@ interface Step2PlantEntryProps {
   updatePlant: (id: string, partial: Partial<PlantEntry>) => void;
   scopedGeographicalUnits: any[];
   /** Giống / hạt giống của vùng canh tác chọn ở bước 1 */
-  varietyOptions?: Array<{ id: string; name: string; code?: string }>;
+  varietyOptions?: VarietyOption[];
   initialData: any;
   isImportOpen: boolean;
   setIsImportOpen: (open: boolean) => void;

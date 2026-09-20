@@ -25,13 +25,19 @@ import {
 } from "lucide-react";
 import { useRef, useState } from "react";
 import readXlsxFile from "read-excel-file";
+import * as XLSX from "xlsx";
+import {
+  PLANT_HEALTH_STATUS_LABELS,
+  type PlantHealthStatus,
+  type VarietyOption,
+} from "./types";
 
 interface ImportPlantDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onImport: (plants: Partial<Plant>[]) => void;
   /** Giống / hạt giống của vùng canh tác chọn ở bước 1 */
-  varietyOptions?: Array<{ id: string; name: string; code?: string }>;
+  varietyOptions?: VarietyOption[];
 }
 
 interface TempPlant extends Partial<Plant> {
@@ -39,6 +45,46 @@ interface TempPlant extends Partial<Plant> {
   isValid: boolean;
   errors?: string[];
 }
+
+/** Tiêu đề cột của file mẫu — phải khớp với phần nhận diện cột khi đọc file */
+const SAMPLE_HEADERS = [
+  "Chiều cao (m)",
+  "Độ tuổi",
+  "Đơn vị tuổi",
+  "Ngày trồng",
+  "Vĩ độ",
+  "Kinh độ",
+  "Hiện trạng sức khỏe",
+  "Ghi chú",
+];
+
+/**
+ * Chuẩn hoá cột "Hiện trạng sức khỏe" trong Excel.
+ * Nhận cả nhãn tiếng Việt lẫn mã enum của API; giá trị lạ trả undefined
+ * (coi như chưa đánh giá) thay vì làm hỏng cả dòng.
+ */
+const parseHealthStatus = (raw?: string): PlantHealthStatus | undefined => {
+  const value = raw?.trim().toLowerCase();
+  if (!value) return undefined;
+
+  const byLabel: Record<string, PlantHealthStatus> = {
+    "khỏe mạnh": "HEALTHY",
+    "khoẻ mạnh": "HEALTHY",
+    bệnh: "PEST",
+    "mắc bệnh": "PEST",
+    "thu hoạch": "HARVESTED",
+    "đã thu hoạch": "HARVESTED",
+    "đang điều trị": "TREATING",
+    "đã chết": "DEAD",
+  };
+
+  const byCode = value.toUpperCase();
+  if (byCode in PLANT_HEALTH_STATUS_LABELS) {
+    return byCode as PlantHealthStatus;
+  }
+
+  return byLabel[value];
+};
 
 export function ImportPlantDialog({
   open,
@@ -60,7 +106,7 @@ export function ImportPlantDialog({
     {
       key: "height",
       label: "Chiều cao (m)",
-      render: (value, item) => (
+      render: (value: any, item) => (
         <span
           className={
             item.errors?.includes("height") ? "text-red-500 font-medium" : ""
@@ -73,7 +119,7 @@ export function ImportPlantDialog({
     {
       key: "ageValue",
       label: "Độ tuổi",
-      render: (value, item) => (
+      render: (value: any, item) => (
         <span
           className={
             item.errors?.includes("ageValue") ? "text-red-500 font-medium" : ""
@@ -95,7 +141,7 @@ export function ImportPlantDialog({
     {
       key: "plantedDate",
       label: "Ngày trồng",
-      render: (value, item) => (
+      render: (value: any, item) => (
         <span
           className={
             item.errors?.includes("plantedDate")
@@ -123,6 +169,18 @@ export function ImportPlantDialog({
             : "Thiếu"}
         </span>
       ),
+    },
+    {
+      key: "healthStatus",
+      label: "Hiện trạng",
+      render: (value: unknown) =>
+        value ? (
+          <span className="text-xs font-medium text-slate-700">
+            {PLANT_HEALTH_STATUS_LABELS[value as string] ?? String(value)}
+          </span>
+        ) : (
+          <span className="text-xs italic text-slate-400">Chưa đánh giá</span>
+        ),
     },
     { key: "note", label: "Ghi chú" },
     {
@@ -169,11 +227,8 @@ export function ImportPlantDialog({
             headerClean?.includes("cao")
           ) {
             rowData.height = val?.toString();
-          } else if (
-            headerClean?.includes("độ tuổi") ||
-            headerClean?.includes("tuổi")
-          ) {
-            rowData.ageValue = val?.toString();
+            // "Đơn vị tuổi" phải xét trước "Độ tuổi": cả hai đều chứa "tuổi",
+            // để sau sẽ bị nhánh độ tuổi nuốt mất.
           } else if (
             headerClean?.includes("đơn vị") ||
             headerClean?.includes("đvt")
@@ -185,6 +240,11 @@ export function ImportPlantDialog({
             else if (unit === "tháng" || unit === "months" || unit === "month")
               rowData.ageUnit = "months";
             else rowData.ageUnit = "years"; // Default to years
+          } else if (
+            headerClean?.includes("độ tuổi") ||
+            headerClean?.includes("tuổi")
+          ) {
+            rowData.ageValue = val?.toString();
           } else if (headerClean?.includes("ngày trồng")) {
             // handle date
             if (val instanceof Date) {
@@ -206,6 +266,12 @@ export function ImportPlantDialog({
               const date = new Date((val - (25567 + 2)) * 86400 * 1000);
               rowData.plantedDate = date.toISOString().split("T")[0];
             }
+          } else if (
+            headerClean?.includes("sức khỏe") ||
+            headerClean?.includes("sức khoẻ") ||
+            headerClean?.includes("hiện trạng")
+          ) {
+            rowData.healthStatus = parseHealthStatus(val?.toString());
           } else if (headerClean?.includes("ghi chú")) {
             rowData.note = val?.toString();
           } else if (headerClean?.includes("vĩ độ") || headerClean === "lat") {
@@ -243,6 +309,7 @@ export function ImportPlantDialog({
           plantedDate:
             rowData.plantedDate || new Date().toISOString().split("T")[0],
           note: rowData.note || "",
+          healthStatus: rowData.healthStatus || undefined,
           coordinate: {
             lat: rowData.lat || 0,
             lng: rowData.lng || 0,
@@ -271,15 +338,51 @@ export function ImportPlantDialog({
     }
   };
 
+  /**
+   * Sinh file mẫu ngay tại trình duyệt thay vì tải từ link tĩnh, để các cột
+   * luôn khớp với phần đọc file bên dưới (thêm cột nào thì mẫu có cột đó).
+   */
   const handleDownloadSample = () => {
+    const today = new Date().toISOString().split("T")[0];
+
+    const rows = [
+      SAMPLE_HEADERS,
+      [
+        "2.5",
+        "18",
+        "months",
+        today,
+        "11.5460",
+        "106.8938",
+        "Khỏe mạnh",
+        "Cây đầu dòng",
+      ],
+      ["1.8", "2", "years", today, "11.5472", "106.8951", "Bệnh", ""],
+      [
+        "3.1",
+        "400",
+        "days",
+        today,
+        "11.5485",
+        "106.8964",
+        "",
+        "Chưa đánh giá sức khỏe",
+      ],
+    ];
+
+    const worksheet = XLSX.utils.aoa_to_sheet(rows);
+    worksheet["!cols"] = SAMPLE_HEADERS.map((header) => ({
+      wch: Math.max(header.length + 4, 14),
+    }));
+
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Danh sách cây trồng");
+    XLSX.writeFile(workbook, "mau-danh-sach-cay-trong.xlsx");
+
     toast({
-      title: "Đang chuẩn bị file mẫu",
-      description: "Hệ thống đang tạo file mẫu cho bạn...",
+      title: "Đã tải file mẫu",
+      description: "Điền dữ liệu theo đúng tiêu đề cột rồi tải lên lại.",
     });
-    window.open(
-      "https://static.affina.com.vn/affina/9c1e9ec6-1992-4590-a9dc-c24bbadd234d.xlsx",
-      "_blank",
-    );
   };
 
   const handleImport = () => {
@@ -298,7 +401,13 @@ export function ImportPlantDialog({
     const plantsToImport = validItems.map(
       ({ id, isValid, errors, ...rest }) => ({
         ...rest,
-        ...(varietyId ? { varietyId } : {}),
+        ...(varietyId
+          ? {
+              varietyId,
+              variantKind: varietyOptions.find((o) => o.id === varietyId)
+                ?.variantKind,
+            }
+          : {}),
       }),
     );
 
@@ -366,7 +475,7 @@ export function ImportPlantDialog({
                   <h4 className="font-bold text-green-900">Mẫu file Excel</h4>
                   <p className="text-sm text-green-700 opacity-80">
                     Tải xuống file mẫu (Gồm: Chiều cao, Độ tuổi, Đơn vị tuổi,
-                    Ngày trồng, Vĩ độ, Kinh độ, Ghi chú)
+                    Ngày trồng, Vĩ độ, Kinh độ, Hiện trạng sức khỏe, Ghi chú)
                   </p>
                 </div>
               </div>
