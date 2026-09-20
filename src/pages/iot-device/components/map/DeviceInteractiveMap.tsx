@@ -1,10 +1,10 @@
-import React, { useEffect } from "react";
-import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
+import { cn } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
+import { Activity, Battery, Wifi } from "lucide-react";
+import { useEffect } from "react";
+import { MapContainer, Marker, Popup, TileLayer, useMap } from "react-leaflet";
 import type { IoTDevice } from "../../types";
-import { cn } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { Battery, Wifi, Activity } from "lucide-react";
 
 // Fix for default Leaflet icons in Vite/React
 import icon from "leaflet/dist/images/marker-icon.png";
@@ -54,7 +54,7 @@ export function DeviceInteractiveMap({
       >
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
         />
         <ChangeView center={center} zoom={zoom} />
         {devices.map((device) => (

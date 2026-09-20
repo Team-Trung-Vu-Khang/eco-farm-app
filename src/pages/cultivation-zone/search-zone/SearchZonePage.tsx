@@ -50,13 +50,13 @@ import {
 } from "react-leaflet";
 import { useLocation } from "wouter";
 import type { CultivationRegion } from "../../../stores/useCultivationRegionStore";
-import CultivationRegionDetailBody from "../cultivation-region/CultivationRegionDetailBody";
-import type { CultivationRegionDetails } from "../cultivation-region/useCultivationRegionDetail";
 import {
   LAND_TYPES,
   type Coordinate,
   type Region,
 } from "../../region-chart/constants";
+import CultivationRegionDetailBody from "../cultivation-region/CultivationRegionDetailBody";
+import type { CultivationRegionDetails } from "../cultivation-region/useCultivationRegionDetail";
 import {
   mockSearchZoneCultivationRegions,
   mockSearchZoneDetailRecords,
@@ -1243,7 +1243,7 @@ const SearchZonePage = () => {
                       zoomControl={false}
                       scrollWheelZoom
                     >
-                      <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+                      <TileLayer url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}" />
                       <ZoneMapContent
                         regions={selectedCultivationTargets.visibleRegions}
                         enterprises={enterprises}
@@ -1313,7 +1313,7 @@ const SearchZonePage = () => {
                             zoomControl={false}
                             scrollWheelZoom
                           >
-                            <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+                            <TileLayer url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}" />
                             <ZoneMapContent
                               regions={
                                 selectedCultivationTargets.visibleRegions
@@ -2125,7 +2125,10 @@ const buildMockCultivationRegionDetails = (
 
       if (!groups[regionKey]) {
         groups[regionKey] = {
-          region: region || { id: regionKey, name: entity.regionName || entity.name },
+          region: region || {
+            id: regionKey,
+            name: entity.regionName || entity.name,
+          },
           areas: {},
         };
       }
@@ -2155,14 +2158,16 @@ const buildMockCultivationRegionDetails = (
     return sum + Number(region?.area || area?.area || plot?.area || 0);
   }, 0);
 
-  const personnel = (detail?.managers || zone.managerIds).map((name, index) => ({
-    id: index + 1,
-    fullName: name,
-    avatarUrl: null,
-    positionName: index === 0 ? "Quản lý vùng" : "Kỹ thuật viên",
-    positionCode: index === 0 ? "MANAGER" : "TECH",
-    phone: `09${index + 1}0 000 00${index + 1}`,
-  }));
+  const personnel = (detail?.managers || zone.managerIds).map(
+    (name, index) => ({
+      id: index + 1,
+      fullName: name,
+      avatarUrl: null,
+      positionName: index === 0 ? "Quản lý vùng" : "Kỹ thuật viên",
+      positionCode: index === 0 ? "MANAGER" : "TECH",
+      phone: `09${index + 1}0 000 00${index + 1}`,
+    }),
+  );
 
   const crops = (detail?.crops || zone.selectedCrops).map((name, index) => ({
     id: `crop-${zone.id}-${index + 1}`,
@@ -2212,13 +2217,25 @@ const buildMockCultivationRegionDetails = (
       : null,
     entityConfigs: selectedEntities.map((entity) => ({
       entity,
-      farmingMethod: { id: zone.farmingMethodId, name: detail?.farmingMethod || zone.farmingMethodId },
-      irrigationMethod: { id: zone.irrigationMethodId, name: detail?.irrigation || zone.irrigationMethodId },
+      farmingMethod: {
+        id: zone.farmingMethodId,
+        name: detail?.farmingMethod || zone.farmingMethodId,
+      },
+      irrigationMethod: {
+        id: zone.irrigationMethodId,
+        name: detail?.irrigation || zone.irrigationMethodId,
+      },
       crops,
     })),
     technicalConfig: {
-      farmingMethod: { id: zone.farmingMethodId, name: detail?.farmingMethod || zone.farmingMethodId },
-      irrigationMethod: { id: zone.irrigationMethodId, name: detail?.irrigation || zone.irrigationMethodId },
+      farmingMethod: {
+        id: zone.farmingMethodId,
+        name: detail?.farmingMethod || zone.farmingMethodId,
+      },
+      irrigationMethod: {
+        id: zone.irrigationMethodId,
+        name: detail?.irrigation || zone.irrigationMethodId,
+      },
       crops,
     },
     harvestStats: {

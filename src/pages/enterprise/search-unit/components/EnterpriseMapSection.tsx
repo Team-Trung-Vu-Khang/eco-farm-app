@@ -1,19 +1,19 @@
-import React, { useEffect } from "react";
 import { Button, Card, cn } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { Layers } from "lucide-react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
+import { Layers } from "lucide-react";
+import React, { useEffect } from "react";
 import {
   MapContainer,
   Marker,
   Polygon,
-  Tooltip,
   TileLayer,
+  Tooltip,
   useMap,
 } from "react-leaflet";
 
-import defaultMarkerIconUrl from "leaflet/dist/images/marker-icon.png";
 import defaultMarkerIcon2xUrl from "leaflet/dist/images/marker-icon-2x.png";
+import defaultMarkerIconUrl from "leaflet/dist/images/marker-icon.png";
 import defaultMarkerShadowUrl from "leaflet/dist/images/marker-shadow.png";
 
 interface EnterpriseMapSectionProps {
@@ -66,7 +66,9 @@ const makeImageIcon = (image: string, size: number) =>
     className: "rounded-full border border-white shadow-lg",
   });
 
-const getEnterpriseTypeLabel = (type: "enterprise" | "farm" | "cooperative") => {
+const getEnterpriseTypeLabel = (
+  type: "enterprise" | "farm" | "cooperative",
+) => {
   if (type === "enterprise") return "Doanh nghiệp";
   if (type === "cooperative") return "Hợp tác xã";
   return "Nông hộ";
@@ -191,7 +193,7 @@ export const EnterpriseMapSection: React.FC<EnterpriseMapSectionProps> = ({
           zoomControl={false}
           scrollWheelZoom
         >
-          <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+          <TileLayer url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}" />
           <MapSynchronizer mapRef={mapRef} center={mapCurrentCenter} />
 
           {visiblePolygons.map((poly) => {

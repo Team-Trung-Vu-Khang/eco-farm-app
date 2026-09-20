@@ -1,3 +1,4 @@
+import treeMarkerIcon from "@/assets/tree.webp";
 import {
   Badge,
   Button,
@@ -11,14 +12,13 @@ import "leaflet/dist/leaflet.css";
 import { Edit2, Layers, Navigation } from "lucide-react";
 import { useEffect, useMemo } from "react";
 import { MapContainer, Marker, TileLayer, useMap } from "react-leaflet";
-import { MOCK_SEEDS } from "../constants";
 import type {
   AnimalDistributionMethod,
   AnimalEntry,
   AnimalLocation,
   RowConfig,
 } from "../constants";
-import treeMarkerIcon from "@/assets/tree.webp";
+import { MOCK_SEEDS } from "../constants";
 type Props = {
   distributionMethod: AnimalDistributionMethod;
   animalEntries: AnimalEntry[];
@@ -73,10 +73,7 @@ export const AnimalDistributionGpsStep = ({
   }, [animalLocations, selectedAnimalId]);
 
   const mapCenter: [number, number] = activeAnimalLocation
-    ? [
-        activeAnimalLocation.coordinate.lat,
-        activeAnimalLocation.coordinate.lng,
-      ]
+    ? [activeAnimalLocation.coordinate.lat, activeAnimalLocation.coordinate.lng]
     : [11.558, 107.134];
 
   return (
@@ -139,7 +136,7 @@ export const AnimalDistributionGpsStep = ({
                 zoomControl={false}
                 scrollWheelZoom
               >
-                <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+                <TileLayer url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}" />
                 <MapCenterSync center={mapCenter} />
 
                 {animalLocations.map((location) => {
@@ -235,7 +232,8 @@ export const AnimalDistributionGpsStep = ({
                   <div className="bg-white/10 rounded px-2 py-1.5 backdrop-blur-sm">
                     <div className="text-white/50 mb-0.5">Mật độ</div>
                     <div className="font-semibold">
-                      ~{totalAnimals > 0 ? (totalAnimals / 10).toFixed(1) : 0}/m²
+                      ~{totalAnimals > 0 ? (totalAnimals / 10).toFixed(1) : 0}
+                      /m²
                     </div>
                   </div>
                 </div>

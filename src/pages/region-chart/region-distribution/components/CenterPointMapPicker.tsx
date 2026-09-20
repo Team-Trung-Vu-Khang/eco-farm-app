@@ -1,4 +1,16 @@
-import { useMemo, useCallback, useState, useRef, useEffect } from "react";
+import { getMarkerIcon } from "@/pages/cultivation-zone/cultivation-region/components/mapUtils";
+import { useDebounce } from "@/shared/hooks/useDebounce";
+import {
+  Button,
+  Dialog,
+  DialogContent,
+  Input,
+  Label,
+  useToast,
+} from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import L from "leaflet";
+import { Maximize2, Search } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useFormContext } from "react-hook-form";
 import {
   MapContainer,
@@ -7,18 +19,6 @@ import {
   useMap,
   useMapEvents,
 } from "react-leaflet";
-import L from "leaflet";
-import {
-  Input,
-  Button,
-  Label,
-  useToast,
-  Dialog,
-  DialogContent,
-} from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { Search, Maximize2 } from "lucide-react";
-import { getMarkerIcon } from "@/pages/cultivation-zone/cultivation-region/components/mapUtils";
-import { useDebounce } from "@/shared/hooks/useDebounce";
 import type { RegionFormValues } from "../data/region-form.schema";
 
 const customIcon = getMarkerIcon("blue");
@@ -180,7 +180,7 @@ const PickerContent = ({
           >
             <TileLayer
               attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+              url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
             />
             <ChangeView center={markerPosition} />
             <MapEvents onChange={handleMapClick} />

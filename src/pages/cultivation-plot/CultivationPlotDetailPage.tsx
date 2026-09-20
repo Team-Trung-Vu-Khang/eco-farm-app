@@ -87,7 +87,7 @@ const CultivationPlotDetailPage = () => {
                 className="h-full w-full"
                 zoomControl={false}
               >
-                <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+                <TileLayer url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}" />
                 <MapController center={center} />
                 {geometry?.coordinates && (
                   <Polygon

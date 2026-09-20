@@ -1,13 +1,24 @@
 import AddressSearchInput from "@/components/AddressSearchInput";
-import { Button, Input, Label, useToast } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import {
+  Button,
+  Input,
+  Label,
+  useToast,
+} from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { MapPin } from "lucide-react";
 import { useCallback, useEffect, useRef } from "react";
-import { MapContainer, Marker, TileLayer, useMap, useMapEvents } from "react-leaflet";
+import {
+  MapContainer,
+  Marker,
+  TileLayer,
+  useMap,
+  useMapEvents,
+} from "react-leaflet";
 
-import defaultMarkerIconUrl from "leaflet/dist/images/marker-icon.png";
 import defaultMarkerIcon2xUrl from "leaflet/dist/images/marker-icon-2x.png";
+import defaultMarkerIconUrl from "leaflet/dist/images/marker-icon.png";
 import defaultMarkerShadowUrl from "leaflet/dist/images/marker-shadow.png";
 
 import type { BranchFormData } from "../../types/types";
@@ -233,7 +244,7 @@ export function BranchLocationMap({
           zoomControl
           scrollWheelZoom
         >
-          <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+          <TileLayer url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}" />
           <MapCenterSync center={center} />
           <MapClickHandler onPickLocation={handlePickLocation} />
           <DraggableLocationMarker

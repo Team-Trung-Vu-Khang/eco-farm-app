@@ -8,8 +8,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { MapContainer, TileLayer, Rectangle } from "react-leaflet";
 import L from "leaflet";
+import { MapContainer, Rectangle, TileLayer } from "react-leaflet";
 import { type SubArea, LAND_TYPES } from "../constants";
 import { DraggableRectangle } from "./DraggableRectangle";
 
@@ -105,7 +105,7 @@ export const SubAreaEditor = ({
               >
                 <TileLayer
                   attribution="&copy; OpenStreetMap"
-                  url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                  url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
                 />
                 {/* Parent Outline */}
                 <Rectangle

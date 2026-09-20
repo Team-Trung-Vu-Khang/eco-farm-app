@@ -994,7 +994,7 @@ const AquacultureSearchFarmPage = () => {
                           zoomControl={false}
                           scrollWheelZoom
                         >
-                          <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+                          <TileLayer url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}" />
                           <MapSync center={mapCenter} zoom={mapZoom} />
                           {regionPath.length > 0 ? (
                             <Polygon
@@ -1131,7 +1131,7 @@ const AquacultureSearchFarmPage = () => {
                     zoomControl={false}
                     scrollWheelZoom
                   >
-                    <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+                    <TileLayer url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}" />
                     <MapSync center={mapCenter} zoom={mapZoom} />
                     {regionPath.length > 0 ? (
                       <Polygon

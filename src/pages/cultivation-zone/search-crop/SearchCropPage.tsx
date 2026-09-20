@@ -1,5 +1,5 @@
-import PageWrapper from "@/components/PageWrapper";
 import treeMarkerIcon from "@/assets/tree.webp";
+import PageWrapper from "@/components/PageWrapper";
 import useGroupCropStore from "@/stores/useGroupCropStore";
 import {
   Badge,
@@ -993,11 +993,11 @@ const SearchCropPage = () => {
                                   <MapContainer
                                     center={mapView.center}
                                     zoom={mapView.zoom}
-                                    className="h-full w-full"
+                                    className="h-full w-full z-0"
                                     zoomControl={false}
                                     scrollWheelZoom
                                   >
-                                    <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+                                    <TileLayer url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}" />
                                     <MapContent
                                       currentRegion={currentRegion}
                                       cropsInThisRegion={cropsInThisRegion}
@@ -1010,7 +1010,7 @@ const SearchCropPage = () => {
                                   </MapContainer>
                                   <div
                                     onClick={() => setIsMapExpanded(true)}
-                                    className="p-3 rounded-xl cursor-pointer absolute top-4 right-4 z-1000 bg-white/90 backdrop-blur-sm shadow-xl hover:bg-white transition-colors"
+                                    className="p-3 rounded-xl cursor-pointer absolute top-4 right-4 z-1 bg-white/90 backdrop-blur-sm shadow-xl hover:bg-white transition-colors"
                                   >
                                     <Maximize2 size={20} />
                                   </div>
@@ -1042,9 +1042,10 @@ const SearchCropPage = () => {
                                       </div>
                                       <Button
                                         className="w-full h-11 rounded-xl font-black shadow-lg shadow-primary/20 mt-4 gap-2"
-                                        onClick={() =>
-                                          setIsCropDetailOpen(true)
-                                        }
+                                        onClick={() => {
+                                          setIsMapExpanded(false);
+                                          setIsCropDetailOpen(true);
+                                        }}
                                       >
                                         <Maximize2 size={16} />
                                         Xem chi tiết
@@ -1174,7 +1175,7 @@ const SearchCropPage = () => {
                     zoomControl={false}
                     scrollWheelZoom
                   >
-                    <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+                    <TileLayer url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}" />
                     <MapContent
                       currentRegion={regions.find(
                         (r) => r.id === selectedRegionId,
@@ -1245,7 +1246,10 @@ const SearchCropPage = () => {
 
                         <Button
                           className="w-full h-12 rounded-2xl font-black shadow-xl shadow-primary/20 gap-2 mt-4"
-                          onClick={() => setIsCropDetailOpen(true)}
+                          onClick={() => {
+                            setIsMapExpanded(false);
+                            setIsCropDetailOpen(true);
+                          }}
                         >
                           <Maximize2 size={18} />
                           XEM CHI TIẾT CÂY TRỒNG
