@@ -19,15 +19,12 @@ import "leaflet/dist/leaflet.css";
 import {
   Award,
   Building2,
-  ChevronRight,
   Filter,
   Layers,
   Leaf,
   MapPin,
   Maximize2,
   Minimize2,
-  PanelLeftClose,
-  PanelLeftOpen,
   Search,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
@@ -39,9 +36,8 @@ import {
   useMap,
 } from "react-leaflet";
 import useCropDetailStore from "../../../stores/useCropDetailStore";
-import useEnterpriseStore from "../../../stores/useEnterpriseStore";
 import useRegionStore from "../../../stores/useRegionStore";
-import { PROVINCES, type Region } from "../../region-chart/constants";
+import { type Region } from "../../region-chart/constants";
 import { type CropDetail } from "../constants";
 import { CropDetailDialog } from "./components/CropDetailDialog";
 import { CultivationZoneDialog } from "./components/CultivationZoneDialog";
@@ -193,144 +189,12 @@ interface AdvancedFilters {
 // Hierarchical View State
 type SearchView = "regions" | "crops" | "plants";
 
-const getRegionStatusBadge = (status: string) => {
-  const config = {
-    active: {
-      label: "Hoạt động",
-      variant: "default" as const,
-      className: "bg-emerald-500 text-white",
-    },
-    inactive: {
-      label: "Ngưng",
-      variant: "destructive" as const,
-      className: "",
-    },
-    "under-construction": {
-      label: "Đang xây dựng",
-      variant: "secondary" as const,
-      className: "bg-amber-100 text-amber-700",
-    },
-  };
-  const regionStatus =
-    status === "active"
-      ? "active"
-      : status === "under-construction"
-        ? "under-construction"
-        : "inactive";
-  const item = config[regionStatus as keyof typeof config];
-  return (
-    <Badge
-      variant={item.variant}
-      className={cn(
-        "text-[10px] uppercase font-bold px-1.5 py-0",
-        item.className,
-      )}
-    >
-      {item.label}
-    </Badge>
-  );
-};
 
-const RegionListItem = ({
-  region,
-  enterprises,
-  filteredCrops,
-  isActive,
-  onClick,
-}: {
-  region: Region;
-  enterprises: Array<{ id: string | number; name?: string }>;
-  filteredCrops: CropDetail[];
-  isActive: boolean;
-  onClick: () => void;
-}) => {
-  const matchesSearchInRegion = filteredCrops.filter(
-    (c) => c.regionId === region.id,
-  );
-
-  const enterprise = enterprises.find(
-    (e) => String(e.id) === String(region.enterpriseId),
-  );
-
-  return (
-    <div
-      className={cn(
-        "p-4 border-b hover:bg-slate-50 cursor-pointer transition-all duration-200 border-l-4",
-        isActive
-          ? "bg-primary/5 border-l-primary shadow-inner"
-          : "border-l-transparent bg-white",
-      )}
-      onClick={onClick}
-    >
-      <div className="flex justify-between items-start mb-2">
-        <Badge
-          variant="outline"
-          className="text-[9px] font-black text-slate-400 border-slate-200 uppercase px-1"
-        >
-          {region.code}
-        </Badge>
-        {getRegionStatusBadge(region.status)}
-      </div>
-
-      <h4
-        className={cn(
-          "font-bold text-sm mb-1 line-clamp-1",
-          isActive ? "text-primary" : "text-slate-800",
-        )}
-      >
-        {region.name}
-      </h4>
-
-      <div className="flex items-center gap-1.5 text-[11px] text-slate-500 mb-2">
-        <MapPin size={12} className="text-red-500 shrink-0" />
-        <span className="truncate">
-          {PROVINCES.find((p) => p.id === region.provinceId)?.name ||
-            region.provinceId}
-        </span>
-      </div>
-
-      <div className="grid grid-cols-2 gap-2 mt-3">
-        <div className="flex items-center gap-1.5">
-          <div className="p-1 rounded bg-blue-50">
-            <Building2 size={10} className="text-blue-600" />
-          </div>
-          <span className="text-[10px] text-slate-500 font-medium truncate max-w-20">
-            {enterprise?.name || "Đơn vị sở hữu"}
-          </span>
-        </div>
-        <div className="flex items-center gap-1.5 justify-end">
-          <div className="p-1 rounded bg-emerald-50">
-            <Leaf size={10} className="text-emerald-600" />
-          </div>
-          <span className="text-[10px] text-slate-500 font-medium whitespace-nowrap">
-            {matchesSearchInRegion.length} cây
-          </span>
-        </div>
-      </div>
-
-      <div className="mt-3 flex items-center justify-between">
-        <div className="flex gap-1">
-          <Badge
-            variant="secondary"
-            className="bg-slate-100 text-slate-600 text-[9px] font-bold border-none px-1.5"
-          >
-            {region.area} ha
-          </Badge>
-        </div>
-        <div className="flex items-center gap-1 text-[10px] font-bold text-primary group-hover:translate-x-1 transition-transform">
-          <span>Chi tiết</span>
-          <ChevronRight size={10} />
-        </div>
-      </div>
-    </div>
-  );
-};
 
 const SearchCropPage = () => {
   const { toast } = useToast();
   const { crops } = useCropDetailStore();
   const { regions } = useRegionStore();
-  const { enterprises } = useEnterpriseStore();
   const { groupCrops } = useGroupCropStore();
 
   const [searchQuery, setSearchQuery] = useState("");
@@ -342,14 +206,9 @@ const SearchCropPage = () => {
   const [advancedFilters, setAdvancedFilters] = useState<AdvancedFilters>({});
   const [isZoneDialogOpen, setIsZoneDialogOpen] = useState(false);
   const [isMapExpanded, setIsMapExpanded] = useState(false);
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
 
   const [currentView, setCurrentView] = useState<SearchView>("regions");
   const [selectedRegionId, setSelectedRegionId] = useState<number | null>(null);
-  const [selectedCropGroup, setSelectedCropGroup] = useState<{
-    name: string;
-    variety: string;
-  } | null>(null);
 
   const cropGroupOptions = groupCrops.map((gc) => ({
     value: gc.name,
@@ -435,35 +294,18 @@ const SearchCropPage = () => {
     });
   };
 
-  const handleViewRegion = (regionId: number) => {
-    setSelectedRegionId(regionId);
-    setCurrentView("plants");
-
-    // Auto-select first plant in this region
-    const plantsInRegion = filteredCrops.filter((c) => c.regionId === regionId);
-    if (plantsInRegion.length > 0) {
-      const firstPlant = plantsInRegion[0];
-      setActiveCropInDialog(firstPlant);
-      setSelectedCropGroup({
-        name: firstPlant.name,
-        variety: firstPlant.variety,
-      });
-    }
-  };
 
   const clearFilters = () => {
     setAdvancedFilters({});
     setSearchQuery("");
     setCurrentView("regions");
     setSelectedRegionId(null);
-    setSelectedCropGroup(null);
   };
 
   const resetToRegionsView = () => {
     if (currentView !== "regions") {
       setCurrentView("regions");
       setSelectedRegionId(null);
-      setSelectedCropGroup(null);
     }
   };
 
@@ -489,16 +331,8 @@ const SearchCropPage = () => {
       };
     }
 
-    if (!selectedRegionId) {
-      return {
-        center: [11.53, 106.88] as LatLngTuple,
-        zoom: 15,
-      };
-    }
-
-    const firstCrop = filteredCrops.find(
-      (c) => c.regionId === selectedRegionId,
-    );
+    // Chưa chọn cây: canh theo cây đầu tiên trong kết quả tìm kiếm
+    const firstCrop = filteredCrops[0];
     if (!firstCrop) {
       return {
         center: [11.53, 106.88] as LatLngTuple,
@@ -858,93 +692,16 @@ const SearchCropPage = () => {
 
         {/* MAIN BODY: Sidebar | Content */}
         <div className="flex-1 flex relative">
-          {/* Sidebar Toggle Button (Visible when collapsed) */}
-          {isSidebarCollapsed && (
-            <button
-              onClick={() => setIsSidebarCollapsed(false)}
-              className="absolute left-4 top-4 z-40 w-10 h-10 bg-white shadow-xl border border-slate-100 rounded-xl flex items-center justify-center text-primary hover:bg-slate-50 transition-all animate-in fade-in zoom-in duration-300"
-              title="Mở danh sách vùng trồng"
-            >
-              <PanelLeftOpen size={20} />
-            </button>
-          )}
-
-          {/* LEFT SIDEBAR: Region List */}
-          <div
-            className={cn(
-              "bg-white border-r flex flex-col z-30 shadow-[4px_0_24px_-12px_rgba(0,0,0,0.05)] transition-all duration-300 ease-in-out",
-              isSidebarCollapsed ? "w-0 opacity-0" : "w-85 lg:w-100",
-            )}
-          >
-            <div className="p-4 border-b bg-slate-50/50 flex items-center justify-between min-w-60">
-              <h3 className="font-black text-xs text-slate-500 uppercase tracking-widest flex items-center gap-2">
-                <MapPin size={14} className="text-primary" />
-                Vùng trồng (
-                {
-                  regions.filter((r) =>
-                    filteredCrops.some((c) => c.regionId === r.id),
-                  ).length
-                }
-                )
-              </h3>
-              <button
-                onClick={() => setIsSidebarCollapsed(true)}
-                className="p-1.5 text-slate-400 hover:text-primary hover:bg-slate-100 rounded-lg transition-colors"
-                title="Thu gọn"
-              >
-                <PanelLeftClose size={18} />
-              </button>
-            </div>
-
-            <div className="flex-1 overflow-y-auto split-scrollbar min-w-60">
-              {regions
-                .filter((region) =>
-                  filteredCrops.some((c) => c.regionId === region.id),
-                )
-                .map((region) => (
-                  <RegionListItem
-                    key={region.id}
-                    region={region}
-                    enterprises={enterprises}
-                    filteredCrops={filteredCrops}
-                    isActive={selectedRegionId === region.id}
-                    onClick={() => handleViewRegion(region.id)}
-                  />
-                ))}
-
-              {filteredCrops.length === 0 && (
-                <div className="p-10 text-center flex flex-col items-center">
-                  <div className="w-16 h-16 rounded-full bg-slate-50 flex items-center justify-center mb-4">
-                    <Search className="h-8 w-8 text-slate-200" />
-                  </div>
-                  <p className="text-sm font-bold text-slate-400">
-                    Không tìm thấy vùng phù hợp
-                  </p>
-                </div>
-              )}
-            </div>
-          </div>
-
           {/* RIGHT CONTENT: Map & Plant List */}
           <div className="flex-1 flex flex-col bg-slate-50 relative p-6 space-y-6 overflow-y-auto split-scrollbar">
-            {!selectedRegionId ? (
-              <div className="flex-1 flex flex-col items-center justify-center opacity-40">
-                <div className="w-32 h-32 rounded-full bg-white shadow-xl flex items-center justify-center mb-6">
-                  <MapPin size={64} className="text-slate-200" />
-                </div>
-                <h3 className="text-xl font-black text-slate-400 uppercase tracking-widest">
-                  Chọn vùng trồng để xem chi tiết
-                </h3>
-              </div>
-            ) : (
+            {(
               <div className="flex-1 flex flex-col">
                 {(() => {
+                  // Bản đồ & panel bám theo cây đang chọn thay vì vùng đã chọn
                   const currentRegion = regions.find(
-                    (r) => r.id === selectedRegionId,
+                    (r) => r.id === activeCropInDialog?.regionId,
                   );
-                  const cropsInThisRegion = filteredCrops.filter(
-                    (c) => c.regionId === selectedRegionId,
-                  );
+                  const cropsInThisRegion = filteredCrops;
 
                   return (
                     <div className="flex-1 flex flex-col">
@@ -963,15 +720,14 @@ const SearchCropPage = () => {
                                   </div>
                                   <div>
                                     <h2 className="font-black text-lg text-slate-800">
-                                      {enterprises.find(
-                                        (e) =>
-                                          String(e.id) ===
-                                          String(currentRegion?.enterpriseId),
-                                      )?.name || "Đơn vị sở hữu"}
+                                      {activeCropInDialog
+                                        ? activeCropInDialog.name
+                                        : "Kết quả tìm kiếm cây trồng"}
                                     </h2>
                                     <p className="text-xs text-slate-400 font-bold uppercase tracking-widest">
-                                      Đang xem: {selectedCropGroup?.name} (
-                                      {selectedCropGroup?.variety})
+                                      {activeCropInDialog
+                                        ? `${activeCropInDialog.variety} · ${activeCropInDialog.regionName}`
+                                        : "Chọn một cây trong danh sách để xem chi tiết"}
                                     </p>
                                   </div>
                                 </div>
@@ -1088,6 +844,23 @@ const SearchCropPage = () => {
                                               </div>
                                               <div className="text-[10px] text-slate-500 font-bold uppercase tracking-tight">
                                                 {item.variety}
+                                              </div>
+                                            </div>
+                                          ),
+                                        },
+                                        {
+                                          key: "regionName",
+                                          label: "Vùng trồng",
+                                          render: (
+                                            value: string,
+                                            item: CropDetail,
+                                          ) => (
+                                            <div>
+                                              <div className="text-xs font-bold text-slate-700">
+                                                {value}
+                                              </div>
+                                              <div className="text-[10px] text-slate-400">
+                                                {item.areaName}
                                               </div>
                                             </div>
                                           ),
