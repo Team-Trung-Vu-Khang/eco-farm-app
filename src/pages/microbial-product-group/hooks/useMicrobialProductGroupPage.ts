@@ -1,0 +1,191 @@
+import { useMemo, useState } from "react";
+import { useToast } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import { useMasterData, useMasterDataMutations } from "@/features/master-data";
+import type {
+  MicrobialProductGroupRecord,
+  MasterDataStatus,
+} from "@/features/master-data/types/master-data.type";
+import type { MicrobialProductGroupFormValues } from "../data/microbial-product-group-form.schema";
+import { useDebounce } from "@/shared/hooks/useDebounce";
+
+/**
+ * TODO(API): Chưa có catalog riêng cho chế phẩm vi sinh — master-data hiện chỉ
+ * có "fertilizer-groups". Tạm dùng chung, phân biệt bằng tham số `classification`
+ * (enzyme / carrier / bio_extract / supplement). Khi backend thêm catalog mới thì
+ * đổi hằng số này.
+ */
+const GROUP_CATALOG = "fertilizer-groups" as const;
+
+const ALL_STATUS = "all" as const;
+const DEFAULT_PAGE_SIZE = 10;
+
+type MicrobialProductGroupStatusFilter = MasterDataStatus | typeof ALL_STATUS;
+
+export function useMicrobialProductGroupPage(classification?: string) {
+  const { toast } = useToast();
+  const [search, setSearch] = useState("");
+  const [status, setStatus] = useState<MicrobialProductGroupStatusFilter>(ALL_STATUS);
+  const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
+  const [currentIndex, setCurrentIndex] = useState(1);
+  const [formOpen, setFormOpen] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [editItem, setEditItem] = useState<MicrobialProductGroupRecord | null>(null);
+  const [deleteItem, setDeleteItem] = useState<MicrobialProductGroupRecord | null>(
+    null,
+  );
+
+  const searchDebounce = useDebounce(search, 400);
+
+  const query = useMasterData("microbial-product-groups", {
+    params: {
+      classification,
+      keyword: searchDebounce.trim() || undefined,
+      status: status === ALL_STATUS ? undefined : status,
+      page: Math.max(currentIndex - 1, 0),
+      size: pageSize,
+    },
+  });
+
+  const { createMasterData, updateMasterData, deleteMasterData } =
+    useMasterDataMutations("microbial-product-groups");
+
+  const buildPayload = (values: MicrobialProductGroupFormValues) => {
+    return {
+      code: values.code?.trim().toUpperCase() || "",
+      name: values.name.trim(),
+      classification: (values as any).classification || classification || "",
+      description: values.description.trim(),
+      displayOrder: 1,
+      status: values.status,
+      metadataJson: {
+        source: "manual",
+      },
+    };
+  };
+
+  const data = useMemo(() => query.items, [query.items]);
+
+  const handleSearch = (value: string) => {
+    setSearch(value);
+    setCurrentIndex(1);
+  };
+
+  const handleFilterChange = (key: string, value: string) => {
+    if (key === "status") {
+      setStatus(
+        value === ALL_STATUS ? ALL_STATUS : (value as MasterDataStatus),
+      );
+      setCurrentIndex(1);
+    }
+  };
+
+  const handleAdd = () => {
+    setEditItem(null);
+    setFormOpen(true);
+  };
+
+  const handleEdit = (item: MicrobialProductGroupRecord) => {
+    setEditItem(item);
+    setFormOpen(true);
+  };
+
+  const handleDelete = (item: MicrobialProductGroupRecord) => {
+    setDeleteItem(item);
+    setDeleteOpen(true);
+  };
+
+  const handleSubmit = async (values: MicrobialProductGroupFormValues) => {
+    const payload = buildPayload(values);
+
+    if (!payload.name) {
+      toast({
+        title: "Thiếu thông tin",
+        description: "Vui lòng nhập tên nhóm chế phẩm.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      if (editItem) {
+        await updateMasterData.mutateAsync({
+          id: editItem.id,
+          data: payload,
+        });
+      } else {
+        await createMasterData.mutateAsync(payload);
+      }
+
+      toast({
+        title: "Thành công",
+        description: editItem
+          ? "Đã cập nhật danh mục chế phẩm."
+          : "Đã thêm danh mục chế phẩm mới.",
+      });
+      setFormOpen(false);
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Đã xảy ra lỗi không xác định";
+
+      toast({
+        title: editItem ? "Không thể cập nhật" : "Không thể thêm",
+        description: message,
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deleteItem) {
+      setDeleteOpen(false);
+      return;
+    }
+
+    try {
+      await deleteMasterData.mutateAsync(deleteItem.id);
+      toast({
+        title: "Thành công",
+        description: "Đã xóa danh mục chế phẩm.",
+      });
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Đã xảy ra lỗi không xác định";
+
+      toast({
+        title: "Không thể xóa",
+        description: message,
+        variant: "destructive",
+      });
+    }
+
+    setDeleteOpen(false);
+    setDeleteItem(null);
+  };
+
+  return {
+    data,
+    loading: query.loading,
+    submitting: createMasterData.isPending || updateMasterData.isPending,
+    error: query.error,
+    response: query.response,
+    search,
+    status,
+    pageSize,
+    setPageSize,
+    currentIndex,
+    setCurrentIndex,
+    formOpen,
+    setFormOpen,
+    deleteOpen,
+    setDeleteOpen,
+    editItem,
+    deleteItem,
+    handleAdd,
+    handleEdit,
+    handleDelete,
+    handleSubmit,
+    handleConfirmDelete,
+    handleSearch,
+    handleFilterChange,
+  };
+}

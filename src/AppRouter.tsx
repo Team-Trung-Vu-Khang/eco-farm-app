@@ -677,6 +677,9 @@ const MaterialGroupPage = lazy(
 const FertilizerGroupPage = lazy(
   () => import("./pages/fertilizer-group/FertilizerGroupPage"),
 );
+const MicrobialProductGroupPage = lazy(
+  () => import("./pages/microbial-product-group/MicrobialProductGroupPage"),
+);
 const PesticideGroupPage = lazy(
   () => import("./pages/pesticide-group/PesticideGroupPage"),
 );
@@ -1519,6 +1522,10 @@ function Router() {
           component={FertilizerPage}
         />
         <Route path="/fertilizer-group" component={FertilizerGroupPage} />
+        <Route
+          path="/microbial-product-group"
+          component={MicrobialProductGroupPage}
+        />
         <Route
           path="/cultivation-material/fertilizer/create"
           component={FertilizerCreatePage}
