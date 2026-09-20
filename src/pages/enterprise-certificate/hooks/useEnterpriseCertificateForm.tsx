@@ -13,6 +13,7 @@ import {
   mapFarmCertificateRecordToView,
   mapStandardRecordToOption,
 } from "../utils";
+import { getApiErrorMessage } from "@/shared/lib/api-error";
 
 export function useEnterpriseCertificateForm() {
   const { toast } = useToast();
@@ -104,12 +105,9 @@ export function useEnterpriseCertificateForm() {
         description: "Đã xóa chứng nhận",
       });
     } catch (error) {
-      const message =
-        error instanceof Error ? error.message : "Đã xảy ra lỗi không xác định";
-
       toast({
         title: "Không thể xóa",
-        description: message,
+        description: getApiErrorMessage(error),
         variant: "destructive",
       });
       return;
