@@ -1,6 +1,5 @@
 import React, { useEffect } from "react";
 import {
-  MapContainer,
   Marker,
   Polygon,
   Polyline,
@@ -13,12 +12,26 @@ import * as turf from "@turf/turf";
 import { getMarkerIcon } from "./mapUtils";
 import type { PlantEntry } from "./types";
 
-// Component to recenter map when coordinates change manually
-export const RecenterMap = ({ lat, lng }: { lat: number; lng: number }) => {
+// Component to recenter map only when active plant tab changes
+export const RecenterMap = ({
+  activeId,
+  lat,
+  lng,
+}: {
+  activeId: string;
+  lat: number;
+  lng: number;
+}) => {
   const map = useMapEvents({});
+  const prevActiveIdRef = React.useRef<string>("");
+
   useEffect(() => {
-    map.flyTo([lat, lng], Math.max(map.getZoom(), 17), { duration: 0.6 });
-  }, [lat, lng, map]);
+    if (activeId && prevActiveIdRef.current !== activeId) {
+      prevActiveIdRef.current = activeId;
+      map.flyTo([lat, lng], Math.max(map.getZoom(), 17), { duration: 0.6 });
+    }
+  }, [activeId, lat, lng, map]);
+
   return null;
 };
 
@@ -143,6 +156,7 @@ export const AllPlantsMapContent = ({
       {/* Auto-pan to active plant on tab click */}
       {activePlant && (
         <RecenterMap
+          activeId={activeId}
           lat={activePlant.coordinate.lat}
           lng={activePlant.coordinate.lng}
         />

@@ -49,6 +49,9 @@ interface Step2PlantEntryProps {
     lng: number,
   ) => void;
   validateAndSnapToUnit: (entryId: string, lat: number, lng: number) => void;
+  radius?: number;
+  setRadius?: (val: number) => void;
+  hasOnlyCenterPoint?: boolean;
 }
 
 export const Step2PlantEntry: React.FC<Step2PlantEntryProps> = ({
@@ -69,6 +72,9 @@ export const Step2PlantEntry: React.FC<Step2PlantEntryProps> = ({
   mapCenter,
   handleAutoAssign,
   validateAndSnapToUnit,
+  radius = 100,
+  setRadius,
+  hasOnlyCenterPoint = false,
 }) => {
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
@@ -109,6 +115,60 @@ export const Step2PlantEntry: React.FC<Step2PlantEntryProps> = ({
         </div>
         <div className="absolute top-0 right-0 -mt-4 -mr-4 w-32 h-32 bg-blue-500/10 rounded-full blur-2xl" />
       </div>
+
+      {/* Configuration bar for radius when region only has centerPoint */}
+      {hasOnlyCenterPoint && (
+        <div className="p-4 rounded-xl border border-blue-200 bg-linear-to-r from-blue-50/80 via-white to-blue-50/50 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4 animate-in fade-in duration-300">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center shrink-0 border border-blue-200/60 shadow-xs">
+              <MapPin className="w-5 h-5" />
+            </div>
+            <div>
+              <div className="text-sm font-bold text-blue-950 flex items-center gap-2">
+                Bán kính vùng canh tác
+                <span className="text-[11px] font-semibold px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full">
+                  CenterPoint Only
+                </span>
+              </div>
+              <div className="text-xs text-blue-700/80">
+                Vùng chưa có ranh giới polygon. Tự động dựng ranh giới hình tròn quanh tọa độ tâm để kiểm tra vị trí cây.
+              </div>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <div className="relative w-32">
+              <input
+                type="number"
+                min={10}
+                max={5000}
+                value={radius || 100}
+                onChange={(e) => setRadius?.(Math.max(1, Number(e.target.value)))}
+                className="w-full px-3 py-1.5 text-sm font-semibold rounded-lg border border-blue-200 bg-white pr-8 focus:outline-none focus:ring-2 focus:ring-blue-500/20 shadow-xs text-blue-950"
+              />
+              <span className="absolute right-2.5 top-2 text-xs font-bold text-slate-400 pointer-events-none">
+                m
+              </span>
+            </div>
+            <div className="flex items-center gap-1">
+              {[50, 100, 200, 500].map((r) => (
+                <button
+                  key={r}
+                  type="button"
+                  onClick={() => setRadius?.(r)}
+                  className={cn(
+                    "px-2.5 py-1 text-xs font-semibold rounded-lg transition-all border shadow-xs cursor-pointer",
+                    radius === r
+                      ? "bg-blue-600 text-white border-blue-600 font-bold"
+                      : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50",
+                  )}
+                >
+                  {r}m
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Warning: unplaced or out-of-boundary plants block next step */}
       {(() => {
@@ -156,7 +216,7 @@ export const Step2PlantEntry: React.FC<Step2PlantEntryProps> = ({
               varietyOptions={varietyOptions}
               onUpdate={(partial) => updatePlant(plant.entryId, partial)}
               onRemove={() => removePlant(plant.entryId)}
-              canRemove
+              canRemove={!initialData}
               isInvalidBoundary={plant.isInvalidBoundary}
             />
           ))}

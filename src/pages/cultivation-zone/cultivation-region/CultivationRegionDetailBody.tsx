@@ -27,14 +27,21 @@ const CultivationRegionDetailBody = ({
   onBack,
   onEdit,
 }: Props) => {
-  const primaryManager = details.managers[0] ?? null;
+  const primaryManager = details?.managers?.[0] ?? null;
 
   return (
-    <>
-      <CultivationRegionDetailHeader area={area} onBack={onBack} onEdit={onEdit} />
+    <div className="w-full flex-1 flex flex-col justify-start items-stretch self-start">
+      <CultivationRegionDetailHeader
+        area={area}
+        onBack={onBack}
+        onEdit={onEdit}
+      />
 
-      <Tabs defaultValue="overview" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-6 overflow-x-auto">
+      <Tabs
+        defaultValue="overview"
+        className="space-y-6 w-full flex-1 flex flex-col justify-start items-stretch"
+      >
+        <TabsList className="grid w-full grid-cols-6 overflow-x-auto shrink-0">
           <TabsTrigger value="overview">Thông tin</TabsTrigger>
           <TabsTrigger value="crops">Cây trồng</TabsTrigger>
           <TabsTrigger value="staff">Nhân viên</TabsTrigger>
@@ -91,7 +98,7 @@ const CultivationRegionDetailBody = ({
           />
         </TabsContent>
       </Tabs>
-    </>
+    </div>
   );
 };
 

@@ -249,8 +249,8 @@ export const regionApi = {
         return r.data as PageResponse<FarmRegionResponse>;
       }),
 
-  getById: (id: number) =>
-    apiClient.get<any>(`${FARM_ENDPOINTS.regions}/${id}`).then((r) => {
+  getById: (id: number, options?: { headers?: Record<string, string> }) =>
+    apiClient.get<any>(`${FARM_ENDPOINTS.regions}/${id}`, options).then((r) => {
       const item = r.data;
       if (!item) return item as FarmRegionResponse;
 
@@ -301,8 +301,8 @@ export const areaApi = {
         return r.data as PageResponse<FarmAreaResponse>;
       }),
 
-  getById: (id: number) =>
-    apiClient.get<any>(`${FARM_ENDPOINTS.areas}/${id}`).then((r) => {
+  getById: (id: number, options?: { headers?: Record<string, string> }) =>
+    apiClient.get<any>(`${FARM_ENDPOINTS.areas}/${id}`, options).then((r) => {
       const item = r.data;
       if (!item) return item as FarmAreaResponse;
 
@@ -355,8 +355,8 @@ export const plotApi = {
         return r.data as PageResponse<FarmPlotResponse>;
       }),
 
-  getById: (id: number) =>
-    apiClient.get<any>(`${FARM_ENDPOINTS.plots}/${id}`).then((r) => {
+  getById: (id: number, options?: { headers?: Record<string, string> }) =>
+    apiClient.get<any>(`${FARM_ENDPOINTS.plots}/${id}`, options).then((r) => {
       const item = r.data;
       if (item) {
         return normalizePlot(item) as FarmPlotResponse;
@@ -390,10 +390,17 @@ export const cultivationZoneApi = {
       >(FARM_ENDPOINTS.cultivationZones, { params })
       .then((r) => r.data),
 
-  getById: (id: number) =>
+  getById: (id: number, workspaceId?: number) =>
     apiClient
       .get<FarmCultivationZoneResponse>(
         `${FARM_ENDPOINTS.cultivationZones}/${id}`,
+        workspaceId
+          ? {
+              headers: {
+                "X-Workspace-Id": workspaceId,
+              },
+            }
+          : undefined,
       )
       .then((r) => r.data),
 
@@ -439,11 +446,12 @@ const withCsvArrayParams = <T extends Record<string, unknown>>(
 export const plantIdentificationApi = {
   list: (params?: PlantIdentificationQueryParams) =>
     apiClient
-      .get<
-        PageResponse<FarmPlantIdentificationResponse>
-      >(FARM_ENDPOINTS.plantIdentifications, {
-        params: withCsvArrayParams(params),
-      })
+      .get<PageResponse<FarmPlantIdentificationResponse>>(
+        FARM_ENDPOINTS.plantIdentifications,
+        {
+          params: withCsvArrayParams(params),
+        },
+      )
       .then((r) => {
         if (r.data?.content) {
           r.data.content = r.data.content.map(normalizePlantIdentification);

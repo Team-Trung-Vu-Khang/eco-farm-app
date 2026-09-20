@@ -10,7 +10,8 @@ export const cultivationZoneKeys = {
   all: () => ["farm", "cultivation-zones"] as const,
   list: (params?: CultivationZoneQueryParams) =>
     ["farm", "cultivation-zones", "list", params ?? {}] as const,
-  detail: (id: number) => ["farm", "cultivation-zones", "detail", id] as const,
+  detail: (id: number, workspaceId?: number) =>
+    ["farm", "cultivation-zones", "detail", id, workspaceId ?? null] as const,
 };
 
 interface UseCultivationZonesOptions {
@@ -46,15 +47,17 @@ export function useCultivationZones({
 
 interface UseCultivationZoneByIdOptions {
   enabled?: boolean;
+  workspaceId?: number;
 }
 
 export function useCultivationZoneById(
   id: number,
-  { enabled = true }: UseCultivationZoneByIdOptions = {},
+  { enabled = true, workspaceId }: UseCultivationZoneByIdOptions = {},
 ) {
   return useQuery<FarmCultivationZoneResponse, Error>({
-    queryKey: cultivationZoneKeys.detail(id),
-    queryFn: () => cultivationZoneApi.getById(id),
+    queryKey: cultivationZoneKeys.detail(id, workspaceId),
+    queryFn: () => cultivationZoneApi.getById(id, workspaceId),
     enabled: enabled && !!id,
   });
 }
+

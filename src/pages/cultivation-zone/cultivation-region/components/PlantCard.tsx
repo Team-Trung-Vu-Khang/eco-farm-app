@@ -21,7 +21,6 @@ import {
   Trash2,
 } from "lucide-react";
 import * as turf from "@turf/turf";
-import useRegionStore from "../../../../stores/useRegionStore";
 import {
   PLANT_HEALTH_STATUS_LABELS,
   PLANT_HEALTH_STATUS_OPTIONS,
@@ -233,54 +232,17 @@ export const PlantCard = ({
             }
 
             // Build the ancestor chain from geographicalUnits
-            // Try to get full context from the store
-            const regionStore = useRegionStore.getState();
             let regionUnit: any = null;
             let areaUnit: any = null;
             let plotUnit: any = null;
 
             if (selectedUnit.level === 1) {
               plotUnit = selectedUnit;
-              // Find parent area and region via store
-              const pc = regionStore.getPlotById?.(selectedUnit.id);
-              if (pc) {
-                if (pc.area)
-                  areaUnit = geographicalUnits.find(
-                    (u: any) => u.id === pc.area.id?.toString(),
-                  ) || {
-                    id: pc.area.id?.toString(),
-                    name: pc.area.name,
-                    type: "Khu vực",
-                    level: 2,
-                  };
-                if (pc.region)
-                  regionUnit = geographicalUnits.find(
-                    (u: any) => u.id === pc.region.id?.toString(),
-                  ) || {
-                    id: pc.region.id?.toString(),
-                    name: pc.region.name,
-                    type: "Vùng trồng",
-                    level: 3,
-                  };
-              } else {
-                // fallback: look up level 2 and 3 via name matching in geographicalUnits
-                areaUnit = geographicalUnits.find((u: any) => u.level === 2);
-                regionUnit = geographicalUnits.find((u: any) => u.level === 3);
-              }
+              areaUnit = geographicalUnits.find((u: any) => u.level === 2);
+              regionUnit = geographicalUnits.find((u: any) => u.level === 3);
             } else if (selectedUnit.level === 2) {
               areaUnit = selectedUnit;
-              const ac = regionStore.getAreaById?.(selectedUnit.id);
-              if (ac?.region)
-                regionUnit = geographicalUnits.find(
-                  (u: any) => u.id === ac.region.id?.toString(),
-                ) || {
-                  id: ac.region.id?.toString(),
-                  name: ac.region.name,
-                  type: "Vùng trồng",
-                  level: 3,
-                };
-              else
-                regionUnit = geographicalUnits.find((u: any) => u.level === 3);
+              regionUnit = geographicalUnits.find((u: any) => u.level === 3);
             } else {
               regionUnit = selectedUnit;
             }

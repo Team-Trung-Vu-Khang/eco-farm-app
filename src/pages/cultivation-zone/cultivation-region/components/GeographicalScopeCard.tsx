@@ -1,5 +1,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useMemo } from "react";
+import { useQueries } from "@tanstack/react-query";
+import { areaApi, plotApi, regionApi } from "@/features/farm";
+import { areaKeys } from "@/features/farm/hooks/useAreas";
+import { plotKeys } from "@/features/farm/hooks/usePlots";
+import { regionKeys } from "@/features/farm/hooks/useRegions";
 import {
   Card,
   CardContent,
@@ -14,7 +19,7 @@ import type { GeographicalUnit } from "./GeographicalTree";
 
 interface GeographicalScopeCardProps {
   selectedCultivationRegion: any;
-  geographicalUnits: GeographicalUnit[];
+  geographicalUnits?: GeographicalUnit[];
   selectedScopeIds: string[];
   onScopeChange: (ids: string[]) => void;
   areasByRegion?: Record<string, GeographicalUnit[]>;
@@ -23,45 +28,340 @@ interface GeographicalScopeCardProps {
 
 export const GeographicalScopeCard = ({
   selectedCultivationRegion,
-  geographicalUnits,
+  geographicalUnits: propGeographicalUnits = [],
   selectedScopeIds,
   onScopeChange,
   areasByRegion: propAreasByRegion,
   plotsByArea: propPlotsByArea,
 }: GeographicalScopeCardProps) => {
-  // Build parent-relationship maps from API scopes
-  const { areasByRegion, plotsByArea } = useMemo(() => {
-    if (propAreasByRegion && propPlotsByArea) {
-      return { areasByRegion: propAreasByRegion, plotsByArea: propPlotsByArea };
-    }
+  // 1. Collect Region IDs referenced in selectedCultivationRegion.scopes
+  const regionIds = useMemo(() => {
+    const scopes: any[] = selectedCultivationRegion?.scopes ?? [];
+    const rIds = new Set<number>();
+    scopes.forEach((s) => {
+      if (s.scopeType === "REGION" && s.region?.id) {
+        rIds.add(Number(s.region.id));
+      }
+      if (s.scopeType === "AREA" && s.area?.region?.id) {
+        rIds.add(Number(s.area.region.id));
+      }
+      if (s.scopeType === "PLOT" && s.plot?.area?.region?.id) {
+        rIds.add(Number(s.plot.area.region.id));
+      }
+    });
+    return Array.from(rIds);
+  }, [selectedCultivationRegion]);
+
+  // Execute Region Detail API queries
+  const regionDetailQueries = useQueries({
+    queries: regionIds.map((id) => ({
+      queryKey: regionKeys.detail(id),
+      queryFn: () => regionApi.getById(id),
+      enabled: !!id,
+      staleTime: 5 * 60 * 1000,
+    })),
+  });
+
+  // 2. Collect Area IDs from scopes AND from Region Detail API responses
+  const areaIds = useMemo(() => {
+    const aIds = new Set<number>();
 
     const scopes: any[] = selectedCultivationRegion?.scopes ?? [];
-    const abr: Record<string, GeographicalUnit[]> = {};
-    const pba: Record<string, GeographicalUnit[]> = {};
+    scopes.forEach((s) => {
+      if (s.scopeType === "AREA" && s.area?.id) {
+        aIds.add(Number(s.area.id));
+      }
+      if (s.scopeType === "PLOT" && s.plot?.area?.id) {
+        aIds.add(Number(s.plot.area.id));
+      }
+    });
 
+    regionDetailQueries.forEach((q) => {
+      if (q.data) {
+        const subAreas = q.data.areas || q.data.productionAreas || [];
+        subAreas.forEach((sa: any) => {
+          if (sa.id) aIds.add(Number(sa.id));
+        });
+      }
+    });
+
+    return Array.from(aIds);
+  }, [selectedCultivationRegion, regionDetailQueries]);
+
+  // Execute Area Detail API queries (calls areaApi.getById for every area under the region!)
+  const areaDetailQueries = useQueries({
+    queries: areaIds.map((id) => ({
+      queryKey: areaKeys.detail(id),
+      queryFn: () => areaApi.getById(id),
+      enabled: !!id,
+      staleTime: 5 * 60 * 1000,
+    })),
+  });
+
+  // 3. Collect Plot IDs from scopes, Region Detail API responses AND Area Detail API responses
+  const plotIds = useMemo(() => {
+    const pIds = new Set<number>();
+
+    const scopes: any[] = selectedCultivationRegion?.scopes ?? [];
+    scopes.forEach((s) => {
+      if (s.scopeType === "PLOT" && s.plot?.id) {
+        pIds.add(Number(s.plot.id));
+      }
+    });
+
+    regionDetailQueries.forEach((q) => {
+      if (q.data) {
+        const subAreas = q.data.areas || q.data.productionAreas || [];
+        subAreas.forEach((sa: any) => {
+          const subPlots = sa.plots || sa.productionUnits || [];
+          subPlots.forEach((sp: any) => {
+            if (sp.id) pIds.add(Number(sp.id));
+          });
+        });
+      }
+    });
+
+    areaDetailQueries.forEach((q) => {
+      if (q.data) {
+        const subPlots = q.data.plots || q.data.productionUnits || [];
+        subPlots.forEach((sp: any) => {
+          if (sp.id) pIds.add(Number(sp.id));
+        });
+      }
+    });
+
+    return Array.from(pIds);
+  }, [selectedCultivationRegion, regionDetailQueries, areaDetailQueries]);
+
+  // Execute Plot Detail API queries (calls plotApi.getById for every plot under the area!)
+  const plotDetailQueries = useQueries({
+    queries: plotIds.map((id) => ({
+      queryKey: plotKeys.detail(id),
+      queryFn: () => plotApi.getById(id),
+      enabled: !!id,
+      staleTime: 5 * 60 * 1000,
+    })),
+  });
+
+  // 3. Xây dựng cây phân cấp địa lý (areasByRegion, plotsByArea, geographicalUnits) từ kết quả API chi tiết
+  const { areasByRegion, plotsByArea, geographicalUnits } = useMemo(() => {
+    const abr: Record<string, GeographicalUnit[]> = {
+      ...(propAreasByRegion || {}),
+    };
+    const pba: Record<string, GeographicalUnit[]> = {
+      ...(propPlotsByArea || {}),
+    };
+    const unitsMap = new Map<string, GeographicalUnit>();
+
+    // Đưa các đơn vị truyền từ props vào trước
+    (propGeographicalUnits || []).forEach((u) => {
+      if (u.id) unitsMap.set(String(u.id), u);
+    });
+
+    // 1. Phân tích chi tiết Vùng trồng (Region Detail Response)
+    regionDetailQueries.forEach((q) => {
+      if (!q.data) return;
+      const reg = q.data;
+      const rId = String(reg.id);
+
+      if (!unitsMap.has(rId)) {
+        unitsMap.set(rId, {
+          id: rId,
+          name: reg.name || `Vùng trồng #${rId}`,
+          type: "Vùng trồng",
+          level: 3,
+          coordinates: reg.boundary?.map((b: any) => ({
+            lat: b.latitude ?? 0,
+            lng: b.longitude ?? 0,
+          })),
+        });
+      }
+
+      const subAreas = reg.areas || reg.productionAreas || [];
+      subAreas.forEach((sa: any) => {
+        const aId = String(sa.id);
+        if (!abr[rId]) abr[rId] = [];
+        if (!abr[rId].some((item) => item.id === aId)) {
+          abr[rId].push({
+            id: aId,
+            name: sa.name,
+            level: 2,
+            type: "Khu vực",
+          });
+        }
+
+        if (!unitsMap.has(aId)) {
+          unitsMap.set(aId, {
+            id: aId,
+            name: sa.name,
+            type: "Khu vực",
+            level: 2,
+            coordinates: sa.boundary?.map((b: any) => ({
+              lat: b.latitude ?? 0,
+              lng: b.longitude ?? 0,
+            })),
+          });
+        }
+
+        const subPlots = sa.plots || sa.productionUnits || [];
+        subPlots.forEach((sp: any) => {
+          const pId = String(sp.id);
+          if (!pba[aId]) pba[aId] = [];
+          if (!pba[aId].some((item) => item.id === pId)) {
+            pba[aId].push({
+              id: pId,
+              name: sp.name,
+              level: 1,
+              type: "Lô trồng",
+            });
+          }
+
+          if (!unitsMap.has(pId)) {
+            unitsMap.set(pId, {
+              id: pId,
+              name: sp.name,
+              type: "Lô trồng",
+              level: 1,
+              coordinates: sp.boundary?.map((b: any) => ({
+                lat: b.latitude ?? 0,
+                lng: b.longitude ?? 0,
+              })),
+            });
+          }
+        });
+      });
+    });
+
+    // 2. Phân tích chi tiết Khu vực (Area Detail Response)
+    areaDetailQueries.forEach((q) => {
+      if (!q.data) return;
+      const area = q.data;
+      const aId = String(area.id);
+      const rId = area.region?.id
+        ? String(area.region.id)
+        : area.productionRegion?.id
+          ? String(area.productionRegion.id)
+          : "";
+
+      if (rId) {
+        if (!abr[rId]) abr[rId] = [];
+        if (!abr[rId].some((item) => item.id === aId)) {
+          abr[rId].push({
+            id: aId,
+            name: area.name,
+            level: 2,
+            type: "Khu vực",
+          });
+        }
+      }
+
+      if (!unitsMap.has(aId)) {
+        unitsMap.set(aId, {
+          id: aId,
+          name: area.name,
+          type: "Khu vực",
+          level: 2,
+          coordinates: area.boundary?.map((b: any) => ({
+            lat: b.latitude ?? 0,
+            lng: b.longitude ?? 0,
+          })),
+        });
+      }
+
+      const subPlots = area.plots || area.productionUnits || [];
+      subPlots.forEach((sp: any) => {
+        const pId = String(sp.id);
+        if (!pba[aId]) pba[aId] = [];
+        if (!pba[aId].some((item) => item.id === pId)) {
+          pba[aId].push({
+            id: pId,
+            name: sp.name,
+            level: 1,
+            type: "Lô trồng",
+          });
+        }
+
+        if (!unitsMap.has(pId)) {
+          unitsMap.set(pId, {
+            id: pId,
+            name: sp.name,
+            type: "Lô trồng",
+            level: 1,
+            coordinates: sp.boundary?.map((b: any) => ({
+              lat: b.latitude ?? 0,
+              lng: b.longitude ?? 0,
+            })),
+          });
+        }
+      });
+    });
+
+    // 3. Phân tích chi tiết Lô đất (Plot Detail Response)
+    plotDetailQueries.forEach((q) => {
+      if (!q.data) return;
+      const plot = q.data;
+      const pId = String(plot.id);
+      const aId = plot.area?.id ? String(plot.area.id) : "";
+      if (aId) {
+        if (!pba[aId]) pba[aId] = [];
+        if (!pba[aId].some((item) => item.id === pId)) {
+          pba[aId].push({
+            id: pId,
+            name: plot.name,
+            level: 1,
+            type: "Lô trồng",
+          });
+        }
+      }
+      if (!unitsMap.has(pId)) {
+        unitsMap.set(pId, {
+          id: pId,
+          name: plot.name,
+          type: "Lô trồng",
+          level: 1,
+          coordinates: plot.boundary?.map((b: any) => ({
+            lat: b.latitude ?? 0,
+            lng: b.longitude ?? 0,
+          })),
+        });
+      }
+    });
+
+    // 4. Fallback từ thông tin scopes của selectedCultivationRegion
+    const scopes: any[] = selectedCultivationRegion?.scopes ?? [];
     scopes.forEach((scope: any) => {
       if (scope.scopeType === "AREA" && scope.area) {
-        const rId = String(scope.area.region?.id ?? "");
+        const aId = String(scope.area.id);
+        const rId = scope.area.region?.id ? String(scope.area.region.id) : "";
         if (rId) {
           if (!abr[rId]) abr[rId] = [];
-          if (!abr[rId].some((a) => a.id === String(scope.area.id))) {
+          if (!abr[rId].some((a) => a.id === aId)) {
             abr[rId].push({
-              id: String(scope.area.id),
+              id: aId,
               name: scope.area.name,
               level: 2,
               type: "Khu vực",
             });
           }
         }
+        if (!unitsMap.has(aId)) {
+          unitsMap.set(aId, {
+            id: aId,
+            name: scope.area.name,
+            type: "Khu vực",
+            level: 2,
+          });
+        }
       } else if (scope.scopeType === "PLOT" && scope.plot) {
+        const pId = String(scope.plot.id);
         const area = scope.plot.area;
         if (area) {
           const aId = String(area.id);
-          const rId = String(area.region?.id ?? "");
+          const rId = area.region?.id ? String(area.region.id) : "";
           if (!pba[aId]) pba[aId] = [];
-          if (!pba[aId].some((p) => p.id === String(scope.plot.id))) {
+          if (!pba[aId].some((p) => p.id === pId)) {
             pba[aId].push({
-              id: String(scope.plot.id),
+              id: pId,
               name: scope.plot.name,
               level: 1,
               type: "Lô trồng",
@@ -79,11 +379,41 @@ export const GeographicalScopeCard = ({
             }
           }
         }
+        if (!unitsMap.has(pId)) {
+          unitsMap.set(pId, {
+            id: pId,
+            name: scope.plot.name,
+            type: "Lô trồng",
+            level: 1,
+          });
+        }
+      } else if (scope.scopeType === "REGION" && scope.region) {
+        const rId = String(scope.region.id);
+        if (!unitsMap.has(rId)) {
+          unitsMap.set(rId, {
+            id: rId,
+            name: scope.region.name,
+            type: "Vùng trồng",
+            level: 3,
+          });
+        }
       }
     });
 
-    return { areasByRegion: abr, plotsByArea: pba };
-  }, [selectedCultivationRegion, propAreasByRegion, propPlotsByArea]);
+    return {
+      areasByRegion: abr,
+      plotsByArea: pba,
+      geographicalUnits: Array.from(unitsMap.values()),
+    };
+  }, [
+    propAreasByRegion,
+    propPlotsByArea,
+    propGeographicalUnits,
+    regionDetailQueries,
+    areaDetailQueries,
+    plotDetailQueries,
+    selectedCultivationRegion,
+  ]);
 
   const treeData = useMemo(
     () =>

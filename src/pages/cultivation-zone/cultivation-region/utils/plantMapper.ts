@@ -75,33 +75,10 @@ export const mapApiPlantToFrontend = (
 /* eslint-disable @typescript-eslint/no-explicit-any */
 export const mapFrontendPlantToApiRequest = (
   p: Plant,
-  regionStore?: any,
   isUpdate?: boolean,
 ): FarmPlantIdentificationRequest => {
-  let scopeType: "REGION" | "AREA" | "PLOT" = "REGION";
-
-  // Use scopeType passed from frontend if present, otherwise fallback to store checks
-  if ((p as any).scopeType) {
-    scopeType = (p as any).scopeType;
-  } else if (regionStore) {
-    const idStr = String(p.plotId);
-    if (
-      typeof regionStore.getPlotById === "function" &&
-      regionStore.getPlotById(idStr)
-    ) {
-      scopeType = "PLOT";
-    } else if (
-      typeof regionStore.getAreaById === "function" &&
-      regionStore.getAreaById(idStr)
-    ) {
-      scopeType = "AREA";
-    } else if (
-      Array.isArray(regionStore.regions) &&
-      regionStore.regions.some((r: any) => String(r.id) === idStr)
-    ) {
-      scopeType = "REGION";
-    }
-  }
+  const scopeType: "REGION" | "AREA" | "PLOT" =
+    (p as any).scopeType || "REGION";
 
   let durationDays = 0;
   if (p.ageValue) {

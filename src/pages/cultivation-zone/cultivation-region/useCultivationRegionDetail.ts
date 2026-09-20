@@ -68,7 +68,10 @@ export interface CultivationRegionDetails {
   }>;
 }
 
-export const useCultivationRegionDetail = (id?: string | null) => {
+export const useCultivationRegionDetail = (
+  id?: string | null,
+  workspaceId?: number | null,
+) => {
   const numericId = id ? parseInt(String(id), 10) : 0;
 
   // Real API Queries
@@ -76,8 +79,10 @@ export const useCultivationRegionDetail = (id?: string | null) => {
     numericId,
     {
       enabled: !!numericId,
+      workspaceId: workspaceId || undefined,
     },
   );
+
 
   const { items: allSeeds, loading: isSeedsLoading } = useSeeds({
     params: { size: 100 },

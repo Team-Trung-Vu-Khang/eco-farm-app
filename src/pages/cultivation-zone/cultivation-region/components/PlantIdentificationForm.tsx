@@ -58,6 +58,9 @@ const PlantIdentificationForm = ({
     isLoadingCultivationRegions,
     areasByRegion,
     plotsByArea,
+    radius,
+    setRadius,
+    hasOnlyCenterPoint,
   } = usePlantIdentificationForm({ initialData, initialList, onSubmit });
 
   // Giống / hạt giống của vùng canh tác chọn ở bước 1, dùng cho select ở bước 2
@@ -128,6 +131,9 @@ const PlantIdentificationForm = ({
           mapCenter={mapCenter}
           handleAutoAssign={handleAutoAssign}
           validateAndSnapToUnit={validateAndSnapToUnit}
+          radius={radius}
+          setRadius={setRadius}
+          hasOnlyCenterPoint={hasOnlyCenterPoint}
         />
       ),
     },

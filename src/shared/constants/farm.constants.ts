@@ -10,4 +10,7 @@ export const FARM_ENDPOINTS = {
   plantIdentificationResolveLocation: `${FARM_BASE_PATH}/production-identifications/resolve-location`,
   productionHealthMetrics: `${FARM_BASE_PATH}/production-health-metrics`,
   productionHealthMetricsWorkspace: `${FARM_BASE_PATH}/production-health-metrics/workspace`,
+  adminProductionZoneGroups: `/api/admin/farm/production-zones/groups`,
+  adminProductionZones: `/api/admin/farm/production-zones`,
 } as const;
+

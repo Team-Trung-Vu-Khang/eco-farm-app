@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import {
   areaApi,
   plotApi,
@@ -12,10 +11,9 @@ import { regionKeys } from "@/features/farm/hooks/useRegions";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQueries } from "@tanstack/react-query";
 import * as turf from "@turf/turf";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useFieldArray, useForm } from "react-hook-form";
 import { z } from "zod";
-import usePlantStore from "../../../../stores/usePlantStore";
 import { type Plant } from "../../../region-chart/constants";
 import { type PlantEntry, makeEmptyPlant } from "../components/types";
 
@@ -81,6 +79,7 @@ export const usePlantIdentificationForm = ({
     lat: number;
     lng: number;
   } | null>(null);
+  const [radius, setRadius] = useState<number>(100);
 
   // ---- Default values ----
   const defaultPlants = useMemo<PlantEntry[]>(() => {
@@ -199,31 +198,27 @@ export const usePlantIdentificationForm = ({
   );
 
   // Step 1: extract unique region/area/plot IDs referenced in the cultivation zone scopes
-  const scopeEntityIds = useMemo(() => {
+  // Step 1: Collect region IDs referenced in cultivation zone scopes
+  const regionIds = useMemo(() => {
     const scopes: any[] = selectedCultivationRegion?.scopes ?? [];
     const rIds = new Set<number>();
-    const aIds = new Set<number>();
-    const pIds = new Set<number>();
     scopes.forEach((s) => {
-      if (s.scopeType === "REGION" && s.region) rIds.add(Number(s.region.id));
-      if (s.scopeType === "AREA" && s.area) {
-        aIds.add(Number(s.area.id));
-        if (s.area.region) rIds.add(Number(s.area.region.id));
+      if (s.scopeType === "REGION" && s.region?.id) {
+        rIds.add(Number(s.region.id));
       }
-      if (s.scopeType === "PLOT" && s.plot) {
-        pIds.add(Number(s.plot.id));
-        if (s.plot.area) {
-          aIds.add(Number(s.plot.area.id));
-          if (s.plot.area.region) rIds.add(Number(s.plot.area.region.id));
-        }
+      if (s.scopeType === "AREA" && s.area?.region?.id) {
+        rIds.add(Number(s.area.region.id));
+      }
+      if (s.scopeType === "PLOT" && s.plot?.area?.region?.id) {
+        rIds.add(Number(s.plot.area.region.id));
       }
     });
-    return { regionIds: [...rIds], areaIds: [...aIds], plotIds: [...pIds] };
+    return Array.from(rIds);
   }, [selectedCultivationRegion]);
 
-  // Step 2: batch-fetch details (boundary coords) for each geo entity
+  // Execute Region Detail API queries
   const regionDetailQueries = useQueries({
-    queries: scopeEntityIds.regionIds.map((id) => ({
+    queries: regionIds.map((id) => ({
       queryKey: regionKeys.detail(id),
       queryFn: () => regionApi.getById(id),
       enabled: !!id,
@@ -231,8 +226,35 @@ export const usePlantIdentificationForm = ({
     })),
   });
 
+  // Step 2: Collect Area IDs from scopes AND from Region Detail API responses
+  const areaIds = useMemo(() => {
+    const aIds = new Set<number>();
+
+    const scopes: any[] = selectedCultivationRegion?.scopes ?? [];
+    scopes.forEach((s) => {
+      if (s.scopeType === "AREA" && s.area?.id) {
+        aIds.add(Number(s.area.id));
+      }
+      if (s.scopeType === "PLOT" && s.plot?.area?.id) {
+        aIds.add(Number(s.plot.area.id));
+      }
+    });
+
+    regionDetailQueries.forEach((q) => {
+      if (q.data) {
+        const subAreas = q.data.areas || q.data.productionAreas || [];
+        subAreas.forEach((sa: any) => {
+          if (sa.id) aIds.add(Number(sa.id));
+        });
+      }
+    });
+
+    return Array.from(aIds);
+  }, [selectedCultivationRegion, regionDetailQueries]);
+
+  // Execute Area Detail API queries (calls areaApi.getById for every area under the region!)
   const areaDetailQueries = useQueries({
-    queries: scopeEntityIds.areaIds.map((id) => ({
+    queries: areaIds.map((id) => ({
       queryKey: areaKeys.detail(id),
       queryFn: () => areaApi.getById(id),
       enabled: !!id,
@@ -240,8 +262,44 @@ export const usePlantIdentificationForm = ({
     })),
   });
 
+  // Step 3: Collect Plot IDs from scopes, Region Detail API responses AND Area Detail API responses
+  const plotIds = useMemo(() => {
+    const pIds = new Set<number>();
+
+    const scopes: any[] = selectedCultivationRegion?.scopes ?? [];
+    scopes.forEach((s) => {
+      if (s.scopeType === "PLOT" && s.plot?.id) {
+        pIds.add(Number(s.plot.id));
+      }
+    });
+
+    regionDetailQueries.forEach((q) => {
+      if (q.data) {
+        const subAreas = q.data.areas || q.data.productionAreas || [];
+        subAreas.forEach((sa: any) => {
+          const subPlots = sa.plots || sa.productionUnits || [];
+          subPlots.forEach((sp: any) => {
+            if (sp.id) pIds.add(Number(sp.id));
+          });
+        });
+      }
+    });
+
+    areaDetailQueries.forEach((q) => {
+      if (q.data) {
+        const subPlots = q.data.plots || q.data.productionUnits || [];
+        subPlots.forEach((sp: any) => {
+          if (sp.id) pIds.add(Number(sp.id));
+        });
+      }
+    });
+
+    return Array.from(pIds);
+  }, [selectedCultivationRegion, regionDetailQueries, areaDetailQueries]);
+
+  // Execute Plot Detail API queries (calls plotApi.getById for every plot under the area!)
   const plotDetailQueries = useQueries({
-    queries: scopeEntityIds.plotIds.map((id) => ({
+    queries: plotIds.map((id) => ({
       queryKey: plotKeys.detail(id),
       queryFn: () => plotApi.getById(id),
       enabled: !!id,
@@ -256,13 +314,13 @@ export const usePlantIdentificationForm = ({
     const plots: Record<string, any> = {};
 
     // 1. Populate from region detail responses (including nested areas and plots)
-    scopeEntityIds.regionIds.forEach((id, i) => {
+    regionIds.forEach((id, i) => {
       const reg = regionDetailQueries[i]?.data;
       if (reg) {
         regions[String(id)] = reg;
-        (reg.areas || []).forEach((sa: any) => {
+        (reg.areas || reg.productionAreas || []).forEach((sa: any) => {
           areas[String(sa.id)] = sa;
-          (sa.plots || []).forEach((p: any) => {
+          (sa.plots || sa.productionUnits || []).forEach((p: any) => {
             plots[String(p.id)] = p;
           });
         });
@@ -270,18 +328,18 @@ export const usePlantIdentificationForm = ({
     });
 
     // 2. Populate from area detail responses (including nested plots)
-    scopeEntityIds.areaIds.forEach((id, i) => {
+    areaIds.forEach((id, i) => {
       const area = areaDetailQueries[i]?.data;
       if (area) {
         areas[String(id)] = area;
-        (area.plots || []).forEach((p: any) => {
+        (area.plots || area.productionUnits || []).forEach((p: any) => {
           plots[String(p.id)] = p;
         });
       }
     });
 
     // 3. Populate from plot detail responses
-    scopeEntityIds.plotIds.forEach((id, i) => {
+    plotIds.forEach((id, i) => {
       const plot = plotDetailQueries[i]?.data;
       if (plot) {
         plots[String(id)] = plot;
@@ -290,23 +348,114 @@ export const usePlantIdentificationForm = ({
 
     return { regions, areas, plots };
   }, [
-    scopeEntityIds,
+    regionIds,
+    areaIds,
+    plotIds,
     regionDetailQueries,
     areaDetailQueries,
     plotDetailQueries,
   ]);
 
-  // Step 4: build geographicalUnits using API boundary data
-  const geographicalUnits = useMemo(() => {
-    if (!selectedCultivationRegion?.scopes) return [];
-    const result: {
-      id: string;
-      name: string;
-      type: string;
-      level: number;
-      coordinates?: { lat: number; lng: number }[];
-    }[] = [];
-    const processedIds = new Set<string>();
+  const centerPointObj = useMemo(() => {
+    let cp =
+      selectedCultivationRegion?.centerPoint ||
+      cultivationRegionDetail?.centerPoint;
+
+    if (!cp && selectedCultivationRegion?.scopes) {
+      for (const s of selectedCultivationRegion.scopes as any[]) {
+        const entityCp =
+          s.region?.centerPoint || s.area?.centerPoint || s.plot?.centerPoint;
+        if (entityCp?.latitude && entityCp?.longitude) {
+          cp = entityCp;
+          break;
+        }
+      }
+    }
+
+    if (!cp && geoDetailMap) {
+      for (const rId of Object.keys(geoDetailMap.regions)) {
+        if (geoDetailMap.regions[rId]?.centerPoint?.latitude) {
+          cp = geoDetailMap.regions[rId].centerPoint;
+          break;
+        }
+      }
+    }
+
+    if (cp?.latitude && cp?.longitude) {
+      return { lat: Number(cp.latitude), lng: Number(cp.longitude) };
+    }
+
+    // Default fallback to standard map center
+    return { lat: 11.548, lng: 106.896 };
+  }, [selectedCultivationRegion, cultivationRegionDetail, geoDetailMap]);
+
+  useEffect(() => {
+    const metaRadius = (selectedCultivationRegion?.metadataJson as any)?.radius;
+    if (typeof metaRadius === "number" && metaRadius > 0) {
+      setRadius(metaRadius);
+    } else {
+      setRadius(100);
+    }
+  }, [selectedCultivationRegion]);
+
+  const generateCircleBoundary = (
+    center: { lat: number; lng: number },
+    radiusMeters: number,
+  ): { lat: number; lng: number }[] => {
+    if (!center.lat || !center.lng || radiusMeters <= 0) return [];
+    try {
+      const circlePoly = turf.circle(
+        [center.lng, center.lat],
+        radiusMeters / 1000,
+        { steps: 64, units: "kilometers" },
+      );
+      return circlePoly.geometry.coordinates[0].map(([lng, lat]) => ({
+        lat,
+        lng,
+      }));
+    } catch {
+      return [];
+    }
+  };
+
+  // Step 4: build geographicalUnits, areasByRegion, and plotsByArea from API detail responses
+  const { geographicalUnits, areasByRegion, plotsByArea } = useMemo(() => {
+    if (!selectedCultivationRegion?.scopes) {
+      return { geographicalUnits: [], areasByRegion: {}, plotsByArea: {} };
+    }
+
+    const unitsMap = new Map<
+      string,
+      {
+        id: string;
+        name: string;
+        type: string;
+        level: number;
+        coordinates?: { lat: number; lng: number }[];
+      }
+    >();
+
+    const abr: Record<string, any[]> = {};
+    const pba: Record<string, any[]> = {};
+
+    const resolveCoords = (
+      boundary?: Array<{ latitude?: number; longitude?: number }>,
+      entityCenter?: { latitude?: number; longitude?: number },
+    ) => {
+      const bCoords = boundaryToCoords(boundary);
+      if (bCoords.length >= 3) return bCoords;
+      const cPt =
+        entityCenter?.latitude && entityCenter?.longitude
+          ? {
+              lat: Number(entityCenter.latitude),
+              lng: Number(entityCenter.longitude),
+            }
+          : centerPointObj;
+      if (cPt && radius > 0) {
+        return generateCircleBoundary(cPt, radius);
+      }
+      return bCoords;
+    };
 
     const addUnit = (
       id: string,
@@ -315,276 +464,270 @@ export const usePlantIdentificationForm = ({
       level: number,
       coords?: { lat: number; lng: number }[],
     ) => {
-      if (!id || processedIds.has(id)) return;
-      result.push({ id, name, type, level, coordinates: coords });
-      processedIds.add(id);
+      if (!id || unitsMap.has(id)) return;
+      unitsMap.set(id, { id, name, type, level, coordinates: coords });
     };
 
-    selectedCultivationRegion.scopes.forEach((scope: any) => {
-      if (scope.scopeType === "PLOT" && scope.plot) {
-        const plot = scope.plot;
-        const pId = String(plot.id);
-        const plotData = geoDetailMap.plots[pId];
-        addUnit(
-          pId,
-          plot.name,
-          "Lô trồng",
-          1,
-          boundaryToCoords(plotData?.boundary),
-        );
+    // 1. Parse from Region Detail API responses
+    Object.keys(geoDetailMap.regions).forEach((rId) => {
+      const reg = geoDetailMap.regions[rId];
+      addUnit(
+        rId,
+        reg.name || `Vùng trồng #${rId}`,
+        "Vùng trồng",
+        3,
+        resolveCoords(reg.boundary, reg.centerPoint),
+      );
 
-        if (plot.area) {
-          const aId = String(plot.area.id);
-          const areaData = geoDetailMap.areas[aId];
-          addUnit(
-            aId,
-            plot.area.name,
-            "Khu vực",
-            2,
-            boundaryToCoords(areaData?.boundary),
-          );
-
-          if (plot.area.region) {
-            const rId = String(plot.area.region.id);
-            const regionData = geoDetailMap.regions[rId];
-            addUnit(
-              rId,
-              plot.area.region.name,
-              "Vùng trồng",
-              3,
-              boundaryToCoords(regionData?.boundary),
-            );
-          }
+      const subAreas = reg.areas || reg.productionAreas || [];
+      subAreas.forEach((sa: any) => {
+        const aId = String(sa.id);
+        if (!abr[rId]) abr[rId] = [];
+        if (!abr[rId].some((item) => item.id === aId)) {
+          abr[rId].push({ id: aId, name: sa.name, level: 2, type: "Khu vực" });
         }
-      } else if (scope.scopeType === "AREA" && scope.area) {
-        const area = scope.area;
-        const aId = String(area.id);
-        const areaData = geoDetailMap.areas[aId];
         addUnit(
           aId,
-          area.name,
+          sa.name,
           "Khu vực",
           2,
-          boundaryToCoords(areaData?.boundary),
+          resolveCoords(sa.boundary, sa.centerPoint),
         );
 
-        // Child plots — from area detail response
-        (areaData?.plots ?? []).forEach((p: any) => {
-          addUnit(
-            String(p.id),
-            p.name,
-            "Lô trồng",
-            1,
-            boundaryToCoords(p.boundary),
-          );
-        });
-
-        if (area.region) {
-          const rId = String(area.region.id);
-          const regionData = geoDetailMap.regions[rId];
-          addUnit(
-            rId,
-            area.region.name,
-            "Vùng trồng",
-            3,
-            boundaryToCoords(regionData?.boundary),
-          );
-        }
-      } else if (scope.scopeType === "REGION" && scope.region) {
-        const reg = scope.region;
-        const rId = String(reg.id);
-        const regionData = geoDetailMap.regions[rId];
-        addUnit(
-          rId,
-          reg.name,
-          "Vùng trồng",
-          3,
-          boundaryToCoords(regionData?.boundary),
-        );
-
-        // Child areas & plots — from region detail response
-        (regionData?.areas ?? []).forEach((sa: any) => {
-          addUnit(
-            String(sa.id),
-            sa.name,
-            "Khu vực",
-            2,
-            boundaryToCoords(sa.boundary),
-          );
-          (sa.plots ?? []).forEach((p: any) => {
-            addUnit(
-              String(p.id),
-              p.name,
-              "Lô trồng",
-              1,
-              boundaryToCoords(p.boundary),
-            );
-          });
-        });
-      }
-    });
-
-    return result;
-  }, [selectedCultivationRegion, geoDetailMap]);
-
-  const { areasByRegion, plotsByArea } = useMemo(() => {
-    const scopes: any[] = selectedCultivationRegion?.scopes ?? [];
-    const abr: Record<string, any[]> = {};
-    const pba: Record<string, any[]> = {};
-
-    scopes.forEach((scope: any) => {
-      if (scope.scopeType === "AREA" && scope.area) {
-        const rId = String(scope.area.region?.id ?? "");
-        if (rId) {
-          if (!abr[rId]) abr[rId] = [];
-          if (!abr[rId].some((a) => a.id === String(scope.area.id))) {
-            abr[rId].push({
-              id: String(scope.area.id),
-              name: scope.area.name,
-              level: 2,
-              type: "Khu vực",
-            });
-          }
-        }
-      } else if (scope.scopeType === "PLOT" && scope.plot) {
-        const area = scope.plot.area;
-        if (area) {
-          const aId = String(area.id);
-          const rId = String(area.region?.id ?? "");
+        const subPlots = sa.plots || sa.productionUnits || [];
+        subPlots.forEach((sp: any) => {
+          const pId = String(sp.id);
           if (!pba[aId]) pba[aId] = [];
-          if (!pba[aId].some((p) => p.id === String(scope.plot.id))) {
+          if (!pba[aId].some((item) => item.id === pId)) {
             pba[aId].push({
-              id: String(scope.plot.id),
-              name: scope.plot.name,
+              id: pId,
+              name: sp.name,
               level: 1,
               type: "Lô trồng",
             });
           }
-          if (rId) {
-            if (!abr[rId]) abr[rId] = [];
-            if (!abr[rId].some((a) => a.id === aId)) {
-              abr[rId].push({
-                id: aId,
-                name: area.name,
-                level: 2,
-                type: "Khu vực",
-              });
-            }
-          }
-        }
-      } else if (scope.scopeType === "REGION" && scope.region) {
-        const rId = String(scope.region.id);
-        const regionData = geoDetailMap.regions[rId];
-        if (regionData) {
-          (regionData.areas ?? []).forEach((sa: any) => {
-            const aId = String(sa.id);
-            if (!abr[rId]) abr[rId] = [];
-            if (!abr[rId].some((a) => a.id === aId)) {
-              abr[rId].push({
-                id: aId,
-                name: sa.name,
-                level: 2,
-                type: "Khu vực",
-              });
-            }
-            (sa.plots ?? []).forEach((p: any) => {
-              const pId = String(p.id);
-              if (!pba[aId]) pba[aId] = [];
-              if (!pba[aId].some((item) => item.id === pId)) {
-                pba[aId].push({
-                  id: pId,
-                  name: p.name,
-                  level: 1,
-                  type: "Lô trồng",
-                });
-              }
-            });
+          addUnit(
+            pId,
+            sp.name,
+            "Lô trồng",
+            1,
+            resolveCoords(sp.boundary, sp.centerPoint),
+          );
+        });
+      });
+    });
+
+    // 2. Parse from Area Detail API responses
+    Object.keys(geoDetailMap.areas).forEach((aId) => {
+      const area = geoDetailMap.areas[aId];
+      const rId = area.region?.id
+        ? String(area.region.id)
+        : area.productionRegion?.id
+          ? String(area.productionRegion.id)
+          : "";
+      if (rId) {
+        if (!abr[rId]) abr[rId] = [];
+        if (!abr[rId].some((item) => item.id === aId)) {
+          abr[rId].push({
+            id: aId,
+            name: area.name,
+            level: 2,
+            type: "Khu vực",
           });
         }
       }
+      addUnit(
+        aId,
+        area.name,
+        "Khu vực",
+        2,
+        resolveCoords(area.boundary, area.centerPoint),
+      );
+
+      const subPlots = area.plots || area.productionUnits || [];
+      subPlots.forEach((sp: any) => {
+        const pId = String(sp.id);
+        if (!pba[aId]) pba[aId] = [];
+        if (!pba[aId].some((item) => item.id === pId)) {
+          pba[aId].push({ id: pId, name: sp.name, level: 1, type: "Lô trồng" });
+        }
+        addUnit(
+          pId,
+          sp.name,
+          "Lô trồng",
+          1,
+          resolveCoords(sp.boundary, sp.centerPoint),
+        );
+      });
     });
 
-    return { areasByRegion: abr, plotsByArea: pba };
-  }, [selectedCultivationRegion, geoDetailMap]);
+    // 3. Parse from Plot Detail API responses
+    Object.keys(geoDetailMap.plots).forEach((pId) => {
+      const plot = geoDetailMap.plots[pId];
+      const aId = plot.area?.id ? String(plot.area.id) : "";
+      if (aId) {
+        if (!pba[aId]) pba[aId] = [];
+        if (!pba[aId].some((item) => item.id === pId)) {
+          pba[aId].push({
+            id: pId,
+            name: plot.name,
+            level: 1,
+            type: "Lô trồng",
+          });
+        }
+      }
+      addUnit(
+        pId,
+        plot.name,
+        "Lô trồng",
+        1,
+        resolveCoords(plot.boundary, plot.centerPoint),
+      );
+    });
+
+    // 4. Parse fallback from selectedCultivationRegion.scopes
+    const scopes: any[] = selectedCultivationRegion?.scopes ?? [];
+    scopes.forEach((scope: any) => {
+      if (scope.scopeType === "PLOT" && scope.plot) {
+        const pId = String(scope.plot.id);
+        addUnit(
+          pId,
+          scope.plot.name,
+          "Lô trồng",
+          1,
+          resolveCoords(scope.plot.boundary, scope.plot.centerPoint),
+        );
+        if (scope.plot.area) {
+          const aId = String(scope.plot.area.id);
+          addUnit(
+            aId,
+            scope.plot.area.name,
+            "Khu vực",
+            2,
+            resolveCoords(
+              scope.plot.area.boundary,
+              scope.plot.area.centerPoint,
+            ),
+          );
+          if (scope.plot.area.region) {
+            const rId = String(scope.plot.area.region.id);
+            addUnit(
+              rId,
+              scope.plot.area.region.name,
+              "Vùng trồng",
+              3,
+              resolveCoords(
+                scope.plot.area.region.boundary,
+                scope.plot.area.region.centerPoint,
+              ),
+            );
+          }
+        }
+      } else if (scope.scopeType === "AREA" && scope.area) {
+        const aId = String(scope.area.id);
+        addUnit(
+          aId,
+          scope.area.name,
+          "Khu vực",
+          2,
+          resolveCoords(scope.area.boundary, scope.area.centerPoint),
+        );
+        if (scope.area.region) {
+          const rId = String(scope.area.region.id);
+          addUnit(
+            rId,
+            scope.area.region.name,
+            "Vùng trồng",
+            3,
+            resolveCoords(
+              scope.area.region.boundary,
+              scope.area.region.centerPoint,
+            ),
+          );
+        }
+      } else if (scope.scopeType === "REGION" && scope.region) {
+        const rId = String(scope.region.id);
+        addUnit(
+          rId,
+          scope.region.name,
+          "Vùng trồng",
+          3,
+          resolveCoords(scope.region.boundary, scope.region.centerPoint),
+        );
+      }
+    });
+
+    return {
+      geographicalUnits: Array.from(unitsMap.values()),
+      areasByRegion: abr,
+      plotsByArea: pba,
+    };
+  }, [selectedCultivationRegion, geoDetailMap, radius, centerPointObj]);
 
   const scopedGeographicalUnits = useMemo(() => {
     if (!selectedScopeIds || selectedScopeIds.length === 0)
       return geographicalUnits;
-    const scopes: any[] = selectedCultivationRegion?.scopes ?? [];
 
-    const plotsByAreaId: Record<string, string[]> = {};
-    const plotsByRegionId: Record<string, string[]> = {};
-    const areasByRegionId: Record<string, string[]> = {};
+    const resultIds = new Set<string>();
 
-    scopes.forEach((s) => {
-      if (s.scopeType === "PLOT" && s.plot?.area) {
-        const pId = String(s.plot.id);
-        const aId = String(s.plot.area.id);
-        const rId = s.plot.area.region ? String(s.plot.area.region.id) : null;
+    selectedScopeIds.forEach((id) => {
+      resultIds.add(id);
 
-        if (!plotsByAreaId[aId]) plotsByAreaId[aId] = [];
-        if (!plotsByAreaId[aId].includes(pId)) plotsByAreaId[aId].push(pId);
-        if (rId) {
-          if (!plotsByRegionId[rId]) plotsByRegionId[rId] = [];
-          if (!plotsByRegionId[rId].includes(pId))
-            plotsByRegionId[rId].push(pId);
-          if (!areasByRegionId[rId]) areasByRegionId[rId] = [];
-          if (!areasByRegionId[rId].includes(aId))
-            areasByRegionId[rId].push(aId);
-        }
-      } else if (s.scopeType === "AREA" && s.area?.region) {
-        const rId = String(s.area.region.id);
-        const aId = String(s.area.id);
-        if (!areasByRegionId[rId]) areasByRegionId[rId] = [];
-        if (!areasByRegionId[rId].includes(aId)) areasByRegionId[rId].push(aId);
-        // include plots under the area from geographicalUnits
-        geographicalUnits
-          .filter((u) => u.level === 1)
-          .forEach((u) => {
-            if (!plotsByAreaId[aId]) plotsByAreaId[aId] = [];
-            if (!plotsByAreaId[aId].includes(u.id))
-              plotsByAreaId[aId].push(u.id);
-          });
+      // Nếu chọn Vùng -> lấy toàn bộ Khu vực & Lô trực thuộc
+      if (areasByRegion[id]) {
+        areasByRegion[id].forEach((area) => {
+          resultIds.add(area.id);
+          if (plotsByArea[area.id]) {
+            plotsByArea[area.id].forEach((plot) => resultIds.add(plot.id));
+          }
+        });
+      }
+
+      // Nếu chọn Khu vực -> lấy toàn bộ Lô trực thuộc
+      if (plotsByArea[id]) {
+        plotsByArea[id].forEach((plot) => resultIds.add(plot.id));
       }
     });
 
-    const resultIds = new Set<string>();
-    selectedScopeIds.forEach((id) => {
-      resultIds.add(id);
-      if (plotsByAreaId[id]) {
-        plotsByAreaId[id].forEach((pid) => resultIds.add(pid));
-      }
-      if (plotsByRegionId[id]) {
-        plotsByRegionId[id].forEach((pid) => resultIds.add(pid));
-      }
-      if (areasByRegionId[id]) {
-        areasByRegionId[id].forEach((aid) => {
-          resultIds.add(aid);
-          if (plotsByAreaId[aid]) {
-            plotsByAreaId[aid].forEach((pid) => resultIds.add(pid));
+    // Thêm các đơn vị cha (Khu vực & Vùng) cho bất kỳ Lô nào có trong resultIds
+    geographicalUnits.forEach((u) => {
+      if (resultIds.has(u.id) && u.level === 1) {
+        Object.keys(plotsByArea).forEach((aId) => {
+          if (plotsByArea[aId].some((p) => p.id === u.id)) {
+            resultIds.add(aId);
+            Object.keys(areasByRegion).forEach((rId) => {
+              if (areasByRegion[rId].some((a) => a.id === aId)) {
+                resultIds.add(rId);
+              }
+            });
           }
         });
       }
     });
 
     return geographicalUnits.filter((u) => resultIds.has(u.id));
-  }, [geographicalUnits, selectedScopeIds, selectedCultivationRegion]);
+  }, [geographicalUnits, selectedScopeIds, areasByRegion, plotsByArea]);
 
-  // Smallest units for map rendering (only Plot if exists, else Area, else Region)
+  // Smallest units for map rendering and initial coordinates (from scopedGeographicalUnits)
   const smallestUnits = useMemo(() => {
-    const hasPlots = geographicalUnits.some((u) => u.level === 1);
-    const hasAreas = geographicalUnits.some((u) => u.level === 2);
+    const units =
+      scopedGeographicalUnits.length > 0
+        ? scopedGeographicalUnits
+        : geographicalUnits;
+    const hasPlots = units.some((u) => u.level === 1);
+    const hasAreas = units.some((u) => u.level === 2);
 
-    if (hasPlots) return geographicalUnits.filter((u) => u.level === 1);
-    if (hasAreas) return geographicalUnits.filter((u) => u.level === 2);
-    return geographicalUnits;
-  }, [geographicalUnits]);
+    if (hasPlots) return units.filter((u) => u.level === 1);
+    if (hasAreas) return units.filter((u) => u.level === 2);
+    return units;
+  }, [scopedGeographicalUnits, geographicalUnits]);
 
   const findGeographicalUnit = (lat: number, lng: number) => {
     const pt = turf.point([lng, lat]);
 
-    const sortedUnits = geographicalUnits
-      .filter((u) => selectedScopeIds.includes(u.id))
+    // Ưu tiên kiểm tra Lô trồng (level 1) trước, rồi đến Khu vực (level 2) và Vùng trồng (level 3)
+    const sortedUnits = scopedGeographicalUnits
+      .filter((u) => u.coordinates && u.coordinates.length >= 3)
       .sort((a, b) => a.level - b.level);
 
     for (const unit of sortedUnits) {
@@ -599,21 +742,125 @@ export const usePlantIdentificationForm = ({
           return unit;
         }
       } catch {
-        // skip errors
+        // skip invalid polygon
       }
     }
     return null;
   };
 
-  // ---- Auto-validate and snap on geographicalUnits / selectedScopeIds load ----
+  const getUnitCenter = (unit: any): { lat: number; lng: number } | null => {
+    if (!unit?.coordinates || unit.coordinates.length < 3) return null;
+    try {
+      const polyCoords = [
+        ...unit.coordinates.map((c: any) => [c.lng, c.lat]),
+        [unit.coordinates[0].lng, unit.coordinates[0].lat],
+      ];
+      const poly = turf.polygon([polyCoords]);
+      const center = turf.centerOfMass(poly);
+      const [lng, lat] = center.geometry.coordinates;
+
+      if (turf.booleanPointInPolygon(center, poly)) {
+        return { lat, lng };
+      }
+
+      const avgLat =
+        unit.coordinates.reduce((s: number, c: any) => s + c.lat, 0) /
+        unit.coordinates.length;
+      const avgLng =
+        unit.coordinates.reduce((s: number, c: any) => s + c.lng, 0) /
+        unit.coordinates.length;
+      return { lat: avgLat, lng: avgLng };
+    } catch {
+      if (unit.coordinates && unit.coordinates.length > 0) {
+        return { lat: unit.coordinates[0].lat, lng: unit.coordinates[0].lng };
+      }
+      return null;
+    }
+  };
+
+  // ---- Auto-validate and snap default plant coordinate to smallest scoped unit ----
+  const generateUniqueCoordinate = (
+    baseCenter: [number, number],
+    existingPlants: PlantEntry[],
+  ) => {
+    const isCoordinateTaken = (l: number, g: number) => {
+      return existingPlants.some(
+        (p) =>
+          Math.abs(p.coordinate.lat - l) < 0.00003 &&
+          Math.abs(p.coordinate.lng - g) < 0.00003,
+      );
+    };
+
+    let lat = baseCenter[0];
+    let lng = baseCenter[1];
+
+    if (!isCoordinateTaken(lat, lng)) {
+      const unit = findGeographicalUnit(lat, lng);
+      if (unit) return { coordinate: { lat, lng }, unit };
+    }
+
+    const offsetStep = 0.00004;
+    for (let attempts = 1; attempts <= 120; attempts++) {
+      const angle = attempts * 0.5 * Math.PI;
+      const radius = offsetStep * (1 + Math.floor(attempts / 4) * 0.5);
+      const candidateLat = baseCenter[0] + radius * Math.sin(angle);
+      const candidateLng = baseCenter[1] + radius * Math.cos(angle);
+
+      if (!isCoordinateTaken(candidateLat, candidateLng)) {
+        const unit = findGeographicalUnit(candidateLat, candidateLng);
+        if (unit) {
+          return {
+            coordinate: { lat: candidateLat, lng: candidateLng },
+            unit,
+          };
+        }
+      }
+    }
+
+    const fallbackUnit = findGeographicalUnit(lat, lng);
+    return { coordinate: { lat, lng }, unit: fallbackUnit };
+  };
+
+  const hasInitializedCoordsRef = useRef(false);
+
   useEffect(() => {
-    if (geographicalUnits.length === 0) return;
+    if (smallestUnits.length === 0) return;
+
+    const currentPlants = getValues("plants") || [];
+    if (currentPlants.length === 0) return;
 
     let changed = false;
-    const currentPlants = getValues("plants") || [];
-    const updatedPlants = currentPlants.map((p) => {
+    const updatedPlants = currentPlants.map((p, index) => {
+      const isDefaultFallback =
+        Math.abs(p.coordinate.lat - 11.548) < 0.001 &&
+        Math.abs(p.coordinate.lng - 106.896) < 0.001;
+
       const unit = findGeographicalUnit(p.coordinate.lat, p.coordinate.lng);
-      if (unit) {
+
+      if (
+        isDefaultFallback &&
+        (!hasInitializedCoordsRef.current || !p.plotId)
+      ) {
+        const targetUnit = smallestUnits.find(
+          (u) => u.coordinates && u.coordinates.length >= 3,
+        );
+        if (targetUnit) {
+          const baseCenter = getUnitCenter(targetUnit);
+          if (baseCenter) {
+            const { coordinate, unit: newUnit } = generateUniqueCoordinate(
+              [baseCenter.lat, baseCenter.lng],
+              currentPlants.slice(0, index),
+            );
+            changed = true;
+            return {
+              ...p,
+              coordinate,
+              plotId: newUnit ? newUnit.id : targetUnit.id,
+              isInvalidBoundary: false,
+            };
+          }
+        }
+      } else if (unit) {
         if (!p.plotId || p.plotId !== unit.id || p.isInvalidBoundary) {
           changed = true;
           return { ...p, plotId: unit.id, isInvalidBoundary: false };
@@ -624,13 +871,15 @@ export const usePlantIdentificationForm = ({
           return { ...p, isInvalidBoundary: true };
         }
       }
+
       return p;
     });
 
     if (changed) {
       setValue("plants", updatedPlants);
     }
-  }, [geographicalUnits, selectedScopeIds]);
+    hasInitializedCoordsRef.current = true;
+  }, [smallestUnits, selectedScopeIds]);
 
   // ---- Derive managers, methods, crops from detail API response ----
   const managers: any[] = useMemo(
@@ -646,81 +895,104 @@ export const usePlantIdentificationForm = ({
   );
 
   const irrigationMethod = useMemo(
-    () => cultivationRegionDetail?.rearingMethod,
+    () =>
+      cultivationRegionDetail?.rearingMethod ||
+      cultivationRegionDetail?.irrigationSystem,
     [cultivationRegionDetail],
   );
 
   const selectedCropsData: any[] = useMemo(() => {
-    // Ưu tiên giống Foundation, sau đó hạt giống owner, cuối cùng là seeds (legacy).
-    // `variantKind` cho biết id thuộc loại nào để gửi đúng field khi submit:
-    //   production  -> productionSubjectVariantId (Giống cây)
-    //   subject     -> subjectVariantId (Hạt giống)
-    const foundation = cultivationRegionDetail?.productionSubjectVariants;
-    const owner = cultivationRegionDetail?.subjectVariants;
-    const legacy = cultivationRegionDetail?.seeds;
+    if (!cultivationRegionDetail) return [];
 
-    const variantKind: "production" | "subject" = foundation?.length
-      ? "production"
-      : "subject";
-    const list = foundation?.length
-      ? foundation
-      : owner?.length
-        ? owner
-        : (legacy ?? []);
+    const results: any[] = [];
 
-    return list.map((item: any) => ({
-      ...item,
-      variantKind,
-      cropVarietyCode:
-        item.cropVarietyCode ||
-        item.subjectVariantCode ||
-        item.varietyCode ||
-        item.code,
-      cropVarietyName:
-        item.cropVarietyName ||
-        item.subjectVariantName ||
-        item.varietyName ||
-        item.name,
-      cropName: item.cropName || item.productionSubjectName || item.crop,
-    }));
+    if (
+      cultivationRegionDetail.subjectVariants &&
+      cultivationRegionDetail.subjectVariants.length > 0
+    ) {
+      cultivationRegionDetail.subjectVariants.forEach((sv) => {
+        results.push({
+          ...sv,
+          id: sv.id,
+          cropVarietyCode: sv.subjectVariantCode,
+          cropVarietyName: sv.subjectVariantName,
+          cropName: sv.productionSubjectName,
+          variantKind: "subject" as const,
+        });
+      });
+    }
+
+    if (
+      cultivationRegionDetail.productionSubjectVariants &&
+      cultivationRegionDetail.productionSubjectVariants.length > 0
+    ) {
+      cultivationRegionDetail.productionSubjectVariants.forEach((pv) => {
+        results.push({
+          ...pv,
+          id: pv.id,
+          cropVarietyCode: pv.code,
+          cropVarietyName: pv.name,
+          cropName: pv.name,
+          variantKind: "production" as const,
+        });
+      });
+    }
+
+    if (
+      results.length === 0 &&
+      cultivationRegionDetail.seeds &&
+      cultivationRegionDetail.seeds.length > 0
+    ) {
+      cultivationRegionDetail.seeds.forEach((s) => {
+        results.push({
+          ...s,
+          id: s.id,
+          cropVarietyCode: s.cropVarietyCode,
+          cropVarietyName: s.cropVarietyName,
+          cropName: s.cropName,
+          variantKind: undefined,
+        });
+      });
+    }
+
+    return results;
   }, [cultivationRegionDetail]);
 
-  /** Giống đầu tiên của vùng canh tác — dùng làm giá trị mặc định cho cây mới */
-  const defaultVarietyId = useMemo(() => {
-    const first = selectedCropsData[0];
-    return first?.id != null ? String(first.id) : "";
-  }, [selectedCropsData]);
-
-  const defaultVariantKind = useMemo<"production" | "subject">(
-    () => selectedCropsData[0]?.variantKind ?? "production",
+  const defaultVarietyId = useMemo(
+    () => (selectedCropsData.length > 0 ? String(selectedCropsData[0].id) : ""),
     [selectedCropsData],
   );
 
-  // selectedCropsData về sau khi cây đã được tạo (hoặc đổi vùng canh tác):
-  // điền giống mặc định cho những cây chưa chọn.
+  const defaultVariantKind = useMemo(
+    () =>
+      selectedCropsData.length > 0
+        ? (selectedCropsData[0].variantKind as
+            | "production"
+            | "subject"
+            | undefined)
+        : undefined,
+    [selectedCropsData],
+  );
+
   useEffect(() => {
     if (!defaultVarietyId) return;
-
     const currentPlants = getValues("plants") || [];
-    if (currentPlants.length === 0) return;
-    if (currentPlants.every((plant) => plant.varietyId)) return;
-
-    setValue(
-      "plants",
-      currentPlants.map((plant) =>
-        plant.varietyId
-          ? plant
-          : {
-              ...plant,
-              varietyId: defaultVarietyId,
-              variantKind: defaultVariantKind,
-            },
-      ),
-      { shouldDirty: false },
-    );
-    // `plants` trong deps để effect chạy lại khi form reset xong dữ liệu cây cũ
-    // (cây tạo trước 2026-09-20 không có giống, cần điền mặc định để lưu được).
-  }, [defaultVarietyId, defaultVariantKind, plants, getValues, setValue]);
+    let updated = false;
+    const nextPlants = currentPlants.map((p) => {
+      if (!p.varietyId) {
+        updated = true;
+        return {
+          ...p,
+          varietyId: defaultVarietyId,
+          variantKind: p.variantKind || defaultVariantKind,
+        };
+      }
+      return p;
+    });
+    if (updated) {
+      setValue("plants", nextPlants);
+    }
+  }, [defaultVarietyId, defaultVariantKind, getValues, setValue]);
 
   const handleSetActiveEntry = (id: string) => {
     setActiveEntryId(id);
@@ -732,61 +1004,36 @@ export const usePlantIdentificationForm = ({
     }, 50);
   };
 
-  // Resolve effective active entry
   const effectiveActiveId = activeEntryId || plants[0]?.entryId || "";
 
   // ---- Default map center ----
   const mapCenter = useMemo(() => {
-    const withCoord = plants.find((p) => p.plotId);
-    if (withCoord)
-      return [withCoord.coordinate.lat, withCoord.coordinate.lng] as [
+    const withValidCoord = plants.find((p) => p.plotId && !p.isInvalidBoundary);
+    if (withValidCoord) {
+      return [withValidCoord.coordinate.lat, withValidCoord.coordinate.lng] as [
         number,
         number,
       ];
+    }
 
-    const unitsWithCoords = smallestUnits.filter(
+    const unitWithCoord = smallestUnits.find(
       (u) => u.coordinates && u.coordinates.length >= 3,
     );
-    if (unitsWithCoords.length > 0) {
-      const allCoords = unitsWithCoords.flatMap((u) => u.coordinates ?? []) as {
-        lat: number;
-        lng: number;
-      }[];
-      if (allCoords.length > 0) {
-        const avgLat =
-          allCoords.reduce((s, c) => s + c.lat, 0) / allCoords.length;
-        const avgLng =
-          allCoords.reduce((s, c) => s + c.lng, 0) / allCoords.length;
-        return [avgLat, avgLng] as [number, number];
-      }
+    if (unitWithCoord) {
+      const center = getUnitCenter(unitWithCoord);
+      if (center) return [center.lat, center.lng] as [number, number];
     }
 
     return [11.548, 106.896] as [number, number];
   }, [plants, smallestUnits]);
 
   const addPlant = () => {
-    let [lat, lng] = mapCenter;
-
     const currentPlants = getValues("plants") || [];
-    const isCoordinateTaken = (l: number, g: number) => {
-      return currentPlants.some(
-        (p) =>
-          Math.abs(p.coordinate.lat - l) < 0.00002 &&
-          Math.abs(p.coordinate.lng - g) < 0.00002,
-      );
-    };
+    const { coordinate, unit } = generateUniqueCoordinate(
+      mapCenter,
+      currentPlants,
+    );
 
-    let attempts = 0;
-    const offsetStep = 0.00004;
-    while (isCoordinateTaken(lat, lng) && attempts < 100) {
-      attempts++;
-      const angle = attempts * 0.5 * Math.PI;
-      const radius = offsetStep * (1 + attempts * 0.1);
-      lat = mapCenter[0] + radius * Math.sin(angle);
-      lng = mapCenter[1] + radius * Math.cos(angle);
-    }
-
-    const unit = findGeographicalUnit(lat, lng);
     append({
       entryId: `plant-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
       height: "",
@@ -795,9 +1042,8 @@ export const usePlantIdentificationForm = ({
       plantedDate: new Date().toISOString().split("T")[0],
       note: "",
       plotId: unit ? unit.id : "",
-      coordinate: { lat, lng },
+      coordinate,
       isInvalidBoundary: false,
-      // Mặc định lấy giống đầu tiên của vùng canh tác, người dùng đổi sau
       varietyId: defaultVarietyId,
       variantKind: defaultVariantKind,
     });
@@ -935,31 +1181,17 @@ export const usePlantIdentificationForm = ({
   };
 
   const handleComplete = () => {
-    const nextPlantCode = (index: number) => {
-      if (initialData?.code) return initialData.code;
-
-      const maxNumericCode = usePlantStore
-        .getState()
-        .plants.map((item) => item.code || "")
-        .map((code) => code.match(/^(?:PL-|PLANT-)?(\d+)$/i)?.[1])
-        .filter(Boolean)
-        .map((value) => Number(value))
-        .filter((value) => !Number.isNaN(value))
-        .reduce((max, current) => Math.max(max, current), 0);
-
-      return `PL-${String(maxNumericCode + index + 1).padStart(3, "0")}`;
-    };
-
     const newPlantArr = plants.map((p, index) => {
       const { plotName, areaName, regionName, scopeType } =
         resolveLocationNames(p.plotId);
 
-      const generatedCode = nextPlantCode(index);
+      // Nếu tạo mới, giữ code undefined/rỗng để Backend tự động sinh PL-xxx
+      const plantCode = initialData?.code || undefined;
 
       return {
         ...initialData,
-        code: generatedCode,
-        name: initialData?.name || plotName || `Cây trồng ${generatedCode}`,
+        code: plantCode,
+        name: initialData?.name || plotName || `Cây trồng ${index + 1}`,
         type: initialData?.type || "Cây trồng",
         status: initialData?.status || "healthy",
         height: p.height,
@@ -993,6 +1225,33 @@ export const usePlantIdentificationForm = ({
       onSubmit(newPlantArr);
     }
   };
+
+  const hasOnlyCenterPoint = useMemo(() => {
+    if (!selectedCultivationRegion) return true;
+    let hasRealBoundary = false;
+    Object.keys(geoDetailMap.regions).forEach((rId) => {
+      if (boundaryToCoords(geoDetailMap.regions[rId]?.boundary).length >= 3)
+        hasRealBoundary = true;
+    });
+    Object.keys(geoDetailMap.areas).forEach((aId) => {
+      if (boundaryToCoords(geoDetailMap.areas[aId]?.boundary).length >= 3)
+        hasRealBoundary = true;
+    });
+    Object.keys(geoDetailMap.plots).forEach((pId) => {
+      if (boundaryToCoords(geoDetailMap.plots[pId]?.boundary).length >= 3)
+        hasRealBoundary = true;
+    });
+    (selectedCultivationRegion?.scopes ?? []).forEach((s: any) => {
+      if (
+        boundaryToCoords(s.plot?.boundary).length >= 3 ||
+        boundaryToCoords(s.area?.boundary).length >= 3 ||
+        boundaryToCoords(s.region?.boundary).length >= 3
+      ) {
+        hasRealBoundary = true;
+      }
+    });
+    return !hasRealBoundary;
+  }, [selectedCultivationRegion, geoDetailMap]);
 
   const handleImport = (importedList: any[]) => {
     if (importedList.length === 0) return;
@@ -1098,5 +1357,8 @@ export const usePlantIdentificationForm = ({
     findGeographicalUnit,
     areasByRegion,
     plotsByArea,
+    radius,
+    setRadius,
+    hasOnlyCenterPoint,
   };
 };

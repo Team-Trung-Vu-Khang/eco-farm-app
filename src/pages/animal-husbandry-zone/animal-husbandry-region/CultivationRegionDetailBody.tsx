@@ -27,7 +27,7 @@ const CultivationRegionDetailBody = ({
   onBack,
   onEdit,
 }: Props) => {
-  const primaryManager = details.managers[0] ?? null;
+  const primaryManager = details?.managers?.[0] ?? null;
 
   return (
     <>
