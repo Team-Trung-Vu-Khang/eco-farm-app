@@ -16,19 +16,16 @@ import {
   MapPin,
   Layers,
   Globe,
-  Scale3d,
-  FileText,
-  Award,
   Phone,
   Mail,
   User,
   Hash,
   Maximize2,
-  X,
   Target,
   Contact,
   Tag,
   Sprout,
+  Activity,
 } from "lucide-react";
 import {
   MapContainer,
@@ -921,6 +918,32 @@ export const OverviewTab = ({
                 <span className="text-xs font-medium text-muted-foreground">
                   ha
                 </span>
+              </div>
+            </div>
+            <div>
+              <div className="text-[10px] text-muted-foreground flex items-center gap-1.5 mb-1.5 uppercase tracking-wider font-bold">
+                <Activity className="w-3.5 h-3.5 text-purple-600/70" />
+                Cập nhật sức khỏe
+              </div>
+              <div className="mt-1">
+                <Badge
+                  variant="outline"
+                  className={cn(
+                    "px-2.5 py-1 rounded-lg text-xs font-bold shadow-2xs border",
+                    area.healthUpdateMode === "individual" ||
+                      area.healthUpdateMode === "INDIVIDUAL" ||
+                      area.metadataJson?.healthUpdateMethod ===
+                        "INDIVIDUAL_PLANT"
+                      ? "bg-purple-50 text-purple-700 border-purple-200"
+                      : "bg-emerald-50 text-emerald-700 border-emerald-200",
+                  )}
+                >
+                  {area.healthUpdateMode === "individual" ||
+                  area.healthUpdateMode === "INDIVIDUAL" ||
+                  area.metadataJson?.healthUpdateMethod === "INDIVIDUAL_PLANT"
+                    ? "Theo cá thể từng cây trồng"
+                    : "Theo phạm vi vùng trồng"}
+                </Badge>
               </div>
             </div>
           </div>

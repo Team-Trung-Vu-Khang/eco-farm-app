@@ -112,9 +112,11 @@ export function useCultivationZoneCreateForm(
         varietyLabels,
         varietyCropMap,
         healthUpdateMethod:
-          (zoneData.metadataJson?.healthUpdateMethod as
-            | "ZONE_SCOPE"
-            | "INDIVIDUAL_PLANT") || "ZONE_SCOPE",
+          zoneData.healthUpdateMode === "individual" ||
+          zoneData.healthUpdateMode === "INDIVIDUAL" ||
+          zoneData.metadataJson?.healthUpdateMethod === "INDIVIDUAL_PLANT"
+            ? "INDIVIDUAL_PLANT"
+            : "ZONE_SCOPE",
         certificateIds: (zoneData.certificates ?? []).map((c) => c.id),
         personnelIds: (zoneData.personnel ?? []).map((p) => p.id),
         notes: zoneData.notes ?? "",
@@ -175,9 +177,19 @@ export function useCultivationZoneCreateForm(
         .filter((id) => !isNaN(id) && id > 0);
       const varietyIds = (data.varietyIds ?? []).filter((id) => id > 0);
 
+      const healthUpdateMode: "zone" | "individual" =
+        data.healthUpdateMethod === "INDIVIDUAL_PLANT" ||
+        data.healthUpdateMethod === "individual" ||
+        data.healthUpdateMethod === "INDIVIDUAL" ||
+        data.healthUpdateMode === "individual" ||
+        data.healthUpdateMode === "INDIVIDUAL"
+          ? "individual"
+          : "zone";
+
       const request: FarmCultivationZoneRequest = {
         code: isEditMode ? data.code : undefined,
         name: data.name,
+        healthUpdateMode,
         scopes: (data.selections ?? [])
           .map((s) => {
             let scopeId = 0;

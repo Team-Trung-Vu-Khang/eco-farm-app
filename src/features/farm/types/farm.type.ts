@@ -352,6 +352,8 @@ export interface FarmCultivationZoneRequest {
    * Loại trừ lẫn nhau với productionSubjectVariantIds.
    */
   subjectVariantIds?: number[];
+  /** Phương thức cập nhật tình trạng sức khỏe vùng canh tác: "zone" / "individual" */
+  healthUpdateMode?: "zone" | "individual" | "ZONE" | "INDIVIDUAL";
   notes?: string;
   status?: FarmCultivationZoneStatus;
   displayOrder?: number;
@@ -363,6 +365,8 @@ export interface FarmCultivationZoneResponse {
   code?: string;
   name?: string;
   domainCode?: "CROP" | "LIVESTOCK" | "AQUACULTURE";
+  /** Phương thức cập nhật tình trạng sức khỏe vùng canh tác */
+  healthUpdateMode?: "zone" | "individual" | "ZONE" | "INDIVIDUAL";
   scopes?: FarmCultivationZoneScopeResponse[];
   certificates?: CatalogRef[];
   personnel?: PersonnelRef[];

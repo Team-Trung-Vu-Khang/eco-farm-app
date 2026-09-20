@@ -24,6 +24,7 @@ export interface CultivationRegion {
   seedSelections?: Record<string, string[]>;
   configs?: Record<string, CultivationRegionConfig>;
   status: "active" | "inactive";
+  healthUpdateMode?: "zone" | "individual" | "ZONE" | "INDIVIDUAL";
   createdAt: string;
 }
 

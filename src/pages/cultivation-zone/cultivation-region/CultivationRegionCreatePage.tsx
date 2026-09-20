@@ -41,9 +41,6 @@ const CultivationRegionCreatePage = () => {
   const { isEditMode, handleComplete, handleCancel, isSubmitting } =
     useCultivationZoneCreateForm(reset);
 
-  const formValues = watch();
-  console.log("formValues", formValues);
-
   // Validation for Step 1 & Step 2
   const [
     name,

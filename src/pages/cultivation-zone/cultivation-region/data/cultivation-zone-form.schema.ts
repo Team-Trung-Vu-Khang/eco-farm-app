@@ -49,10 +49,24 @@ export const cultivationZoneFormSchema = z.object({
 
   /** Phương thức cập nhật tình trạng sức khỏe vùng trồng — bắt buộc */
   healthUpdateMethod: z
-    .enum(["ZONE_SCOPE", "INDIVIDUAL_PLANT"], {
-      message: "Vui lòng chọn phương thức cập nhật tình trạng sức khỏe",
-    })
+    .enum(
+      [
+        "ZONE_SCOPE",
+        "INDIVIDUAL_PLANT",
+        "zone",
+        "individual",
+        "ZONE",
+        "INDIVIDUAL",
+      ],
+      {
+        message: "Vui lòng chọn phương thức cập nhật tình trạng sức khỏe",
+      },
+    )
     .default("ZONE_SCOPE"),
+
+  healthUpdateMode: z
+    .enum(["zone", "individual", "ZONE", "INDIVIDUAL"])
+    .optional(),
 
   /** Chứng nhận — tuỳ chọn */
   certificateIds: z.array(z.number().int().positive()).optional(),

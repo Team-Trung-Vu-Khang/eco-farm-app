@@ -101,6 +101,22 @@ export const CultivationRegionOverviewTab = ({
               </div>
             </div>
             <div>
+              <div className="text-sm text-muted-foreground">
+                Cập nhật sức khỏe
+              </div>
+              <div className="mt-1">
+                <Badge
+                  variant="outline"
+                  className="bg-green-50 text-green-700 border-green-200"
+                >
+                  {area.healthUpdateMode === "individual" ||
+                  area.healthUpdateMode === "INDIVIDUAL"
+                    ? "Theo cá thể từng cây trồng"
+                    : "Theo phạm vi vùng trồng"}
+                </Badge>
+              </div>
+            </div>
+            <div>
               <div className="text-sm text-muted-foreground">Trạng thái</div>
               <div className="mt-1">
                 <Badge
