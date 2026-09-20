@@ -1,20 +1,12 @@
-import { useMemo, useState } from "react";
-import { useToast } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { useMasterData, useMasterDataMutations } from "@/features/master-data";
 import type {
-  MicrobialProductGroupRecord,
   MasterDataStatus,
+  MicrobialProductGroupRecord,
 } from "@/features/master-data/types/master-data.type";
-import type { MicrobialProductGroupFormValues } from "../data/microbial-product-group-form.schema";
 import { useDebounce } from "@/shared/hooks/useDebounce";
-
-/**
- * TODO(API): Chưa có catalog riêng cho chế phẩm vi sinh — master-data hiện chỉ
- * có "fertilizer-groups". Tạm dùng chung, phân biệt bằng tham số `classification`
- * (enzyme / carrier / bio_extract / supplement). Khi backend thêm catalog mới thì
- * đổi hằng số này.
- */
-const GROUP_CATALOG = "fertilizer-groups" as const;
+import { useToast } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import { useMemo, useState } from "react";
+import type { MicrobialProductGroupFormValues } from "../data/microbial-product-group-form.schema";
 
 const ALL_STATUS = "all" as const;
 const DEFAULT_PAGE_SIZE = 10;
@@ -24,19 +16,21 @@ type MicrobialProductGroupStatusFilter = MasterDataStatus | typeof ALL_STATUS;
 export function useMicrobialProductGroupPage(classification?: string) {
   const { toast } = useToast();
   const [search, setSearch] = useState("");
-  const [status, setStatus] = useState<MicrobialProductGroupStatusFilter>(ALL_STATUS);
+  const [status, setStatus] =
+    useState<MicrobialProductGroupStatusFilter>(ALL_STATUS);
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
   const [currentIndex, setCurrentIndex] = useState(1);
   const [formOpen, setFormOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
-  const [editItem, setEditItem] = useState<MicrobialProductGroupRecord | null>(null);
-  const [deleteItem, setDeleteItem] = useState<MicrobialProductGroupRecord | null>(
+  const [editItem, setEditItem] = useState<MicrobialProductGroupRecord | null>(
     null,
   );
+  const [deleteItem, setDeleteItem] =
+    useState<MicrobialProductGroupRecord | null>(null);
 
   const searchDebounce = useDebounce(search, 400);
 
-  const query = useMasterData("microbial-product-groups", {
+  const query = useMasterData("biological-product-groups", {
     params: {
       classification,
       keyword: searchDebounce.trim() || undefined,
@@ -47,7 +41,7 @@ export function useMicrobialProductGroupPage(classification?: string) {
   });
 
   const { createMasterData, updateMasterData, deleteMasterData } =
-    useMasterDataMutations("microbial-product-groups");
+    useMasterDataMutations("biological-product-groups");
 
   const buildPayload = (values: MicrobialProductGroupFormValues) => {
     return {

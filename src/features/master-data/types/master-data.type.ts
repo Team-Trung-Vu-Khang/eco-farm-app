@@ -62,6 +62,7 @@ export interface MasterDataAttributesMap {
   departments: Record<string, unknown>;
   "equipment-tool-groups": Record<string, unknown>;
   "fertilizer-groups": Record<string, unknown>;
+  "biological-product-groups": Record<string, unknown>;
   "irrigation-systems": Record<string, unknown>;
   "rearing-methods": Record<string, unknown>;
   "iot-device-groups": Record<string, unknown>;
@@ -102,6 +103,9 @@ export interface MasterDataRequestExtraFieldsMap {
   };
   "equipment-tool-groups": Record<string, never>;
   "fertilizer-groups": {
+    classification: string;
+  };
+  "biological-product-groups": {
     classification: string;
   };
   "irrigation-systems": Record<string, never>;
@@ -150,6 +154,9 @@ export interface MasterDataRecordExtraFieldsMap {
   };
   "equipment-tool-groups": Record<string, never>;
   "fertilizer-groups": {
+    classification: string;
+  };
+  "biological-product-groups": {
     classification: string;
   };
   "irrigation-systems": Record<string, never>;
@@ -345,6 +352,8 @@ export type EquipmentToolGroupRecord =
   MasterDataRecord<"equipment-tool-groups">;
 export type IoTDeviceGroupRecord = MasterDataRecord<"iot-device-groups">;
 export type FertilizerGroupRecord = MasterDataRecord<"fertilizer-groups">;
+export type MicrobialProductGroupRecord =
+  MasterDataRecord<"biological-product-groups">;
 export type IrrigationSystemRecord = MasterDataRecord<"irrigation-systems">;
 export type RearingMethodRecord = MasterDataRecord<"rearing-methods">;
 export type MaterialGroupRecord = MasterDataRecord<"material-groups">;
@@ -360,6 +369,10 @@ export type FertilizerGroupCreateRequest =
   MasterDataCreateRequest<"fertilizer-groups">;
 export type FertilizerGroupUpdateRequest =
   MasterDataUpdateRequest<"fertilizer-groups">;
+export type MicrobialProductGroupCreateRequest =
+  MasterDataCreateRequest<"biological-product-groups">;
+export type MicrobialProductGroupUpdateRequest =
+  MasterDataUpdateRequest<"biological-product-groups">;
 export type IrrigationSystemCreateRequest =
   MasterDataCreateRequest<"irrigation-systems">;
 export type IrrigationSystemUpdateRequest =
