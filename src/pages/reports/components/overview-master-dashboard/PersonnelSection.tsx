@@ -63,7 +63,12 @@ export const PersonnelSection: React.FC<PersonnelSectionProps> = ({
                 margin={{ top: 15, right: 35, left: 10, bottom: 5 }}
               >
                 {/* Hide grid lines and axis lines for a cleaner look */}
-                <CartesianGrid strokeDasharray="3 3" vertical={false} horizontal={false} stroke="#f1f5f9" />
+                <CartesianGrid
+                  strokeDasharray="3 3"
+                  vertical={false}
+                  horizontal={false}
+                  stroke="#f1f5f9"
+                />
                 <XAxis
                   type="number"
                   axisLine={false}
@@ -91,7 +96,11 @@ export const PersonnelSection: React.FC<PersonnelSectionProps> = ({
                   <LabelList
                     dataKey="value"
                     position="right"
-                    style={{ fill: "#475569", fontSize: 10, fontWeight: "bold" }}
+                    style={{
+                      fill: "#475569",
+                      fontSize: 10,
+                      fontWeight: "bold",
+                    }}
                   />
                 </Bar>
               </BarChart>

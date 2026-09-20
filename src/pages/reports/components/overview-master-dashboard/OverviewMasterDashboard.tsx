@@ -6,7 +6,6 @@ import { GeographicalSidebar } from "./GeographicalSidebar";
 import { HealthSection } from "./HealthSection";
 import { MaterialSection } from "./MaterialSection";
 import { OperationsSection } from "./OperationsSection";
-import { PersonnelSection } from "./PersonnelSection";
 import { useGeoSummary } from "@/features/farm/hooks/useFarmReport";
 
 interface OverviewMasterDashboardProps {
@@ -25,7 +24,12 @@ export const OverviewMasterDashboard: React.FC<
     null,
   );
 
-  const { regionCount, areaCount, plotCount, isLoading: geoLoading } = useGeoSummary();
+  const {
+    regionCount,
+    areaCount,
+    plotCount,
+    isLoading: geoLoading,
+  } = useGeoSummary();
 
   /** Derive { regionId?, areaId?, plotId? } from the selected sidebar node */
   const locationFilter = useMemo(() => {
@@ -156,7 +160,7 @@ export const OverviewMasterDashboard: React.FC<
           <OperationsSection selectedLocation={selectedLocation} />
 
           {/* Section 4: Personnel Headcount Bar Chart */}
-          <PersonnelSection selectedLocation={selectedLocation} />
+          {/* <PersonnelSection selectedLocation={selectedLocation} /> */}
         </div>
       </div>
     </div>
