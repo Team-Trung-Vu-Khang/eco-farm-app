@@ -69,9 +69,7 @@ const FertilizerCreatePage = () => {
           updateField={updateField}
         />
       ),
-      isValid: Boolean(
-        formData.name && formData.fertilizerOriginGroup,
-      ),
+      isValid: Boolean(formData.name && formData.fertilizerOriginGroup),
     },
     {
       id: "usage",
@@ -121,7 +119,13 @@ const FertilizerCreatePage = () => {
         <Button
           variant="ghost"
           size="sm"
-          onClick={() => setLocation(scope === "admin" ? "/admin/fertilizer" : "/cultivation-material/fertilizer")}
+          onClick={() =>
+            setLocation(
+              scope === "admin"
+                ? "/admin/fertilizer"
+                : "/cultivation-material/fertilizer",
+            )
+          }
           className="gap-2 pl-0 text-muted-foreground hover:text-primary"
         >
           <ChevronLeft className="w-4 h-4" />
@@ -154,7 +158,13 @@ const FertilizerCreatePage = () => {
             steps={steps}
             completeLabel={isEdit ? "Lưu thay đổi" : "Hoàn tất & Lưu"}
             onComplete={() => setConfirmOpen(true)}
-            onCancel={() => setLocation(scope === "admin" ? "/admin/fertilizer" : "/cultivation-material/fertilizer")}
+            onCancel={() =>
+              setLocation(
+                scope === "admin"
+                  ? "/admin/fertilizer"
+                  : "/cultivation-material/fertilizer",
+              )
+            }
             loading={submitting}
           />
         ) : (

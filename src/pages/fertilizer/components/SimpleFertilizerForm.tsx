@@ -113,9 +113,8 @@ export default function SimpleFertilizerForm({
       ? baseUnits.map((u) => u.name)
       : MEASURE_UNIT_OPTIONS;
 
-  const [configMode, setConfigMode] = useState<"SPEC" | "BASE_UNIT">("SPEC");
   const hasSimplePackagingRule =
-    configMode === "SPEC"
+    formData.configMode === "SPEC"
       ? Boolean(formData.packaging && formData.quantity && formData.unit)
       : Boolean(formData.unit);
 
@@ -268,9 +267,9 @@ export default function SimpleFertilizerForm({
         <div className="flex flex-wrap items-center p-1 bg-slate-100 rounded-xl text-xs font-medium w-fit max-w-full gap-1">
           <button
             type="button"
-            onClick={() => setConfigMode("SPEC")}
+            onClick={() => updateField("configMode", "SPEC")}
             className={`px-3 py-1.5 rounded-lg transition-all ${
-              configMode === "SPEC"
+              formData.configMode === "SPEC"
                 ? "bg-white text-primary shadow-xs font-bold"
                 : "text-slate-600 hover:text-slate-900"
             }`}
@@ -279,9 +278,9 @@ export default function SimpleFertilizerForm({
           </button>
           <button
             type="button"
-            onClick={() => setConfigMode("BASE_UNIT")}
+            onClick={() => updateField("configMode", "BASE_UNIT")}
             className={`px-3 py-1.5 rounded-lg transition-all ${
-              configMode === "BASE_UNIT"
+              formData.configMode === "BASE_UNIT"
                 ? "bg-white text-primary shadow-xs font-bold"
                 : "text-slate-600 hover:text-slate-900"
             }`}
@@ -291,7 +290,7 @@ export default function SimpleFertilizerForm({
         </div>
 
         <div className="flex gap-2 items-center">
-          {configMode === "SPEC" ? (
+          {formData.configMode === "SPEC" ? (
             <>
               <div className="flex-1 min-w-[130px]">
                 <Select
@@ -365,7 +364,7 @@ export default function SimpleFertilizerForm({
           )}
         </div>
         <p className="text-xs text-muted-foreground">
-          {configMode === "SPEC"
+          {formData.configMode === "SPEC"
             ? "VD: Chai 500 ml, Bao 25 kg... Nhập loại đóng gói, số lượng và đơn vị."
             : "VD: kg, Lít, ml... Chọn đơn vị cơ bản khi không rõ quy cách đóng gói."}
         </p>

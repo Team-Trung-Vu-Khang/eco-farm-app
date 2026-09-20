@@ -60,6 +60,8 @@ export interface Fertilizer {
 }
 
 export interface FertilizerFormData {
+  configMode?: "SPEC" | "BASE_UNIT";
+
   code: string;
   name: string;
   imageUrl?: string;

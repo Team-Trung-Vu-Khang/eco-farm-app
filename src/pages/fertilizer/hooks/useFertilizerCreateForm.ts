@@ -19,15 +19,19 @@ import { getApiErrorMessage } from "@/shared/lib/api-error";
 export function useFertilizerCreateForm() {
   const queryClient = useQueryClient();
   const [location, setLocation] = useLocation();
-  const [matchFarm, paramsFarm] = useRoute("/cultivation-material/fertilizer/:id/edit");
+  const [matchFarm, paramsFarm] = useRoute(
+    "/cultivation-material/fertilizer/:id/edit",
+  );
   const [matchAdmin, paramsAdmin] = useRoute("/admin/fertilizer/:id/edit");
-  const isEdit = (matchFarm || matchAdmin) && !!(paramsFarm?.id || paramsAdmin?.id);
+  const isEdit =
+    (matchFarm || matchAdmin) && !!(paramsFarm?.id || paramsAdmin?.id);
   const params = paramsFarm || paramsAdmin;
   const scope = matchAdmin || location.startsWith("/admin") ? "admin" : "farm";
   const { toast } = useToast();
   const { uploadImage } = useImageUploadWithCache();
 
   const [formData, setFormData] = useState<FertilizerFormData>({
+    configMode: "SPEC",
     code: "",
     name: "",
     imageUrl: "",
@@ -152,9 +156,11 @@ export function useFertilizerCreateForm() {
   };
 
   const handleConfirmSubmit = async (isDetailMode?: boolean) => {
-    const hasSimplePackagingRule = Boolean(
-      formData.packaging && formData.quantity && formData.unit,
-    );
+    const hasSimplePackagingRule =
+      formData.configMode === "BASE_UNIT"
+        ? Boolean(formData.unit)
+        : Boolean(formData.packaging && formData.quantity && formData.unit);
+
     const hasAdvancedPackagingRule = (formData.packagingSpecs || []).length > 0;
 
     if (isDetailMode ? !hasAdvancedPackagingRule : !hasSimplePackagingRule) {
@@ -328,7 +334,12 @@ export function useFertilizerCreateForm() {
       };
 
       if (isEdit && params?.id) {
-        await farmSupplyApi.update("fertilizer", Number(params.id), payload, scope);
+        await farmSupplyApi.update(
+          "fertilizer",
+          Number(params.id),
+          payload,
+          scope,
+        );
         toast({
           title: "Thành công",
           description: "Đã cập nhật thông tin phân bón thành công",
@@ -340,8 +351,14 @@ export function useFertilizerCreateForm() {
           description: "Đã thêm mới phân bón thành công",
         });
       }
-      queryClient.invalidateQueries({ queryKey: [scope === "admin" ? "admin-supplies" : "farm-supplies"] });
-      setLocation(scope === "admin" ? "/admin/fertilizer" : "/cultivation-material/fertilizer");
+      queryClient.invalidateQueries({
+        queryKey: [scope === "admin" ? "admin-supplies" : "farm-supplies"],
+      });
+      setLocation(
+        scope === "admin"
+          ? "/admin/fertilizer"
+          : "/cultivation-material/fertilizer",
+      );
     } catch (err: any) {
       if (err.response?.status === 409) {
         toast({

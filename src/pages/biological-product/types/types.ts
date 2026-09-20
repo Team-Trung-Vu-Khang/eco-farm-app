@@ -60,6 +60,8 @@ export interface BiologicalProduct {
 }
 
 export interface BiologicalProductFormData {
+  configMode?: "SPEC" | "BASE_UNIT";
+
   code: string;
   name: string;
   imageUrl?: string;

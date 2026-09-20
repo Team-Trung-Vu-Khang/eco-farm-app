@@ -20,15 +20,22 @@ import { SUPPLY_TYPE } from "../data/constants";
 export function useBiologicalProductCreateForm() {
   const queryClient = useQueryClient();
   const [location, setLocation] = useLocation();
-  const [matchFarm, paramsFarm] = useRoute("/cultivation-material/biological-product/:id/edit");
-  const [matchAdmin, paramsAdmin] = useRoute("/admin/biological-product/:id/edit");
-  const isEdit = (matchFarm || matchAdmin) && !!(paramsFarm?.id || paramsAdmin?.id);
+  const [matchFarm, paramsFarm] = useRoute(
+    "/cultivation-material/biological-product/:id/edit",
+  );
+  const [matchAdmin, paramsAdmin] = useRoute(
+    "/admin/biological-product/:id/edit",
+  );
+  const isEdit =
+    (matchFarm || matchAdmin) && !!(paramsFarm?.id || paramsAdmin?.id);
   const params = paramsFarm || paramsAdmin;
   const scope = matchAdmin || location.startsWith("/admin") ? "admin" : "farm";
   const { toast } = useToast();
   const { uploadImage } = useImageUploadWithCache();
 
   const [formData, setFormData] = useState<BiologicalProductFormData>({
+    configMode: "SPEC",
+
     code: "",
     name: "",
     imageUrl: "",
@@ -153,9 +160,11 @@ export function useBiologicalProductCreateForm() {
   };
 
   const handleConfirmSubmit = async (isDetailMode?: boolean) => {
-    const hasSimplePackagingRule = Boolean(
-      formData.packaging && formData.quantity && formData.unit,
-    );
+    const hasSimplePackagingRule =
+      formData.configMode === "BASE_UNIT"
+        ? Boolean(formData.unit)
+        : Boolean(formData.packaging && formData.quantity && formData.unit);
+
     const hasAdvancedPackagingRule = (formData.packagingSpecs || []).length > 0;
 
     if (isDetailMode ? !hasAdvancedPackagingRule : !hasSimplePackagingRule) {
@@ -200,7 +209,10 @@ export function useBiologicalProductCreateForm() {
         "nutrient_composition",
         formData.biologicalProductType || formData.nutritionalContentId,
       );
-      addClass("origin", formData.biologicalProductOriginGroup || formData.originId);
+      addClass(
+        "origin",
+        formData.biologicalProductOriginGroup || formData.originId,
+      );
       addClass(
         "effect_stage",
         formData.applicationStage || formData.applicationStageId,
@@ -329,7 +341,12 @@ export function useBiologicalProductCreateForm() {
       };
 
       if (isEdit && params?.id) {
-        await farmSupplyApi.update(SUPPLY_TYPE, Number(params.id), payload, scope);
+        await farmSupplyApi.update(
+          SUPPLY_TYPE,
+          Number(params.id),
+          payload,
+          scope,
+        );
         toast({
           title: "Thành công",
           description: "Đã cập nhật thông tin chế phẩm sinh học thành công",
@@ -341,8 +358,14 @@ export function useBiologicalProductCreateForm() {
           description: "Đã thêm mới chế phẩm sinh học thành công",
         });
       }
-      queryClient.invalidateQueries({ queryKey: [scope === "admin" ? "admin-supplies" : "farm-supplies"] });
-      setLocation(scope === "admin" ? "/admin/biological-product" : "/cultivation-material/biological-product");
+      queryClient.invalidateQueries({
+        queryKey: [scope === "admin" ? "admin-supplies" : "farm-supplies"],
+      });
+      setLocation(
+        scope === "admin"
+          ? "/admin/biological-product"
+          : "/cultivation-material/biological-product",
+      );
     } catch (err: any) {
       if (err.response?.status === 409) {
         toast({

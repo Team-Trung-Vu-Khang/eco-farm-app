@@ -1,6 +1,8 @@
 import type { Pesticide, PesticideFormData } from "../types";
 
 export const createEmptyPesticideFormData = (): PesticideFormData => ({
+  configMode: "SPEC",
+
   // Bước 1
   code: "",
   name: "",

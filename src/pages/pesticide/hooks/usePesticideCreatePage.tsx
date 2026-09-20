@@ -127,9 +127,11 @@ export function usePesticideCreatePage() {
   };
 
   const handleConfirmSubmit = async (isDetailMode?: boolean) => {
-    const hasSimplePackagingRule = Boolean(
-      formData.packaging && formData.quantity && formData.unit,
-    );
+    const hasSimplePackagingRule =
+      formData.configMode === "BASE_UNIT"
+        ? Boolean(formData.unit)
+        : Boolean(formData.packaging && formData.quantity && formData.unit);
+
     const hasAdvancedPackagingRule = formData.packagingSpecs.length > 0;
 
     if (isDetailMode ? !hasAdvancedPackagingRule : !hasSimplePackagingRule) {

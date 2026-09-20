@@ -102,10 +102,8 @@ export default function SimplePesticideForm({
   const isEdit = window.location.pathname.includes("/edit");
   const labels = DOMAIN_LABELS[domain];
 
-  const [configMode, setConfigMode] = useState<"SPEC" | "BASE_UNIT">("SPEC");
-
   const hasBasicPackagingRule =
-    configMode === "SPEC"
+    formData.configMode === "SPEC"
       ? Boolean(formData.packaging && formData.quantity && formData.unit)
       : Boolean(formData.unit);
 
@@ -291,9 +289,9 @@ export default function SimplePesticideForm({
         <div className="flex flex-wrap items-center p-1 bg-slate-100 rounded-xl text-xs font-medium w-fit max-w-full gap-1">
           <button
             type="button"
-            onClick={() => setConfigMode("SPEC")}
+            onClick={() => onFormFieldChange("configMode", "SPEC")}
             className={`px-3 py-1.5 rounded-lg transition-all ${
-              configMode === "SPEC"
+              formData.configMode === "SPEC"
                 ? "bg-white text-primary shadow-xs font-bold"
                 : "text-slate-600 hover:text-slate-900"
             }`}
@@ -302,9 +300,9 @@ export default function SimplePesticideForm({
           </button>
           <button
             type="button"
-            onClick={() => setConfigMode("BASE_UNIT")}
+            onClick={() => onFormFieldChange("configMode", "BASE_UNIT")}
             className={`px-3 py-1.5 rounded-lg transition-all ${
-              configMode === "BASE_UNIT"
+              formData.configMode === "BASE_UNIT"
                 ? "bg-white text-primary shadow-xs font-bold"
                 : "text-slate-600 hover:text-slate-900"
             }`}
@@ -314,7 +312,7 @@ export default function SimplePesticideForm({
         </div>
 
         <div className="flex gap-2 items-center">
-          {configMode === "SPEC" ? (
+          {formData.configMode === "SPEC" ? (
             <>
               <div className="flex-1 min-w-[130px]">
                 <Select
@@ -385,7 +383,7 @@ export default function SimplePesticideForm({
           )}
         </div>
         <p className="text-xs text-muted-foreground">
-          {configMode === "SPEC"
+          {formData.configMode === "SPEC"
             ? "VD: Chai 500 ml, Bao 25 kg, Vỉ 10 viên… Nhập đầy đủ loại, số lượng và đơn vị."
             : "VD: kg, Lít, ml, viên… Chọn đơn vị cơ bản khi không rõ quy cách đóng gói."}
         </p>
