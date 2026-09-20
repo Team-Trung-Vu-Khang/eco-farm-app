@@ -10,10 +10,8 @@ import {
   DeleteDialog,
   Tabs,
   TabsContent,
-  TabsList,
-  TabsTrigger,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { Fish, PawPrint, Plus, TreeDeciduous } from "lucide-react";
+import { Plus } from "lucide-react";
 import { useState } from "react";
 import { useDebounce } from "@/shared/hooks/useDebounce";
 import { seasonColumns } from "./data/columns";
@@ -122,7 +120,10 @@ export default function SeasonPage() {
     >
       <div className="space-y-6">
         <Tabs defaultValue="CROP">
-          <TabsList className="grid w-full grid-cols-3">
+          {/* Tạm ẩn Vụ nuôi & Vụ thả nuôi — chỉ còn Vụ mùa nên bỏ luôn thanh tab.
+              Mở lại: bỏ comment khối dưới và khôi phục import TabsList/
+              TabsTrigger, TreeDeciduous, PawPrint, Fish. */}
+          {/* <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="CROP" className="gap-2">
               <TreeDeciduous className="h-4 w-4" />
               Vụ mùa
@@ -135,8 +136,7 @@ export default function SeasonPage() {
               <Fish className="h-4 w-4" />
               Vụ thả nuôi
             </TabsTrigger>
-          </TabsList>
-
+          </TabsList> */}
           <TabsContent value="CROP" className="mt-5">
             <SeasonTabContent
               domainCode="CROP"

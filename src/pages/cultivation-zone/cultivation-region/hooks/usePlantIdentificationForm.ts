@@ -1003,6 +1003,8 @@ export const usePlantIdentificationForm = ({
         plotId: autoPlotId,
         coordinate: coord,
         isInvalidBoundary: invalid,
+        // Giống chọn trong hộp thoại import, fallback về giống đầu của vùng
+        varietyId: item.varietyId || defaultVarietyId,
       };
     });
 

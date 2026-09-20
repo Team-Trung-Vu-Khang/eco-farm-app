@@ -7,6 +7,12 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
+  Label,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
   useToast,
   type Column,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
@@ -24,6 +30,8 @@ interface ImportPlantDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onImport: (plants: Partial<Plant>[]) => void;
+  /** Giống / hạt giống của vùng canh tác chọn ở bước 1 */
+  varietyOptions?: Array<{ id: string; name: string; code?: string }>;
 }
 
 interface TempPlant extends Partial<Plant> {
@@ -36,11 +44,16 @@ export function ImportPlantDialog({
   open,
   onOpenChange,
   onImport,
+  varietyOptions = [],
 }: ImportPlantDialogProps) {
   const [isDragging, setIsDragging] = useState(false);
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [importData, setImportData] = useState<TempPlant[]>([]);
+  // Giống áp cho toàn bộ cây trong file. Chưa chọn thì mặc định lấy giống đầu
+  // tiên của vùng — tính trực tiếp để không cần effect đồng bộ state.
+  const [selectedVarietyId, setSelectedVarietyId] = useState("");
+  const varietyId = selectedVarietyId || varietyOptions[0]?.id || "";
   const [isParsing, setIsParsing] = useState(false);
 
   const columns: Column<TempPlant>[] = [
@@ -283,7 +296,10 @@ export function ImportPlantDialog({
     // Pass valid items exactly as required
     // Remove temporary id, isValid, errors properties
     const plantsToImport = validItems.map(
-      ({ id, isValid, errors, ...rest }) => rest,
+      ({ id, isValid, errors, ...rest }) => ({
+        ...rest,
+        ...(varietyId ? { varietyId } : {}),
+      }),
     );
 
     onImport(plantsToImport);
@@ -363,6 +379,28 @@ export function ImportPlantDialog({
                 Tải mẫu
               </Button>
             </div>
+
+            {/* Chọn giống áp cho toàn bộ cây trong file */}
+            {varietyOptions.length > 0 && (
+              <div className="mb-4 space-y-1.5">
+                <Label className="text-xs font-bold text-slate-600">
+                  Giống / Hạt giống áp dụng cho toàn bộ cây
+                </Label>
+                <Select value={varietyId} onValueChange={setSelectedVarietyId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Chọn giống" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {varietyOptions.map((option) => (
+                      <SelectItem key={option.id} value={option.id}>
+                        {option.name}
+                        {option.code ? ` (${option.code})` : ""}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
 
             {/* Upload Area */}
             {importData.length === 0 && !isParsing && (

@@ -160,6 +160,7 @@ const PlantIdentificationForm = ({
         open={isImportOpen}
         onOpenChange={setIsImportOpen}
         onImport={handleImport}
+        varietyOptions={varietyOptions}
       />
     </>
   );
