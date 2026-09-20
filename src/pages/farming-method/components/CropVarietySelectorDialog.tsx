@@ -33,11 +33,7 @@ export function CropVarietySelectorDialog({
     Record<number, RelatedCropForm>
   >({});
 
-  const {
-    items: cropItems,
-    response,
-    loading: cropsLoading,
-  } = useCrops({
+  const { response, loading: cropsLoading } = useCrops({
     enabled: open,
     params: {
       domainCode: "CROP",
@@ -50,27 +46,31 @@ export function CropVarietySelectorDialog({
 
   const isFetchingData = cropsLoading && page === 0;
 
+  // Đổi từ khoá hoặc đóng/mở dialog: về trang đầu và xoá danh sách đã gộp.
+  // Dữ liệu trang 0 sẽ do effect bên dưới nạp lại khi query trả về.
   useEffect(() => {
     setPage(0);
-    if (open) {
-      setAllCrops(cropItems || []);
-    } else {
-      setAllCrops([]);
-    }
+    setAllCrops([]);
   }, [debouncedSearch, open]);
 
+  // Phụ thuộc `response` (object ổn định từ React Query) thay vì `cropItems`:
+  // `items` là `data?.content ?? []`, tức mảng mới sau mỗi render, đưa vào deps
+  // sẽ khiến effect chạy lại vô hạn.
   useEffect(() => {
-    if (!cropItems) return;
+    const items = response?.content;
+    if (!items) return;
+
     if (page === 0) {
-      setAllCrops(cropItems);
-    } else {
-      setAllCrops((prev) => {
-        const existingIds = new Set(prev.map((c) => c.id));
-        const newItems = cropItems.filter((c) => !existingIds.has(c.id));
-        return [...prev, ...newItems];
-      });
+      setAllCrops(items);
+      return;
     }
-  }, [cropItems, page]);
+
+    setAllCrops((prev) => {
+      const existingIds = new Set(prev.map((c) => c.id));
+      const newItems = items.filter((c) => !existingIds.has(c.id));
+      return newItems.length > 0 ? [...prev, ...newItems] : prev;
+    });
+  }, [response, page]);
 
   const allCropOptions = useMemo<CropOption[]>(() => {
     return allCrops.map((crop) => ({

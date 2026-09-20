@@ -557,6 +557,7 @@ export const ZoneConfigurationStep: React.FC<ZoneConfigurationStepProps> = ({
   const [farmingMethodSearch, setFarmingMethodSearch] = useState("");
   const [rearingMethodSearch, setRearingMethodSearch] = useState("");
   const [cropSearch, setCropSearch] = useState("");
+  const [cachedSubjects, setCachedSubjects] = useState<SeedSubjectGroup[]>([]);
   const debouncedFarmingMethodSearch = useDebounce(farmingMethodSearch, 300);
   const debouncedRearingMethodSearch = useDebounce(rearingMethodSearch, 300);
   const debouncedCropSearch = useDebounce(cropSearch, 300);
@@ -707,11 +708,44 @@ export const ZoneConfigurationStep: React.FC<ZoneConfigurationStepProps> = ({
     return Array.from(mergedMap.values());
   }, [activeMethodApps, allProductionSubjects]);
 
+  useEffect(() => {
+    if (subjects.length === 0) return;
+
+    setCachedSubjects((previous) => {
+      const mergedMap = new Map<number, SeedSubjectGroup>();
+      previous.forEach((subject) => mergedMap.set(subject.subjectId, subject));
+      let hasChanged = false;
+
+      subjects.forEach((subject) => {
+        const existing = mergedMap.get(subject.subjectId);
+        if (!existing || subject.variants.length >= existing.variants.length) {
+          const isSame =
+            existing &&
+            existing.subjectName === subject.subjectName &&
+            existing.subjectCode === subject.subjectCode &&
+            existing.variants.length === subject.variants.length;
+
+          if (!isSame) hasChanged = true;
+          mergedMap.set(subject.subjectId, subject);
+        }
+      });
+
+      return hasChanged ? Array.from(mergedMap.values()) : previous;
+    });
+  }, [subjects]);
+
+  const subjectsForSelection = useMemo(() => {
+    const mergedMap = new Map<number, SeedSubjectGroup>();
+    cachedSubjects.forEach((subject) => mergedMap.set(subject.subjectId, subject));
+    subjects.forEach((subject) => mergedMap.set(subject.subjectId, subject));
+    return Array.from(mergedMap.values());
+  }, [cachedSubjects, subjects]);
+
   const selectedCrops = useMemo(() => {
-    return subjects.filter((s) =>
+    return subjectsForSelection.filter((s) =>
       selectedCropIds.includes(String(s.subjectId)),
     );
-  }, [subjects, selectedCropIds]);
+  }, [subjectsForSelection, selectedCropIds]);
 
   // Auto-infer parent cropIds from selectedVarietyIds and available subjects / foundation varieties
   useEffect(() => {
@@ -720,8 +754,8 @@ export const ZoneConfigurationStep: React.FC<ZoneConfigurationStepProps> = ({
     const currentCropIdsSet = new Set<string>(selectedCropIds);
     let hasNewCrops = false;
 
-    // A. Infer from subjects
-    subjects.forEach((subj) => {
+    // A. Infer from loaded/cached subjects
+    subjectsForSelection.forEach((subj) => {
       const subjIdStr = String(subj.subjectId);
       if (!currentCropIdsSet.has(subjIdStr)) {
         const hasSelectedVariety = subj.variants.some((v) =>
@@ -769,7 +803,7 @@ export const ZoneConfigurationStep: React.FC<ZoneConfigurationStepProps> = ({
       hasNewMapping = true;
     };
 
-    subjects.forEach((subj) => {
+    subjectsForSelection.forEach((subj) => {
       subj.variants.forEach((v) => {
         if (selectedVarietyIds.includes(v.id)) linkVariety(v.id, subj.subjectId);
       });
@@ -785,7 +819,7 @@ export const ZoneConfigurationStep: React.FC<ZoneConfigurationStepProps> = ({
       setValue("varietyCropMap", restoredMap, { shouldDirty: false });
     }
   }, [
-    subjects,
+    subjectsForSelection,
     allFoundationVarieties,
     selectedVarietyIds,
     selectedCropIds,
@@ -811,7 +845,9 @@ export const ZoneConfigurationStep: React.FC<ZoneConfigurationStepProps> = ({
       watch("varietyCropMap") || {};
     const allCropsHaveVarieties = selectedCropIds.every((cropIdStr) => {
       const cropIdNum = parseInt(cropIdStr, 10);
-      const cropGroup = subjects.find((s) => s.subjectId === cropIdNum);
+      const cropGroup = subjectsForSelection.find(
+        (s) => s.subjectId === cropIdNum,
+      );
       const variants = cropGroup?.variants ?? [];
 
       if (variants.length > 0) {
@@ -851,7 +887,7 @@ export const ZoneConfigurationStep: React.FC<ZoneConfigurationStepProps> = ({
   }, [
     selectedCropIds,
     selectedVarietyIds,
-    subjects,
+    subjectsForSelection,
     allFoundationVarieties,
     hasInvalidVarieties,
     setValue,
@@ -896,7 +932,7 @@ export const ZoneConfigurationStep: React.FC<ZoneConfigurationStepProps> = ({
     });
 
     const cropId = parseInt(cropIdStr, 10);
-    const cropGroup = subjects.find((s) => s.subjectId === cropId);
+    const cropGroup = subjectsForSelection.find((s) => s.subjectId === cropId);
     if (cropGroup) {
       const varietyIdsOfCrop = cropGroup.variants.map((v) => v.id);
       const nextVarietyIds = selectedVarietyIds.filter(
