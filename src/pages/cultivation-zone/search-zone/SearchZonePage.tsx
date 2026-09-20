@@ -50,6 +50,8 @@ import {
 } from "react-leaflet";
 import { useLocation } from "wouter";
 import type { CultivationRegion } from "../../../stores/useCultivationRegionStore";
+import CultivationRegionDetailBody from "../cultivation-region/CultivationRegionDetailBody";
+import type { CultivationRegionDetails } from "../cultivation-region/useCultivationRegionDetail";
 import {
   LAND_TYPES,
   type Coordinate,
@@ -1651,8 +1653,23 @@ const SearchZonePage = () => {
                           </div>
                         </div>
                         {selectedCultivationRegion && (
-                          <MockCultivationRegionDetailView
-                            zone={selectedCultivationRegion}
+                          <CultivationRegionDetailBody
+                            area={selectedCultivationRegion}
+                            details={buildMockCultivationRegionDetails(
+                              selectedCultivationRegion,
+                              enterprises,
+                              regionIndex,
+                            )}
+                            onBack={() =>
+                              setIsCultivationRegionDetailOpen(false)
+                            }
+                            onEdit={() => {
+                              toast({
+                                title: "Dữ liệu mock",
+                                description:
+                                  "Trang tìm kiếm vùng canh tác đang dùng dữ liệu mock local.",
+                              });
+                            }}
                           />
                         )}
                       </div>
@@ -2034,95 +2051,195 @@ const SearchZonePage = () => {
   );
 };
 
-const MockCultivationRegionDetailView = ({
-  zone,
-}: {
-  zone: CultivationRegion;
-}) => {
+const buildMockCultivationRegionDetails = (
+  zone: CultivationRegion,
+  enterprises: any[],
+  regionIndex: {
+    regionById: Map<string, Region>;
+    areaById: Map<string, { area: any; region: Region }>;
+    plotById: Map<string, { plot: any; area: any; region: Region }>;
+  },
+): CultivationRegionDetails => {
   const detail =
     mockSearchZoneDetailRecords[
       zone.id as keyof typeof mockSearchZoneDetailRecords
     ];
-
-  const infoRows = [
-    { label: "Đơn vị sở hữu", value: detail?.owner || zone.enterpriseId },
-    { label: "Quy mô", value: detail?.areaText || "Đang cập nhật" },
-    { label: "Phương thức canh tác", value: detail?.farmingMethod || zone.farmingMethodId },
-    { label: "Tưới tiêu", value: detail?.irrigation || zone.irrigationMethodId },
-    { label: "Ngày tạo", value: zone.createdAt },
-    { label: "Trạng thái", value: zone.status === "active" ? "Hoạt động" : "Ngưng hoạt động" },
-  ];
-
-  return (
-    <div className="space-y-6">
-      <div className="rounded-xl border bg-slate-50 p-5">
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div>
-            <p className="text-xs font-bold uppercase tracking-widest text-slate-400">
-              Mock data local
-            </p>
-            <h2 className="mt-1 text-2xl font-bold text-slate-900">
-              {zone.name}
-            </h2>
-            <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
-              {zone.note}
-            </p>
-          </div>
-          <Badge className={zone.status === "active" ? "bg-primary" : ""}>
-            {zone.status === "active" ? "Hoạt động" : "Ngưng hoạt động"}
-          </Badge>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-        {infoRows.map((item) => (
-          <div key={item.label} className="rounded-lg border bg-white p-4">
-            <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
-              {item.label}
-            </p>
-            <p className="mt-2 text-sm font-semibold text-slate-800">
-              {item.value}
-            </p>
-          </div>
-        ))}
-      </div>
-
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <MockDetailList title="Cây trồng" items={detail?.crops || zone.selectedCrops} />
-        <MockDetailList title="Chứng nhận" items={detail?.certifications || zone.certificateIds} />
-        <MockDetailList title="Nhân sự phụ trách" items={detail?.managers || zone.managerIds} />
-        <MockDetailList title="Kế hoạch đang chạy" items={detail?.activePlans || []} />
-        <MockDetailList title="Thiết bị giám sát" items={detail?.devices || []} />
-        <MockDetailList title="Phạm vi áp dụng" items={[zone.targetName]} />
-      </div>
-    </div>
+  const enterprise = enterprises.find(
+    (item) => String(item.id) === String(zone.enterpriseId),
   );
-};
+  const selectedEntities = zone.targetIds.map((id) => {
+    const region = regionIndex.regionById.get(String(id));
+    if (region) {
+      return {
+        id: String(region.id),
+        type: "Vùng trồng",
+        typeCode: "region",
+        name: region.name,
+        regionId: String(region.id),
+      };
+    }
 
-const MockDetailList = ({
-  title,
-  items,
-}: {
-  title: string;
-  items: readonly string[];
-}) => (
-  <div className="rounded-xl border bg-white p-5">
-    <h3 className="text-xs font-black uppercase tracking-widest text-slate-500">
-      {title}
-    </h3>
-    <div className="mt-4 flex flex-wrap gap-2">
-      {items.length ? (
-        items.map((item) => (
-          <Badge key={item} variant="outline" className="bg-slate-50">
-            {item}
-          </Badge>
-        ))
-      ) : (
-        <span className="text-sm text-slate-400">Chưa có dữ liệu</span>
-      )}
-    </div>
-  </div>
-);
+    const areaHit = regionIndex.areaById.get(String(id));
+    if (areaHit) {
+      return {
+        id: String(areaHit.area.id),
+        type: "Khu vực",
+        typeCode: "area",
+        name: areaHit.area.name,
+        regionId: String(areaHit.region.id),
+        regionName: areaHit.region.name,
+        areaId: String(areaHit.area.id),
+      };
+    }
+
+    const plotHit = regionIndex.plotById.get(String(id));
+    if (plotHit) {
+      return {
+        id: String(plotHit.plot.id),
+        type: "Lô đất",
+        typeCode: "plot",
+        name: plotHit.plot.name,
+        regionId: String(plotHit.region.id),
+        regionName: plotHit.region.name,
+        areaId: String(plotHit.area.id),
+        areaName: plotHit.area.name,
+      };
+    }
+
+    return {
+      id,
+      type: zone.scope,
+      typeCode: zone.scope,
+      name: id,
+    };
+  });
+
+  const groupedSelections = selectedEntities.reduce<Record<string, any>>(
+    (groups, entity) => {
+      const regionId = String(entity.regionId || entity.id);
+      const region =
+        regionIndex.regionById.get(regionId) ||
+        regionIndex.areaById.get(String(entity.areaId))?.region ||
+        regionIndex.plotById.get(String(entity.id))?.region;
+      const regionKey = regionId || "mock-region";
+
+      if (!groups[regionKey]) {
+        groups[regionKey] = {
+          region: region || { id: regionKey, name: entity.regionName || entity.name },
+          areas: {},
+        };
+      }
+
+      const areaKey = String(entity.areaId || "region-only");
+      if (!groups[regionKey].areas[areaKey]) {
+        groups[regionKey].areas[areaKey] = {
+          area: entity.areaId
+            ? regionIndex.areaById.get(String(entity.areaId))?.area || {
+                id: entity.areaId,
+                name: entity.areaName,
+              }
+            : null,
+          entities: [],
+        };
+      }
+      groups[regionKey].areas[areaKey].entities.push(entity);
+      return groups;
+    },
+    {},
+  );
+
+  const totalArea = selectedEntities.reduce((sum, entity) => {
+    const region = regionIndex.regionById.get(String(entity.id));
+    const area = regionIndex.areaById.get(String(entity.id))?.area;
+    const plot = regionIndex.plotById.get(String(entity.id))?.plot;
+    return sum + Number(region?.area || area?.area || plot?.area || 0);
+  }, 0);
+
+  const personnel = (detail?.managers || zone.managerIds).map((name, index) => ({
+    id: index + 1,
+    fullName: name,
+    avatarUrl: null,
+    positionName: index === 0 ? "Quản lý vùng" : "Kỹ thuật viên",
+    positionCode: index === 0 ? "MANAGER" : "TECH",
+    phone: `09${index + 1}0 000 00${index + 1}`,
+  }));
+
+  const crops = (detail?.crops || zone.selectedCrops).map((name, index) => ({
+    id: `crop-${zone.id}-${index + 1}`,
+    name,
+    crop: name.split(" ")[0] || name,
+    selectedSeeds: [
+      {
+        id: `seed-${index + 1}`,
+        name: `${name} - giống mock`,
+      },
+    ],
+  }));
+
+  const certificates = (detail?.certifications || zone.certificateIds).map(
+    (name, index) => ({
+      id: index + 1,
+      code: name,
+      name,
+    }),
+  );
+
+  return {
+    managers: personnel,
+    personnel,
+    certificates,
+    selectedCerts: certificates,
+    regionStats: {
+      total: 76,
+      healthy: 68,
+      treating: 6,
+      diseased: 2,
+    },
+    region:
+      selectedEntities[0]?.regionId != null
+        ? regionIndex.regionById.get(String(selectedEntities[0].regionId)) ||
+          null
+        : null,
+    selectedEntities,
+    groupedSelections,
+    totalArea: Number(totalArea.toFixed(1)),
+    enterprise: enterprise
+      ? {
+          ...enterprise,
+          code: enterprise.code || enterprise.id,
+          name: enterprise.brandName || enterprise.name,
+        }
+      : null,
+    entityConfigs: selectedEntities.map((entity) => ({
+      entity,
+      farmingMethod: { id: zone.farmingMethodId, name: detail?.farmingMethod || zone.farmingMethodId },
+      irrigationMethod: { id: zone.irrigationMethodId, name: detail?.irrigation || zone.irrigationMethodId },
+      crops,
+    })),
+    technicalConfig: {
+      farmingMethod: { id: zone.farmingMethodId, name: detail?.farmingMethod || zone.farmingMethodId },
+      irrigationMethod: { id: zone.irrigationMethodId, name: detail?.irrigation || zone.irrigationMethodId },
+      crops,
+    },
+    harvestStats: {
+      totalVolume: 128,
+      lastVolume: 18,
+      lastChange: 8,
+      avgVolume: 16,
+      avgChange: 4,
+    },
+    harvestBatches: [
+      {
+        id: `harvest-${zone.id}-1`,
+        date: "2026-08-25",
+        volume: 18,
+        quality: "Loại A",
+        staff: personnel[0]?.fullName || "Nhân sự mock",
+        notes: "Dữ liệu mock phục vụ màn tra cứu.",
+      },
+    ],
+  };
+};
 
 const GeographyScopeTree = ({
   scopeTree,
