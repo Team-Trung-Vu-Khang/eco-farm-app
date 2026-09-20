@@ -1,6 +1,5 @@
 import treeMarkerIcon from "@/assets/tree.webp";
 import PageWrapper from "@/components/PageWrapper";
-import useGroupCropStore from "@/stores/useGroupCropStore";
 import {
   Badge,
   Button,
@@ -173,7 +172,6 @@ const MapContent = ({
 
 interface AdvancedFilters {
   // Group 1: Crop Info
-  cropNames?: string[];
   varieties?: string[];
   seedTypes?: string[];
   age?: number;
@@ -195,7 +193,6 @@ const SearchCropPage = () => {
   const { toast } = useToast();
   const { crops } = useCropDetailStore();
   const { regions } = useRegionStore();
-  const { groupCrops } = useGroupCropStore();
 
   const [searchQuery, setSearchQuery] = useState("");
   const [activeCropInDialog, setActiveCropInDialog] =
@@ -210,10 +207,7 @@ const SearchCropPage = () => {
   const [currentView, setCurrentView] = useState<SearchView>("regions");
   const [selectedRegionId, setSelectedRegionId] = useState<number | null>(null);
 
-  const cropGroupOptions = groupCrops.map((gc) => ({
-    value: gc.name,
-    label: gc.name,
-  }));
+
 
   const varietyOptions = Array.from(new Set(crops.map((c) => c.variety))).map(
     (v) => ({
@@ -239,11 +233,6 @@ const SearchCropPage = () => {
     const matchesStatus =
       advancedFilters.status && advancedFilters.status.length > 0
         ? advancedFilters.status.includes(crop.status)
-        : true;
-
-    const matchesCropName =
-      advancedFilters.cropNames && advancedFilters.cropNames.length > 0
-        ? advancedFilters.cropNames.includes(crop.groupCropName)
         : true;
 
     const matchesVariety =
@@ -278,7 +267,6 @@ const SearchCropPage = () => {
     return (
       matchesSearch &&
       matchesStatus &&
-      matchesCropName &&
       matchesVariety &&
       matchesSeedType &&
       matchesAge &&
@@ -438,40 +426,6 @@ const SearchCropPage = () => {
                       </div>
 
                       <div className="space-y-4">
-                        <div className="space-y-1.5">
-                          <div className="flex justify-between items-center">
-                            <Label className="text-xs font-bold text-slate-600">
-                              Nhóm cây trồng
-                            </Label>
-                            {advancedFilters.cropNames?.length ? (
-                              <button
-                                onClick={() =>
-                                  setAdvancedFilters({
-                                    ...advancedFilters,
-                                    cropNames: [],
-                                  })
-                                }
-                                className="text-[10px] text-primary font-bold hover:underline"
-                              >
-                                Xóa
-                              </button>
-                            ) : null}
-                          </div>
-                          <Combobox
-                            options={cropGroupOptions}
-                            value={advancedFilters.cropNames?.[0] || ""}
-                            onChange={(v) => {
-                              setAdvancedFilters({
-                                ...advancedFilters,
-                                cropNames: [v],
-                              });
-                              resetToRegionsView();
-                            }}
-                            placeholder="Chọn nhóm cây..."
-                            className="w-full"
-                          />
-                        </div>
-
                         <div className="space-y-1.5">
                           <div className="flex justify-between items-center">
                             <Label className="text-xs font-bold text-slate-600">
