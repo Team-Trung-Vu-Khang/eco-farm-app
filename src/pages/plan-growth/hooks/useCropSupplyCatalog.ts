@@ -32,6 +32,7 @@ export type CropSupplyCatalog = {
 const CROP_SUPPLY_TYPE_OPTIONS: CropSupplyTypeOption[] = [
   { value: "medicine", label: "Thuốc BVTV" },
   { value: "fertilizer", label: "Phân bón" },
+  { value: "biological", label: "Chế phẩm sinh học" },
   { value: "material", label: "Vật tư khác" },
   { value: "equipment", label: "Dụng cụ - Máy móc" },
 ];
@@ -39,6 +40,7 @@ const CROP_SUPPLY_TYPE_OPTIONS: CropSupplyTypeOption[] = [
 const DEFAULT_UNITS: Record<CropSupplyType, string[]> = {
   medicine: ["chai", "gói", "lít", "ml", "can"],
   fertilizer: ["kg", "bao", "tấn", "lít", "chai"],
+  biological: ["kg", "gói", "chai", "lít", "ml"],
   material: ["cái", "bộ", "cuộn", "thùng", "bao"],
   equipment: ["cái", "bộ", "đôi", "chiếc", "máy"],
 };

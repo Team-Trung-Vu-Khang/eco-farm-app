@@ -3,7 +3,7 @@ export type SupplyType =
   | "fertilizer"
   | "material"
   | "equipment"
-  | "microbial";
+  | "biological";
 export type DomainCode = "CROP" | "LIVESTOCK" | "AQUACULTURE";
 export type LegalStatus = "allowed" | "restricted" | "banned";
 export type MasterDataStatus = "active" | "inactive" | "archived";

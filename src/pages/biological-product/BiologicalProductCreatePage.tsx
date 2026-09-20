@@ -15,14 +15,13 @@ import {
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { ChevronLeft, Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
-import { BiologicalProductBasicInfoStep } from "./components/steps/BiologicalProductBasicInfoStep";
-import { BiologicalProductUsageStep } from "./components/steps/BiologicalProductUsageStep";
-import BiologicalProductSafetyLegalStep from "./components/steps/BiologicalProductSafetyLegalStep";
-import { BiologicalProductConfirmationStep } from "./components/steps/BiologicalProductConfirmationStep";
-import { BiologicalProductSuppliersStep } from "./components/steps/BiologicalProductSuppliersStep";
 import SimpleBiologicalProductForm from "./components/SimpleBiologicalProductForm";
+import { BiologicalProductBasicInfoStep } from "./components/steps/BiologicalProductBasicInfoStep";
+import { BiologicalProductConfirmationStep } from "./components/steps/BiologicalProductConfirmationStep";
+import BiologicalProductSafetyLegalStep from "./components/steps/BiologicalProductSafetyLegalStep";
+import { BiologicalProductSuppliersStep } from "./components/steps/BiologicalProductSuppliersStep";
+import { BiologicalProductUsageStep } from "./components/steps/BiologicalProductUsageStep";
 import { useBiologicalProductCreateForm } from "./hooks/useBiologicalProductCreateForm";
-import { originOptions } from "./data/constants";
 
 const BiologicalProductCreatePage = () => {
   const {
@@ -49,7 +48,9 @@ const BiologicalProductCreatePage = () => {
 
   if (loading) {
     return (
-      <PageWrapper title={isEdit ? "Cập nhật chế phẩm sinh học" : "Thêm chế phẩm sinh học"}>
+      <PageWrapper
+        title={isEdit ? "Cập nhật chế phẩm sinh học" : "Thêm chế phẩm sinh học"}
+      >
         <div className="flex flex-col items-center justify-center py-20">
           <p className="text-muted-foreground animate-pulse">
             Đang tải dữ liệu...
@@ -69,15 +70,16 @@ const BiologicalProductCreatePage = () => {
           updateField={updateField}
         />
       ),
-      isValid: Boolean(
-        formData.name && formData.biologicalProductOriginGroup,
-      ),
+      isValid: Boolean(formData.name && formData.biologicalProductOriginGroup),
     },
     {
       id: "usage",
       title: "Thông tin sử dụng",
       content: (
-        <BiologicalProductUsageStep formData={formData} updateField={updateField} />
+        <BiologicalProductUsageStep
+          formData={formData}
+          updateField={updateField}
+        />
       ),
     },
     {
@@ -109,7 +111,9 @@ const BiologicalProductCreatePage = () => {
 
   return (
     <PageWrapper
-      title={isEdit ? "Cập nhật chế phẩm sinh học" : "Thêm mới chế phẩm sinh học"}
+      title={
+        isEdit ? "Cập nhật chế phẩm sinh học" : "Thêm mới chế phẩm sinh học"
+      }
       description={
         isEdit
           ? `Chỉnh sửa thông tin ${formData.name}`
@@ -121,7 +125,13 @@ const BiologicalProductCreatePage = () => {
         <Button
           variant="ghost"
           size="sm"
-          onClick={() => setLocation(scope === "admin" ? "/admin/biological-product" : "/cultivation-material/biological-product")}
+          onClick={() =>
+            setLocation(
+              scope === "admin"
+                ? "/admin/biological-product"
+                : "/cultivation-material/biological-product",
+            )
+          }
           className="gap-2 pl-0 text-muted-foreground hover:text-primary"
         >
           <ChevronLeft className="w-4 h-4" />
@@ -154,7 +164,13 @@ const BiologicalProductCreatePage = () => {
             steps={steps}
             completeLabel={isEdit ? "Lưu thay đổi" : "Hoàn tất & Lưu"}
             onComplete={() => setConfirmOpen(true)}
-            onCancel={() => setLocation(scope === "admin" ? "/admin/biological-product" : "/cultivation-material/biological-product")}
+            onCancel={() =>
+              setLocation(
+                scope === "admin"
+                  ? "/admin/biological-product"
+                  : "/cultivation-material/biological-product",
+              )
+            }
             loading={submitting}
           />
         ) : (
@@ -163,7 +179,9 @@ const BiologicalProductCreatePage = () => {
               formData={formData}
               updateField={updateField}
               handleComplete={() => setConfirmOpen(true)}
-              goBack={() => setLocation("/cultivation-material/biological-product")}
+              goBack={() =>
+                setLocation("/cultivation-material/biological-product")
+              }
               completeLabel={isEdit ? "Lưu thay đổi" : "Hoàn tất & Lưu"}
               loading={submitting}
             />
@@ -187,18 +205,21 @@ const BiologicalProductCreatePage = () => {
                 </p>
                 <div className="bg-slate-50 p-4 rounded-lg space-y-2 text-sm">
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">Mã chế phẩm sinh học:</span>
+                    <span className="text-muted-foreground">
+                      Mã chế phẩm sinh học:
+                    </span>
                     <span className="font-medium">{formData.code}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">Tên chế phẩm sinh học:</span>
+                    <span className="text-muted-foreground">
+                      Tên chế phẩm sinh học:
+                    </span>
                     <span className="font-medium">{formData.name}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Nguồn gốc:</span>
                     <span className="font-medium">
-                      {originOptions.find((o) => o.id === formData.originId)
-                        ?.label || "N/A"}
+                      {formData?.manufacturerOrigin?.name || ""}
                     </span>
                   </div>
                   <div className="flex justify-between">

@@ -2,20 +2,9 @@ import type { SupplyType } from "@/features/farm-supply/types";
 import type { BiologicalProduct } from "../types/types";
 export type { BiologicalProduct };
 
-/**
- * TODO(API): Backend chưa có endpoint riêng cho chế phẩm sinh học — hiện chỉ có
- * medicines / fertilizers / materials / equipment. Tạm dùng chung "fertilizer"
- * để UI chạy được; khi có endpoint mới thì thêm giá trị vào `SupplyType`
- * (features/farm-supply/types) + `SUPPLY_PATHS` (farm-supply.api.ts) rồi đổi
- * hằng số này. Toàn bộ module chỉ tham chiếu qua đây nên sửa một chỗ là đủ.
- */
-export const SUPPLY_TYPE: SupplyType = "fertilizer";
+export const SUPPLY_TYPE: SupplyType = "biological";
 
-/**
- * TODO(API): Danh mục nhóm — cùng lý do trên, chưa có catalog riêng cho chế phẩm
- * sinh học nên tạm dùng "fertilizer-groups".
- */
-export const SUPPLY_GROUP_CATALOG = "fertilizer-groups" as const;
+export const SUPPLY_GROUP_CATALOG = "biological-product-groups" as const;
 
 /** Nhóm hoạt chất sinh học chính của chế phẩm */
 export const nutritionalContentOptions = [
@@ -108,7 +97,11 @@ export const initialBiologicalProducts: BiologicalProduct[] = [
     indications:
       "Phòng trừ nấm bệnh vùng rễ (Phytophthora, Fusarium, Rhizoctonia). Phân giải chất hữu cơ, cải tạo đất và kích thích bộ rễ phát triển.",
     applicationStage: "Xử lý đất trước gieo trồng",
-    targetCrops: ["Cây lúa", "Cây ăn quả (sầu riêng, xoài, nhãn, bưởi...)", "Cây công nghiệp (cà phê, hồ tiêu, cao su, chè...)"],
+    targetCrops: [
+      "Cây lúa",
+      "Cây ăn quả (sầu riêng, xoài, nhãn, bưởi...)",
+      "Cây công nghiệp (cà phê, hồ tiêu, cao su, chè...)",
+    ],
     recommendedDosage:
       "Xử lý đất: 3-5 kg/ha\nTưới gốc: 20-30 g/10 lít nước, định kỳ 15-20 ngày/lần",
     applicationMethod:
@@ -116,14 +109,17 @@ export const initialBiologicalProducts: BiologicalProduct[] = [
     usageNotes:
       "Không dùng chung với thuốc trừ nấm hóa học; cách ly tối thiểu 7 ngày. Tưới giữ ẩm sau khi xử lý để vi sinh phát triển.",
 
-    toxicityInfo: "Không độc hại trực tiếp nếu tiếp xúc da thông thường. Có thể gây kích ứng mắt nhẹ. Hạn chế rửa trôi lượng lớn xuống ao hồ nuôi thủy sản.",
+    toxicityInfo:
+      "Không độc hại trực tiếp nếu tiếp xúc da thông thường. Có thể gây kích ứng mắt nhẹ. Hạn chế rửa trôi lượng lớn xuống ao hồ nuôi thủy sản.",
     protectiveMeasures:
       "Đeo găng tay và khẩu trang khi thao tác. Rửa sạch tay bằng xà phòng sau khi sử dụng.",
-    firstAid: "<p>Nếu dính vào mắt: rửa sạch bằng nước ấm trong 15 phút. Nếu nuốt phải số lượng lớn: uống nhiều nước và gây nôn, sau đó đưa tới y tế.</p>",
+    firstAid:
+      "<p>Nếu dính vào mắt: rửa sạch bằng nước ấm trong 15 phút. Nếu nuốt phải số lượng lớn: uống nhiều nước và gây nôn, sau đó đưa tới y tế.</p>",
     legalStatus: "Được phép lưu hành tại Việt Nam",
     standardsCompliance: ["VietGAP", "GlobalG.A.P"],
 
-    manufacturerOrigin: "Công ty Cổ phần Công nghệ Sinh học Nông nghiệp - Việt Nam",
+    manufacturerOrigin:
+      "Công ty Cổ phần Công nghệ Sinh học Nông nghiệp - Việt Nam",
     importerRegistrant: "Bình Điền JSC",
     distributor: "Hệ thống Đại lý Vật tư Nông nghiệp Toàn quốc",
     referencePrice: "850.000 đ / bao 50kg",
@@ -156,7 +152,11 @@ export const initialBiologicalProducts: BiologicalProduct[] = [
     indications:
       "Ủ nhanh phân hữu cơ và phụ phẩm nông nghiệp, khử mùi hôi chuồng trại, cân bằng hệ vi sinh vùng rễ.",
     applicationStage: "Xử lý đất và giai đoạn sinh trưởng",
-    targetCrops: ["Cây ăn quả (sầu riêng, xoài, nhãn, bưởi...)", "Rau màu (rau cải, xà lách, muống...)", "Cây công nghiệp (cà phê, hồ tiêu, cao su, chè...)"],
+    targetCrops: [
+      "Cây ăn quả (sầu riêng, xoài, nhãn, bưởi...)",
+      "Rau màu (rau cải, xà lách, muống...)",
+      "Cây công nghiệp (cà phê, hồ tiêu, cao su, chè...)",
+    ],
     recommendedDosage:
       "Ủ phân: 1 lít EM gốc cho 1 tấn nguyên liệu\nTưới gốc: pha loãng 1/500, định kỳ 10-15 ngày/lần",
     applicationMethod:
@@ -164,7 +164,8 @@ export const initialBiologicalProducts: BiologicalProduct[] = [
     usageNotes:
       "Bảo quản nơi mát, tránh ánh nắng trực tiếp. Không pha với nước máy còn clo hoặc dùng chung thuốc sát khuẩn.",
 
-    toxicityInfo: "Hoàn toàn an toàn thân thiện môi trường, không độc hại với người và gia súc gia cầm.",
+    toxicityInfo:
+      "Hoàn toàn an toàn thân thiện môi trường, không độc hại với người và gia súc gia cầm.",
     protectiveMeasures:
       "Đeo găng tay khi pha chế. Tránh để dung dịch bắn vào mắt.",
     firstAid:
@@ -177,17 +178,16 @@ export const initialBiologicalProducts: BiologicalProduct[] = [
     distributor: "Hệ thống Đại lý Vật tư Nông nghiệp Miền Nam",
     referencePrice: "220.000 đ / bao 25kg",
     packagingSpecs: ["Bao 25kg", "Bao 10kg"],
-  }
+  },
 ];
 
 export const commonHashtags = [
-  "TangTruongNhanh",
-  "CaiTaoDat",
-  "RaHoaDauQua",
-  "AnToanSinhHoc",
-  "ChuyenDungCayAnQua",
+  "ChePhamSinhHoc",
+  "NongNghiepSach",
+  "GiaiPhapSinhHoc",
+  "ViSinhNongNghiep",
+  "BVCTVAnToan",
 ];
-
 export const suppliers = [
   {
     id: "sup1",
