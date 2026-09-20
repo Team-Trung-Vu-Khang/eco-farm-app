@@ -7,6 +7,7 @@ import { useIrrigationSystems } from "@/features/master-data";
 import { useCultivationZones } from "@/features/farm/hooks/useCultivationZones";
 import { useCultivationZoneMutations } from "@/features/farm/hooks/useCultivationZoneMutations";
 import { getAnimalHusbandryRegionColumns } from "../data/columns";
+import { getApiErrorMessage } from "@/shared/lib/api-error";
 
 export const useAnimalHusbandryRegionPage = () => {
   const [, setLocation] = useLocation();
@@ -125,10 +126,10 @@ export const useAnimalHusbandryRegionPage = () => {
     try {
       await deleteCultivationZone.mutateAsync(deletingId);
       toast({ title: "Thành công", description: "Đã xóa vùng chăn nuôi" });
-    } catch {
+    } catch (error) {
       toast({
         title: "Lỗi",
-        description: "Không thể xóa vùng chăn nuôi",
+        description: getApiErrorMessage(error) || "Không thể xóa vùng chăn nuôi",
         variant: "destructive",
       });
     } finally {

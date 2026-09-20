@@ -7,6 +7,7 @@ import { useIrrigationSystems } from "@/features/master-data";
 import { useCultivationZones } from "@/features/farm/hooks/useCultivationZones";
 import { useCultivationZoneMutations } from "@/features/farm/hooks/useCultivationZoneMutations";
 import { getAquacultureRegionColumns } from "../data/columns";
+import { getApiErrorMessage } from "@/shared/lib/api-error";
 
 export const useAquacultureRegionPage = () => {
   const basePath = "/aquaculture-region";
@@ -126,10 +127,10 @@ export const useAquacultureRegionPage = () => {
     try {
       await deleteCultivationZone.mutateAsync(deletingId);
       toast({ title: "Thành công", description: "Đã xóa vùng nuôi trồng" });
-    } catch {
+    } catch (error) {
       toast({
         title: "Lỗi",
-        description: "Không thể xóa vùng nuôi trồng",
+        description: getApiErrorMessage(error) || "Không thể xóa vùng nuôi trồng",
         variant: "destructive",
       });
     } finally {

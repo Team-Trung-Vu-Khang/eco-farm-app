@@ -46,6 +46,7 @@ import {
 import { mapPurpose } from "./useAquacultureGrowthPage";
 import { useAquacultureGrowthWorkflowDraftStore } from "./useAquacultureGrowthWorkflowDraftStore";
 import { mapSeasonsToGrowthCycles } from "../utils/season-mappers";
+import { getApiErrorMessage } from "@/shared/lib/api-error";
 
 function mapFarmPersonnelToOption(
   item: FarmPersonnelResponse,
@@ -895,7 +896,7 @@ export function useAquacultureGrowthForm(
         toast({
           title: "Lỗi",
           description:
-            error?.response?.data?.message ||
+            getApiErrorMessage(error) ||
             `Không thể cập nhật kế hoạch ${formData.name}`,
           variant: "destructive",
         });
@@ -940,7 +941,7 @@ export function useAquacultureGrowthForm(
       toast({
         title: "Lỗi",
         description:
-          error?.response?.data?.message ||
+          getApiErrorMessage(error) ||
           `Không thể tạo kế hoạch ${formData.name}`,
         variant: "destructive",
       });

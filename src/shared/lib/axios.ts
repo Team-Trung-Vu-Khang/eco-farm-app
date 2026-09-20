@@ -4,7 +4,7 @@ import { authStorage } from "@/features/auth/api/auth.api";
 import { AUTH_PATHS } from "../constants/auth.constants";
 import { apiEnv } from "../config/api.env";
 import { getSelectedWorkspaceIdFromStorage } from "@/features/workspace";
-import { getApiErrorDetails } from "./api-error";
+import { getApiErrorMessage } from "./api-error";
 
 export const apiClient = axios.create({
   baseURL: apiEnv.apiBaseUrl,
@@ -143,7 +143,9 @@ apiClient.interceptors.response.use(
 
       // Keep the backend payload intact for field-level handling, while making
       // the standard Error message safe to show in generic UI toasts.
-      error.message = getApiErrorDetails(error).message;
+      // Ưu tiên liệt kê lỗi từng trường (fieldErrors) rồi mới tới message chung,
+      // nhờ đó mọi toast đọc `error.message` đều có thông báo chi tiết.
+      error.message = getApiErrorMessage(error);
     }
 
     return Promise.reject(error);

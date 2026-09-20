@@ -47,6 +47,7 @@ import {
 import { mapPurpose } from "./usePlanPage";
 import { usePlanWorkflowDraftStore } from "./usePlanWorkflowDraftStore";
 import { mapSeasonsToGrowthCycles } from "../utils/season-mappers";
+import { getApiErrorMessage } from "@/shared/lib/api-error";
 
 function mapFarmPersonnelToOption(
   item: FarmPersonnelResponse,
@@ -901,7 +902,7 @@ export function usePlanForm(
         toast({
           title: "Lỗi",
           description:
-            error?.response?.data?.message ||
+            getApiErrorMessage(error) ||
             `Không thể cập nhật kế hoạch ${formData.name}`,
           variant: "destructive",
         });
@@ -946,7 +947,7 @@ export function usePlanForm(
       toast({
         title: "Lỗi",
         description:
-          error?.response?.data?.message ||
+          getApiErrorMessage(error) ||
           `Không thể tạo kế hoạch ${formData.name}`,
         variant: "destructive",
       });

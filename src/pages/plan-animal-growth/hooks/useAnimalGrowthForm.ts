@@ -45,6 +45,7 @@ import {
 } from "../utils/location";
 import { mapPurpose } from "./useAnimalGrowthPage";
 import { useAnimalGrowthWorkflowDraftStore } from "./useAnimalGrowthWorkflowDraftStore";
+import { getApiErrorMessage } from "@/shared/lib/api-error";
 
 function mapFarmPersonnelToOption(
   item: FarmPersonnelResponse,
@@ -715,7 +716,7 @@ export function useAnimalGrowthForm(
         toast({
           title: "Lỗi",
           description:
-            error?.response?.data?.message ||
+            getApiErrorMessage(error) ||
             `Không thể cập nhật kế hoạch ${formData.name}`,
           variant: "destructive",
         });
@@ -760,7 +761,7 @@ export function useAnimalGrowthForm(
       toast({
         title: "Lỗi",
         description:
-          error?.response?.data?.message ||
+          getApiErrorMessage(error) ||
           `Không thể tạo kế hoạch ${formData.name}`,
         variant: "destructive",
       });

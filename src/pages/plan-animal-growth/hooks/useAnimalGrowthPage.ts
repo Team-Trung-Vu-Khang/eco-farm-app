@@ -20,6 +20,7 @@ import {
   mapWorkflowResponseToWorkflow,
 } from "../utils/api-mappers";
 import type { Plan, Workflow } from "../types";
+import { getApiErrorMessage } from "@/shared/lib/api-error";
 
 const WORKFLOW_DOMAIN_CODE = "LIVESTOCK" as const;
 
@@ -171,11 +172,11 @@ export function useAnimalGrowthPage(
     try {
       await deletePlan.mutateAsync(deleteItem.id);
       toast({ title: "Thành công", description: "Đã xóa kế hoạch" });
-    } catch {
+    } catch (error) {
       toast({
         variant: "destructive",
         title: "Lỗi",
-        description: "Không thể xóa kế hoạch",
+        description: getApiErrorMessage(error) || "Không thể xóa kế hoạch",
       });
     } finally {
       setDeleteOpen(false);
@@ -199,11 +200,11 @@ export function useAnimalGrowthPage(
         payload: toFarmPlanRequest(item),
       });
       toast({ title: "Thành công", description: "Đã nhân bản kế hoạch" });
-    } catch {
+    } catch (error) {
       toast({
         variant: "destructive",
         title: "Lỗi",
-        description: "Không thể nhân bản kế hoạch",
+        description: getApiErrorMessage(error) || "Không thể nhân bản kế hoạch",
       });
     }
   };
@@ -215,11 +216,11 @@ export function useAnimalGrowthPage(
         title: "Đã xóa sơ đồ",
         description: `Đã xóa "${workflow.name}".`,
       });
-    } catch {
+    } catch (error) {
       toast({
         variant: "destructive",
         title: "Lỗi",
-        description: "Không thể xóa sơ đồ quy trình",
+        description: getApiErrorMessage(error) || "Không thể xóa sơ đồ quy trình",
       });
     }
   };
@@ -231,11 +232,11 @@ export function useAnimalGrowthPage(
         title: "Đã nhân bản sơ đồ",
         description: `Đã tạo bản sao của "${workflow.name}".`,
       });
-    } catch {
+    } catch (error) {
       toast({
         variant: "destructive",
         title: "Lỗi",
-        description: "Không thể nhân bản sơ đồ quy trình",
+        description: getApiErrorMessage(error) || "Không thể nhân bản sơ đồ quy trình",
       });
     }
   };

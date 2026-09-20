@@ -17,6 +17,7 @@ import {
 } from "@/features/farm-supply";
 import { useImageUploadWithCache } from "@/features/storage/hooks/useImageUploadWithCache";
 import { z } from "zod";
+import { getApiErrorMessage } from "@/shared/lib/api-error";
 
 const materialSchema = z.object({
   name: z.string().trim().min(1),
@@ -211,7 +212,7 @@ export function useAhMaterialCreatePage() {
         toast({
           title: "Dữ liệu không hợp lệ",
           description:
-            err.response?.data?.message ||
+            getApiErrorMessage(err) ||
             "Thông tin tổ chức không hợp lệ. Vui lòng kiểm tra lại.",
           variant: "destructive",
         });

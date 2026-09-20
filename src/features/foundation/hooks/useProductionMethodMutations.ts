@@ -1,11 +1,12 @@
+import { getApiErrorMessage } from "@/shared/lib/api-error";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useToast } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { productionMethodApi } from "../api/foundation.api";
-import { productionMethodKeys } from "./useProductionMethods";
 import type {
   ProductionMethodRequest,
   ProductionMethodResponse,
 } from "../types/foundation.type";
-import { useToast } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import { productionMethodKeys } from "./useProductionMethods";
 
 export function useProductionMethodMutations() {
   const queryClient = useQueryClient();
@@ -21,14 +22,13 @@ export function useProductionMethodMutations() {
       toast({
         title: "Thành công",
         description: "Thêm mới phương pháp sản xuất thành công",
-        variant: "success",
       });
       queryClient.invalidateQueries({ queryKey: productionMethodKeys.all });
     },
     onError: (error: any) => {
       toast({
         title: "Lỗi",
-        description: error?.response?.data?.message || "Đã có lỗi xảy ra",
+        description: getApiErrorMessage(error) || "Đã có lỗi xảy ra",
         variant: "destructive",
       });
     },
@@ -44,7 +44,6 @@ export function useProductionMethodMutations() {
       toast({
         title: "Thành công",
         description: "Cập nhật phương pháp sản xuất thành công",
-        variant: "success",
       });
       queryClient.invalidateQueries({ queryKey: productionMethodKeys.all });
       queryClient.invalidateQueries({
@@ -54,19 +53,18 @@ export function useProductionMethodMutations() {
     onError: (error: any) => {
       toast({
         title: "Lỗi",
-        description: error?.response?.data?.message || "Đã có lỗi xảy ra",
+        description: getApiErrorMessage(error) || "Đã có lỗi xảy ra",
         variant: "destructive",
       });
     },
   });
 
   const deleteMutation = useMutation<void, Error, number>({
-    mutationFn: (id) => productionMethodApi.delete(id),
+    mutationFn: (id) => productionMethodApi.delete(id).then(() => undefined),
     onSuccess: (_, id) => {
       toast({
         title: "Thành công",
         description: "Xóa phương pháp sản xuất thành công",
-        variant: "success",
       });
       queryClient.invalidateQueries({ queryKey: productionMethodKeys.all });
       queryClient.removeQueries({
@@ -76,7 +74,7 @@ export function useProductionMethodMutations() {
     onError: (error: any) => {
       toast({
         title: "Lỗi",
-        description: error?.response?.data?.message || "Đã có lỗi xảy ra",
+        description: getApiErrorMessage(error) || "Đã có lỗi xảy ra",
         variant: "destructive",
       });
     },

@@ -51,6 +51,7 @@ import {
   mapWorkflowResponseToInfoRecord,
 } from "./utils/api-mappers";
 import { summarizeSelections } from "./utils/location";
+import { getApiErrorMessage } from "@/shared/lib/api-error";
 
 const WORKFLOW_PATH = "/plan-animal-growth/create/workflow";
 const WORKFLOW_DOMAIN_CODE = "LIVESTOCK" as const;
@@ -395,11 +396,11 @@ export default function PlanAnimalGrowthWorkflowInfoFormPage() {
       // Route with the persisted workflow id so the canvas page's URL keeps
       // reflecting which workflow is open (bookmarkable/reload-safe).
       setLocation(`${WORKFLOW_PATH}/${record.id}`);
-    } catch {
+    } catch (error) {
       toast({
         variant: "destructive",
         title: "Lỗi",
-        description: "Không thể lưu sơ đồ quy trình",
+        description: getApiErrorMessage(error) || "Không thể lưu sơ đồ quy trình",
       });
     }
   };

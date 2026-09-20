@@ -22,6 +22,7 @@ import {
   formatPackagingSpecs,
 } from "@/features/farm-supply";
 import { useImageUploadWithCache } from "@/features/storage/hooks/useImageUploadWithCache";
+import { getApiErrorMessage } from "@/shared/lib/api-error";
 
 export function useAhPesticideCreatePage() {
   const queryClient = useQueryClient();
@@ -262,7 +263,7 @@ export function useAhPesticideCreatePage() {
         toast({
           title: "Dữ liệu không hợp lệ",
           description:
-            err.response?.data?.message ||
+            getApiErrorMessage(err) ||
             "Thông tin tổ chức không hợp lệ. Vui lòng kiểm tra lại.",
           variant: "destructive",
         });

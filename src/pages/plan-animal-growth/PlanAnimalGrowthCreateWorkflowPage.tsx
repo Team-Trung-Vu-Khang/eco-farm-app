@@ -81,6 +81,7 @@ import {
 } from "./utils/api-mappers";
 import { getMaterialSummaryItems } from "../plan-growth/utils/material-summary";
 import { summarizePlanSelections, summarizeSelections } from "./utils/location";
+import { getApiErrorMessage } from "@/shared/lib/api-error";
 
 // Local draft-only nodes carry a `workflow-<timestamp>-<rand>` id; only
 // numeric ids are real backend workflow ids worth fetching from the API.
@@ -715,11 +716,11 @@ export default function PlanAnimalGrowthCreateWorkflowPage() {
           plans: [...state.plans.filter((item) => item.id !== plan.id), plan],
         }));
         attachPlanNode(plan.id, sourceNodeId);
-      } catch {
+      } catch (error) {
         toast({
           variant: "destructive",
           title: "Lỗi",
-          description: "Không thể tạo kế hoạch nháp mới",
+          description: getApiErrorMessage(error) || "Không thể tạo kế hoạch nháp mới",
         });
       }
       return;
@@ -779,11 +780,11 @@ export default function PlanAnimalGrowthCreateWorkflowPage() {
             }));
             removeNodeCascade(nodeId);
             toast({ title: "Thành công", description: "Đã xóa kế hoạch" });
-          } catch {
+          } catch (error) {
             toast({
               variant: "destructive",
               title: "Lỗi",
-              description: "Không thể xóa kế hoạch",
+              description: getApiErrorMessage(error) || "Không thể xóa kế hoạch",
             });
           }
           return;
@@ -856,11 +857,11 @@ export default function PlanAnimalGrowthCreateWorkflowPage() {
             },
           },
         });
-      } catch {
+      } catch (error) {
         toast({
           variant: "destructive",
           title: "Lỗi",
-          description: "Không thể lưu vị trí sơ đồ",
+          description: getApiErrorMessage(error) || "Không thể lưu vị trí sơ đồ",
         });
         return;
       }

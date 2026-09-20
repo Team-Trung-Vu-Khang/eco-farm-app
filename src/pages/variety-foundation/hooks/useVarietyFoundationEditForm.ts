@@ -11,6 +11,7 @@ import { useFileUpload } from "../../../features/storage";
 import { safeConvertLexicalToHtml } from "@/utils/commons";
 import { useRef, useMemo, useState, useEffect } from "react";
 import type { VarietyFoundationFormValues } from "../schemas/varietyFoundationSchema";
+import { getApiErrorMessage } from "@/shared/lib/api-error";
 
 function parseDurationToDays(duration: string): number | undefined {
   if (!duration) return undefined;
@@ -262,7 +263,7 @@ export function useVarietyFoundationEditForm() {
               variant: "destructive",
               title: "Lỗi",
               description:
-                err?.response?.data?.message ||
+                getApiErrorMessage(err) ||
                 err?.message ||
                 "Không thể cập nhật giống cây (nền tảng)",
             });

@@ -84,6 +84,7 @@ import { PlannedTaskDetailCard } from "./PlannedTaskDetailCard";
 import { WorkAllocationCard, type WorkTaskDetail } from "./WorkAllocationCard";
 import { WorkflowScopeMapModal } from "../dialogs/WorkflowScopeMapModal";
 import { useLocation } from "wouter";
+import { getApiErrorMessage } from "@/shared/lib/api-error";
 
 export function HistoryFormContent({
   isPlannedModeDefault = false,
@@ -1094,7 +1095,7 @@ export function HistoryFormContent({
         toast({
           title: "Lỗi tạo nhật ký kế hoạch",
           description:
-            errObj.response?.data?.message ||
+            getApiErrorMessage(errObj) ||
             "Không thể tạo nhật ký theo kế hoạch. Vui lòng thử lại sau.",
           variant: "destructive",
         });

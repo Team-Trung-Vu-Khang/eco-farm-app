@@ -7,6 +7,7 @@ import { useRearingMethods } from "@/features/master-data";
 import { useCultivationZones } from "@/features/farm/hooks/useCultivationZones";
 import { useCultivationZoneMutations } from "@/features/farm/hooks/useCultivationZoneMutations";
 import { getCultivationRegionColumns } from "../data/columns";
+import { getApiErrorMessage } from "@/shared/lib/api-error";
 
 export const useCultivationRegionPage = () => {
   const [, setLocation] = useLocation();
@@ -131,10 +132,10 @@ export const useCultivationRegionPage = () => {
     try {
       await deleteCultivationZone.mutateAsync(deletingId);
       toast({ title: "Thành công", description: "Đã xóa vùng canh tác" });
-    } catch {
+    } catch (error) {
       toast({
         title: "Lỗi",
-        description: "Không thể xóa vùng canh tác",
+        description: getApiErrorMessage(error) || "Không thể xóa vùng canh tác",
         variant: "destructive",
       });
     } finally {

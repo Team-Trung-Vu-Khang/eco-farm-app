@@ -5,6 +5,7 @@ import { useCultivationZoneMutations } from "@/features/farm/hooks/useCultivatio
 import { useCultivationZoneById } from "@/features/farm/hooks/useCultivationZones";
 import type { FarmCultivationZoneRequest } from "@/features/farm/types/farm.type";
 import type { CultivationZoneFormValues } from "../data/cultivation-zone-form.schema";
+import { getApiErrorMessage } from "@/shared/lib/api-error";
 
 export function useAquacultureZoneCreateForm(
   reset: (values: Partial<CultivationZoneFormValues>) => void,
@@ -214,10 +215,10 @@ export function useAquacultureZoneCreateForm(
       }
 
       setLocation(basePath);
-    } catch {
+    } catch (error) {
       toast({
         title: "Lỗi",
-        description: "Đã xảy ra lỗi khi lưu thông tin",
+        description: getApiErrorMessage(error) || "Đã xảy ra lỗi khi lưu thông tin",
         variant: "destructive",
       });
     } finally {

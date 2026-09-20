@@ -5,6 +5,7 @@ import { useFileUpload } from "../../../features/storage";
 import { safeConvertLexicalToHtml } from "@/utils/commons";
 import { useRef, useState } from "react";
 import type { VarietyFoundationFormValues } from "../schemas/varietyFoundationSchema";
+import { getApiErrorMessage } from "@/shared/lib/api-error";
 
 function parseDurationToDays(duration: string): number | undefined {
   if (!duration) return undefined;
@@ -154,7 +155,7 @@ export function useVarietyFoundationForm() {
             variant: "destructive",
             title: "Lỗi",
             description:
-              err?.response?.data?.message ||
+              getApiErrorMessage(err) ||
               err?.message ||
               "Không thể tạo giống cây (nền tảng)",
           });

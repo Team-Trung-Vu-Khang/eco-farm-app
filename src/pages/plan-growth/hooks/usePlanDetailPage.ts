@@ -14,6 +14,7 @@ import type { TreatmentProcedure } from "@/pages/treatment/types/treatment.types
 import type { GeographicalSelection, Plan } from "../types";
 import { mapPlanResponseToPlan } from "../utils/api-mappers";
 import { summarizeTaskSelections } from "../utils/location";
+import { getApiErrorMessage } from "@/shared/lib/api-error";
 
 type AmendmentRegimenSummary = {
   id: number;
@@ -119,11 +120,11 @@ export function usePlanDetailPage(basePath = "/plan-growth") {
       await deletePlan.mutateAsync(plan.id);
       toast({ title: "Thành công", description: "Đã xóa kế hoạch" });
       setLocation(basePath);
-    } catch {
+    } catch (error) {
       toast({
         variant: "destructive",
         title: "Lỗi",
-        description: "Không thể xóa kế hoạch",
+        description: getApiErrorMessage(error) || "Không thể xóa kế hoạch",
       });
     }
   };

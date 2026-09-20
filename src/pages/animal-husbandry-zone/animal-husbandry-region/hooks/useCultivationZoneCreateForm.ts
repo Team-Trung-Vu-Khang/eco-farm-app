@@ -6,6 +6,7 @@ import { useCultivationZoneById } from "@/features/farm/hooks/useCultivationZone
 import type { FarmCultivationZoneRequest } from "@/features/farm/types/farm.type";
 import { useSelectedWorkspaceId } from "@/features/workspace";
 import type { CultivationZoneFormValues } from "../data/cultivation-zone-form.schema";
+import { getApiErrorMessage } from "@/shared/lib/api-error";
 
 export function useCultivationZoneCreateForm(
   reset: (values: Partial<CultivationZoneFormValues>) => void,
@@ -222,10 +223,10 @@ export function useCultivationZoneCreateForm(
       }
 
       setLocation("/animal-husbandry-region");
-    } catch {
+    } catch (error) {
       toast({
         title: "Lỗi",
-        description: "Đã xảy ra lỗi khi lưu thông tin",
+        description: getApiErrorMessage(error) || "Đã xảy ra lỗi khi lưu thông tin",
         variant: "destructive",
       });
     } finally {

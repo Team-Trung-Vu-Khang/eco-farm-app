@@ -10,6 +10,7 @@ import {
 import { useImageUploadWithCache } from "@/features/storage/hooks/useImageUploadWithCache";
 import { useQueryClient } from "@tanstack/react-query";
 import { z } from "zod";
+import { getApiErrorMessage } from "@/shared/lib/api-error";
 
 const equipmentSchema = z.object({
   machineName: z.string().trim().min(1),
@@ -311,7 +312,7 @@ export function useEquipmentCreateForm() {
         toast({
           title: "Dữ liệu không hợp lệ",
           description:
-            err.response?.data?.message ||
+            getApiErrorMessage(err) ||
             "Thông tin tổ chức không hợp lệ. Vui lòng kiểm tra lại.",
           variant: "destructive",
         });
