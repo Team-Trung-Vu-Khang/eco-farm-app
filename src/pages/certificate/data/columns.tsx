@@ -1,9 +1,6 @@
-import { Badge, type Column } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { CodeBadge } from "@/components/CodeBadge";
-import type {
-  Certificate,
-  CertificationOrganization,
-} from "../types/types";
+import { Badge, type Column } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import type { Certificate, CertificationOrganization } from "../types/types";
 
 export const organizationColumns: Column<CertificationOrganization>[] = [
   {
@@ -62,7 +59,6 @@ export function getStandardColumns(
                 .map((org) => org.name);
 
         if (issuerNames.length === 0) return <span>-</span>;
-        if (issuerNames.length === 1) return <span>{issuerNames[0]}</span>;
 
         return (
           <div className="flex flex-wrap gap-1">
