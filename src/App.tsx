@@ -3,15 +3,15 @@ import {
   RadixToaster,
   TooltipProvider,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { Suspense, useState, useEffect } from "react";
+import { Suspense, useEffect, useState } from "react";
+import AppRouter from "./AppRouter";
 import { AppLoadingState } from "./components/AppLoadingState";
 import { AuthWrapper } from "./features/auth/components/AuthWrapper";
-import AppRouter from "./AppRouter";
-import { OnboardRegionDialog } from "./pages/region-chart/region-basic-distribution/components/OnboardRegionDialog";
 import { useRegions } from "./features/farm/hooks/useRegions";
+import { OnboardRegionDialog } from "./pages/region-chart/region-basic-distribution/components/OnboardRegionDialog";
 
-import { useCurrentUser } from "./features/auth/hooks/useCurrentUser";
 import { WorkspaceChangeHandler } from "./components/WorkspaceChangeHandler";
+import { useCurrentUser } from "./features/auth/hooks/useCurrentUser";
 
 interface OnboardCheckerProps {
   children: React.ReactNode;
@@ -73,7 +73,7 @@ function App() {
   return (
     <TooltipProvider>
       <AuthWrapper>
-        <AdminLayout isDev>
+        <AdminLayout isDev isMevi>
           <Suspense fallback={<AppLoadingState />}>
             <WorkspaceChangeHandler />
             <OnboardChecker>
