@@ -1648,7 +1648,7 @@ const SearchZonePage = () => {
                           </div>
                           <div>
                             <DialogTitle className="text-xl font-bold text-slate-800">
-                              Chi tiết vùng trồng
+                              Hồ sơ vùng trồng
                             </DialogTitle>
                           </div>
                         </div>

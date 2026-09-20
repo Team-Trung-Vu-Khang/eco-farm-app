@@ -1,7 +1,12 @@
+import { useCurrentUser } from "@/features/auth";
 import {
   Avatar,
   AvatarFallback,
   AvatarImage,
+  Badge,
+  Button,
+  Card,
+  CardContent,
   Input,
   Label,
   Select,
@@ -10,9 +15,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import { Building2, Search, Sprout } from "lucide-react";
+import { useEffect, useState } from "react";
 import { Controller, useFormContext, useWatch } from "react-hook-form";
 import type { Standard } from "../../../stores/useEnterpriseCertificateStore";
 import type { EnterpriseCertificateFormValues } from "../data/enterprise-certificate-form.schema";
+import {
+  FarmerSelectorDialog,
+  getOrganizationTypeLabel,
+} from "./FarmerSelectorDialog";
 
 interface BasicInfoProps {
   standards: Standard[];
@@ -27,6 +38,8 @@ const getStandardInitials = (name: string) =>
     .join("") || "ST";
 
 export function CertificateBasicInfoFields({ standards }: BasicInfoProps) {
+  const { currentUser } = useCurrentUser();
+  const [isFarmerDialogOpen, setIsFarmerDialogOpen] = useState(false);
   const {
     control,
     formState: { errors },
@@ -42,9 +55,100 @@ export function CertificateBasicInfoFields({ standards }: BasicInfoProps) {
     (standard) => standard.code === watchedStandardType,
   );
   const organizations = selectedStandard?.organizations ?? [];
+  const farmerId = useWatch({ control, name: "farmerId" });
+  const farmerName = useWatch({ control, name: "farmerName" });
+  const farmerCode = useWatch({ control, name: "farmerCode" });
+  const farmerType = useWatch({ control, name: "farmerType" });
+  const isAdmin = (currentUser?.roleCodes ?? []).some((role) =>
+    role.toLowerCase().includes("admin"),
+  );
+  const shouldShowFarmerSelector = isAdmin;
+
+  useEffect(() => {
+    if (!currentUser || isAdmin || farmerId) return;
+
+    setValue("farmerId", String(currentUser.id), {
+      shouldDirty: false,
+      shouldValidate: true,
+    });
+    setValue("farmerName", currentUser.fullName || currentUser.username, {
+      shouldDirty: false,
+      shouldValidate: true,
+    });
+    setValue("farmerCode", currentUser.username || String(currentUser.id), {
+      shouldDirty: false,
+      shouldValidate: true,
+    });
+    setValue("farmerType", "farm", {
+      shouldDirty: false,
+      shouldValidate: true,
+    });
+  }, [currentUser, farmerId, isAdmin, setValue]);
 
   return (
     <div className="space-y-4">
+      <div className="space-y-2">
+        <Label required={shouldShowFarmerSelector}>Nông hộ được cấp</Label>
+        <Card className="border-slate-200 bg-white shadow-sm">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex min-w-0 items-start gap-3">
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-emerald-100 text-emerald-700">
+                  <Sprout className="h-5 w-5" />
+                </div>
+                <div className="min-w-0">
+                  {farmerName ? (
+                    <>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <p className="truncate font-semibold text-slate-900">
+                          {farmerName}
+                        </p>
+                        <Badge variant="outline" className="text-[10px]">
+                          {getOrganizationTypeLabel({ type: farmerType })}
+                        </Badge>
+                      </div>
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        Mã: {farmerCode || farmerId || "Chưa cập nhật"}
+                      </p>
+                    </>
+                  ) : (
+                    <>
+                      <p className="font-semibold text-slate-900">
+                        Chưa chọn nông hộ
+                      </p>
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        Admin chọn nông hộ để tạo chứng nhận thay cho đơn vị
+                        đó.
+                      </p>
+                    </>
+                  )}
+                </div>
+              </div>
+
+              {shouldShowFarmerSelector ? (
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="shrink-0 gap-2"
+                  onClick={() => setIsFarmerDialogOpen(true)}
+                >
+                  <Search className="h-4 w-4" />
+                  {farmerName ? "Đổi nông hộ" : "Chọn nông hộ"}
+                </Button>
+              ) : (
+                <div className="flex shrink-0 items-center gap-2 text-xs text-muted-foreground">
+                  <Building2 className="h-4 w-4" />
+                  Thông tin nông hộ hiện tại
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+        {shouldShowFarmerSelector && !farmerId ? (
+          <p className="text-xs text-red-600">Vui lòng chọn nông hộ.</p>
+        ) : null}
+      </div>
+
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         <div className="space-y-2">
           <Label htmlFor="code" required>
@@ -198,6 +302,30 @@ export function CertificateBasicInfoFields({ standards }: BasicInfoProps) {
           ) : null}
         </div>
       </div>
+
+      <FarmerSelectorDialog
+        open={isFarmerDialogOpen}
+        onOpenChange={setIsFarmerDialogOpen}
+        selectedId={farmerId}
+        onConfirm={(farmer) => {
+          setValue("farmerId", String(farmer.id), {
+            shouldDirty: true,
+            shouldValidate: true,
+          });
+          setValue("farmerName", farmer.name, {
+            shouldDirty: true,
+            shouldValidate: true,
+          });
+          setValue("farmerCode", farmer.code || String(farmer.id), {
+            shouldDirty: true,
+            shouldValidate: true,
+          });
+          setValue("farmerType", farmer.type || "farm", {
+            shouldDirty: true,
+            shouldValidate: true,
+          });
+        }}
+      />
     </div>
   );
 }
