@@ -48,6 +48,17 @@ type Props = {
   description?: string;
 };
 
+/** "Lô đất · Khu A · Vùng Bình Phước · 8.5 ha" — bỏ qua phần thiếu dữ liệu */
+const describeEntityScope = (entity: CultivationRegionTargetEntity) =>
+  [
+    entity.type,
+    entity.areaName,
+    entity.regionName,
+    entity.plotArea && `${entity.plotArea} ha`,
+  ]
+    .filter(Boolean)
+    .join(" · ");
+
 export const CultivationRegionCreateConfirmationStep = ({
   name,
   note,
@@ -175,11 +186,7 @@ export const CultivationRegionCreateConfirmationStep = ({
                     {entity.name}
                   </span>
                   <span className="text-[10px] text-muted-foreground">
-                    {entity.type === "region"
-                      ? "Vùng"
-                      : entity.type === "area"
-                        ? `Khu vực (${entity.regionName})`
-                        : `Thửa (${entity.areaName} - ${entity.regionName})`}
+                    {describeEntityScope(entity)}
                   </span>
                 </div>
               </div>

@@ -32,6 +32,10 @@ export interface CultivationRegionTargetEntity {
   name: string;
   type: string;
   typeCode: GeographicalSelection["type"];
+  regionName?: string;
+  areaName?: string;
+  /** Diện tích (ha) của đơn vị được chọn */
+  plotArea?: number;
 }
 
 export const useCultivationRegionCreatePage = () => {
@@ -99,6 +103,9 @@ export const useCultivationRegionCreatePage = () => {
               ? "Khu vực"
               : "Lô đất",
         typeCode: selection.type,
+        regionName: selection.regionName || region?.name,
+        areaName: selection.areaName || area?.name,
+        plotArea: plot?.area ?? area?.area ?? region?.area,
       };
     });
   }, [regions, selections]);

@@ -334,6 +334,8 @@ export const useCultivationRegionDetail = (id?: string | null) => {
       crop: string;
       illustration: string;
       seedType: string;
+      /** Giống Foundation không có trang chi tiết /variety/:id */
+      isFoundation?: boolean;
       selectedSeeds: Array<{
         id: string;
         varietyName: string;
@@ -350,6 +352,7 @@ export const useCultivationRegionDetail = (id?: string | null) => {
             crop: "", // Foundation variants don't carry crop name directly
             illustration: "",
             seedType: "Giống Foundation",
+            isFoundation: true,
             selectedSeeds: [],
           }))
         : areaData.subjectVariants && areaData.subjectVariants.length > 0

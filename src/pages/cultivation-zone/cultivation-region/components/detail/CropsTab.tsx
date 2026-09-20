@@ -227,16 +227,18 @@ export const CropsTab = ({ details }: CropsTabProps) => {
                               <div className="font-bold text-slate-900 leading-tight mb-1 group-hover:text-primary transition-colors">
                                 {crop.varietyName}
                               </div>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8 text-slate-400 hover:text-primary -mt-1 -mr-1"
-                                onClick={() =>
-                                  window.open(`/variety/${crop.id}`, "_blank")
-                                }
-                              >
-                                <Maximize2 className="w-4 h-4" />
-                              </Button>
+                              {!crop.isFoundation && (
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8 text-slate-400 hover:text-primary -mt-1 -mr-1"
+                                  onClick={() =>
+                                    window.open(`/variety/${crop.id}`, "_blank")
+                                  }
+                                >
+                                  <Maximize2 className="w-4 h-4" />
+                                </Button>
+                              )}
                             </div>
                             <div className="flex items-center gap-2">
                               {crop.seedType && (

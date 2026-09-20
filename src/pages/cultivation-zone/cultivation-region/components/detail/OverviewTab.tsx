@@ -174,6 +174,19 @@ const MapBoundsSync = ({
   return null;
 };
 
+/**
+ * Entity kiểu "region" trùng với header của group nên bị loại — nếu không sẽ
+ * hiện lặp "Vùng trồng X" lồng trong chính "Vùng trồng X".
+ */
+const childEntities = (areaGroup: any) =>
+  (areaGroup.entities || []).filter((e: any) => e.typeCode !== "region");
+
+/** Bỏ nhánh rỗng: group chỉ chọn nguyên vùng, không có khu vực/lô con. */
+const visibleAreaGroups = (group: any) =>
+  Object.values(group.areas).filter(
+    (areaGroup: any) => areaGroup.area || childEntities(areaGroup).length > 0,
+  );
+
 export const OverviewTab = ({
   area,
   details,
@@ -717,7 +730,7 @@ export const OverviewTab = ({
 
                   {area.scope !== "region" && (
                     <div className="ml-5 border-l-2 border-slate-100 pl-6 space-y-8">
-                      {Object.values(group.areas).map((areaGroup: any) => (
+                      {visibleAreaGroups(group).map((areaGroup: any) => (
                         <div
                           key={areaGroup.area?.id || "none"}
                           className="relative"
@@ -801,7 +814,7 @@ export const OverviewTab = ({
                             </>
                           ) : (
                             <div className="space-y-4">
-                              {areaGroup.entities.map((entity: any) => (
+                              {childEntities(areaGroup).map((entity: any) => (
                                 <button
                                   key={entity.id}
                                   type="button"
