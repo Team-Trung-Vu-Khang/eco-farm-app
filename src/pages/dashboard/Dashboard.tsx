@@ -1,13 +1,27 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import PageWrapper from "@/components/PageWrapper";
 import { DashboardAlerts } from "./components/DashboardAlerts";
 import { AdminDashboardView } from "./views/AdminDashboardView";
 import { FarmerDashboardView } from "./views/FarmerDashboardView";
 import { useDashboardData } from "./hooks/useDashboardData";
-import { Building2, UserCheck, RefreshCw } from "lucide-react";
+import { useCurrentUser } from "@/features/auth/hooks/useCurrentUser";
+// import { Building2, UserCheck, RefreshCw } from "lucide-react";
 
 export default function Dashboard() {
+  const { currentUser } = useCurrentUser();
+  const userRoles = currentUser?.roleCodes ?? [];
+  const isAdmin = userRoles.some((role) =>
+    ["MEVI_SUPER_ADMIN", "MEVI_ADMIN", "MEVI_FARM_ADMIN"].includes(role),
+  );
+
   const [roleView, setRoleView] = useState<"admin" | "farmer">("admin");
+
+  useEffect(() => {
+    if (currentUser) {
+      setRoleView(isAdmin ? "admin" : "farmer");
+    }
+  }, [currentUser, isAdmin]);
+
   const { zoneTreeData, cropHealthMetrics, taskStats, isLoading, refetchAll } =
     useDashboardData();
 
@@ -17,7 +31,7 @@ export default function Dashboard() {
       description="Tổng quan hệ thống quản lý nông trại"
     >
       <div className="space-y-6">
-        {/* Công tắc chuyển đổi Role View cho mục đích kiểm thử */}
+        {/* Công tắc chuyển đổi Role View cho mục đích kiểm thử (commented out)
         <div className="flex items-center justify-between bg-slate-100/80 p-2 rounded-xl border border-slate-200">
           <div className="flex items-center gap-2 px-2">
             <span className="text-xs font-semibold text-slate-600 uppercase tracking-wider">
@@ -60,11 +74,12 @@ export default function Dashboard() {
             </div>
           </div>
         </div>
+        */}
 
-        {/* 1. Khối Cảnh báo di chuyển lên vị trí trên cùng theo yêu cầu */}
-        {roleView === "admin" ? <></> : <DashboardAlerts />}
+        {/* 1. Khối Cảnh báo hiển thị ở góc nhìn Nông hộ */}
+        {roleView === "admin" ? null : <DashboardAlerts />}
 
-        {/* 2. Render View tương ứng với Role View với dữ liệu API thực tế */}
+        {/* 2. Render View tương ứng dựa trên role người dùng */}
         {roleView === "admin" ? (
           <AdminDashboardView
             zoneTreeData={zoneTreeData}

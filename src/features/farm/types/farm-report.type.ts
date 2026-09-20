@@ -84,7 +84,12 @@ export interface VariantCardQueryParams {
 
 // ─── Mục 4 — Tiêu thụ vật tư nông nghiệp ────────────────────────────────────
 
-export type SupplyType = "MEDICINE" | "FERTILIZER" | "EQUIPMENT" | "MATERIAL";
+export type SupplyType =
+  | "MEDICINE"
+  | "FERTILIZER"
+  | "EQUIPMENT"
+  | "MATERIAL"
+  | "BIOLOGICAL";
 export type PeriodType = "MONTHLY" | "YEARLY" | "WEEKLY";
 
 export interface SupplyUnit {

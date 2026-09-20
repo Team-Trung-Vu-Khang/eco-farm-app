@@ -10,6 +10,7 @@ import {
   Wrench,
   Layers,
   Leaf,
+  FlaskConical,
   TrendingUp,
   TrendingDown,
   Info,
@@ -17,10 +18,7 @@ import {
 } from "lucide-react";
 import type { TreeNode } from "../../constants/mockReportData";
 import { useSupplyConsumption } from "@/features/farm/hooks/useFarmReport";
-import type {
-  SupplyType,
-  SupplyConsumptionResponse,
-} from "@/features/farm/types/farm-report.type";
+import type { SupplyType } from "@/features/farm/types/farm-report.type";
 
 interface MaterialSectionProps {
   selectedLocation: TreeNode | null;
@@ -32,6 +30,7 @@ interface MaterialSectionProps {
 const SUPPLY_LABEL: Record<SupplyType, string> = {
   MEDICINE: "Thuốc BVTV canh tác",
   FERTILIZER: "Phân bón chất lượng cao",
+  BIOLOGICAL: "Chế phẩm sinh học",
   EQUIPMENT: "Máy móc & thiết bị",
   MATERIAL: "Vật tư canh tác khác",
 };
@@ -39,11 +38,13 @@ const SUPPLY_LABEL: Record<SupplyType, string> = {
 const SUPPLY_ICON: Record<SupplyType, React.ReactNode> = {
   MEDICINE: <ShieldAlert className="w-4 h-4 text-rose-500" />,
   FERTILIZER: <Leaf className="w-4 h-4 text-emerald-500" />,
+  BIOLOGICAL: <FlaskConical className="w-4 h-4 text-purple-500" />,
   EQUIPMENT: <Wrench className="w-4 h-4 text-amber-500" />,
   MATERIAL: <Layers className="w-4 h-4 text-sky-500" />,
 };
 
-const formatNumber = (val: number) => new Intl.NumberFormat("en-US").format(val);
+const formatNumber = (val: number) =>
+  new Intl.NumberFormat("en-US").format(val);
 
 // ─── Single supply card ───────────────────────────────────────────────────────
 
@@ -52,7 +53,10 @@ interface SupplyCardProps {
   locationFilter: { regionId?: number; areaId?: number; plotId?: number };
 }
 
-const SupplyCard: React.FC<SupplyCardProps> = ({ supplyType, locationFilter }) => {
+const SupplyCard: React.FC<SupplyCardProps> = ({
+  supplyType,
+  locationFilter,
+}) => {
   const today = new Date().toISOString().slice(0, 10);
   const { data, isLoading } = useSupplyConsumption({
     supplyType,
@@ -200,6 +204,7 @@ const SupplyCard: React.FC<SupplyCardProps> = ({ supplyType, locationFilter }) =
 const SUPPLY_TYPES: SupplyType[] = [
   "MEDICINE",
   "FERTILIZER",
+  "BIOLOGICAL",
   "EQUIPMENT",
   "MATERIAL",
 ];
@@ -217,15 +222,16 @@ export const MaterialSection: React.FC<MaterialSectionProps> = ({
             Giám sát tiêu thụ vật tư nông nghiệp
           </h4>
           <p className="text-[11px] text-slate-400 font-medium mt-0.5">
-            Khối lượng phân bón, thuốc bảo vệ thực vật & khấu hao máy móc thiết bị
+            Khối lượng phân bón, thuốc bảo vệ thực vật & khấu hao máy móc thiết
+            bị
           </p>
         </div>
 
         <div className="flex items-start gap-2 bg-emerald-50/30 border border-emerald-100/60 rounded-lg px-3 py-2 text-[10px] text-emerald-800 font-medium md:max-w-md">
           <Info className="w-3.5 h-3.5 text-emerald-600 shrink-0 mt-0.5" />
           <span>
-            Chỉ số <strong>% trong ngoặc đơn ( )</strong> thể hiện tỷ trọng
-            tiêu thụ của từng vật tư so với tổng cùng đơn vị trong nhóm chính.
+            Chỉ số <strong>% trong ngoặc đơn ( )</strong> thể hiện tỷ trọng tiêu
+            thụ của từng vật tư so với tổng cùng đơn vị trong nhóm chính.
           </span>
         </div>
       </div>
@@ -233,7 +239,11 @@ export const MaterialSection: React.FC<MaterialSectionProps> = ({
       {/* 4 supply cards — each fetches its own data in parallel */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {SUPPLY_TYPES.map((type) => (
-          <SupplyCard key={type} supplyType={type} locationFilter={locationFilter} />
+          <SupplyCard
+            key={type}
+            supplyType={type}
+            locationFilter={locationFilter}
+          />
         ))}
       </div>
     </div>
