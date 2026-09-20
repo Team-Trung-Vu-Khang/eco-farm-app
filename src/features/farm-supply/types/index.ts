@@ -1,4 +1,9 @@
-export type SupplyType = "medicine" | "fertilizer" | "material" | "equipment";
+export type SupplyType =
+  | "medicine"
+  | "fertilizer"
+  | "material"
+  | "equipment"
+  | "microbial";
 export type DomainCode = "CROP" | "LIVESTOCK" | "AQUACULTURE";
 export type LegalStatus = "allowed" | "restricted" | "banned";
 export type MasterDataStatus = "active" | "inactive" | "archived";
