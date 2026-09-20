@@ -243,14 +243,18 @@ const SearchZonePage = () => {
     );
   }, [selectedUnit, zoneNode]);
 
-  const activeCenter: [number, number] = useMemo(() => {
-    if (
+  const hasValidCenterPoint = useMemo(() => {
+    return Boolean(
       rawCenter &&
       !isNaN(Number(rawCenter[0])) &&
       !isNaN(Number(rawCenter[1])) &&
       Number(rawCenter[0]) !== 0 &&
-      Number(rawCenter[1]) !== 0
-    ) {
+      Number(rawCenter[1]) !== 0,
+    );
+  }, [rawCenter]);
+
+  const activeCenter: [number, number] = useMemo(() => {
+    if (hasValidCenterPoint && rawCenter) {
       return [Number(rawCenter[0]), Number(rawCenter[1])];
     }
     if (activeBounds && activeBounds.length > 0) {
@@ -259,7 +263,7 @@ const SearchZonePage = () => {
       return [sumLat / activeBounds.length, sumLng / activeBounds.length];
     }
     return [11.53, 106.88];
-  }, [rawCenter, activeBounds]);
+  }, [rawCenter, activeBounds, hasValidCenterPoint]);
 
   const activeName =
     selectedUnit?.data?.name || zoneNode?.name || "Bản đồ vùng canh tác";
@@ -705,39 +709,44 @@ const SearchZonePage = () => {
                   />
 
                   {/* Render Zone Main Boundary */}
-                  {activeBounds && activeBounds.length > 0 && (
-                    <Polygon
-                      positions={activeBounds}
-                      pathOptions={{
-                        color: "#10b981",
-                        fillColor: "#10b981",
-                        fillOpacity: 0.15,
-                        weight: 2.5,
-                      }}
+                  {(selectedZoneItem || selectedUnit) &&
+                    activeBounds &&
+                    activeBounds.length > 0 && (
+                      <Polygon
+                        positions={activeBounds}
+                        pathOptions={{
+                          color: "#10b981",
+                          fillColor: "#10b981",
+                          fillOpacity: 0.15,
+                          weight: 2.5,
+                        }}
+                      />
+                    )}
+
+                  {/* Render Child Areas & Plots Boundaries and Markers */}
+                  {(selectedZoneItem || selectedUnit) && (
+                    <MapChildLayers
+                      zone={zoneNode}
+                      onSelectUnit={(type, data) =>
+                        setSelectedUnit({ type, data })
+                      }
                     />
                   )}
 
-                  {/* Render Child Areas & Plots Boundaries and Markers */}
-                  <MapChildLayers
-                    zone={zoneNode}
-                    onSelectUnit={(type, data) =>
-                      setSelectedUnit({ type, data })
-                    }
-                  />
-
                   {/* Render Main Center Marker */}
-                  {activeCenter && (
-                    <Marker position={activeCenter} icon={RedMarker()}>
-                      <Tooltip sticky direction="top" opacity={0.95}>
-                        <div style={{ fontWeight: 600, fontSize: 12 }}>
-                          {activeName}
-                        </div>
-                        <div style={{ fontSize: 10, color: "#64748b" }}>
-                          Tọa độ trung tâm
-                        </div>
-                      </Tooltip>
-                    </Marker>
-                  )}
+                  {(selectedZoneItem || selectedUnit) &&
+                    hasValidCenterPoint && (
+                      <Marker position={activeCenter} icon={RedMarker()}>
+                        <Tooltip sticky direction="top" opacity={0.95}>
+                          <div style={{ fontWeight: 600, fontSize: 12 }}>
+                            {activeName}
+                          </div>
+                          <div style={{ fontSize: 10, color: "#64748b" }}>
+                            Tọa độ trung tâm
+                          </div>
+                        </Tooltip>
+                      </Marker>
+                    )}
                 </MapContainer>
 
                 <Button
