@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { useMasterData } from "@/features/master-data";
 import {
   Badge,
   Button,
@@ -20,7 +19,6 @@ import {
   FileText,
   Image as ImageIcon,
   Info,
-  Leaf,
   Package,
   Plus,
   Tags,
@@ -29,9 +27,11 @@ import {
   Loader2,
 } from "lucide-react";
 import type { BiologicalProductFormData } from "../types/types";
-import { originOptions, commonHashtags } from "../data/constants";
+import { commonHashtags } from "../data/constants";
 import { useQuery } from "@tanstack/react-query";
 import { farmSupplyApi } from "@/features/farm-supply";
+import { useMasterData } from "@/features/master-data";
+import { SUPPLY_GROUP_CATALOG } from "../data/constants";
 
 const MEASURE_UNIT_OPTIONS = [
   "kg",
@@ -85,11 +85,10 @@ export default function SimpleBiologicalProductForm({
   loading,
 }: SimpleBiologicalProductFormProps) {
   const isEdit = window.location.pathname.includes("/edit");
-  // Fetch biologicalProduct groups from master data (same as advanced form)
-  const { items: biologicalProductGroups } = useMasterData("biologicalProduct-groups", {
-    params: { size: 100 },
-  });
-
+  const { items: biologicalProductGroups } = useMasterData(
+    SUPPLY_GROUP_CATALOG,
+    { params: { size: 100 } },
+  );
   // Dynamic API Fetching
   const { data: packagingTypes } = useQuery({
     queryKey: ["packaging-types"],
@@ -191,43 +190,6 @@ export default function SimpleBiologicalProductForm({
         )}
       </div>
 
-      {/* ── Nhóm chế phẩm sinh học ── */}
-      <div className="space-y-2">
-        <Label className="flex items-center gap-1.5">
-          <Package className="w-4 h-4 text-slate-400" />
-          Nhóm chế phẩm sinh học
-        </Label>
-        <Select
-          value={formData.biologicalProductOriginGroup}
-          onValueChange={(val) => {
-            updateField("biologicalProductOriginGroup", val);
-            // Sync legacy originId field if there's a match
-            const matchedOption = originOptions.find((o) => o.label === val);
-            if (matchedOption) {
-              updateField("originId", matchedOption.id);
-            }
-          }}
-        >
-          <SelectTrigger className="text-left h-auto py-2">
-            <SelectValue placeholder="Chọn nhóm chế phẩm sinh học từ danh mục..." />
-          </SelectTrigger>
-          <SelectContent>
-            {biologicalProductGroups.map((g) => (
-              <SelectItem key={g.id} value={g.name}>
-                <div className="flex flex-col">
-                  <span className="font-medium">{g.name}</span>
-                  {g.description && (
-                    <span className="text-xs text-muted-foreground truncate max-w-[400px]">
-                      {g.description}
-                    </span>
-                  )}
-                </div>
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-
       {/* ── Mã SKU ── */}
       <div className="space-y-2">
         <Label className="flex items-center gap-1.5">
@@ -252,8 +214,40 @@ export default function SimpleBiologicalProductForm({
         <Input
           value={formData.name}
           onChange={(e) => updateField("name", e.target.value)}
-          placeholder="VD: NPK 20-20-15 Đầu Trâu, Phân hữu cơ vi sinh Sông Gianh..."
+          placeholder="VD: Chế phẩm Trichoderma, Chế phẩm EM gốc..."
         />
+      </div>
+
+      {/* ── Nhóm chế phẩm sinh học ── */}
+      <div className="space-y-2">
+        <Label className="flex items-center gap-1.5">
+          <Package className="w-4 h-4 text-slate-400" />
+          Nhóm chế phẩm sinh học
+        </Label>
+        <Select
+          value={formData.biologicalProductOriginGroup}
+          onValueChange={(val) =>
+            updateField("biologicalProductOriginGroup", val)
+          }
+        >
+          <SelectTrigger className="text-left h-auto py-2">
+            <SelectValue placeholder="Chọn nhóm chế phẩm sinh học từ danh mục..." />
+          </SelectTrigger>
+          <SelectContent className="max-h-72 overflow-y-auto">
+            {biologicalProductGroups.map((group) => (
+              <SelectItem key={group.id} value={group.name}>
+                <div className="flex flex-col">
+                  <span className="font-medium">{group.name}</span>
+                  {group.description && (
+                    <span className="text-xs text-muted-foreground truncate max-w-[400px]">
+                      {group.description}
+                    </span>
+                  )}
+                </div>
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
       {/* ── Cấu hình Đơn vị Vật tư ── */}
@@ -463,7 +457,7 @@ export default function SimpleBiologicalProductForm({
           <p className="text-xs text-amber-800">
             Chế độ cơ bản giúp tạo nhanh chế phẩm sinh học với thông tin tối thiểu. Bật{" "}
             <span className="font-bold">Thông tin chuyên sâu</span> để khai báo
-            đầy đủ thành phần dinh dưỡng, hướng dẫn sử dụng, an toàn pháp lý và
+            đầy đủ thành phần vi sinh, hướng dẫn sử dụng, an toàn pháp lý và
             nhà cung cấp.
           </p>
         </CardContent>

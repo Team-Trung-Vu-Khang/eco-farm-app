@@ -92,22 +92,20 @@ export const BiologicalProductConfirmationStep = ({
                 value={formData.scientificTechnicalName}
               />
               <Row
-                label="Nhóm nguồn gốc"
+                label="Nhóm chế phẩm"
                 value={formData.biologicalProductOriginGroup}
               />
               <Row
-                label="Thành phần dinh dưỡng"
+                label="Nhóm hoạt chất sinh học"
                 value={formData.nutritionalComponents}
               />
-              <Row label="Dạng phân" value={formData.biologicalProductType} />
+              <Row label="Dạng chế phẩm" value={formData.biologicalProductType} />
               <Row label="Hình thái vật lý" value={formData.physicalForm} />
-              <Row label="Nhóm tác động MoA" value={formData.moaGroup} />
-              <Row label="Tỷ lệ N-P-K" value={formData.npkRatio} />
 
               {formData.mainIngredients && (
                 <div className="col-span-2">
                   <span className="text-muted-foreground text-sm block mb-1">
-                    Thành phần chi tiết:
+                    Thành phần vi sinh:
                   </span>
                   <div className="bg-slate-50 p-3 rounded-lg border border-slate-100 text-xs whitespace-pre-line text-slate-700">
                     {formData.mainIngredients}
@@ -188,7 +186,7 @@ export const BiologicalProductConfirmationStep = ({
               </div>
               <div className="col-span-2">
                 <span className="text-muted-foreground text-sm block mb-1">
-                  Cách bón:
+                  Cách dùng:
                 </span>
                 <p className="bg-slate-50 p-2 border rounded-md whitespace-pre-line text-xs">
                   {formData.applicationMethod}

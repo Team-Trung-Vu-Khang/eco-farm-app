@@ -12,9 +12,10 @@ import {
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { Image as ImageIcon, Leaf, Plus, Tags, Upload, X } from "lucide-react";
 import { useState } from "react";
-import { useMasterData } from "@/features/master-data";
-import { commonHashtags, originOptions } from "../../data/constants";
+import { commonHashtags } from "../../data/constants";
 import type { BiologicalProductFormData } from "../../types/types";
+import { useMasterData } from "@/features/master-data";
+import { SUPPLY_GROUP_CATALOG } from "../../data/constants";
 
 interface BiologicalProductBasicInfoStepProps {
   formData: BiologicalProductFormData;
@@ -28,8 +29,9 @@ export const BiologicalProductBasicInfoStep = ({
   const isEdit = window.location.pathname.includes("/edit");
   const [paramHashtag, setParamHashtag] = useState("");
 
-  // Fetch groups dynamically from master data (managed in BiologicalProductGroupPage.tsx)
-  const { items: biologicalProductGroups } = useMasterData("biologicalProduct-groups");
+  const { items: biologicalProductGroups } = useMasterData(
+    SUPPLY_GROUP_CATALOG,
+  );
 
   const handleAddHashtag = () => {
     const nextHashtag = paramHashtag.trim();
@@ -65,7 +67,7 @@ export const BiologicalProductBasicInfoStep = ({
               <Input
                 value={formData.code}
                 onChange={(e) => updateField("code", e.target.value)}
-                placeholder="VD: PB-NPK-202015"
+                placeholder="VD: CPSH-TRI-01"
                 disabled={isEdit}
                 clearable={!isEdit}
               />
@@ -80,7 +82,7 @@ export const BiologicalProductBasicInfoStep = ({
               <Input
                 value={formData.name}
                 onChange={(e) => updateField("name", e.target.value)}
-                placeholder="VD: NPK 20-20-15 Đầu Trâu"
+                placeholder="VD: Chế phẩm Trichoderma đối kháng"
               />
               <p className="text-xs text-muted-foreground">
                 Tên thương mại nhãn hiệu chế phẩm sinh học
@@ -110,40 +112,33 @@ export const BiologicalProductBasicInfoStep = ({
                 onChange={(e) =>
                   updateField("scientificTechnicalName", e.target.value)
                 }
-                placeholder="VD: Inorganic Compound NPK"
+                placeholder="VD: Trichoderma harzianum"
               />
             </div>
           </div>
 
-          {/* Single BiologicalProduct Group Selector (managed in Category page) */}
+          {/* Nhóm chế phẩm (quản lý ở trang Danh mục) */}
           <div className="space-y-2">
             <Label className="flex items-center gap-1">
               Nhóm chế phẩm sinh học <span className="text-red-500">*</span>
             </Label>
             <Select
               value={formData.biologicalProductOriginGroup}
-              onValueChange={(val) => {
-                updateField("biologicalProductOriginGroup", val);
-                // Also set legacy field originId if there is a match or just sync
-                const matchedOption = originOptions.find(
-                  (o) => o.label === val,
-                );
-                if (matchedOption) {
-                  updateField("originId", matchedOption.id);
-                }
-              }}
+              onValueChange={(val) =>
+                updateField("biologicalProductOriginGroup", val)
+              }
             >
               <SelectTrigger className="text-left h-auto py-2">
                 <SelectValue placeholder="Chọn nhóm chế phẩm sinh học từ danh mục..." />
               </SelectTrigger>
-              <SelectContent>
-                {biologicalProductGroups.map((g) => (
-                  <SelectItem key={g.id} value={g.name}>
+              <SelectContent className="max-h-72 overflow-y-auto">
+                {biologicalProductGroups.map((group) => (
+                  <SelectItem key={group.id} value={group.name}>
                     <div className="flex flex-col">
-                      <span className="font-medium">{g.name}</span>
-                      {g.description && (
+                      <span className="font-medium">{group.name}</span>
+                      {group.description && (
                         <span className="text-xs text-muted-foreground truncate max-w-[400px]">
-                          {g.description}
+                          {group.description}
                         </span>
                       )}
                     </div>
@@ -151,46 +146,21 @@ export const BiologicalProductBasicInfoStep = ({
                 ))}
               </SelectContent>
             </Select>
-            {/* <p className="text-xs text-muted-foreground">
-              Danh mục được quản lý tại{" "}
-              <span className="text-primary font-medium">
-                Danh mục → Chế phẩm sinh học
-              </span>
-            </p> */}
           </div>
 
-          {/* MoA & NPK Ratio */}
-          {/* <div className="grid grid-cols-1 md:grid-cols-2 gap-4"> */}
+          {/* Thành phần vi sinh */}
           <div className="space-y-2">
-            <Label>Cơ chế tác động (MoA) / Dưỡng chất đặc biệt</Label>
-            <Input
-              value={formData.moaGroup}
-              onChange={(e) => updateField("moaGroup", e.target.value)}
-              placeholder="VD: Tan nhanh, nhả chậm, vi lượng Chelate..."
-            />
-          </div>
-          <div className="space-y-2">
-            <Label>Tỷ lệ N-P-K (nếu có)</Label>
-            <Input
-              value={formData.npkRatio}
-              onChange={(e) => updateField("npkRatio", e.target.value)}
-              placeholder="VD: 20-20-15, 16-16-8"
-            />
-            <p className="text-xs text-muted-foreground">
-              Tỷ lệ hàm lượng Nitơ - Phốt pho - Kali
-            </p>
-          </div>
-          {/* </div> */}
-
-          {/* Main Ingredients */}
-          <div className="space-y-2">
-            <Label>Thành phần chính chi tiết</Label>
+            <Label>Thành phần vi sinh</Label>
             <Textarea
               value={formData.mainIngredients}
               onChange={(e) => updateField("mainIngredients", e.target.value)}
-              placeholder="Nhập chi tiết thành phần (VD: Đạm N: 20%, Lân P2O5: 20%, Kali K2O: 15%...)"
+              placeholder="VD: Bacillus subtilis - 10^9 CFU/g"
               rows={4}
             />
+            <p className="text-xs text-muted-foreground">
+              Lưu chi tiết tên chủng vi sinh và mật độ. Cần thiết cho báo cáo kỹ
+              thuật.
+            </p>
           </div>
 
           {/* Description */}

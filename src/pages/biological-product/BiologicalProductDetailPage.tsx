@@ -279,23 +279,21 @@ const BiologicalProductDetailPage = () => {
                   value={item.scientificTechnicalName}
                 />
                 <InfoRow
-                  label="Nhóm chế phẩm sinh học (nguồn gốc)"
+                  label="Nhóm chế phẩm sinh học"
                   value={item.biologicalProductOriginGroup}
                 />
                 <InfoRow
-                  label="Thành phần dinh dưỡng chính"
+                  label="Nhóm hoạt chất sinh học"
                   value={item.nutritionalComponents}
                 />
                 <InfoRow label="Dạng chế phẩm sinh học" value={item.biologicalProductType} />
                 <InfoRow label="Hình thái vật lý" value={item.physicalForm} />
-                <InfoRow label="Cơ chế tác động (MoA)" value={item.moaGroup} />
-                <InfoRow label="Tỷ lệ N-P-K" value={item.npkRatio} />
               </div>
 
               {item.mainIngredients && (
                 <div className="border-t pt-4">
                   <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
-                    Thành phần chính chi tiết
+                    Thành phần vi sinh
                   </h4>
                   <div className="text-sm bg-slate-50 border rounded-lg p-3 whitespace-pre-line text-slate-700">
                     {item.mainIngredients}
@@ -366,7 +364,7 @@ const BiologicalProductDetailPage = () => {
               {item.applicationMethod && (
                 <div>
                   <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
-                    Cách bón / Cách dùng
+                    Cách dùng
                   </h4>
                   <p className="text-sm bg-slate-50 border rounded-lg p-3 whitespace-pre-line text-slate-700">
                     {item.applicationMethod}

@@ -113,7 +113,7 @@ const BiologicalProductCreatePage = () => {
       description={
         isEdit
           ? `Chỉnh sửa thông tin ${formData.name}`
-          : "Khai báo thông tin chất bón, chế phẩm sinh học mới"
+          : "Khai báo thông tin chế phẩm sinh học mới"
       }
     >
       {/* Header bar: back button + toggle */}

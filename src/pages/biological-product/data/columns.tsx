@@ -78,7 +78,7 @@ export const getBiologicalProductColumns = (
   },
   {
     key: "npkRatio",
-    label: "Tỷ lệ NPK / Hàm lượng",
+    label: "Mật độ vi sinh",
     render: (val, row) => {
       const npk = val || row.profile?.npkRatio;
       const comp = row.profile?.detailedComposition || row.nutrientContent;

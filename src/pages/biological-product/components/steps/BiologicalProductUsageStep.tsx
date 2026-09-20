@@ -95,7 +95,7 @@ export const BiologicalProductUsageStep = ({
           <Textarea
             value={formData.indications}
             onChange={(e) => updateField("indications", e.target.value)}
-            placeholder="Cung cấp dinh dưỡng gì, kích thích sinh trưởng rễ/lá/quả như thế nào..."
+            placeholder="Đối kháng nấm bệnh gì, cải tạo đất hay kích thích sinh trưởng ra sao..."
             rows={3}
           />
         </div>
@@ -106,7 +106,7 @@ export const BiologicalProductUsageStep = ({
             <Input
               value={formData.applicationStage}
               onChange={(e) => updateField("applicationStage", e.target.value)}
-              placeholder="VD: Bón lót, bón thúc đẻ nhánh, bón nuôi trái..."
+              placeholder="VD: Xử lý đất trước gieo trồng, giai đoạn cây con, sau thu hoạch..."
             />
           </div>
           <div className="space-y-2">
@@ -140,11 +140,11 @@ export const BiologicalProductUsageStep = ({
         </div>
 
         <div className="space-y-2">
-          <Label>Cách dùng (Phương thức bón phân)</Label>
+          <Label>Cách dùng (Phương thức sử dụng)</Label>
           <Textarea
             value={formData.applicationMethod}
             onChange={(e) => updateField("applicationMethod", e.target.value)}
-            placeholder="VD: Bón lót trộn đất, rải quanh gốc rãnh rễ, phun qua lá..."
+            placeholder="VD: Trộn đất, tưới gốc, phun qua lá, ủ với phân chuồng..."
             rows={3}
           />
         </div>
@@ -154,7 +154,7 @@ export const BiologicalProductUsageStep = ({
           <Textarea
             value={formData.usageNotes}
             onChange={(e) => updateField("usageNotes", e.target.value)}
-            placeholder="VD: Không bón lúc trời nắng gắt, tưới nước ngay sau khi rải..."
+            placeholder="VD: Không dùng chung thuốc hóa học, tưới giữ ẩm sau khi xử lý..."
             rows={3}
           />
         </div>

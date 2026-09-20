@@ -114,7 +114,7 @@ export default function BiologicalProductSafetyLegalStep({
           <Textarea
             value={formData.protectiveMeasures}
             onChange={(e) => updateField("protectiveMeasures", e.target.value)}
-            placeholder={"• Hô hấp: Khẩu trang chống bụi mịn\n• Tay: Găng tay cao su khi rải chế phẩm sinh học\n• Chân: Ủng bảo hộ nông nghiệp\n• Vệ sinh: Rửa sạch tay chân sau khi bón phân..."}
+            placeholder={"• Hô hấp: Khẩu trang chống bụi mịn\n• Tay: Găng tay cao su khi pha chế\n• Chân: Ủng bảo hộ nông nghiệp\n• Vệ sinh: Rửa sạch tay chân sau khi sử dụng..."}
             rows={4}
           />
         </div>

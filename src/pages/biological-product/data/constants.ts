@@ -11,6 +11,12 @@ export type { BiologicalProduct };
  */
 export const SUPPLY_TYPE: SupplyType = "fertilizer";
 
+/**
+ * TODO(API): Danh mục nhóm — cùng lý do trên, chưa có catalog riêng cho chế phẩm
+ * sinh học nên tạm dùng "fertilizer-groups".
+ */
+export const SUPPLY_GROUP_CATALOG = "fertilizer-groups" as const;
+
 /** Nhóm hoạt chất sinh học chính của chế phẩm */
 export const nutritionalContentOptions = [
   { id: "microorganism", label: "Vi sinh vật có ích" },
@@ -75,38 +81,44 @@ export const packagingUnitOptions = [
 export const initialBiologicalProducts: BiologicalProduct[] = [
   {
     id: 1,
-    code: "PB001",
-    name: "NPK 20-20-15 Đầu Trâu",
-    nutritionalContentId: "macronutrients",
-    originId: "inorganic",
-    applicationStageId: "top_dressing",
+    code: "CPSH001",
+    name: "Chế phẩm Trichoderma đối kháng",
+    nutritionalContentId: "microorganism",
+    originId: "microbial",
+    applicationStageId: "soil_preparation",
     physicalFormId: "soil_application",
-    nutrientContent: "N: 20%, P: 20%, K: 15%",
+    nutrientContent: "Trichoderma harzianum: 1x10^9 CFU/g",
     description:
       "Chế phẩm vi sinh Trichoderma, đối kháng nấm bệnh vùng rễ và phân giải hữu cơ.",
     status: "active",
     createdAt: "2024-01-20",
 
     // Spec fields
-    registrationNumber: "LH-5821/GP-PB",
-    scientificTechnicalName: "Nitrogen-Phosphorus-Potassium Complex",
-    biologicalProductOriginGroup: "Vô cơ (Hóa học)",
-    nutritionalComponents: "Nhóm Đa lượng (NPK)",
-    biologicalProductType: "Hỗn hợp/Phức hợp (NPK)",
+    registrationNumber: "LH-5821/GP-CPSH",
+    scientificTechnicalName: "Trichoderma harzianum Rifai",
+    biologicalProductOriginGroup: "Vi sinh",
+    nutritionalComponents: "Vi sinh vật có ích",
+    biologicalProductType: "Chế phẩm vi sinh đối kháng",
     physicalForm: "Dạng hạt (Granular)",
-    mainIngredients: "Đạm tổng số (N): 20%\nLân hữu hiệu (P2O5): 20%\nKali hữu hiệu (K2O): 15%\nĐộ ẩm: 5%",
-    moaGroup: "Cơ chế hấp thụ qua rễ và hòa tan nhanh",
-    npkRatio: "20-20-15",
+    mainIngredients:
+      "Trichoderma harzianum: 1x10^9 CFU/g\nBacillus subtilis: 1x10^8 CFU/g\nĐộ ẩm: 5%",
+    moaGroup: "Ký sinh và cạnh tranh dinh dưỡng với nấm bệnh vùng rễ",
+    npkRatio: "",
 
-    indications: "Cung cấp đa lượng cân đối cho cây trồng giai đoạn kiến thiết cơ bản và bón thúc giai đoạn tăng trưởng nhanh. Kích thích đẻ nhánh, đâm chồi, lá xanh dày, tăng khả năng chống chịu.",
-    applicationStage: "Bón thúc sinh trưởng",
+    indications:
+      "Phòng trừ nấm bệnh vùng rễ (Phytophthora, Fusarium, Rhizoctonia). Phân giải chất hữu cơ, cải tạo đất và kích thích bộ rễ phát triển.",
+    applicationStage: "Xử lý đất trước gieo trồng",
     targetCrops: ["Cây lúa", "Cây ăn quả (sầu riêng, xoài, nhãn, bưởi...)", "Cây công nghiệp (cà phê, hồ tiêu, cao su, chè...)"],
-    recommendedDosage: "Lúa: 150-250 kg/ha/lần bón\nCây ăn quả: 0.5-1.5 kg/cây/lần bón tùy độ tuổi",
-    applicationMethod: "Bón gốc (rải quanh tán cây sau đó tưới nước) hoặc bón đón mưa",
-    usageNotes: "Bón đúng liều lượng khuyến cáo. Tránh bón lúc trời nắng gắt hoặc đất khô hạn mà không tưới nước.",
+    recommendedDosage:
+      "Xử lý đất: 3-5 kg/ha\nTưới gốc: 20-30 g/10 lít nước, định kỳ 15-20 ngày/lần",
+    applicationMethod:
+      "Trộn đều với phân hữu cơ hoai mục rải quanh tán, hoặc hòa nước tưới vùng rễ",
+    usageNotes:
+      "Không dùng chung với thuốc trừ nấm hóa học; cách ly tối thiểu 7 ngày. Tưới giữ ẩm sau khi xử lý để vi sinh phát triển.",
 
     toxicityInfo: "Không độc hại trực tiếp nếu tiếp xúc da thông thường. Có thể gây kích ứng mắt nhẹ. Hạn chế rửa trôi lượng lớn xuống ao hồ nuôi thủy sản.",
-    protectiveMeasures: "Đeo găng tay khi bón phân thủ công. Rửa sạch tay bằng xà phòng sau khi sử dụng.",
+    protectiveMeasures:
+      "Đeo găng tay và khẩu trang khi thao tác. Rửa sạch tay bằng xà phòng sau khi sử dụng.",
     firstAid: "<p>Nếu dính vào mắt: rửa sạch bằng nước ấm trong 15 phút. Nếu nuốt phải số lượng lớn: uống nhiều nước và gây nôn, sau đó đưa tới y tế.</p>",
     legalStatus: "Được phép lưu hành tại Việt Nam",
     standardsCompliance: ["VietGAP", "GlobalG.A.P"],
@@ -119,42 +131,50 @@ export const initialBiologicalProducts: BiologicalProduct[] = [
   },
   {
     id: 2,
-    code: "PB002",
-    name: "Phân hữu cơ vi sinh Sông Gianh",
-    nutritionalContentId: "macronutrients",
-    originId: "organic",
-    applicationStageId: "basal_application",
+    code: "CPSH002",
+    name: "Chế phẩm EM gốc",
+    nutritionalContentId: "microorganism",
+    originId: "botanical",
+    applicationStageId: "growth_stage",
     physicalFormId: "soil_application",
-    nutrientContent: "Hữu cơ: 15%, Axit Humic: 2.5%",
-    description: "Cải tạo cấu trúc đất, cung cấp mùn hữu cơ tự nhiên và hoạt hóa hệ vi sinh vật.",
+    nutrientContent: "Vi sinh vật hữu hiệu tổng số: 1x10^8 CFU/ml",
+    description:
+      "Tổ hợp vi sinh vật hữu hiệu, dùng ủ phân hữu cơ, xử lý mùi và cải tạo hệ vi sinh vùng rễ.",
     status: "active",
     createdAt: "2024-01-21",
 
-    registrationNumber: "LH-0934/GP-PB",
-    scientificTechnicalName: "Microbial Organic BiologicalProduct",
-    biologicalProductOriginGroup: "Hữu cơ vi sinh",
-    nutritionalComponents: "Nhóm Hữu cơ & Vi sinh",
-    biologicalProductType: "Phân hữu cơ bổ sung chủng men vi sinh vật ích",
-    physicalForm: "Dạng bột hoặc viên nén",
-    mainIngredients: "Chất hữu cơ: 15%\nAxit Humic: 2.5%\nNitơ (N): 1%\nLân (P2O5): 1%\nVi sinh vật phân giải xenlulo: 1x10^6 CFU/g",
-    moaGroup: "Hoạt hóa mùn đất và tăng cường hệ vi sinh vùng rễ",
+    registrationNumber: "LH-0934/GP-CPSH",
+    scientificTechnicalName: "Effective Microorganisms (EM)",
+    biologicalProductOriginGroup: "Vi sinh",
+    nutritionalComponents: "Vi sinh vật có ích",
+    biologicalProductType: "Chế phẩm vi sinh tổng hợp (EM)",
+    physicalForm: "Dạng dung dịch",
+    mainIngredients:
+      "Lactobacillus sp.: 1x10^8 CFU/ml\nSaccharomyces sp.: 1x10^7 CFU/ml\nRhodopseudomonas sp.: 1x10^6 CFU/ml",
+    moaGroup: "Lên men phân giải hữu cơ, ức chế vi sinh vật gây hại",
 
-    indications: "Cải tạo đất chai cứng, bạc màu. Tăng độ tơi xốp, giữ ẩm, hoạt hóa các khoáng chất khó tan trong đất giúp rễ hấp thu dễ dàng hơn.",
-    applicationStage: "Bón lót cải tạo đất và bón thúc phục hồi",
+    indications:
+      "Ủ nhanh phân hữu cơ và phụ phẩm nông nghiệp, khử mùi hôi chuồng trại, cân bằng hệ vi sinh vùng rễ.",
+    applicationStage: "Xử lý đất và giai đoạn sinh trưởng",
     targetCrops: ["Cây ăn quả (sầu riêng, xoài, nhãn, bưởi...)", "Rau màu (rau cải, xà lách, muống...)", "Cây công nghiệp (cà phê, hồ tiêu, cao su, chè...)"],
-    recommendedDosage: "Rau màu: 1.000-1.500 kg/ha/vụ bón lót\nCây ăn quả: 3-5 kg/gốc/năm",
-    applicationMethod: "Trộn đều với đất mặt khi làm đất (bón lót) hoặc rải xung quanh rãnh rễ rồi lấp đất giữ ẩm",
-    usageNotes: "Ủ ẩm đất sau khi bón phân hữu cơ vi sinh để hệ vi sinh vật sinh trưởng nhanh.",
+    recommendedDosage:
+      "Ủ phân: 1 lít EM gốc cho 1 tấn nguyên liệu\nTưới gốc: pha loãng 1/500, định kỳ 10-15 ngày/lần",
+    applicationMethod:
+      "Pha loãng với nước sạch (không chứa clo) rồi tưới gốc hoặc phun đều lên nguyên liệu ủ",
+    usageNotes:
+      "Bảo quản nơi mát, tránh ánh nắng trực tiếp. Không pha với nước máy còn clo hoặc dùng chung thuốc sát khuẩn.",
 
     toxicityInfo: "Hoàn toàn an toàn thân thiện môi trường, không độc hại với người và gia súc gia cầm.",
-    protectiveMeasures: "Sử dụng khẩu trang khi rải phân dạng bột để tránh hít phải bụi mịn hữu cơ.",
-    firstAid: "<p>Súc miệng bằng nước sạch nếu hít phải bụi phân. Rửa tay sau khi hoàn thành bón lót.</p>",
+    protectiveMeasures:
+      "Đeo găng tay khi pha chế. Tránh để dung dịch bắn vào mắt.",
+    firstAid:
+      "<p>Nếu dính vào mắt: rửa sạch bằng nước trong 15 phút. Rửa tay bằng xà phòng sau khi sử dụng.</p>",
     legalStatus: "Được phép lưu hành tại Việt Nam",
     standardsCompliance: ["VietGAP", "Organic (hữu cơ)"],
 
-    manufacturerOrigin: "Tổng Công ty Sông Gianh - Việt Nam",
-    importerRegistrant: "Sông Gianh Corp",
-    distributor: "Đại lý Vật tư Nông nghiệp Sông Gianh Miền Nam",
+    manufacturerOrigin: "Viện Công nghệ Sinh học Nông nghiệp - Việt Nam",
+    importerRegistrant: "AgriBio Vietnam",
+    distributor: "Hệ thống Đại lý Vật tư Nông nghiệp Miền Nam",
     referencePrice: "220.000 đ / bao 25kg",
     packagingSpecs: ["Bao 25kg", "Bao 10kg"],
   }
