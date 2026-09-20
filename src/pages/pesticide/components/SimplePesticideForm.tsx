@@ -101,9 +101,14 @@ export default function SimplePesticideForm({
 }: SimplePesticideFormProps) {
   const isEdit = window.location.pathname.includes("/edit");
   const labels = DOMAIN_LABELS[domain];
-  const hasBasicPackagingRule = Boolean(
-    formData.packaging && formData.quantity && formData.unit,
-  );
+
+  const [configMode, setConfigMode] = useState<"SPEC" | "BASE_UNIT">("SPEC");
+
+  const hasBasicPackagingRule =
+    configMode === "SPEC"
+      ? Boolean(formData.packaging && formData.quantity && formData.unit)
+      : Boolean(formData.unit);
+
   const isValid = Boolean(formData.name) && hasBasicPackagingRule;
   const [paramHashtag, setParamHashtag] = useState("");
   const [groupSearch, setGroupSearch] = useState("");
@@ -153,8 +158,6 @@ export default function SimplePesticideForm({
     baseUnits && baseUnits.length > 0
       ? baseUnits.map((u) => u.name)
       : MEASURE_UNIT_OPTIONS;
-
-  const [configMode, setConfigMode] = useState<"SPEC" | "BASE_UNIT">("SPEC");
 
   const groupOptions = remoteGroups.map((group) => ({
     label: group.name,

@@ -116,8 +116,9 @@ export default function SimpleFertilizerForm({
   const [configMode, setConfigMode] = useState<"SPEC" | "BASE_UNIT">("SPEC");
   const hasSimplePackagingRule =
     configMode === "SPEC"
-      ? Boolean(formData.packaging && formData.quantity)
-      : Boolean(formData.unit && formData.quantity);
+      ? Boolean(formData.packaging && formData.quantity && formData.unit)
+      : Boolean(formData.unit);
+
   const isValid = Boolean(formData.name) && hasSimplePackagingRule;
   const [paramHashtag, setParamHashtag] = useState("");
 
