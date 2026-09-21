@@ -1612,6 +1612,20 @@ function Router() {
         />
         <Route path="/admin/fertilizer/:id" component={FertilizerDetailPage} />
 
+        <Route path="/admin/biological-product" component={BiologicalProductPage} />
+        <Route
+          path="/admin/biological-product/create"
+          component={BiologicalProductCreatePage}
+        />
+        <Route
+          path="/admin/biological-product/:id/edit"
+          component={BiologicalProductCreatePage}
+        />
+        <Route
+          path="/admin/biological-product/:id"
+          component={BiologicalProductDetailPage}
+        />
+
         <Route path="/admin/equipment" component={EquipmentPage} />
         <Route path="/admin/equipment/create" component={EquipmentCreatePage} />
         <Route

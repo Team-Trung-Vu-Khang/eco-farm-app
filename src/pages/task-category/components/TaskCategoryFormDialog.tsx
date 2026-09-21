@@ -12,10 +12,11 @@ import {
   SelectValue,
   Textarea,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import {
-  taskCategoryDomainLabel,
-  taskCategoryDomainOptions,
-} from "../data/constants";
+// TODO: Tạm ẩn chọn "Nhóm công việc", mặc định luôn là "Trồng trọt" (crop)
+// import {
+//   taskCategoryDomainLabel,
+//   taskCategoryDomainOptions,
+// } from "../data/constants";
 import type { TaskCategoryFormData } from "../types/types";
 
 const formSchema = z.object({
@@ -97,6 +98,8 @@ export function TaskCategoryFormDialog({
           )}
         />
 
+        {/* TODO: Tạm ẩn field "Nhóm công việc" vì hiện chỉ có lĩnh vực Trồng trọt.
+            Giá trị `domain` vẫn được giữ trong form state với default "crop".
         <Controller
           control={form.control}
           name="domain"
@@ -123,6 +126,7 @@ export function TaskCategoryFormDialog({
             </div>
           )}
         />
+        */}
 
         <Controller
           control={form.control}

@@ -101,14 +101,14 @@ export interface MasterDataRequestExtraFieldsMap {
   "rearing-methods": {
     domainCode?: "CROP" | "LIVESTOCK" | "AQUACULTURE" | null;
   };
-  "equipment-tool-groups": Record<string, never>;
+  "equipment-tool-groups": EmptyExtraFields;
   "fertilizer-groups": {
     classification: string;
   };
   "biological-product-groups": {
     classification: string;
   };
-  "irrigation-systems": Record<string, never>;
+  "irrigation-systems": EmptyExtraFields;
   "iot-device-groups": {
     classification: string;
   };
@@ -152,14 +152,14 @@ export interface MasterDataRecordExtraFieldsMap {
     issuers: CertificateIssuerRecord[];
     documents: CertificateStandardDocument[];
   };
-  "equipment-tool-groups": Record<string, never>;
+  "equipment-tool-groups": EmptyExtraFields;
   "fertilizer-groups": {
     classification: string;
   };
   "biological-product-groups": {
     classification: string;
   };
-  "irrigation-systems": Record<string, never>;
+  "irrigation-systems": EmptyExtraFields;
   "rearing-methods": {
     domainCode?: "CROP" | "LIVESTOCK" | "AQUACULTURE";
   };
@@ -254,6 +254,14 @@ export interface ProvinceRecord {
   wards?: ProvinceWardRecord[];
 }
 
+/**
+ * Sentinel cho catalog không có extra field.
+ * Không dùng `Record<string, never>` vì index signature của nó sẽ "đầu độc"
+ * mọi property khi intersect với MasterDataCommonFields (string không gán được cho never).
+ */
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
+export type EmptyExtraFields = {};
+
 export type MasterDataAttributes<C extends MasterDataCatalog> =
   C extends keyof MasterDataAttributesMap
     ? MasterDataAttributesMap[C]
@@ -262,12 +270,12 @@ export type MasterDataAttributes<C extends MasterDataCatalog> =
 export type MasterDataRequestExtraFields<C extends MasterDataCatalog> =
   C extends keyof MasterDataRequestExtraFieldsMap
     ? MasterDataRequestExtraFieldsMap[C]
-    : Record<string, never>;
+    : EmptyExtraFields;
 
 export type MasterDataRecordExtraFields<C extends MasterDataCatalog> =
   C extends keyof MasterDataRecordExtraFieldsMap
     ? MasterDataRecordExtraFieldsMap[C]
-    : Record<string, never>;
+    : EmptyExtraFields;
 
 export type MasterDataRecord<
   C extends MasterDataCatalog = MasterDataCatalog,

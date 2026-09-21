@@ -16,12 +16,10 @@ const DEFAULT_PAGE_SIZE = 10;
 
 type IrrigationSystemStatusFilter = MasterDataStatus | typeof ALL_STATUS;
 
-function buildPayload(
-  values: IrrigationSystemFormValues,
-  domainCode: "CROP" | "LIVESTOCK" | "AQUACULTURE",
-) {
+function buildPayload(values: IrrigationSystemFormValues) {
   return {
-    domainCode,
+    // TODO: resource "irrigation-systems" không có field `domainCode`
+    // (chỉ dùng cho trồng trọt), nên không gửi lên payload.
     code: values.code.trim().toUpperCase(),
     name: values.name.trim(),
     description: values.description.trim(),
@@ -93,7 +91,7 @@ export function useIrrigationSystemPage(
   };
 
   const handleSubmit = async (values: IrrigationSystemFormValues) => {
-    const payload = buildPayload(values, domainCode);
+    const payload = buildPayload(values);
 
     if (!payload.name) {
       toast({

@@ -1,24 +1,26 @@
 import PageWrapper from "@/components/PageWrapper";
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { Leaf, Waves } from "lucide-react";
-import { useState } from "react";
+// TODO: Tạm ẩn tabs lĩnh vực, mặc định chỉ còn "Trồng trọt" (CROP)
+// import {
+//   Tabs,
+//   TabsContent,
+//   TabsList,
+//   TabsTrigger,
+// } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+// import { Leaf, Waves } from "lucide-react";
+// import { useState } from "react";
 import { IrrigationSystemTabContent } from "./components/IrrigationSystemTabContent";
 
-type ProductionDomain = "CROP" | "AQUACULTURE";
+// type ProductionDomain = "CROP" | "AQUACULTURE";
 
 export default function IrrigationSystemPage() {
-  const [activeTab, setActiveTab] = useState<ProductionDomain>("CROP");
+  // const [activeTab, setActiveTab] = useState<ProductionDomain>("CROP");
 
   return (
     <PageWrapper
-      title="Danh mục phương pháp bổ trợ (Tưới tiêu / Hình thức nuôi)"
-      description="Quản lý phương pháp tưới tiêu cho trồng trọt hoặc hình thức nuôi cho thủy sản"
+      title="Danh mục phương pháp tưới tiêu"
+      description="Quản lý phương pháp tưới tiêu cho trồng trọt"
     >
+      {/* TODO: Tạm ẩn tabs (Trồng trọt / Nuôi trồng thủy sản), chỉ hiển thị CROP.
       <Tabs
         value={activeTab}
         onValueChange={(value) => setActiveTab(value as ProductionDomain)}
@@ -51,6 +53,9 @@ export default function IrrigationSystemPage() {
           />
         </TabsContent>
       </Tabs>
+      */}
+
+      <IrrigationSystemTabContent domainCode="CROP" />
     </PageWrapper>
   );
 }

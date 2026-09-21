@@ -1,28 +1,21 @@
 import { useFarmSupplyListHook } from "@/features/farm-supply/hooks/useFarmSupplyListHook";
-import type { SupplyItemResponse } from "@/features/farm-supply/types";
-import { useLocation } from "wouter";
 import { SUPPLY_TYPE } from "../data/constants";
-
-const BASE_PATH = "/cultivation-material/biological-product";
 
 export function useBiologicalProductPage() {
   const listHook = useFarmSupplyListHook(SUPPLY_TYPE, "CROP");
-  const [, setLocation] = useLocation();
 
-  // Hook chung dựng đường dẫn từ SupplyType nên sẽ trỏ về /fertilizer —
-  // override lại cho đúng trang chế phẩm sinh học.
+  // The shared hook resolves both farm and admin paths, and selects the
+  // corresponding API scope from the current route.
   return {
     biologicalProducts: listHook.items,
     deleteOpen: listHook.deleteOpen,
     setDeleteOpen: listHook.setDeleteOpen,
-    handleAdd: () => setLocation(`${BASE_PATH}/create`),
-    handleEdit: (item: SupplyItemResponse) =>
-      setLocation(`${BASE_PATH}/${item.id}/edit`),
+    handleAdd: listHook.handleAdd,
+    handleEdit: listHook.handleEdit,
     handleDelete: listHook.handleDelete,
-    handleView: (item: SupplyItemResponse) =>
-      setLocation(`${BASE_PATH}/${item.id}`),
+    handleView: listHook.handleViewDetail,
     handleConfirmDelete: listHook.handleConfirmDelete,
-    navigateToDetail: (id: number) => setLocation(`${BASE_PATH}/${id}`),
+    navigateToDetail: listHook.navigateToDetail,
 
     // Pagination/Filter states for DataTable
     pageSize: listHook.pageSize,

@@ -64,7 +64,7 @@ export default function BiologicalProductPage() {
       }
     >
       <DataTable
-        columns={biologicalProductColumns(navigateToDetail)}
+        columns={biologicalProductColumns(navigateToDetail, scope as "farm" | "admin")}
         data={biologicalProducts}
         pageSize={pageSize}
         currentIndex={currentIndex}

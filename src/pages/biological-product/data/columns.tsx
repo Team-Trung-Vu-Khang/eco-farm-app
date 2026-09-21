@@ -5,6 +5,9 @@ import { originOptions } from "./constants";
 
 export const getBiologicalProductColumns = (
   onView: (id: number) => void,
+  /** Ở scope "admin" chỉ có dữ liệu hệ thống (MASTER) nên mặc định là MASTER
+   *  khi API không trả về field `source`. */
+  scope: "admin" | "farm" = "farm",
 ): Column<any>[] => [
   { key: "code", label: "Mã", render: (value) => <CodeBadge value={value} /> },
   {
@@ -34,11 +37,14 @@ export const getBiologicalProductColumns = (
   {
     key: "source",
     label: "Nguồn",
-    render: (value) => (
-      <Badge variant={value === "MASTER" ? "secondary" : "default"}>
-        {value === "MASTER" ? "Hệ thống" : "Nội bộ"}
-      </Badge>
-    ),
+    render: (value) => {
+      const source = value ?? (scope === "admin" ? "MASTER" : "OWNER");
+      return (
+        <Badge variant={source === "MASTER" ? "secondary" : "default"}>
+          {source === "MASTER" ? "Hệ thống" : "Nội bộ"}
+        </Badge>
+      );
+    },
   },
   {
     key: "registrationNumber",

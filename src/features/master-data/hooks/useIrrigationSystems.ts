@@ -3,11 +3,11 @@ import { useMasterDataMutations } from "./useMasterDataMutations";
 import type { MasterDataQueryParams } from "../types/master-data.type";
 
 export const irrigationSystemKeys = {
-  all: () => ["master-data", "rearing-methods"] as const,
+  all: () => ["master-data", "irrigation-systems"] as const,
   list: (params?: MasterDataQueryParams) =>
-    ["master-data", "rearing-methods", "list", params ?? {}] as const,
+    ["master-data", "irrigation-systems", "list", params ?? {}] as const,
   detail: (id: number | string) =>
-    ["master-data", "rearing-methods", "detail", id] as const,
+    ["master-data", "irrigation-systems", "detail", id] as const,
 };
 
 interface UseIrrigationSystemsOptions {
@@ -22,16 +22,16 @@ interface UseIrrigationSystemByIdOptions {
 export function useIrrigationSystems(
   { params, enabled = true }: UseIrrigationSystemsOptions = {},
 ) {
-  return useMasterData("rearing-methods", { params, enabled });
+  return useMasterData("irrigation-systems", { params, enabled });
 }
 
 export function useIrrigationSystemById(
   id: number | string,
   { enabled = true }: UseIrrigationSystemByIdOptions = {},
 ) {
-  return useMasterDataById("rearing-methods", id, { enabled });
+  return useMasterDataById("irrigation-systems", id, { enabled });
 }
 
 export function useIrrigationSystemMutations() {
-  return useMasterDataMutations("rearing-methods");
+  return useMasterDataMutations("irrigation-systems");
 }

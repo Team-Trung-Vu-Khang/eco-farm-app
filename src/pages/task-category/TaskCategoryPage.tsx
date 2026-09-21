@@ -3,10 +3,11 @@ import {
   Button,
   DataTable,
   DeleteDialog,
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
+  // TODO: Tạm ẩn tabs lĩnh vực, mặc định là "Trồng trọt"
+  // Tabs,
+  // TabsContent,
+  // TabsList,
+  // TabsTrigger,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { Plus } from "lucide-react";
 import { useDialogBugWorkaround } from "../../shared/hooks/useDialogBugWorkaround";
@@ -14,10 +15,10 @@ import { TaskCategoryFormDialog } from "./components/TaskCategoryFormDialog";
 import { taskCategoryColumns } from "./data/columns";
 import {
   taskCategoryDomainLabel,
-  taskCategoryDomainOptions,
+  // taskCategoryDomainOptions,
 } from "./data/constants";
 import { useTaskCategoryPage } from "./hooks/useTaskCategoryPage";
-import type { TaskCategoryDomain } from "./types/types";
+// import type { TaskCategoryDomain } from "./types/types";
 
 export default function TaskCategoryPage() {
   const {
@@ -38,7 +39,7 @@ export default function TaskCategoryPage() {
     response,
     stages,
     activeDomain,
-    setActiveDomain,
+    // setActiveDomain,
     handleSearch,
     handleFilterChange,
     pageSize,
@@ -64,6 +65,8 @@ export default function TaskCategoryPage() {
         </Button>
       }
     >
+      {/* TODO: Tạm ẩn tabs lĩnh vực (Trồng trọt / Chăn nuôi / Nuôi trồng thủy sản),
+          mặc định luôn hiển thị "Trồng trọt".
       <Tabs
         value={activeDomain}
         onValueChange={(value) => setActiveDomain(value as TaskCategoryDomain)}
@@ -76,57 +79,50 @@ export default function TaskCategoryPage() {
             </TabsTrigger>
           ))}
         </TabsList>
-
-        {taskCategoryDomainOptions.map((option) => (
-          <TabsContent
-            key={option.value}
-            value={option.value}
-            className="space-y-3"
-          >
-            {error ? (
-              <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
-                {error}
-              </div>
-            ) : (
-              <DataTable
-                loading={loading}
-                columns={taskCategoryColumns}
-                data={taskCategories}
-                searchable
-                searchPlaceholder={`Tìm kiếm công việc ${taskCategoryDomainLabel[option.value].toLowerCase()}...`}
-                onSearch={handleSearch}
-                onFilterChange={handleFilterChange}
-                filters={[
-                  {
-                    key: "stage",
-                    label: "Giai đoạn",
-                    options: [
-                      ...stages.map((item) => ({ value: item, label: item })),
-                    ],
-                  },
-                  {
-                    key: "status",
-                    label: "Trạng thái",
-                    options: [
-                      { value: "active", label: "Hoạt động" },
-                      { value: "inactive", label: "Không hoạt động" },
-                      { value: "archived", label: "Đã lưu trữ" },
-                    ],
-                  },
-                ]}
-                pageSize={pageSize}
-                currentIndex={currentIndex}
-                totalElements={response?.totalElements}
-                totalPages={response?.totalPages}
-                onPageSize={setPageSize}
-                onIndexChange={setCurrentIndex}
-                onEdit={handleEdit}
-                onDelete={handleDelete}
-              />
-            )}
-          </TabsContent>
-        ))}
       </Tabs>
+      */}
+
+      <div className="space-y-3">
+        {error ? (
+          <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+            {error}
+          </div>
+        ) : (
+          <DataTable
+            loading={loading}
+            columns={taskCategoryColumns}
+            data={taskCategories}
+            searchable
+            searchPlaceholder={`Tìm kiếm công việc ${taskCategoryDomainLabel[activeDomain].toLowerCase()}...`}
+            onSearch={handleSearch}
+            onFilterChange={handleFilterChange}
+            filters={[
+              {
+                key: "stage",
+                label: "Giai đoạn",
+                options: [...stages.map((item) => ({ value: item, label: item }))],
+              },
+              {
+                key: "status",
+                label: "Trạng thái",
+                options: [
+                  { value: "active", label: "Hoạt động" },
+                  { value: "inactive", label: "Không hoạt động" },
+                  { value: "archived", label: "Đã lưu trữ" },
+                ],
+              },
+            ]}
+            pageSize={pageSize}
+            currentIndex={currentIndex}
+            totalElements={response?.totalElements}
+            totalPages={response?.totalPages}
+            onPageSize={setPageSize}
+            onIndexChange={setCurrentIndex}
+            onEdit={handleEdit}
+            onDelete={handleDelete}
+          />
+        )}
+      </div>
 
       <TaskCategoryFormDialog
         open={formOpen}

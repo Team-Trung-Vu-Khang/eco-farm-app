@@ -11,14 +11,15 @@ import { useIrrigationSystemPage } from "../hooks/useIrrigationSystemPage";
 
 interface Props {
   domainCode: "CROP" | "LIVESTOCK" | "AQUACULTURE";
-  title: string;
-  description: string;
+  // TODO: Tạm không dùng, xem phần header đã comment bên dưới
+  title?: string;
+  description?: string;
 }
 
 export const IrrigationSystemTabContent = ({
   domainCode,
-  title,
-  description,
+  // title,
+  // description,
 }: Props) => {
   const {
     data,
@@ -47,11 +48,14 @@ export const IrrigationSystemTabContent = ({
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-end">
+        {/* TODO: Tạm ẩn title/description vì đã trùng với tiêu đề của PageWrapper
+            (chỉ còn 1 lĩnh vực "Trồng trọt" nên không cần header riêng cho tab).
         <div className="space-y-1">
           <h3 className="text-lg font-semibold">{title}</h3>
           <p className="text-sm text-muted-foreground">{description}</p>
         </div>
+        */}
         <Button
           onClick={handleAdd}
           data-testid={`add-${domainCode.toLowerCase()}-method`}
