@@ -16,7 +16,8 @@ import { areaApi, plotApi } from "@/features/farm/api/farm.api";
 // Subcomponents
 import { OverviewTab } from "./detail/OverviewTab";
 import { CropsTab } from "./detail/CropsTab";
-import { StaffTab } from "./detail/StaffTab";
+// TODO: Tạm ẩn tab "Nhân viên"
+// import { StaffTab } from "./detail/StaffTab";
 import { CertificatesTab } from "./detail/CertificatesTab";
 
 export const CultivationRegionDetailView = ({ id }: { id?: string }) => {
@@ -178,12 +179,14 @@ export const CultivationRegionDetailView = ({ id }: { id?: string }) => {
         >
           Cây trồng
         </TabsTrigger>
+        {/* TODO: Tạm ẩn tab "Nhân viên"
         <TabsTrigger
           value="staff"
           className="flex-1 min-w-20 font-bold text-xs"
         >
           Nhân viên
         </TabsTrigger>
+        */}
         <TabsTrigger
           value="certificates"
           className="flex-1 min-w-20 font-bold text-xs"
@@ -202,10 +205,11 @@ export const CultivationRegionDetailView = ({ id }: { id?: string }) => {
         <CropsTab details={details} />
       </TabsContent>
 
-      {/* Personnel/Staff Tab */}
+      {/* TODO: Tạm ẩn tab "Nhân viên" (Personnel/Staff)
       <TabsContent value="staff" className="space-y-6">
         <StaffTab details={details} />
       </TabsContent>
+      */}
 
       {/* Certificates Tab */}
       <TabsContent value="certificates" className="space-y-8">

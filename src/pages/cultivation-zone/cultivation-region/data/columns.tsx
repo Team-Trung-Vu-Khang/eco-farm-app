@@ -44,11 +44,30 @@ export const getCultivationRegionColumns =
           return <span className="text-muted-foreground text-xs">—</span>;
         return (
           <div className="flex flex-wrap gap-1">
-            {scopes.map((scope, idx) => (
-              <Badge key={idx} variant="outline">
-                {SCOPE_TYPE_LABELS[scope.scopeType] ?? scope.scopeType}
-              </Badge>
-            ))}
+            {scopes.map((scope, idx) => {
+              const typeLabel =
+                SCOPE_TYPE_LABELS[scope.scopeType] ?? scope.scopeType;
+              // Tên của thực thể tương ứng với scopeType (Vùng trồng / Khu vực / Lô trồng)
+              const target =
+                scope.scopeType === "REGION"
+                  ? scope.region
+                  : scope.scopeType === "AREA"
+                    ? scope.area
+                    : scope.plot;
+              const name = target?.name || target?.code;
+
+              return (
+                <Badge key={idx} variant="outline" className="font-normal">
+                  <span className="text-muted-foreground">{typeLabel}</span>
+                  {name && (
+                    <>
+                      <span className="mx-1 text-muted-foreground">·</span>
+                      <span className="font-medium">{name}</span>
+                    </>
+                  )}
+                </Badge>
+              );
+            })}
           </div>
         );
       },

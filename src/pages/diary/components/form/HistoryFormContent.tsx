@@ -2155,6 +2155,10 @@ export function HistoryFormContent({
         </div>
       </div>
 
+      {/* Chừa khoảng trống để thanh hành động fixed bên dưới không đè lên nội dung
+          (và để dropdown gợi ý hạng mục có chỗ hiển thị). */}
+      <div className="h-25" />
+
       {/* Nút hành động (Sticky Footer) */}
       <div className="fixed left-0 right-0 bottom-0 z-30 bg-white/95 backdrop-blur-md border-t border-slate-200 shadow-lg px-6 py-4 flex items-center justify-end gap-3 rounded-b-2xl">
         <Button

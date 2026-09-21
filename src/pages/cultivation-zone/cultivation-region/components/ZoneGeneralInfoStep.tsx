@@ -1,6 +1,7 @@
 import { useFormContext, Controller } from "react-hook-form";
 import { useState } from "react";
-import { Award, MapPin, ScrollText } from "lucide-react";
+// `Award` chỉ dùng cho khối "Nhân sự phụ trách" đang tạm ẩn
+import { MapPin, ScrollText } from "lucide-react";
 import {
   Badge,
   Input,
@@ -11,7 +12,8 @@ import type { CultivationZoneFormValues } from "../data/cultivation-zone-form.sc
 import {
   CertificateSelector,
   GeographicalSelector,
-  ManagerSelector,
+  // `ManagerSelector` chỉ dùng cho khối "Nhân sự phụ trách" đang tạm ẩn
+  // ManagerSelector,
   SelectionCard,
   OrganizationSelector,
 } from "./index";
@@ -79,7 +81,9 @@ export const ZoneGeneralInfoStep = ({
 
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 pt-2">
+      {/* TODO: Tạm ẩn cột "Nhân sự phụ trách" nên chuyển về 1 cột.
+          Khi bật lại, đổi thành "grid grid-cols-1 lg:grid-cols-2 gap-8 pt-2". */}
+      <div className="grid grid-cols-1 gap-8 pt-2">
         {/* Left column */}
         <div className="space-y-5">
           <div className="flex items-center gap-2 pb-2 border-b">
@@ -230,7 +234,8 @@ export const ZoneGeneralInfoStep = ({
           </div>
         </div>
 
-        {/* Right column — personnel */}
+        {/* TODO: Tạm ẩn khối "Nhân sự phụ trách" (nhân viên chịu trách nhiệm).
+            Giá trị `personnelIds` vẫn nằm trong form với default [].
         <div className="space-y-5">
           <div className="flex items-center gap-2 pb-2 border-b">
             <Award className="w-5 h-5 text-primary" />
@@ -238,7 +243,6 @@ export const ZoneGeneralInfoStep = ({
           </div>
 
           <div className="space-y-6">
-            {/* Manager selector */}
             <Controller
               control={control}
               name="personnelIds"
@@ -265,6 +269,7 @@ export const ZoneGeneralInfoStep = ({
             />
           </div>
         </div>
+        */}
       </div>
     </div>
   );

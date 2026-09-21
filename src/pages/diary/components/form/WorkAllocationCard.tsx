@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import type { DomainCode, SupplyType } from "@/features/farm-supply";
+import { getSupplyTypeOptions } from "@/shared/hooks/useRemoteSupplySearch";
 import {
   Badge,
   Button,
@@ -21,12 +22,20 @@ import {
   Plus,
   X,
 } from "lucide-react";
+import { useMemo, useRef, useState } from "react";
+import { WORK_TASK_SUGGESTIONS } from "../../constants/history-form.constants";
 import {
   StageMaterialPicker,
   type MaterialAllocation,
 } from "./StageMaterialPicker";
-import type { DomainCode, SupplyType } from "@/features/farm-supply";
-import { getSupplyTypeOptions } from "@/shared/hooks/useRemoteSupplySearch";
+
+/** Bỏ dấu tiếng Việt để tìm kiếm gợi ý không phụ thuộc dấu. */
+const normalize = (value: string) =>
+  value
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/đ/g, "d");
 
 // Stat-pill colors keyed by the underlying supply type (`value`), not the
 // (domain-specific) label text, so they stay stable across CROP/LIVESTOCK/
@@ -113,11 +122,30 @@ export function WorkAllocationCard({
   onUpdateActualQuantity,
 }: WorkAllocationCardProps) {
   const [newStageInput, setNewStageInput] = useState<string>("");
+  // Dropdown gợi ý hạng mục: chỉ là text gợi ý, user có thể chọn hoặc tự nhập.
+  const [suggestionsOpen, setSuggestionsOpen] = useState(false);
+  const blurTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
   // Collapsed by default — the header already surfaces the progress/priority
   // summary, so the detail form + material picker only need to open when the
   // user actually wants to edit that item. Accordion behaviour: opening one
   // item closes whichever other item was open, so at most one stays open.
   const [expandedStage, setExpandedStage] = useState<string | null>(null);
+
+  const suggestions = useMemo(() => {
+    const keyword = normalize(newStageInput.trim());
+    return WORK_TASK_SUGGESTIONS.filter(
+      // Ẩn những hạng mục đã được thêm vào danh sách
+      (item) => !selectedStages.includes(item),
+    ).filter((item) => !keyword || normalize(item).includes(keyword));
+  }, [newStageInput, selectedStages]);
+
+  const handleSelectSuggestion = (name: string) => {
+    if (blurTimeout.current) clearTimeout(blurTimeout.current);
+    setSuggestionsOpen(false);
+    setNewStageInput("");
+    onAddStage(name);
+    setExpandedStage(name);
+  };
 
   const toggleStage = (stage: string) => {
     setExpandedStage((prev) => (prev === stage ? null : stage));
@@ -128,12 +156,14 @@ export function WorkAllocationCard({
     if (!name) return;
     onAddStage(name);
     setNewStageInput("");
+    setSuggestionsOpen(false);
     // Auto-open the freshly added item so the user can fill it in right away.
     setExpandedStage(name);
   };
 
   return (
-    <Card className="border-none shadow-sm bg-white rounded-2xl overflow-hidden">
+    // overflow-visible để dropdown gợi ý hạng mục không bị Card cắt
+    <Card className="border-none shadow-sm bg-white rounded-2xl overflow-visible">
       <CardHeader className="pb-3 border-b border-slate-100 bg-white">
         <CardTitle className="text-base font-bold flex items-center justify-between">
           <span className="flex items-center gap-2 text-slate-900">
@@ -149,20 +179,56 @@ export function WorkAllocationCard({
         </CardTitle>
       </CardHeader>
       <CardContent className="pt-5 space-y-5">
-        {/* Input thêm công việc mới */}
+        {/* Input thêm công việc mới + dropdown gợi ý */}
         <div className="flex gap-2">
-          <Input
-            placeholder="Thêm hạng mục / công việc mới (Làm đất, Gieo hạt...)"
-            value={newStageInput}
-            onChange={(e) => setNewStageInput(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                e.preventDefault();
-                handleAddStage();
-              }
-            }}
-            className="h-11 bg-white border-slate-200 font-medium text-xs rounded-xl"
-          />
+          <div className="relative flex-1">
+            <Input
+              placeholder="Thêm hạng mục / công việc mới (Làm đất, Gieo hạt...)"
+              value={newStageInput}
+              onChange={(e) => {
+                setNewStageInput(e.target.value);
+                setSuggestionsOpen(true);
+              }}
+              onFocus={() => setSuggestionsOpen(true)}
+              onBlur={() => {
+                // Hoãn việc đóng để kịp bắt sự kiện click trên item gợi ý.
+                blurTimeout.current = setTimeout(
+                  () => setSuggestionsOpen(false),
+                  150,
+                );
+              }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  handleAddStage();
+                } else if (e.key === "Escape") {
+                  setSuggestionsOpen(false);
+                }
+              }}
+              className="h-11 w-full bg-white border-slate-200 font-medium text-xs rounded-xl"
+            />
+
+            {suggestionsOpen && suggestions.length > 0 && (
+              <div className="absolute z-50 left-0 right-0 top-full mt-1 max-h-44 overflow-y-auto overscroll-contain rounded-xl border border-slate-200 bg-white py-1 shadow-lg">
+                <div className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-wide text-slate-400">
+                  Gợi ý hạng mục
+                </div>
+                {suggestions.map((item) => (
+                  <button
+                    key={item}
+                    type="button"
+                    // onMouseDown chạy trước onBlur của input nên không bị mất click.
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={() => handleSelectSuggestion(item)}
+                    className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs font-medium text-slate-700 hover:bg-emerald-50 hover:text-emerald-700 cursor-pointer"
+                  >
+                    <Plus className="w-3 h-3 shrink-0 text-slate-400" />
+                    {item}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
           <Button
             type="button"
             onClick={handleAddStage}
