@@ -1,61 +1,36 @@
 import PageWrapper from "@/components/PageWrapper";
 // TODO: Tạm ẩn tabs lĩnh vực, mặc định chỉ còn "Trồng trọt" (CROP)
-// import {
-//   Tabs,
-//   TabsContent,
-//   TabsList,
-//   TabsTrigger,
-// } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+// import { Tabs, TabsContent, TabsList, TabsTrigger } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 // import { Leaf, Waves } from "lucide-react";
 // import { useState } from "react";
+import { Button } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import { Plus } from "lucide-react";
 import { IrrigationSystemTabContent } from "./components/IrrigationSystemTabContent";
+import { useIrrigationSystemPage } from "./hooks/useIrrigationSystemPage";
 
 // type ProductionDomain = "CROP" | "AQUACULTURE";
 
 export default function IrrigationSystemPage() {
   // const [activeTab, setActiveTab] = useState<ProductionDomain>("CROP");
+  const page = useIrrigationSystemPage("CROP");
 
   return (
     <PageWrapper
       title="Danh mục phương pháp tưới tiêu"
       description="Quản lý phương pháp tưới tiêu cho trồng trọt"
+      actions={
+        <Button onClick={page.handleAdd} data-testid="add-crop-method">
+          <Plus className="w-4 h-4 mr-2" />
+          Thêm phương pháp
+        </Button>
+      }
     >
-      {/* TODO: Tạm ẩn tabs (Trồng trọt / Nuôi trồng thủy sản), chỉ hiển thị CROP.
-      <Tabs
-        value={activeTab}
-        onValueChange={(value) => setActiveTab(value as ProductionDomain)}
-        className="w-full"
-      >
-        <TabsList className="grid w-full grid-cols-2 mb-6">
-          <TabsTrigger value="CROP" className="gap-2">
-            <Leaf className="w-4 h-4" />
-            Trồng trọt (Tưới tiêu)
-          </TabsTrigger>
-          <TabsTrigger value="AQUACULTURE" className="gap-2">
-            <Waves className="w-4 h-4" />
-            Nuôi trồng thủy sản (Hình thức nuôi)
-          </TabsTrigger>
-        </TabsList>
+      {/* TODO: Tạm ẩn tabs lĩnh vực (Trồng trọt / Nuôi trồng thủy sản).
+          Khi cần bật lại: bọc bằng <Tabs>/<TabsList>/<TabsTrigger>, và với mỗi
+          tab gọi useIrrigationSystemPage(<domainCode>) rồi truyền xuống
+          <IrrigationSystemTabContent page={...} />. */}
 
-        <TabsContent value="CROP">
-          <IrrigationSystemTabContent
-            domainCode="CROP"
-            title="Phương pháp Tưới tiêu"
-            description="Quản lý các phương pháp tưới tiêu áp dụng trong trồng trọt"
-          />
-        </TabsContent>
-
-        <TabsContent value="AQUACULTURE">
-          <IrrigationSystemTabContent
-            domainCode="AQUACULTURE"
-            title="Hình thức Nuôi trồng thủy sản"
-            description="Quản lý các hình thức nuôi áp dụng trong thủy sản"
-          />
-        </TabsContent>
-      </Tabs>
-      */}
-
-      <IrrigationSystemTabContent domainCode="CROP" />
+      <IrrigationSystemTabContent page={page} />
     </PageWrapper>
   );
 }

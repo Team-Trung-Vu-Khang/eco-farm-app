@@ -5,7 +5,7 @@ import {
   useIrrigationSystems,
 } from "@/features/master-data";
 import type {
-  IrrigationSystemRecord,
+  RearingMethodRecord,
   MasterDataStatus,
 } from "@/features/master-data/types/master-data.type";
 import type { IrrigationSystemFormValues } from "../data/irrigation-system-form.schema";
@@ -16,10 +16,12 @@ const DEFAULT_PAGE_SIZE = 10;
 
 type IrrigationSystemStatusFilter = MasterDataStatus | typeof ALL_STATUS;
 
-function buildPayload(values: IrrigationSystemFormValues) {
+function buildPayload(
+  values: IrrigationSystemFormValues,
+  domainCode: "CROP" | "LIVESTOCK" | "AQUACULTURE",
+) {
   return {
-    // TODO: resource "irrigation-systems" không có field `domainCode`
-    // (chỉ dùng cho trồng trọt), nên không gửi lên payload.
+    domainCode,
     code: values.code.trim().toUpperCase(),
     name: values.name.trim(),
     description: values.description.trim(),
@@ -43,8 +45,8 @@ export function useIrrigationSystemPage(
   const [currentIndex, setCurrentIndex] = useState(1);
   const [formOpen, setFormOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
-  const [editItem, setEditItem] = useState<IrrigationSystemRecord | null>(null);
-  const [deleteItem, setDeleteItem] = useState<IrrigationSystemRecord | null>(
+  const [editItem, setEditItem] = useState<RearingMethodRecord | null>(null);
+  const [deleteItem, setDeleteItem] = useState<RearingMethodRecord | null>(
     null,
   );
 
@@ -80,18 +82,18 @@ export function useIrrigationSystemPage(
     setFormOpen(true);
   };
 
-  const handleEdit = (item: IrrigationSystemRecord) => {
+  const handleEdit = (item: RearingMethodRecord) => {
     setEditItem(item);
     setFormOpen(true);
   };
 
-  const handleDelete = (item: IrrigationSystemRecord) => {
+  const handleDelete = (item: RearingMethodRecord) => {
     setDeleteItem(item);
     setDeleteOpen(true);
   };
 
   const handleSubmit = async (values: IrrigationSystemFormValues) => {
-    const payload = buildPayload(values);
+    const payload = buildPayload(values, domainCode);
 
     if (!payload.name) {
       toast({

@@ -1,14 +1,15 @@
-import type { IrrigationSystemRecord } from "@/features/master-data/types/master-data.type";
+// Endpoint thực tế của trang này là master-data "rearing-methods"
+import type { RearingMethodRecord } from "@/features/master-data/types/master-data.type";
 import { Badge, type Column } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { CodeBadge } from "@/components/CodeBadge";
 
-const statusLabelMap: Record<IrrigationSystemRecord["status"], string> = {
+const statusLabelMap: Record<RearingMethodRecord["status"], string> = {
   active: "Hoạt động",
   inactive: "Ngừng hoạt động",
   archived: "Đã lưu trữ",
 };
 
-export const irrigationSystemColumns: Column<IrrigationSystemRecord>[] = [
+export const irrigationSystemColumns: Column<RearingMethodRecord>[] = [
   {
     key: "code",
     label: "Mã hệ thống",
@@ -21,7 +22,7 @@ export const irrigationSystemColumns: Column<IrrigationSystemRecord>[] = [
     label: "Trạng thái",
     render: (value) => (
       <Badge variant="secondary" className="capitalize">
-        {statusLabelMap[value as IrrigationSystemRecord["status"]] ??
+        {statusLabelMap[value as RearingMethodRecord["status"]] ??
           String(value ?? "")}
       </Badge>
     ),

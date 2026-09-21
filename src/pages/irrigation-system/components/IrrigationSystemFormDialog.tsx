@@ -7,7 +7,7 @@ import {
   Textarea,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { Controller, useForm, type SubmitHandler } from "react-hook-form";
-import type { IrrigationSystemRecord } from "@/features/master-data/types/master-data.type";
+import type { RearingMethodRecord } from "@/features/master-data/types/master-data.type";
 import {
   IRRIGATION_SYSTEM_FORM_STATUSES,
   irrigationSystemFormSchema,
@@ -19,13 +19,13 @@ import { emptyIrrigationSystemFormData } from "../data/constants";
 interface IrrigationSystemFormDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  editItem: IrrigationSystemRecord | null;
+  editItem: RearingMethodRecord | null;
   onSubmit: (data: IrrigationSystemFormValues) => Promise<void> | void;
   loading?: boolean;
 }
 
 function normalizeStatus(
-  status: IrrigationSystemRecord["status"] | null | undefined,
+  status: RearingMethodRecord["status"] | null | undefined,
 ): IrrigationSystemFormValues["status"] {
   if (IRRIGATION_SYSTEM_FORM_STATUSES.includes(status as never)) {
     return status as IrrigationSystemFormValues["status"];

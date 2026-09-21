@@ -1,26 +1,16 @@
-import {
-  Button,
-  DataTable,
-  DeleteDialog,
-} from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { Plus } from "lucide-react";
+import { DataTable, DeleteDialog } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { IrrigationSystemFormDialog } from "./IrrigationSystemFormDialog";
 import { irrigationSystemColumns } from "../data/columns";
 import { IRRIGATION_SYSTEM_STATUS_OPTIONS } from "../data/constants";
-import { useIrrigationSystemPage } from "../hooks/useIrrigationSystemPage";
+import type { useIrrigationSystemPage } from "../hooks/useIrrigationSystemPage";
 
 interface Props {
-  domainCode: "CROP" | "LIVESTOCK" | "AQUACULTURE";
-  // TODO: Tạm không dùng, xem phần header đã comment bên dưới
-  title?: string;
-  description?: string;
+  /** State từ useIrrigationSystemPage, được khởi tạo ở IrrigationSystemPage
+   *  để nút "Thêm phương pháp" có thể đặt trong actions của PageWrapper. */
+  page: ReturnType<typeof useIrrigationSystemPage>;
 }
 
-export const IrrigationSystemTabContent = ({
-  domainCode,
-  // title,
-  // description,
-}: Props) => {
+export const IrrigationSystemTabContent = ({ page }: Props) => {
   const {
     data,
     loading,
@@ -37,34 +27,16 @@ export const IrrigationSystemTabContent = ({
     setDeleteOpen,
     editItem,
     deleteItem,
-    handleAdd,
     handleEdit,
     handleDelete,
     handleSubmit,
     handleConfirmDelete,
     handleSearch,
     handleFilterChange,
-  } = useIrrigationSystemPage(domainCode);
+  } = page;
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-end">
-        {/* TODO: Tạm ẩn title/description vì đã trùng với tiêu đề của PageWrapper
-            (chỉ còn 1 lĩnh vực "Trồng trọt" nên không cần header riêng cho tab).
-        <div className="space-y-1">
-          <h3 className="text-lg font-semibold">{title}</h3>
-          <p className="text-sm text-muted-foreground">{description}</p>
-        </div>
-        */}
-        <Button
-          onClick={handleAdd}
-          data-testid={`add-${domainCode.toLowerCase()}-method`}
-        >
-          <Plus className="w-4 h-4 mr-2" />
-          Thêm phương pháp
-        </Button>
-      </div>
-
       {error ? (
         <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm font-medium text-red-700">
           ⚠️ {error}
