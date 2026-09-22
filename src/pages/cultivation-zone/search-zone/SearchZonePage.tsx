@@ -1,23 +1,15 @@
 import PageWrapper from "@/components/PageWrapper";
+import { RemoteMultiSelect } from "@/components/RemoteMultiSelect";
 import {
   Badge,
   Button,
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
   cn,
-  Combobox,
   DataTable,
+  RemoteAutoCompleteSelect,
   Dialog,
   DialogContent,
   Input,
   Label,
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
   useToast,
   type Column,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
@@ -27,7 +19,6 @@ import {
   Activity,
   Building2,
   ChevronRight,
-  Filter,
   Layers,
   MapPin,
   Maximize2,
@@ -57,7 +48,12 @@ import type {
   FarmAdminProductionZoneFilter,
   FarmAdminProductionZoneItem,
 } from "@/features/farm/types/admin-production-zone.type";
-import { useGeoProvinces } from "@/features/master-data";
+import { useGeoProvinces, useGeoWards } from "@/features/master-data";
+import {
+  useProductionSubjects,
+  useProductionSubjectVariants,
+} from "@/features/foundation";
+import { useAdminWorkspaces } from "@/features/workspace/hooks/useAdminWorkspaces";
 import { useDebounce } from "@/shared/hooks/useDebounce";
 import {
   LAND_TYPES,
@@ -97,12 +93,15 @@ const MapCenterSync = ({
 };
 
 interface AdvancedFiltersState {
-  crops?: string[];
-  varieties?: string[];
-  provinces?: string[];
-  districts?: string[];
-  wards?: string[];
-  status?: string[];
+  // Province/ward are selected by code (remote search) but the API
+  // filters by name, so both are kept.
+  provinceCode?: string;
+  provinceName?: string;
+  wardCode?: string;
+  wardName?: string;
+  productionSubjectId?: number;
+  productionSubjectVariantId?: number;
+  workspaceIds?: number[];
   minArea?: number;
   maxArea?: number;
   hasActivePlan?: boolean;
@@ -116,7 +115,6 @@ const SearchZonePage = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const searchDebounce = useDebounce(searchQuery, 500);
 
-  const [isAdvancedSearchOpen, setIsAdvancedSearchOpen] = useState(false);
   const [advancedFilters, setAdvancedFilters] = useState<AdvancedFiltersState>(
     {},
   );
@@ -137,21 +135,120 @@ const SearchZonePage = () => {
   const [isCultivationRegionDetailOpen, setIsCultivationRegionDetailOpen] =
     useState(false);
 
-  // Fetch provinces list from Master Data API for Combobox
-  const { items: provincesList } = useGeoProvinces({
-    params: { size: 100 },
+  // ── Remote search terms for each filter select ──────────────────────────
+  const [cropSearch, setCropSearch] = useState("");
+  const [varietySearch, setVarietySearch] = useState("");
+  const [provinceSearch, setProvinceSearch] = useState("");
+  const [wardSearch, setWardSearch] = useState("");
+  const [workspaceSearch, setWorkspaceSearch] = useState("");
+
+  const debouncedCropSearch = useDebounce(cropSearch, 300);
+  const debouncedVarietySearch = useDebounce(varietySearch, 300);
+  const debouncedProvinceSearch = useDebounce(provinceSearch, 300);
+  const debouncedWardSearch = useDebounce(wardSearch, 300);
+  const debouncedWorkspaceSearch = useDebounce(workspaceSearch, 300);
+
+  // Crops (production subjects) — remote keyword search
+  const { items: cropsList, isFetching: isFetchingCrops } =
+    useProductionSubjects({
+      params: {
+        domainCode: "CROP",
+        size: 20,
+        keyword: debouncedCropSearch.trim() || undefined,
+      },
+    });
+
+  const cropOptions = useMemo(
+    () =>
+      cropsList.map((crop) => ({ value: String(crop.id), label: crop.name })),
+    [cropsList],
+  );
+
+  // Crop varieties — remote keyword search, scoped to the selected crop
+  const { items: varietiesList, isFetching: isFetchingVarieties } =
+    useProductionSubjectVariants({
+      params: {
+        domainCode: "CROP",
+        size: 20,
+        subjectId: advancedFilters.productionSubjectId,
+        keyword: debouncedVarietySearch.trim() || undefined,
+      },
+    });
+
+  const varietyOptions = useMemo(
+    () =>
+      varietiesList.map((variety) => ({
+        value: String(variety.id),
+        label: variety.name,
+      })),
+    [varietiesList],
+  );
+
+  // Provinces — remote keyword search
+  const { items: provincesList, isFetching: isFetchingProvinces } =
+    useGeoProvinces({
+      params: {
+        size: 20,
+        keyword: debouncedProvinceSearch.trim() || undefined,
+      },
+    });
+
+  const provinceOptions = useMemo(
+    () =>
+      provincesList.map((province) => ({
+        value: province.code,
+        label: province.fullName || province.name,
+      })),
+    [provincesList],
+  );
+
+  // Wards — remote keyword search within the selected province
+  const selectedProvinceCode = advancedFilters.provinceCode;
+
+  const { items: wardsList, isFetching: isFetchingWards } = useGeoWards({
+    params: {
+      provinceCode: selectedProvinceCode ?? "",
+      size: 20,
+      keyword: debouncedWardSearch.trim() || undefined,
+    },
+    enabled: !!selectedProvinceCode,
   });
 
-  const provinceOptions = useMemo(() => {
-    const options = [{ value: "", label: "Tất cả Tỉnh / Thành phố" }];
-    provincesList.forEach((p) => {
-      options.push({
-        value: p.name,
-        label: p.fullName || p.name,
-      });
+  const wardOptions = useMemo(
+    () =>
+      wardsList.map((w) => ({
+        value: w.code,
+        label: w.fullName || w.name,
+      })),
+    [wardsList],
+  );
+
+  // Owning units (workspaces) — remote keyword search, multi-value
+  const { items: workspacesList, isFetching: isFetchingWorkspaces } =
+    useAdminWorkspaces({
+      params: {
+        size: 20,
+        keyword: debouncedWorkspaceSearch.trim() || undefined,
+      },
     });
-    return options;
-  }, [provincesList]);
+
+  // Keep already-selected workspaces visible even when the remote
+  // result set no longer contains them.
+  const [selectedWorkspaceOptions, setSelectedWorkspaceOptions] = useState<
+    { value: string; label: string }[]
+  >([]);
+
+  const workspaceOptions = useMemo(() => {
+    const fetched = workspacesList.map((ws) => ({
+      value: String(ws.id),
+      label: ws.name,
+    }));
+    const fetchedValues = new Set(fetched.map((o) => o.value));
+    const pinned = selectedWorkspaceOptions.filter(
+      (o) => !fetchedValues.has(o.value),
+    );
+    return [...pinned, ...fetched];
+  }, [workspacesList, selectedWorkspaceOptions]);
 
   // Validation: acreageFrom cannot be greater than acreageTo
   const isAreaRangeInvalid = useMemo(() => {
@@ -167,10 +264,13 @@ const SearchZonePage = () => {
     return {
       keyword: searchDebounce.trim() || undefined,
       domainCode: "CROP",
-      province: advancedFilters.provinces?.[0],
-      district: advancedFilters.districts?.[0],
-      ward: advancedFilters.wards?.[0],
-      status: advancedFilters.status?.[0]?.toUpperCase(),
+      province: advancedFilters.provinceName,
+      ward: advancedFilters.wardName,
+      productionSubjectId: advancedFilters.productionSubjectId,
+      productionSubjectVariantId: advancedFilters.productionSubjectVariantId,
+      workspaceIds: advancedFilters.workspaceIds?.length
+        ? advancedFilters.workspaceIds
+        : undefined,
       hasActivePlan: advancedFilters.hasActivePlan,
       acreageFrom: isAreaRangeInvalid ? undefined : advancedFilters.minArea,
       acreageTo: isAreaRangeInvalid ? undefined : advancedFilters.maxArea,
@@ -377,10 +477,11 @@ const SearchZonePage = () => {
 
   const activeFilterCount = useMemo(() => {
     let count = 0;
-    if (advancedFilters.provinces?.length) count++;
-    if (advancedFilters.districts?.length) count++;
-    if (advancedFilters.wards?.length) count++;
-    if (advancedFilters.status?.length) count++;
+    if (advancedFilters.provinceCode) count++;
+    if (advancedFilters.wardCode) count++;
+    if (advancedFilters.productionSubjectId !== undefined) count++;
+    if (advancedFilters.productionSubjectVariantId !== undefined) count++;
+    if (advancedFilters.workspaceIds?.length) count++;
     if (
       advancedFilters.minArea !== undefined ||
       advancedFilters.maxArea !== undefined
@@ -393,196 +494,279 @@ const SearchZonePage = () => {
   return (
     <PageWrapper title="Tìm kiếm vùng canh tác">
       <div className="min-h-[calc(100vh-64px)] flex flex-col bg-slate-50">
-        {/* TOP HEADER: Search & Summary Banner */}
-        <div className="bg-white border-b rounded-md p-4 shadow-xs">
-          <div className="max-w-7xl mx-auto space-y-4">
-            <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
-              <div className="relative flex-1 w-full">
-                <Search className="absolute left-3 top-2.5 h-5 w-5 text-muted-foreground" />
-                <Input
-                  placeholder="Tìm kiếm vùng canh tác theo tên, mã vùng, giống áp dụng..."
-                  className="pl-10 border-slate-200 focus:ring-primary shadow-xs bg-slate-50/50"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                />
-              </div>
-
-              <div className="flex gap-2 w-full md:w-auto">
-                <Button
-                  variant={isAdvancedSearchOpen ? "default" : "outline"}
-                  onClick={() => setIsAdvancedSearchOpen(!isAdvancedSearchOpen)}
-                >
-                  <Filter className="h-4 w-4" />
-                  <span>Bộ lọc nâng cao</span>
-                  {activeFilterCount > 0 && (
-                    <span className="text-primary bg-white rounded-sm text-xs w-5 h-5 flex items-center justify-center font-bold">
-                      {activeFilterCount}
-                    </span>
-                  )}
-                </Button>
-                <Button className="font-bold" onClick={handleSearch}>
-                  Tìm kiếm
-                </Button>
-              </div>
-            </div>
-
-            {/* Results Summary Banner */}
-            <div className="relative overflow-hidden rounded-xl border border-green-200 bg-linear-to-r from-green-50 via-white to-green-50 p-5 shadow-xs">
-              <div className="relative z-10 flex items-center gap-4">
-                <div className="w-12 h-12 rounded-xl bg-white shadow-xs border border-green-100 flex items-center justify-center text-green-600 shrink-0">
-                  <Layers className="w-6 h-6" />
+        {/* TOP HEADER: Search form + result summary */}
+        <div className="bg-white border-b px-4 py-4">
+          <div className="max-w-7xl mx-auto">
+            <div className="rounded-xl border border-slate-200 bg-white">
+              {/* Search bar + result count */}
+              <div className="flex flex-col gap-3 border-b border-slate-100 p-4 sm:flex-row sm:items-center">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                  <Input
+                    placeholder="Tìm theo tên, mã vùng, giống áp dụng..."
+                    className="h-10 border-slate-200 bg-white pl-9"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                  />
                 </div>
-                <div>
-                  <h3 className="text-base font-bold text-green-900 uppercase tracking-wide">
-                    Kết quả tìm kiếm toàn hệ thống
-                  </h3>
-                  <p className="text-sm text-green-700/80 font-medium">
-                    Đã tìm thấy{" "}
-                    <span className="text-green-600 font-black px-1.5 py-0.5 bg-white rounded-md border border-green-100 shadow-xs">
+                <div className="flex shrink-0 items-center gap-2">
+                  <Button className="h-10 font-semibold" onClick={handleSearch}>
+                    Tìm kiếm
+                  </Button>
+                  {(activeFilterCount > 0 || searchQuery) && (
+                    <Button
+                      variant="ghost"
+                      className="h-10 text-slate-500 hover:text-slate-900"
+                      onClick={() => {
+                        setAdvancedFilters({});
+                        setSearchQuery("");
+                      }}
+                    >
+                      Xóa lọc
+                      {activeFilterCount > 0 && ` (${activeFilterCount})`}
+                    </Button>
+                  )}
+                </div>
+                <div className="hidden items-center gap-2 border-l border-slate-100 pl-4 text-sm text-slate-500 lg:flex">
+                  <Layers className="h-4 w-4 text-primary" />
+                  <span>
+                    <span className="font-bold text-slate-900">
                       {totalZones}
                     </span>{" "}
-                    vùng canh tác phù hợp trên{" "}
-                    <span className="text-green-600 font-bold">
+                    vùng ·{" "}
+                    <span className="font-bold text-slate-900">
                       {workspaceGroups.length}
                     </span>{" "}
-                    Đơn vị sở hữu.
-                  </p>
+                    đơn vị
+                  </span>
+                </div>
+              </div>
+
+              {/* Filters */}
+              <div className="p-4">
+                {/* GROUP 1: Growing zone information */}
+                <div className="space-y-3">
+                  <h4 className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+                    <Sprout size={13} />
+                    Thông tin vùng trồng
+                  </h4>
+                  <div className="grid grid-cols-1 gap-x-4 gap-y-3 md:grid-cols-3">
+                    {/* Crop: remote search from Production Subjects */}
+                    <div className="space-y-1.5">
+                      <Label className="text-xs font-medium text-slate-600">
+                        Cây trồng
+                      </Label>
+                      <RemoteAutoCompleteSelect
+                        options={cropOptions}
+                        value={
+                          advancedFilters.productionSubjectId !== undefined
+                            ? String(advancedFilters.productionSubjectId)
+                            : ""
+                        }
+                        onChange={(val) =>
+                          setAdvancedFilters((prev) => ({
+                            ...prev,
+                            productionSubjectId: val ? Number(val) : undefined,
+                            // Reset variety when the crop changes
+                            productionSubjectVariantId: undefined,
+                          }))
+                        }
+                        onSearch={setCropSearch}
+                        loading={isFetchingCrops}
+                        placeholder="Tất cả cây trồng"
+                        searchPlaceholder="Tìm kiếm cây trồng..."
+                        emptyText="Không tìm thấy cây trồng nào"
+                      />
+                    </div>
+
+                    {/* Variety: cascades from the selected crop */}
+                    <div className="space-y-1.5">
+                      <Label className="text-xs font-medium text-slate-600">
+                        Giống cây
+                      </Label>
+                      <RemoteAutoCompleteSelect
+                        options={varietyOptions}
+                        value={
+                          advancedFilters.productionSubjectVariantId !==
+                          undefined
+                            ? String(advancedFilters.productionSubjectVariantId)
+                            : ""
+                        }
+                        onChange={(val) =>
+                          setAdvancedFilters((prev) => ({
+                            ...prev,
+                            productionSubjectVariantId: val
+                              ? Number(val)
+                              : undefined,
+                          }))
+                        }
+                        onSearch={setVarietySearch}
+                        loading={isFetchingVarieties}
+                        placeholder="Tất cả giống cây"
+                        searchPlaceholder="Tìm kiếm giống cây..."
+                        emptyText="Không tìm thấy giống cây nào"
+                      />
+                    </div>
+
+                    {/* Area Range with Validation */}
+                    <div className="space-y-1.5">
+                      <Label className="text-xs font-medium text-slate-600">
+                        Diện tích (ha)
+                      </Label>
+                      <div className="flex gap-2">
+                        <Input
+                          type="number"
+                          placeholder="Từ ha"
+                          min={0}
+                          className={cn(
+                            isAreaRangeInvalid &&
+                              "border-red-500 focus-visible:ring-red-500 bg-red-50/50",
+                          )}
+                          value={advancedFilters.minArea ?? ""}
+                          onChange={(e) =>
+                            setAdvancedFilters((prev) => ({
+                              ...prev,
+                              minArea:
+                                e.target.value !== ""
+                                  ? Number(e.target.value)
+                                  : undefined,
+                            }))
+                          }
+                        />
+                        <Input
+                          type="number"
+                          placeholder="Đến ha"
+                          min={0}
+                          className={cn(
+                            isAreaRangeInvalid &&
+                              "border-red-500 focus-visible:ring-red-500 bg-red-50/50",
+                          )}
+                          value={advancedFilters.maxArea ?? ""}
+                          onChange={(e) =>
+                            setAdvancedFilters((prev) => ({
+                              ...prev,
+                              maxArea:
+                                e.target.value !== ""
+                                  ? Number(e.target.value)
+                                  : undefined,
+                            }))
+                          }
+                        />
+                      </div>
+                      {isAreaRangeInvalid && (
+                        <p className="text-[11px] font-bold text-red-500 mt-1 flex items-center gap-1">
+                          ⚠️ Diện tích "Từ" không được lớn hơn "Đến"
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* GROUP 2: Area information */}
+                <div className="mt-5 space-y-3 border-t border-slate-100 pt-5">
+                  <h4 className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+                    <MapPin size={13} />
+                    Thông tin khu vực
+                  </h4>
+                  <div className="grid grid-cols-1 gap-x-4 gap-y-3 md:grid-cols-3">
+                    {/* Province from Master Data API */}
+                    <div className="space-y-1.5">
+                      <Label className="text-xs font-medium text-slate-600">
+                        Tỉnh / Thành
+                      </Label>
+                      <RemoteAutoCompleteSelect
+                        options={provinceOptions}
+                        value={advancedFilters.provinceCode || ""}
+                        onChange={(val) => {
+                          const province = provincesList.find(
+                            (item) => item.code === val,
+                          );
+                          setAdvancedFilters((prev) => ({
+                            ...prev,
+                            provinceCode: val || undefined,
+                            provinceName: province?.name,
+                            // Reset ward when the province changes
+                            wardCode: undefined,
+                            wardName: undefined,
+                          }));
+                          setWardSearch("");
+                        }}
+                        onSearch={setProvinceSearch}
+                        loading={isFetchingProvinces}
+                        placeholder="Tất cả Tỉnh / Thành"
+                        searchPlaceholder="Tìm kiếm Tỉnh / Thành..."
+                        emptyText="Không tìm thấy Tỉnh/Thành nào"
+                      />
+                    </div>
+
+                    {/* Ward: cascades from the selected province */}
+                    <div className="space-y-1.5">
+                      <Label className="text-xs font-medium text-slate-600">
+                        Phường / Xã
+                      </Label>
+                      <RemoteAutoCompleteSelect
+                        options={wardOptions}
+                        value={advancedFilters.wardCode || ""}
+                        onChange={(val) => {
+                          const ward = wardsList.find(
+                            (item) => item.code === val,
+                          );
+                          setAdvancedFilters((prev) => ({
+                            ...prev,
+                            wardCode: val || undefined,
+                            wardName: ward?.name,
+                          }));
+                        }}
+                        onSearch={setWardSearch}
+                        loading={isFetchingWards}
+                        placeholder={
+                          selectedProvinceCode
+                            ? "Tất cả Phường / Xã"
+                            : "Chọn Tỉnh/Thành trước"
+                        }
+                        searchPlaceholder="Tìm kiếm Phường / Xã..."
+                        emptyText="Không tìm thấy Phường/Xã nào"
+                        disabled={!selectedProvinceCode}
+                      />
+                    </div>
+
+                    {/* Owning Unit: multi-value select */}
+                    <div className="space-y-1.5">
+                      <Label className="text-xs font-medium text-slate-600">
+                        Đơn vị sở hữu
+                      </Label>
+                      <RemoteMultiSelect
+                        options={workspaceOptions}
+                        value={(advancedFilters.workspaceIds ?? []).map(String)}
+                        onChange={(next) => {
+                          // Pin the chosen labels so they survive
+                          // a narrowed remote result set.
+                          setSelectedWorkspaceOptions(
+                            next.map(
+                              (val) =>
+                                workspaceOptions.find(
+                                  (o) => o.value === val,
+                                ) ?? { value: val, label: val },
+                            ),
+                          );
+                          setAdvancedFilters((prev) => ({
+                            ...prev,
+                            workspaceIds: next.length
+                              ? next.map(Number)
+                              : undefined,
+                          }));
+                        }}
+                        onSearch={setWorkspaceSearch}
+                        loading={isFetchingWorkspaces}
+                        placeholder="Tất cả đơn vị sở hữu"
+                        searchPlaceholder="Tìm kiếm đơn vị sở hữu..."
+                        emptyText="Không tìm thấy đơn vị nào"
+                      />
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
-
-            {/* ADVANCED FILTER PANEL */}
-            {isAdvancedSearchOpen && (
-              <div className="pt-2 animate-in slide-in-from-top-2 duration-200">
-                <Card className="bg-white rounded-xl border border-slate-100 shadow-md overflow-hidden">
-                  <CardHeader className="px-6 py-4 bg-slate-50/50 border-b">
-                    <div className="flex items-center justify-between">
-                      <CardTitle className="flex items-center gap-2 text-primary font-black uppercase tracking-widest text-sm">
-                        <Filter size={18} />
-                        Bộ lọc nâng cao
-                      </CardTitle>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setAdvancedFilters({})}
-                        className="text-primary hover:text-primary/80 text-xs font-bold"
-                      >
-                        Xóa tất cả
-                      </Button>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="p-6 space-y-6 bg-white">
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                      {/* Address: Searchable Combobox for Province from API */}
-                      <div className="space-y-3">
-                        <Label className="text-xs font-bold text-slate-500 uppercase">
-                          Tỉnh / Thành phố
-                        </Label>
-                        <Combobox
-                          options={provinceOptions}
-                          value={advancedFilters.provinces?.[0] || ""}
-                          onChange={(val) =>
-                            setAdvancedFilters((prev) => ({
-                              ...prev,
-                              provinces: val ? [val] : undefined,
-                            }))
-                          }
-                          placeholder="Chọn hoặc tìm Tỉnh/Thành..."
-                          searchPlaceholder="Tìm kiếm Tỉnh / Thành phố..."
-                          emptyText="Không tìm thấy Tỉnh/Thành nào"
-                        />
-                      </div>
-
-                      {/* Area Range with Validation */}
-                      <div className="space-y-3">
-                        <Label className="text-xs font-bold text-slate-500 uppercase">
-                          Khoảng diện tích (ha)
-                        </Label>
-                        <div className="flex gap-2">
-                          <Input
-                            type="number"
-                            placeholder="Từ ha"
-                            min={0}
-                            className={cn(
-                              isAreaRangeInvalid &&
-                                "border-red-500 focus-visible:ring-red-500 bg-red-50/50",
-                            )}
-                            value={advancedFilters.minArea ?? ""}
-                            onChange={(e) =>
-                              setAdvancedFilters((prev) => ({
-                                ...prev,
-                                minArea:
-                                  e.target.value !== ""
-                                    ? Number(e.target.value)
-                                    : undefined,
-                              }))
-                            }
-                          />
-                          <Input
-                            type="number"
-                            placeholder="Đến ha"
-                            min={0}
-                            className={cn(
-                              isAreaRangeInvalid &&
-                                "border-red-500 focus-visible:ring-red-500 bg-red-50/50",
-                            )}
-                            value={advancedFilters.maxArea ?? ""}
-                            onChange={(e) =>
-                              setAdvancedFilters((prev) => ({
-                                ...prev,
-                                maxArea:
-                                  e.target.value !== ""
-                                    ? Number(e.target.value)
-                                    : undefined,
-                              }))
-                            }
-                          />
-                        </div>
-                        {isAreaRangeInvalid && (
-                          <p className="text-[11px] font-bold text-red-500 mt-1 flex items-center gap-1">
-                            ⚠️ Diện tích "Từ" không được lớn hơn "Đến"
-                          </p>
-                        )}
-                      </div>
-
-                      {/* Status: Select Control */}
-                      <div className="space-y-3">
-                        <Label className="text-xs font-bold text-slate-500 uppercase">
-                          Trạng thái
-                        </Label>
-                        <Select
-                          value={advancedFilters.status?.[0] || "ALL"}
-                          onValueChange={(val) =>
-                            setAdvancedFilters((prev) => ({
-                              ...prev,
-                              status: val === "ALL" ? undefined : [val],
-                            }))
-                          }
-                        >
-                          <SelectTrigger className="w-full bg-white border-slate-200">
-                            <SelectValue placeholder="Tất cả trạng thái" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="ALL">
-                              Tất cả trạng thái
-                            </SelectItem>
-                            <SelectItem value="ACTIVE">
-                              Hoạt động (ACTIVE)
-                            </SelectItem>
-                            <SelectItem value="INACTIVE">
-                              Ngưng hoạt động (INACTIVE)
-                            </SelectItem>
-                            <SelectItem value="ARCHIVED">
-                              Lưu trữ (ARCHIVED)
-                            </SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-            )}
           </div>
         </div>
 
@@ -840,18 +1024,20 @@ const SearchZonePage = () => {
           onOpenChange={setIsCultivationRegionDetailOpen}
         >
           <DialogContent className="max-w-[96vw] w-[96vw] h-[92vh] max-h-[92vh] overflow-y-auto p-6 flex flex-col justify-start items-stretch">
-            {selectedZoneItem && (
+            {selectedZoneItem && zoneDetailData.details && (
               <CultivationRegionDetailBody
                 area={{
                   id: String(selectedZoneItem.id),
                   name: selectedZoneItem.name,
                   targetName: selectedZoneItem.name,
-                  targetIds: [selectedZoneItem.id],
+                  targetIds: [String(selectedZoneItem.id)],
                   scope: "region",
                   enterpriseId: String(selectedZoneItem.workspaceId),
                   managerIds: [],
                   selectedCrops: selectedZoneItem.variantNames || [],
                   certificateIds: [],
+                  note: "",
+                  createdAt: "",
                   farmingMethodId: "N/A",
                   irrigationMethodId: "N/A",
                   status: (
