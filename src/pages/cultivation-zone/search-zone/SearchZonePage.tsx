@@ -1,49 +1,37 @@
 import PageWrapper from "@/components/PageWrapper";
 import { RemoteMultiSelect } from "@/components/RemoteMultiSelect";
+import type { CultivationRegion } from "@/stores/useCultivationRegionStore";
+import { ZoneDetailDialog } from "./components/ZoneDetailDialog";
 import {
   Badge,
   Button,
   cn,
   DataTable,
   RemoteAutoCompleteSelect,
-  Dialog,
-  DialogContent,
   Input,
   Label,
   useToast,
   type Column,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import L from "leaflet";
-import "leaflet/dist/leaflet.css";
 import {
   Activity,
   Building2,
   ChevronRight,
   Layers,
   MapPin,
-  Maximize2,
   PanelLeftClose,
   PanelLeftOpen,
   Search,
   Sprout,
   X,
 } from "lucide-react";
-import React, { useCallback, useEffect, useMemo, useState } from "react";
-import {
-  MapContainer,
-  Marker,
-  Polygon,
-  TileLayer,
-  Tooltip,
-  useMap,
-} from "react-leaflet";
+import React, { useMemo, useState } from "react";
 import { useLocation } from "wouter";
 
 import {
   useAdminProductionZoneGroups,
   useAdminWorkspaceProductionZones,
 } from "@/features/farm/hooks/useAdminProductionZoneSearch";
-import { useCultivationZoneById } from "@/features/farm/hooks/useCultivationZones";
 import type {
   FarmAdminProductionZoneFilter,
   FarmAdminProductionZoneItem,
@@ -60,37 +48,8 @@ import {
   type Coordinate,
   type Region,
 } from "../../region-chart/constants";
-import CultivationRegionDetailBody from "../cultivation-region/CultivationRegionDetailBody";
 import { useCultivationRegionDetail } from "../cultivation-region/useCultivationRegionDetail";
 import { mockSearchZoneRegions } from "./searchZone.mock";
-import {
-  RedMarker,
-  MapChildLayers,
-  MapBoundsSync,
-} from "../../dashboard/components/FarmerZoneMapChildLayers";
-import {
-  FarmerZoneMapUnitDetailPanel,
-  type SelectedUnitState,
-} from "../../dashboard/components/FarmerZoneMapUnitDetailPanel";
-import { useZoneGeographicTree } from "./hooks/useZoneGeographicTree";
-
-type LatLngTuple = [number, number];
-
-const MapCenterSync = ({
-  center,
-  zoom,
-}: {
-  center: LatLngTuple;
-  zoom: number;
-}) => {
-  const map = useMap();
-
-  useEffect(() => {
-    map.setView(center, zoom, { animate: true });
-  }, [center, map, zoom]);
-
-  return null;
-};
 
 interface AdvancedFiltersState {
   // Province/ward are selected by code (remote search) but the API
@@ -124,14 +83,9 @@ const SearchZonePage = () => {
     null,
   );
   const [selectedZoneId, setSelectedZoneId] = useState<number | null>(null);
-  const [selectedUnit, setSelectedUnit] = useState<{
-    type: "region" | "area" | "plot";
-    data: any;
-  } | null>(null);
 
   // UI Toggle State
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
-  const [isMapExpanded, setIsMapExpanded] = useState(false);
   const [isCultivationRegionDetailOpen, setIsCultivationRegionDetailOpen] =
     useState(false);
 
@@ -291,15 +245,6 @@ const SearchZonePage = () => {
       filter: apiFilter,
     });
 
-  // Query 3: Zone full detail for map & detail dialog
-  const { data: zoneDetailResponse } = useCultivationZoneById(
-    selectedZoneId || 0,
-    {
-      enabled: !!selectedZoneId,
-      workspaceId: selectedWorkspaceId || undefined,
-    },
-  );
-
   const zoneDetailData = useCultivationRegionDetail(
     selectedZoneId ? String(selectedZoneId) : null,
     selectedWorkspaceId,
@@ -318,74 +263,6 @@ const SearchZonePage = () => {
     if (!selectedZoneId) return null;
     return workspaceZones.find((z) => z.id === selectedZoneId) ?? null;
   }, [workspaceZones, selectedZoneId]);
-
-  // Execute dynamic geographic tree query based on zone scopes & selected workspace
-  const { zoneNode } = useZoneGeographicTree(
-    selectedZoneItem,
-    zoneDetailResponse,
-    selectedWorkspaceId,
-  );
-
-  const activeBounds: [number, number][] | null = useMemo(() => {
-    return selectedUnit?.data?.boundary || zoneNode?.boundary || null;
-  }, [selectedUnit, zoneNode]);
-
-  const rawCenter = useMemo(() => {
-    return (
-      selectedUnit?.data?.centerPoint ||
-      (selectedUnit?.data?.coordinates
-        ? [selectedUnit.data.coordinates.lat, selectedUnit.data.coordinates.lng]
-        : null) ||
-      zoneNode?.centerPoint ||
-      (zoneNode?.coordinates
-        ? [zoneNode.coordinates.lat, zoneNode.coordinates.lng]
-        : null)
-    );
-  }, [selectedUnit, zoneNode]);
-
-  const hasValidCenterPoint = useMemo(() => {
-    return Boolean(
-      rawCenter &&
-      !isNaN(Number(rawCenter[0])) &&
-      !isNaN(Number(rawCenter[1])) &&
-      Number(rawCenter[0]) !== 0 &&
-      Number(rawCenter[1]) !== 0,
-    );
-  }, [rawCenter]);
-
-  const activeCenter: [number, number] = useMemo(() => {
-    if (hasValidCenterPoint && rawCenter) {
-      return [Number(rawCenter[0]), Number(rawCenter[1])];
-    }
-    if (activeBounds && activeBounds.length > 0) {
-      const sumLat = activeBounds.reduce((acc, curr) => acc + curr[0], 0);
-      const sumLng = activeBounds.reduce((acc, curr) => acc + curr[1], 0);
-      return [sumLat / activeBounds.length, sumLng / activeBounds.length];
-    }
-    return [11.53, 106.88];
-  }, [rawCenter, activeBounds, hasValidCenterPoint]);
-
-  const activeName =
-    selectedUnit?.data?.name || zoneNode?.name || "Bản đồ vùng canh tác";
-
-  const handleNavigateToDetail = useCallback(() => {
-    if (!selectedUnit) return;
-    const rawId = selectedUnit.data.id || "1";
-    const numericId = String(rawId).replace(/^(ZONE|REGION|AREA|PLOT)-/i, "");
-
-    let path = "";
-    if (selectedUnit.type === "region") {
-      path = `/region-distribution/detail/${numericId}`;
-    } else if (selectedUnit.type === "area") {
-      path = `/area-distribution/detail/${numericId}`;
-    } else if (selectedUnit.type === "plot") {
-      path = `/plot-distribution/detail/${numericId}`;
-    }
-
-    if (path) {
-      window.open(path, "_blank");
-    }
-  }, [selectedUnit]);
 
   const handleSearch = () => {
     toast({
@@ -825,7 +702,6 @@ const SearchZonePage = () => {
                       onClick={() => {
                         setSelectedWorkspaceId(group.workspaceId);
                         setSelectedZoneId(null);
-                        setSelectedUnit(null);
                       }}
                     >
                       <div className="w-10 h-10 rounded-xl bg-slate-100 border flex items-center justify-center shrink-0">
@@ -876,94 +752,6 @@ const SearchZonePage = () => {
 
           {/* MAIN CONTENT AREA */}
           <div className="flex-1 flex flex-col gap-4 overflow-hidden">
-            {/* Map & Detail Container */}
-            <div className="flex-1 flex gap-4 min-h-100 relative">
-              {/* Leaflet Map */}
-              <div className="flex-1 bg-white rounded-xl border overflow-hidden relative shadow-xs">
-                <MapContainer
-                  center={activeCenter}
-                  zoom={14}
-                  className="w-full h-full z-10"
-                  zoomControl={false}
-                >
-                  <TileLayer url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}" />
-                  <MapBoundsSync
-                    bounds={activeBounds}
-                    centerPoint={activeCenter}
-                  />
-
-                  {/* Render Zone Main Boundary */}
-                  {(selectedZoneItem || selectedUnit) &&
-                    activeBounds &&
-                    activeBounds.length > 0 && (
-                      <Polygon
-                        positions={activeBounds}
-                        pathOptions={{
-                          color: "#10b981",
-                          fillColor: "#10b981",
-                          fillOpacity: 0.15,
-                          weight: 2.5,
-                        }}
-                      />
-                    )}
-
-                  {/* Render Child Areas & Plots Boundaries and Markers */}
-                  {(selectedZoneItem || selectedUnit) && (
-                    <MapChildLayers
-                      zone={zoneNode}
-                      onSelectUnit={(type, data) =>
-                        setSelectedUnit({ type, data })
-                      }
-                    />
-                  )}
-
-                  {/* Render Main Center Marker */}
-                  {(selectedZoneItem || selectedUnit) &&
-                    hasValidCenterPoint && (
-                      <Marker position={activeCenter} icon={RedMarker()}>
-                        <Tooltip sticky direction="top" opacity={0.95}>
-                          <div style={{ fontWeight: 600, fontSize: 12 }}>
-                            {activeName}
-                          </div>
-                          <div style={{ fontSize: 10, color: "#64748b" }}>
-                            Tọa độ trung tâm
-                          </div>
-                        </Tooltip>
-                      </Marker>
-                    )}
-                </MapContainer>
-
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="absolute top-4 right-4 z-20 bg-white/90 shadow-md font-bold text-xs"
-                  onClick={() => setIsMapExpanded(!isMapExpanded)}
-                >
-                  <Maximize2 size={14} className="mr-1.5" />
-                  {isMapExpanded ? "Thu nhỏ bản đồ" : "Phóng to bản đồ"}
-                </Button>
-              </div>
-
-              {/* Zone Detail Panel (Right Side of Map) */}
-              <div className="w-80 bg-white rounded-xl border p-4 shadow-xs flex flex-col overflow-y-auto">
-                <FarmerZoneMapUnitDetailPanel
-                  selectedZone={zoneNode}
-                  selectedUnit={selectedUnit}
-                  onSelectUnit={setSelectedUnit}
-                  onNavigateToDetail={handleNavigateToDetail}
-                />
-                {selectedZoneItem && (
-                  <Button
-                    className="w-full rounded-xl font-bold text-xs h-10 mt-3 shrink-0 bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs"
-                    onClick={() => setIsCultivationRegionDetailOpen(true)}
-                  >
-                    Xem chi tiết đầy đủ vùng canh tác
-                    <ChevronRight size={14} className="ml-1" />
-                  </Button>
-                )}
-              </div>
-            </div>
-
             {/* Bottom DataTable Section */}
             <div className="bg-white rounded-xl border flex flex-col min-h-72 shadow-xs">
               <div className="flex items-center justify-between px-4 py-3 bg-slate-50/50 border-b">
@@ -1009,7 +797,7 @@ const SearchZonePage = () => {
                     data={workspaceZones}
                     onView={(zone) => {
                       setSelectedZoneId(zone.id);
-                      setSelectedUnit(null);
+                      setIsCultivationRegionDetailOpen(true);
                     }}
                   />
                 )}
@@ -1018,15 +806,13 @@ const SearchZonePage = () => {
           </div>
         </div>
 
-        {/* Dialog xem chi tiết đầy đủ 6 tab của vùng canh tác */}
-        <Dialog
+        {/* Zone profile dialog — crop-profile theme, zone tabs */}
+        <ZoneDetailDialog
           open={isCultivationRegionDetailOpen}
           onOpenChange={setIsCultivationRegionDetailOpen}
-        >
-          <DialogContent className="max-w-[96vw] w-[96vw] h-[92vh] max-h-[92vh] overflow-y-auto p-6 flex flex-col justify-start items-stretch">
-            {selectedZoneItem && zoneDetailData.details && (
-              <CultivationRegionDetailBody
-                area={{
+          area={
+            selectedZoneItem
+              ? {
                   id: String(selectedZoneItem.id),
                   name: selectedZoneItem.name,
                   targetName: selectedZoneItem.name,
@@ -1042,15 +828,14 @@ const SearchZonePage = () => {
                   irrigationMethodId: "N/A",
                   status: (
                     selectedZoneItem.status || "active"
-                  ).toLowerCase() as any,
-                }}
-                details={zoneDetailData.details}
-                onBack={() => setIsCultivationRegionDetailOpen(false)}
-                onEdit={() => {}}
-              />
-            )}
-          </DialogContent>
-        </Dialog>
+                  ).toLowerCase() as CultivationRegion["status"],
+                }
+              : null
+          }
+          details={zoneDetailData.details}
+          code={selectedZoneItem?.code}
+          workspaceName={selectedWorkspace?.workspaceName}
+        />
       </div>
     </PageWrapper>
   );

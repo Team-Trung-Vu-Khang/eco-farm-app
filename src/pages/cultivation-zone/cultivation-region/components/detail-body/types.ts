@@ -6,6 +6,9 @@ export type DetailBodyPrimaryManager = {
   fullName?: string;
   phone?: string;
   avatar?: string;
+  /** Present when resolved from the API personnel list. */
+  positionName?: string;
+  positionCode?: string;
 } | null;
 
 export type CultivationRegionDetailBodyCommonProps = {

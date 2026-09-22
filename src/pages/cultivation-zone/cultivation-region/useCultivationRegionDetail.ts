@@ -1,6 +1,8 @@
 import { useMemo } from "react";
 import { useCultivationZoneById } from "@/features/farm/hooks/useCultivationZones";
 import { useSeeds } from "@/features/farm/hooks/useSeeds";
+import { useAdminWorkspaceById } from "@/features/workspace/hooks/useAdminWorkspaceById";
+import { useProductionHealthMetricByScope } from "@/features/farm/hooks/useProductionHealthMetrics";
 import useRegionStore from "../../../stores/useRegionStore";
 import usePersonnelStore from "../../../stores/usePersonnelStore";
 import useFarmingMethodStore from "../../../stores/useFarmingMethodStore";
@@ -34,6 +36,17 @@ export interface CultivationRegionDetails {
     healthy: number;
     treating: number;
     diseased: number;
+    harvested: number;
+    soil: {
+      ph?: number;
+      temperature?: number;
+      moisturePct?: number;
+      compaction?: number;
+      nitrogen?: number;
+      phosphorus?: number;
+      potassium?: number;
+      organicMatterPct?: number;
+    } | null;
   };
   region: Region | null;
   selectedEntities: any[];
@@ -83,9 +96,29 @@ export const useCultivationRegionDetail = (
     },
   );
 
-
   const { items: allSeeds, loading: isSeedsLoading } = useSeeds({
     params: { size: 100 },
+  });
+
+  // Owning unit (Đơn vị sở hữu) for the staff tab
+  const { data: workspaceData } = useAdminWorkspaceById(workspaceId ?? "", {
+    enabled: !!workspaceId,
+  });
+
+  // Primary scope of the zone — drives the health metrics query
+  const primaryScope = useMemo(() => {
+    const scope = areaData?.scopes?.[0];
+    if (!scope) return null;
+    const scopeId =
+      scope.plot?.id ?? scope.area?.id ?? scope.region?.id ?? null;
+    if (scopeId == null) return null;
+    return { scopeType: scope.scopeType, scopeId: Number(scopeId) };
+  }, [areaData]);
+
+  // Real health metrics for the zone's primary scope
+  const { data: healthMetric } = useProductionHealthMetricByScope({
+    params: primaryScope ?? undefined,
+    enabled: !!primaryScope,
   });
 
   const { regions } = useRegionStore();
@@ -224,17 +257,38 @@ export const useCultivationRegionDetail = (
   const details: CultivationRegionDetails | null = useMemo(() => {
     if (!area || !areaData) return null;
 
-    // Resolve managers
-    const managers = personnel.filter((m) =>
-      (area.managerIds || []).includes(m.id.toString()),
-    );
+    // Resolve managers — API personnel wins, mock store only as fallback
+    const apiManagers = (areaData.personnel ?? []).map((p: any) => ({
+      id: p.id,
+      fullName: p.fullName ?? "",
+      avatar: p.avatarUrl ?? undefined,
+      positionName: p.position?.name ?? "",
+      positionCode: p.position?.code ?? "",
+    }));
+    const managers =
+      apiManagers.length > 0
+        ? apiManagers
+        : personnel.filter((m) =>
+            (area.managerIds || []).includes(m.id.toString()),
+          );
 
-    // Resolve certificates
-    const selectedCerts = standards.filter(
-      (c) =>
-        (area.certificateIds || []).includes(String(c.id)) ||
-        (area as any).certificateId === c.code,
-    );
+    // Resolve certificates — API response wins, mock store only as fallback
+    const apiCerts = (areaData.certificates ?? []).map((c: any) => ({
+      id: c.id,
+      code: c.code ?? "",
+      name: c.name ?? "",
+    }));
+    const selectedCerts =
+      apiCerts.length > 0
+        ? apiCerts
+        : standards
+            // Standard has no numeric id — it is keyed by code.
+            .filter(
+              (c) =>
+                (area.certificateIds || []).includes(c.code) ||
+                (area as any).certificateId === c.code,
+            )
+            .map((c) => ({ id: c.code, code: c.code, name: c.name }));
 
     // Build selectedEntities directly from API scopes — no store lookup needed
     const selectedEntities = (areaData.scopes ?? [])
@@ -435,12 +489,27 @@ export const useCultivationRegionDetail = (
               ).values(),
             );
 
-    // Mock region-level stats
+    // Region-level stats from the production health metrics API.
+    // pestCount is the API's "under treatment" figure; it exposes
+    // harvestedCount rather than a diseased count.
     const regionStats = {
-      total: 12500,
-      healthy: 11800,
-      treating: 450,
-      diseased: 250,
+      total: healthMetric?.totalCount ?? 0,
+      healthy: healthMetric?.healthyCount ?? 0,
+      treating: healthMetric?.pestCount ?? 0,
+      diseased: 0,
+      harvested: healthMetric?.harvestedCount ?? 0,
+      soil: healthMetric
+        ? {
+            ph: healthMetric.soilPh,
+            temperature: healthMetric.soilTemperature,
+            moisturePct: healthMetric.soilMoisturePct,
+            compaction: healthMetric.soilCompaction,
+            nitrogen: healthMetric.nitrogen,
+            phosphorus: healthMetric.phosphorus,
+            potassium: healthMetric.potassium,
+            organicMatterPct: healthMetric.organicMatterPct,
+          }
+        : null,
     };
 
     // Mock harvest stats
@@ -504,9 +573,10 @@ export const useCultivationRegionDetail = (
       };
     });
 
-    const enterprise = enterprises.find(
-      (e) => e.id.toString() === area.enterpriseId,
-    );
+    // Owning unit — real workspace wins, mock enterprise store as fallback
+    const enterprise =
+      workspaceData ??
+      enterprises.find((e) => e.id.toString() === area.enterpriseId);
 
     // Map personnel directly from API response
     const apiPersonnel: PersonnelItem[] = (areaData.personnel ?? []).map(
@@ -559,6 +629,8 @@ export const useCultivationRegionDetail = (
     varieties,
     enterprises,
     allSeeds,
+    workspaceData,
+    healthMetric,
   ]);
 
   return { area, details, loading: isZoneLoading || isSeedsLoading };
