@@ -163,6 +163,57 @@ const visibleAreaGroups = (group: any) =>
     (areaGroup: any) => areaGroup.area || childEntities(areaGroup).length > 0,
   );
 
+type ScopeAccent = "primary" | "slate" | "emerald";
+
+const SCOPE_ACCENTS: Record<ScopeAccent, { label: string; iconWrap: string }> =
+  {
+    primary: {
+      label: "text-primary",
+      iconWrap: "bg-primary/10 text-primary",
+    },
+    slate: {
+      label: "text-slate-400",
+      iconWrap: "bg-slate-100 text-slate-500",
+    },
+    emerald: {
+      label: "text-emerald-600",
+      iconWrap: "bg-emerald-50 text-emerald-600",
+    },
+  };
+
+const ScopeNodeCard = ({
+  label,
+  name,
+  icon,
+  accent,
+}: {
+  label: string;
+  name: string;
+  icon: React.ReactNode;
+  accent: ScopeAccent;
+}) => {
+  const tone = SCOPE_ACCENTS[accent];
+
+  return (
+    <div className="flex items-start gap-2.5 py-1">
+      <span className={cn("mt-0.5 shrink-0", tone.label)}>{icon}</span>
+      <div className="min-w-0 flex-1">
+        <div
+          className={cn(
+            "mb-0.5 text-[10px] font-bold uppercase tracking-wider leading-none",
+            tone.label,
+          )}
+        >
+          {label}
+        </div>
+        <div className="text-sm font-semibold text-slate-900 break-words">
+          {name}
+        </div>
+      </div>
+    </div>
+  );
+};
+
 export const CultivationRegionOverviewTab = ({
   area,
   details,
@@ -600,178 +651,92 @@ export const CultivationRegionOverviewTab = ({
         <CardHeader className="border-b bg-slate-50/50 py-3 px-4 flex flex-row items-center justify-between shrink-0">
           <CardTitle className="text-sm font-bold flex items-center gap-2">
             <MapPin className="w-4 h-4 text-primary" />
-            <span className="text-base">
-              Phạm vi vùng canh tác ({details.selectedEntities.length} mục)
-            </span>
+            <span className="text-base">Phạm vi địa lý</span>
           </CardTitle>
         </CardHeader>
         <CardContent className="p-0 overflow-y-auto flex-1">
-          <div className="p-5 flex">
-            <div className="space-y-6 flex-1">
-              {Object.values(details.groupedSelections).map((group: any) => (
-                <div key={group.region.id} className="relative">
-                  <button
-                    type="button"
-                    className="flex items-center gap-3 mb-3 relative z-10 w-full text-left rounded-lg p-2 -m-2 hover:bg-slate-50 transition-colors cursor-pointer"
-                    onClick={() =>
-                      focusScopeMapToCoordinates(
-                        getBoundaryPoints(
-                          regionIndex.regionById.get(String(group.region.id)),
-                        ) || getBoundaryPoints(group.region),
-                      )
-                    }
-                  >
-                    <div className="w-9 h-9 rounded-xl bg-primary text-white flex items-center justify-center shadow-xs shrink-0">
-                      <MapPin className="w-4.5 h-4.5" />
-                    </div>
-                    <div className="min-w-0">
-                      <div className="text-[10px] text-primary font-bold uppercase tracking-wider leading-none mb-1">
-                        Vùng trồng
-                      </div>
-                      <div className="text-xs font-bold text-slate-900 truncate">
-                        {group.region.name}
-                      </div>
-                    </div>
-                  </button>
+          <div className="divide-y divide-slate-100 px-4">
+            {Object.values(details.groupedSelections).map((group: any) => (
+              <div key={group.region.id} className="space-y-2 py-3">
+                {/* Level 1: geographic region */}
+                <ScopeNodeCard
+                  label="Vùng địa lý"
+                  name={group.region.name}
+                  icon={<MapPin className="h-4.5 w-4.5" />}
+                  accent="primary"
+                />
 
-                  {area.scope !== "region" && (
-                    <div className="ml-4 border-l-2 border-slate-100 pl-5 space-y-5">
-                      {visibleAreaGroups(group).map((areaGroup: any) => (
-                        <div
-                          key={areaGroup.area?.id || "none"}
-                          className="relative"
-                        >
-                          <div className="absolute -left-5.5 w-5 h-px bg-slate-200 top-4" />
+                {area.scope !== "region" && (
+                  <div className="ml-4 space-y-3 border-l-2 border-slate-100 pl-5">
+                    {visibleAreaGroups(group).map((areaGroup: any) => (
+                      <div
+                        key={areaGroup.area?.id || "none"}
+                        className="relative space-y-3"
+                      >
+                        <div className="absolute -left-5.5 top-6 h-px w-5 bg-slate-200" />
 
-                          {areaGroup.area ? (
-                            <>
-                              <button
-                                type="button"
-                                className="flex items-center gap-3 mb-3 relative z-10 w-full text-left rounded-lg p-2 -m-2 hover:bg-slate-50 transition-colors cursor-pointer"
-                                onClick={() =>
-                                  focusScopeMapToCoordinates(
-                                    getBoundaryPoints(
-                                      regionIndex.areaById.get(
-                                        String(areaGroup.area.id),
-                                      )?.area,
-                                    ) || getBoundaryPoints(areaGroup.area),
-                                  )
-                                }
-                              >
-                                <div className="w-8 h-8 rounded-lg bg-blue-500 text-white flex items-center justify-center shadow-xs shrink-0">
-                                  <Layers className="w-4 h-4" />
-                                </div>
-                                <div className="min-w-0">
-                                  <div className="text-[10px] text-blue-500 font-bold uppercase tracking-wider leading-none mb-1">
-                                    Khu vực
-                                  </div>
-                                  <div className="text-xs font-bold text-slate-900 truncate">
-                                    {areaGroup.area.name}
-                                  </div>
-                                </div>
-                              </button>
+                        {areaGroup.area ? (
+                          <>
+                            {/* Level 2: area */}
+                            <ScopeNodeCard
+                              label="Khu vực"
+                              name={areaGroup.area.name}
+                              icon={<Layers className="h-4 w-4" />}
+                              accent="slate"
+                            />
 
-                              <div className="ml-4 border-l-2 border-slate-100 pl-5 space-y-3">
+                            {/* Level 3: plots */}
+                            {(areaGroup.entities || []).filter(
+                              (e: any) => e?.typeCode === "plot",
+                            ).length > 0 && (
+                              <div className="ml-4 space-y-3 border-l-2 border-slate-100 pl-5">
                                 {(areaGroup.entities || [])
                                   .filter((e: any) => e?.typeCode === "plot")
                                   .map((plot: any) => (
-                                    <button
-                                      key={plot.id}
-                                      type="button"
-                                      className="relative flex items-center gap-2.5 py-1 w-full text-left rounded-lg p-1.5 -m-1.5 hover:bg-slate-50 transition-colors cursor-pointer"
-                                      onClick={() =>
-                                        focusScopeMapToCoordinates(
-                                          getBoundaryPoints(
-                                            regionIndex.plotById.get(
-                                              String(plot.id),
-                                            )?.plot,
-                                          ) || getBoundaryPoints(plot),
-                                        )
-                                      }
-                                    >
-                                      <div className="absolute -left-5.5 w-5 h-px bg-slate-200 top-1/2" />
-                                      <div className="w-7 h-7 rounded-lg bg-emerald-500 text-white flex items-center justify-center shadow-xs shrink-0">
-                                        <Target className="w-3.5 h-3.5" />
-                                      </div>
-                                      <div className="min-w-0">
-                                        <div className="text-[10px] text-emerald-600 font-bold uppercase tracking-wider leading-none mb-0.5">
-                                          Lô đất
-                                        </div>
-                                        <div className="text-xs font-bold text-slate-800 truncate">
-                                          {plot.name}
-                                        </div>
-                                      </div>
-                                    </button>
+                                    <div key={plot.id} className="relative">
+                                      <div className="absolute -left-5.5 top-6 h-px w-5 bg-slate-200" />
+                                      <ScopeNodeCard
+                                        label="Lô đất"
+                                        name={plot.name}
+                                        icon={
+                                          <Target className="h-3.5 w-3.5" />
+                                        }
+                                        accent="emerald"
+                                      />
+                                    </div>
                                   ))}
                               </div>
-                            </>
-                          ) : (
-                            <div className="space-y-3">
-                              {(areaGroup.entities || []).map((entity: any) => (
-                                <button
-                                  type="button"
-                                  key={entity.id}
-                                  className="relative flex items-center gap-3 w-full text-left rounded-lg p-2 -m-2 hover:bg-slate-50 transition-colors cursor-pointer"
-                                  onClick={() => {
-                                    const ent =
-                                      entity.typeCode === "region"
-                                        ? regionIndex.regionById.get(
-                                            String(entity.id),
-                                          )
-                                        : entity.typeCode === "area"
-                                          ? regionIndex.areaById.get(
-                                              String(entity.id),
-                                            )?.area
-                                          : regionIndex.plotById.get(
-                                              String(entity.id),
-                                            )?.plot;
-                                    focusScopeMapToCoordinates(
-                                      getBoundaryPoints(ent) ||
-                                        getBoundaryPoints(entity),
-                                    );
-                                  }}
-                                >
-                                  <div className="absolute -left-5.5 w-5 h-px bg-slate-200 top-1/2" />
-                                  <div
-                                    className={cn(
-                                      "w-7 h-7 rounded-lg flex items-center justify-center text-white shadow-xs shrink-0",
-                                      entity.typeCode === "region"
-                                        ? "bg-primary"
-                                        : "bg-emerald-500",
-                                    )}
-                                  >
-                                    {entity.typeCode === "region" ? (
-                                      <MapPin className="w-3.5 h-3.5" />
-                                    ) : (
-                                      <Target className="w-3.5 h-3.5" />
-                                    )}
-                                  </div>
-                                  <div className="min-w-0">
-                                    <div
-                                      className={cn(
-                                        "text-[10px] font-bold uppercase tracking-wider leading-none mb-0.5",
-                                        entity.typeCode === "region"
-                                          ? "text-primary"
-                                          : "text-emerald-600",
-                                      )}
-                                    >
-                                      {entity.type}
-                                    </div>
-                                    <div className="text-xs font-bold text-slate-800 truncate">
-                                      {entity.name}
-                                    </div>
-                                  </div>
-                                </button>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
+                            )}
+                          </>
+                        ) : (
+                          <div className="space-y-3">
+                            {(areaGroup.entities || []).map((entity: any) => (
+                              <ScopeNodeCard
+                                key={entity.id}
+                                label={entity.type}
+                                name={entity.name}
+                                icon={
+                                  entity.typeCode === "region" ? (
+                                    <MapPin className="h-3.5 w-3.5" />
+                                  ) : (
+                                    <Target className="h-3.5 w-3.5" />
+                                  )
+                                }
+                                accent={
+                                  entity.typeCode === "region"
+                                    ? "primary"
+                                    : "emerald"
+                                }
+                              />
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ))}
           </div>
         </CardContent>
       </Card>
