@@ -36,6 +36,7 @@ export const emptyTaskCategoryFormData: TaskCategoryFormData = {
   name: "",
   description: "",
   domain: "crop",
+  hashtags: [],
 };
 
 export const mockTaskCategories: TaskCategory[] = [

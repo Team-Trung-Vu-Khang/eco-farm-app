@@ -11,6 +11,8 @@ export const useCultivationRegionDetailPage = () => {
 
   return {
     area,
+    code: area?.code,
+    status: area?.status,
     title: area?.name || "Đang tải...",
     description: area
       ? `Mã: ${area.id} • Tạo: ${area.createdAt ? new Date(area.createdAt).toLocaleDateString("vi-VN") : "---"}`

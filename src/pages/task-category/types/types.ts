@@ -14,5 +14,6 @@ export interface TaskCategoryFormData {
   name: string;
   description: string;
   domain: TaskCategoryDomain;
+  hashtags: string[];
   status?: "active" | "inactive";
 }

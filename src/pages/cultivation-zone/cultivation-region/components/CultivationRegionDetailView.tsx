@@ -1,6 +1,15 @@
 import React, { useMemo } from "react";
 import { useLocation, useParams } from "wouter";
-import { Loader2, Target } from "lucide-react";
+import {
+  Award,
+  BarChart3,
+  ClipboardList,
+  Info,
+  Loader2,
+  Sprout,
+  Target,
+  Users,
+} from "lucide-react";
 import { useQueries } from "@tanstack/react-query";
 import {
   Button,
@@ -16,11 +25,26 @@ import { areaApi, plotApi } from "@/features/farm/api/farm.api";
 // Subcomponents
 import { OverviewTab } from "./detail/OverviewTab";
 import { CropsTab } from "./detail/CropsTab";
-// TODO: Tạm ẩn tab "Nhân viên"
-// import { StaffTab } from "./detail/StaffTab";
 import { CertificatesTab } from "./detail/CertificatesTab";
+import { StaffTab } from "./detail/StaffTab";
+import { PlansTab } from "./detail/PlansTab";
+import { StatisticsTab } from "./detail/StatisticsTab";
 
-export const CultivationRegionDetailView = ({ id }: { id?: string }) => {
+/** Shared pill-tab styling, matching the zone profile dialog. */
+const TAB_TRIGGER_CLASS =
+  "rounded-lg px-4 py-2 text-sm font-medium gap-2 data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:text-primary";
+
+export const CultivationRegionDetailView = ({
+  id,
+  workspaceId,
+  showAllTabs = false,
+}: {
+  id?: string;
+  /** Required when viewing a zone outside the active workspace (admin search). */
+  workspaceId?: number | null;
+  /** Zone profile dialog shows staff/plans/statistics; the detail page does not. */
+  showAllTabs?: boolean;
+}) => {
   const params = useParams<{ id: string }>();
   const resolvedId = id ?? params?.id;
   const [, setLocation] = useLocation();
@@ -29,7 +53,10 @@ export const CultivationRegionDetailView = ({ id }: { id?: string }) => {
     setLocation("/cultivation-region");
   };
 
-  const { area, details, loading } = useCultivationRegionDetail(resolvedId);
+  const { area, details, loading } = useCultivationRegionDetail(
+    resolvedId,
+    workspaceId,
+  );
 
   // Fetch regions from API instead of loading from local zustand store
   const { items: regions, isLoading: isRegionsLoading } = useRegions({
@@ -165,34 +192,38 @@ export const CultivationRegionDetailView = ({ id }: { id?: string }) => {
   }
 
   return (
-    <Tabs defaultValue="overview" className="space-y-6 mt-6">
-      <TabsList className="flex w-full overflow-x-auto rounded-2xl bg-slate-100/50 p-1 gap-1">
-        <TabsTrigger
-          value="overview"
-          className="flex-1 min-w-20 font-bold text-xs"
-        >
+    <Tabs defaultValue="overview" className="mt-6 w-full">
+      <TabsList className="no-scrollbar mb-6 flex h-auto max-w-full overflow-x-auto rounded-xl border border-slate-200 bg-slate-100/50 p-1">
+        <TabsTrigger value="overview" className={TAB_TRIGGER_CLASS}>
+          <Info className="h-4 w-4" />
           Thông tin
         </TabsTrigger>
-        <TabsTrigger
-          value="crops"
-          className="flex-1 min-w-20 font-bold text-xs"
-        >
+        <TabsTrigger value="crops" className={TAB_TRIGGER_CLASS}>
+          <Sprout className="h-4 w-4" />
           Cây trồng
         </TabsTrigger>
-        {/* TODO: Tạm ẩn tab "Nhân viên"
-        <TabsTrigger
-          value="staff"
-          className="flex-1 min-w-20 font-bold text-xs"
-        >
-          Nhân viên
-        </TabsTrigger>
-        */}
-        <TabsTrigger
-          value="certificates"
-          className="flex-1 min-w-20 font-bold text-xs"
-        >
+        {showAllTabs && (
+          <TabsTrigger value="staff" className={TAB_TRIGGER_CLASS}>
+            <Users className="h-4 w-4" />
+            Nhân viên
+          </TabsTrigger>
+        )}
+        <TabsTrigger value="certificates" className={TAB_TRIGGER_CLASS}>
+          <Award className="h-4 w-4" />
           Chứng nhận
         </TabsTrigger>
+        {showAllTabs && (
+          <>
+            <TabsTrigger value="plans" className={TAB_TRIGGER_CLASS}>
+              <ClipboardList className="h-4 w-4" />
+              Kế hoạch
+            </TabsTrigger>
+            <TabsTrigger value="statistics" className={TAB_TRIGGER_CLASS}>
+              <BarChart3 className="h-4 w-4" />
+              Thống kê
+            </TabsTrigger>
+          </>
+        )}
       </TabsList>
 
       {/* Overview Tab */}
@@ -205,30 +236,31 @@ export const CultivationRegionDetailView = ({ id }: { id?: string }) => {
         <CropsTab details={details} />
       </TabsContent>
 
-      {/* TODO: Tạm ẩn tab "Nhân viên" (Personnel/Staff)
-      <TabsContent value="staff" className="space-y-6">
-        <StaffTab details={details} />
-      </TabsContent>
-      */}
+      {showAllTabs && (
+        <TabsContent value="staff" className="space-y-6">
+          <StaffTab details={details} />
+        </TabsContent>
+      )}
 
       {/* Certificates Tab */}
       <TabsContent value="certificates" className="space-y-8">
         <CertificatesTab details={details} />
       </TabsContent>
 
-      {/* Plans & Tasks Tab */}
-      {/* <TabsContent value="plans" className="space-y-6 overflow-hidden">
-        <PlansTab
-          area={area}
-          regionIndex={regionIndex}
-          resolvedId={resolvedId ?? ""}
-        />
-      </TabsContent> */}
-
-      {/* Harvest Statistics Tab */}
-      {/* <TabsContent value="statistics" className="space-y-6 overflow-hidden">
-        <StatisticsTab details={details} />
-      </TabsContent> */}
+      {showAllTabs && (
+        <>
+          <TabsContent value="plans" className="space-y-6 overflow-hidden">
+            <PlansTab
+              area={area}
+              regionIndex={regionIndex}
+              resolvedId={resolvedId ?? ""}
+            />
+          </TabsContent>
+          <TabsContent value="statistics" className="space-y-6 overflow-hidden">
+            <StatisticsTab details={details} />
+          </TabsContent>
+        </>
+      )}
     </Tabs>
   );
 };
