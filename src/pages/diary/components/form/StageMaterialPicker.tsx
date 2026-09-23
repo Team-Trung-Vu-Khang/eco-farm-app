@@ -8,6 +8,7 @@ import {
   SelectTrigger,
   SelectValue,
   useToast,
+  useIsMobile,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { Link2, Plus, X, Search, ChevronRight } from "lucide-react";
 import { getSupplyTypeOptions } from "@/shared/hooks/useRemoteSupplySearch";
@@ -61,6 +62,7 @@ export function StageMaterialPicker({
   const [qty, setQty] = useState("");
   const [selectedUnitKey, setSelectedUnitKey] = useState("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const isMobile = useIsMobile();
 
   const selectedTypeOption = typeOptions.find(
     (option) => option.value === selectedType,
@@ -230,6 +232,66 @@ export function StageMaterialPicker({
               a.unitMode === "PACKAGING" && a.packagingSpecLabel
                 ? a.packagingSpecLabel
                 : a.unit || "kg";
+            const allocError = errors?.[`alloc_${a.id}`];
+
+            // Điện thoại: thẻ gọn 3 dòng — tên + xóa / kế hoạch / ô thực tế + đơn vị
+            if (isMobile) {
+              return (
+                <div
+                  key={a.id}
+                  className="rounded-xl border border-slate-200/90 bg-slate-50/50 p-3 space-y-2"
+                >
+                  <div className="flex items-center gap-2">
+                    <div className="h-6 w-6 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center shrink-0">
+                      <Link2 className="h-3.5 w-3.5" />
+                    </div>
+                    <span className="min-w-0 flex-1 truncate text-sm font-bold text-slate-900">
+                      {a.materialName}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => onRemoveMaterial(a.id)}
+                      className="text-slate-400 hover:text-red-500 p-1 rounded-lg hover:bg-red-50 shrink-0"
+                      aria-label="Xóa vật tư này"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+                  {a.quantity && (
+                    <p className="text-[11px] font-medium text-slate-500">
+                      Kế hoạch: {a.quantity} {displayUnit}
+                    </p>
+                  )}
+                  <div className="flex items-center gap-2">
+                    {/* Input của shared-ui bọc thêm div full width → cố định độ rộng bằng khung ngoài */}
+                    <div className="w-24 shrink-0">
+                      <Input
+                        type="number"
+                        min={0}
+                        clearable={false}
+                        placeholder="Thực tế"
+                        className={`h-9 w-full text-sm bg-white border-slate-200 rounded-lg font-bold text-slate-900 ${
+                          allocError ? "border-red-500" : ""
+                        }`}
+                        value={a.actualQuantity ?? ""}
+                        onChange={(e) =>
+                          onUpdateActualQuantity?.(a.id, e.target.value)
+                        }
+                      />
+                    </div>
+                    {/* Đơn vị có thể dài (quy cách đóng gói) → cho xuống dòng, không cắt */}
+                    <span className="min-w-0 flex-1 break-words text-xs font-semibold leading-snug text-slate-600">
+                      {displayUnit}
+                    </span>
+                  </div>
+                  {allocError && (
+                    <p className="text-[10px] text-red-500 font-medium">
+                      {allocError}
+                    </p>
+                  )}
+                </div>
+              );
+            }
 
             return (
               <div

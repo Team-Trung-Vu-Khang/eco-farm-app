@@ -1,3 +1,4 @@
+import { useMobileUiMode } from "@/shared/hooks/useMobileUiMode";
 import PageWrapper from "@/components/PageWrapper";
 import {
   createDailyDiaryEntrySchema,
@@ -38,6 +39,7 @@ import {
   SelectTrigger,
   SelectValue,
   Textarea,
+  useIsMobile,
   useToast,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import {
@@ -1263,11 +1265,18 @@ export function HistoryFormContent({
     }
   };
 
+  const isMobile = useIsMobile();
+  const mobileUiMode = useMobileUiMode();
+  // Giao diện mobile có bottom nav cố định → thanh hành động không fixed nữa
+  const isMobileApp = isMobile && mobileUiMode === "app";
+
   return (
     <PageWrapper
       title={pageTitle}
       description="Ghi nhận hoạt động sản xuất, cập nhật tiến độ công việc và cấp phát vật tư"
+      // Điện thoại: không hiện nút Quay lại (đã có thanh điều hướng dưới)
       actions={
+        isMobile ? undefined : (
         <div className="flex items-center gap-3">
           {/* {allowModeToggle && (
             <div className="flex items-center gap-2 bg-slate-100 px-1.5 py-1 rounded-lg border border-slate-200/80 shrink-0">
@@ -1301,6 +1310,7 @@ export function HistoryFormContent({
             Quay lại
           </Button>
         </div>
+        )
       }
     >
       <div className="mx-auto w-full max-w-5xl pb-24 space-y-6">
@@ -2153,14 +2163,24 @@ export function HistoryFormContent({
 
       {/* Chừa khoảng trống để thanh hành động fixed bên dưới không đè lên nội dung
           (và để dropdown gợi ý hạng mục có chỗ hiển thị). */}
-      <div className="h-25" />
+      {!isMobileApp && <div className="h-25" />}
 
-      {/* Nút hành động (Sticky Footer) */}
-      <div className="fixed left-0 right-0 bottom-0 z-30 bg-white/95 backdrop-blur-md border-t border-slate-200 shadow-lg px-6 py-4 flex items-center justify-end gap-3 rounded-b-2xl">
+      {/* Nút hành động (Sticky Footer) — giao diện mobile: nằm cuối form */}
+      <div
+        className={
+          isMobileApp
+            ? "mt-4 flex items-center gap-2"
+            : "fixed left-0 right-0 bottom-0 z-30 bg-white/95 backdrop-blur-md border-t border-slate-200 shadow-lg px-6 py-4 flex items-center justify-end gap-3 rounded-b-2xl"
+        }
+      >
         <Button
           variant="outline"
           type="button"
-          className="h-11 px-6 rounded-xl text-sm font-semibold"
+          className={
+            isMobileApp
+              ? "h-11 flex-1 rounded-xl text-sm font-semibold"
+              : "h-11 px-6 rounded-xl text-sm font-semibold"
+          }
           onClick={() => setLocation(backUrl)}
         >
           Hủy bỏ
@@ -2168,7 +2188,7 @@ export function HistoryFormContent({
         <Button
           type="button"
           disabled={isSubmitting || createDailyDiaryMutation.isPending}
-          className="h-11 px-8 rounded-xl text-sm bg-emerald-600 hover:bg-emerald-700 text-white font-bold shadow-md shadow-emerald-600/20 disabled:opacity-50"
+          className={`${isMobileApp ? "h-11 flex-[2]" : "h-11 px-8"} rounded-xl text-sm bg-emerald-600 hover:bg-emerald-700 text-white font-bold shadow-md shadow-emerald-600/20 disabled:opacity-50`}
           onClick={handleSubmitForm}
         >
           {isSubmitting || createDailyDiaryMutation.isPending
