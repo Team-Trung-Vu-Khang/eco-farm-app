@@ -1,58 +1,199 @@
 import treeMarkerIcon from "@/assets/tree.webp";
 import PageWrapper from "@/components/PageWrapper";
+import { plantIdentificationApi } from "@/features/farm/api/farm.api";
+import { useCultivationZones } from "@/features/farm/hooks/useCultivationZones";
+import { plantKeys } from "@/features/farm/hooks/usePlantIdentifications";
+import { useSeeds } from "@/features/farm/hooks/useSeeds";
+import type {
+  FarmPlantHealthStatus,
+  FarmPlantIdentificationResponse,
+  PlantIdentificationQueryParams,
+} from "@/features/farm/types/farm.type";
+import { useProductionSubjectVariants } from "@/features/foundation/hooks/useProductionSubjects";
+import { useMasterData } from "@/features/master-data";
+import { useDebounce } from "@/shared/hooks/useDebounce";
 import {
   Badge,
   Button,
-  Combobox,
-  DataTable,
-  Dialog,
-  DialogContent,
   Input,
   Label,
+  MultiSelect,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
   cn,
-  useToast,
-  type Column,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import { useInfiniteQuery } from "@tanstack/react-query";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import {
-  Award,
-  Building2,
   ChevronRight,
   Filter,
-  Layers,
-  Leaf,
-  MapPin,
+  Loader2,
   Maximize2,
-  Minimize2,
   PanelLeftClose,
   PanelLeftOpen,
   Search,
+  Sprout,
+  X,
 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
-import {
-  MapContainer,
-  Marker,
-  Polygon,
-  TileLayer,
-  useMap,
-} from "react-leaflet";
-import useCropDetailStore from "../../../stores/useCropDetailStore";
-import useEnterpriseStore from "../../../stores/useEnterpriseStore";
-import useRegionStore from "../../../stores/useRegionStore";
-import { PROVINCES, type Region } from "../../region-chart/constants";
-import { type CropDetail } from "../constants";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { MapContainer, Marker, TileLayer, useMap } from "react-leaflet";
+import type { CropDetail } from "../constants";
 import { CropDetailDialog } from "./components/CropDetailDialog";
-import { CultivationZoneDialog } from "./components/CultivationZoneDialog";
+import {
+  PLANT_HEALTH_STATUS_LABELS,
+  PLANT_HEALTH_STATUS_STYLES,
+} from "../cultivation-region/components/types";
 
 type LatLngTuple = [number, number];
+type PlantItem = FarmPlantIdentificationResponse;
+
+const PAGE_SIZE = 20;
+const DEFAULT_CENTER: LatLngTuple = [11.53, 106.88];
+const ALL = "__all__";
+const DAYS_PER_MONTH = 30;
 
 const cropMarkerIcon = L.icon({
   iconUrl: treeMarkerIcon,
-  iconSize: [32, 32],
-  iconAnchor: [16, 32],
-  popupAnchor: [0, -30],
+  iconSize: [36, 36],
+  iconAnchor: [18, 34],
 });
+
+/**
+ * Bộ lọc nâng cao — chỉ gồm các tham số API
+ * GET /farm/production-identifications hỗ trợ.
+ */
+interface AdvancedFilters {
+  healthStatus?: FarmPlantHealthStatus;
+  /** Giống cây */
+  productionSubjectVariantId?: number;
+  /** Hạt giống */
+  subjectVariantId?: number;
+  /** Tuổi cây (tháng) — quy đổi sang ngày khi gọi API */
+  ageFromMonths?: number;
+  ageToMonths?: number;
+  /** Vùng canh tác (OR) */
+  productionZoneIds?: number[];
+  /** Loại chứng nhận (OR) */
+  agricultureCertificateIds?: number[];
+}
+
+const toQueryParams = (
+  keyword: string,
+  filters: AdvancedFilters,
+): PlantIdentificationQueryParams => ({
+  domainCode: "CROP",
+  keyword: keyword.trim() || undefined,
+  healthStatus: filters.healthStatus,
+  productionSubjectVariantId: filters.productionSubjectVariantId,
+  subjectVariantId: filters.subjectVariantId,
+  durationDaysFrom:
+    filters.ageFromMonths !== undefined
+      ? filters.ageFromMonths * DAYS_PER_MONTH
+      : undefined,
+  durationDaysTo:
+    filters.ageToMonths !== undefined
+      ? filters.ageToMonths * DAYS_PER_MONTH
+      : undefined,
+  productionZoneIds: filters.productionZoneIds?.length
+    ? filters.productionZoneIds
+    : undefined,
+  agricultureCertificateIds: filters.agricultureCertificateIds?.length
+    ? filters.agricultureCertificateIds
+    : undefined,
+});
+
+const countActiveFilters = (filters: AdvancedFilters) =>
+  Object.values(filters).filter((value) =>
+    Array.isArray(value) ? value.length > 0 : value !== undefined,
+  ).length;
+
+const getCoordinate = (plant: PlantItem): LatLngTuple | null =>
+  typeof plant.latitude === "number" && typeof plant.longitude === "number"
+    ? [plant.latitude, plant.longitude]
+    : null;
+
+const getVarietyName = (plant: PlantItem) =>
+  plant.productionSubjectVariant?.name ||
+  plant.subjectVariant?.name ||
+  "Chưa có giống";
+
+/** Vị trí: Lô · Khu vực · Vùng theo phạm vi được gán */
+const getLocationText = (plant: PlantItem) => {
+  const location = plant.location;
+  if (!location) return "";
+  const plot = location.plot;
+  const area = location.area ?? plot?.area;
+  const region = location.region ?? area?.region;
+  return [plot?.name, area?.name, region?.name].filter(Boolean).join(" · ");
+};
+
+const formatAge = (durationDays?: number) => {
+  if (durationDays === undefined || durationDays === null) return "";
+  if (durationDays >= 365) return `${Math.floor(durationDays / 365)} năm`;
+  if (durationDays >= DAYS_PER_MONTH)
+    return `${Math.floor(durationDays / DAYS_PER_MONTH)} tháng`;
+  return `${durationDays} ngày`;
+};
+
+const formatDate = (value?: string) =>
+  value ? new Date(value).toLocaleDateString("vi-VN") : "";
+
+const parseMonths = (value: string) => {
+  if (value === "") return undefined;
+  const months = Number(value);
+  return Number.isFinite(months) && months >= 0 ? months : undefined;
+};
+
+/** Chuyển dữ liệu API sang CropDetail để dùng lại dialog chi tiết hiện có */
+const toCropDetail = (plant: PlantItem): CropDetail => {
+  const location = plant.location;
+  const plot = location?.plot;
+  const area = location?.area ?? plot?.area;
+  const region = location?.region ?? area?.region;
+  const coordinate = getCoordinate(plant);
+
+  return {
+    id: String(plant.id),
+    code: plant.code || `#${plant.id}`,
+    name: getVarietyName(plant),
+    image: treeMarkerIcon,
+    plantedDate: plant.plantedAt ?? plant.startedAt ?? "",
+    seedType: plant.subjectVariant?.name ?? "",
+    variety: plant.productionSubjectVariant?.name ?? "",
+    groupCropName: "",
+    notes: plant.notes ?? "",
+    status:
+      plant.healthStatus === "PEST" || plant.healthStatus === "TREATING"
+        ? "diseased"
+        : plant.healthStatus === "HARVESTED"
+          ? "harvesting"
+          : plant.healthStatus === "DEAD"
+            ? "removed"
+            : "healthy",
+    regionId: region?.id ?? 0,
+    regionName: region?.name ?? "",
+    areaId: area?.id ?? 0,
+    areaName: area?.name ?? "",
+    plotId: plot ? String(plot.id) : "",
+    plotName: plot?.name ?? "",
+    coordinate: coordinate
+      ? { lat: coordinate[0], lng: coordinate[1] }
+      : { lat: DEFAULT_CENTER[0], lng: DEFAULT_CENTER[1] },
+    growthStage: "",
+    expectedHarvestDate: "",
+    actualAge: plant.durationDays
+      ? Math.floor(plant.durationDays / DAYS_PER_MONTH)
+      : 0,
+    certifications: [],
+    cultivationHistory: [],
+    diseaseHistory: [],
+    harvestHistory: [],
+  };
+};
 
 const MapViewSync = ({
   center,
@@ -62,1172 +203,565 @@ const MapViewSync = ({
   zoom: number;
 }) => {
   const map = useMap();
-
   useEffect(() => {
     map.setView(center, zoom, { animate: true });
   }, [center, map, zoom]);
-
   return null;
 };
 
-const MapContent = ({
-  currentRegion,
-  cropsInThisRegion,
-  setActiveCropInDialog,
-  center,
-  zoom,
-}: {
-  currentRegion: Region | undefined;
-  cropsInThisRegion: CropDetail[];
-  setActiveCropInDialog: (c: CropDetail) => void;
-  center: LatLngTuple;
-  zoom: number;
-}) => {
-  const toClosedPath = useMemo(
-    () => (coordinates?: Array<{ lat: number; lng: number }>) => {
-      if (!coordinates || coordinates.length < 3) return [];
-
-      const path = coordinates.map(
-        (coord) => [coord.lat, coord.lng] as LatLngTuple,
-      );
-      const [firstLat, firstLng] = path[0];
-      const [lastLat, lastLng] = path[path.length - 1];
-      if (firstLat !== lastLat || firstLng !== lastLng) {
-        path.push([firstLat, firstLng]);
-      }
-
-      return path;
-    },
-    [],
-  );
-
-  const regionPath = toClosedPath(currentRegion?.coordinates);
-  const areaPaths = (currentRegion?.subAreas ?? []).map((area) => ({
-    id: area.id,
-    path: toClosedPath(area.coordinates),
-  }));
-  const plotPaths = (currentRegion?.subAreas ?? []).flatMap((area) =>
-    area.plots.map((plot) => ({
-      id: plot.id,
-      path: toClosedPath(plot.coordinates),
-    })),
-  );
-
-  return (
-    <>
-      <MapViewSync center={center} zoom={zoom} />
-
-      {regionPath.length > 0 ? (
-        <Polygon
-          positions={regionPath}
-          pathOptions={{
-            color: "#3b82f6",
-            weight: 3,
-            fillColor: "#3b82f6",
-            fillOpacity: 0.1,
-          }}
-        />
-      ) : null}
-
-      {areaPaths?.map((area) =>
-        area.path.length > 0 ? (
-          <Polygon
-            key={area.id}
-            positions={area.path}
-            pathOptions={{
-              color: "#22c55e",
-              weight: 2,
-              fillColor: "#22c55e",
-              fillOpacity: 0.15,
-            }}
-          />
-        ) : null,
-      )}
-
-      {plotPaths.map((plot) =>
-        plot.path.length > 0 ? (
-          <Polygon
-            key={plot.id}
-            positions={plot.path}
-            pathOptions={{
-              color: "#f97316",
-              weight: 1.5,
-              fillColor: "#f97316",
-              fillOpacity: 0.2,
-            }}
-          />
-        ) : null,
-      )}
-
-      {cropsInThisRegion.map((c) => (
-        <Marker
-          key={c.id}
-          position={[c.coordinate.lat, c.coordinate.lng]}
-          icon={cropMarkerIcon}
-          title={c.name}
-          eventHandlers={{
-            click: () => setActiveCropInDialog(c),
-          }}
-        />
-      ))}
-    </>
-  );
-};
-
-interface AdvancedFilters {
-  // Group 1: Crop Info
-  varieties?: string[];
-  seedTypes?: string[];
-  age?: number;
-  status?: string[];
-
-  // Group 2: Cultivation Zone
-  regionIds?: number[];
-
-  // Group 3: Certifications
-  certifications?: string[];
-}
-
-const getRegionStatusBadge = (status: string) => {
-  const config = {
-    active: {
-      label: "Hoạt động",
-      variant: "default" as const,
-      className: "bg-emerald-500 text-white",
-    },
-    inactive: {
-      label: "Ngưng",
-      variant: "destructive" as const,
-      className: "",
-    },
-    "under-construction": {
-      label: "Đang xây dựng",
-      variant: "secondary" as const,
-      className: "bg-amber-100 text-amber-700",
-    },
-  };
-  const regionStatus =
-    status === "active"
-      ? "active"
-      : status === "under-construction"
-        ? "under-construction"
-        : "inactive";
-  const item = config[regionStatus as keyof typeof config];
-  return (
-    <Badge
-      variant={item.variant}
+const HealthBadge = ({ status }: { status?: FarmPlantHealthStatus | null }) =>
+  status ? (
+    <span
       className={cn(
-        "text-[10px] uppercase font-bold px-1.5 py-0",
-        item.className,
+        "shrink-0 rounded-md border px-1.5 py-0.5 text-[10px] font-bold",
+        PLANT_HEALTH_STATUS_STYLES[status],
       )}
     >
-      {item.label}
-    </Badge>
-  );
-};
+      {PLANT_HEALTH_STATUS_LABELS[status] ?? status}
+    </span>
+  ) : null;
 
-const RegionListItem = ({
-  region,
-  enterprises,
-  filteredCrops,
-  isActive,
-  onClick,
-}: {
-  region: Region;
-  enterprises: any[];
-  filteredCrops: CropDetail[];
-  isActive: boolean;
-  onClick: () => void;
-}) => {
-  const matchesSearchInRegion = filteredCrops.filter(
-    (c) => c.regionId === region.id,
-  );
-
-  const enterprise = enterprises.find(
-    (e) => String(e.id) === String(region.enterpriseId),
-  );
-
-  return (
-    <div
-      className={cn(
-        "p-4 border-b hover:bg-slate-50 cursor-pointer transition-all duration-200 border-l-4",
-        isActive
-          ? "bg-primary/5 border-l-primary shadow-inner"
-          : "border-l-transparent bg-white",
-      )}
-      onClick={onClick}
-    >
-      <div className="flex justify-between items-start mb-2">
-        <Badge
-          variant="outline"
-          className="text-[9px] font-black text-slate-400 border-slate-200 uppercase px-1"
-        >
-          {region.code}
-        </Badge>
-        {getRegionStatusBadge(region.status)}
-      </div>
-
-      <h4
-        className={cn(
-          "font-bold text-sm mb-1 line-clamp-1",
-          isActive ? "text-primary" : "text-slate-800",
-        )}
-      >
-        {region.name}
-      </h4>
-
-      <div className="flex items-center gap-1.5 text-[11px] text-slate-500 mb-2">
-        <MapPin size={12} className="text-red-500 shrink-0" />
-        <span className="truncate">
-          {PROVINCES.find((p) => p.id === region.provinceId)?.name ||
-            region.provinceId}
-        </span>
-      </div>
-
-      <div className="grid grid-cols-2 gap-2 mt-3">
-        <div className="flex items-center gap-1.5">
-          <div className="p-1 rounded bg-blue-50">
-            <Building2 size={10} className="text-blue-600" />
-          </div>
-          <span className="text-[10px] text-slate-500 font-medium truncate max-w-20">
-            {enterprise?.name || "Đơn vị sở hữu"}
-          </span>
-        </div>
-        <div className="flex items-center gap-1.5 justify-end">
-          <div className="p-1 rounded bg-emerald-50">
-            <Leaf size={10} className="text-emerald-600" />
-          </div>
-          <span className="text-[10px] text-slate-500 font-medium whitespace-nowrap">
-            {matchesSearchInRegion.length} cây
-          </span>
-        </div>
-      </div>
-
-      <div className="mt-3 flex items-center justify-between">
-        <div className="flex gap-1">
-          <Badge
-            variant="secondary"
-            className="bg-slate-100 text-slate-600 text-[9px] font-bold border-none px-1.5"
-          >
-            {region.area} ha
-          </Badge>
-        </div>
-        <div className="flex items-center gap-1 text-[10px] font-bold text-primary group-hover:translate-x-1 transition-transform">
-          <span>Chi tiết</span>
-          <ChevronRight size={10} />
-        </div>
-      </div>
+const InfoRow = ({ label, value }: { label: string; value?: ReactNode }) =>
+  value ? (
+    <div className="flex items-start justify-between gap-3 py-2 text-sm">
+      <span className="shrink-0 text-slate-500">{label}</span>
+      <span className="text-right font-semibold text-slate-800">{value}</span>
     </div>
-  );
-};
+  ) : null;
 
 const SearchCropPage = () => {
-  const { toast } = useToast();
-  const { crops } = useCropDetailStore();
-  const { regions } = useRegionStore();
-  const { enterprises } = useEnterpriseStore();
-
   const [searchQuery, setSearchQuery] = useState("");
-  const [activeCropInDialog, setActiveCropInDialog] =
-    useState<CropDetail | null>(null);
+  const debouncedSearch = useDebounce(searchQuery, 400);
+  const [isAdvancedSearchOpen, setIsAdvancedSearchOpen] = useState(false);
+  const [draftFilters, setDraftFilters] = useState<AdvancedFilters>({});
+  const [appliedFilters, setAppliedFilters] = useState<AdvancedFilters>({});
+  const [selectedId, setSelectedId] = useState<number | null>(null);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isCropDetailOpen, setIsCropDetailOpen] = useState(false);
 
-  const [isAdvancedSearchOpen, setIsAdvancedSearchOpen] = useState(false);
-  const [advancedFilters, setAdvancedFilters] = useState<AdvancedFilters>({});
-  const [isZoneDialogOpen, setIsZoneDialogOpen] = useState(false);
-  const [isMapExpanded, setIsMapExpanded] = useState(false);
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
-
-  const [currentView, setCurrentView] = useState<SearchView>("regions");
-  const [selectedRegionId, setSelectedRegionId] = useState<number | null>(null);
-
-  const handleViewRegion = (regionId: number) => {
-    setSelectedRegionId(regionId);
-    setCurrentView("plants");
-
-    const plantsInRegion = filteredCrops.filter((c) => c.regionId === regionId);
-    if (plantsInRegion.length > 0) {
-      const firstPlant = plantsInRegion[0];
-      setActiveCropInDialog(firstPlant);
-    }
-  };
-
-  const varietyOptions = Array.from(new Set(crops.map((c) => c.variety))).map(
-    (v) => ({
-      value: v,
-      label: v,
-    }),
+  const queryParams = useMemo(
+    () => toQueryParams(debouncedSearch, appliedFilters),
+    [debouncedSearch, appliedFilters],
   );
 
-  const statusOptions = [
-    { value: "healthy", label: "Khỏe mạnh" },
-    { value: "diseased", label: "Bệnh" },
-    { value: "harvesting", label: "Thu hoạch" },
-  ];
-
-  const filteredCrops = crops.filter((crop) => {
-    // Basic search
-    const matchesSearch =
-      crop.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      crop.code.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      crop.variety.toLowerCase().includes(searchQuery.toLowerCase());
-
-    // Advanced filters - Group 1
-    const matchesStatus =
-      advancedFilters.status && advancedFilters.status.length > 0
-        ? advancedFilters.status.includes(crop.status)
-        : true;
-
-    const matchesVariety =
-      advancedFilters.varieties && advancedFilters.varieties.length > 0
-        ? advancedFilters.varieties.includes(crop.variety)
-        : true;
-
-    const matchesSeedType =
-      advancedFilters.seedTypes && advancedFilters.seedTypes.length > 0
-        ? advancedFilters.seedTypes.includes(crop.seedType)
-        : true;
-
-    const matchesAge = advancedFilters.age
-      ? Math.abs(crop.actualAge - advancedFilters.age) <= 6 // Within 6 months
-      : true;
-
-    // Advanced filters - Group 2 (Cultivation Zone)
-    const matchesRegion =
-      advancedFilters.regionIds && advancedFilters.regionIds.length > 0
-        ? advancedFilters.regionIds.includes(crop.regionId)
-        : true;
-
-    // Advanced filters - Group 3 (Certifications)
-    const matchesCertification =
-      advancedFilters.certifications &&
-      advancedFilters.certifications.length > 0
-        ? crop.certifications.some((c) =>
-            advancedFilters.certifications?.includes(c.name),
-          )
-        : true;
-
-    return (
-      matchesSearch &&
-      matchesStatus &&
-      matchesVariety &&
-      matchesSeedType &&
-      matchesAge &&
-      matchesRegion &&
-      matchesCertification
-    );
+  const plantsQuery = useInfiniteQuery({
+    queryKey: [...plantKeys.all(), "search-crop", queryParams] as const,
+    queryFn: ({ pageParam }) =>
+      plantIdentificationApi.list({
+        ...queryParams,
+        page: pageParam,
+        size: PAGE_SIZE,
+      }),
+    initialPageParam: 0,
+    getNextPageParam: (lastPage) =>
+      lastPage.last ? undefined : lastPage.page + 1,
   });
 
-  const handleSearch = () => {
-    toast({
-      title: "Tìm kiếm hoàn tất",
-      description: `Đã tìm thấy ${filteredCrops.length} cây trồng phù hợp với tiêu chí của bạn.`,
-    });
+  const plants = useMemo(
+    () => plantsQuery.data?.pages.flatMap((page) => page.content) ?? [],
+    [plantsQuery.data],
+  );
+  const totalElements = plantsQuery.data?.pages[0]?.totalElements ?? 0;
+
+  // Cây đang xem: cây đã chọn nếu còn trong kết quả, không thì cây đầu tiên
+  const activePlant =
+    plants.find((plant) => plant.id === selectedId) ?? plants[0] ?? null;
+
+  // Nguồn dữ liệu cho bộ lọc nâng cao — chỉ tải khi mở bộ lọc
+  const optionsEnabled = isAdvancedSearchOpen;
+  const { items: varietyItems } = useProductionSubjectVariants({
+    params: { domainCode: "CROP", page: 0, size: 100 },
+    enabled: optionsEnabled,
+  });
+  const { items: seedItems } = useSeeds({
+    params: { page: 0, size: 100 },
+    enabled: optionsEnabled,
+  });
+  const { items: zoneItems } = useCultivationZones({
+    params: { domainCode: "CROP", page: 0, size: 100 },
+    enabled: optionsEnabled,
+  });
+  const certificatesQuery = useMasterData("certificate-standards", {
+    params: { page: 0, size: 100 },
+    enabled: optionsEnabled,
+  });
+
+  const activeFilterCount = countActiveFilters(appliedFilters);
+
+  const setDraft = (partial: Partial<AdvancedFilters>) =>
+    setDraftFilters((prev) => ({ ...prev, ...partial }));
+
+  const applyFilters = () => {
+    setAppliedFilters(draftFilters);
+    setSelectedId(null);
   };
 
   const clearFilters = () => {
-    setAdvancedFilters({});
-    setSearchQuery("");
-    setCurrentView("regions");
-    setSelectedRegionId(null);
+    setDraftFilters({});
+    setAppliedFilters({});
+    setSelectedId(null);
   };
 
-  const resetToRegionsView = () => {
-    if (currentView !== "regions") {
-      setCurrentView("regions");
-      setSelectedRegionId(null);
-    }
-  };
-
-  const activeFilterCount = Object.keys(advancedFilters).filter((key) => {
-    const value = advancedFilters[key as keyof AdvancedFilters];
-    if (Array.isArray(value)) {
-      return value.length > 0;
-    }
-    if (typeof value === "number") {
-      return value > 0;
-    }
-    return value !== undefined && value !== null;
-  }).length;
-
-  const mapView = (() => {
-    if (activeCropInDialog) {
-      return {
-        center: [
-          activeCropInDialog.coordinate.lat,
-          activeCropInDialog.coordinate.lng,
-        ] as LatLngTuple,
-        zoom: 17,
-      };
-    }
-
-    // Chưa chọn cây: canh theo cây đầu tiên trong kết quả tìm kiếm
-    const firstCrop = filteredCrops[0];
-    if (!firstCrop) {
-      return {
-        center: [11.53, 106.88] as LatLngTuple,
-        zoom: 15,
-      };
-    }
-
-    return {
-      center: [
-        firstCrop.coordinate.lat,
-        firstCrop.coordinate.lng,
-      ] as LatLngTuple,
-      zoom: 15,
-    };
-  })();
+  const activeCoordinate = activePlant ? getCoordinate(activePlant) : null;
+  const firstCoordinate = plants.map(getCoordinate).find(Boolean) ?? null;
+  const mapCenter = activeCoordinate ?? firstCoordinate ?? DEFAULT_CENTER;
+  const mapZoom = activeCoordinate ? 17 : 15;
 
   return (
     <PageWrapper title="Tìm kiếm & Truy xuất nguồn gốc">
-      <div className="min-h-screen flex flex-col bg-slate-50 space-y-6 pb-12">
-        {/* TOP HEADER: Search & Advanced Search */}
-        <div className="bg-white border-b rounded-md p-4 z-40 shadow-sm">
-          <div className="max-w-7xl mx-auto space-y-4">
-            <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
-              <div className="relative flex-1 w-full">
-                <Search className="absolute left-3 top-2.5 h-5 w-5 text-muted-foreground" />
-                <Input
-                  placeholder="Nhập tên cây, mã số, hoặc giống cần tìm..."
-                  className="pl-10 border-slate-200 focus:ring-primary shadow-sm bg-slate-50/50"
-                  value={searchQuery}
-                  onChange={(e) => {
-                    setSearchQuery(e.target.value);
-                    resetToRegionsView();
-                  }}
-                />
-              </div>
-
-              <div className="flex gap-2 w-full md:w-auto">
-                <Button
-                  variant={isAdvancedSearchOpen ? "default" : "outline"}
-                  onClick={() => setIsAdvancedSearchOpen(!isAdvancedSearchOpen)}
-                >
-                  <Filter className="h-4 w-4" />
-                  <span>Bộ lọc nâng cao</span>
-                  {activeFilterCount > 0 && (
-                    <span className="text-primary bg-white rounded text-xs w-5 h-5 flex items-center justify-center">
-                      {activeFilterCount}
-                    </span>
-                  )}
-                </Button>
-                <Button className="font-bold" onClick={handleSearch}>
-                  Tìm kiếm
-                </Button>
-              </div>
+      <div className="flex min-h-screen flex-col space-y-6 bg-slate-50 pb-12">
+        {/* TOP HEADER: Tìm kiếm & Bộ lọc nâng cao */}
+        <div className="z-40 space-y-4 rounded-md border-b bg-white p-4 shadow-sm">
+          <div className="flex flex-col items-center justify-between gap-4 md:flex-row">
+            <div className="relative w-full flex-1">
+              <Search className="pointer-events-none absolute left-3 top-2.5 z-10 h-5 w-5 text-muted-foreground" />
+              <Input
+                placeholder="Nhập mã cây, tên/mã giống cây hoặc hạt giống..."
+                className="border-slate-200 bg-slate-50/50 pl-10 shadow-sm"
+                value={searchQuery}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                  setSelectedId(null);
+                }}
+              />
             </div>
 
-            {/* Premium Search Results Banner */}
-            <div className="relative overflow-hidden rounded-xl border border-green-200 bg-linear-to-r from-green-50 via-white to-green-50 p-5 shadow-sm mt-4">
-              <div className="relative z-10 flex items-center gap-4">
-                <div className="w-12 h-12 rounded-xl bg-white shadow-sm border border-green-100 flex items-center justify-center text-green-600 shrink-0">
-                  <Layers className="w-6 h-6" />
-                </div>
-                <div>
-                  <h3 className="text-base font-bold text-green-900 uppercase tracking-wide">
-                    Kết quả tìm kiếm
-                  </h3>
-                  <p className="text-sm text-green-700/80 font-medium">
-                    Đã tìm thấy{" "}
-                    <span className="text-green-600 font-black px-1.5 py-0.5 bg-white rounded-md border border-green-100 shadow-xs">
-                      {filteredCrops.length}
-                    </span>{" "}
-                    cây trồng phù hợp với tiêu chí của bạn.
-                  </p>
-                </div>
-              </div>
-              <div className="absolute top-0 right-0 -mt-4 -mr-4 w-32 h-32 bg-green-500/10 rounded-full blur-2xl" />
-            </div>
-
-            {/* Advanced Filter Panel (Collapsible) */}
-            {isAdvancedSearchOpen && (
-              <div className="pt-2 animate-in slide-in-from-top-2 duration-200">
-                <div className="bg-white rounded-xl border border-slate-100 shadow-md overflow-hidden">
-                  <div className="px-6 py-4 bg-slate-50/50 border-b flex items-center justify-between">
-                    <div className="flex items-center gap-2 text-primary font-black uppercase tracking-widest text-sm">
-                      <Filter size={18} />
-                      Bộ lọc nâng cao
-                    </div>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={clearFilters}
-                      className="text-primary hover:text-primary/80 text-xs font-bold"
-                    >
-                      Xóa tất cả
-                    </Button>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-0 divide-x divide-slate-100">
-                    {/* Column 1: Crop Information */}
-                    <div className="p-6 space-y-6">
-                      <div className="flex items-center gap-2 text-emerald-600 font-black uppercase tracking-widest text-[11px] mb-4">
-                        <Leaf size={14} />
-                        1. Thông tin cây trồng
-                      </div>
-
-                      <div className="space-y-4">
-                        <div className="space-y-1.5">
-                          <div className="flex justify-between items-center">
-                            <Label className="text-xs font-bold text-slate-600">
-                              Giống cây
-                            </Label>
-                            {advancedFilters.varieties?.length ? (
-                              <button
-                                onClick={() =>
-                                  setAdvancedFilters({
-                                    ...advancedFilters,
-                                    varieties: [],
-                                  })
-                                }
-                                className="text-[10px] text-primary font-bold hover:underline"
-                              >
-                                Xóa
-                              </button>
-                            ) : null}
-                          </div>
-                          <Combobox
-                            options={varietyOptions}
-                            value={advancedFilters.varieties?.[0] || ""}
-                            onChange={(v) => {
-                              setAdvancedFilters({
-                                ...advancedFilters,
-                                varieties: [v],
-                              });
-                              resetToRegionsView();
-                            }}
-                            placeholder="Chọn giống cây..."
-                            className="w-full"
-                          />
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-4">
-                          <div className="space-y-1.5">
-                            <div className="flex justify-between items-center">
-                              <Label className="text-xs font-bold text-slate-600">
-                                Hạt giống
-                              </Label>
-                              {advancedFilters.seedTypes?.length ? (
-                                <button
-                                  onClick={() =>
-                                    setAdvancedFilters({
-                                      ...advancedFilters,
-                                      seedTypes: [],
-                                    })
-                                  }
-                                  className="text-[10px] text-primary font-bold hover:underline"
-                                >
-                                  Xóa
-                                </button>
-                              ) : null}
-                            </div>
-                            <Combobox
-                              options={[
-                                { value: "F1", label: "Hạt giống F1" },
-                                {
-                                  value: "local",
-                                  label: "Hạt giống địa phương",
-                                },
-                              ]}
-                              value={advancedFilters.seedTypes?.[0] || ""}
-                              onChange={(v) => {
-                                setAdvancedFilters({
-                                  ...advancedFilters,
-                                  seedTypes: [v],
-                                });
-                                resetToRegionsView();
-                              }}
-                              placeholder="Hạt giống..."
-                              className="w-full"
-                            />
-                          </div>
-                          <div className="space-y-1.5">
-                            <Label className="text-xs font-bold text-slate-600">
-                              Độ tuổi (tháng)
-                            </Label>
-                            <Input
-                              type="number"
-                              placeholder="Nhập tháng"
-                              value={advancedFilters.age || ""}
-                              onChange={(e) => {
-                                setAdvancedFilters({
-                                  ...advancedFilters,
-                                  age: parseInt(e.target.value) || undefined,
-                                });
-                                resetToRegionsView();
-                              }}
-                              className="w-full h-10 rounded-xl"
-                            />
-                          </div>
-                        </div>
-
-                        <div className="space-y-1.5">
-                          <div className="flex justify-between items-center">
-                            <Label className="text-xs font-bold text-slate-600">
-                              Hiện trạng sức khỏe
-                            </Label>
-                            {advancedFilters.status?.length ? (
-                              <button
-                                onClick={() =>
-                                  setAdvancedFilters({
-                                    ...advancedFilters,
-                                    status: [],
-                                  })
-                                }
-                                className="text-[10px] text-primary font-bold hover:underline"
-                              >
-                                Xóa
-                              </button>
-                            ) : null}
-                          </div>
-                          <Combobox
-                            options={statusOptions}
-                            value={advancedFilters.status?.[0] || ""}
-                            onChange={(v) => {
-                              setAdvancedFilters({
-                                ...advancedFilters,
-                                status: [v],
-                              });
-                              resetToRegionsView();
-                            }}
-                            placeholder="Chọn trạng thái..."
-                            className="w-full"
-                          />
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Column 2: Cultivation Zone */}
-                    <div className="p-6 space-y-6">
-                      <div className="flex items-center gap-2 text-emerald-600 font-black uppercase tracking-widest text-[11px] mb-4">
-                        <MapPin size={14} />
-                        2. Vùng canh tác
-                      </div>
-
-                      <div className="p-4 rounded-xl border border-slate-100 border-dashed bg-slate-50 space-y-4">
-                        <div className="space-y-3">
-                          <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                            Vùng đã chọn
-                          </div>
-                          <div className="min-h-15 p-3 rounded-2xl bg-white border border-slate-100 text-xs text-slate-400 flex items-center justify-center text-center">
-                            {advancedFilters.regionIds?.length
-                              ? `Đã chọn ${advancedFilters.regionIds.length} vùng`
-                              : "Chưa chọn vùng nào"}
-                          </div>
-                        </div>
-
-                        <Button
-                          variant="outline"
-                          className="w-full justify-center gap-2 h-12 rounded-2xl bg-white border-slate-200 text-primary font-black shadow-sm hover:bg-slate-50"
-                          onClick={() => setIsZoneDialogOpen(true)}
-                        >
-                          <MapPin size={16} />
-                          Chọn vùng canh tác
-                        </Button>
-                        <p className="text-[9px] text-slate-400 italic leading-relaxed text-center px-2">
-                          * Nhấn nút để mở hộp thoại trực quan và lọc theo Doanh
-                          nghiệp, Tỉnh/Thành
-                        </p>
-                      </div>
-                    </div>
-
-                    {/* Column 3: Certifications */}
-                    <div className="p-6 space-y-6">
-                      <div className="flex items-center gap-2 text-emerald-600 font-black uppercase tracking-widest text-[11px] mb-4">
-                        <Award size={14} className="text-emerald-600" />
-                        3. Chứng nhận
-                      </div>
-
-                      <div className="p-4 rounded-xl border border-slate-100 bg-white min-h-35">
-                        <div className="flex flex-wrap gap-2">
-                          {[
-                            "VietGAP",
-                            "GlobalGAP",
-                            "Organic",
-                            "Premium Quality",
-                          ].map((cert) => (
-                            <Badge
-                              key={cert}
-                              variant={
-                                advancedFilters.certifications?.includes(cert)
-                                  ? "default"
-                                  : "outline"
-                              }
-                              className={cn(
-                                "cursor-pointer py-2 px-4 rounded-xl text-xs font-bold transition-all",
-                                advancedFilters.certifications?.includes(cert)
-                                  ? "bg-primary border-primary shadow-md shadow-primary/20"
-                                  : "bg-white text-slate-600 border-slate-100",
-                              )}
-                              onClick={() => {
-                                const current =
-                                  advancedFilters.certifications || [];
-                                const updated = current.includes(cert)
-                                  ? current.filter((c) => c !== cert)
-                                  : [...current, cert];
-                                setAdvancedFilters({
-                                  ...advancedFilters,
-                                  certifications: updated,
-                                });
-                                resetToRegionsView();
-                              }}
-                            >
-                              {cert}
-                            </Badge>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
+            <Button
+              variant={isAdvancedSearchOpen ? "default" : "outline"}
+              className="w-full gap-2 md:w-auto"
+              onClick={() => setIsAdvancedSearchOpen((open) => !open)}
+            >
+              <Filter className="h-4 w-4" />
+              <span>Bộ lọc nâng cao</span>
+              {activeFilterCount > 0 && (
+                <span className="flex h-5 w-5 items-center justify-center rounded bg-white text-xs text-primary">
+                  {activeFilterCount}
+                </span>
+              )}
+            </Button>
           </div>
+
+          {isAdvancedSearchOpen && (
+            <div className="space-y-4 rounded-xl border border-slate-200 bg-slate-50/60 p-4">
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-semibold">Giống cây</Label>
+                  <Select
+                    value={
+                      draftFilters.productionSubjectVariantId
+                        ? String(draftFilters.productionSubjectVariantId)
+                        : ALL
+                    }
+                    onValueChange={(value) =>
+                      setDraft({
+                        productionSubjectVariantId:
+                          value === ALL ? undefined : Number(value),
+                      })
+                    }
+                  >
+                    <SelectTrigger className="bg-white">
+                      <SelectValue placeholder="Tất cả giống cây" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value={ALL}>Tất cả giống cây</SelectItem>
+                      {varietyItems.map((variety) => (
+                        <SelectItem key={variety.id} value={String(variety.id)}>
+                          {variety.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-semibold">Hạt giống</Label>
+                  <Select
+                    value={
+                      draftFilters.subjectVariantId
+                        ? String(draftFilters.subjectVariantId)
+                        : ALL
+                    }
+                    onValueChange={(value) =>
+                      setDraft({
+                        subjectVariantId:
+                          value === ALL ? undefined : Number(value),
+                      })
+                    }
+                  >
+                    <SelectTrigger className="bg-white">
+                      <SelectValue placeholder="Tất cả hạt giống" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value={ALL}>Tất cả hạt giống</SelectItem>
+                      {seedItems.map((seed) => (
+                        <SelectItem key={seed.id} value={String(seed.id)}>
+                          {seed.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-semibold">
+                    Hiện trạng sức khỏe
+                  </Label>
+                  <Select
+                    value={draftFilters.healthStatus ?? ALL}
+                    onValueChange={(value) =>
+                      setDraft({
+                        healthStatus:
+                          value === ALL
+                            ? undefined
+                            : (value as FarmPlantHealthStatus),
+                      })
+                    }
+                  >
+                    <SelectTrigger className="bg-white">
+                      <SelectValue placeholder="Tất cả" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value={ALL}>Tất cả</SelectItem>
+                      {Object.entries(PLANT_HEALTH_STATUS_LABELS).map(
+                        ([value, label]) => (
+                          <SelectItem key={value} value={value}>
+                            {label}
+                          </SelectItem>
+                        ),
+                      )}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-semibold">
+                    Tuổi cây (tháng)
+                  </Label>
+                  <div className="flex items-center gap-2">
+                    <Input
+                      type="number"
+                      min={0}
+                      placeholder="Từ"
+                      className="bg-white"
+                      value={draftFilters.ageFromMonths ?? ""}
+                      onChange={(e) =>
+                        setDraft({ ageFromMonths: parseMonths(e.target.value) })
+                      }
+                    />
+                    <span className="text-slate-400">–</span>
+                    <Input
+                      type="number"
+                      min={0}
+                      placeholder="Đến"
+                      className="bg-white"
+                      value={draftFilters.ageToMonths ?? ""}
+                      onChange={(e) =>
+                        setDraft({ ageToMonths: parseMonths(e.target.value) })
+                      }
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-semibold">Vùng canh tác</Label>
+                  <MultiSelect
+                    options={zoneItems.map((zone) => ({
+                      value: String(zone.id),
+                      label: zone.name || zone.code || `#${zone.id}`,
+                      keywords: zone.code ? [zone.code] : undefined,
+                    }))}
+                    value={(draftFilters.productionZoneIds ?? []).map(String)}
+                    onChange={(next) =>
+                      setDraft({ productionZoneIds: next.map(Number) })
+                    }
+                    placeholder="Tất cả vùng canh tác"
+                    searchPlaceholder="Tìm vùng canh tác..."
+                    emptyText="Không có vùng canh tác"
+                    clearable
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-semibold">Chứng nhận</Label>
+                  <MultiSelect
+                    options={certificatesQuery.items.map((certificate) => ({
+                      value: String(certificate.id),
+                      label: certificate.name || certificate.code,
+                      keywords: certificate.code ? [certificate.code] : undefined,
+                    }))}
+                    value={(draftFilters.agricultureCertificateIds ?? []).map(
+                      String,
+                    )}
+                    onChange={(next) =>
+                      setDraft({ agricultureCertificateIds: next.map(Number) })
+                    }
+                    placeholder="Tất cả chứng nhận"
+                    searchPlaceholder="Tìm chứng nhận..."
+                    emptyText="Không có loại chứng nhận"
+                    clearable
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-center justify-end gap-2">
+                <Button variant="ghost" onClick={clearFilters}>
+                  <X className="h-4 w-4" /> Xóa bộ lọc
+                </Button>
+                <Button onClick={applyFilters}>Áp dụng</Button>
+              </div>
+            </div>
+          )}
         </div>
 
-        {/* MAIN BODY: Sidebar | Content */}
-        <div className="flex-1 flex gap-6 items-start relative px-2">
-          {/* Sidebar Toggle Button (Visible when collapsed) */}
+        {/* MAIN BODY: Danh sách cây (trái) | Chi tiết cây (phải) */}
+        <div className="relative flex flex-1 items-start gap-6 px-2">
           {isSidebarCollapsed && (
             <button
               onClick={() => setIsSidebarCollapsed(false)}
-              className="absolute left-4 top-4 z-40 w-10 h-10 bg-white shadow-xl border border-slate-100 rounded-xl flex items-center justify-center text-primary hover:bg-slate-50 transition-all animate-in fade-in zoom-in duration-300"
-              title="Mở danh sách vùng trồng"
+              className="absolute left-4 top-4 z-40 flex h-10 w-10 items-center justify-center rounded-xl border border-slate-100 bg-white text-primary shadow-xl hover:bg-slate-50"
+              title="Mở danh sách cây trồng"
             >
               <PanelLeftOpen size={20} />
             </button>
           )}
 
-          {/* LEFT SIDEBAR: Region List */}
+          {/* LEFT: danh sách cây trồng */}
           <div
             className={cn(
-              "bg-white border rounded-xl flex flex-col z-30 shadow-sm transition-all duration-300 ease-in-out sticky top-4 max-h-[calc(100vh-32px)] shrink-0 overflow-hidden",
+              "sticky top-4 z-30 flex max-h-[calc(100vh-32px)] shrink-0 flex-col overflow-hidden rounded-xl border bg-white shadow-sm transition-all duration-300",
               isSidebarCollapsed
-                ? "w-0 opacity-0 border-none p-0"
+                ? "w-0 border-none p-0 opacity-0"
                 : "w-85 lg:w-100",
             )}
           >
-            <div className="p-4 border-b bg-slate-50/50 flex items-center justify-between min-w-60">
-              <h3 className="font-black text-xs text-slate-500 uppercase tracking-widest flex items-center gap-2">
-                <MapPin size={14} className="text-primary" />
-                Vùng trồng (
-                {
-                  regions.filter((r) =>
-                    filteredCrops.some((c) => c.regionId === r.id),
-                  ).length
-                }
-                )
+            <div className="flex min-w-60 items-center justify-between border-b bg-slate-50/50 p-4">
+              <h3 className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-slate-500">
+                <Sprout size={14} className="text-primary" />
+                Cây trồng ({totalElements})
               </h3>
               <button
                 onClick={() => setIsSidebarCollapsed(true)}
-                className="p-1.5 text-slate-400 hover:text-primary hover:bg-slate-100 rounded-lg transition-colors"
+                className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-primary"
                 title="Thu gọn"
               >
                 <PanelLeftClose size={18} />
               </button>
             </div>
 
-            <div className="flex-1 overflow-y-auto split-scrollbar min-w-60">
-              {regions
-                .filter((region) =>
-                  filteredCrops.some((c) => c.regionId === region.id),
-                )
-                .map((region) => (
-                  <RegionListItem
-                    key={region.id}
-                    region={region}
-                    enterprises={enterprises}
-                    filteredCrops={filteredCrops}
-                    isActive={selectedRegionId === region.id}
-                    onClick={() => handleViewRegion(region.id)}
-                  />
-                ))}
-
-              {filteredCrops.length === 0 && (
-                <div className="p-10 text-center flex flex-col items-center">
-                  <div className="w-16 h-16 rounded-full bg-slate-50 flex items-center justify-center mb-4">
+            <div className="min-w-60 flex-1 space-y-1.5 overflow-y-auto p-2">
+              {plantsQuery.isLoading ? (
+                <div className="flex items-center justify-center gap-2 p-10 text-sm text-slate-400">
+                  <Loader2 className="h-4 w-4 animate-spin" /> Đang tải...
+                </div>
+              ) : plantsQuery.isError ? (
+                <p className="p-10 text-center text-sm text-red-500">
+                  Không tải được danh sách cây trồng
+                </p>
+              ) : plants.length === 0 ? (
+                <div className="flex flex-col items-center p-10 text-center">
+                  <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-slate-50">
                     <Search className="h-8 w-8 text-slate-200" />
                   </div>
                   <p className="text-sm font-bold text-slate-400">
-                    Không tìm thấy vùng phù hợp
+                    Không tìm thấy cây trồng phù hợp
                   </p>
                 </div>
+              ) : (
+                <>
+                  {plants.map((plant) => {
+                    const isActive = activePlant?.id === plant.id;
+                    return (
+                      <button
+                        key={plant.id}
+                        type="button"
+                        onClick={() => setSelectedId(plant.id)}
+                        className={cn(
+                          "flex w-full items-center gap-3 rounded-xl border p-2.5 text-left transition-colors",
+                          isActive
+                            ? "border-primary bg-primary/5"
+                            : "border-transparent hover:bg-slate-50",
+                        )}
+                      >
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600">
+                          <Sprout className="h-5 w-5" />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-2">
+                            <span className="truncate text-sm font-bold text-slate-800">
+                              {plant.code || `#${plant.id}`}
+                            </span>
+                            <HealthBadge status={plant.healthStatus} />
+                          </div>
+                          <p className="truncate text-[11px] text-slate-500">
+                            {getVarietyName(plant)}
+                          </p>
+                          <p className="truncate text-[10px] text-slate-400">
+                            {getLocationText(plant) ||
+                              plant.productionZone?.name ||
+                              ""}
+                          </p>
+                        </div>
+                        <ChevronRight
+                          size={14}
+                          className={
+                            isActive ? "text-primary" : "text-slate-300"
+                          }
+                        />
+                      </button>
+                    );
+                  })}
+
+                  {plantsQuery.hasNextPage && (
+                    <Button
+                      variant="ghost"
+                      className="w-full text-xs"
+                      disabled={plantsQuery.isFetchingNextPage}
+                      onClick={() => void plantsQuery.fetchNextPage()}
+                    >
+                      {plantsQuery.isFetchingNextPage ? (
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      ) : (
+                        "Tải thêm"
+                      )}
+                    </Button>
+                  )}
+                </>
               )}
             </div>
           </div>
 
-          {/* RIGHT CONTENT: Map & Plant List */}
-          <div className="flex-1 flex flex-col space-y-6 min-w-0 bg-slate-50 relative">
-            {!selectedRegionId ? (
-              <div className="h-full min-h-[400px] flex flex-col items-center justify-center opacity-40">
-                <div className="w-32 h-32 rounded-full bg-white shadow-xl flex items-center justify-center mb-6">
-                  <MapPin size={64} className="text-slate-200" />
+          {/* RIGHT: chi tiết cây đang chọn */}
+          <div className="relative flex min-w-0 flex-1 flex-col space-y-6">
+            {!activePlant ? (
+              <div className="flex min-h-[400px] flex-col items-center justify-center opacity-40">
+                <div className="mb-6 flex h-32 w-32 items-center justify-center rounded-full bg-white shadow-xl">
+                  <Sprout size={64} className="text-slate-200" />
                 </div>
-                <h3 className="text-xl font-black text-slate-400 uppercase tracking-widest">
-                  Chọn vùng trồng để xem chi tiết
+                <h3 className="text-xl font-black uppercase tracking-widest text-slate-400">
+                  Chọn cây trồng để xem chi tiết
                 </h3>
               </div>
             ) : (
-              <div className="flex flex-col space-y-6">
-                {(() => {
-                  // Bản đồ & panel bám theo cây đang chọn thay vì vùng đã chọn
-                  const currentRegion = regions.find(
-                    (r) => r.id === activeCropInDialog?.regionId,
-                  );
-                  const cropsInThisRegion = filteredCrops;
-
-                  return (
-                    <div className="flex flex-col space-y-6">
-                      <div className="flex flex-col space-y-6">
-                        {(() => {
-                          return (
-                            <div className="flex flex-col gap-6">
-                              {/* Enterprise Header inside Plants View */}
-                              <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-100 flex items-center justify-between">
-                                <div className="flex items-center gap-4">
-                                  <div className="w-12 h-12 rounded-xl bg-slate-50 flex items-center justify-center border">
-                                    <Building2
-                                      size={24}
-                                      className="text-slate-300"
-                                    />
-                                  </div>
-                                  <div>
-                                    <h2 className="font-black text-lg text-slate-800">
-                                      {activeCropInDialog
-                                        ? activeCropInDialog.name
-                                        : "Kết quả tìm kiếm cây trồng"}
-                                    </h2>
-                                    <p className="text-xs text-slate-400 font-bold uppercase tracking-widest">
-                                      {activeCropInDialog
-                                        ? `${activeCropInDialog.variety} · ${activeCropInDialog.regionName}`
-                                        : "Chọn một cây trong danh sách để xem chi tiết"}
-                                    </p>
-                                  </div>
-                                </div>
-                                <Badge
-                                  variant="secondary"
-                                  className="font-black py-1 px-3"
-                                >
-                                  {cropsInThisRegion.length} cây trồng
-                                </Badge>
-                              </div>
-
-                              <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 h-100 shrink-0">
-                                <div
-                                  className={cn(
-                                    "lg:col-span-8 rounded-xl overflow-hidden border-4 border-white bg-white shadow-xl relative transition-opacity duration-300",
-                                    isCropDetailOpen && "opacity-0",
-                                  )}
-                                >
-                                  <MapContainer
-                                    center={mapView.center}
-                                    zoom={mapView.zoom}
-                                    className="h-full w-full z-0"
-                                    zoomControl={false}
-                                    scrollWheelZoom
-                                  >
-                                    <TileLayer url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}" />
-                                    <MapContent
-                                      currentRegion={currentRegion}
-                                      cropsInThisRegion={cropsInThisRegion}
-                                      setActiveCropInDialog={
-                                        setActiveCropInDialog
-                                      }
-                                      center={mapView.center}
-                                      zoom={mapView.zoom}
-                                    />
-                                  </MapContainer>
-                                  <div
-                                    onClick={() => setIsMapExpanded(true)}
-                                    className="p-3 rounded-xl cursor-pointer absolute top-4 right-4 z-1 bg-white/90 backdrop-blur-sm shadow-xl hover:bg-white transition-colors"
-                                  >
-                                    <Maximize2 size={20} />
-                                  </div>
-                                </div>
-                                <div className="lg:col-span-4 bg-white rounded-xl p-6 shadow-xl border-4 border-white overflow-y-auto split-scrollbar">
-                                  {activeCropInDialog ? (
-                                    <div className="space-y-4">
-                                      <img
-                                        src={activeCropInDialog.image}
-                                        className="w-full h-32 object-cover rounded-2xl mb-4"
-                                      />
-                                      <h4 className="font-black text-lg">
-                                        {activeCropInDialog.name}
-                                      </h4>
-                                      <Badge className="bg-primary/10 text-primary uppercase font-black">
-                                        {activeCropInDialog.code}
-                                      </Badge>
-                                      <div className="text-xs text-slate-500 font-bold">
-                                        Giai đoạn:{" "}
-                                        <span className="text-slate-800">
-                                          {activeCropInDialog.growthStage}
-                                        </span>
-                                      </div>
-                                      <div className="text-xs text-slate-500 font-bold">
-                                        Vị trí:{" "}
-                                        <span className="text-slate-800">
-                                          {activeCropInDialog.plotName}
-                                        </span>
-                                      </div>
-                                      <Button
-                                        className="w-full h-11 rounded-xl font-black shadow-lg shadow-primary/20 mt-4 gap-2"
-                                        onClick={() => {
-                                          setIsMapExpanded(false);
-                                          setIsCropDetailOpen(true);
-                                        }}
-                                      >
-                                        <Maximize2 size={16} />
-                                        Xem chi tiết
-                                      </Button>
-                                    </div>
-                                  ) : (
-                                    <div className="h-full flex flex-col items-center justify-center text-slate-300 italic text-center text-sm">
-                                      Chọn một cây để xem chi tiết
-                                    </div>
-                                  )}
-                                </div>
-                              </div>
-                              <div className="bg-white rounded-xl border border-slate-100 shadow-sm flex flex-col">
-                                <div className="p-4 bg-slate-50/50 border-b font-black text-xs uppercase tracking-widest text-slate-500">
-                                  Danh sách cây trồng
-                                </div>
-                                <div className="p-4 overflow-x-auto">
-                                  <DataTable
-                                    columns={
-                                      [
-                                        {
-                                          key: "code",
-                                          label: "Mã hiệu",
-                                          render: (value: string) => (
-                                            <span className="font-bold text-slate-800 bg-slate-100 px-2 py-1 rounded-lg text-xs">
-                                              {value}
-                                            </span>
-                                          ),
-                                        },
-                                        {
-                                          key: "name",
-                                          label: "Tên & Giống",
-                                          render: (
-                                            value: string,
-                                            item: CropDetail,
-                                          ) => (
-                                            <div>
-                                              <div className="font-black text-slate-800 text-sm leading-tight">
-                                                {value}
-                                              </div>
-                                              <div className="text-[10px] text-slate-500 font-bold uppercase tracking-tight">
-                                                {item.variety}
-                                              </div>
-                                            </div>
-                                          ),
-                                        },
-                                        {
-                                          key: "regionName",
-                                          label: "Vùng trồng",
-                                          render: (
-                                            value: string,
-                                            item: CropDetail,
-                                          ) => (
-                                            <div>
-                                              <div className="text-xs font-bold text-slate-700">
-                                                {value}
-                                              </div>
-                                              <div className="text-[10px] text-slate-400">
-                                                {item.areaName}
-                                              </div>
-                                            </div>
-                                          ),
-                                        },
-                                        {
-                                          key: "plantedDate",
-                                          label: "Ngày trồng",
-                                          render: (value: string) => (
-                                            <span className="text-xs font-bold text-slate-600">
-                                              {new Date(
-                                                value,
-                                              ).toLocaleDateString("vi-VN")}
-                                            </span>
-                                          ),
-                                        },
-                                        {
-                                          key: "coordinate",
-                                          label: "Tọa độ",
-                                          render: (
-                                            value: CropDetail["coordinate"],
-                                          ) => (
-                                            <code className="text-[11px] bg-slate-50 px-2 py-1 rounded-md text-slate-500 border border-slate-100">
-                                              {value.lat.toFixed(6)},{" "}
-                                              {value.lng.toFixed(6)}
-                                            </code>
-                                          ),
-                                        },
-                                        {
-                                          key: "plotName",
-                                          label: "Lô",
-                                          render: (value: string) => (
-                                            <Badge
-                                              variant="outline"
-                                              className="text-[10px] border-slate-200 text-slate-500 font-bold"
-                                            >
-                                              {value}
-                                            </Badge>
-                                          ),
-                                        },
-                                      ] as Column<CropDetail>[]
-                                    }
-                                    data={cropsInThisRegion}
-                                    onView={setActiveCropInDialog}
-                                  />
-                                </div>
-                              </div>
-                            </div>
-                          );
-                        })()}
-                      </div>
+              <>
+                <div className="flex items-center justify-between rounded-xl border border-slate-100 bg-white p-6 shadow-sm">
+                  <div className="flex items-center gap-4">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-xl border bg-slate-50">
+                      <Sprout size={24} className="text-primary" />
                     </div>
-                  );
-                })()}
-              </div>
+                    <div>
+                      <h2 className="text-lg font-black text-slate-800">
+                        {activePlant.code || `#${activePlant.id}`}
+                      </h2>
+                      <p className="text-xs font-bold uppercase tracking-widest text-slate-400">
+                        {getVarietyName(activePlant)}
+                        {activePlant.productionZone?.name
+                          ? ` · ${activePlant.productionZone.name}`
+                          : ""}
+                      </p>
+                    </div>
+                  </div>
+                  <HealthBadge status={activePlant.healthStatus} />
+                </div>
+
+                <div className="grid h-100 shrink-0 grid-cols-1 gap-6 lg:grid-cols-12">
+                  <div className="relative overflow-hidden rounded-xl border-4 border-white bg-white shadow-xl lg:col-span-8">
+                    <MapContainer
+                      center={mapCenter}
+                      zoom={mapZoom}
+                      className="z-0 h-full w-full"
+                      zoomControl={false}
+                      scrollWheelZoom
+                    >
+                      <TileLayer url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}" />
+                      <MapViewSync center={mapCenter} zoom={mapZoom} />
+                      {plants.map((plant) => {
+                        const coordinate = getCoordinate(plant);
+                        if (!coordinate) return null;
+                        return (
+                          <Marker
+                            key={plant.id}
+                            position={coordinate}
+                            icon={cropMarkerIcon}
+                            title={plant.code}
+                            eventHandlers={{
+                              click: () => setSelectedId(plant.id),
+                            }}
+                          />
+                        );
+                      })}
+                    </MapContainer>
+                    {!activeCoordinate && (
+                      <div className="absolute inset-x-0 bottom-3 z-[400] mx-auto w-max rounded-lg bg-white/90 px-3 py-1.5 text-xs font-medium text-slate-600 shadow">
+                        Cây này chưa có tọa độ
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="flex flex-col overflow-y-auto rounded-xl border-4 border-white bg-white p-5 shadow-xl lg:col-span-4">
+                    <Badge className="mb-3 self-start bg-primary/10 font-black uppercase text-primary">
+                      {activePlant.code || `#${activePlant.id}`}
+                    </Badge>
+                    <div className="divide-y divide-slate-100">
+                      <InfoRow
+                        label="Giống cây"
+                        value={activePlant.productionSubjectVariant?.name}
+                      />
+                      <InfoRow
+                        label="Hạt giống"
+                        value={activePlant.subjectVariant?.name}
+                      />
+                      <InfoRow
+                        label="Vùng canh tác"
+                        value={
+                          activePlant.productionZone?.name ||
+                          activePlant.cultivationZone?.name
+                        }
+                      />
+                      <InfoRow
+                        label="Vị trí"
+                        value={getLocationText(activePlant)}
+                      />
+                      <InfoRow
+                        label="Ngày trồng"
+                        value={formatDate(
+                          activePlant.plantedAt ?? activePlant.startedAt,
+                        )}
+                      />
+                      <InfoRow
+                        label="Tuổi cây"
+                        value={formatAge(activePlant.durationDays)}
+                      />
+                      <InfoRow
+                        label="Chiều cao"
+                        value={
+                          activePlant.height !== undefined &&
+                          activePlant.height !== null
+                            ? `${activePlant.height} m`
+                            : undefined
+                        }
+                      />
+                      <InfoRow label="Ghi chú" value={activePlant.notes} />
+                    </div>
+                    <Button
+                      className="mt-auto h-11 gap-2 rounded-xl font-black"
+                      onClick={() => setIsCropDetailOpen(true)}
+                    >
+                      <Maximize2 size={16} />
+                      Xem chi tiết
+                    </Button>
+                  </div>
+                </div>
+              </>
             )}
           </div>
         </div>
-
-        {/* Global Dialogs */}
-        <CultivationZoneDialog
-          open={isZoneDialogOpen}
-          onOpenChange={setIsZoneDialogOpen}
-          initialSelections={regions.filter((r) =>
-            advancedFilters.regionIds?.includes(r.id),
-          )}
-          onConfirm={(selections) => {
-            setAdvancedFilters({
-              ...advancedFilters,
-              regionIds: selections.map((s) => s.id),
-            });
-            resetToRegionsView();
-          }}
-        />
-
-        <Dialog open={isMapExpanded} onOpenChange={setIsMapExpanded}>
-          <DialogContent className="max-w-[95vw] w-full h-[95vh] p-0 overflow-hidden rounded-xl bg-slate-50 border-none shadow-2xl z-1000">
-            {selectedRegionId && (
-              <div className="flex h-full w-full overflow-hidden">
-                {/* Map Section */}
-                <div className="flex-1 relative bg-white border-r">
-                  <MapContainer
-                    center={mapView.center}
-                    zoom={mapView.zoom}
-                    className="h-full w-full"
-                    zoomControl={false}
-                    scrollWheelZoom
-                  >
-                    <TileLayer url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}" />
-                    <MapContent
-                      currentRegion={regions.find(
-                        (r) => r.id === selectedRegionId,
-                      )}
-                      cropsInThisRegion={filteredCrops.filter(
-                        (c) => c.regionId === selectedRegionId,
-                      )}
-                      setActiveCropInDialog={setActiveCropInDialog}
-                      center={mapView.center}
-                      zoom={mapView.zoom}
-                    />
-                  </MapContainer>
-                  <div
-                    className="p-3 rounded-xl cursor-pointer absolute top-4 right-4 z-1000 bg-white/90 backdrop-blur-sm shadow-xl hover:bg-white transition-colors"
-                    onClick={() => setIsMapExpanded(false)}
-                  >
-                    <Minimize2 size={20} />
-                  </div>
-                </div>
-
-                {/* Info Panel Section */}
-                <div className="w-96 bg-white overflow-y-auto split-scrollbar p-6 space-y-6">
-                  {activeCropInDialog ? (
-                    <div className="space-y-6">
-                      <div className="aspect-video rounded-2xl overflow-hidden border-4 border-slate-50 shadow-md">
-                        <img
-                          src={activeCropInDialog.image}
-                          className="w-full h-full object-cover"
-                        />
-                      </div>
-
-                      <div className="space-y-4">
-                        <div>
-                          <Badge className="bg-primary/10 text-primary uppercase font-black mb-2">
-                            {activeCropInDialog.code}
-                          </Badge>
-                          <h2 className="text-2xl font-black text-slate-800 leading-tight">
-                            {activeCropInDialog.name}
-                          </h2>
-                        </div>
-
-                        <div className="grid grid-cols-1 gap-4">
-                          <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100">
-                            <div className="text-[10px] font-black underline uppercase text-slate-400 mb-1">
-                              Giống cây
-                            </div>
-                            <div className="text-sm font-bold text-slate-700">
-                              {activeCropInDialog.variety}
-                            </div>
-                          </div>
-                          <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100">
-                            <div className="text-[10px] font-black underline uppercase text-slate-400 mb-1">
-                              Giai đoạn sinh trưởng
-                            </div>
-                            <div className="text-sm font-bold text-slate-700">
-                              {activeCropInDialog.growthStage}
-                            </div>
-                          </div>
-                          <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100">
-                            <div className="text-[10px] font-black underline uppercase text-slate-400 mb-1">
-                              Vị trí (Lô/Khu)
-                            </div>
-                            <div className="text-sm font-bold text-slate-700">
-                              {activeCropInDialog.plotName}
-                            </div>
-                          </div>
-                        </div>
-
-                        <Button
-                          className="w-full h-12 rounded-2xl font-black shadow-xl shadow-primary/20 gap-2 mt-4"
-                          onClick={() => {
-                            setIsMapExpanded(false);
-                            setIsCropDetailOpen(true);
-                          }}
-                        >
-                          <Maximize2 size={18} />
-                          XEM CHI TIẾT CÂY TRỒNG
-                        </Button>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="h-full flex flex-col items-center justify-center text-slate-300 italic text-center p-12">
-                      <MapPin size={48} className="mb-4 opacity-20" />
-                      Chọn một cây trên bản đồ để xem chi tiết
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-          </DialogContent>
-        </Dialog>
-        <CropDetailDialog
-          open={isCropDetailOpen}
-          onOpenChange={setIsCropDetailOpen}
-          crop={activeCropInDialog}
-        />
-        <style>{`
-          .leaflet-container {
-            height: 100%;
-            width: 100%;
-            font-family: inherit;
-            background: #e2e8f0;
-          }
-        `}</style>
       </div>
+      <CropDetailDialog
+        open={isCropDetailOpen}
+        onOpenChange={setIsCropDetailOpen}
+        crop={activePlant ? toCropDetail(activePlant) : null}
+      />
     </PageWrapper>
   );
 };
