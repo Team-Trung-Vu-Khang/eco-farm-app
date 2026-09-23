@@ -22,7 +22,7 @@ interface OnboardCheckerProps {
 }
 
 const OnboardChecker: React.FC<OnboardCheckerProps> = ({ children }) => {
-  const [showOnboard, setShowOnboard] = useState(true);
+  const [showOnboard, setShowOnboard] = useState(false);
   const [hasChecked, setHasChecked] = useState(false);
 
   // Gọi API lấy danh sách vùng trồng tại root để check
