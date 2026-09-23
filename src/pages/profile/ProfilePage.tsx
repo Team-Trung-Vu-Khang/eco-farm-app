@@ -18,7 +18,14 @@ import {
   SelectValue,
   Switch,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { Building2, LogOut, Mail, Phone, Smartphone, UserRound } from "lucide-react";
+import {
+  Building2,
+  LogOut,
+  Phone,
+  Smartphone,
+  UserCheck,
+  UserRound,
+} from "lucide-react";
 import type { ReactNode } from "react";
 
 const InfoRow = ({
@@ -77,9 +84,15 @@ export default function ProfilePage() {
           value={currentUser?.phoneNumber}
         />
         <InfoRow
-          icon={<Mail className="h-4 w-4" />}
-          label="Email"
-          value={currentUser?.email}
+          icon={<UserCheck className="h-4 w-4" />}
+          label="Người giới thiệu"
+          value={
+            currentUser?.referrer
+              ? [currentUser.referrer.fullName, currentUser.referrer.phoneNumber]
+                  .filter(Boolean)
+                  .join(" · ")
+              : null
+          }
         />
       </section>
 
