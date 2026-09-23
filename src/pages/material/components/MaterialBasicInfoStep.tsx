@@ -23,6 +23,8 @@ import {
 import { commonHashtags } from "../data/constants";
 import type { MaterialFormData } from "../types/types";
 
+import { normalizeSku } from "@/shared/lib/sku";
+
 interface MaterialBasicInfoStepProps {
   formData: MaterialFormData;
   paramHashtag: string;
@@ -127,7 +129,9 @@ export default function MaterialBasicInfoStep({
                 value={formData.code}
                 disabled={isEdit}
                 clearable={!isEdit}
-                onChange={(e) => onFormFieldChange("code", e.target.value)}
+                onChange={(e) =>
+                  onFormFieldChange("code", normalizeSku(e.target.value))
+                }
                 placeholder="VD: VL001"
               />
             </div>

@@ -34,6 +34,8 @@ import { commonHashtags } from "../data/constants";
 import { useQuery } from "@tanstack/react-query";
 import { farmSupplyApi } from "@/features/farm-supply";
 
+import { normalizeSku } from "@/shared/lib/sku";
+
 interface SimpleFertilizerFormProps {
   formData: FertilizerFormData;
   updateField: (
@@ -201,7 +203,7 @@ export default function SimpleFertilizerForm({
           value={formData.code}
           disabled={isEdit}
           clearable={!isEdit}
-          onChange={(e) => updateField("code", e.target.value)}
+          onChange={(e) => updateField("code", normalizeSku(e.target.value))}
           placeholder="Để trống để tự động tạo"
         />
       </div>

@@ -29,6 +29,8 @@ import { useState } from "react";
 import { commonHashtags } from "../data/constants";
 import type { PesticideDomain, PesticideFormData } from "../types";
 
+import { normalizeSku } from "@/shared/lib/sku";
+
 interface PesticideBasicInfoStepProps {
   domain?: PesticideDomain;
   formData: PesticideFormData;
@@ -147,7 +149,8 @@ export default function PesticideBasicInfoStep({
   const pesticideModesOfAction = loadedPesticideModesOfAction ?? [];
   const pesticideFormulations = loadedPesticideFormulations ?? [];
 
-  const livestockAdministrationRoutes = loadedLivestockAdministrationRoutes ?? [];
+  const livestockAdministrationRoutes =
+    loadedLivestockAdministrationRoutes ?? [];
   const livestockControlLevels = loadedLivestockControlLevels ?? [];
 
   const aquacultureControlResidues = loadedAquacultureControlResidues ?? [];
@@ -176,7 +179,9 @@ export default function PesticideBasicInfoStep({
                 clearable={!isEdit}
                 value={formData.code}
                 placeholder="VD: BVTV001"
-                onChange={(e) => onFormFieldChange("code", e.target.value)}
+                onChange={(e) =>
+                  onFormFieldChange("code", normalizeSku(e.target.value))
+                }
               />
               <p className="text-xs text-muted-foreground">
                 Rất quan trọng để truy xuất nguồn gốc

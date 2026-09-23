@@ -9,6 +9,8 @@ import {
 import { ImageIcon, Upload, Wrench, Tags, Plus, X } from "lucide-react";
 import type { EquipmentFormData } from "../../types";
 
+import { normalizeSku } from "@/shared/lib/sku";
+
 interface EquipmentBasicInfoStepProps {
   formData: EquipmentFormData;
   updateField: (field: keyof EquipmentFormData, value: any) => void;
@@ -68,8 +70,9 @@ export const EquipmentBasicInfoStep = ({
                 disabled={isEdit}
                 clearable={!isEdit}
                 onChange={(e) => {
-                  updateField("sku", e.target.value);
-                  updateField("code", e.target.value); // Sync with legacy code field
+                  const val = normalizeSku(e.target.value);
+                  updateField("sku", val);
+                  updateField("code", val);
                 }}
                 placeholder="VD: SKU-KUBOTA-L5018"
               />

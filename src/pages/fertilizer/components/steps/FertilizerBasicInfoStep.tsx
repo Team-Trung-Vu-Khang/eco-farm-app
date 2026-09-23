@@ -14,6 +14,8 @@ import { commonHashtags } from "../../data/constants";
 import type { FertilizerFormData } from "../../types/types";
 import { useDebounce } from "@/shared/hooks/useDebounce";
 
+import { normalizeSku } from "@/shared/lib/sku";
+
 interface FertilizerBasicInfoStepProps {
   formData: FertilizerFormData;
   updateField: (field: keyof FertilizerFormData, value: any) => void;
@@ -74,7 +76,9 @@ export const FertilizerBasicInfoStep = ({
               </Label>
               <Input
                 value={formData.code}
-                onChange={(e) => updateField("code", e.target.value)}
+                onChange={(e) =>
+                  updateField("code", normalizeSku(e.target.value))
+                }
                 placeholder="VD: PB-NPK-202015"
                 disabled={isEdit}
                 clearable={!isEdit}

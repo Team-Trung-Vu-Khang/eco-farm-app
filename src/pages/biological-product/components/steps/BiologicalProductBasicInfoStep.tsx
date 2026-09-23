@@ -14,6 +14,8 @@ import { useMasterData } from "@/features/master-data";
 import { SUPPLY_GROUP_CATALOG } from "../../data/constants";
 import { useDebounce } from "@/shared/hooks/useDebounce";
 
+import { normalizeSku } from "@/shared/lib/sku";
+
 interface BiologicalProductBasicInfoStepProps {
   formData: BiologicalProductFormData;
   updateField: (field: keyof BiologicalProductFormData, value: any) => void;
@@ -76,7 +78,9 @@ export const BiologicalProductBasicInfoStep = ({
               </Label>
               <Input
                 value={formData.code}
-                onChange={(e) => updateField("code", e.target.value)}
+                onChange={(e) =>
+                  updateField("code", normalizeSku(e.target.value))
+                }
                 placeholder="VD: CPSH-TRI-01"
                 disabled={isEdit}
                 clearable={!isEdit}

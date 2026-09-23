@@ -30,6 +30,8 @@ import type { MaterialFormData } from "../types/types";
 import { commonHashtags } from "../data/constants";
 import { useSupplyCatalog } from "@/features/farm-supply/hooks/useSupplyCatalog";
 
+import { normalizeSku } from "@/shared/lib/sku";
+
 interface SimpleMaterialFormProps {
   formData: MaterialFormData;
   updateField: <K extends keyof MaterialFormData>(
@@ -193,7 +195,7 @@ export default function SimpleMaterialForm({
               value={formData.code}
               disabled={isEdit}
               clearable={!isEdit}
-              onChange={(e) => updateField("code", e.target.value)}
+              onChange={(e) => updateField("code", normalizeSku(e.target.value))}
               placeholder="VD: VL001"
             />
           </div>

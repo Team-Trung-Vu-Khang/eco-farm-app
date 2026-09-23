@@ -39,6 +39,8 @@ const DOMAIN_LABELS: Record<EquipmentDomain, string> = {
   aquaculture: "Thiết bị thủy sản",
 };
 
+import { normalizeSku } from "@/shared/lib/sku";
+
 interface SimpleEquipmentFormProps {
   formData: EquipmentFormData;
   isEdit: boolean;
@@ -191,8 +193,9 @@ export default function SimpleEquipmentForm({
           clearable={!isEdit}
           value={formData.sku || ""}
           onChange={(e) => {
-            updateField("sku", e.target.value);
-            updateField("code", e.target.value);
+            const val = normalizeSku(e.target.value);
+            updateField("sku", val);
+            updateField("code", val);
           }}
           placeholder="VD: SKU-KUBOTA-L5018"
         />

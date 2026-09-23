@@ -36,6 +36,8 @@ import { useState } from "react";
 import { commonHashtags } from "../data/constants";
 import type { PesticideDomain, PesticideFormData } from "../types";
 
+import { normalizeSku } from "@/shared/lib/sku";
+
 const DOMAIN_LABELS: Record<
   PesticideDomain,
   { item: string; groupLabel: string }
@@ -235,7 +237,9 @@ export default function SimplePesticideForm({
             value={formData.code}
             disabled={isEdit}
             clearable={!isEdit}
-            onChange={(e) => onFormFieldChange("code", e.target.value)}
+            onChange={(e) =>
+              onFormFieldChange("code", normalizeSku(e.target.value))
+            }
             placeholder="Để trống để tự động tạo"
           />
         </div>

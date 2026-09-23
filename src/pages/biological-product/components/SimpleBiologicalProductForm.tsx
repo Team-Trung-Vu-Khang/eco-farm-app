@@ -34,6 +34,8 @@ import { farmSupplyApi } from "@/features/farm-supply";
 import { useMasterData } from "@/features/master-data";
 import { SUPPLY_GROUP_CATALOG } from "../data/constants";
 
+import { normalizeSku } from "@/shared/lib/sku";
+
 interface SimpleBiologicalProductFormProps {
   formData: BiologicalProductFormData;
   updateField: (
@@ -175,7 +177,7 @@ export default function SimpleBiologicalProductForm({
           value={formData.code}
           disabled={isEdit}
           clearable={!isEdit}
-          onChange={(e) => updateField("code", e.target.value)}
+          onChange={(e) => updateField("code", normalizeSku(e.target.value))}
           placeholder="Để trống để tự động tạo"
         />
       </div>
