@@ -21,6 +21,7 @@ interface CertificatesTabProps {
 
 const STATUS_BADGE: Record<string, { label: string; className: string }> = {
   valid: { label: "Đang hiệu lực", className: "text-green-600" },
+  expiring_soon: { label: "Sắp hết hạn", className: "text-amber-600" },
   expired: { label: "Hết hạn", className: "text-orange-600" },
   revoked: { label: "Đã thu hồi", className: "text-red-600" },
 };
@@ -80,7 +81,7 @@ interface CertCardProps {
 const CertCard = ({ cert }: CertCardProps) => {
   const standard = cert.agricultureCertificate;
   const visual = getVisual(standard?.code ?? cert.code);
-  const status = STATUS_BADGE[cert.status] ?? {
+  const status = STATUS_BADGE[String(cert.status ?? "").toLowerCase()] ?? {
     label: cert.status,
     className: "text-slate-600",
   };
