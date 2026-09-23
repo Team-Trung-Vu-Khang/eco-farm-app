@@ -27,6 +27,9 @@ import type {
   FarmProductionHealthMetricRequest,
   FarmProductionHealthMetricResponse,
   ProductionHealthMetricScopeQueryParams,
+  FarmZoneHarvestStatsResponse,
+  FarmZoneHarvestChartResponse,
+  FarmZoneHarvestChartQueryParams,
 } from "../types/farm.type";
 import type { PageResponse } from "../../foundation/types/foundation.type";
 
@@ -497,7 +500,10 @@ export const plantIdentificationApi = {
     apiClient.delete(`${FARM_ENDPOINTS.plantIdentifications}/${id}`),
 
   /** POST bulk-upload (202) — chạy bất đồng bộ, trả `jobExecutionId` để poll `getBulkUploadStatus`. */
-  bulkUpload: (file: File, request: FarmPlantIdentificationBulkUploadRequest) => {
+  bulkUpload: (
+    file: File,
+    request: FarmPlantIdentificationBulkUploadRequest,
+  ) => {
     const formData = new FormData();
     formData.append("file", file);
     formData.append(
@@ -548,4 +554,26 @@ export const productionHealthMetricsApi = {
         data,
       )
       .then((r) => normalizeProductionHealthMetric(r.data)),
+};
+
+// ─── Production Zone Harvest Stats & Chart API ──────────────────────────────
+
+export const productionZoneHarvestApi = {
+  getStats: (zoneId: number | string) =>
+    apiClient
+      .get<FarmZoneHarvestStatsResponse>(
+        FARM_ENDPOINTS.productionZoneHarvestStats(zoneId),
+      )
+      .then((r) => r.data),
+
+  getChart: (
+    zoneId: number | string,
+    params?: FarmZoneHarvestChartQueryParams,
+  ) =>
+    apiClient
+      .get<FarmZoneHarvestChartResponse>(
+        FARM_ENDPOINTS.productionZoneHarvestChart(zoneId),
+        { params },
+      )
+      .then((r) => r.data),
 };

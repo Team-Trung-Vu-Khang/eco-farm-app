@@ -615,3 +615,33 @@ export interface FarmPlantIdentificationResolveLocationResponse {
   resolvedToPlot: boolean;
   location?: FarmCultivationZoneScopeResponse;
 }
+
+// ─── Production Zone Harvest Stats & Chart ─────────────────────────
+
+export interface FarmZoneHarvestStatsResponse {
+  zoneId: number;
+  batchCount: number;
+  totalQuantityKg: number | null;
+  latestQuantityKg: number | null;
+  latestAt: string | null;
+  latestChangePercent: number | null;
+  averageQuantityKg: number | null;
+  averageChangePercent: number | null;
+}
+
+export interface FarmHarvestPeriodPoint {
+  bucketStart: string;
+  quantityKg: number;
+}
+
+export interface FarmZoneHarvestChartResponse {
+  zoneId: number;
+  periodType: "MONTHLY" | "YEARLY";
+  points: FarmHarvestPeriodPoint[] | null;
+}
+
+export interface FarmZoneHarvestChartQueryParams {
+  periodType?: "MONTHLY" | "YEARLY";
+  fromDate?: string;
+  toDate?: string;
+}

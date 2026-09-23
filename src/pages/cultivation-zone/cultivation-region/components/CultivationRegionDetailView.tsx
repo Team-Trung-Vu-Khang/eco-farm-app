@@ -264,7 +264,7 @@ export const CultivationRegionDetailView = ({
             <PlansTab zoneId={zoneId} workspaceId={workspaceId} />
           </TabsContent>
           <TabsContent value="statistics" className="space-y-6 overflow-hidden">
-            <StatisticsTab details={details} />
+            <StatisticsTab details={details} zoneId={zoneId} />
           </TabsContent>
         </>
       )}

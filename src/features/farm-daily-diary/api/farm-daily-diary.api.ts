@@ -3,6 +3,7 @@ import type {
   CreateFarmDailyDiaryEntryRequest,
   FarmDailyDiaryEntryResponse,
   FarmDailyDiaryQueryParams,
+  FarmDiaryQueryParams,
   FarmDailyDiaryStatsResponse,
   PageResponseFarmDailyDiaryEntryResponse,
   PhotoResponse,
@@ -15,6 +16,12 @@ export const farmDailyDiaryApi = {
   list(params?: FarmDailyDiaryQueryParams) {
     return apiClient
       .get<PageResponseFarmDailyDiaryEntryResponse>(DAILY_DIARY_PATH, { params })
+      .then((response) => response.data);
+  },
+
+  listGeneral(params: FarmDiaryQueryParams) {
+    return apiClient
+      .get<PageResponseFarmDailyDiaryEntryResponse>("/api/farm/diary-entries", { params })
       .then((response) => response.data);
   },
 

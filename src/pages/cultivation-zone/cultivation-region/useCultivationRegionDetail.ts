@@ -64,14 +64,14 @@ export interface CultivationRegionDetails {
     irrigationMethod: any;
     crops: any[];
   };
-  harvestStats: {
+  harvestStats?: {
     totalVolume: number;
     lastVolume: number;
     lastChange: number;
     avgVolume: number;
     avgChange: number;
   };
-  harvestBatches: Array<{
+  harvestBatches?: Array<{
     id: string;
     date: string;
     volume: number;
@@ -512,57 +512,6 @@ export const useCultivationRegionDetail = (
         : null,
     };
 
-    // Mock harvest stats
-    const harvestStats = {
-      totalVolume: 8540,
-      lastVolume: 1250,
-      lastChange: 12.5,
-      avgVolume: 1067,
-      avgChange: 5.2,
-    };
-
-    // Mock harvest batches
-    const harvestBatches = [
-      {
-        id: "HB001",
-        date: "2024-03-10",
-        volume: 1250,
-        quality: "Loại A",
-        staff: "Nguyễn Văn A",
-        notes: "Thu hoạch đúng tiến độ, chất lượng tốt",
-      },
-      {
-        id: "HB002",
-        date: "2024-02-15",
-        volume: 1100,
-        quality: "Loại A",
-        staff: "Trần Thị B",
-        notes: "Thời tiết thuận lợi",
-      },
-      {
-        id: "HB003",
-        date: "2024-01-20",
-        volume: 950,
-        quality: "Loại B",
-        staff: "Lê Văn C",
-        notes: "Có một số cây bị ảnh hưởng bởi sâu bệnh nhẹ",
-      },
-      {
-        id: "HB004",
-        date: "2023-12-15",
-        volume: 1150,
-        quality: "Loại A",
-        staff: "Nguyễn Văn A",
-      },
-      {
-        id: "HB005",
-        date: "2023-11-10",
-        volume: 1000,
-        quality: "Loại A",
-        staff: "Trần Thị B",
-      },
-    ];
-
     // Build entity configurations list
     const entityConfigs = selectedEntities.map((entity) => {
       return {
@@ -610,8 +559,6 @@ export const useCultivationRegionDetail = (
       totalArea: totalAreaValue,
       enterprise,
       entityConfigs,
-      harvestStats,
-      harvestBatches,
       technicalConfig: {
         farmingMethod,
         irrigationMethod,

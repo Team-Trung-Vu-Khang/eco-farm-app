@@ -33,6 +33,11 @@ export const FARM_ENDPOINTS = {
   plantIdentificationResolveLocation: `${FARM_BASE_PATH}/production-identifications/resolve-location`,
   productionHealthMetrics: `${FARM_BASE_PATH}/production-health-metrics`,
   productionHealthMetricsWorkspace: `${FARM_BASE_PATH}/production-health-metrics/workspace`,
+  productionZoneHarvestStats: (zoneId: number | string) =>
+    `${FARM_BASE_PATH}/production-zones/${zoneId}/harvest-stats`,
+  productionZoneHarvestChart: (zoneId: number | string) =>
+    `${FARM_BASE_PATH}/production-zones/${zoneId}/harvest-chart`,
+  diaryEntries: `${FARM_BASE_PATH}/diary-entries`,
   adminProductionZoneGroups: `/api/admin/farm/production-zones/groups`,
   adminProductionZones: `/api/admin/farm/production-zones`,
 } as const;

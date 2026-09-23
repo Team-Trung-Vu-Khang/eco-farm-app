@@ -193,5 +193,13 @@ export interface FarmDailyDiaryQueryParams {
   keyword?: string;
   fromDate?: string;
   toDate?: string;
+  zoneId?: number;
 }
+
+export interface FarmDiaryQueryParams extends FarmDailyDiaryQueryParams {
+  diaryType: "DAILY" | "PLAN";
+  planId?: number;
+  stageId?: number;
+}
+
 
