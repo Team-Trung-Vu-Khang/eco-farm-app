@@ -760,17 +760,6 @@ export const AreaMapStep = ({ markerIcon }: AreaMapStepProps) => {
     [areaPoints, setAreaPoints],
   );
 
-  const handleAddPoint = useCallback(() => {
-    const mapCenter = getBoundsFromPoints(
-      areaPoints,
-      DEFAULT_POINTS,
-    ).getCenter();
-    setAreaPoints([
-      ...areaPoints,
-      L.latLng(mapCenter.lat + 0.005, mapCenter.lng + 0.005),
-    ]);
-  }, [areaPoints, setAreaPoints]);
-
   const center = useMemo(() => {
     if (areaPoints.length > 0) {
       return getBoundsFromPoints(areaPoints, DEFAULT_POINTS).getCenter();
@@ -783,6 +772,18 @@ export const AreaMapStep = ({ markerIcon }: AreaMapStepProps) => {
     }
     return getBoundsFromPoints(DEFAULT_POINTS, DEFAULT_POINTS).getCenter();
   }, [areaPoints, regionPoints, regionCenter]);
+
+  // Điểm đầu tiên đặt đúng tâm vùng; các điểm sau lệch nhẹ khỏi tâm khu vực
+  const handleAddPoint = useCallback(() => {
+    if (areaPoints.length === 0) {
+      setAreaPoints([L.latLng(center.lat, center.lng)]);
+      return;
+    }
+    setAreaPoints([
+      ...areaPoints,
+      L.latLng(center.lat + 0.005, center.lng + 0.005),
+    ]);
+  }, [areaPoints, center, setAreaPoints]);
 
   return (
     <Card className="flex h-auto md:h-[750px] min-h-[600px] md:min-h-0 flex-col">

@@ -268,7 +268,7 @@ const SubAreaEditForm = ({
                     </FormLabel>
                     <Select
                       onValueChange={field.onChange}
-                      defaultValue={field.value}
+                      value={field.value}
                     >
                       <FormControl>
                         <SelectTrigger className="h-8 text-sm">
@@ -638,8 +638,9 @@ const SubAreaLayout = ({
                         <span>{subArea.area} ha</span>
                         <span className="flex items-center gap-1">
                           •{" "}
-                          {lands.find((l) => l.id === subArea.landType)?.name ||
-                            "Chưa chọn đất"}
+                          {lands.find(
+                            (l) => String(l.id) === String(subArea.landType),
+                          )?.name || "Chưa chọn đất"}
                         </span>
                       </div>
                     </div>

@@ -114,6 +114,20 @@ export function AreaInfoStep({
                           setSelectedRegion(region);
                           field.onChange(region.id);
                           if (region) {
+                            // Tâm khu vực mặc định = tâm của vùng được chọn
+                            const regionCenterLat =
+                              region.centerPoint?.latitude;
+                            const regionCenterLng =
+                              region.centerPoint?.longitude;
+                            if (
+                              typeof regionCenterLat === "number" &&
+                              typeof regionCenterLng === "number"
+                            ) {
+                              setValue("centerPoint", {
+                                lat: regionCenterLat,
+                                lng: regionCenterLng,
+                              });
+                            }
                             setValue(
                               "soilType",
                               region.soilType?.id?.toString() || "",

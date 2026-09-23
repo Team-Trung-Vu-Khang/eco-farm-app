@@ -28,26 +28,18 @@ interface BranchLocationMapProps {
   updateFormData: (updates: Partial<BranchFormData>) => void;
 }
 
-interface ReverseGeocodeAddress {
-  road?: string;
-  street?: string;
-  house_number?: string;
-  suburb?: string;
-  neighbourhood?: string;
-  quarter?: string;
-  city_district?: string;
-  county?: string;
-  town?: string;
-  city?: string;
-  province?: string;
-  state?: string;
-  ward?: string;
-  district?: string;
-}
-
-interface ReverseGeocodeResult {
-  display_name?: string;
-  address?: ReverseGeocodeAddress;
+/** Response của Goong Reverse Geocoding API (rsapi.goong.io/Geocode) */
+interface GoongReverseGeocodeResponse {
+  results?: {
+    formatted_address?: string;
+    name?: string;
+    address?: string;
+    compound?: {
+      commune?: string;
+      district?: string;
+      province?: string;
+    };
+  }[];
 }
 
 const defaultLeafletIcon = L.icon({
@@ -126,44 +118,25 @@ export function BranchLocationMap({
   const center: [number, number] = [safeLatitude, safeLongitude];
 
   const reverseGeocode = useCallback(async (lat: number, lon: number) => {
-    const apiKey = import.meta.env.VITE_GEOCODE_API_KEY?.trim();
+    const apiKey = import.meta.env.VITE_GOONG_API_KEY?.trim();
     try {
-      const url = new URL("https://geocode.maps.co/reverse");
-      url.searchParams.set("lat", String(lat));
-      url.searchParams.set("lon", String(lon));
-      url.searchParams.set("format", "json");
+      const url = new URL("https://rsapi.goong.io/Geocode");
+      url.searchParams.set("latlng", `${lat},${lon}`);
       if (apiKey) url.searchParams.set("api_key", apiKey);
 
       const response = await fetch(url.toString());
       if (!response.ok) return null;
 
-      const data = (await response.json()) as ReverseGeocodeResult;
-      const address = data.address ?? {};
-      const detailedAddress =
-        [
-          address.house_number,
-          address.road || address.street,
-          address.quarter || address.neighbourhood || address.suburb,
-        ]
-          .filter(Boolean)
-          .join(" ")
-          .trim() || data.display_name;
+      const data = (await response.json()) as GoongReverseGeocodeResponse;
+      const place = data.results?.[0];
+      if (!place) return null;
+      const compound = place.compound ?? {};
 
       return {
-        address: detailedAddress || undefined,
-        ward:
-          address.ward ||
-          address.suburb ||
-          address.neighbourhood ||
-          address.quarter ||
-          "",
-        district:
-          address.district ||
-          address.city_district ||
-          address.county ||
-          address.town ||
-          "",
-        city: address.city || address.province || address.state || "",
+        address: place.name || place.formatted_address || undefined,
+        ward: compound.commune || "",
+        district: compound.district || "",
+        city: compound.province || "",
       };
     } catch {
       return null;

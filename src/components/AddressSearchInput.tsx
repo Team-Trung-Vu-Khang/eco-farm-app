@@ -2,11 +2,24 @@ import { Input } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { Loader2, MapPin } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
+const GOONG_API_URL = "https://rsapi.goong.io";
+
 interface SearchResult {
-  place_id: number | string;
-  display_name: string;
-  lat: string;
-  lon: string;
+  place_id: string;
+  description: string;
+}
+
+/** Response của Goong Place AutoComplete API */
+interface GoongAutoCompleteResponse {
+  predictions?: SearchResult[];
+}
+
+/** Response của Goong Place Detail API */
+interface GoongPlaceDetailResponse {
+  result?: {
+    formatted_address?: string;
+    geometry?: { location?: { lat: number; lng: number } };
+  };
 }
 
 interface AddressSearchInputProps {
@@ -22,70 +35,15 @@ interface AddressSearchInputProps {
   placeholder?: string;
 }
 
-interface GoogleMapsPlace {
-  formatted_address?: string;
-  name?: string;
-  geometry?: {
-    location?: {
-      lat: () => number;
-      lng: () => number;
-    };
-  };
-}
-
-interface GoogleMapsAutocomplete {
-  addListener: (
-    eventName: string,
-    callback: () => void,
-  ) => { remove: () => void };
-  getPlace: () => GoogleMapsPlace;
-}
-
-interface GoogleMapsAutocompleteConstructor {
-  new (
-    input: HTMLInputElement,
-    options?: {
-      componentRestrictions?: { country: string | string[] };
-      fields?: string[];
-      types?: string[];
-    },
-  ): GoogleMapsAutocomplete;
-}
-
-declare global {
-  interface Window {
-    google?: {
-      maps?: {
-        places?: {
-          Autocomplete: GoogleMapsAutocompleteConstructor;
-        };
-      };
-    };
-  }
-}
-
-let googleMapsScriptPromise: Promise<void> | undefined;
-
-function loadGooglePlaces(apiKey: string) {
-  if (window.google?.maps?.places?.Autocomplete) return Promise.resolve();
-  if (googleMapsScriptPromise) return googleMapsScriptPromise;
-
-  googleMapsScriptPromise = new Promise((resolve, reject) => {
-    const script = document.createElement("script");
-    const url = new URL("https://maps.googleapis.com/maps/api/js");
-    url.searchParams.set("key", apiKey);
-    url.searchParams.set("libraries", "places");
-    url.searchParams.set("language", "vi");
-    url.searchParams.set("region", "VN");
-    script.src = url.toString();
-    script.async = true;
-    script.onload = () => resolve();
-    script.onerror = () => reject(new Error("Không thể tải Google Places"));
-    document.head.appendChild(script);
-  });
-
-  return googleMapsScriptPromise;
-}
+const buildGoongUrl = (path: string, params: Record<string, string>) => {
+  const url = new URL(`${GOONG_API_URL}${path}`);
+  Object.entries(params).forEach(([key, value]) =>
+    url.searchParams.set(key, value),
+  );
+  const apiKey = import.meta.env.VITE_GOONG_API_KEY?.trim();
+  if (apiKey) url.searchParams.set("api_key", apiKey);
+  return url;
+};
 
 export default function AddressSearchInput({
   value,
@@ -97,80 +55,10 @@ export default function AddressSearchInput({
 }: AddressSearchInputProps) {
   const [results, setResults] = useState<SearchResult[]>([]);
   const [isSearching, setIsSearching] = useState(false);
-  const [googlePlacesUnavailable, setGooglePlacesUnavailable] = useState(false);
   const selectedQueryRef = useRef(value);
   const userTypedQueryRef = useRef(value);
-  const inputWrapperRef = useRef<HTMLDivElement>(null);
-  const onSelectLocationRef = useRef(onSelectLocation);
-  const onChangeRef = useRef(onChange);
 
   useEffect(() => {
-    onSelectLocationRef.current = onSelectLocation;
-    onChangeRef.current = onChange;
-  }, [onChange, onSelectLocation]);
-
-  useEffect(() => {
-    const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY?.trim();
-    if (!apiKey) return;
-
-    let disposed = false;
-    let listener: { remove?: () => void } | undefined;
-
-    void loadGooglePlaces(apiKey)
-      .then(() => {
-        if (disposed) return;
-        const input = inputWrapperRef.current?.querySelector("input");
-        const Autocomplete = window.google?.maps?.places?.Autocomplete;
-        if (!input || !Autocomplete) return;
-
-        const autocomplete = new Autocomplete(input, {
-          componentRestrictions: { country: "vn" },
-          fields: ["formatted_address", "geometry", "name"],
-          types: ["geocode"],
-        });
-        listener = autocomplete.addListener("place_changed", () => {
-          const place = autocomplete.getPlace();
-          const latFn = place.geometry?.location?.lat;
-          const lngFn = place.geometry?.location?.lng;
-          const latitude = typeof latFn === "function" ? latFn() : undefined;
-          const longitude = typeof lngFn === "function" ? lngFn() : undefined;
-          const address = place.formatted_address || place.name;
-          if (
-            !address ||
-            latitude === undefined ||
-            longitude === undefined ||
-            !Number.isFinite(latitude) ||
-            !Number.isFinite(longitude)
-          ) {
-            return;
-          }
-
-          selectedQueryRef.current = address;
-          onChangeRef.current(address);
-          onSelectLocationRef.current({ address, latitude, longitude });
-        });
-        setGooglePlacesUnavailable(false);
-      })
-      .catch(() => {
-        // Keep the existing geocoding search available when Google is not configured correctly.
-        if (!disposed) setGooglePlacesUnavailable(true);
-      });
-
-    return () => {
-      disposed = true;
-      listener?.remove?.();
-    };
-  }, []);
-
-  /* eslint-disable react-hooks/set-state-in-effect */
-  useEffect(() => {
-    if (
-      import.meta.env.VITE_GOOGLE_MAPS_API_KEY?.trim() &&
-      !googlePlacesUnavailable
-    ) {
-      setResults([]);
-      return;
-    }
     // If the value changed from an external source (autofill/prop update), skip searching
     if (value !== userTypedQueryRef.current) {
       userTypedQueryRef.current = value;
@@ -184,18 +72,14 @@ export default function AddressSearchInput({
       return;
     }
 
+    const controller = new AbortController();
     const timer = window.setTimeout(async () => {
-      const apiKey = import.meta.env.VITE_GEOCODE_API_KEY?.trim();
-      const controller = new AbortController();
       setIsSearching(true);
       try {
-        const url = new URL("https://geocode.maps.co/search");
-        url.searchParams.set("q", query);
-        url.searchParams.set("format", "json");
-        if (apiKey) url.searchParams.set("api_key", apiKey);
+        const url = buildGoongUrl("/Place/AutoComplete", { input: query });
         const response = await fetch(url, { signal: controller.signal });
-        const data = (await response.json()) as SearchResult[];
-        setResults(Array.isArray(data) ? data.slice(0, 5) : []);
+        const data = (await response.json()) as GoongAutoCompleteResponse;
+        setResults((data.predictions ?? []).slice(0, 5));
       } catch {
         if (!controller.signal.aborted) setResults([]);
       } finally {
@@ -203,26 +87,44 @@ export default function AddressSearchInput({
       }
     }, 600);
 
-    return () => window.clearTimeout(timer);
-  }, [value, googlePlacesUnavailable]);
-  /* eslint-enable react-hooks/set-state-in-effect */
+    return () => {
+      window.clearTimeout(timer);
+      controller.abort();
+    };
+  }, [value]);
 
-  const selectResult = (result: SearchResult) => {
-    const latitude = Number(result.lat);
-    const longitude = Number(result.lon);
-    if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) return;
-    selectedQueryRef.current = result.display_name;
-    onChange(result.display_name);
-    onSelectLocation({
-      address: result.display_name,
-      latitude,
-      longitude,
-    });
+  // AutoComplete không trả tọa độ → lấy từ Place Detail khi chọn
+  const selectResult = async (result: SearchResult) => {
     setResults([]);
+    selectedQueryRef.current = result.description;
+    onChange(result.description);
+    setIsSearching(true);
+    try {
+      const url = buildGoongUrl("/Place/Detail", { place_id: result.place_id });
+      const response = await fetch(url);
+      const data = (await response.json()) as GoongPlaceDetailResponse;
+      const location = data.result?.geometry?.location;
+      if (
+        !location ||
+        !Number.isFinite(location.lat) ||
+        !Number.isFinite(location.lng)
+      ) {
+        return;
+      }
+      onSelectLocation({
+        address: result.description,
+        latitude: location.lat,
+        longitude: location.lng,
+      });
+    } catch {
+      // Giữ địa chỉ đã chọn, không cập nhật tọa độ khi lỗi mạng
+    } finally {
+      setIsSearching(false);
+    }
   };
 
   return (
-    <div ref={inputWrapperRef} className="relative">
+    <div className="relative">
       <Input
         value={value}
         onChange={(event) => {
@@ -244,11 +146,11 @@ export default function AddressSearchInput({
               className="flex w-full items-start gap-2 rounded px-3 py-2 text-left text-sm hover:bg-slate-100"
               onPointerDown={(event) => {
                 event.preventDefault();
-                selectResult(result);
+                void selectResult(result);
               }}
             >
               <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" />
-              <span>{result.display_name}</span>
+              <span>{result.description}</span>
             </button>
           ))}
         </div>

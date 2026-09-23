@@ -49,8 +49,17 @@ const MapEvents = ({ onChange }: { onChange: (latlng: L.LatLng) => void }) => {
   return null;
 };
 
+/** Response của Goong Geocoding API (rsapi.goong.io/geocode) */
+interface GoongGeocodeResponse {
+  results?: {
+    place_id: string;
+    formatted_address: string;
+    geometry: { location: { lat: number; lng: number } };
+  }[];
+}
+
 interface SearchResult {
-  place_id: number;
+  place_id: number | string;
   display_name: string;
   lat: string;
   lon: string;
@@ -279,16 +288,22 @@ export const CenterPointMapPicker = () => {
       isSearchingRef.current = true;
       setIsSearching(true);
       try {
-        const apiKey = import.meta.env.VITE_GEOCODE_API_KEY?.trim();
-        const url = new URL("https://geocode.maps.co/search");
-        url.searchParams.set("q", query);
+        const apiKey = import.meta.env.VITE_GOONG_API_KEY?.trim();
+        const url = new URL("https://rsapi.goong.io/geocode");
+        url.searchParams.set("address", query);
         if (apiKey) {
           url.searchParams.set("api_key", apiKey);
         }
         const response = await fetch(url.toString());
-        const data = await response.json();
-        if (data && Array.isArray(data) && data.length > 0) {
-          setSearchResults(data);
+        const data = (await response.json()) as GoongGeocodeResponse;
+        const results: SearchResult[] = (data.results ?? []).map((item) => ({
+          place_id: item.place_id,
+          display_name: item.formatted_address,
+          lat: String(item.geometry.location.lat),
+          lon: String(item.geometry.location.lng),
+        }));
+        if (results.length > 0) {
+          setSearchResults(results);
         } else {
           setSearchResults([]);
           if (isExplicit) {

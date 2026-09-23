@@ -85,16 +85,10 @@ export function useAreaCreateForm(
         soilType: "",
         terrainFeature: "",
         note: "",
-        coordinates: [
-          { lat: 11.53, lng: 106.88 },
-          { lat: 11.55, lng: 106.88 },
-          { lat: 11.55, lng: 106.91 },
-          { lat: 11.53, lng: 106.91 },
-        ],
-        centerPoint: {
-          lat: 11.54,
-          lng: 106.895,
-        },
+        // Không gán tọa độ mẫu: tâm lấy theo vùng được chọn ở bước 1,
+        // ranh giới do người dùng vẽ ở bước 2.
+        coordinates: [],
+        centerPoint: undefined,
         plots: [],
         status: "active",
       });
