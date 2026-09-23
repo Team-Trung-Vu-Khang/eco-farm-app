@@ -13,7 +13,8 @@ import {
   getVarietyName,
   type PlantItem,
 } from "../utils/plant-identification.utils";
-import { PlantHealthBadge } from "./PlantHealthBadge";
+// Tạm ẩn badge sức khỏe
+// import { PlantHealthBadge } from "./PlantHealthBadge";
 
 interface PlantResultListProps {
   plants: PlantItem[];
@@ -123,7 +124,9 @@ export function PlantResultList({
                         <span className="truncate text-sm font-bold text-slate-800">
                           {getPlantCode(plant)}
                         </span>
+                        {/* Tạm ẩn badge sức khỏe
                         <PlantHealthBadge status={plant.healthStatus} />
+                        */}
                       </div>
                       <p className="truncate text-[11px] text-slate-500">
                         {getVarietyName(plant)}

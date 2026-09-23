@@ -17,7 +17,8 @@ import {
   type LatLngTuple,
   type PlantItem,
 } from "../utils/plant-identification.utils";
-import { PlantHealthBadge } from "./PlantHealthBadge";
+// Tạm ẩn badge sức khỏe
+// import { PlantHealthBadge } from "./PlantHealthBadge";
 
 const cropMarkerIcon = L.icon({
   iconUrl: treeMarkerIcon,
@@ -102,7 +103,9 @@ export function PlantDetailPanel({
             </p>
           </div>
         </div>
+        {/* Tạm ẩn badge sức khỏe
         <PlantHealthBadge status={activePlant.healthStatus} />
+        */}
       </div>
 
       <div className="grid h-100 shrink-0 grid-cols-1 gap-6 lg:grid-cols-12">

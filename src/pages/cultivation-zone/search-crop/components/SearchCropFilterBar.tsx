@@ -1,7 +1,8 @@
 import { RemoteMultiSelect } from "@/components/RemoteMultiSelect";
 import { useCultivationZones } from "@/features/farm/hooks/useCultivationZones";
 import { useSeeds } from "@/features/farm/hooks/useSeeds";
-import type { FarmPlantHealthStatus } from "@/features/farm/types/farm.type";
+// Tạm ẩn lọc theo sức khỏe
+// import type { FarmPlantHealthStatus } from "@/features/farm/types/farm.type";
 import { useProductionSubjectVariants } from "@/features/foundation/hooks/useProductionSubjects";
 import { useMasterData } from "@/features/master-data";
 import {
@@ -13,7 +14,7 @@ import {
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { Layers, MapPin, Search, Sprout } from "lucide-react";
 import type { ReactNode } from "react";
-import { PLANT_HEALTH_STATUS_LABELS } from "../../cultivation-region/components/types";
+// import { PLANT_HEALTH_STATUS_LABELS } from "../../cultivation-region/components/types";
 import { usePinnedOptions, useRemoteSearch } from "../hooks/useRemoteOptions";
 import {
   parseMonths,
@@ -22,9 +23,10 @@ import {
 
 const OPTION_PAGE = { page: 0, size: 20 } as const;
 
-const HEALTH_OPTIONS = Object.entries(PLANT_HEALTH_STATUS_LABELS).map(
-  ([value, label]) => ({ value, label }),
-);
+// Tạm ẩn lọc theo sức khỏe
+// const HEALTH_OPTIONS = Object.entries(PLANT_HEALTH_STATUS_LABELS).map(
+//   ([value, label]) => ({ value, label }),
+// );
 
 const toId = (value: string) => (value ? Number(value) : undefined);
 const toIds = (values: string[]) =>
@@ -135,7 +137,7 @@ export function SearchCropFilterBar({
           <Search className="pointer-events-none absolute left-3 top-1/2 z-10 h-4 w-4 -translate-y-1/2 text-slate-400" />
           <Input
             placeholder="Tìm theo mã cây, tên/mã giống cây hoặc hạt giống..."
-            className="h-10 border-slate-200 bg-white pl-9"
+            className="h-10 border-slate-200 bg-white pl-10"
             value={searchQuery}
             onChange={(e) => onSearchQueryChange(e.target.value)}
             onKeyDown={(e) => {
@@ -169,7 +171,7 @@ export function SearchCropFilterBar({
 
       <div className="p-4">
         <FilterGroup icon={<Sprout size={13} />} title="Thông tin cây trồng">
-          <div className="grid grid-cols-1 gap-x-4 gap-y-3 md:grid-cols-2 lg:grid-cols-4">
+          <div className="grid grid-cols-1 gap-x-4 gap-y-3 md:grid-cols-3">
             <FilterField label="Giống cây">
               <RemoteAutoCompleteSelect
                 options={varieties.items.map((variety) => ({
@@ -206,6 +208,7 @@ export function SearchCropFilterBar({
               />
             </FilterField>
 
+            {/* Tạm ẩn lọc theo sức khỏe
             <FilterField label="Hiện trạng sức khỏe">
               <RemoteAutoCompleteSelect
                 options={HEALTH_OPTIONS}
@@ -213,7 +216,8 @@ export function SearchCropFilterBar({
                 onChange={(value) =>
                   onFiltersChange({
                     healthStatus: (value || undefined) as
-                      FarmPlantHealthStatus | undefined,
+                      | FarmPlantHealthStatus
+                      | undefined,
                   })
                 }
                 onSearch={() => {}}
@@ -222,6 +226,7 @@ export function SearchCropFilterBar({
                 emptyText="Không có hiện trạng phù hợp"
               />
             </FilterField>
+            */}
 
             <FilterField label="Tuổi cây (tháng)">
               <div className="flex gap-2">
