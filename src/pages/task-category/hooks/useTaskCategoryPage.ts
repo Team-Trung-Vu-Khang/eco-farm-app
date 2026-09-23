@@ -9,6 +9,10 @@ import {
   type TaskCategoryStatus,
 } from "@/features/task-category";
 import { emptyTaskCategoryFormData } from "../data/constants";
+import {
+  buildTaskCategoryTag,
+  getTaskCategoryTagType,
+} from "../utils/hashtags";
 import type { TaskCategoryDomain, TaskCategoryFormData } from "../types/types";
 import { useDebounce } from "@/shared/hooks/useDebounce";
 
@@ -87,7 +91,10 @@ export function useTaskCategoryPage() {
           : item.domainCode === "LIVESTOCK"
             ? "animal"
             : "aquaculture",
-      hashtags: parseTaskCategoryTags(item.tags),
+      // Tag "DINHDUONG:Bón phân" → chỉ giữ mã loại công việc cho form
+      hashtags: [
+        ...new Set(parseTaskCategoryTags(item.tags).map(getTaskCategoryTagType)),
+      ],
       status: item.status === "archived" ? "inactive" : item.status,
     });
     setFormOpen(true);
@@ -110,7 +117,12 @@ export function useTaskCategoryPage() {
         example: values.description.trim(),
         displayOrder: editItem?.displayOrder || 10,
         status: values.status || "active",
-        tags: serializeTaskCategoryTags(values.hashtags) ?? "",
+        tags:
+          serializeTaskCategoryTags(
+            values.hashtags.map((typeCode) =>
+              buildTaskCategoryTag(typeCode, values.name),
+            ),
+          ) ?? "",
         metadataJson: editItem?.metadataJson || { source: "manual" },
       } as const;
 
