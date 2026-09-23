@@ -12,17 +12,17 @@ import { useRegions } from "./features/farm/hooks/useRegions";
 import { OnboardRegionDialog } from "./pages/region-chart/region-basic-distribution/components/OnboardRegionDialog";
 
 import { WorkspaceChangeHandler } from "./components/WorkspaceChangeHandler";
+import { useCurrentUser } from "./features/auth/hooks/useCurrentUser";
 import { MobileAppLayout } from "./layouts/mobile/MobileAppLayout";
 import { SwitchToMobileAppButton } from "./layouts/mobile/SwitchToMobileAppButton";
 import { useMobileUiMode } from "./shared/hooks/useMobileUiMode";
-import { useCurrentUser } from "./features/auth/hooks/useCurrentUser";
 
 interface OnboardCheckerProps {
   children: React.ReactNode;
 }
 
 const OnboardChecker: React.FC<OnboardCheckerProps> = ({ children }) => {
-  const [showOnboard, setShowOnboard] = useState(false);
+  const [showOnboard, setShowOnboard] = useState(true);
   const [hasChecked, setHasChecked] = useState(false);
 
   // Gọi API lấy danh sách vùng trồng tại root để check
