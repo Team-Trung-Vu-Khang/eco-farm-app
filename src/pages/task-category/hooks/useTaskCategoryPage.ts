@@ -10,6 +10,7 @@ import { emptyTaskCategoryFormData } from "../data/constants";
 import { taskCategoryDomainLabel } from "../data/constants";
 import type { TaskCategoryDomain, TaskCategoryFormData } from "../types/types";
 import { useDebounce } from "@/shared/hooks/useDebounce";
+import { getTaskCategoryHashtags } from "../utils/hashtags";
 
 const domainCodePrefix: Record<TaskCategoryDomain, string> = {
   crop: "CV",
@@ -99,6 +100,7 @@ export function useTaskCategoryPage() {
           : item.domainCode === "LIVESTOCK"
             ? "animal"
             : "aquaculture",
+      hashtags: getTaskCategoryHashtags(item),
       status: item.status === "archived" ? "inactive" : item.status,
     });
     setFormOpen(true);
@@ -122,7 +124,11 @@ export function useTaskCategoryPage() {
         example: values.description.trim(),
         displayOrder: editItem?.displayOrder || 10,
         status: values.status || "active",
-        metadataJson: editItem?.metadataJson || { source: "manual" },
+        // Backend chưa có field hashtags riêng → lưu trong metadataJson.hashtags
+        metadataJson: {
+          ...(editItem?.metadataJson || { source: "manual" }),
+          hashtags: values.hashtags,
+        },
       } as const;
 
       if (editItem) {
