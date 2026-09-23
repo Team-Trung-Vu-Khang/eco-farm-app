@@ -12,32 +12,52 @@ import type {
 /** Cache TTL khớp với TTL Redis BE = 5 phút */
 const STALE_TIME = 5 * 60 * 1000;
 
+export interface ReportHookOptions {
+  workspaceId?: number | string | null;
+  enabled?: boolean;
+}
+
 // ─── Query Key Factory ────────────────────────────────────────────────────────
 
 export const farmReportKeys = {
-  all: () => ["farm", "report"] as const,
-  geoSummary: () => ["farm", "report", "geo-summary"] as const,
-  variants: (params: ProductionVariantsQueryParams) =>
-    ["farm", "report", "variants", params] as const,
-  variantCard: (params: VariantCardQueryParams) =>
-    ["farm", "report", "variant-card", params] as const,
-  supply: (params: SupplyConsumptionQueryParams) =>
-    ["farm", "report", "supply", params.supplyType, params] as const,
-  planStats: (params?: ProductionPlanQueryParams) =>
-    ["farm", "report", "plan-stats", params ?? {}] as const,
-  taskRanking: (params?: TaskNameRankingQueryParams) =>
-    ["farm", "report", "task-ranking", params ?? {}] as const,
-  taskStats: (params?: TaskNameStatsQueryParams) =>
-    ["farm", "report", "task-stats", params ?? {}] as const,
+  all: (wsId?: number | string | null) => ["farm", "report", wsId] as const,
+  geoSummary: (wsId?: number | string | null) =>
+    ["farm", "report", "geo-summary", wsId] as const,
+  variants: (
+    params: ProductionVariantsQueryParams,
+    wsId?: number | string | null,
+  ) => ["farm", "report", "variants", params, wsId] as const,
+  variantCard: (
+    params: VariantCardQueryParams,
+    wsId?: number | string | null,
+  ) => ["farm", "report", "variant-card", params, wsId] as const,
+  supply: (
+    params: SupplyConsumptionQueryParams,
+    wsId?: number | string | null,
+  ) => ["farm", "report", "supply", params.supplyType, params, wsId] as const,
+  planStats: (
+    params?: ProductionPlanQueryParams,
+    wsId?: number | string | null,
+  ) => ["farm", "report", "plan-stats", params ?? {}, wsId] as const,
+  taskRanking: (
+    params?: TaskNameRankingQueryParams,
+    wsId?: number | string | null,
+  ) => ["farm", "report", "task-ranking", params ?? {}, wsId] as const,
+  taskStats: (
+    params?: TaskNameStatsQueryParams,
+    wsId?: number | string | null,
+  ) => ["farm", "report", "task-stats", params ?? {}, wsId] as const,
 };
 
 // ─── Mục 2 — Geo Summary ─────────────────────────────────────────────────────
 
-export function useGeoSummary() {
+export function useGeoSummary(options?: ReportHookOptions) {
+  const wsId = options?.workspaceId;
   const query = useQuery({
-    queryKey: farmReportKeys.geoSummary(),
-    queryFn: farmReportApi.getGeoSummary,
+    queryKey: farmReportKeys.geoSummary(wsId),
+    queryFn: () => farmReportApi.getGeoSummary(wsId),
     staleTime: STALE_TIME,
+    enabled: options?.enabled !== false,
   });
 
   return {
@@ -50,11 +70,16 @@ export function useGeoSummary() {
 
 // ─── Mục 3.1 — Danh sách giống ───────────────────────────────────────────────
 
-export function useProductionVariants(params: ProductionVariantsQueryParams) {
+export function useProductionVariants(
+  params: ProductionVariantsQueryParams,
+  options?: ReportHookOptions,
+) {
+  const wsId = options?.workspaceId;
   const query = useQuery({
-    queryKey: farmReportKeys.variants(params),
-    queryFn: () => farmReportApi.getProductionVariants(params),
+    queryKey: farmReportKeys.variants(params, wsId),
+    queryFn: () => farmReportApi.getProductionVariants(params, wsId),
     staleTime: STALE_TIME,
+    enabled: options?.enabled !== false,
   });
 
   return {
@@ -67,33 +92,46 @@ export function useProductionVariants(params: ProductionVariantsQueryParams) {
 
 // ─── Mục 3.2 — Card báo cáo 1 giống ─────────────────────────────────────────
 
-export function useVariantCard(params: VariantCardQueryParams) {
+export function useVariantCard(
+  params: VariantCardQueryParams,
+  options?: ReportHookOptions,
+) {
+  const wsId = options?.workspaceId;
   return useQuery({
-    queryKey: farmReportKeys.variantCard(params),
-    queryFn: () => farmReportApi.getVariantCard(params),
+    queryKey: farmReportKeys.variantCard(params, wsId),
+    queryFn: () => farmReportApi.getVariantCard(params, wsId),
     staleTime: STALE_TIME,
-    enabled: !!params.variantCode && !!params.domainCode,
+    enabled: !!params.variantCode && !!params.domainCode && options?.enabled !== false,
   });
 }
 
 // ─── Mục 4 — Tiêu thụ vật tư ─────────────────────────────────────────────────
 
-export function useSupplyConsumption(params: SupplyConsumptionQueryParams) {
+export function useSupplyConsumption(
+  params: SupplyConsumptionQueryParams,
+  options?: ReportHookOptions,
+) {
+  const wsId = options?.workspaceId;
   return useQuery({
-    queryKey: farmReportKeys.supply(params),
-    queryFn: () => farmReportApi.getSupplyConsumption(params),
+    queryKey: farmReportKeys.supply(params, wsId),
+    queryFn: () => farmReportApi.getSupplyConsumption(params, wsId),
     staleTime: STALE_TIME,
-    enabled: !!params.supplyType,
+    enabled: !!params.supplyType && options?.enabled !== false,
   });
 }
 
 // ─── Mục 5.1 — Kế hoạch sản xuất ─────────────────────────────────────────────
 
-export function useProductionPlanStats(params?: ProductionPlanQueryParams) {
+export function useProductionPlanStats(
+  params?: ProductionPlanQueryParams,
+  options?: ReportHookOptions,
+) {
+  const wsId = options?.workspaceId;
   const query = useQuery({
-    queryKey: farmReportKeys.planStats(params),
-    queryFn: () => farmReportApi.getProductionPlanStats(params),
+    queryKey: farmReportKeys.planStats(params, wsId),
+    queryFn: () => farmReportApi.getProductionPlanStats(params, wsId),
     staleTime: STALE_TIME,
+    enabled: options?.enabled !== false,
   });
 
   return {
@@ -106,11 +144,16 @@ export function useProductionPlanStats(params?: ProductionPlanQueryParams) {
 
 // ─── Mục 5.3 — Task Ranking ───────────────────────────────────────────────────
 
-export function useTaskNameRanking(params?: TaskNameRankingQueryParams) {
+export function useTaskNameRanking(
+  params?: TaskNameRankingQueryParams,
+  options?: ReportHookOptions,
+) {
+  const wsId = options?.workspaceId;
   const query = useQuery({
-    queryKey: farmReportKeys.taskRanking(params),
-    queryFn: () => farmReportApi.getTaskNameRanking(params),
+    queryKey: farmReportKeys.taskRanking(params, wsId),
+    queryFn: () => farmReportApi.getTaskNameRanking(params, wsId),
     staleTime: STALE_TIME,
+    enabled: options?.enabled !== false,
   });
 
   return {
@@ -122,11 +165,16 @@ export function useTaskNameRanking(params?: TaskNameRankingQueryParams) {
 
 // ─── Mục 5.2 — Task Stats (1 tab) ────────────────────────────────────────────
 
-export function useTaskNameStats(params?: TaskNameStatsQueryParams) {
+export function useTaskNameStats(
+  params?: TaskNameStatsQueryParams,
+  options?: ReportHookOptions,
+) {
+  const wsId = options?.workspaceId;
   const query = useQuery({
-    queryKey: farmReportKeys.taskStats(params),
-    queryFn: () => farmReportApi.getTaskNameStats(params),
+    queryKey: farmReportKeys.taskStats(params, wsId),
+    queryFn: () => farmReportApi.getTaskNameStats(params, wsId),
     staleTime: STALE_TIME,
+    enabled: options?.enabled !== false,
   });
 
   return {

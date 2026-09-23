@@ -208,6 +208,7 @@ export const ReportPageContainer: React.FC = () => {
 
   return (
     <PageWrapper
+      overflow="clip"
       title={meta.title}
       description={meta.description}
       actions={

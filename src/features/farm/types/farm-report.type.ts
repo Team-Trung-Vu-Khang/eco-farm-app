@@ -89,7 +89,8 @@ export type SupplyType =
   | "FERTILIZER"
   | "EQUIPMENT"
   | "MATERIAL"
-  | "BIOLOGICAL";
+  | "BIOLOGICAL_PRODUCT";
+
 export type PeriodType = "MONTHLY" | "YEARLY" | "WEEKLY";
 
 export interface SupplyUnit {

@@ -35,6 +35,7 @@ import { AdminMaterialSection } from "./AdminMaterialSection";
 import { AdminOperationsSection } from "./AdminOperationsSection";
 import { AdminPersonnelSection } from "./AdminPersonnelSection";
 import { EntitySidebar, type CorporateEntity } from "./EntitySidebar";
+import type { WorkspaceRecord } from "@/features/workspace/types/workspace.type";
 
 export const OverviewAdminDashboard: React.FC = () => {
   // ─── States (Phần mới) ─────────────────────────────────────────────────────
@@ -49,9 +50,8 @@ export const OverviewAdminDashboard: React.FC = () => {
   const [lightboxImage, setLightboxImage] = useState<string | null>(null);
 
   // ─── States (Phần cũ) ──────────────────────────────────────────────────────
-  const [selectedEntity, setSelectedEntity] = useState<CorporateEntity | null>(
-    null,
-  );
+  const [selectedWorkspace, setSelectedWorkspace] =
+    useState<WorkspaceRecord | null>(null);
 
   // ─── Process Data (Phần mới) ────────────────────────────────────────────────
   const unitsData = useMemo(() => {
@@ -144,27 +144,11 @@ export const OverviewAdminDashboard: React.FC = () => {
 
   // ─── Calculations (Phần cũ) ────────────────────────────────────────────────
   const stats = useMemo(() => {
-    if (!selectedEntity) {
+    if (!selectedWorkspace) {
       return {
         regions: mockGeneralStats.regionsCount,
         areas: mockGeneralStats.areasCount,
         plots: mockGeneralStats.plotsCount,
-      };
-    }
-
-    if (selectedEntity.id === "ecofarm") {
-      return {
-        regions: 2,
-        areas: 5,
-        plots: 15,
-      };
-    }
-
-    if (selectedEntity.id === "hoabinh") {
-      return {
-        regions: 2,
-        areas: 7,
-        plots: 21,
       };
     }
 
@@ -173,7 +157,7 @@ export const OverviewAdminDashboard: React.FC = () => {
       areas: 2,
       plots: 5,
     };
-  }, [selectedEntity]);
+  }, [selectedWorkspace]);
 
   // ─── Helpers ───────────────────────────────────────────────────────────────
   const openDrawer = (unit: AdminUnitReport) => {
@@ -607,20 +591,20 @@ export const OverviewAdminDashboard: React.FC = () => {
           </Card>
         </div> */}
 
-        {/* Layout 2 cột cũ */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-          <div className="lg:col-span-3 lg:sticky lg:top-6 shrink-0">
+        {/* Layout 2 cột */}
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-start">
+          <div className="md:col-span-4 lg:col-span-3 md:sticky md:top-6 shrink-0 z-20">
             <EntitySidebar
-              selectedEntity={selectedEntity}
-              onSelectEntity={setSelectedEntity}
+              selectedWorkspace={selectedWorkspace}
+              onSelectWorkspace={setSelectedWorkspace}
             />
           </div>
 
-          <div className="lg:col-span-9 space-y-6">
-            <AdminHealthSection selectedEntity={selectedEntity} />
-            <AdminMaterialSection selectedEntity={selectedEntity} />
-            <AdminOperationsSection selectedEntity={selectedEntity} />
-            <AdminPersonnelSection selectedEntity={selectedEntity} />
+          <div className="md:col-span-8 lg:col-span-9 space-y-6">
+            <AdminHealthSection selectedWorkspace={selectedWorkspace} />
+            <AdminMaterialSection selectedWorkspace={selectedWorkspace} />
+            <AdminOperationsSection selectedWorkspace={selectedWorkspace} />
+            <AdminPersonnelSection selectedWorkspace={selectedWorkspace} />
           </div>
         </div>
       </div>

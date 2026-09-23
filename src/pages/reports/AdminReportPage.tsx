@@ -59,6 +59,7 @@ export const AdminReportPage: React.FC = () => {
 
   return (
     <PageWrapper
+      overflow="clip"
       title="Báo cáo Quản trị Admin"
       description="Báo cáo tổng hợp quy mô canh tác, tiêu thụ vật tư, kế hoạch vận hành và nhân sự phân bổ theo Đơn vị thành viên."
       actions={

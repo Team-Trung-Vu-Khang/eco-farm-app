@@ -113,7 +113,7 @@ export function useFarmPositionsMasterData({
     {
       queryKey: farmPositionKeys.masterData(params, workspaceId),
       queryFn: () => farmPositionApi.masterData(params, workspaceId),
-      enabled: enabled && workspaceId !== undefined,
+      enabled: enabled,
       staleTime: 5 * 60 * 1000,
       refetchOnWindowFocus: false,
     },

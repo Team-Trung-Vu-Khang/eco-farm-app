@@ -30,7 +30,7 @@ interface MaterialSectionProps {
 const SUPPLY_LABEL: Record<SupplyType, string> = {
   MEDICINE: "Thuốc BVTV canh tác",
   FERTILIZER: "Phân bón chất lượng cao",
-  BIOLOGICAL: "Chế phẩm sinh học",
+  BIOLOGICAL_PRODUCT: "Chế phẩm sinh học",
   EQUIPMENT: "Máy móc & thiết bị",
   MATERIAL: "Vật tư canh tác khác",
 };
@@ -38,7 +38,7 @@ const SUPPLY_LABEL: Record<SupplyType, string> = {
 const SUPPLY_ICON: Record<SupplyType, React.ReactNode> = {
   MEDICINE: <ShieldAlert className="w-4 h-4 text-rose-500" />,
   FERTILIZER: <Leaf className="w-4 h-4 text-emerald-500" />,
-  BIOLOGICAL: <FlaskConical className="w-4 h-4 text-purple-500" />,
+  BIOLOGICAL_PRODUCT: <FlaskConical className="w-4 h-4 text-purple-500" />,
   EQUIPMENT: <Wrench className="w-4 h-4 text-amber-500" />,
   MATERIAL: <Layers className="w-4 h-4 text-sky-500" />,
 };
@@ -204,7 +204,7 @@ const SupplyCard: React.FC<SupplyCardProps> = ({
 const SUPPLY_TYPES: SupplyType[] = [
   "MEDICINE",
   "FERTILIZER",
-  "BIOLOGICAL",
+  "BIOLOGICAL_PRODUCT",
   "EQUIPMENT",
   "MATERIAL",
 ];

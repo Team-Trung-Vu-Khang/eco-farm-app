@@ -5,6 +5,8 @@ type PageWrapperProps = {
   description?: ReactNode;
   actions?: ReactNode;
   children: ReactNode;
+  overflow?: "hidden" | "clip" | "visible";
+  className?: string;
 };
 
 const PageWrapper = ({
@@ -12,9 +14,18 @@ const PageWrapper = ({
   description,
   actions,
   children,
+  overflow = "hidden",
+  className = "",
 }: PageWrapperProps) => {
+  const overflowClass =
+    overflow === "clip"
+      ? "overflow-clip"
+      : overflow === "visible"
+        ? "overflow-visible"
+        : "overflow-hidden";
+
   return (
-    <div className="min-w-0 overflow-hidden">
+    <div className={`min-w-0 ${overflowClass} ${className}`}>
       {(title || actions) && (
         <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div>
@@ -35,7 +46,9 @@ const PageWrapper = ({
               </p>
             )}
           </div>
-          {actions && <div className="flex shrink-0 items-center gap-2">{actions}</div>}
+          {actions && (
+            <div className="flex shrink-0 items-center gap-2">{actions}</div>
+          )}
         </div>
       )}
       {children}

@@ -24,9 +24,10 @@ import type {
 
 const BASE = "/api/farm";
 
-// Helpers for Workspace Header
 const getHeaders = (workspaceId?: number) => {
-  return workspaceId ? { "X-Workspace-Id": workspaceId } : {};
+  return workspaceId
+    ? { "X-Workspace-Id": workspaceId }
+    : { skipWorkspaceHeader: "true" };
 };
 
 // ─── Farm Departments API ─────────────────────────────────────────────────────
