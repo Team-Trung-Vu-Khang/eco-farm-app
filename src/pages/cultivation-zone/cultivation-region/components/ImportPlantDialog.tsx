@@ -26,6 +26,7 @@ import {
 import { useRef, useState } from "react";
 import readXlsxFile from "read-excel-file";
 import * as XLSX from "xlsx";
+import { useSeeds } from "@/features/farm";
 import {
   PLANT_HEALTH_STATUS_LABELS,
   type PlantHealthStatus,
@@ -36,8 +37,8 @@ interface ImportPlantDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onImport: (plants: Partial<Plant>[]) => void;
-  /** Giống / hạt giống của vùng canh tác chọn ở bước 1 */
-  varietyOptions?: VarietyOption[];
+  /** Giống cây (Foundation) của vùng canh tác chọn ở bước 1 */
+  productionVarietyOptions?: VarietyOption[];
 }
 
 interface TempPlant extends Partial<Plant> {
@@ -90,16 +91,35 @@ export function ImportPlantDialog({
   open,
   onOpenChange,
   onImport,
-  varietyOptions = [],
+  productionVarietyOptions = [],
 }: ImportPlantDialogProps) {
   const [isDragging, setIsDragging] = useState(false);
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [importData, setImportData] = useState<TempPlant[]>([]);
-  // Giống áp cho toàn bộ cây trong file. Chưa chọn thì mặc định lấy giống đầu
-  // tiên của vùng — tính trực tiếp để không cần effect đồng bộ state.
-  const [selectedVarietyId, setSelectedVarietyId] = useState("");
-  const varietyId = selectedVarietyId || varietyOptions[0]?.id || "";
+  // Giống cây áp cho toàn bộ cây trong file. Chưa chọn thì mặc định lấy giống
+  // đầu tiên của vùng; hạt giống cascade theo giống đang chọn (tùy chọn).
+  const [selectedProductionVariantId, setSelectedProductionVariantId] =
+    useState("");
+  const [selectedSubjectVariantId, setSelectedSubjectVariantId] = useState("");
+  const productionVariantId =
+    selectedProductionVariantId || productionVarietyOptions[0]?.id || "";
+
+  const productionVariantNumber = productionVariantId
+    ? Number(productionVariantId)
+    : undefined;
+  const { items: seedOptions, loading: seedsLoading } = useSeeds({
+    params: productionVariantNumber
+      ? {
+          foundationSubjectVariantId: productionVariantNumber,
+          status: "active",
+          size: 100,
+        }
+      : undefined,
+    enabled: !!productionVariantNumber,
+    staleTime: 15_000,
+  });
+  const subjectVariantId = selectedSubjectVariantId || "";
   const [isParsing, setIsParsing] = useState(false);
 
   const columns: Column<TempPlant>[] = [
@@ -398,16 +418,19 @@ export function ImportPlantDialog({
 
     // Pass valid items exactly as required
     // Remove temporary id, isValid, errors properties
+    const presetVariety = productionVarietyOptions.find(
+      (o) => o.id === productionVariantId,
+    );
+    const presetSeed = seedOptions.find(
+      (s) => String(s.id) === subjectVariantId,
+    );
     const plantsToImport = validItems.map(
       ({ id, isValid, errors, ...rest }) => ({
         ...rest,
-        ...(varietyId
-          ? {
-              varietyId,
-              variantKind: varietyOptions.find((o) => o.id === varietyId)
-                ?.variantKind,
-            }
-          : {}),
+        productionVariantId: productionVariantId || undefined,
+        productionVariantName: productionVariantId ? presetVariety?.name : "",
+        subjectVariantId: subjectVariantId || undefined,
+        subjectVariantName: subjectVariantId ? presetSeed?.name : "",
       }),
     );
 
@@ -489,25 +512,72 @@ export function ImportPlantDialog({
               </Button>
             </div>
 
-            {/* Chọn giống áp cho toàn bộ cây trong file */}
-            {varietyOptions.length > 0 && (
-              <div className="mb-4 space-y-1.5">
-                <Label className="text-xs font-bold text-slate-600">
-                  Giống / Hạt giống áp dụng cho toàn bộ cây
-                </Label>
-                <Select value={varietyId} onValueChange={setSelectedVarietyId}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Chọn giống" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {varietyOptions.map((option) => (
-                      <SelectItem key={option.id} value={option.id}>
-                        {option.name}
-                        {option.code ? ` (${option.code})` : ""}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+            {/* Giống cây + Hạt giống áp cho toàn bộ cây trong file */}
+            {productionVarietyOptions.length > 0 && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-bold text-slate-600">
+                    Giống cây áp dụng cho toàn bộ cây{" "}
+                    <span className="text-red-500">*</span>
+                  </Label>
+                  <Select
+                    value={productionVariantId}
+                    onValueChange={(val) => {
+                      setSelectedProductionVariantId(val);
+                      setSelectedSubjectVariantId(""); // đổi giống → reset hạt
+                    }}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Chọn giống cây" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {productionVarietyOptions.map((option) => (
+                        <SelectItem key={option.id} value={option.id}>
+                          {option.name}
+                          {option.code ? ` (${option.code})` : ""}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-bold text-slate-600">
+                    Hạt giống áp dụng cho toàn bộ cây{" "}
+                    <span className="text-slate-400 font-normal">
+                      (tùy chọn)
+                    </span>
+                  </Label>
+                  <Select
+                    value={subjectVariantId}
+                    onValueChange={setSelectedSubjectVariantId}
+                    disabled={!productionVariantNumber || seedOptions.length === 0}
+                  >
+                    <SelectTrigger>
+                      <SelectValue
+                        placeholder={
+                          !productionVariantNumber
+                            ? "Chọn giống cây trước"
+                            : seedsLoading
+                              ? "Đang tải hạt giống..."
+                              : seedOptions.length === 0
+                                ? "Giống này chưa có hạt giống"
+                                : "Chọn hạt giống"
+                        }
+                      />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {seedOptions.map((seed) => (
+                        <SelectItem
+                          key={seed.id}
+                          value={String(seed.id)}
+                        >
+                          {seed.name || seed.code || `Hạt giống #${seed.id}`}
+                          {seed.code && seed.name ? ` (${seed.code})` : ""}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
             )}
 

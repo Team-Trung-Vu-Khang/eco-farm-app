@@ -89,7 +89,13 @@ export interface Plan {
     | "treatment"
     | "amendment"
     | "harvest"
-    | "incurred";
+    | "incurred"
+    | "nutrition"
+    | "plant-care"
+    | "pest-disease"
+    | "weed-control"
+    | "irrigation"
+    | "other";
   zone?: string;
   cultivationRegion?: string;
   plot?: string;

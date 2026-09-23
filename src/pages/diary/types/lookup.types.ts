@@ -5,7 +5,13 @@ export type DiaryWorkType =
   | "facility-upgrade"
   | "treatment"
   | "amendment"
-  | "harvest";
+  | "harvest"
+  | "nutrition"
+  | "plant-care"
+  | "pest-disease"
+  | "weed-control"
+  | "irrigation"
+  | "other";
 
 export type DiaryStatus = "TODO" | "DOING" | "DONE" | "CANCELLED";
 

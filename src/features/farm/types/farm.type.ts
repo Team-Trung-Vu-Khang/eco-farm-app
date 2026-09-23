@@ -397,6 +397,9 @@ export interface FarmCultivationZoneResponse {
 }
 
 export interface CultivationZoneQueryParams {
+  regionId?: number;
+  areaId?: number;
+  plotId?: number;
   keyword?: string;
   status?: FarmCultivationZoneStatus;
   farmingMethodId?: number;
@@ -406,7 +409,6 @@ export interface CultivationZoneQueryParams {
   page?: number;
   size?: number;
 }
-
 
 // ─── Plant Identification ───────────────────────────────────────────────────
 
@@ -444,9 +446,9 @@ export interface FarmPlantIdentificationRequest {
   displayOrder?: number;
   metadataJson?: Record<string, unknown>;
   domainCode?: "CROP" | "LIVESTOCK" | "AQUACULTURE";
-  /** Giống cây — bắt buộc nếu không gửi `subjectVariantId` */
+  /** Giống cây (Foundation) — có thể gửi đồng thời với `subjectVariantId`; bắt buộc ít nhất một trong hai */
   productionSubjectVariantId?: number;
-  /** Hạt giống — bắt buộc nếu không gửi `productionSubjectVariantId` */
+  /** Hạt giống (FarmSeed) — cascade theo `productionSubjectVariantId`; bắt buộc ít nhất một trong hai */
   subjectVariantId?: number;
   /** Không gửi hoặc gửi null khi sửa đều giữ nguyên giá trị hiện có */
   healthStatus?: FarmPlantHealthStatus;

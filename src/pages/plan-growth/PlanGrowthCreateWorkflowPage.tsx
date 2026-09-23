@@ -72,6 +72,7 @@ import {
   type DiagramInfoRecord,
   type DraftNode,
 } from "./hooks/usePlanWorkflowDraftStore";
+import { mapPurpose } from "./hooks/usePlanPage";
 import type { GeographicalSelection } from "./types";
 import {
   mapPlanResponseToPlan,
@@ -628,6 +629,9 @@ export default function PlanGrowthCreateWorkflowPage() {
         workflowId: workflowDetail.id,
         payload: {
           name: DEFAULT_DRAFT_PLAN_NAME,
+          // First plan of a workflow has no parent plan to inherit a purpose
+          // from — keep CULTIVATION as the default until the operator
+          // configures the plan.
           purpose: "CULTIVATION",
           durationDays: 1,
           status: "DRAFT",
@@ -694,12 +698,15 @@ export default function PlanGrowthCreateWorkflowPage() {
           : undefined;
         const parentPlanId =
           sourceNode?.data.setupKind === "plan" ? sourceNode.data.planId : undefined;
+        const parentPlan = parentPlanId != null
+          ? plans.find((item) => item.id === parentPlanId)
+          : undefined;
 
         const created = await createPlan.mutateAsync({
           workflowId: activeWorkflowId,
           payload: {
             name: planName || DEFAULT_DRAFT_PLAN_NAME,
-            purpose: "CULTIVATION",
+            purpose: parentPlan ? mapPurpose(parentPlan.purpose) : "CULTIVATION",
             durationDays: 1,
             status: "DRAFT",
             ...(parentPlanId != null

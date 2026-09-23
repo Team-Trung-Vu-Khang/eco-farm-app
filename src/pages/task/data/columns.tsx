@@ -2,6 +2,7 @@ import { Badge, type Column } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { Users } from "lucide-react";
 import type { Task } from "../../../stores/useTaskStore";
 import { CodeBadge } from "@/components/CodeBadge";
+import { FARM_PLAN_PURPOSE_LABELS } from "@/shared/constants/farm.constants";
 
 const ROLE_LABELS: Record<string, string> = {
   MANAGER: "Quản lý",
@@ -32,13 +33,7 @@ function getAssignmentCounts(
   return executorCount > 0 ? [{ role: "EXECUTOR", count: executorCount }] : [];
 }
 
-const PLAN_PURPOSE_LABELS: Record<string, string> = {
-  CULTIVATION: "Canh tác",
-  FACILITY_UPGRADE: "Nâng cấp CSVC",
-  TREATMENT: "Điều trị",
-  SOIL_IMPROVEMENT: "Cải tạo đất",
-  HARVEST: "Thu hoạch",
-};
+const PLAN_PURPOSE_LABELS = FARM_PLAN_PURPOSE_LABELS;
 
 export const taskColumns: Column<Task>[] = [
   { key: "plan", label: "Kế hoạch" },

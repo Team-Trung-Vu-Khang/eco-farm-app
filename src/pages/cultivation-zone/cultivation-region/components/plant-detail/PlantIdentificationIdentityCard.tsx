@@ -21,9 +21,17 @@ export const PlantIdentificationIdentityCard = ({
   formattedAge,
 }: Props) => {
   // Cây tạo trước 2026-09-20 không có giống / hiện trạng
-  const { variantName, variantKind, healthStatus } = plant as Plant & {
+  const {
+    variantName,
+    variantKind,
+    productionVariantName,
+    subjectVariantName,
+    healthStatus,
+  } = plant as Plant & {
     variantName?: string;
     variantKind?: "production" | "subject";
+    productionVariantName?: string;
+    subjectVariantName?: string;
     healthStatus?: string;
   };
 
@@ -59,12 +67,31 @@ export const PlantIdentificationIdentityCard = ({
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4 pt-2">
               <div className="space-y-1">
                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                  {variantKind === "subject" ? "Hạt giống" : "Giống cây"}
+                  Giống cây
                 </p>
-                <p className="text-sm font-semibold">
-                  {variantName || (
-                    <span className="italic text-slate-400">Chưa có giống</span>
-                  )}
+                <p className="text-sm font-semibold text-blue-700">
+                  {productionVariantName ||
+                    (!subjectVariantName ? variantName : "") || (
+                      <span className="italic text-slate-400">
+                        Chưa có giống
+                      </span>
+                    )}
+                </p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                  Hạt giống
+                </p>
+                <p className="text-sm font-semibold text-emerald-700">
+                  {subjectVariantName ||
+                    (!productionVariantName &&
+                    variantKind === "subject"
+                      ? variantName
+                      : "") || (
+                      <span className="italic text-slate-400">
+                        Chưa có hạt giống
+                      </span>
+                    )}
                 </p>
               </div>
               <div className="space-y-1">

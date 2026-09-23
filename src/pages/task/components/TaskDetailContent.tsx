@@ -15,8 +15,13 @@ import {
   Calendar,
   CheckCircle2,
   Circle,
+  CircleEllipsis,
   ClipboardCheck,
   ClipboardList,
+  Droplet,
+  Flower2,
+  Hammer,
+  HeartPulse,
   Info,
   Layers,
   MapPin,
@@ -27,7 +32,10 @@ import {
   Sprout,
   User,
   Users,
+  Waves,
+  Wheat,
 } from "lucide-react";
+import { FARM_PLAN_PURPOSE_LABELS } from "../../../shared/constants/farm.constants";
 import { type Task } from "../../../stores/useTaskStore";
 import useRegionStore from "../../../stores/useRegionStore";
 import { getFrequencyText, getRepeatDatesText } from "../../plan/utils/task";
@@ -91,6 +99,63 @@ const objectiveConfig: Record<
   string,
   { label: string; icon: typeof Sprout; className: string }
 > = {
+  CULTIVATION: {
+    label: FARM_PLAN_PURPOSE_LABELS.CULTIVATION,
+    icon: Sprout,
+    className: "bg-blue-100 text-blue-800 border-blue-200",
+  },
+  FACILITY_UPGRADE: {
+    label: FARM_PLAN_PURPOSE_LABELS.FACILITY_UPGRADE,
+    icon: Hammer,
+    className: "bg-slate-100 text-slate-700 border-slate-200",
+  },
+  TREATMENT: {
+    label: FARM_PLAN_PURPOSE_LABELS.TREATMENT,
+    icon: HeartPulse,
+    className: "bg-rose-100 text-rose-800 border-rose-200",
+  },
+  SOIL_IMPROVEMENT: {
+    label: FARM_PLAN_PURPOSE_LABELS.SOIL_IMPROVEMENT,
+    icon: Sprout,
+    className: "bg-emerald-100 text-emerald-800 border-emerald-200",
+  },
+  HARVEST: {
+    label: FARM_PLAN_PURPOSE_LABELS.HARVEST,
+    icon: Apple,
+    className: "bg-orange-100 text-orange-800 border-orange-200",
+  },
+  NUTRITION: {
+    label: FARM_PLAN_PURPOSE_LABELS.NUTRITION,
+    icon: Droplet,
+    className: "bg-emerald-100 text-emerald-800 border-emerald-200",
+  },
+  PLANT_CARE: {
+    label: FARM_PLAN_PURPOSE_LABELS.PLANT_CARE,
+    icon: Flower2,
+    className: "bg-teal-100 text-teal-800 border-teal-200",
+  },
+  PEST_DISEASE: {
+    label: FARM_PLAN_PURPOSE_LABELS.PEST_DISEASE,
+    icon: Bug,
+    className: "bg-amber-100 text-amber-800 border-amber-200",
+  },
+  WEED_CONTROL: {
+    label: FARM_PLAN_PURPOSE_LABELS.WEED_CONTROL,
+    icon: Wheat,
+    className: "bg-lime-100 text-lime-800 border-lime-200",
+  },
+  IRRIGATION: {
+    label: FARM_PLAN_PURPOSE_LABELS.IRRIGATION,
+    icon: Waves,
+    className: "bg-sky-100 text-sky-800 border-sky-200",
+  },
+  OTHER: {
+    label: FARM_PLAN_PURPOSE_LABELS.OTHER,
+    icon: CircleEllipsis,
+    className: "bg-gray-100 text-gray-700 border-gray-200",
+  },
+  // Legacy keyword-derived objectives, kept as a fallback when a task has no
+  // planPurpose (ad-hoc task or legacy seeded data).
   "theo-ke-hoach": {
     label: "Canh tác",
     icon: Sprout,
@@ -118,7 +183,8 @@ const objectiveConfig: Record<
   },
 };
 
-function getObjectiveType(task: Task) {
+function getObjectiveType(task: Task): string {
+  if (task.planPurpose) return task.planPurpose;
   if (!task.plan || task.plan === "N/A" || task.plan === "Công việc phát sinh")
     return "phat-sinh";
   const p = task.plan.toLowerCase();

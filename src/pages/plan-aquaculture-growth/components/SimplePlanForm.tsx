@@ -14,9 +14,13 @@ import {
   ArrowLeft,
   Bug,
   Calendar,
+  Droplet,
+  FlaskConical,
   Info,
   Layers,
+  MoreHorizontal,
   Plus,
+  Scissors,
   Sprout,
   Wrench,
   X,
@@ -57,6 +61,12 @@ const PURPOSE_OPTIONS = [
   { id: "treatment", label: "Điều trị", icon: Bug, color: "red" },
   { id: "amendment", label: "Cải tạo ao nuôi", icon: Sprout, color: "green" },
   { id: "harvest", label: "Xuất bán", icon: Apple, color: "orange" },
+  { id: "nutrition", label: "Dinh dưỡng", icon: FlaskConical, color: "emerald" },
+  { id: "plant-care", label: "Chăm sóc cây", icon: Sprout, color: "teal" },
+  { id: "pest-disease", label: "Sâu bệnh hại", icon: Bug, color: "amber" },
+  { id: "weed-control", label: "Cỏ dại", icon: Scissors, color: "lime" },
+  { id: "irrigation", label: "Tưới tiêu", icon: Droplet, color: "sky" },
+  { id: "other", label: "Khác", icon: MoreHorizontal, color: "gray" },
 ] as const;
 
 const PURPOSE_COLOR_CLASSES: Record<
@@ -92,6 +102,42 @@ const PURPOSE_COLOR_CLASSES: Record<
     text: "text-orange-700",
     border: "border-orange-500",
     bg: "bg-orange-50/50",
+  },
+  emerald: {
+    active: "bg-emerald-500",
+    text: "text-emerald-700",
+    border: "border-emerald-500",
+    bg: "bg-emerald-50/50",
+  },
+  teal: {
+    active: "bg-teal-500",
+    text: "text-teal-700",
+    border: "border-teal-500",
+    bg: "bg-teal-50/50",
+  },
+  amber: {
+    active: "bg-amber-500",
+    text: "text-amber-700",
+    border: "border-amber-500",
+    bg: "bg-amber-50/50",
+  },
+  lime: {
+    active: "bg-lime-500",
+    text: "text-lime-700",
+    border: "border-lime-500",
+    bg: "bg-lime-50/50",
+  },
+  sky: {
+    active: "bg-sky-500",
+    text: "text-sky-700",
+    border: "border-sky-500",
+    bg: "bg-sky-50/50",
+  },
+  gray: {
+    active: "bg-gray-500",
+    text: "text-gray-700",
+    border: "border-gray-500",
+    bg: "bg-gray-50/50",
   },
 };
 

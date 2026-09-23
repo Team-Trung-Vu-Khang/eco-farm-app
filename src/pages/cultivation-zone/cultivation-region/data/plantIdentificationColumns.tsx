@@ -20,17 +20,40 @@ export const plantIdentificationColumns = [
   },
   {
     key: "variantName",
-    label: "Tên & Giống",
-    // Response không trả tên loại cây, chỉ có tên giống / hạt giống
+    label: "Giống & Hạt giống",
+    // Response không trả tên loại cây, chỉ có tên giống cây / hạt giống
     render: (_: unknown, row: any) =>
-      row.variantName ? (
+      row.variantName || row.productionVariantName || row.subjectVariantName ? (
         <div>
-          <div className="text-sm font-semibold text-slate-800">
-            {row.variantName}
-          </div>
-          <div className="text-[10px] uppercase tracking-wide text-slate-400">
-            {row.variantKind === "subject" ? "Hạt giống" : "Giống cây"}
-          </div>
+          {row.productionVariantName && (
+            <div className="text-sm font-semibold text-slate-800">
+              {row.productionVariantName}
+              <span className="ml-1.5 text-[10px] uppercase tracking-wide font-medium text-blue-500">
+                Giống cây
+              </span>
+            </div>
+          )}
+          {row.subjectVariantName && (
+            <div className="text-sm text-slate-600">
+              {row.subjectVariantName}
+              <span className="ml-1.5 text-[10px] uppercase tracking-wide font-medium text-emerald-500">
+                Hạt giống
+              </span>
+            </div>
+          )}
+          {/* Fallback cho dữ liệu cũ chỉ có variantName/variantKind */}
+          {!row.productionVariantName &&
+            !row.subjectVariantName &&
+            row.variantName && (
+              <div>
+                <div className="text-sm font-semibold text-slate-800">
+                  {row.variantName}
+                </div>
+                <div className="text-[10px] uppercase tracking-wide text-slate-400">
+                  {row.variantKind === "subject" ? "Hạt giống" : "Giống cây"}
+                </div>
+              </div>
+            )}
         </div>
       ) : (
         <span className="text-xs italic text-slate-400">Chưa có giống</span>

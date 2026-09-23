@@ -288,13 +288,13 @@ export function createWorkflowColumns({
               <Eye className="mr-2 h-4 w-4" />
               Chi tiết
             </DropdownMenuItem>
-            {/* <DropdownMenuItem
+            <DropdownMenuItem
               disabled={item.id === UNASSIGNED_WORKFLOW_ID}
               onClick={() => onOpenWorkflow(item)}
             >
               <Workflow className="mr-2 h-4 w-4" />
               Workflow
-            </DropdownMenuItem> */}
+            </DropdownMenuItem>
             <DropdownMenuItem
               disabled={item.id === UNASSIGNED_WORKFLOW_ID}
               onClick={() => onClone(item)}

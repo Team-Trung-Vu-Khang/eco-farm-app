@@ -56,6 +56,72 @@ function formatDate(isoString?: string) {
 function getWorkTypeBadge(purposeOrCategoryName?: string) {
   const str = (purposeOrCategoryName || "").toUpperCase();
 
+  if (str === "NUTRITION" || str.includes("DINH DƯỠNG")) {
+    return (
+      <Badge
+        variant="outline"
+        className="bg-emerald-50 text-emerald-700 border-emerald-200 font-bold gap-1.5 px-3 py-1 text-xs rounded-xl"
+      >
+        <Sprout className="w-3.5 h-3.5 text-emerald-600" />
+        Dinh dưỡng
+      </Badge>
+    );
+  }
+  if (str === "PLANT_CARE" || str.includes("CHĂM SÓC CÂY")) {
+    return (
+      <Badge
+        variant="outline"
+        className="bg-teal-50 text-teal-700 border-teal-200 font-bold gap-1.5 px-3 py-1 text-xs rounded-xl"
+      >
+        <Sprout className="w-3.5 h-3.5 text-teal-600" />
+        Chăm sóc cây
+      </Badge>
+    );
+  }
+  if (str === "PEST_DISEASE" || str.includes("SÂU BỆNH HẠI")) {
+    return (
+      <Badge
+        variant="outline"
+        className="bg-amber-50 text-amber-700 border-amber-200 font-bold gap-1.5 px-3 py-1 text-xs rounded-xl"
+      >
+        <Bug className="w-3.5 h-3.5 text-amber-600" />
+        Sâu bệnh hại
+      </Badge>
+    );
+  }
+  if (str === "WEED_CONTROL" || str.includes("CỎ DẠI")) {
+    return (
+      <Badge
+        variant="outline"
+        className="bg-lime-50 text-lime-700 border-lime-200 font-bold gap-1.5 px-3 py-1 text-xs rounded-xl"
+      >
+        <Layers className="w-3.5 h-3.5 text-lime-600" />
+        Cỏ dại
+      </Badge>
+    );
+  }
+  if (str === "IRRIGATION" || str.includes("TƯỚI TIÊU")) {
+    return (
+      <Badge
+        variant="outline"
+        className="bg-sky-50 text-sky-700 border-sky-200 font-bold gap-1.5 px-3 py-1 text-xs rounded-xl"
+      >
+        <Zap className="w-3.5 h-3.5 text-sky-600" />
+        Tưới tiêu
+      </Badge>
+    );
+  }
+  if (str === "OTHER" || str.includes("KHÁC")) {
+    return (
+      <Badge
+        variant="outline"
+        className="bg-gray-50 text-gray-700 border-gray-200 font-bold gap-1.5 px-3 py-1 text-xs rounded-xl"
+      >
+        <Layers className="w-3.5 h-3.5 text-gray-600" />
+        Khác
+      </Badge>
+    );
+  }
   if (
     str === "FACILITY_UPGRADE" ||
     str.includes("NÂNG CẤP") ||
@@ -167,6 +233,12 @@ export default function UpdateHistoryDetailPage() {
       TREATMENT: "Điều trị",
       SOIL_IMPROVEMENT: "Cải tạo đất",
       HARVEST: "Thu hoạch",
+      NUTRITION: "Dinh dưỡng",
+      PLANT_CARE: "Chăm sóc cây",
+      PEST_DISEASE: "Sâu bệnh hại",
+      WEED_CONTROL: "Cỏ dại",
+      IRRIGATION: "Tưới tiêu",
+      OTHER: "Khác",
     };
     const purposeLabel =
       purposeMap[dailyDiaryDetail.purpose] ||
@@ -416,7 +488,10 @@ export default function UpdateHistoryDetailPage() {
       planCode: realFarmTask.plan?.code || "N/A",
       planName: realFarmTask.plan?.name || "Kế hoạch canh tác",
       planId: realFarmTask.plan?.id || 0,
-      taskCategoryName: realFarmTask.taskCategory?.name || "Canh tác",
+      taskCategoryName:
+        realFarmTask.plan?.purpose ||
+        realFarmTask.taskCategory?.name ||
+        "Canh tác",
       latestUpdate: latestLog,
       historyLogs: logsFromHistory.length > 0 ? logsFromHistory : [latestLog],
     };

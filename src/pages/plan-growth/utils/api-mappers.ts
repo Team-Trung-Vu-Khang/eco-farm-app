@@ -241,6 +241,12 @@ const apiPurposeToPlanPurpose: Record<FarmPlanPurpose, Plan["purpose"]> = {
   TREATMENT: "treatment",
   SOIL_IMPROVEMENT: "amendment",
   HARVEST: "harvest",
+  NUTRITION: "nutrition",
+  PLANT_CARE: "plant-care",
+  PEST_DISEASE: "pest-disease",
+  WEED_CONTROL: "weed-control",
+  IRRIGATION: "irrigation",
+  OTHER: "other",
 };
 
 const durationUnitToLabel: Record<FarmWorkDurationUnit, string> = {

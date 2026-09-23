@@ -26,12 +26,20 @@ import { DiaryAdvancedFilterPanel } from "./components/lookup/DiaryAdvancedFilte
 import { UpdateHistoryTable } from "./components/table/UpdateHistoryTable";
 import type { DiaryAdvancedFilters } from "./hooks/useDiaryLookupPage";
 
+import { WORK_TYPE_OPTIONS } from "./constants/history-form.constants";
+
 const WORK_TYPE_TO_PURPOSE_MAP: Record<string, FarmPlanPurpose> = {
   cultivation: "CULTIVATION",
   "facility-upgrade": "FACILITY_UPGRADE",
   treatment: "TREATMENT",
   amendment: "SOIL_IMPROVEMENT",
   harvest: "HARVEST",
+  nutrition: "NUTRITION",
+  "plant-care": "PLANT_CARE",
+  "pest-disease": "PEST_DISEASE",
+  "weed-control": "WEED_CONTROL",
+  irrigation: "IRRIGATION",
+  other: "OTHER",
 };
 
 export interface UpdateHistoryPageProps {
@@ -236,13 +244,7 @@ export default function UpdateHistoryPage({
   );
 
   const workTypeOptions = useMemo(
-    () => [
-      { id: "cultivation", name: "Canh tác" },
-      { id: "facility-upgrade", name: "Nâng cấp CSVC" },
-      { id: "treatment", name: "Điều trị" },
-      { id: "amendment", name: "Cải tạo đất" },
-      { id: "harvest", name: "Thu hoạch" },
-    ],
+    () => WORK_TYPE_OPTIONS.map((opt) => ({ id: opt.value, name: opt.label })),
     [],
   );
 

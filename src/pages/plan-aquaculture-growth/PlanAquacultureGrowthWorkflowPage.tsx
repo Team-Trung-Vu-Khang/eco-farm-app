@@ -42,7 +42,7 @@ import {
 import { useLocation, useParams } from "wouter";
 import { useAquacultureGrowthWorkflowDraftStore } from "./hooks/useAquacultureGrowthWorkflowDraftStore";
 import { useFarmPlanMutations } from "@/features/farm-workflow/hooks";
-import { useAquacultureGrowthPage } from "./hooks/useAquacultureGrowthPage";
+import { mapPurpose, useAquacultureGrowthPage } from "./hooks/useAquacultureGrowthPage";
 import type { Region } from "../region-chart/constants";
 import type { Plan } from "./types";
 import type {
@@ -496,7 +496,7 @@ export default function PlanAquacultureGrowthWorkflowPage({
         name: editDraft.name.trim() || plan.name,
         description: editDraft.description.trim() || undefined,
         scopeNote: plan.scopeNote || undefined,
-        purpose: "CULTIVATION",
+        purpose: mapPurpose(plan.purpose),
         durationDays: Math.max(
           1,
           Math.round(

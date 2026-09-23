@@ -267,6 +267,9 @@ export const Step3Confirmation: React.FC<Step3ConfirmationProps> = ({
                   Vị trí (Lô/Khu vực)
                 </TableHead>
                 <TableHead className="font-bold text-[10px] uppercase tracking-wider">
+                  Giống / Hạt giống
+                </TableHead>
+                <TableHead className="font-bold text-[10px] uppercase tracking-wider">
                   Ngày trồng
                 </TableHead>
                 <TableHead className="font-bold text-[10px] uppercase tracking-wider text-right">
@@ -324,6 +327,29 @@ export const Step3Confirmation: React.FC<Step3ConfirmationProps> = ({
                           <AlertTriangle className="w-3 h-3" />
                           Chưa chọn
                         </span>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      {p.productionVariantName || p.subjectVariantName ? (
+                        <div className="space-y-0.5">
+                          {p.productionVariantName && (
+                            <div className="text-xs font-semibold text-blue-700">
+                              {p.productionVariantName}
+                            </div>
+                          )}
+                          {p.subjectVariantName && (
+                            <div className="text-xs text-emerald-700">
+                              {p.subjectVariantName}
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <Badge
+                          variant="outline"
+                          className="border-red-200 text-red-500 bg-red-50/50 text-[10px]"
+                        >
+                          Thiếu giống
+                        </Badge>
                       )}
                     </TableCell>
                     <TableCell className="text-slate-600 text-xs">

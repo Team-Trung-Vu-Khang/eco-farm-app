@@ -59,13 +59,13 @@ export const mapApiPlantToFrontend = (
       p.productionZone?.id?.toString() ||
       p.cultivationZone?.id?.toString() ||
       "",
-    // Ưu tiên hạt giống (cụ thể hơn), fallback về giống cây
-    varietyId: p.subjectVariant?.id
-      ? String(p.subjectVariant.id)
-      : p.productionSubjectVariant?.id
-        ? String(p.productionSubjectVariant.id)
-        : "",
-    variantKind: p.subjectVariant?.id ? "subject" : "production",
+    // Giống cây (Foundation) + Hạt giống (FarmSeed) — có thể gửi đồng thời cả hai
+    productionVariantId: p.productionSubjectVariant?.id
+      ? String(p.productionSubjectVariant.id)
+      : "",
+    productionVariantName: p.productionSubjectVariant?.name || "",
+    subjectVariantId: p.subjectVariant?.id ? String(p.subjectVariant.id) : "",
+    subjectVariantName: p.subjectVariant?.name || "",
     healthStatus: p.healthStatus ?? undefined,
     variantName:
       p.subjectVariant?.name || p.productionSubjectVariant?.name || "",
@@ -92,12 +92,14 @@ export const mapFrontendPlantToApiRequest = (
     ? Number((p as any).cultivationRegionId)
     : undefined;
 
-  const rawVariantId = (p as any).varietyId;
-  const variantId = rawVariantId ? Number(rawVariantId) : undefined;
-  const variantKind = (p as any).variantKind as
-    | "production"
-    | "subject"
-    | undefined;
+  const rawProductionVariantId = (p as any).productionVariantId;
+  const productionSubjectVariantId = rawProductionVariantId
+    ? Number(rawProductionVariantId)
+    : undefined;
+  const rawSubjectVariantId = (p as any).subjectVariantId;
+  const subjectVariantId = rawSubjectVariantId
+    ? Number(rawSubjectVariantId)
+    : undefined;
   const healthStatus = (p as any).healthStatus as
     | FarmPlantHealthStatus
     | undefined;
@@ -119,12 +121,12 @@ export const mapFrontendPlantToApiRequest = (
     notes: p.note || undefined,
     status: "active",
     domainCode: "CROP",
-    // API yêu cầu ít nhất một trong hai: Giống cây hoặc Hạt giống
-    ...(variantId
-      ? variantKind === "subject"
-        ? { subjectVariantId: variantId }
-        : { productionSubjectVariantId: variantId }
+    // API cho phép gửi đồng thời cả Giống cây (productionSubjectVariantId) và
+    // Hạt giống (subjectVariantId); bắt buộc ít nhất một trong hai.
+    ...(productionSubjectVariantId
+      ? { productionSubjectVariantId }
       : {}),
+    ...(subjectVariantId ? { subjectVariantId } : {}),
     ...(healthStatus ? { healthStatus } : {}),
   };
 };

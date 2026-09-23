@@ -45,13 +45,11 @@ export const PLANT_HEALTH_STATUS_OPTIONS = [
   "HARVESTED",
 ] as const;
 
-/** Lựa chọn Giống cây / Hạt giống cho cây trồng */
+/** Lựa chọn Giống cây (Foundation) cho cây trồng — lấy từ productionSubjectVariants của vùng canh tác */
 export interface VarietyOption {
   id: string;
   name: string;
   code?: string;
-  /** production = Giống cây, subject = Hạt giống */
-  variantKind?: "production" | "subject";
 }
 
 /** Đơn vị tuổi cây — khớp với plantEntrySchema (Zod enum) */
@@ -67,10 +65,14 @@ export interface PlantEntry {
   plotId: string;
   coordinate: Coordinate;
   isInvalidBoundary?: boolean;
-  /** Giống / hạt giống của cây, kế thừa từ vùng canh tác đã chọn ở bước 1 */
-  varietyId?: string;
-  /** `varietyId` là Giống cây (production) hay Hạt giống (subject) */
-  variantKind?: "production" | "subject";
+  /** Giống cây (Foundation) — bắt buộc trừ khi chỉ có hạt giống, kế thừa từ vùng canh tác bước 1 */
+  productionVariantId?: string;
+  /** Tên giống cây (cho hiển thị, không gửi lên API) */
+  productionVariantName?: string;
+  /** Hạt giống (FarmSeed) — tùy chọn, phải thuộc giống cây đang chọn */
+  subjectVariantId?: string;
+  /** Tên hạt giống (cho hiển thị, không gửi lên API) */
+  subjectVariantName?: string;
   /** Hiện trạng sức khỏe; undefined = chưa đánh giá */
   healthStatus?: PlantHealthStatus;
 }

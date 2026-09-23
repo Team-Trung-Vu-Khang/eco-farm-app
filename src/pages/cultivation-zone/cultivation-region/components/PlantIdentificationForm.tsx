@@ -1,6 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { StepperForm, type Step } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { useMemo } from "react";
 import { useLocation } from "wouter";
 import { type Plant } from "../../../region-chart/constants";
 import { ImportPlantDialog } from "./ImportPlantDialog";
@@ -54,6 +53,7 @@ const PlantIdentificationForm = ({
     farmingMethod,
     irrigationMethod,
     selectedCropsData,
+    productionVarietyOptions,
     filteredCultivationRegions,
     isLoadingCultivationRegions,
     areasByRegion,
@@ -62,18 +62,6 @@ const PlantIdentificationForm = ({
     setRadius,
     hasOnlyCenterPoint,
   } = usePlantIdentificationForm({ initialData, initialList, onSubmit });
-
-  // Giống / hạt giống của vùng canh tác chọn ở bước 1, dùng cho select ở bước 2
-  const varietyOptions = useMemo(
-    () =>
-      selectedCropsData.map((crop: any) => ({
-        id: String(crop.id),
-        name: crop.cropVarietyName || crop.cropName || `Giống #${crop.id}`,
-        code: crop.cropVarietyCode,
-        variantKind: crop.variantKind as "production" | "subject" | undefined,
-      })),
-    [selectedCropsData],
-  );
 
   const steps: Step[] = [
     {
@@ -107,9 +95,12 @@ const PlantIdentificationForm = ({
       description: "Thêm từng cây trồng, chọn vị trí và điền thông tin",
       // Optional step — user may proceed without adding any plant.
       // Plants that are added must still have a valid plot/boundary.
-      // Mỗi cây phải có vị trí hợp lệ và một Giống cây / Hạt giống (API bắt buộc)
+      // Mỗi cây phải có vị trí hợp lệ và ít nhất một Giống cây / Hạt giống (API bắt buộc)
       isValid: plants.every(
-        (p) => p.plotId && !p.isInvalidBoundary && p.varietyId,
+        (p) =>
+          p.plotId &&
+          !p.isInvalidBoundary &&
+          (p.productionVariantId || p.subjectVariantId),
       ),
       content: (
         <Step2PlantEntry
@@ -118,7 +109,7 @@ const PlantIdentificationForm = ({
           removePlant={removePlant}
           updatePlant={updatePlant}
           scopedGeographicalUnits={scopedGeographicalUnits}
-          varietyOptions={varietyOptions}
+          productionVarietyOptions={productionVarietyOptions}
           initialData={initialData}
           isImportOpen={isImportOpen}
           setIsImportOpen={setIsImportOpen}
@@ -170,7 +161,7 @@ const PlantIdentificationForm = ({
         open={isImportOpen}
         onOpenChange={setIsImportOpen}
         onImport={handleImport}
-        varietyOptions={varietyOptions}
+        productionVarietyOptions={productionVarietyOptions}
       />
     </>
   );

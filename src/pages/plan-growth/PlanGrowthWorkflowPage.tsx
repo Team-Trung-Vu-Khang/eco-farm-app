@@ -42,7 +42,7 @@ import {
 import { useLocation, useParams } from "wouter";
 import { usePlanWorkflowDraftStore } from "./hooks/usePlanWorkflowDraftStore";
 import { useFarmPlanMutations } from "@/features/farm-workflow/hooks";
-import { usePlanPage } from "./hooks/usePlanPage";
+import { mapPurpose, usePlanPage } from "./hooks/usePlanPage";
 import { getMaterialSummaryItems } from "./utils/material-summary";
 import type { Region } from "../region-chart/constants";
 import type { Plan } from "./types";
@@ -496,7 +496,7 @@ export default function PlanGrowthWorkflowPage({
         name: editDraft.name.trim() || plan.name,
         description: editDraft.description.trim() || undefined,
         scopeNote: plan.scopeNote || undefined,
-        purpose: "CULTIVATION",
+        purpose: mapPurpose(plan.purpose),
         durationDays: Math.max(
           1,
           Math.round(

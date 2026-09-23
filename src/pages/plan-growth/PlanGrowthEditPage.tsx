@@ -33,6 +33,7 @@ import {
   cn,
   type Step,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import { ENABLE_NEW_PURPOSE_ENUMS } from "@/shared/constants/farm.constants";
 import {
   Apple,
   ArrowLeft,
@@ -40,10 +41,14 @@ import {
   Calendar,
   CheckCircle2,
   Clock,
+  Droplet,
+  FlaskConical,
   Layers,
   Leaf,
   MapPin,
+  MoreHorizontal,
   Package,
+  Scissors,
   Sprout,
   Users,
   Wrench,
@@ -105,7 +110,9 @@ export default function PlanGrowthEditPage({
   const inheritedCycleIds = workflowInfo?.seasonIds?.length
     ? workflowInfo.seasonIds.map(String)
     : workflowInfo?.growthCycleSelections?.length
-      ? Array.from(new Set(workflowInfo.growthCycleSelections.map((s) => s.cycleId)))
+      ? Array.from(
+          new Set(workflowInfo.growthCycleSelections.map((s) => s.cycleId)),
+        )
       : [];
   const inheritedCycles = growthCycles.filter((c) =>
     inheritedCycleIds.includes(c.id),
@@ -296,7 +303,7 @@ export default function PlanGrowthEditPage({
     availableGrowthCycleStagesMap.values(),
   );
 
-  const purposeOptions = [
+  const oldPurposeOptions = [
     {
       id: "cultivation",
       label: "Canh tác",
@@ -348,6 +355,83 @@ export default function PlanGrowthEditPage({
       description: "Nhập hạng mục dự kiến",
     },
   ] as const;
+
+  const newPurposeOptions = [
+    {
+      id: "nutrition",
+      label: "Dinh dưỡng",
+      icon: FlaskConical,
+      borderColor: "border-emerald-500",
+      bgColor: "bg-emerald-50/50",
+      activeColor: "bg-emerald-500",
+      textColor: "text-emerald-700",
+      description: "Bón phân và bổ sung dinh dưỡng",
+    },
+    {
+      id: "plant-care",
+      label: "Chăm sóc cây",
+      icon: Sprout,
+      borderColor: "border-teal-500",
+      bgColor: "bg-teal-50/50",
+      activeColor: "bg-teal-500",
+      textColor: "text-teal-700",
+      description: "Tỉa cành, bao quả, tạo hình",
+    },
+    {
+      id: "pest-disease",
+      label: "Sâu bệnh hại",
+      icon: Bug,
+      borderColor: "border-amber-500",
+      bgColor: "bg-amber-50/50",
+      activeColor: "bg-amber-500",
+      textColor: "text-amber-700",
+      description: "Phòng trừ sâu bệnh",
+    },
+    {
+      id: "weed-control",
+      label: "Cỏ dại",
+      icon: Scissors,
+      borderColor: "border-lime-500",
+      bgColor: "bg-lime-50/50",
+      activeColor: "bg-lime-500",
+      textColor: "text-lime-700",
+      description: "Làm cỏ, phát cỏ",
+    },
+    {
+      id: "irrigation",
+      label: "Tưới tiêu",
+      icon: Droplet,
+      borderColor: "border-sky-500",
+      bgColor: "bg-sky-50/50",
+      activeColor: "bg-sky-500",
+      textColor: "text-sky-700",
+      description: "Tưới nước, tiêu úng",
+    },
+    {
+      id: "harvest",
+      label: "Thu hoạch",
+      icon: Apple,
+      borderColor: "border-orange-500",
+      bgColor: "bg-orange-50/50",
+      activeColor: "bg-orange-500",
+      textColor: "text-orange-700",
+      description: "Nhập hạng mục dự kiến",
+    },
+    {
+      id: "other",
+      label: "Khác",
+      icon: MoreHorizontal,
+      borderColor: "border-gray-500",
+      bgColor: "bg-gray-50/50",
+      activeColor: "bg-gray-500",
+      textColor: "text-gray-700",
+      description: "Công việc khác",
+    },
+  ] as const;
+
+  const purposeOptions = ENABLE_NEW_PURPOSE_ENUMS
+    ? newPurposeOptions
+    : oldPurposeOptions;
 
   const purposeSelector = (
     <div className="space-y-4">
@@ -986,21 +1070,21 @@ export default function PlanGrowthEditPage({
                               {index + 1}
                             </span>
                             <span className="flex-1">{displayName}</span>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon"
-                            onClick={() =>
-                              setFormData((prev) => ({
-                                ...prev,
-                                selectedStages: prev.selectedStages.filter(
-                                  (item) => item !== stage,
-                                ),
-                              }))
-                            }
-                            className="h-7 w-7 shrink-0 text-slate-400 hover:bg-red-50 hover:text-red-600"
-                          >
-                            <X className="h-3.5 w-3.5" />
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              onClick={() =>
+                                setFormData((prev) => ({
+                                  ...prev,
+                                  selectedStages: prev.selectedStages.filter(
+                                    (item) => item !== stage,
+                                  ),
+                                }))
+                              }
+                              className="h-7 w-7 shrink-0 text-slate-400 hover:bg-red-50 hover:text-red-600"
+                            >
+                              <X className="h-3.5 w-3.5" />
                             </Button>
                           </div>
                         );
@@ -2005,67 +2089,67 @@ export default function PlanGrowthEditPage({
   return (
     <>
       <PageWrapper
-      title={pageTitle}
-      description={pageDescription}
-      actions={
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2.5 rounded-full border border-slate-200 bg-white px-4 py-2 shadow-sm">
-            <Label
-              htmlFor="simple-mode-toggle"
-              className="text-xs font-bold text-slate-700 whitespace-nowrap cursor-pointer"
-            >
-              Thông tin chuyên sâu
-            </Label>
-            <Switch
-              id="simple-mode-toggle"
-              checked={!isSimpleMode}
-              onCheckedChange={(checked) => setIsSimpleMode(!checked)}
-            />
+        title={pageTitle}
+        description={pageDescription}
+        actions={
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2.5 rounded-full border border-slate-200 bg-white px-4 py-2 shadow-sm">
+              <Label
+                htmlFor="simple-mode-toggle"
+                className="text-xs font-bold text-slate-700 whitespace-nowrap cursor-pointer"
+              >
+                Thông tin chuyên sâu
+              </Label>
+              <Switch
+                id="simple-mode-toggle"
+                checked={!isSimpleMode}
+                onCheckedChange={(checked) => setIsSimpleMode(!checked)}
+              />
+            </div>
+            <Button variant="outline" onClick={goBack}>
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Quay lại
+            </Button>
           </div>
-          <Button variant="outline" onClick={goBack}>
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Quay lại
-          </Button>
+        }
+      >
+        <div className="max-w-5xl mx-auto">
+          {isSimpleMode ? (
+            <SimplePlanForm
+              formData={formData}
+              setFormData={setFormData}
+              regimens={regimens}
+              handleDurationPartChange={handleDurationPartChange}
+              handleAddMaterial={handleAddMaterial}
+              handleRemoveMaterial={handleRemoveMaterial}
+              handleAddTask={handleAddTask}
+              handleRemoveTask={handleRemoveTask}
+              handleComplete={handleComplete}
+              goBack={goBack}
+              completeLabel={completeLabel}
+              regions={regions || []}
+              selectedEnterpriseId={selectedEnterpriseId}
+              selections={selections}
+              selectionSummary={selectionSummary}
+              handleGeographicalConfirm={handleGeographicalConfirm}
+              isWorkflowContext={isWorkflowContext}
+              workflowInfo={workflowInfo}
+              growthCycles={growthCycles}
+              personnel={personnel}
+              supplyCatalog={supplyCatalog}
+              isEdit={plan?.status !== "draft"}
+              loading={isSubmitting}
+            />
+          ) : (
+            <StepperForm
+              steps={steps}
+              onComplete={handleComplete}
+              onCancel={goBack}
+              completeLabel={completeLabel}
+              loading={isSubmitting}
+            />
+          )}
         </div>
-      }
-    >
-      <div className="max-w-5xl mx-auto">
-        {isSimpleMode ? (
-          <SimplePlanForm
-            formData={formData}
-            setFormData={setFormData}
-            regimens={regimens}
-            handleDurationPartChange={handleDurationPartChange}
-            handleAddMaterial={handleAddMaterial}
-            handleRemoveMaterial={handleRemoveMaterial}
-            handleAddTask={handleAddTask}
-            handleRemoveTask={handleRemoveTask}
-            handleComplete={handleComplete}
-            goBack={goBack}
-            completeLabel={completeLabel}
-            regions={regions || []}
-            selectedEnterpriseId={selectedEnterpriseId}
-            selections={selections}
-            selectionSummary={selectionSummary}
-            handleGeographicalConfirm={handleGeographicalConfirm}
-            isWorkflowContext={isWorkflowContext}
-            workflowInfo={workflowInfo}
-            growthCycles={growthCycles}
-            personnel={personnel}
-            supplyCatalog={supplyCatalog}
-            isEdit={plan?.status !== "draft"}
-            loading={isSubmitting}
-          />
-        ) : (
-          <StepperForm
-            steps={steps}
-            onComplete={handleComplete}
-            onCancel={goBack}
-            completeLabel={completeLabel}
-            loading={isSubmitting}
-          />
-        )}
-      </div>
       </PageWrapper>
       <AlertDialog
         open={pendingGrowthCycleSelections !== null}

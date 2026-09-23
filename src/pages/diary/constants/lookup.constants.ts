@@ -1,4 +1,4 @@
-import { Apple, Bug, Layers, Sprout, Wrench } from "lucide-react";
+import { Apple, Bug, Droplet, FlaskConical, Layers, MoreHorizontal, Scissors, Sprout, Wrench } from "lucide-react";
 import type { DiaryDomainCode, DiaryStatus, DiaryWorkType } from "../types/lookup.types";
 
 export const WORK_TYPE_CONFIG: Record<
@@ -34,6 +34,42 @@ export const WORK_TYPE_CONFIG: Record<
     icon: Apple,
     badgeCls: "bg-orange-50 text-orange-700 border-orange-200",
     iconCls: "bg-orange-100 text-orange-600",
+  },
+  nutrition: {
+    label: "Dinh dưỡng",
+    icon: FlaskConical,
+    badgeCls: "bg-emerald-50 text-emerald-700 border-emerald-200",
+    iconCls: "bg-emerald-100 text-emerald-600",
+  },
+  "plant-care": {
+    label: "Chăm sóc cây",
+    icon: Sprout,
+    badgeCls: "bg-teal-50 text-teal-700 border-teal-200",
+    iconCls: "bg-teal-100 text-teal-600",
+  },
+  "pest-disease": {
+    label: "Sâu bệnh hại",
+    icon: Bug,
+    badgeCls: "bg-amber-50 text-amber-700 border-amber-200",
+    iconCls: "bg-amber-100 text-amber-600",
+  },
+  "weed-control": {
+    label: "Cỏ dại",
+    icon: Scissors,
+    badgeCls: "bg-lime-50 text-lime-700 border-lime-200",
+    iconCls: "bg-lime-100 text-lime-600",
+  },
+  irrigation: {
+    label: "Tưới tiêu",
+    icon: Droplet,
+    badgeCls: "bg-sky-50 text-sky-700 border-sky-200",
+    iconCls: "bg-sky-100 text-sky-600",
+  },
+  other: {
+    label: "Khác",
+    icon: MoreHorizontal,
+    badgeCls: "bg-gray-50 text-gray-700 border-gray-200",
+    iconCls: "bg-gray-100 text-gray-600",
   },
 };
 

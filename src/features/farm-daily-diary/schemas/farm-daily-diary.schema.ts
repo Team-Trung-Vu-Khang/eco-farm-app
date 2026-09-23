@@ -23,7 +23,7 @@ export const photoRequestSchema = z.object({
 export const supplyUsageSchema = z.object({
   supplyItemId: z.number({ required_error: "Vui lòng chọn vật tư" }).positive(),
   unitBaseId: z.number({ required_error: "Vui lòng chọn đơn vị tính" }).positive(),
-  quantityActual: z.number({ required_error: "Vui lòng nhập số lượng thực tế" }).positive("Số lượng phải lớn hơn 0"),
+  quantityActual: z.number({ required_error: "Vui lòng nhập số lượng thực tế" }).min(0, "Số lượng phải lớn hơn hoặc bằng 0"),
 });
 export const supplyUsageRequestSchema = supplyUsageSchema;
 
@@ -68,7 +68,19 @@ export const createDailyDiaryEntrySchema = z
     workflowId: z.number({ required_error: "Vui lòng chọn quy trình canh tác" }).positive("Vui lòng chọn quy trình canh tác"),
     seasonId: z.number().optional(),
     purpose: z.enum(
-      ["CULTIVATION", "FACILITY_UPGRADE", "TREATMENT", "SOIL_IMPROVEMENT", "HARVEST"],
+      [
+        "CULTIVATION",
+        "FACILITY_UPGRADE",
+        "TREATMENT",
+        "SOIL_IMPROVEMENT",
+        "HARVEST",
+        "NUTRITION",
+        "PLANT_CARE",
+        "PEST_DISEASE",
+        "WEED_CONTROL",
+        "IRRIGATION",
+        "OTHER",
+      ],
       { required_error: "Vui lòng chọn mục đích" },
     ),
     description: z.string().optional().default(""),

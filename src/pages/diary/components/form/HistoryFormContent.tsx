@@ -45,7 +45,6 @@ import {
   CheckCircle2,
   ChevronLeft,
   ClipboardList,
-  Layers,
   Plus,
   Trash2,
   Upload,
@@ -74,6 +73,7 @@ import {
   extractCropSubjectVariants,
   mapWorkTypeToPurpose,
   mapWorkflowScopeToHarvestOption,
+  resolveWorkType,
   toCultivationZoneOptions,
   uploadPhotosInParallel,
 } from "../../utils/history-form.utils";
@@ -193,14 +193,7 @@ export function HistoryFormContent({
 
     const detail = dailyDiaryDetail;
 
-    const workTypeMap: Record<string, string> = {
-      CULTIVATION: "cultivation",
-      FACILITY_UPGRADE: "facility-upgrade",
-      TREATMENT: "treatment",
-      SOIL_IMPROVEMENT: "amendment",
-      HARVEST: "harvest",
-    };
-    const workType = workTypeMap[detail.purpose] || "cultivation";
+    const workType = resolveWorkType(detail.purpose);
 
     const newTaskDetails: Record<string, WorkTaskDetail> = {};
     const newAllocations: MaterialAllocation[] = [];
@@ -541,12 +534,11 @@ export function HistoryFormContent({
       };
     });
 
-    const isHarvestTask =
-      taskItem.taskCategory?.code === "CAT-THU-HOACH" ||
-      taskItem.name.toLowerCase().includes("thu hoạch") ||
-      taskItem.name.toLowerCase().includes("harvest");
-
-    const resolvedWorkType = isHarvestTask ? "harvest" : "cultivation";
+    const resolvedWorkType = resolveWorkType(
+      taskItem.plan?.purpose,
+      taskItem.name,
+      taskItem.taskCategory?.code,
+    );
 
     const initialProgress =
       typeof taskItem.progressPercent === "number"
@@ -1520,6 +1512,10 @@ export function HistoryFormContent({
                           setPlannedStages(newTaskNames);
                           setFormData((prev) => ({
                             ...prev,
+                            workType: resolveWorkType(
+                              selectedPlan?.purpose,
+                              targetStage?.name ?? newTaskNames[0] ?? "",
+                            ),
                             selectedStages: newTaskNames,
                             materialAllocations: newAllocations,
                           }));

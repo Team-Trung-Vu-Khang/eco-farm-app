@@ -16,30 +16,57 @@ import {
 } from "lucide-react";
 import { useFarmTasks } from "@/features/farm-task/hooks/useFarmTasks";
 import type { FarmPlanPurpose } from "@/features/farm-daily-diary/types/farm-daily-diary.type";
+import { FARM_PLAN_PURPOSE_LABELS } from "@/shared/constants/farm.constants";
 
 const PURPOSE_MAP: Record<string, { label: string; className: string }> = {
   CULTIVATION: {
-    label: "Canh tác",
+    label: FARM_PLAN_PURPOSE_LABELS.CULTIVATION,
     className:
       "bg-emerald-50 text-emerald-700 border border-emerald-200 font-bold",
   },
   FACILITY_UPGRADE: {
-    label: "Nâng cấp CSVC",
+    label: FARM_PLAN_PURPOSE_LABELS.FACILITY_UPGRADE,
     className: "bg-blue-50 text-blue-700 border border-blue-200 font-bold",
   },
   TREATMENT: {
-    label: "Điều trị",
+    label: FARM_PLAN_PURPOSE_LABELS.TREATMENT,
     className: "bg-amber-50 text-amber-700 border border-amber-200 font-bold",
   },
   SOIL_IMPROVEMENT: {
-    label: "Cải tạo đất",
+    label: FARM_PLAN_PURPOSE_LABELS.SOIL_IMPROVEMENT,
     className:
       "bg-orange-50 text-orange-700 border border-orange-200 font-bold",
   },
   HARVEST: {
-    label: "Thu hoạch",
+    label: FARM_PLAN_PURPOSE_LABELS.HARVEST,
     className:
       "bg-purple-50 text-purple-700 border border-purple-200 font-bold",
+  },
+  NUTRITION: {
+    label: FARM_PLAN_PURPOSE_LABELS.NUTRITION,
+    className:
+      "bg-emerald-50 text-emerald-700 border border-emerald-200 font-bold",
+  },
+  PLANT_CARE: {
+    label: FARM_PLAN_PURPOSE_LABELS.PLANT_CARE,
+    className: "bg-teal-50 text-teal-700 border border-teal-200 font-bold",
+  },
+  PEST_DISEASE: {
+    label: FARM_PLAN_PURPOSE_LABELS.PEST_DISEASE,
+    className:
+      "bg-amber-50 text-amber-700 border border-amber-200 font-bold",
+  },
+  WEED_CONTROL: {
+    label: FARM_PLAN_PURPOSE_LABELS.WEED_CONTROL,
+    className: "bg-lime-50 text-lime-700 border border-lime-200 font-bold",
+  },
+  IRRIGATION: {
+    label: FARM_PLAN_PURPOSE_LABELS.IRRIGATION,
+    className: "bg-sky-50 text-sky-700 border border-sky-200 font-bold",
+  },
+  OTHER: {
+    label: FARM_PLAN_PURPOSE_LABELS.OTHER,
+    className: "bg-gray-50 text-gray-700 border border-gray-200 font-bold",
   },
 };
 

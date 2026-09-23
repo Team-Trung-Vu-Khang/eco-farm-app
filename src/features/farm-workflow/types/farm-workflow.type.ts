@@ -15,7 +15,13 @@ export type FarmPlanPurpose =
   | "FACILITY_UPGRADE"
   | "TREATMENT"
   | "SOIL_IMPROVEMENT"
-  | "HARVEST";
+  | "HARVEST"
+  | "NUTRITION"
+  | "PLANT_CARE"
+  | "PEST_DISEASE"
+  | "WEED_CONTROL"
+  | "IRRIGATION"
+  | "OTHER";
 
 export type FarmPlanPersonnelRole =
   | "MANAGER"

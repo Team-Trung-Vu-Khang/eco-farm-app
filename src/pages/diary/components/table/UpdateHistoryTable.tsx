@@ -53,6 +53,30 @@ const PURPOSE_MAP: Record<
     label: "Thu hoạch",
     className: "bg-purple-50 text-purple-700 border-purple-200",
   },
+  NUTRITION: {
+    label: "Dinh dưỡng",
+    className: "bg-emerald-50 text-emerald-700 border-emerald-200",
+  },
+  PLANT_CARE: {
+    label: "Chăm sóc cây",
+    className: "bg-teal-50 text-teal-700 border-teal-200",
+  },
+  PEST_DISEASE: {
+    label: "Sâu bệnh hại",
+    className: "bg-amber-50 text-amber-700 border-amber-200",
+  },
+  WEED_CONTROL: {
+    label: "Cỏ dại",
+    className: "bg-lime-50 text-lime-700 border-lime-200",
+  },
+  IRRIGATION: {
+    label: "Tưới tiêu",
+    className: "bg-sky-50 text-sky-700 border-sky-200",
+  },
+  OTHER: {
+    label: "Khác",
+    className: "bg-gray-50 text-gray-700 border-gray-200",
+  },
 };
 
 export interface UpdateHistoryTableProps {

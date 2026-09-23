@@ -12,6 +12,7 @@ import type {
   HarvestDetail,
   RawSupplyLineItem,
 } from "../types/history-form.types";
+import { PURPOSE_TO_WORK_TYPE_MAP } from "../constants/history-form.constants";
 
 export function toWorkflowScopeRegionOptions(
   scopes?: FarmWorkflowScopeResponse[],
@@ -209,6 +210,18 @@ export function mapWorkTypeToPurpose(workType: string): FarmPlanPurpose {
       return "SOIL_IMPROVEMENT";
     case "harvest":
       return "HARVEST";
+    case "nutrition":
+      return "NUTRITION";
+    case "plant-care":
+      return "PLANT_CARE";
+    case "pest-disease":
+      return "PEST_DISEASE";
+    case "weed-control":
+      return "WEED_CONTROL";
+    case "irrigation":
+      return "IRRIGATION";
+    case "other":
+      return "OTHER";
     case "cultivation":
     default:
       return "CULTIVATION";
@@ -217,6 +230,28 @@ export function mapWorkTypeToPurpose(workType: string): FarmPlanPurpose {
 
 export function getFileKey(file: File) {
   return `${file.name}_${file.size}_${file.lastModified}`;
+}
+
+/**
+ * Resolve workType (nút "Loại công việc") cho form nhật ký.
+ * Thứ tự fallback: purpose của plan → canh tác → thu hoạch.
+ */
+export function resolveWorkType(
+  purpose?: FarmPlanPurpose | string | null,
+  name = "",
+  categoryCode?: string | null,
+): string {
+  const mapped = purpose
+    ? PURPOSE_TO_WORK_TYPE_MAP[purpose as FarmPlanPurpose]
+    : undefined;
+  if (mapped) return mapped;
+
+  const isHarvestTask =
+    categoryCode === "CAT-THU-HOACH" ||
+    name.toLowerCase().includes("thu hoạch") ||
+    name.toLowerCase().includes("harvest");
+
+  return isHarvestTask ? "harvest" : "cultivation";
 }
 
 export async function uploadPhotosInParallel(

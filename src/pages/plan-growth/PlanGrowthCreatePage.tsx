@@ -25,6 +25,7 @@ import {
   Textarea,
   type Step,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import { ENABLE_NEW_PURPOSE_ENUMS } from "@/shared/constants/farm.constants";
 import {
   Apple,
   ArrowLeft,
@@ -33,11 +34,15 @@ import {
   CheckCircle2,
   ClipboardList,
   Clock,
+  Droplet,
+  FlaskConical,
   Info,
   Layers,
   Leaf,
   MapPin,
+  MoreHorizontal,
   Package,
+  Scissors,
   Search,
   Sprout,
   Users,
@@ -104,7 +109,7 @@ export default function PlanGrowthCreatePage({
   const isHarvest = purpose === "harvest";
   const stageSearchTerm = stageSearch.trim().toLowerCase();
 
-  const purposeOptions = [
+  const oldPurposeOptions = [
     {
       id: "cultivation",
       label: "Canh tác",
@@ -156,6 +161,83 @@ export default function PlanGrowthCreatePage({
       description: "Nhập hạng mục dự kiến",
     },
   ] as const;
+
+  const newPurposeOptions = [
+    {
+      id: "nutrition",
+      label: "Dinh dưỡng",
+      icon: FlaskConical,
+      borderColor: "border-emerald-500",
+      bgColor: "bg-emerald-50/50",
+      activeColor: "bg-emerald-500",
+      textColor: "text-emerald-700",
+      description: "Bón phân và bổ sung dinh dưỡng",
+    },
+    {
+      id: "plant-care",
+      label: "Chăm sóc cây",
+      icon: Sprout,
+      borderColor: "border-teal-500",
+      bgColor: "bg-teal-50/50",
+      activeColor: "bg-teal-500",
+      textColor: "text-teal-700",
+      description: "Tỉa cành, bao quả, tạo hình",
+    },
+    {
+      id: "pest-disease",
+      label: "Sâu bệnh hại",
+      icon: Bug,
+      borderColor: "border-amber-500",
+      bgColor: "bg-amber-50/50",
+      activeColor: "bg-amber-500",
+      textColor: "text-amber-700",
+      description: "Phòng trừ sâu bệnh",
+    },
+    {
+      id: "weed-control",
+      label: "Cỏ dại",
+      icon: Scissors,
+      borderColor: "border-lime-500",
+      bgColor: "bg-lime-50/50",
+      activeColor: "bg-lime-500",
+      textColor: "text-lime-700",
+      description: "Làm cỏ, phát cỏ",
+    },
+    {
+      id: "irrigation",
+      label: "Tưới tiêu",
+      icon: Droplet,
+      borderColor: "border-sky-500",
+      bgColor: "bg-sky-50/50",
+      activeColor: "bg-sky-500",
+      textColor: "text-sky-700",
+      description: "Tưới nước, tiêu úng",
+    },
+    {
+      id: "harvest",
+      label: "Thu hoạch",
+      icon: Apple,
+      borderColor: "border-orange-500",
+      bgColor: "bg-orange-50/50",
+      activeColor: "bg-orange-500",
+      textColor: "text-orange-700",
+      description: "Nhập hạng mục dự kiến",
+    },
+    {
+      id: "other",
+      label: "Khác",
+      icon: MoreHorizontal,
+      borderColor: "border-gray-500",
+      bgColor: "bg-gray-50/50",
+      activeColor: "bg-gray-500",
+      textColor: "text-gray-700",
+      description: "Công việc khác",
+    },
+  ] as const;
+
+  const purposeOptions = ENABLE_NEW_PURPOSE_ENUMS
+    ? newPurposeOptions
+    : oldPurposeOptions;
 
   const harvestSuggestions = TASK_OPTIONS.map((item) => item.label).filter(
     (label) =>

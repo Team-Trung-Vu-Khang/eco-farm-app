@@ -15,7 +15,10 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useFieldArray, useForm } from "react-hook-form";
 import { z } from "zod";
 import { type Plant } from "../../../region-chart/constants";
-import { type PlantEntry, makeEmptyPlant } from "../components/types";
+import {
+  type PlantEntry,
+  makeEmptyPlant,
+} from "../components/types";
 
 /** Convert API boundary (latitude/longitude) → map coords ({lat,lng}) */
 function boundaryToCoords(
@@ -27,26 +30,37 @@ function boundaryToCoords(
     .filter((c) => c.lat !== 0 || c.lng !== 0);
 }
 
-export const plantEntrySchema = z.object({
-  entryId: z.string(),
-  height: z.string().optional(),
-  ageValue: z.string().optional(),
-  ageUnit: z.enum(["days", "months", "years"]),
-  plantedDate: z.string(),
-  note: z.string().optional(),
-  plotId: z.string().min(1, "Vui lòng chọn vị trí canh tác cho cây trồng"),
-  coordinate: z.object({
-    lat: z.number(),
-    lng: z.number(),
-  }),
-  isInvalidBoundary: z.boolean().optional(),
-  // API yêu cầu ít nhất một trong Giống cây / Hạt giống, thiếu sẽ trả 400
-  varietyId: z.string().min(1, "Vui lòng chọn giống cây hoặc hạt giống"),
-  variantKind: z.enum(["production", "subject"]).optional(),
-  healthStatus: z
-    .enum(["HEALTHY", "PEST", "HARVESTED", "TREATING", "DEAD"])
-    .optional(),
-});
+export const plantEntrySchema = z
+  .object({
+    entryId: z.string(),
+    height: z.string().optional(),
+    ageValue: z.string().optional(),
+    ageUnit: z.enum(["days", "months", "years"]),
+    plantedDate: z.string(),
+    note: z.string().optional(),
+    plotId: z.string().min(1, "Vui lòng chọn vị trí canh tác cho cây trồng"),
+    coordinate: z.object({
+      lat: z.number(),
+      lng: z.number(),
+    }),
+    isInvalidBoundary: z.boolean().optional(),
+    // API chấp nhận gửi cả 2: Giống cây (productionSubjectVariantId) + Hạt
+    // giống (subjectVariantId); bắt buộc tối thiểu 1 trong 2.
+    productionVariantId: z.string().optional(),
+    productionVariantName: z.string().optional(),
+    subjectVariantId: z.string().optional(),
+    subjectVariantName: z.string().optional(),
+    healthStatus: z
+      .enum(["HEALTHY", "PEST", "HARVESTED", "TREATING", "DEAD"])
+      .optional(),
+  })
+  .refine(
+    (data) => data.productionVariantId || data.subjectVariantId,
+    {
+      message: "Vui lòng chọn giống cây hoặc hạt giống",
+      path: ["productionVariantId"],
+    },
+  );
 
 export const plantFormSchema = z.object({
   cultivationRegionId: z.string().min(1, "Vui lòng chọn vùng canh tác"),
@@ -97,8 +111,10 @@ export const usePlantIdentificationForm = ({
           plotId: initialData.plotId || "",
           coordinate: initialData.coordinate || { lat: 11.548, lng: 106.896 },
           isInvalidBoundary: false,
-          varietyId: (initialData as any).varietyId || "",
-          variantKind: (initialData as any).variantKind || undefined,
+          productionVariantId: (initialData as any).productionVariantId || "",
+          productionVariantName: (initialData as any).productionVariantName || "",
+          subjectVariantId: (initialData as any).subjectVariantId || "",
+          subjectVariantName: (initialData as any).subjectVariantName || "",
           healthStatus: (initialData as any).healthStatus || undefined,
         },
       ];
@@ -114,8 +130,10 @@ export const usePlantIdentificationForm = ({
         plotId: item.plotId || "",
         coordinate: item.coordinate || { lat: 11.548, lng: 106.896 },
         isInvalidBoundary: false,
-        varietyId: (item as any).varietyId || "",
-        variantKind: (item as any).variantKind || undefined,
+        productionVariantId: (item as any).productionVariantId || "",
+        productionVariantName: (item as any).productionVariantName || "",
+        subjectVariantId: (item as any).subjectVariantId || "",
+        subjectVariantName: (item as any).subjectVariantName || "",
         healthStatus: (item as any).healthStatus || undefined,
       }));
     }
@@ -958,33 +976,38 @@ export const usePlantIdentificationForm = ({
     return results;
   }, [cultivationRegionDetail]);
 
-  const defaultVarietyId = useMemo(
-    () => (selectedCropsData.length > 0 ? String(selectedCropsData[0].id) : ""),
-    [selectedCropsData],
-  );
+  // Danh sách Giống cây (Foundation) cho select ở bước 2 — chỉ từ productionSubjectVariants.
+  // Hạt giống được lọc theo giống đang chọn bằng useSeeds (foundationSubjectVariantId) ở từng card/bảng.
+  const productionVarietyOptions = useMemo(() => {
+    if (!cultivationRegionDetail) return [];
+    return (cultivationRegionDetail.productionSubjectVariants ?? []).map(
+      (pv: any) => ({
+        id: String(pv.id),
+        name: pv.name || `Giống #${pv.id}`,
+        code: pv.code,
+      }),
+    );
+  }, [cultivationRegionDetail]);
 
-  const defaultVariantKind = useMemo(
-    () =>
-      selectedCropsData.length > 0
-        ? (selectedCropsData[0].variantKind as
-            | "production"
-            | "subject"
-            | undefined)
-        : undefined,
-    [selectedCropsData],
+  const defaultProductionVariantId = useMemo(
+    () => productionVarietyOptions[0]?.id ?? "",
+    [productionVarietyOptions],
   );
 
   useEffect(() => {
-    if (!defaultVarietyId) return;
+    if (!defaultProductionVariantId) return;
     const currentPlants = getValues("plants") || [];
     let updated = false;
     const nextPlants = currentPlants.map((p) => {
-      if (!p.varietyId) {
+      if (!p.productionVariantId) {
         updated = true;
+        const preset = productionVarietyOptions.find(
+          (o) => o.id === defaultProductionVariantId,
+        );
         return {
           ...p,
-          varietyId: defaultVarietyId,
-          variantKind: p.variantKind || defaultVariantKind,
+          productionVariantId: defaultProductionVariantId,
+          productionVariantName: preset?.name || "",
         };
       }
       return p;
@@ -992,7 +1015,7 @@ export const usePlantIdentificationForm = ({
     if (updated) {
       setValue("plants", nextPlants);
     }
-  }, [defaultVarietyId, defaultVariantKind, getValues, setValue]);
+  }, [defaultProductionVariantId, productionVarietyOptions, getValues, setValue]);
 
   const handleSetActiveEntry = (id: string) => {
     setActiveEntryId(id);
@@ -1034,19 +1057,29 @@ export const usePlantIdentificationForm = ({
       currentPlants,
     );
 
-    append({
+    const presetVariety = productionVarietyOptions.find(
+      (o) => o.id === defaultProductionVariantId,
+    );
+
+    const newEntry = {
       entryId: `plant-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
       height: "",
       ageValue: "",
-      ageUnit: "years",
+      ageUnit: "years" as const,
       plantedDate: new Date().toISOString().split("T")[0],
       note: "",
       plotId: unit ? unit.id : "",
       coordinate,
       isInvalidBoundary: false,
-      varietyId: defaultVarietyId,
-      variantKind: defaultVariantKind,
-    });
+      productionVariantId: defaultProductionVariantId || "",
+      productionVariantName: presetVariety?.name || "",
+      subjectVariantId: "",
+      subjectVariantName: "",
+      healthStatus: undefined,
+    };
+
+    append(newEntry);
+    return newEntry.entryId;
   };
 
   // ---- Boundary validation helper ----
@@ -1210,8 +1243,8 @@ export const usePlantIdentificationForm = ({
         areaName,
         coordinate: p.coordinate,
         // Giống cây / hạt giống & hiện trạng — mapper cần để dựng payload
-        varietyId: p.varietyId,
-        variantKind: p.variantKind,
+        productionVariantId: p.productionVariantId,
+        subjectVariantId: p.subjectVariantId,
         healthStatus: p.healthStatus,
         id:
           initialData?.id ||
@@ -1301,9 +1334,20 @@ export const usePlantIdentificationForm = ({
         plotId: autoPlotId,
         coordinate: coord,
         isInvalidBoundary: invalid,
-        // Giống chọn trong hộp thoại import, fallback về giống đầu của vùng
-        varietyId: item.varietyId || defaultVarietyId,
-        variantKind: item.variantKind || defaultVariantKind,
+        // Giống chọn trong hộp thoại import, fallback về giống đầu của vùng;
+        // hạt giống áp chung (nếu có), không tự suy theo giống từng dòng.
+        productionVariantId:
+          item.productionVariantId || defaultProductionVariantId || "",
+        productionVariantName:
+          item.productionVariantName ||
+          (item.productionVariantId || defaultProductionVariantId
+            ? productionVarietyOptions.find(
+                (o) => o.id === (item.productionVariantId || defaultProductionVariantId),
+              )?.name
+            : "") ||
+          "",
+        subjectVariantId: item.subjectVariantId || "",
+        subjectVariantName: item.subjectVariantName || "",
         // Cột "Hiện trạng sức khỏe" trong file Excel (nếu có)
         healthStatus: item.healthStatus || undefined,
       };
@@ -1352,6 +1396,8 @@ export const usePlantIdentificationForm = ({
     farmingMethod,
     irrigationMethod,
     selectedCropsData,
+    productionVarietyOptions,
+    defaultProductionVariantId,
     filteredCultivationRegions,
     isLoadingCultivationRegions,
     findGeographicalUnit,

@@ -42,6 +42,30 @@ const PURPOSE_META: Record<
     label: "Kế hoạch phát sinh",
     className: "bg-slate-50 text-slate-700 border-slate-200",
   },
+  nutrition: {
+    label: "Dinh dưỡng",
+    className: "bg-emerald-50 text-emerald-700 border-emerald-200",
+  },
+  "plant-care": {
+    label: "Chăm sóc cây",
+    className: "bg-teal-50 text-teal-700 border-teal-200",
+  },
+  "pest-disease": {
+    label: "Sâu bệnh hại",
+    className: "bg-amber-50 text-amber-700 border-amber-200",
+  },
+  "weed-control": {
+    label: "Cỏ dại",
+    className: "bg-lime-50 text-lime-700 border-lime-200",
+  },
+  irrigation: {
+    label: "Tưới tiêu",
+    className: "bg-sky-50 text-sky-700 border-sky-200",
+  },
+  other: {
+    label: "Khác",
+    className: "bg-gray-50 text-gray-700 border-gray-200",
+  },
 };
 
 const STATUS_META: Record<

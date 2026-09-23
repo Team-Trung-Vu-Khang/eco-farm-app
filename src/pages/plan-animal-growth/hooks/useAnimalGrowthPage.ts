@@ -59,6 +59,20 @@ export function mapPurpose(planPurpose: Plan["purpose"]): FarmPlanRequest["purpo
       return "SOIL_IMPROVEMENT";
     case "harvest":
       return "HARVEST";
+    case "incurred":
+      return "OTHER";
+    case "nutrition":
+      return "NUTRITION";
+    case "plant-care":
+      return "PLANT_CARE";
+    case "pest-disease":
+      return "PEST_DISEASE";
+    case "weed-control":
+      return "WEED_CONTROL";
+    case "irrigation":
+      return "IRRIGATION";
+    case "other":
+      return "OTHER";
     default:
       return "CULTIVATION";
   }

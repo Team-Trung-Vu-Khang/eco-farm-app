@@ -21,6 +21,7 @@ import {
   Trash2,
 } from "lucide-react";
 import * as turf from "@turf/turf";
+import { useSeeds } from "@/features/farm";
 import {
   PLANT_HEALTH_STATUS_LABELS,
   PLANT_HEALTH_STATUS_OPTIONS,
@@ -34,25 +35,30 @@ interface PlantCardProps {
   plant: PlantEntry;
   index: number;
   geographicalUnits: any[];
-  /** Giống / hạt giống của vùng canh tác chọn ở bước 1 */
-  varietyOptions?: VarietyOption[];
+  /** Giống cây (Foundation) của vùng canh tác chọn ở bước 1 — bắt buộc */
+  productionVarietyOptions?: VarietyOption[];
   onUpdate: (partial: Partial<PlantEntry>) => void;
   onRemove: () => void;
   canRemove: boolean;
   isInvalidBoundary?: boolean;
+  /** Dùng cho chế độ edit-in-place: luôn mở form + hiện nút "Xong" */
+  forceExpanded?: boolean;
+  onExitEdit?: () => void;
 }
 
 export const PlantCard = ({
   plant,
   index,
   geographicalUnits,
-  varietyOptions = [],
+  productionVarietyOptions = [],
   onUpdate,
   onRemove,
   canRemove,
   isInvalidBoundary,
+  forceExpanded = false,
+  onExitEdit,
 }: PlantCardProps) => {
-  const [expanded, setExpanded] = useState(true);
+  const [expanded, setExpanded] = useState(forceExpanded);
   const [tempLat, setTempLat] = useState(
     plant.coordinate?.lat?.toString() || "",
   );
@@ -158,56 +164,106 @@ export const PlantCard = ({
 
   const selectedUnit = geographicalUnits.find((u) => u.id === plant.plotId);
 
+  // Hạt giống của giống đang chọn (cascade) — cache 15s để đổi giống không gọi lại liên tục
+  const selectedProductionVariantId = plant.productionVariantId
+    ? Number(plant.productionVariantId)
+    : undefined;
+  const { items: seedOptions, loading: seedsLoading } = useSeeds({
+    params: selectedProductionVariantId
+      ? {
+          foundationSubjectVariantId: selectedProductionVariantId,
+          status: "active",
+          size: 100,
+        }
+      : undefined,
+    enabled: !!selectedProductionVariantId,
+    staleTime: 15_000,
+  });
+
   return (
     <div
       id={`plant-${plant.entryId}`}
       className="border border-slate-200 rounded-2xl overflow-hidden shadow-sm bg-white"
     >
       {/* Card Header */}
-      <div
-        className="flex items-center gap-3 px-5 py-3.5 bg-slate-50 border-b cursor-pointer select-none"
-        onClick={() => setExpanded((e) => !e)}
-      >
-        <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center text-primary text-xs font-bold shrink-0">
-          {index + 1}
-        </div>
-        <div className="flex-1 min-w-0">
-          <div className="font-semibold text-slate-800 text-sm truncate flex items-center gap-2">
-            {`Cây trồng ${index + 1}`}
-            {isInvalidBoundary && (
-              <span className="text-[10px] text-red-600 bg-red-50 border border-red-200 px-1.5 py-0.5 rounded-full font-bold flex items-center gap-1">
-                <AlertTriangle className="w-3 h-3" /> Tọa độ lỗi
-              </span>
+      <div className="bg-slate-50 border-b select-none">
+        {/* Row 1: title + badges + actions */}
+        <div
+          className="flex items-center gap-3 px-5 pt-3.5 pb-2.5 cursor-pointer"
+          onClick={() => {
+            if (forceExpanded) return;
+            setExpanded((e) => !e);
+          }}
+        >
+          <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center text-primary text-xs font-bold shrink-0">
+            {index + 1}
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="font-semibold text-slate-800 text-sm truncate flex items-center gap-2 flex-wrap">
+              {`Cây trồng ${index + 1}`}
+              {forceExpanded && (
+                <span className="text-[10px] text-blue-600 bg-blue-50 border border-blue-200 px-1.5 py-0.5 rounded-full font-bold">
+                  Đang chỉnh sửa
+                </span>
+              )}
+              {isInvalidBoundary && (
+                <span className="text-[10px] text-red-600 bg-red-50 border border-red-200 px-1.5 py-0.5 rounded-full font-bold flex items-center gap-1">
+                  <AlertTriangle className="w-3 h-3" /> Tọa độ lỗi
+                </span>
+              )}
+            </div>
+          </div>
+          <div className="flex items-center gap-1 shrink-0">
+            {canRemove && (
+              <button
+                type="button"
+                className="p-1 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 transition-colors"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onRemove();
+                }}
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+              </button>
+            )}
+            {forceExpanded ? (
+              onExitEdit && (
+                <button
+                  type="button"
+                  className="px-2.5 py-1 text-xs font-semibold text-blue-700 bg-white border border-blue-200 rounded-lg hover:bg-blue-50 transition-colors"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onExitEdit();
+                  }}
+                >
+                  Xong
+                </button>
+              )
+            ) : expanded ? (
+              <ChevronDown className="w-4 h-4 text-slate-400" />
+            ) : (
+              <ChevronRight className="w-4 h-4 text-slate-400" />
             )}
           </div>
         </div>
-        {plant.plotId ? (
-          <div className="flex items-center gap-1 text-[10px] text-primary bg-primary/5 border border-primary/20 px-2 py-0.5 rounded-full font-medium shrink-0">
-            <MapPin className="w-2.5 h-2.5" />
-            {selectedUnit?.name || "Đã chọn"}
-          </div>
-        ) : (
-          <div className="text-[10px] text-amber-600 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full font-medium shrink-0">
-            Chưa chọn vị trí
-          </div>
-        )}
-        <div className="flex items-center gap-1 shrink-0">
-          {canRemove && (
-            <button
-              type="button"
-              className="p-1 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 transition-colors"
-              onClick={(e) => {
-                e.stopPropagation();
-                onRemove();
-              }}
-            >
-              <Trash2 className="w-3.5 h-3.5" />
-            </button>
-          )}
-          {expanded ? (
-            <ChevronDown className="w-4 h-4 text-slate-400" />
+
+        {/* Row 2: vị trí đã chọn */}
+        <div className="flex items-center gap-2 flex-wrap px-5 pb-3.5 pt-2.5 border-t border-slate-200/70">
+          {plant.plotId ? (
+            <span className="flex items-center gap-1 text-[11px] text-primary bg-primary/5 border border-primary/20 px-2.5 py-1 rounded-full font-medium">
+              <MapPin className="w-3 h-3" />
+              {selectedUnit?.name || "Đã chọn"}
+            </span>
           ) : (
-            <ChevronRight className="w-4 h-4 text-slate-400" />
+            <span className="flex items-center gap-1 text-[11px] text-amber-600 bg-amber-50 border border-amber-200 px-2.5 py-1 rounded-full font-medium">
+              <AlertTriangle className="w-3 h-3" />
+              Chưa chọn vị trí
+            </span>
+          )}
+          {forceExpanded && (
+            <span className="text-[11px] text-slate-400">
+              Chọn vị trí trên bản đồ hoặc nhập tọa độ bên dưới.
+            </span>
           )}
         </div>
       </div>
@@ -365,30 +421,35 @@ export const PlantCard = ({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2 sm:col-span-2">
               <Label className="text-xs">
-                Giống / Hạt giống <span className="text-red-500">*</span>
+                Giống cây <span className="text-red-500">*</span>
               </Label>
               <Select
-                value={plant.varietyId ?? ""}
-                onValueChange={(val) =>
+                value={plant.productionVariantId ?? ""}
+                onValueChange={(val) => {
+                  const opt = productionVarietyOptions.find(
+                    (o) => o.id === val,
+                  );
+                  // Đổi giống → reset hạt giống (phải thuộc giống mới)
                   onUpdate({
-                    varietyId: val,
-                    variantKind: varietyOptions.find((o) => o.id === val)
-                      ?.variantKind,
-                  })
-                }
-                disabled={varietyOptions.length === 0}
+                    productionVariantId: val,
+                    productionVariantName: opt?.name || "",
+                    subjectVariantId: "",
+                    subjectVariantName: "",
+                  });
+                }}
+                disabled={productionVarietyOptions.length === 0}
               >
                 <SelectTrigger>
                   <SelectValue
                     placeholder={
-                      varietyOptions.length === 0
-                        ? "Vùng canh tác chưa có giống"
-                        : "Chọn giống"
+                      productionVarietyOptions.length === 0
+                        ? "Vùng canh tác chưa có giống cây"
+                        : "Chọn giống cây"
                     }
                   />
                 </SelectTrigger>
                 <SelectContent>
-                  {varietyOptions.map((option) => (
+                  {productionVarietyOptions.map((option) => (
                     <SelectItem key={option.id} value={option.id}>
                       {option.name}
                       {option.code ? ` (${option.code})` : ""}
@@ -396,13 +457,57 @@ export const PlantCard = ({
                   ))}
                 </SelectContent>
               </Select>
-              {!plant.varietyId && (
+              {!plant.productionVariantId && !plant.subjectVariantId && (
                 <p className="text-xs text-red-500">
-                  {varietyOptions.length === 0
-                    ? "Vùng canh tác chưa cấu hình giống — không thể lưu cây trồng."
-                    : "Vui lòng chọn giống cây hoặc hạt giống."}
+                  {productionVarietyOptions.length === 0
+                    ? "Vùng canh tác chưa cấu hình giống — chọn hạt giống bên dưới nếu có."
+                    : "Vui lòng chọn giống cây."}
                 </p>
               )}
+            </div>
+            <div className="space-y-2 sm:col-span-2">
+              <Label className="text-xs">
+                Hạt giống
+                {plant.productionVariantName
+                  ? ` cho giống ${plant.productionVariantName}`
+                  : ""}{" "}
+                <span className="text-slate-400 font-normal">(tùy chọn)</span>
+              </Label>
+              <Select
+                value={plant.subjectVariantId ?? ""}
+                onValueChange={(val) => {
+                  const seed = seedOptions.find(
+                    (s) => String(s.id) === val,
+                  );
+                  onUpdate({
+                    subjectVariantId: val,
+                    subjectVariantName: seed?.name || "",
+                  });
+                }}
+                disabled={!selectedProductionVariantId || seedOptions.length === 0}
+              >
+                <SelectTrigger>
+                  <SelectValue
+                    placeholder={
+                      !selectedProductionVariantId
+                        ? "Chọn giống cây trước"
+                        : seedsLoading
+                          ? "Đang tải hạt giống..."
+                          : seedOptions.length === 0
+                            ? "Giống này chưa có hạt giống"
+                            : "Chọn hạt giống"
+                    }
+                  />
+                </SelectTrigger>
+                <SelectContent>
+                  {seedOptions.map((seed) => (
+                    <SelectItem key={seed.id} value={String(seed.id)}>
+                      {seed.name || seed.code || `Hạt giống #${seed.id}`}
+                      {seed.code && seed.name ? ` (${seed.code})` : ""}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <div className="space-y-2 sm:col-span-2">
               <Label className="text-xs">Hiện trạng sức khỏe</Label>

@@ -17,6 +17,8 @@ export const seedKeys = {
 interface UseSeedsOptions {
   params?: SeedQueryParams;
   enabled?: boolean;
+  /** Thời gian giữ dữ liệu 'tươi' (ms). Cascade giống→hạt dùng 15s để tránh gọi lại quá nhiều khi đổi giống. */
+  staleTime?: number;
 }
 
 type UseSeedsResult = ReturnType<
@@ -30,7 +32,9 @@ type UseSeedsResult = ReturnType<
  * const { items, loading } = useSeeds();
  * const { items } = useSeeds({ params: { keyword: "Ri6", status: "active" } });
  */
-export function useSeeds({ params, enabled = true }: UseSeedsOptions = {}) {
+export function useSeeds(
+  { params, enabled = true, staleTime }: UseSeedsOptions = {},
+) {
   const queryResult: UseSeedsResult = useQuery<
     PageResponse<FarmSeedResponse>,
     Error
@@ -38,6 +42,7 @@ export function useSeeds({ params, enabled = true }: UseSeedsOptions = {}) {
     queryKey: seedKeys.list(params),
     queryFn: () => seedApi.list(params),
     enabled,
+    staleTime,
   });
 
   return {

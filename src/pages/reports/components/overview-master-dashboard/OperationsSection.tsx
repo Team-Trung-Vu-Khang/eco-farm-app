@@ -32,6 +32,12 @@ const PLAN_PURPOSE_LABEL: Record<FarmPlanPurpose, string> = {
   TREATMENT: "Xử lý bệnh",
   SOIL_IMPROVEMENT: "Cải tạo đất",
   HARVEST: "Thu hoạch",
+  NUTRITION: "Dinh dưỡng",
+  PLANT_CARE: "Chăm sóc cây",
+  PEST_DISEASE: "Sâu bệnh hại",
+  WEED_CONTROL: "Cỏ dại",
+  IRRIGATION: "Tưới tiêu",
+  OTHER: "Khác",
 };
 
 // ─── Stat Box ─────────────────────────────────────────────────────────────────

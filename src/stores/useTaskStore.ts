@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { devtools, persist } from "zustand/middleware";
 
+import type { FarmPlanPurpose } from "../features/farm-workflow/types";
 import type { GeographicalSelection } from "../pages/plan/types";
 
 export interface MaterialAllocation {
@@ -60,12 +61,7 @@ export interface Task {
   stageName?: string;
   // Raw API purpose of the plan this task belongs to — used by the task
   // list's "Mục đích kế hoạch" column.
-  planPurpose?:
-    | "CULTIVATION"
-    | "FACILITY_UPGRADE"
-    | "TREATMENT"
-    | "SOIL_IMPROVEMENT"
-    | "HARVEST";
+  planPurpose?: FarmPlanPurpose;
 }
 
 interface TaskStore {

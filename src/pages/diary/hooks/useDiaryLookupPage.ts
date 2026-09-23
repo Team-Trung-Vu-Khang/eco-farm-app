@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { WORK_TYPE_OPTIONS } from "../constants/history-form.constants";
 import { MOCK_DIARY_ENTRIES } from "../mock/diary-lookup.mock";
 import type { DiaryWorkType } from "../types/lookup.types";
 
@@ -58,13 +59,10 @@ export function useDiaryLookupPage() {
     return Array.from(map.values());
   }, []);
 
-  const workTypeOptions = [
-    { id: "cultivation", name: "Canh tác" },
-    { id: "facility-upgrade", name: "Nâng cấp CSVC" },
-    { id: "treatment", name: "Điều trị" },
-    { id: "amendment", name: "Cải tạo đất" },
-    { id: "harvest", name: "Thu hoạch" },
-  ];
+  const workTypeOptions = useMemo(
+    () => WORK_TYPE_OPTIONS.map((opt) => ({ id: opt.value, name: opt.label })),
+    [],
+  );
 
   const toggleFilter = (
     key: "workflowIds" | "planIds" | "workTypes",
