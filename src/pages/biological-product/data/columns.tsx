@@ -1,7 +1,6 @@
 import { CodeBadge } from "@/components/CodeBadge";
 import { formatPackagingVariantText } from "@/features/farm-supply";
 import { Badge, type Column } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { originOptions } from "./constants";
 
 export const getBiologicalProductColumns = (
   onView: (id: number) => void,
@@ -57,19 +56,39 @@ export const getBiologicalProductColumns = (
     key: "originId",
     label: "Phân loại",
     render: (_, row) => {
-      const origin =
-        row.classifications?.find((c: any) => c.classification === "origin")
-          ?.group?.name ||
-        row.metadataJson?.origin ||
-        row.biologicalProductOriginGroup ||
-        originOptions.find((o: any) => o.id === row.originId)?.label ||
-        "N/A";
+      const apiOrigins =
+        row.classifications
+          ?.filter((c: any) => c.classification === "origin")
+          ?.map((c: any) => c.group?.name)
+          ?.filter(Boolean) || [];
+
+      const rawOrigin =
+        row.biologicalProductOriginGroups || row.biologicalProductOriginGroup;
+      const localOrigins = Array.isArray(rawOrigin)
+        ? rawOrigin
+        : rawOrigin
+          ? [rawOrigin]
+          : [];
+
+      const combinedOrigins = Array.from(
+        new Set([...apiOrigins, ...localOrigins]),
+      ).filter(Boolean);
 
       return (
-        <div className="flex gap-1 flex-col">
-          <Badge variant="outline" className="w-fit text-[10px] py-0 px-1.5">
-            {origin}
-          </Badge>
+        <div className="flex flex-wrap gap-1">
+          {combinedOrigins.length > 0 ? (
+            combinedOrigins.map((orig, idx) => (
+              <Badge
+                key={idx}
+                variant="outline"
+                className="w-fit text-[10px] py-0 px-1.5"
+              >
+                {orig}
+              </Badge>
+            ))
+          ) : (
+            <></>
+          )}
         </div>
       );
     },

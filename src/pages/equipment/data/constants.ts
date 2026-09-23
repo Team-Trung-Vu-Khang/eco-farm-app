@@ -121,12 +121,16 @@ export const initialEquipments: Equipment[] = [
   },
 ];
 
+// ── Presentation only: nhãn hiển thị (không phải nguồn option form) ─────────
+
+/** Cấp công nghệ — dùng chỉ để hiển thị nhãn trên columns/detail/confirmation */
 export const technologyLevelOptions = [
   { id: "hand_tools", label: "Dụng cụ thủ công (Hand Tools)" },
   { id: "motorized_machinery", label: "Máy móc cơ giới (Motorized Machinery)" },
   { id: "smart_devices", label: "Thiết bị Công nghệ cao / IoT" },
 ];
 
+/** Mắt xích chuỗi giá trị — dùng chỉ để hiển thị nhãn trên columns/detail/confirmation */
 export const valueChainOptions = [
   { id: "land_prep", label: "Làm đất / Cải tạo ao" },
   { id: "planting", label: "Gieo trồng / Xuống giống" },
@@ -135,10 +139,21 @@ export const valueChainOptions = [
   { id: "post_harvest", label: "Sơ chế & Bảo quản" },
 ];
 
+/** Cách quản lý tài sản — dùng chỉ để hiển thị nhãn trên columns/detail/confirmation */
 export const financialManagementOptions = [
   { id: "consumables", label: "Vật tư / Dụng cụ tiêu hao" },
   { id: "fixed_assets", label: "Tài sản cố định / Công cụ dụng cụ lâu bền" },
 ];
+
+/** Danh sách nhà cung cấp minh họa — hiển thị tên từ id trên confirmation/detail */
+export const suppliers = [
+  { id: "sup1", name: "Công ty Kubota Việt Nam", type: "enterprise" },
+  { id: "sup2", name: "DJI Store Vietnam", type: "enterprise" },
+  { id: "sup3", name: "Nhà cung cấp Hai Lúa", type: "enterprise" },
+  { id: "sup4", name: "Netafim Israel Vietnam", type: "enterprise" },
+];
+
+// ── Free-text gợi ý (nhập tự do, đối chiếu typeTags/fuelType/... để sau) ─────
 
 export const maintenanceIntervals = [
   "Hàng ngày",
@@ -184,12 +199,3 @@ export const packagingSpecsPresets = [
   "Hộp xốp bảo vệ",
   "Đai nẹp kiện hàng",
 ];
-
-export const suppliers = [
-  { id: "sup1", name: "Công ty Kubota Việt Nam", type: "enterprise" },
-  { id: "sup2", name: "DJI Store Vietnam", type: "enterprise" },
-  { id: "sup3", name: "Nhà cung cấp Hai Lúa", type: "enterprise" },
-  { id: "sup4", name: "Netafim Israel Vietnam", type: "enterprise" },
-];
-
-export const units = ["Cái", "Bộ", "Hệ thống", "Chiếc", "Dàn", "Trạm"];

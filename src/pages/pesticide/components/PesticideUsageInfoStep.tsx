@@ -1,4 +1,5 @@
 import { farmSupplyApi } from "@/features/farm-supply";
+import type { DomainCode } from "@/features/farm-supply";
 import { useQuery } from "@tanstack/react-query";
 import {
   Input,
@@ -11,12 +12,6 @@ import {
   SelectValue,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { AlarmClock, Beaker, Leaf } from "lucide-react";
-import {
-  applicationMethods,
-  targetEntitiesAnimal,
-  targetEntitiesAquaculture,
-  targetEntitiesCultivation,
-} from "../data/constants";
 import type { PesticideDomain, PesticideFormData } from "../types";
 
 interface PesticideUsageInfoStepProps {
@@ -30,21 +25,6 @@ interface PesticideUsageInfoStepProps {
 
 interface TargetSubjectItem {
   name: string;
-}
-
-function getTargetOptionsByDomain(domain?: PesticideDomain) {
-  let list: string[];
-  switch (domain) {
-    case "animal":
-      list = targetEntitiesAnimal;
-      break;
-    case "aquaculture":
-      list = targetEntitiesAquaculture;
-      break;
-    default:
-      list = targetEntitiesCultivation;
-  }
-  return list.map((item) => ({ label: item, value: item }));
 }
 
 export default function PesticideUsageInfoStep({
@@ -67,13 +47,26 @@ export default function PesticideUsageInfoStep({
     staleTime: 5 * 60 * 1000,
   });
 
-  const targetOptions =
-    apiSubjects && apiSubjects.length > 0
-      ? (apiSubjects as TargetSubjectItem[]).map((s) => ({
-          label: s.name,
-          value: s.name,
-        }))
-      : getTargetOptionsByDomain(domain);
+  const { data: usageMethodGroups } = useQuery({
+    queryKey: ["usage-methods", domainCode],
+    queryFn: () =>
+      farmSupplyApi.getClassificationGroups(
+        "medicine",
+        "usage_method",
+        domainCode as DomainCode,
+      ),
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const targetOptions = (apiSubjects ?? []).map((s) => ({
+    label: (s as TargetSubjectItem).name,
+    value: (s as TargetSubjectItem).name,
+  }));
+
+  const applicationMethodOptions = (usageMethodGroups ?? []).map((g) => ({
+    label: g.name,
+    value: g.name,
+  }));
 
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500 max-w-4xl mx-auto">
@@ -148,9 +141,9 @@ export default function PesticideUsageInfoStep({
                 <SelectValue placeholder="Chọn cách dùng..." />
               </SelectTrigger>
               <SelectContent>
-                {applicationMethods.map((m) => (
-                  <SelectItem key={m} value={m}>
-                    {m}
+                {applicationMethodOptions.map((m) => (
+                  <SelectItem key={m.value} value={m.value}>
+                    {m.label}
                   </SelectItem>
                 ))}
               </SelectContent>

@@ -14,6 +14,16 @@ export interface CatalogRef {
   name: string;
 }
 
+export interface ClassificationGroup {
+  id: number;
+  code: string;
+  name: string;
+  classification?: string;
+  description?: string;
+  displayOrder?: number;
+  status?: MasterDataStatus;
+}
+
 export interface PackagingVariantRequest {
   packagingTypeId?: number | null;
   unitBaseId?: number | null;

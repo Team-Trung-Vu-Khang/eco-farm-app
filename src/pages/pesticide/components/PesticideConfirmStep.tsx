@@ -138,51 +138,161 @@ export default function PesticideConfirmStep({
               <Row label="Tên thương mại" value={formData.name} />
               <Row label="Số đăng ký" value={formData.registrationNumber} />
               <Row label="Hàm lượng" value={formData.concentration} />
-              <Row label="Nhóm phân loại" value={formData.group} />
-              <Row label="Dạng bào chế" value={formData.form} />
+              <div>
+                <span className="text-muted-foreground text-sm block mb-1">
+                  Công dụng thuốc:
+                </span>
+                <div className="flex flex-wrap gap-1 min-w-0">
+                  {(formData.groups?.length
+                    ? formData.groups
+                    : formData.group
+                      ? [formData.group]
+                      : []
+                  ).map((g) => (
+                    <Badge
+                      key={g}
+                      variant="outline"
+                      className="text-xs bg-slate-50 max-w-full min-w-0 break-words"
+                    >
+                      {g}
+                    </Badge>
+                  ))}
+                  {!formData.groups?.length && !formData.group && (
+                    <span className="text-slate-400 text-sm">Chưa chọn</span>
+                  )}
+                </div>
+              </div>
+              <div>
+                <span className="text-muted-foreground text-sm block mb-1">
+                  Dạng bào chế:
+                </span>
+                <div className="flex flex-wrap gap-1 min-w-0">
+                  {(formData.forms?.length
+                    ? formData.forms
+                    : formData.form
+                      ? [formData.form]
+                      : []
+                  ).map((f) => (
+                    <Badge
+                      key={f}
+                      variant="outline"
+                      className="text-xs bg-slate-50 max-w-full min-w-0 break-words"
+                    >
+                      {f}
+                    </Badge>
+                  ))}
+                  {!formData.forms?.length && !formData.form && (
+                    <span className="text-slate-400 text-sm">Chưa chọn</span>
+                  )}
+                </div>
+              </div>
               {isCultivation && (
-                <Row label="Nguồn gốc" value={formData.origin} />
+                <div>
+                  <span className="text-muted-foreground text-sm block mb-1">
+                    Nguồn gốc:
+                  </span>
+                  <div className="flex flex-wrap gap-1 min-w-0">
+                    {(formData.origins?.length
+                      ? formData.origins
+                      : formData.origin
+                        ? [formData.origin]
+                        : []
+                    ).map((o) => (
+                      <Badge
+                        key={o}
+                        variant="outline"
+                        className="text-xs bg-slate-50 max-w-full min-w-0 break-words"
+                      >
+                        {o}
+                      </Badge>
+                    ))}
+                    {!formData.origins?.length && !formData.origin && (
+                      <span className="text-slate-400 text-sm">Chưa chọn</span>
+                    )}
+                  </div>
+                </div>
               )}
               <div className="col-span-2">
                 <span className="text-muted-foreground text-sm">
                   Hoạt chất:
                 </span>{" "}
                 <span className="font-medium text-sm">
-                  {formData.activeIngredient}
+                  {formData.activeIngredient || "N/A"}
                 </span>
               </div>
-              <Row
-                label={
-                  isCultivation
+              <div>
+                <span className="text-muted-foreground text-sm block mb-1">
+                  {isCultivation
                     ? "Cách xâm nhập"
                     : isAnimal
                       ? "Phân loại sử dụng (Đường dùng)"
-                      : "Cách dùng / Xâm nhập"
-                }
-                value={formData.actionType}
-              />
+                      : "Cách dùng / Xâm nhập"}
+                </span>
+                <div className="flex flex-wrap gap-1 min-w-0">
+                  {(formData.actionTypes?.length
+                    ? formData.actionTypes
+                    : formData.actionType
+                      ? [formData.actionType]
+                      : []
+                  ).map((a) => (
+                    <Badge
+                      key={a}
+                      variant="outline"
+                      className="text-xs bg-slate-50 max-w-full min-w-0 break-words"
+                    >
+                      {a}
+                    </Badge>
+                  ))}
+                  {!formData.actionTypes?.length && !formData.actionType && (
+                    <span className="text-slate-400 text-sm">Chưa chọn</span>
+                  )}
+                </div>
+              </div>
               {isCultivation && (
                 <Row label="Nhóm MoA" value={formData.moaGroup} />
               )}
-              {formData.toxicityLevel && (
-                <div className="col-span-2 flex items-center gap-2">
-                  <ShieldAlert className="w-4 h-4 text-amber-500" />
-                  <span className="text-muted-foreground text-sm">
-                    {getToxicityLabel()}:
-                  </span>
-                  <span
-                    className={`px-2 py-0.5 rounded text-xs font-semibold border ${getToxicityBadgeClass()}`}
-                  >
-                    {getToxicityValue()}
-                  </span>
+              {((formData.toxicityLevels?.length ?? 0) > 0 ||
+                formData.toxicityLevel) && (
+                <div className="col-span-2 flex flex-col gap-1">
+                  <div className="flex items-center gap-1.5">
+                    <ShieldAlert className="w-4 h-4 text-amber-500" />
+                    <span className="text-muted-foreground text-sm">
+                      {getToxicityLabel()}:
+                    </span>
+                  </div>
+                  <div className="flex flex-wrap gap-1 mt-0.5 min-w-0">
+                    {(formData.toxicityLevels?.length
+                      ? formData.toxicityLevels
+                      : [formData.toxicityLevel]
+                    ).map((tox) => {
+                      const toxItem = toxicityLevels.find(
+                        (t) => t.value === tox,
+                      );
+                      const toxDisp = isCultivation
+                        ? (toxItem?.label ?? tox)
+                        : tox;
+                      const badgeClass = isCultivation
+                        ? (toxColorMap[tox] ??
+                          "bg-slate-100 text-slate-700 border-slate-200")
+                        : getToxicityBadgeClass();
+                      return (
+                        <span
+                          key={tox}
+                          className={`px-2 py-0.5 rounded text-xs font-semibold border max-w-full min-w-0 break-words ${badgeClass}`}
+                        >
+                          {toxDisp}
+                        </span>
+                      );
+                    })}
+                  </div>
                 </div>
               )}
               {formData.hashtags.length > 0 && (
                 <div className="col-span-2">
                   <span className="text-muted-foreground text-sm">Tags:</span>{" "}
-                  <div className="inline-flex gap-1 flex-wrap mt-1">
+                  <div className="inline-flex gap-1 flex-wrap mt-1 min-w-0">
                     {formData.hashtags.map((tag) => (
-                      <Badge key={tag} variant="secondary" className="text-xs">
+                      <Badge key={tag} variant="secondary" className="text-xs max-w-full min-w-0 break-words">
                         #{tag}
                       </Badge>
                     ))}
@@ -216,9 +326,9 @@ export default function PesticideConfirmStep({
                   <span className="text-muted-foreground text-sm">
                     Đối tượng:
                   </span>{" "}
-                  <div className="inline-flex gap-1 flex-wrap mt-1">
+                  <div className="inline-flex gap-1 flex-wrap mt-1 min-w-0">
                     {formData.targetEntities.map((e) => (
-                      <Badge key={e} variant="outline" className="text-xs">
+                      <Badge key={e} variant="outline" className="text-xs max-w-full min-w-0 break-words">
                         {e}
                       </Badge>
                     ))}
@@ -292,12 +402,12 @@ export default function PesticideConfirmStep({
                     <span className="text-muted-foreground text-sm">
                       Tiêu chuẩn:
                     </span>{" "}
-                    <div className="inline-flex gap-1 flex-wrap mt-1">
+                    <div className="inline-flex gap-1 flex-wrap mt-1 min-w-0">
                       {formData.standardsCompliance.map((std) => (
                         <Badge
                           key={std}
                           variant="secondary"
-                          className="text-xs"
+                          className="text-xs max-w-full min-w-0 break-words"
                         >
                           {std}
                         </Badge>
@@ -317,8 +427,14 @@ export default function PesticideConfirmStep({
               Bước 4 – Xuất xứ & Cung ứng
             </h4>
             <div className="grid grid-cols-2 gap-x-8 gap-y-3">
-              <Row label="Nhà sản xuất" value={formData.manufacturerOrigin?.name} />
-              <Row label="Nhà nhập khẩu" value={formData.importerRegistrant?.name} />
+              <Row
+                label="Nhà sản xuất"
+                value={formData.manufacturerOrigin?.name}
+              />
+              <Row
+                label="Nhà nhập khẩu"
+                value={formData.importerRegistrant?.name}
+              />
               <Row label="Nhà phân phối" value={formData.distributor?.name} />
               <Row label="Giá tham khảo" value={formData.referencePrice} />
               {formData.packagingSpecs.length > 0 && (
@@ -326,9 +442,9 @@ export default function PesticideConfirmStep({
                   <span className="text-muted-foreground text-sm flex items-center gap-1">
                     <Package className="w-3.5 h-3.5" /> Quy cách:
                   </span>{" "}
-                  <div className="inline-flex gap-1 flex-wrap mt-1">
+                  <div className="inline-flex gap-1 flex-wrap mt-1 min-w-0">
                     {formData.packagingSpecs.map((spec) => (
-                      <Badge key={spec} variant="outline" className="text-xs">
+                      <Badge key={spec} variant="outline" className="text-xs max-w-full min-w-0 break-words">
                         {spec}
                       </Badge>
                     ))}

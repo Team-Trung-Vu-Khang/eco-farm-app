@@ -6,7 +6,11 @@ export const materialColumns = (
   onNavigateDetail: (id: number) => void,
 ): Column<any>[] => [
   { key: "code", label: "Mã", render: (value) => <CodeBadge value={value} /> },
-  { key: "sku", label: "Mã SKU", render: (value) => <CodeBadge value={value} /> },
+  {
+    key: "sku",
+    label: "Mã SKU",
+    render: (value) => <CodeBadge value={value} />,
+  },
   {
     key: "name",
     label: "Tên vật tư",
@@ -15,7 +19,7 @@ export const materialColumns = (
         className="cursor-pointer font-medium text-primary hover:underline"
         onClick={() => onNavigateDetail(row.id)}
       >
-        {value}
+        {value as string}
       </span>
     ),
   },
@@ -32,30 +36,66 @@ export const materialColumns = (
     key: "technologyLevelId",
     label: "Phân loại kỹ thuật",
     render: (_, row) => {
-      const techLevel =
-        row.classifications?.find(
-          (c: any) => c.classification === "technology_level",
-        )?.group?.code || row.technologyLevelId;
-      const valueChain =
-        row.classifications?.find(
-          (c: any) => c.classification === "value_chain",
-        )?.group?.code || row.valueChainId;
+      const apiTechs =
+        row.classifications
+          ?.filter((c: any) => c.classification === "technology_level")
+          ?.map((c: any) => c.group?.code || c.group?.name)
+          ?.filter(Boolean) || [];
 
-      const techLabel = getMaterialGroupLabel(techLevel);
-      const chainLabel = getMaterialGroupLabel(valueChain);
+      const localTechs = Array.isArray(row.technologyLevelIds)
+        ? row.technologyLevelIds
+        : row.technologyLevelId
+          ? [row.technologyLevelId]
+          : [];
+
+      const techCodes = Array.from(
+        new Set([...apiTechs, ...localTechs]),
+      ).filter(Boolean);
+
+      const apiChains =
+        row.classifications
+          ?.filter((c: any) => c.classification === "value_chain")
+          ?.map((c: any) => c.group?.code || c.group?.name)
+          ?.filter(Boolean) || [];
+
+      const localChains = Array.isArray(row.valueChainIds)
+        ? row.valueChainIds
+        : row.valueChainId
+          ? [row.valueChainId]
+          : [];
+
+      const chainCodes = Array.from(
+        new Set([...apiChains, ...localChains]),
+      ).filter(Boolean);
+
+      const techLabels = techCodes
+        .map((code) => getMaterialGroupLabel(code))
+        .filter(Boolean);
+      const chainLabels = chainCodes
+        .map((code) => getMaterialGroupLabel(code))
+        .filter(Boolean);
+
       return (
         <div className="flex flex-col gap-1 text-xs">
-          {techLabel && (
-            <Badge variant="outline" className="w-fit">
-              {techLabel}
-            </Badge>
+          {techLabels.length > 0 && (
+            <div className="flex flex-wrap gap-1">
+              {techLabels.map((lbl, idx) => (
+                <Badge
+                  key={idx}
+                  variant="outline"
+                  className="w-fit text-[10px] py-0 px-1.5"
+                >
+                  {lbl}
+                </Badge>
+              ))}
+            </div>
           )}
-          {chainLabel && (
+          {chainLabels.length > 0 && (
             <span
               className="text-muted-foreground truncate max-w-[200px]"
-              title={chainLabel}
+              title={chainLabels.join(", ")}
             >
-              • {chainLabel}
+              • {chainLabels.join(", ")}
             </span>
           )}
         </div>
@@ -66,7 +106,9 @@ export const materialColumns = (
     key: "description",
     label: "Mô tả",
     render: (value) => (
-      <span className="inline-block max-w-[200px] truncate">{value}</span>
+      <span className="inline-block max-w-[200px] truncate">
+        {value as string}
+      </span>
     ),
   },
   {

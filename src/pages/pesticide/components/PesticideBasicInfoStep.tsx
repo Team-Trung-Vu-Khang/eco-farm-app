@@ -1,8 +1,10 @@
+import { RemoteMultiSelect } from "@/components/RemoteMultiSelect";
 import {
   Badge,
   Button,
   Input,
   Label,
+  MultiSelect,
   RemoteAutoCompleteSelect,
   Select,
   SelectContent,
@@ -24,16 +26,8 @@ import {
 import { useMasterData } from "@/features/master-data";
 import { useDebounce } from "@/shared/hooks/useDebounce";
 import { useState } from "react";
-import { MOCK_MEDICINE_DATA } from "../../shared-medicine-group/data/mocks";
 import { commonHashtags } from "../data/constants";
 import type { PesticideDomain, PesticideFormData } from "../types";
-
-type MedicineGroupItem = {
-  id?: string | number;
-  code?: string;
-  name: string;
-  description?: string | null;
-};
 
 interface PesticideBasicInfoStepProps {
   domain?: PesticideDomain;
@@ -148,43 +142,15 @@ export default function PesticideBasicInfoStep({
       },
     });
 
-  const getItems = (loaded: MedicineGroupItem[] | undefined, catalog: string) => {
-    if (loaded && loaded.length > 0) {
-      return loaded;
-    }
-    return MOCK_MEDICINE_DATA[catalog] || [];
-  };
+  const pesticideOrigins = loadedPesticideOrigins ?? [];
+  const pesticideToxicityClasses = loadedPesticideToxicityClasses ?? [];
+  const pesticideModesOfAction = loadedPesticideModesOfAction ?? [];
+  const pesticideFormulations = loadedPesticideFormulations ?? [];
 
-  const pesticideOrigins = getItems(
-    loadedPesticideOrigins,
-    "pesticide-origins",
-  );
-  const pesticideToxicityClasses = getItems(
-    loadedPesticideToxicityClasses,
-    "pesticide-toxicity-classes",
-  );
-  const pesticideModesOfAction = getItems(
-    loadedPesticideModesOfAction,
-    "pesticide-modes-of-action",
-  );
-  const pesticideFormulations = getItems(
-    loadedPesticideFormulations,
-    "pesticide-formulations",
-  );
+  const livestockAdministrationRoutes = loadedLivestockAdministrationRoutes ?? [];
+  const livestockControlLevels = loadedLivestockControlLevels ?? [];
 
-  const livestockAdministrationRoutes = getItems(
-    loadedLivestockAdministrationRoutes,
-    "livestock-medicine-administration-routes",
-  );
-  const livestockControlLevels = getItems(
-    loadedLivestockControlLevels,
-    "livestock-medicine-control-levels",
-  );
-
-  const aquacultureControlResidues = getItems(
-    loadedAquacultureControlResidues,
-    "aquaculture-medicine-control-residues",
-  );
+  const aquacultureControlResidues = loadedAquacultureControlResidues ?? [];
   const groupOptions = remoteGroupItems.map((item) => ({
     label: item.name,
     value: item.name,
@@ -259,12 +225,21 @@ export default function PesticideBasicInfoStep({
               {isCultivation ? "Công dụng thuốc" : "Công dụng"}{" "}
               <span className="text-red-500">*</span>
             </Label>
-            <RemoteAutoCompleteSelect
-              value={formData.group}
+            <RemoteMultiSelect
               options={groupOptions}
-              onChange={(value) => onFormFieldChange("group", value)}
+              value={
+                formData.groups && formData.groups.length > 0
+                  ? formData.groups
+                  : formData.group
+                    ? [formData.group]
+                    : []
+              }
+              onChange={(values) => {
+                onFormFieldChange("groups", values);
+                onFormFieldChange("group", values[0] || "");
+              }}
               onSearch={setGroupSearch}
-              placeholder="Chọn loại thuốc từ danh mục..."
+              placeholder="Chọn công dụng thuốc (cho phép chọn nhiều)..."
               searchPlaceholder="Tìm công dụng thuốc..."
               emptyText="Không tìm thấy công dụng thuốc"
               loading={isLoadingGroupItems}
@@ -300,61 +275,47 @@ export default function PesticideBasicInfoStep({
                 {/* Dạng bào chế */}
                 <div className="space-y-2">
                   <Label>Dạng bào chế</Label>
-                  <Select
-                    value={formData.form}
-                    onValueChange={(v) => onFormFieldChange("form", v)}
-                  >
-                    <SelectTrigger className="text-left h-auto py-2">
-                      <SelectValue placeholder="Chọn dạng bào chế..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {pesticideFormulations.map((item) => (
-                        <SelectItem
-                          key={item.id || item.code}
-                          value={item.name}
-                        >
-                          <div className="flex flex-col">
-                            <span className="font-medium">{item.name}</span>
-                            {item.description && (
-                              <span className="text-xs text-muted-foreground truncate max-w-[300px]">
-                                {item.description}
-                              </span>
-                            )}
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <MultiSelect
+                    options={pesticideFormulations.map((item) => ({
+                      label: item.name,
+                      value: item.name,
+                    }))}
+                    value={
+                      formData.forms && formData.forms.length > 0
+                        ? formData.forms
+                        : formData.form
+                          ? [formData.form]
+                          : []
+                    }
+                    onChange={(vals) => {
+                      onFormFieldChange("forms", vals);
+                      onFormFieldChange("form", vals[0] || "");
+                    }}
+                    placeholder="Chọn dạng bào chế (chọn nhiều)..."
+                  />
                 </div>
 
                 {/* Nguồn gốc */}
                 <div className="space-y-2">
                   <Label>Nguồn gốc</Label>
-                  <Select
-                    value={formData.origin}
-                    onValueChange={(v) => onFormFieldChange("origin", v)}
-                  >
-                    <SelectTrigger className="text-left h-auto py-2">
-                      <SelectValue placeholder="Chọn nguồn gốc..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {pesticideOrigins.map((item) => (
-                        <SelectItem
-                          key={item.id || item.code}
-                          value={item.name}
-                        >
-                          <div className="flex flex-col">
-                            <span className="font-medium">{item.name}</span>
-                            {item.description && (
-                              <span className="text-xs text-muted-foreground truncate max-w-[300px]">
-                                {item.description}
-                              </span>
-                            )}
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <MultiSelect
+                    options={pesticideOrigins.map((item) => ({
+                      label: item.name,
+                      value: item.name,
+                    }))}
+                    value={
+                      formData.origins && formData.origins.length > 0
+                        ? formData.origins
+                        : formData.origin
+                          ? [formData.origin]
+                          : []
+                    }
+                    onChange={(vals) => {
+                      onFormFieldChange("origins", vals);
+                      onFormFieldChange("origin", vals[0] || "");
+                    }}
+                    placeholder="Chọn nguồn gốc (chọn nhiều)..."
+                  />
                 </div>
               </div>
 
@@ -362,31 +323,24 @@ export default function PesticideBasicInfoStep({
                 {/* Cơ chế tác động */}
                 <div className="space-y-2">
                   <Label>Cơ chế tác động (Cách xâm nhập)</Label>
-                  <Select
-                    value={formData.actionType}
-                    onValueChange={(v) => onFormFieldChange("actionType", v)}
-                  >
-                    <SelectTrigger className="text-left h-auto py-2">
-                      <SelectValue placeholder="Chọn cơ chế tác động..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {pesticideModesOfAction.map((item) => (
-                        <SelectItem
-                          key={item.id || item.code}
-                          value={item.name}
-                        >
-                          <div className="flex flex-col">
-                            <span className="font-medium">{item.name}</span>
-                            {item.description && (
-                              <span className="text-xs text-muted-foreground truncate max-w-[300px]">
-                                {item.description}
-                              </span>
-                            )}
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <MultiSelect
+                    options={pesticideModesOfAction.map((item) => ({
+                      label: item.name,
+                      value: item.name,
+                    }))}
+                    value={
+                      formData.actionTypes && formData.actionTypes.length > 0
+                        ? formData.actionTypes
+                        : formData.actionType
+                          ? [formData.actionType]
+                          : []
+                    }
+                    onChange={(vals) => {
+                      onFormFieldChange("actionTypes", vals);
+                      onFormFieldChange("actionType", vals[0] || "");
+                    }}
+                    placeholder="Chọn cơ chế tác động (chọn nhiều)..."
+                  />
                 </div>
 
                 {/* Độc tính WHO */}
@@ -395,31 +349,25 @@ export default function PesticideBasicInfoStep({
                     <ShieldAlert className="w-4 h-4 text-amber-500" />
                     Nhóm độc / Mức độ độc hại (WHO)
                   </Label>
-                  <Select
-                    value={formData.toxicityLevel}
-                    onValueChange={(v) => onFormFieldChange("toxicityLevel", v)}
-                  >
-                    <SelectTrigger className="text-left h-auto py-2">
-                      <SelectValue placeholder="Chọn nhóm độc WHO..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {pesticideToxicityClasses.map((item) => {
-                        const val = item.name.split(" - ")[0];
-                        return (
-                          <SelectItem key={item.id || item.code} value={val}>
-                            <div className="flex flex-col">
-                              <span className="font-medium">{item.name}</span>
-                              {item.description && (
-                                <span className="text-xs text-muted-foreground truncate max-w-[300px]">
-                                  {item.description}
-                                </span>
-                              )}
-                            </div>
-                          </SelectItem>
-                        );
-                      })}
-                    </SelectContent>
-                  </Select>
+                  <MultiSelect
+                    options={pesticideToxicityClasses.map((item) => {
+                      const val = item.name.split(" - ")[0];
+                      return { label: item.name, value: val };
+                    })}
+                    value={
+                      formData.toxicityLevels &&
+                      formData.toxicityLevels.length > 0
+                        ? formData.toxicityLevels
+                        : formData.toxicityLevel
+                          ? [formData.toxicityLevel]
+                          : []
+                    }
+                    onChange={(vals) => {
+                      onFormFieldChange("toxicityLevels", vals);
+                      onFormFieldChange("toxicityLevel", vals[0] || "");
+                    }}
+                    placeholder="Chọn nhóm độc WHO (chọn nhiều)..."
+                  />
                 </div>
               </div>
 

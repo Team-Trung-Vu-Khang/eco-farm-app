@@ -93,7 +93,7 @@ export function RemoteMultiSelect({
             !value.length && "text-muted-foreground",
           )}
         >
-          <div className="flex flex-wrap items-center gap-2 text-left">
+          <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2 text-left">
             {value.length === 0 ? (
               <span className="text-muted-foreground">{placeholder}</span>
             ) : (
@@ -101,13 +101,13 @@ export function RemoteMultiSelect({
                 <Badge
                   key={item}
                   variant="secondary"
-                  className="gap-2 rounded-full"
+                  className="max-w-full min-w-0 gap-2 rounded-lg whitespace-normal"
                 >
-                  {labelFor(item)}
+                  <span className="min-w-0 break-words">{labelFor(item)}</span>
                   <span
                     role="button"
                     tabIndex={0}
-                    className="opacity-70 hover:opacity-100"
+                    className="shrink-0 opacity-70 hover:opacity-100"
                     aria-label={`Xoá ${labelFor(item)}`}
                     onClick={(event) => {
                       event.stopPropagation();

@@ -11,7 +11,6 @@ import {
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { Building2, Package, Plus, X, DollarSign, Search } from "lucide-react";
 import { useState } from "react";
-import { packagingUnitOptions } from "../../data/constants";
 import type { FertilizerFormData } from "../../types/types";
 import { PartnerSelectorDialog } from "@/components/organizations/PartnerSelectorDialog";
 import { useQuery } from "@tanstack/react-query";
@@ -24,37 +23,6 @@ interface FertilizerSuppliersStepProps {
     value: FertilizerFormData[keyof FertilizerFormData],
   ) => void;
 }
-
-const MEASURE_UNIT_OPTIONS = [
-  "kg",
-  "g",
-  "L",
-  "ml",
-  "tấn",
-  "bao",
-  "can",
-  "thùng",
-  "viên",
-  "ống",
-  "vỉ",
-  "cc",
-  "IU",
-];
-
-const PACKAGING_OPTIONS = [
-  "Bao",
-  "Bì",
-  "Can",
-  "Chai",
-  "Hộp",
-  "Lọ",
-  "Gói",
-  "Thùng",
-  "Túi",
-  "Cuộn",
-  "Kiện",
-  "Khay",
-];
 
 export const FertilizerSuppliersStep = ({
   formData,
@@ -73,15 +41,9 @@ export const FertilizerSuppliersStep = ({
     staleTime: 5 * 60 * 1000,
   });
 
-  const packagingList =
-    packagingTypes && packagingTypes.length > 0
-      ? packagingTypes.map((p) => p.name)
-      : PACKAGING_OPTIONS;
+  const packagingList = (packagingTypes ?? []).map((p) => p.name);
 
-  const unitList =
-    baseUnits && baseUnits.length > 0
-      ? baseUnits.map((u) => u.name)
-      : MEASURE_UNIT_OPTIONS;
+  const unitList = (baseUnits ?? []).map((u) => u.name);
 
   const [configMode, setConfigMode] = useState<"SPEC" | "BASE_UNIT">("SPEC");
   const [quantity, setQuantity] = useState("");
@@ -364,39 +326,6 @@ export const FertilizerSuppliersStep = ({
               Thêm
             </Button>
           </div>
-
-          {/* Quick presets */}
-          {/* <div className="space-y-1">
-            <p className="text-xs text-muted-foreground">Gợi ý phổ biến:</p>
-            <div className="flex flex-wrap gap-1.5">
-              {packagingUnitOptions.slice(0, 8).map((preset) => {
-                const currentSpecs = formData.packagingSpecs || [];
-                const isSelected = currentSpecs.includes(preset);
-                return (
-                  <button
-                    key={preset}
-                    type="button"
-                    onClick={() => {
-                      if (!isSelected) {
-                        updateField("packagingSpecs", [
-                          ...currentSpecs,
-                          preset,
-                        ]);
-                      }
-                    }}
-                    disabled={isSelected}
-                    className={`px-2.5 py-1 rounded-md border text-xs font-medium transition-all ${
-                      isSelected
-                        ? "bg-primary/10 border-primary text-primary opacity-60 cursor-not-allowed"
-                        : "bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100"
-                    }`}
-                  >
-                    {preset}
-                  </button>
-                );
-              })}
-            </div>
-          </div> */}
 
           {/* Tags list */}
           {formData.packagingSpecs && formData.packagingSpecs.length > 0 && (

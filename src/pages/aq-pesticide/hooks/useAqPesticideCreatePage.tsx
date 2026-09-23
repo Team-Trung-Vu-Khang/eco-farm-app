@@ -23,13 +23,17 @@ import {
 } from "@/features/farm-supply";
 import { useImageUploadWithCache } from "@/features/storage/hooks/useImageUploadWithCache";
 import { getApiErrorMessage } from "@/shared/lib/api-error";
+import { normalizeSku } from "@/shared/lib/sku";
 
 export function useAqPesticideCreatePage() {
   const queryClient = useQueryClient();
   const [location, setLocation] = useLocation();
-  const [matchFarm, paramsFarm] = useRoute("/aquaculture-material/pesticide/:id/edit");
+  const [matchFarm, paramsFarm] = useRoute(
+    "/aquaculture-material/pesticide/:id/edit",
+  );
   const [matchAdmin, paramsAdmin] = useRoute("/admin/aq-pesticide/:id/edit");
-  const isEdit = (matchFarm || matchAdmin) && !!(paramsFarm?.id || paramsAdmin?.id);
+  const isEdit =
+    (matchFarm || matchAdmin) && !!(paramsFarm?.id || paramsAdmin?.id);
   const params = paramsFarm || paramsAdmin;
   const scope = matchAdmin || location.startsWith("/admin") ? "admin" : "farm";
   const { toast } = useToast();
@@ -54,7 +58,11 @@ export function useAqPesticideCreatePage() {
     field: K,
     value: PesticideFormData[K],
   ) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
+    const nextValue =
+      field === "code" && typeof value === "string"
+        ? (normalizeSku(value) as PesticideFormData[K])
+        : value;
+    setFormData((prev) => ({ ...prev, [field]: nextValue }));
   };
 
   useEffect(() => {
@@ -135,27 +143,59 @@ export function useAqPesticideCreatePage() {
 
       // Dynamic Classifications matching
       const classifications: any[] = [];
-      const addClass = (classKey: string, name: string) => {
-        if (!name) return;
-        const matched = allGroups.find(
-          (g) =>
-            g.classification === classKey &&
-            g.name.toLowerCase() === name.toLowerCase(),
-        );
-        if (matched) {
-          classifications.push({
-            classification: classKey,
-            groupId: matched.id,
-            displayOrder: 0,
-          });
-        }
+      const addClasses = (classKey: string, names: string | string[]) => {
+        const nameList = Array.isArray(names) ? names : names ? [names] : [];
+        nameList.forEach((name, idx) => {
+          if (!name) return;
+          const matched = allGroups.find(
+            (g) =>
+              g.classification === classKey &&
+              (g.name?.toLowerCase() === name.toLowerCase() ||
+                g.code?.toLowerCase() === name.toLowerCase()),
+          );
+          if (matched) {
+            classifications.push({
+              classification: classKey,
+              groupId: matched.id,
+              displayOrder: idx,
+            });
+          }
+        });
       };
 
-      addClass("usage", formData.group);
-      addClass("control_residue_level", formData.toxicityLevel);
-      addClass("target_subject", formData.origin);
-      addClass("dosage_form", formData.form);
-      addClass("usage_method", formData.actionType);
+      addClasses(
+        "usage",
+        formData.groups && formData.groups.length > 0
+          ? formData.groups
+          : formData.group,
+      );
+      addClasses(
+        "control_residue_level",
+        formData.controlResidueLevels &&
+          formData.controlResidueLevels.length > 0
+          ? formData.controlResidueLevels
+          : formData.toxicityLevels && formData.toxicityLevels.length > 0
+            ? formData.toxicityLevels
+            : formData.toxicityLevel,
+      );
+      addClasses(
+        "target_subject",
+        formData.origins && formData.origins.length > 0
+          ? formData.origins
+          : formData.origin,
+      );
+      addClasses(
+        "dosage_form",
+        formData.forms && formData.forms.length > 0
+          ? formData.forms
+          : formData.form,
+      );
+      addClasses(
+        "usage_method",
+        formData.actionTypes && formData.actionTypes.length > 0
+          ? formData.actionTypes
+          : formData.actionType,
+      );
 
       // Dynamic Subjects mapping
       const targetSubjectIds = formData.targetEntities
@@ -177,7 +217,7 @@ export function useAqPesticideCreatePage() {
         .filter((id): id is number => id !== undefined);
 
       const generatedSku =
-        formData.code?.trim() ||
+        (isEdit ? formData.code?.trim() : normalizeSku(formData.code)) ||
         `AQMED-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
       const payload: any = {
         name: formData.name,
@@ -240,7 +280,12 @@ export function useAqPesticideCreatePage() {
       };
 
       if (isEdit && params?.id) {
-        await farmSupplyApi.update("medicine", Number(params.id), payload, scope);
+        await farmSupplyApi.update(
+          "medicine",
+          Number(params.id),
+          payload,
+          scope,
+        );
         toast({
           title: "Thành công",
           description: "Đã cập nhật thông tin thành công",
@@ -252,8 +297,14 @@ export function useAqPesticideCreatePage() {
           description: "Đã thêm mới thuốc thủy sản",
         });
       }
-      queryClient.invalidateQueries({ queryKey: [scope === "admin" ? "admin-supplies" : "farm-supplies"] });
-      setLocation(scope === "admin" ? "/admin/aq-pesticide" : "/aquaculture-material/pesticide");
+      queryClient.invalidateQueries({
+        queryKey: [scope === "admin" ? "admin-supplies" : "farm-supplies"],
+      });
+      setLocation(
+        scope === "admin"
+          ? "/admin/aq-pesticide"
+          : "/aquaculture-material/pesticide",
+      );
     } catch (err: any) {
       if (err.response?.status === 409) {
         toast({
@@ -354,7 +405,12 @@ export function useAqPesticideCreatePage() {
     steps,
     loading,
     submitting,
-    goBack: () => setLocation(scope === "admin" ? "/admin/aq-pesticide" : "/aquaculture-material/pesticide"),
+    goBack: () =>
+      setLocation(
+        scope === "admin"
+          ? "/admin/aq-pesticide"
+          : "/aquaculture-material/pesticide",
+      ),
     handleComplete: () => setConfirmOpen(true),
     handleConfirmSubmit,
   };

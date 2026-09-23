@@ -32,7 +32,7 @@ import {
   Tag,
 } from "lucide-react";
 import { useLocation, useRoute } from "wouter";
-import { suppliers, SUPPLY_TYPE } from "./data/constants";
+import { SUPPLY_TYPE } from "./data/constants";
 
 const STANDARDS_META: Record<
   string,
@@ -278,15 +278,39 @@ const BiologicalProductDetailPage = () => {
                   label="Tên khoa học / Tên kỹ thuật"
                   value={item.scientificTechnicalName}
                 />
-                <InfoRow
-                  label="Nhóm chế phẩm sinh học"
-                  value={item.biologicalProductOriginGroup}
-                />
+                <div>
+                  <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">
+                    Nhóm chế phẩm sinh học
+                  </h4>
+                  <div className="flex flex-wrap gap-1.5">
+                    {(item.biologicalProductOriginGroups?.length
+                      ? item.biologicalProductOriginGroups
+                      : item.biologicalProductOriginGroup
+                        ? [item.biologicalProductOriginGroup]
+                        : []
+                    ).map((group: string) => (
+                      <Badge
+                        key={group}
+                        variant="outline"
+                        className="text-xs bg-slate-50"
+                      >
+                        {group}
+                      </Badge>
+                    ))}
+                    {!item.biologicalProductOriginGroups?.length &&
+                      !item.biologicalProductOriginGroup && (
+                        <span className="text-sm text-slate-400">N/A</span>
+                      )}
+                  </div>
+                </div>
                 <InfoRow
                   label="Nhóm hoạt chất sinh học"
                   value={item.nutritionalComponents}
                 />
-                <InfoRow label="Dạng chế phẩm sinh học" value={item.biologicalProductType} />
+                <InfoRow
+                  label="Dạng chế phẩm sinh học"
+                  value={item.biologicalProductType}
+                />
                 <InfoRow label="Hình thái vật lý" value={item.physicalForm} />
               </div>
 
@@ -584,16 +608,13 @@ const BiologicalProductDetailPage = () => {
                   </h4>
                   <div className="space-y-1.5">
                     {item.supplierDetails.map((supDetail, idx) => {
-                      const sup = suppliers.find(
-                        (s) => s.id === supDetail.supplierId,
-                      );
                       return (
                         <div
                           key={idx}
                           className="flex justify-between p-2 rounded-lg bg-slate-50 text-xs border"
                         >
                           <span className="font-semibold text-slate-700 truncate mr-2">
-                            {sup?.name || supDetail.supplierId}
+                            {supDetail.supplierName || supDetail.supplierId}
                           </span>
                           <span className="text-muted-foreground shrink-0">
                             {supDetail.quantity} {supDetail.unit} (

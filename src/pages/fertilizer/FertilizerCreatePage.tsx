@@ -22,7 +22,6 @@ import { FertilizerConfirmationStep } from "./components/steps/FertilizerConfirm
 import { FertilizerSuppliersStep } from "./components/steps/FertilizerSuppliersStep";
 import SimpleFertilizerForm from "./components/SimpleFertilizerForm";
 import { useFertilizerCreateForm } from "./hooks/useFertilizerCreateForm";
-import { originOptions } from "./data/constants";
 
 const FertilizerCreatePage = () => {
   const {
@@ -207,8 +206,9 @@ const FertilizerCreatePage = () => {
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Nguồn gốc:</span>
                     <span className="font-medium">
-                      {originOptions.find((o) => o.id === formData.originId)
-                        ?.label || "N/A"}
+                      {formData.fertilizerOriginGroup ||
+                        formData.fertilizerOriginGroups?.[0] ||
+                        "N/A"}
                     </span>
                   </div>
                   <div className="flex justify-between">

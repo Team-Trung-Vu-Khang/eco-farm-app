@@ -10,13 +10,7 @@ import {
   BookOpen,
 } from "lucide-react";
 import { safeConvertLexicalToHtml } from "@/utils/commons";
-import {
-  suppliers,
-  nutritionalContentOptions,
-  originOptions,
-  applicationStageOptions,
-  physicalFormOptions,
-} from "../../data/constants";
+import { suppliers } from "../../data/constants";
 import type { FertilizerFormData } from "../../types/types";
 
 interface FertilizerConfirmationStepProps {
@@ -91,10 +85,31 @@ export const FertilizerConfirmationStep = ({
                 label="Tên khoa học"
                 value={formData.scientificTechnicalName}
               />
-              <Row
-                label="Nhóm nguồn gốc"
-                value={formData.fertilizerOriginGroup}
-              />
+<div className="min-w-0">
+                <span className="text-muted-foreground text-sm block mb-1">
+                  Nguồn gốc:
+                </span>
+                <div className="flex flex-wrap gap-1 min-w-0">
+                  {(formData.fertilizerOriginGroups?.length
+                    ? formData.fertilizerOriginGroups
+                    : formData.fertilizerOriginGroup
+                      ? [formData.fertilizerOriginGroup]
+                      : []
+                  ).map((group) => (
+                    <Badge
+                      key={group}
+                      variant="outline"
+                      className="text-xs bg-slate-50 max-w-full min-w-0 break-words"
+                    >
+                      {group}
+                    </Badge>
+                  ))}
+                  {!formData.fertilizerOriginGroups?.length &&
+                    !formData.fertilizerOriginGroup && (
+                      <span className="text-slate-400">Chưa chọn</span>
+                    )}
+                </div>
+              </div>
               <Row
                 label="Thành phần dinh dưỡng"
                 value={formData.nutritionalComponents}
@@ -127,9 +142,13 @@ export const FertilizerConfirmationStep = ({
               {formData.hashtags.length > 0 && (
                 <div className="col-span-2">
                   <span className="text-muted-foreground text-sm">Tags:</span>{" "}
-                  <div className="inline-flex gap-1 flex-wrap mt-1">
+                  <div className="inline-flex gap-1 flex-wrap mt-1 min-w-0">
                     {formData.hashtags.map((t) => (
-                      <Badge key={t} variant="secondary" className="text-xs">
+                      <Badge
+                        key={t}
+                        variant="secondary"
+                        className="text-xs max-w-full min-w-0 break-words"
+                      >
                         #{t}
                       </Badge>
                     ))}
@@ -160,18 +179,19 @@ export const FertilizerConfirmationStep = ({
                 label="Giai đoạn tác động"
                 value={formData.applicationStage}
               />
-              <Row
-                label="Hạn sử dụng"
-                value={formData.shelfLife}
-              />
+              <Row label="Hạn sử dụng" value={formData.shelfLife} />
               {formData.targetCrops && formData.targetCrops.length > 0 && (
                 <div className="col-span-2">
                   <span className="text-muted-foreground text-sm">
                     Cây trồng áp dụng:
                   </span>{" "}
-                  <div className="inline-flex gap-1 flex-wrap mt-1">
+                  <div className="inline-flex gap-1 flex-wrap mt-1 min-w-0">
                     {formData.targetCrops.map((c) => (
-                      <Badge key={c} variant="outline" className="text-xs">
+                      <Badge
+                        key={c}
+                        variant="outline"
+                        className="text-xs max-w-full min-w-0 break-words"
+                      >
                         {c}
                       </Badge>
                     ))}
@@ -275,7 +295,10 @@ export const FertilizerConfirmationStep = ({
                   <span className="text-muted-foreground">
                     Tình trạng pháp lý:
                   </span>{" "}
-                  <Badge variant="outline" className="ml-1 bg-white">
+                  <Badge
+                    variant="outline"
+                    className="ml-1 bg-white max-w-full min-w-0 break-words"
+                  >
                     {formatLegalStatus(formData.legalStatus)}
                   </Badge>
                 </div>
@@ -286,12 +309,12 @@ export const FertilizerConfirmationStep = ({
                     <span className="text-muted-foreground block mb-1">
                       Tiêu chuẩn nông nghiệp:
                     </span>
-                    <div className="inline-flex gap-1 flex-wrap mt-1">
+                    <div className="inline-flex gap-1 flex-wrap mt-1 min-w-0">
                       {formData.standardsCompliance.map((std) => (
                         <Badge
                           key={std}
                           variant="secondary"
-                          className="text-xs"
+                          className="text-xs max-w-full min-w-0 break-words"
                         >
                           {std}
                         </Badge>
@@ -319,7 +342,10 @@ export const FertilizerConfirmationStep = ({
                 label="Nhà nhập khẩu / Đăng ký"
                 value={formData.importerRegistrant?.name}
               />
-              <Row label="Nhà phân phối chính" value={formData.distributor?.name} />
+              <Row
+                label="Nhà phân phối chính"
+                value={formData.distributor?.name}
+              />
               <Row label="Giá tham khảo" value={formData.referencePrice} />
 
               {formData.packagingSpecs &&
@@ -328,12 +354,12 @@ export const FertilizerConfirmationStep = ({
                     <span className="text-muted-foreground block mb-1.5">
                       Bao bì quy cách:
                     </span>
-                    <div className="inline-flex gap-1.5 flex-wrap">
+                    <div className="inline-flex gap-1.5 flex-wrap min-w-0">
                       {formData.packagingSpecs.map((s) => (
                         <Badge
                           key={s}
                           variant="outline"
-                          className="text-xs bg-slate-50"
+                          className="text-xs bg-slate-50 max-w-full min-w-0 break-words"
                         >
                           {s}
                         </Badge>

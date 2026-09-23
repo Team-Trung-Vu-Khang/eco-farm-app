@@ -1,6 +1,7 @@
 export interface AdminWorkspaceGroupStats {
   count: number;
   totalAcreageHa: number;
+  totalProductionZones: number;
 }
 
 export interface AdminWorkspaceStatsResponse {

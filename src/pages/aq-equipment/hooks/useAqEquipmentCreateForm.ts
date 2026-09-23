@@ -11,6 +11,7 @@ import { useImageUploadWithCache } from "@/features/storage/hooks/useImageUpload
 import { useQueryClient } from "@tanstack/react-query";
 import { z } from "zod";
 import { getApiErrorMessage } from "@/shared/lib/api-error";
+import { normalizeSku } from "@/shared/lib/sku";
 
 const equipmentSchema = z.object({
   machineName: z.string().trim().min(1),
@@ -124,7 +125,11 @@ export function useAqEquipmentCreateForm() {
   }, [isEdit, params?.id]);
 
   const updateField = (field: keyof EquipmentFormData, value: any) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
+    const nextValue =
+      (field === "sku" || field === "code") && typeof value === "string"
+        ? normalizeSku(value)
+        : value;
+    setFormData((prev) => ({ ...prev, [field]: nextValue }));
   };
 
   const addSupplierItem = () => {
@@ -151,7 +156,7 @@ export function useAqEquipmentCreateForm() {
 
   const handleConfirmSubmit = async () => {
     const generatedSku =
-      formData.sku?.trim() ||
+      (isEdit ? formData.sku?.trim() : normalizeSku(formData.sku)) ||
       `AQEQ-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
 
     updateField("sku", generatedSku);

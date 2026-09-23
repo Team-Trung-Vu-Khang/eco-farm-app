@@ -169,20 +169,44 @@ const MaterialDetailPage = () => {
               <CardContent className="pt-6 space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm">
                   <div>
-                    <span className="text-muted-foreground block text-xs mb-1">
+                    <span className="text-muted-foreground block text-xs mb-1.5">
                       Mức độ công nghệ:
                     </span>
-                    <span className="font-semibold text-slate-850 bg-slate-50 border px-2 py-1 rounded inline-block text-xs mt-1">
-                      {getMaterialGroupLabel(item.technologyLevelId)}
-                    </span>
+                    <div className="flex flex-wrap gap-1.5">
+                      {(item.technologyLevelNames?.length
+                        ? item.technologyLevelNames
+                        : item.technologyLevelId
+                          ? [item.technologyLevelId]
+                          : []
+                      ).map((id: string) => (
+                        <Badge key={id} variant="outline" className="bg-slate-50 text-xs">
+                          {getMaterialGroupLabel(id) || id}
+                        </Badge>
+                      ))}
+                      {(!item.technologyLevelNames?.length && !item.technologyLevelId) && (
+                        <span className="text-xs text-muted-foreground">Chưa chọn</span>
+                      )}
+                    </div>
                   </div>
                   <div>
-                    <span className="text-muted-foreground block text-xs mb-1">
+                    <span className="text-muted-foreground block text-xs mb-1.5">
                       Giai đoạn áp dụng:
                     </span>
-                    <span className="font-semibold text-slate-850 bg-slate-50 border px-2 py-1 rounded inline-block text-xs mt-1">
-                      {getMaterialGroupLabel(item.valueChainId)}
-                    </span>
+                    <div className="flex flex-wrap gap-1.5">
+                      {(item.valueChainNames?.length
+                        ? item.valueChainNames
+                        : item.valueChainId
+                          ? [item.valueChainId]
+                          : []
+                      ).map((id: string) => (
+                        <Badge key={id} variant="outline" className="bg-slate-50 text-xs">
+                          {getMaterialGroupLabel(id) || id}
+                        </Badge>
+                      ))}
+                      {(!item.valueChainNames?.length && !item.valueChainId) && (
+                        <span className="text-xs text-muted-foreground">Chưa chọn</span>
+                      )}
+                    </div>
                   </div>
                 </div>
 

@@ -76,20 +76,20 @@ export const EquipmentConfirmationStep = ({
                   {formData.model || "N/A"}
                 </span>
               </div>
-              <div className="grid grid-cols-2 gap-2">
-                <div>
+              <div className="grid grid-cols-2 gap-2 min-w-0">
+                <div className="min-w-0">
                   <span className="text-muted-foreground block text-xs">
                     Hãng sản xuất:
                   </span>
-                  <span className="font-medium text-slate-700">
+                  <span className="font-medium text-slate-700 break-words">
                     {formData.manufacturer || "N/A"}
                   </span>
                 </div>
-                <div>
+                <div className="min-w-0">
                   <span className="text-muted-foreground block text-xs">
                     Nước sản xuất:
                   </span>
-                  <span className="font-medium text-slate-700">
+                  <span className="font-medium text-slate-700 break-words">
                     {formData.countryOfOrigin || "N/A"}
                   </span>
                 </div>
@@ -106,12 +106,12 @@ export const EquipmentConfirmationStep = ({
                 <span className="text-muted-foreground block text-xs">
                   Hashtags:
                 </span>
-                <div className="flex flex-wrap gap-1 mt-1">
+                <div className="flex flex-wrap gap-1 mt-1 min-w-0">
                   {(formData.hashtags || []).map((tag) => (
                     <Badge
                       key={tag}
                       variant="outline"
-                      className="text-[10px] bg-slate-50"
+                      className="text-[10px] bg-slate-50 max-w-full min-w-0 break-words"
                     >
                       #{tag}
                     </Badge>
@@ -141,40 +141,90 @@ export const EquipmentConfirmationStep = ({
               Bước 2 - Thông số kỹ thuật
             </h4>
             <div className="space-y-2.5 text-sm">
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <span className="text-muted-foreground block text-xs">
+              <div className="grid grid-cols-2 gap-2 min-w-0">
+                <div className="min-w-0">
+                  <span className="text-muted-foreground block text-xs mb-1">
                     Nhóm công nghệ:
                   </span>
-                  <span className="font-semibold text-slate-900">
-                    {technologyLevelOptions.find(
-                      (o) => o.id === formData.technologyLevelGroup,
-                    )?.label || "N/A"}
-                  </span>
+                  <div className="flex flex-wrap gap-1 min-w-0">
+                    {(formData.technologyLevelGroups?.length
+                      ? formData.technologyLevelGroups
+                      : formData.technologyLevelGroup
+                        ? [formData.technologyLevelGroup]
+                        : []
+                    ).map((id) => {
+                      const label = technologyLevelOptions.find(
+                        (o) => o.id === id,
+                      )?.label;
+                      return (
+                        <Badge
+                          key={id}
+                          variant="outline"
+                          className="text-[11px] max-w-full min-w-0 gap-2 rounded-lg whitespace-normal"
+                        >
+                          <span className="min-w-0 break-words">
+                            {label || id}
+                          </span>
+                        </Badge>
+                      );
+                    })}
+                    {!formData.technologyLevelGroups?.length &&
+                      !formData.technologyLevelGroup && (
+                        <span className="text-slate-400">N/A</span>
+                      )}
+                  </div>
                 </div>
-                <div>
-                  <span className="text-muted-foreground block text-xs">
+                <div className="min-w-0">
+                  <span className="text-muted-foreground block text-xs mb-1">
                     Nhóm tài sản:
                   </span>
-                  <span className="font-semibold text-slate-900">
-                    {financialManagementOptions.find(
-                      (o) => o.id === formData.assetManagementGroup,
-                    )?.label || "N/A"}
-                  </span>
+                  <div className="flex flex-wrap gap-1 min-w-0">
+                    {(formData.assetManagementGroups?.length
+                      ? formData.assetManagementGroups
+                      : formData.assetManagementGroup
+                        ? [formData.assetManagementGroup]
+                        : []
+                    ).map((id) => {
+                      const label = financialManagementOptions.find(
+                        (o) => o.id === id,
+                      )?.label;
+                      return (
+                        <Badge
+                          key={id}
+                          variant="outline"
+                          className="text-[11px] max-w-full min-w-0 gap-2 rounded-lg whitespace-normal"
+                        >
+                          <span className="min-w-0 break-words">
+                            {label || id}
+                          </span>
+                        </Badge>
+                      );
+                    })}
+                    {!formData.assetManagementGroups?.length &&
+                      !formData.assetManagementGroup && (
+                        <span className="text-slate-400">N/A</span>
+                      )}
+                  </div>
                 </div>
               </div>
               <div>
                 <span className="text-muted-foreground block text-xs mb-1">
-                  Nhóm chuỗi quy trình:
+                  Chuỗi giá trị:
                 </span>
-                <div className="flex flex-wrap gap-1">
+                <div className="flex flex-wrap gap-1 min-w-0">
                   {valueChainGroupArr.map((id) => {
                     const label = valueChainOptions.find(
                       (o) => o.id === id,
                     )?.label;
                     return (
-                      <Badge key={id} variant="outline" className="text-[11px]">
-                        {label || id}
+                      <Badge
+                        key={id}
+                        variant="outline"
+                        className="text-[11px] max-w-full min-w-0 gap-2 rounded-lg whitespace-normal"
+                      >
+                        <span className="min-w-0 break-words">
+                          {label || id}
+                        </span>
                       </Badge>
                     );
                   })}
@@ -187,12 +237,12 @@ export const EquipmentConfirmationStep = ({
                 <span className="text-muted-foreground block text-xs mb-1">
                   Loại máy / Công dụng:
                 </span>
-                <div className="flex flex-wrap gap-1">
+                <div className="flex flex-wrap gap-1 min-w-0">
                   {machineTypeArr.map((tag) => (
                     <Badge
                       key={tag}
                       variant="secondary"
-                      className="text-[11px] bg-slate-100"
+                      className="text-[11px] bg-slate-100 max-w-full min-w-0 wrap-break-word"
                     >
                       {tag}
                     </Badge>
@@ -202,42 +252,42 @@ export const EquipmentConfirmationStep = ({
                   )}
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-2">
-                <div>
+              <div className="grid grid-cols-2 gap-2 min-w-0">
+                <div className="min-w-0">
                   <span className="text-muted-foreground block text-xs">
                     Công suất:
                   </span>
-                  <span className="font-medium text-slate-700">
+                  <span className="font-medium text-slate-700 break-words">
                     {formData.powerCapacity || "N/A"}
                   </span>
                 </div>
-                <div>
+                <div className="min-w-0">
                   <span className="text-muted-foreground block text-xs">
                     Dung tích / Khả năng:
                   </span>
-                  <span className="font-medium text-slate-700">
+                  <span className="font-medium text-slate-700 break-words">
                     {formData.workingCapacity || "N/A"}
                   </span>
                 </div>
               </div>
-              <div className="grid grid-cols-3 gap-2">
-                <div>
+              <div className="grid grid-cols-3 gap-2 min-w-0">
+                <div className="min-w-0">
                   <span className="text-muted-foreground block text-xs">
                     Nhiên liệu:
                   </span>
-                  <span className="font-medium text-slate-700">
+                  <span className="font-medium text-slate-700 break-words">
                     {formData.fuelEnergyType || "N/A"}
                   </span>
                 </div>
-                <div>
+                <div className="min-w-0">
                   <span className="text-muted-foreground block text-xs">
                     Trọng lượng:
                   </span>
-                  <span className="font-medium text-slate-700">
+                  <span className="font-medium text-slate-700 break-words">
                     {formData.weight || "N/A"}
                   </span>
                 </div>
-                <div>
+                <div className="min-w-0">
                   <span className="text-muted-foreground block text-xs">
                     Kích thước:
                   </span>
@@ -258,12 +308,12 @@ export const EquipmentConfirmationStep = ({
               Bước 3 - Vận hành & HDSD kỹ thuật
             </h4>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-              <div className="space-y-2">
+              <div className="space-y-2 min-w-0">
                 <div>
                   <span className="text-muted-foreground block text-xs">
                     Định mức tiêu hao nhiên liệu:
                   </span>
-                  <span className="font-semibold text-slate-900">
+                  <span className="font-semibold text-slate-900 break-words">
                     {formData.fuelConsumptionRate || "N/A"}
                   </span>
                 </div>
@@ -271,7 +321,7 @@ export const EquipmentConfirmationStep = ({
                   <span className="text-muted-foreground block text-xs">
                     Lịch bảo dưỡng định kỳ:
                   </span>
-                  <span className="font-semibold text-slate-900">
+                  <span className="font-semibold text-slate-900 break-words">
                     {formData.maintenanceSchedule || "N/A"}
                   </span>
                 </div>
@@ -284,7 +334,7 @@ export const EquipmentConfirmationStep = ({
                   </span>
                 </div>
               </div>
-              <div>
+              <div className="min-w-0">
                 <span className="text-muted-foreground block text-xs mb-1">
                   Tài liệu kỹ thuật kèm theo:
                 </span>
@@ -319,16 +369,16 @@ export const EquipmentConfirmationStep = ({
               Bước 4 - Xuất xứ & Đơn vị phân phối & Lô kho
             </h4>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm">
-              <div className="space-y-3">
+              <div className="space-y-3 min-w-0">
                 <div>
                   <span className="text-muted-foreground block text-xs mb-1">
                     Nhà sản xuất / Quốc gia:
                   </span>
-                  <div className="flex flex-wrap gap-1">
+                  <div className="flex flex-wrap gap-1 min-w-0">
                     {formData.manufacturerOrigin ? (
                       <Badge
                         variant="outline"
-                        className="text-xs bg-slate-50"
+                        className="text-xs bg-slate-50 max-w-full min-w-0 break-words"
                       >
                         {formData.manufacturerOrigin.name}
                       </Badge>
@@ -341,11 +391,11 @@ export const EquipmentConfirmationStep = ({
                   <span className="text-muted-foreground block text-xs mb-1">
                     Đơn vị nhập khẩu / Đăng ký:
                   </span>
-                  <div className="flex flex-wrap gap-1">
+                  <div className="flex flex-wrap gap-1 min-w-0">
                     {formData.importerRegistrant ? (
                       <Badge
                         variant="outline"
-                        className="text-xs bg-slate-50"
+                        className="text-xs bg-slate-50 max-w-full min-w-0 break-words"
                       >
                         {formData.importerRegistrant.name}
                       </Badge>
@@ -358,11 +408,11 @@ export const EquipmentConfirmationStep = ({
                   <span className="text-muted-foreground block text-xs mb-1">
                     Nhà phân phối chính thức:
                   </span>
-                  <div className="flex flex-wrap gap-1">
+                  <div className="flex flex-wrap gap-1 min-w-0">
                     {formData.distributor ? (
                       <Badge
                         variant="outline"
-                        className="text-xs bg-slate-50"
+                        className="text-xs bg-slate-50 max-w-full min-w-0 break-words"
                       >
                         {formData.distributor.name}
                       </Badge>
@@ -371,25 +421,25 @@ export const EquipmentConfirmationStep = ({
                     )}
                   </div>
                 </div>
-                <div className="grid grid-cols-2 gap-2">
-                  <div>
+                <div className="grid grid-cols-2 gap-2 min-w-0">
+                  <div className="min-w-0">
                     <span className="text-muted-foreground block text-xs">
                       Giá tham khảo:
                     </span>
-                    <span className="font-semibold text-slate-900">
+                    <span className="font-semibold text-slate-900 break-words">
                       {formData.referencePrice || "N/A"}
                     </span>
                   </div>
-                  <div>
+                  <div className="min-w-0">
                     <span className="text-muted-foreground block text-xs mb-1">
-                      Quy cách bao bì:
+                      Quy cách đóng gói máy:
                     </span>
-                    <div className="flex flex-wrap gap-1">
+                    <div className="flex flex-wrap gap-1 min-w-0">
                       {packagingSpecsArr.map((s) => (
                         <Badge
                           key={s}
                           variant="secondary"
-                          className="text-[10px]"
+                          className="text-[10px] max-w-full min-w-0 break-words"
                         >
                           {s}
                         </Badge>

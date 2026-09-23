@@ -15,6 +15,7 @@ import {
 } from "@/features/farm-supply";
 import { useImageUploadWithCache } from "@/features/storage/hooks/useImageUploadWithCache";
 import { getApiErrorMessage } from "@/shared/lib/api-error";
+import { normalizeSku } from "@/shared/lib/sku";
 import { SUPPLY_TYPE } from "../data/constants";
 
 export function useBiologicalProductCreateForm() {
@@ -152,7 +153,11 @@ export function useBiologicalProductCreateForm() {
   }, [formData.code]);
 
   const updateField = (field: keyof BiologicalProductFormData, value: any) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
+    const nextValue =
+      field === "code" && typeof value === "string"
+        ? normalizeSku(value)
+        : value;
+    setFormData((prev) => ({ ...prev, [field]: nextValue }));
   };
 
   const resetForm = () => {
@@ -189,35 +194,42 @@ export function useBiologicalProductCreateForm() {
 
       // Dynamic Classifications matching
       const classifications: any[] = [];
-      const addClass = (classKey: string, name: string) => {
-        if (!name) return;
-        const matched = allGroups.find(
-          (g) =>
-            g.classification === classKey &&
-            g.name.toLowerCase() === name.toLowerCase(),
-        );
-        if (matched) {
-          classifications.push({
-            classification: classKey,
-            groupId: matched.id,
-            displayOrder: 0,
-          });
-        }
+      const addClasses = (classKey: string, names: string | string[]) => {
+        const nameList = Array.isArray(names) ? names : names ? [names] : [];
+        nameList.forEach((name, idx) => {
+          if (!name) return;
+          const matched = allGroups.find(
+            (g) =>
+              g.classification === classKey &&
+              (g.name?.toLowerCase() === name.toLowerCase() ||
+                g.code?.toLowerCase() === name.toLowerCase()),
+          );
+          if (matched) {
+            classifications.push({
+              classification: classKey,
+              groupId: matched.id,
+              displayOrder: idx,
+            });
+          }
+        });
       };
 
-      addClass(
+      addClasses(
         "nutrient_composition",
         formData.biologicalProductType || formData.nutritionalContentId,
       );
-      addClass(
+      addClasses(
         "origin",
-        formData.biologicalProductOriginGroup || formData.originId,
+        formData.biologicalProductOriginGroups &&
+          formData.biologicalProductOriginGroups.length > 0
+          ? formData.biologicalProductOriginGroups
+          : formData.biologicalProductOriginGroup || formData.originId,
       );
-      addClass(
+      addClasses(
         "effect_stage",
         formData.applicationStage || formData.applicationStageId,
       );
-      addClass(
+      addClasses(
         "physical_form",
         formData.physicalForm || formData.physicalFormId,
       );
@@ -274,7 +286,7 @@ export function useBiologicalProductCreateForm() {
       }
 
       const generatedSku =
-        formData.code?.trim() ||
+        (isEdit ? formData.code?.trim() : normalizeSku(formData.code)) ||
         `PB-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
       const payload: any = {
         name: formData.name,
@@ -448,6 +460,11 @@ function mapResponseToBiologicalProduct(item: any, certs: any[]): any {
         ?.group?.name ||
       item.metadataJson?.origin ||
       "",
+    biologicalProductOriginGroups:
+      item.classifications
+        ?.filter((c: any) => c.classification === "origin")
+        ?.map((c: any) => c.group?.name)
+        ?.filter(Boolean) || [],
     nutritionalComponents: profile.detailedComposition || "",
     biologicalProductType:
       item.classifications?.find(

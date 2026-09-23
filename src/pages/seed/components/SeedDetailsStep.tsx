@@ -21,7 +21,7 @@ import { CheckCircle2, CloudUpload, Phone, Search, User } from "lucide-react";
 import { originSelectOptions } from "../utils/utils";
 import { useFormContext, useWatch } from "react-hook-form";
 import type { CreateSeedFormValues } from "../schemas/createSeedSchema";
-import React, { useState, useEffect, useRef, useMemo } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { useOrganizations } from "@/features/organization/hooks/useOrganizations";
 import { useSelectedWorkspaceId } from "@/features/workspace";
 import { MAX_IMAGE_SIZE } from "../utils/utils";
@@ -37,8 +37,7 @@ export function SeedDetailsStep({
   showYieldField = true,
   showSupplierMeta = false,
 }: SeedDetailsStepProps) {
-  const { control, setValue, getValues } =
-    useFormContext<CreateSeedFormValues>();
+  const { control, setValue } = useFormContext<CreateSeedFormValues>();
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 

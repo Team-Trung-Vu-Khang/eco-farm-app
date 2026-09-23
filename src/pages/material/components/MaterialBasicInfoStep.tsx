@@ -1,14 +1,14 @@
 import type { KeyboardEvent } from "react";
+import { RemoteMultiSelect } from "@/components/RemoteMultiSelect";
+import { useMasterData } from "@/features/master-data";
+import { useDebounce } from "@/shared/hooks/useDebounce";
+import { useState } from "react";
 import {
   Badge,
   Button,
   Input,
   Label,
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+  MultiSelect,
   Textarea,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import {
@@ -20,7 +20,7 @@ import {
   X,
   Cpu,
 } from "lucide-react";
-import { commonHashtags, materialGroups } from "../data/constants";
+import { commonHashtags } from "../data/constants";
 import type { MaterialFormData } from "../types/types";
 
 interface MaterialBasicInfoStepProps {
@@ -44,6 +44,32 @@ export default function MaterialBasicInfoStep({
   onRemoveHashtag,
 }: MaterialBasicInfoStepProps) {
   const isEdit = window.location.pathname.includes("/edit");
+  const [techSearch, setTechSearch] = useState("");
+  const [chainSearch, setChainSearch] = useState("");
+  const debouncedTechSearch = useDebounce(techSearch, 300);
+  const debouncedChainSearch = useDebounce(chainSearch, 300);
+
+  const { items: loadedTechLevels, loading: isLoadingTech } = useMasterData(
+    "material-groups",
+    {
+      params: {
+        classification: "technology_level",
+        keyword: debouncedTechSearch.trim() || undefined,
+        size: 50,
+      },
+    },
+  );
+  const { items: loadedValueChains, loading: isLoadingChain } = useMasterData(
+    "material-groups",
+    {
+      params: {
+        classification: "value_chain",
+        keyword: debouncedChainSearch.trim() || undefined,
+        size: 50,
+      },
+    },
+  );
+
   const handleHashtagKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
     if (event.key === "Enter") {
       event.preventDefault();
@@ -59,6 +85,30 @@ export default function MaterialBasicInfoStep({
 
     onFormFieldChange("hashtags", [...(formData.hashtags || []), tag]);
   };
+
+  const techOptions = loadedTechLevels.map((opt: any) => ({
+    label: opt.name || opt.label,
+    value: (opt.code || opt.id || opt.name || "").toLowerCase(),
+  }));
+
+  const valueChainOptions = loadedValueChains.map((opt: any) => ({
+    label: opt.name || opt.label,
+    value: (opt.code || opt.id || opt.name || "").toLowerCase(),
+  }));
+
+  const selectedTechLevels =
+    formData.technologyLevelIds && formData.technologyLevelIds.length > 0
+      ? formData.technologyLevelIds
+      : formData.technologyLevelId
+        ? [formData.technologyLevelId]
+        : [];
+
+  const selectedValueChains =
+    formData.valueChainIds && formData.valueChainIds.length > 0
+      ? formData.valueChainIds
+      : formData.valueChainId
+        ? [formData.valueChainId]
+        : [];
 
   return (
     <div className="grid grid-cols-1 gap-8 lg:grid-cols-3 animate-in fade-in slide-in-from-bottom-2 duration-500">
@@ -117,47 +167,39 @@ export default function MaterialBasicInfoStep({
               <Label>
                 Mức độ công nghệ <span className="text-red-500">*</span>
               </Label>
-              <Select
-                value={formData.technologyLevelId || ""}
-                onValueChange={(value) => {
-                  onFormFieldChange("technologyLevelId", value);
-                  onFormFieldChange("materialGroupId", value);
+              <RemoteMultiSelect
+                options={techOptions}
+                value={selectedTechLevels}
+                onChange={(values) => {
+                  onFormFieldChange("technologyLevelIds", values);
+                  onFormFieldChange("technologyLevelId", values[0] || "");
+                  onFormFieldChange("materialGroupId", values[0] || "");
                 }}
-              >
-                <SelectTrigger className="text-left h-auto py-2">
-                  <SelectValue placeholder="Chọn mức độ công nghệ..." />
-                </SelectTrigger>
-                <SelectContent>
-                  {materialGroups[0].options.map((opt) => (
-                    <SelectItem key={opt.id} value={opt.id}>
-                      {opt.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                onSearch={setTechSearch}
+                placeholder="Chọn mức độ công nghệ (chọn nhiều)..."
+                searchPlaceholder="Tìm mức độ công nghệ..."
+                emptyText="Không tìm thấy mức độ công nghệ"
+                loading={isLoadingTech}
+              />
             </div>
 
             <div className="space-y-2">
               <Label>
-                Giai đoạn áp dụng <span className="text-red-500">*</span>
+                Chuỗi giá trị <span className="text-red-500">*</span>
               </Label>
-              <Select
-                value={formData.valueChainId || ""}
-                onValueChange={(value) =>
-                  onFormFieldChange("valueChainId", value)
-                }
-              >
-                <SelectTrigger className="text-left h-auto py-2">
-                  <SelectValue placeholder="Chọn giai đoạn áp dụng..." />
-                </SelectTrigger>
-                <SelectContent>
-                  {materialGroups[1].options.map((opt) => (
-                    <SelectItem key={opt.id} value={opt.id}>
-                      {opt.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <RemoteMultiSelect
+                options={valueChainOptions}
+                value={selectedValueChains}
+                onChange={(values) => {
+                  onFormFieldChange("valueChainIds", values);
+                  onFormFieldChange("valueChainId", values[0] || "");
+                }}
+                onSearch={setChainSearch}
+                placeholder="Chọn chuỗi giá trị (chọn nhiều)..."
+                searchPlaceholder="Tìm chuỗi giá trị..."
+                emptyText="Không tìm thấy chuỗi giá trị"
+                loading={isLoadingChain}
+              />
             </div>
           </div>
         </div>

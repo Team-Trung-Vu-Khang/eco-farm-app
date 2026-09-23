@@ -6,7 +6,6 @@ import {
   CardTitle,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { AlertTriangle, Building2, CheckCircle2, History } from "lucide-react";
-import { suppliers as presetSuppliers } from "../../data/constants";
 import type { Equipment } from "../../types";
 
 interface EquipmentDetailSidebarProps {
@@ -21,10 +20,9 @@ export const EquipmentDetailSidebar = ({
     item?.supplierDetails &&
     Array.isArray(item.supplierDetails) &&
     item.supplierDetails.length > 0
-      ? item.supplierDetails.map((detail) => {
-          const found = presetSuppliers.find((s) => s.id === detail.supplierId);
+      ? item.supplierDetails.map((detail: any) => {
           return {
-            name: found?.name || detail.supplierId,
+            name: detail.supplierName || detail.supplierId,
             quantity: detail.quantity,
             unit: detail.unit,
             warranty: detail.warranty,

@@ -88,6 +88,7 @@ export interface FarmSeedResponse {
 export interface SeedQueryParams {
   keyword?: string;
   supplierOrganizationId?: number;
+  farmingMethodId?: number;
   status?: FoundationStatus;
   page?: number;
   size?: number;
@@ -468,7 +469,8 @@ export interface FarmPlantIdentificationBulkUploadRequest {
    */
   i18n?: Partial<
     Record<
-      `healthStatus.${FarmPlantHealthStatus}` | `durationUnit.${"DAY" | "MONTH" | "YEAR"}`,
+      | `healthStatus.${FarmPlantHealthStatus}`
+      | `durationUnit.${"DAY" | "MONTH" | "YEAR"}`,
       string
     >
   >;

@@ -1,63 +1,6 @@
 import type { Fertilizer } from "../types/types";
 export type { Fertilizer };
 
-export const nutritionalContentOptions = [
-  { id: "macronutrients", label: "Nhóm Đa lượng" },
-  { id: "secondary_nutrients", label: "Nhóm Trung lượng" },
-  { id: "micronutrients", label: "Nhóm Vi lượng" },
-];
-
-export const originOptions = [
-  { id: "inorganic", label: "Phân Vô cơ" },
-  { id: "organic", label: "Phân Hữu cơ" },
-  { id: "biological", label: "Phân Sinh học / Vi sinh" },
-];
-
-export const applicationStageOptions = [
-  { id: "basal_application", label: "Bón lót" },
-  { id: "top_dressing", label: "Bón thúc" },
-];
-
-export const physicalFormOptions = [
-  { id: "soil_application", label: "Phân bón gốc" },
-  { id: "foliar_application", label: "Phân bón lá" },
-];
-
-export const targetCropsOptions = [
-  "Cây lúa",
-  "Cây ngô (bắp)",
-  "Rau màu (rau cải, xà lách, muống...)",
-  "Cây ăn quả (sầu riêng, xoài, nhãn, bưởi...)",
-  "Cây công nghiệp (cà phê, hồ tiêu, cao su, chè...)",
-  "Hoa & cây cảnh",
-  "Cây lấy củ (khoai lang, sắn, khoai tây...)",
-  "Cây lương thực khác",
-];
-
-export const standardsOptions = [
-  "VietGAP",
-  "GlobalG.A.P",
-  "Organic (hữu cơ)",
-  "EU MRL (Tiêu chuẩn dư lượng EU)",
-  "FDA (Mỹ)",
-  "HACCP",
-  "ISO 22000",
-];
-
-export const packagingUnitOptions = [
-  "Bao 50 kg",
-  "Bao 25 kg",
-  "Bao 10 kg",
-  "Túi 5 kg",
-  "Túi 1 kg",
-  "Túi 500 g",
-  "Chai 1 L",
-  "Chai 500 ml",
-  "Chai 100 ml",
-  "Can 5 L",
-  "Can 10 L",
-];
-
 export const initialFertilizers: Fertilizer[] = [
   {
     id: 1,
@@ -145,6 +88,21 @@ export const initialFertilizers: Fertilizer[] = [
   }
 ];
 
+// ── Presentation only: nhãn hiển thị (không phải nguồn option form) ─────────
+
+/** Nguồn gốc phân bón — dùng chỉ để hiển thị nhãn trên columns */
+export const originOptions = [
+  { id: "inorganic", label: "Phân Vô cơ" },
+  { id: "organic", label: "Phân Hữu cơ" },
+  { id: "biological", label: "Phân Sinh học / Vi sinh" },
+];
+
+/** Giai đoạn bón — dùng chỉ để hiển thị nhãn trên columns */
+export const applicationStageOptions = [
+  { id: "basal_application", label: "Bón lót" },
+  { id: "top_dressing", label: "Bón thúc" },
+];
+
 export const commonHashtags = [
   "TangTruongNhanh",
   "CaiTaoDat",
@@ -153,11 +111,10 @@ export const commonHashtags = [
   "ChuyenDungCayAnQua",
 ];
 
+/** Danh sách nhà cung cấp minh họa — hiển thị tên từ id trên confirmation/detail */
 export const suppliers = [
   { id: "sup1", name: "Công ty Phân bón Bình Điền", type: "enterprise" },
   { id: "sup2", name: "Đại lý VTNN Hòa Phát", type: "enterprise" },
   { id: "sup3", name: "HTX Nông nghiệp Xanh", type: "enterprise" },
   { id: "sup4", name: "Nông hộ Nguyễn Văn A", type: "farmer" },
 ];
-
-export const units = ["Bao", "Gói", "Thùng", "Chai", "Can", "Tấn", "Kg"];

@@ -6,8 +6,7 @@ import {
   MultiSelect,
   Textarea,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { Upload, X, FileText, Droplets, Leaf } from "lucide-react";
-import { targetCropsOptions } from "../../data/constants";
+import { Upload, X, FileText, Droplets } from "lucide-react";
 import type { BiologicalProductFormData } from "../../types/types";
 import { useQuery } from "@tanstack/react-query";
 import { farmSupplyApi } from "@/features/farm-supply";
@@ -73,13 +72,10 @@ export const BiologicalProductUsageStep = ({
     staleTime: 5 * 60 * 1000,
   });
 
-  const cropMultiOptions =
-    apiSubjects && apiSubjects.length > 0
-      ? apiSubjects.map((s: any) => ({ label: s.name, value: s.name }))
-      : targetCropsOptions.map((c) => ({
-          label: c,
-          value: c,
-        }));
+  const cropMultiOptions = (apiSubjects ?? []).map((s: any) => ({
+    label: s.name,
+    value: s.name,
+  }));
 
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500 max-w-4xl mx-auto">

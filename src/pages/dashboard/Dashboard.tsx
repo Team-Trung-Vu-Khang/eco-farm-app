@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import PageWrapper from "@/components/PageWrapper";
-import { DashboardAlerts } from "./components/DashboardAlerts";
+// import { DashboardAlerts } from "./components/DashboardAlerts";
 import { AdminDashboardView } from "./views/AdminDashboardView";
 import { FarmerDashboardView } from "./views/FarmerDashboardView";
 import { useDashboardData } from "./hooks/useDashboardData";
@@ -22,7 +22,7 @@ export default function Dashboard() {
     }
   }, [currentUser, isAdmin]);
 
-  const { zoneTreeData, cropHealthMetrics, taskStats, isLoading, refetchAll } =
+  const { zoneTreeData, cropHealthMetrics, taskStats, isLoading } =
     useDashboardData();
 
   return (
@@ -77,7 +77,7 @@ export default function Dashboard() {
         */}
 
         {/* 1. Khối Cảnh báo hiển thị ở góc nhìn Nông hộ */}
-        {roleView === "admin" ? null : <DashboardAlerts />}
+        {/* {roleView === "admin" ? null : <DashboardAlerts />} */}
 
         {/* 2. Render View tương ứng dựa trên role người dùng */}
         {roleView === "admin" ? (

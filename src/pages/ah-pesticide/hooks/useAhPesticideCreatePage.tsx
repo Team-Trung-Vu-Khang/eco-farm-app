@@ -23,13 +23,17 @@ import {
 } from "@/features/farm-supply";
 import { useImageUploadWithCache } from "@/features/storage/hooks/useImageUploadWithCache";
 import { getApiErrorMessage } from "@/shared/lib/api-error";
+import { normalizeSku } from "@/shared/lib/sku";
 
 export function useAhPesticideCreatePage() {
   const queryClient = useQueryClient();
   const [location, setLocation] = useLocation();
-  const [matchFarm, paramsFarm] = useRoute("/animal-husbandry-material/pesticide/:id/edit");
+  const [matchFarm, paramsFarm] = useRoute(
+    "/animal-husbandry-material/pesticide/:id/edit",
+  );
   const [matchAdmin, paramsAdmin] = useRoute("/admin/ah-pesticide/:id/edit");
-  const isEdit = (matchFarm || matchAdmin) && !!(paramsFarm?.id || paramsAdmin?.id);
+  const isEdit =
+    (matchFarm || matchAdmin) && !!(paramsFarm?.id || paramsAdmin?.id);
   const params = paramsFarm || paramsAdmin;
   const scope = matchAdmin || location.startsWith("/admin") ? "admin" : "farm";
   const { toast } = useToast();
@@ -54,7 +58,11 @@ export function useAhPesticideCreatePage() {
     field: K,
     value: PesticideFormData[K],
   ) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
+    const nextValue =
+      field === "code" && typeof value === "string"
+        ? (normalizeSku(value) as PesticideFormData[K])
+        : value;
+    setFormData((prev) => ({ ...prev, [field]: nextValue }));
   };
 
   useEffect(() => {
@@ -135,27 +143,60 @@ export function useAhPesticideCreatePage() {
 
       // Dynamic Classifications matching
       const classifications: any[] = [];
-      const addClass = (classKey: string, name: string) => {
-        if (!name) return;
-        const matched = allGroups.find(
-          (g) =>
-            g.classification === classKey &&
-            g.name.toLowerCase() === name.toLowerCase(),
-        );
-        if (matched) {
-          classifications.push({
-            classification: classKey,
-            groupId: matched.id,
-            displayOrder: 0,
-          });
-        }
+      const addClasses = (classKey: string, names: string | string[]) => {
+        const nameList = Array.isArray(names) ? names : names ? [names] : [];
+        nameList.forEach((name, idx) => {
+          if (!name) return;
+          const matched = allGroups.find(
+            (g) =>
+              g.classification === classKey &&
+              (g.name?.toLowerCase() === name.toLowerCase() ||
+                g.code?.toLowerCase() === name.toLowerCase()),
+          );
+          if (matched) {
+            classifications.push({
+              classification: classKey,
+              groupId: matched.id,
+              displayOrder: idx,
+            });
+          }
+        });
       };
 
-      addClass("usage", formData.group);
-      addClass("usage_method", formData.actionType);
-      addClass("control_level", formData.toxicityLevel);
-      addClass("dosage_form", formData.form);
-      addClass("origin", formData.origin);
+      addClasses(
+        "usage",
+        formData.groups && formData.groups.length > 0
+          ? formData.groups
+          : formData.group,
+      );
+      addClasses(
+        "usage_method",
+        formData.usageMethods && formData.usageMethods.length > 0
+          ? formData.usageMethods
+          : formData.actionTypes && formData.actionTypes.length > 0
+            ? formData.actionTypes
+            : formData.actionType,
+      );
+      addClasses(
+        "control_level",
+        formData.controlLevels && formData.controlLevels.length > 0
+          ? formData.controlLevels
+          : formData.toxicityLevels && formData.toxicityLevels.length > 0
+            ? formData.toxicityLevels
+            : formData.toxicityLevel,
+      );
+      addClasses(
+        "dosage_form",
+        formData.forms && formData.forms.length > 0
+          ? formData.forms
+          : formData.form,
+      );
+      addClasses(
+        "origin",
+        formData.origins && formData.origins.length > 0
+          ? formData.origins
+          : formData.origin,
+      );
 
       // Dynamic Subjects mapping
       const targetSubjectIds = formData.targetEntities
@@ -177,7 +218,7 @@ export function useAhPesticideCreatePage() {
         .filter((id): id is number => id !== undefined);
 
       const generatedSku =
-        formData.code?.trim() ||
+        (isEdit ? formData.code?.trim() : normalizeSku(formData.code)) ||
         `AHMED-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
       const payload: any = {
         name: formData.name,
@@ -240,7 +281,12 @@ export function useAhPesticideCreatePage() {
       };
 
       if (isEdit && params?.id) {
-        await farmSupplyApi.update("medicine", Number(params.id), payload, scope);
+        await farmSupplyApi.update(
+          "medicine",
+          Number(params.id),
+          payload,
+          scope,
+        );
         toast({
           title: "Thành công",
           description: "Đã cập nhật thông tin thành công",
@@ -249,8 +295,14 @@ export function useAhPesticideCreatePage() {
         await farmSupplyApi.create("medicine", payload, scope);
         toast({ title: "Thành công", description: "Đã thêm mới thuốc thú y" });
       }
-      queryClient.invalidateQueries({ queryKey: [scope === "admin" ? "admin-supplies" : "farm-supplies"] });
-      setLocation(scope === "admin" ? "/admin/ah-pesticide" : "/animal-husbandry-material/pesticide");
+      queryClient.invalidateQueries({
+        queryKey: [scope === "admin" ? "admin-supplies" : "farm-supplies"],
+      });
+      setLocation(
+        scope === "admin"
+          ? "/admin/ah-pesticide"
+          : "/animal-husbandry-material/pesticide",
+      );
     } catch (err: any) {
       if (err.response?.status === 409) {
         toast({
@@ -349,7 +401,12 @@ export function useAhPesticideCreatePage() {
     steps,
     loading,
     submitting,
-    goBack: () => setLocation(scope === "admin" ? "/admin/ah-pesticide" : "/animal-husbandry-material/pesticide"),
+    goBack: () =>
+      setLocation(
+        scope === "admin"
+          ? "/admin/ah-pesticide"
+          : "/animal-husbandry-material/pesticide",
+      ),
     handleComplete: () => setConfirmOpen(true),
     handleConfirmSubmit,
   };

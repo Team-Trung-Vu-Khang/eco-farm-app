@@ -50,6 +50,14 @@ export const createEmptyPesticideFormData = (): PesticideFormData => ({
   unit: "",
   packaging: "",
   formType: "basic",
+  forms: [],
+  origins: [],
+  actionTypes: [],
+  toxicityLevels: [],
+  groups: [],
+  usageMethods: [],
+  controlLevels: [],
+  controlResidueLevels: [],
 });
 
 export const createPesticideFormDataFromItem = (

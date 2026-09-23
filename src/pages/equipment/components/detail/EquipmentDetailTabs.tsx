@@ -1,4 +1,7 @@
-import { formatPackagingVariantText, isBaseUnitOnlyVariant } from "@/features/farm-supply";
+import {
+  formatPackagingVariantText,
+  isBaseUnitOnlyVariant,
+} from "@/features/farm-supply";
 import {
   Badge,
   Button,
@@ -12,7 +15,6 @@ import {
   Building2,
   FileText,
   History,
-  Info,
   TimerReset,
   Cpu,
   Package,
@@ -21,9 +23,14 @@ import {
 } from "lucide-react";
 import type { Equipment } from "../../types";
 import { maintenanceHistory, usageHistory } from "../../data/mocks";
-import { suppliers as presetSuppliers } from "../../data/constants";
 
-function DetailRow({ label, value }: { label: string; value?: string | number | null }) {
+function DetailRow({
+  label,
+  value,
+}: {
+  label: string;
+  value?: string | number | null;
+}) {
   if (!value) return null;
   return (
     <div>
@@ -34,7 +41,9 @@ function DetailRow({ label, value }: { label: string; value?: string | number | 
 }
 
 export const InfoTab = ({ item }: { item: Equipment }) => {
-  const machineTypeArr = Array.isArray(item.machineType) ? item.machineType : [];
+  const machineTypeArr = Array.isArray(item.machineType)
+    ? item.machineType
+    : [];
   const rawNotes = (item as any).profile?.packagingNotes || item.packagingSpecs;
   const packagingSpecsArr = Array.isArray(rawNotes) ? rawNotes : [];
 
@@ -55,18 +64,30 @@ export const InfoTab = ({ item }: { item: Equipment }) => {
             <DetailRow label="Nước sản xuất" value={item.countryOfOrigin} />
             <DetailRow label="Năm sản xuất" value={item.manufactureYear} />
             <DetailRow label="Công suất" value={item.powerCapacity} />
-            <DetailRow label="Dung tích / Khả năng làm việc" value={item.workingCapacity} />
-            <DetailRow label="Nhiên liệu / Năng lượng" value={item.fuelEnergyType} />
+            <DetailRow
+              label="Dung tích / Khả năng làm việc"
+              value={item.workingCapacity}
+            />
+            <DetailRow
+              label="Nhiên liệu / Năng lượng"
+              value={item.fuelEnergyType}
+            />
             <DetailRow label="Trọng lượng" value={item.weight} />
             <DetailRow label="Kích thước" value={item.dimensions} />
           </div>
 
           {machineTypeArr.length > 0 && (
             <div className="mt-6 border-t pt-4">
-              <span className="text-muted-foreground block text-xs mb-2">Loại máy / Công dụng:</span>
+              <span className="text-muted-foreground block text-xs mb-2">
+                Loại máy / Công dụng:
+              </span>
               <div className="flex flex-wrap gap-1.5">
                 {machineTypeArr.map((tag) => (
-                  <Badge key={tag} variant="secondary" className="text-xs bg-slate-100">
+                  <Badge
+                    key={tag}
+                    variant="secondary"
+                    className="text-xs bg-slate-100"
+                  >
                     {tag}
                   </Badge>
                 ))}
@@ -76,7 +97,9 @@ export const InfoTab = ({ item }: { item: Equipment }) => {
 
           {item.otherSpecifications && (
             <div className="mt-6 border-t pt-4">
-              <span className="text-muted-foreground block text-xs mb-2">Thông số kỹ thuật đặc thù khác:</span>
+              <span className="text-muted-foreground block text-xs mb-2">
+                Thông số kỹ thuật đặc thù khác:
+              </span>
               <p className="text-sm bg-slate-50 p-3 rounded-lg border leading-relaxed text-slate-700 whitespace-pre-wrap">
                 {item.otherSpecifications}
               </p>
@@ -95,13 +118,21 @@ export const InfoTab = ({ item }: { item: Equipment }) => {
         </CardHeader>
         <CardContent className="pt-6 space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm">
-            <DetailRow label="Định mức tiêu hao nhiên liệu" value={item.fuelConsumptionRate} />
-            <DetailRow label="Chu kỳ bảo dưỡng định kỳ" value={item.maintenanceSchedule || item.maintainanceInterval} />
+            <DetailRow
+              label="Định mức tiêu hao nhiên liệu"
+              value={item.fuelConsumptionRate}
+            />
+            <DetailRow
+              label="Chu kỳ bảo dưỡng định kỳ"
+              value={item.maintenanceSchedule || item.maintainanceInterval}
+            />
           </div>
 
           {item.mainAccessories && (
             <div className="border-t pt-4">
-              <span className="text-muted-foreground block text-xs mb-2">Phụ tùng chính kèm theo máy:</span>
+              <span className="text-muted-foreground block text-xs mb-2">
+                Phụ tùng chính kèm theo máy:
+              </span>
               <p className="text-sm bg-slate-50 p-3 rounded-lg border leading-relaxed text-slate-700 whitespace-pre-wrap">
                 {item.mainAccessories}
               </p>
@@ -109,7 +140,9 @@ export const InfoTab = ({ item }: { item: Equipment }) => {
           )}
 
           <div className="border-t pt-4">
-            <span className="text-muted-foreground block text-xs mb-2">Mô tả tóm tắt:</span>
+            <span className="text-muted-foreground block text-xs mb-2">
+              Mô tả tóm tắt:
+            </span>
             <p className="text-sm bg-slate-50 p-3 rounded-lg border leading-relaxed text-slate-700">
               {item.description || "Chưa có mô tả tóm tắt cho thiết bị này."}
             </p>
@@ -128,36 +161,54 @@ export const InfoTab = ({ item }: { item: Equipment }) => {
         <CardContent className="pt-6 space-y-4 text-sm">
           {item.manufacturerOrganization && (
             <div>
-              <span className="text-muted-foreground block text-xs mb-1.5">Nhà sản xuất / Xuất xứ:</span>
+              <span className="text-muted-foreground block text-xs mb-1.5">
+                Nhà sản xuất / Xuất xứ:
+              </span>
               <div className="flex flex-wrap gap-1.5">
-                <Badge variant="outline" className="bg-slate-50">{item.manufacturerOrganization.name}</Badge>
+                <Badge variant="outline" className="bg-slate-50">
+                  {item.manufacturerOrganization.name}
+                </Badge>
               </div>
             </div>
           )}
 
           {item.importerOrganization && (
             <div className="border-t pt-4">
-              <span className="text-muted-foreground block text-xs mb-1.5">Nhà nhập khẩu / Đăng ký:</span>
+              <span className="text-muted-foreground block text-xs mb-1.5">
+                Nhà nhập khẩu / Đăng ký:
+              </span>
               <div className="flex flex-wrap gap-1.5">
-                <Badge variant="outline" className="bg-slate-50">{item.importerOrganization.name}</Badge>
+                <Badge variant="outline" className="bg-slate-50">
+                  {item.importerOrganization.name}
+                </Badge>
               </div>
             </div>
           )}
 
           {item.distributorOrganization && (
             <div className="border-t pt-4">
-              <span className="text-muted-foreground block text-xs mb-1.5">Nhà phân phối chính:</span>
+              <span className="text-muted-foreground block text-xs mb-1.5">
+                Nhà phân phối chính:
+              </span>
               <div className="flex flex-wrap gap-1.5">
-                <Badge variant="outline" className="bg-slate-50">{item.distributorOrganization.name}</Badge>
+                <Badge variant="outline" className="bg-slate-50">
+                  {item.distributorOrganization.name}
+                </Badge>
               </div>
             </div>
           )}
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 border-t pt-4">
-            <DetailRow label="Giá tham khảo trên thị trường" value={item.referencePrice} />
-            {((item.packagingVariants && item.packagingVariants.length > 0) || packagingSpecsArr.length > 0) && (
+            <DetailRow
+              label="Giá tham khảo trên thị trường"
+              value={item.referencePrice}
+            />
+            {((item.packagingVariants && item.packagingVariants.length > 0) ||
+              packagingSpecsArr.length > 0) && (
               <div>
-                <span className="text-muted-foreground block text-xs font-semibold mb-1.5">Cấu hình Đơn vị / Quy cách:</span>
+                <span className="text-muted-foreground block text-xs font-semibold mb-1.5">
+                  Cấu hình Đơn vị / Quy cách:
+                </span>
                 <div className="flex flex-wrap gap-2">
                   {item.packagingVariants && item.packagingVariants.length > 0
                     ? item.packagingVariants.map((v, idx) => {
@@ -185,7 +236,11 @@ export const InfoTab = ({ item }: { item: Equipment }) => {
                         );
                       })
                     : packagingSpecsArr.map((tag) => (
-                        <Badge key={tag} variant="secondary" className="text-xs px-2.5 py-1 flex items-center gap-1.5">
+                        <Badge
+                          key={tag}
+                          variant="secondary"
+                          className="text-xs px-2.5 py-1 flex items-center gap-1.5"
+                        >
                           <Package className="w-3.5 h-3.5 text-slate-500 shrink-0" />
                           {tag}
                         </Badge>

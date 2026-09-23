@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { RemoteMultiSelect } from "@/components/RemoteMultiSelect";
 import {
   Badge,
   Button,
@@ -26,131 +27,11 @@ import {
   X,
   Loader2,
 } from "lucide-react";
+import { useMasterData } from "@/features/master-data";
 import type { EquipmentFormData } from "../types";
-import {
-  machineTypeOptions,
-  maintenanceIntervals,
-  technologyLevelOptions,
-} from "../data/constants";
+import { maintenanceIntervals } from "../data/constants";
 
 export type EquipmentDomain = "cultivation" | "animal" | "aquaculture";
-
-// Domain-specific machine type options (name + description two-line style)
-const DOMAIN_MACHINE_TYPES: Record<
-  EquipmentDomain,
-  { value: string; description?: string }[]
-> = {
-  cultivation: [
-    { value: "Máy cày", description: "Làm đất, xới đất trồng trọt" },
-    { value: "Máy kéo", description: "Kéo xe, phụ kiện nông nghiệp" },
-    { value: "Máy gặt đập liên hợp", description: "Thu hoạch lúa, ngô..." },
-    { value: "Máy cấy", description: "Cấy lúa tự động, bán tự động" },
-    { value: "Máy gieo sạ", description: "Gieo hạt, sạ lúa thẳng hàng" },
-    {
-      value: "Máy phun thuốc",
-      description: "Phun thuốc bảo vệ thực vật, phân bón",
-    },
-    {
-      value: "Thiết bị bay không người lái (Drone)",
-      description: "Drone phun thuốc, bón phân, giám sát",
-    },
-    {
-      value: "Hệ thống tưới tự động",
-      description: "Tưới nhỏ giọt, tưới phun mưa tự động",
-    },
-    { value: "Máy bơm nước", description: "Cấp thoát nước đồng ruộng" },
-    { value: "Máy xới cỏ", description: "Diệt cỏ, xới đất gốc cây" },
-    {
-      value: "Máy sấy nông sản",
-      description: "Sấy lúa, cà phê, hạt nông nghiệp",
-    },
-    {
-      value: "Hệ thống nhà màng/nhà kính",
-      description: "Khung vòm, màng phủ, điều khiển nhiệt độ",
-    },
-    { value: "Thiết bị khác", description: "Máy móc phục vụ trồng trọt khác" },
-  ],
-  animal: [
-    {
-      value: "Máy nghiền trộn thức ăn",
-      description: "Nghiền, trộn cám, nguyên liệu chăn nuôi",
-    },
-    {
-      value: "Máy ép cám viên",
-      description: "Tự sản xuất cám viên tại trang trại",
-    },
-    {
-      value: "Hệ thống cho ăn tự động",
-      description: "Máng ăn tự động, điều khiển lượng thức ăn",
-    },
-    {
-      value: "Hệ thống cấp nước tự động",
-      description: "Núm uống, máng uống tự động cho vật nuôi",
-    },
-    {
-      value: "Hệ thống làm mát chuồng trại",
-      description: "Quạt thông gió, giàn lạnh Cooling Pad",
-    },
-    {
-      value: "Hệ thống sưởi ấm",
-      description: "Đèn hồng ngoại, lò sưởi úm gia súc/gia cầm",
-    },
-    { value: "Máy vắt sữa", description: "Vắt sữa bò, dê tự động" },
-    {
-      value: "Thiết bị dọn phân tự động",
-      description: "Cào phân tự động, hệ thống biogas",
-    },
-    {
-      value: "Máy sát trùng/Khử trùng chuồng trại",
-      description: "Phun sương khử trùng, sát khuẩn chuồng",
-    },
-    {
-      value: "Thiết bị thú y trang trại",
-      description: "Kìm bấm tai, xi lanh tự động, máy siêu âm heo",
-    },
-    { value: "Thiết bị khác", description: "Thiết bị phục vụ chăn nuôi khác" },
-  ],
-  aquaculture: [
-    {
-      value: "Máy quạt nước tạo oxy",
-      description: "Quạt guồng, quạt lông nhím cung cấp oxy ao nuôi",
-    },
-    {
-      value: "Máy sục khí nano/sục khí đáy",
-      description: "Tăng oxy hòa tan tầng đáy ao nuôi",
-    },
-    {
-      value: "Máy cho tôm/cá ăn tự động",
-      description: "Phun thức ăn tự động, điều chỉnh bán kính phun",
-    },
-    {
-      value: "Hệ thống đo chất lượng nước tự động",
-      description: "Đo pH, Oxy hòa tan DO, độ mặn, nhiệt độ liên tục",
-    },
-    {
-      value: "Máy bơm nước công suất lớn",
-      description: "Cấp nước ao lắng, tiêu thoát ao nuôi",
-    },
-    { value: "Máy hút bùn ao nuôi", description: "Vệ sinh đáy ao sau vụ nuôi" },
-    {
-      value: "Hệ thống lọc nước tuần hoàn (RAS)",
-      description: "Lọc cơ học, lọc sinh học tuần hoàn nguồn nước",
-    },
-    {
-      value: "Máy khử trùng nước bằng UV/Ozone",
-      description: "Diệt khuẩn nguồn nước cấp ao nuôi",
-    },
-    {
-      value: "Thiết bị phân loại cá/tôm",
-      description: "Phân size, kích cỡ tôm cá thu hoạch",
-    },
-    {
-      value: "Máy bóc vỏ tôm/chế biến thô",
-      description: "Chế biến sơ bộ thủy sản sau thu hoạch",
-    },
-    { value: "Thiết bị khác", description: "Máy móc nuôi trồng thủy sản khác" },
-  ],
-};
 
 const DOMAIN_LABELS: Record<EquipmentDomain, string> = {
   cultivation: "Thiết bị canh tác",
@@ -188,7 +69,18 @@ export default function SimpleEquipmentForm({
   completeLabel = "Hoàn tất & Lưu",
   loading,
 }: SimpleEquipmentFormProps) {
-  const machineTypes = DOMAIN_MACHINE_TYPES[domain];
+  const { items: equipmentToolGroups } = useMasterData(
+    "equipment-tool-groups",
+    { params: { size: 100 } },
+  );
+  const [machineTypeSearch, setMachineTypeSearch] = useState("");
+  const equipmentToolGroupOptions = (equipmentToolGroups || [])
+    .filter((g) =>
+      machineTypeSearch.trim()
+        ? g.name.toLowerCase().includes(machineTypeSearch.toLowerCase())
+        : true,
+    )
+    .map((g) => ({ label: g.name, value: g.name }));
   const domainLabel = DOMAIN_LABELS[domain];
   const isValid = Boolean(formData.machineName || formData.name);
   const [paramHashtag, setParamHashtag] = useState("");
@@ -271,34 +163,21 @@ export default function SimpleEquipmentForm({
           <Tag className="w-4 h-4 text-slate-400" />
           Loại {domainLabel.toLowerCase()}
         </Label>
-        <Select
+        <RemoteMultiSelect
+          options={equipmentToolGroupOptions}
           value={
             Array.isArray(formData.machineType)
-              ? (formData.machineType[0] ?? "")
-              : (formData.machineType ?? "")
+              ? formData.machineType
+              : formData.machineType
+                ? [formData.machineType]
+                : []
           }
-          onValueChange={(v) => updateField("machineType", [v])}
-        >
-          <SelectTrigger className="text-left h-auto py-2">
-            <SelectValue
-              placeholder={`Chọn loại ${domainLabel.toLowerCase()}...`}
-            />
-          </SelectTrigger>
-          <SelectContent>
-            {machineTypes.map((t) => (
-              <SelectItem key={t.value} value={t.value}>
-                <div className="flex flex-col">
-                  <span className="font-medium">{t.value}</span>
-                  {t.description && (
-                    <span className="text-xs text-muted-foreground truncate max-w-[300px]">
-                      {t.description}
-                    </span>
-                  )}
-                </div>
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+          onChange={(vals) => updateField("machineType", vals)}
+          onSearch={setMachineTypeSearch}
+          placeholder={`Chọn loại ${domainLabel.toLowerCase()} (chọn nhiều)...`}
+          searchPlaceholder="Tìm loại thiết bị..."
+          emptyText="Không tìm thấy loại thiết bị"
+        />
       </div>
 
       {/* ── Mã SKU ── */}

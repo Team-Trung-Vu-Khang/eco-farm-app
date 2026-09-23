@@ -1,5 +1,5 @@
 import { Badge, type Column } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { originOptions, applicationStageOptions } from "./constants";
+import { applicationStageOptions } from "./constants";
 import { CodeBadge } from "@/components/CodeBadge";
 import { formatPackagingVariantText } from "@/features/farm-supply";
 
@@ -7,7 +7,11 @@ export const getFertilizerColumns = (
   onView: (id: number) => void,
 ): Column<any>[] => [
   { key: "code", label: "Mã", render: (value) => <CodeBadge value={value} /> },
-  { key: "sku", label: "Mã SKU", render: (value) => <CodeBadge value={value} /> },
+  {
+    key: "sku",
+    label: "Mã SKU",
+    render: (value) => <CodeBadge value={value} />,
+  },
   {
     key: "name",
     label: "Tên phân bón",
@@ -47,13 +51,23 @@ export const getFertilizerColumns = (
     key: "originId",
     label: "Phân loại",
     render: (_, row) => {
-      const origin =
-        row.classifications?.find((c: any) => c.classification === "origin")
-          ?.group?.name ||
-        row.metadataJson?.origin ||
-        row.fertilizerOriginGroup ||
-        originOptions.find((o: any) => o.id === row.originId)?.label ||
-        "N/A";
+      const apiOrigins =
+        row.classifications
+          ?.filter((c: any) => c.classification === "origin")
+          ?.map((c: any) => c.group?.name)
+          ?.filter(Boolean) || [];
+
+      const rawOrigin = row.fertilizerOriginGroups || row.fertilizerOriginGroup;
+      const localOrigins = Array.isArray(rawOrigin)
+        ? rawOrigin
+        : rawOrigin
+          ? [rawOrigin]
+          : [];
+
+      const combinedOrigins = Array.from(
+        new Set([...apiOrigins, ...localOrigins]),
+      ).filter(Boolean);
+
       const stage =
         row.classifications?.find(
           (c: any) => c.classification === "effect_stage",
@@ -66,9 +80,21 @@ export const getFertilizerColumns = (
 
       return (
         <div className="flex gap-1 flex-col">
-          <Badge variant="outline" className="w-fit text-[10px] py-0 px-1.5">
-            {origin}
-          </Badge>
+          <div className="flex flex-wrap gap-1">
+            {combinedOrigins.length > 0 ? (
+              combinedOrigins.map((orig, idx) => (
+                <Badge
+                  key={idx}
+                  variant="outline"
+                  className="w-fit text-[10px] py-0 px-1.5"
+                >
+                  {orig}
+                </Badge>
+              ))
+            ) : (
+              <></>
+            )}
+          </div>
           <Badge variant="secondary" className="w-fit text-[10px] py-0 px-1.5">
             {stage}
           </Badge>
@@ -113,7 +139,9 @@ export const getFertilizerColumns = (
     label: "Đóng gói / Đơn vị",
     render: (_, row) => {
       const specs =
-        row.packagingVariants?.map((pv: any) => formatPackagingVariantText(pv)).filter(Boolean) || [];
+        row.packagingVariants
+          ?.map((pv: any) => formatPackagingVariantText(pv))
+          .filter(Boolean) || [];
       return specs.length > 0 ? (
         <span
           className="text-xs block max-w-[180px] truncate"
@@ -157,8 +185,7 @@ export const getFertilizerColumns = (
     render: (val) => {
       if (!val) return <span className="text-muted-foreground text-xs">—</span>;
       const num = Number(val);
-      if (isNaN(num))
-        return <span className="text-xs">{String(val)}</span>;
+      if (isNaN(num)) return <span className="text-xs">{String(val)}</span>;
       return (
         <span className="text-xs font-semibold text-slate-700">
           {num.toLocaleString("vi-VN")} đ

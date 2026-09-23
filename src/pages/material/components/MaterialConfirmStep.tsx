@@ -1,5 +1,6 @@
 import { Badge, Card, CardContent } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { CheckCircle2 } from "lucide-react";
+import { useSupplyCatalog } from "@/features/farm-supply";
 import { getMaterialGroupLabel } from "../data/constants";
 import type { MaterialFormData } from "../types/types";
 
@@ -11,6 +12,14 @@ export default function MaterialConfirmStep({
   formData,
 }: MaterialConfirmStepProps) {
   const hashtagsArr = formData.hashtags || [];
+  const { groups } = useSupplyCatalog({ type: "material" });
+
+  const resolveGroupLabel = (code: string) => {
+    const match = groups.find(
+      (g) => g.code?.toLowerCase() === code.toLowerCase(),
+    );
+    return match?.name || getMaterialGroupLabel(code) || code;
+  };
 
   return (
     <div className="mx-auto max-w-3xl animate-in fade-in zoom-in duration-300">
@@ -36,23 +45,63 @@ export default function MaterialConfirmStep({
             <div className="grid grid-cols-2 gap-x-8 gap-y-4 text-sm">
               <div>
                 <span className="text-muted-foreground">Mã vật tư:</span>{" "}
-                <span className="font-semibold text-slate-900">{formData.code}</span>
+                <span className="font-semibold text-slate-900">
+                  {formData.code}
+                </span>
               </div>
               <div>
                 <span className="text-muted-foreground">Tên vật tư:</span>{" "}
-                <span className="font-semibold text-slate-900">{formData.name}</span>
-              </div>
-              <div>
-                <span className="text-muted-foreground">Mức độ công nghệ:</span>{" "}
                 <span className="font-semibold text-slate-900">
-                  {getMaterialGroupLabel(formData.technologyLevelId) || "Chưa chọn"}
+                  {formData.name}
                 </span>
               </div>
               <div>
-                <span className="text-muted-foreground">Giai đoạn áp dụng:</span>{" "}
-                <span className="font-semibold text-slate-900">
-                  {getMaterialGroupLabel(formData.valueChainId) || "Chưa chọn"}
+                <span className="text-muted-foreground block text-xs mb-1">
+                  Mức độ công nghệ:
                 </span>
+                <div className="flex flex-wrap gap-1 min-w-0">
+                  {(
+                    formData.technologyLevelIds ||
+                    (formData.technologyLevelId
+                      ? [formData.technologyLevelId]
+                      : [])
+                  ).map((id) => (
+                    <Badge
+                      key={id}
+                      variant="outline"
+                      className="text-xs bg-slate-50 max-w-full min-w-0 break-words"
+                    >
+                      {resolveGroupLabel(id)}
+                    </Badge>
+                  ))}
+                  {!formData.technologyLevelIds?.length &&
+                    !formData.technologyLevelId && (
+                      <span className="text-slate-400">Chưa chọn</span>
+                    )}
+                </div>
+              </div>
+              <div>
+                <span className="text-muted-foreground block text-xs mb-1">
+                  Chuỗi giá trị:
+                </span>
+                <div className="flex flex-wrap gap-1 min-w-0">
+                  {(
+                    formData.valueChainIds ||
+                    (formData.valueChainId ? [formData.valueChainId] : [])
+                  ).map((id) => (
+                    <Badge
+                      key={id}
+                      variant="outline"
+                      className="text-xs bg-slate-50 max-w-full min-w-0 break-words"
+                    >
+                      {resolveGroupLabel(id)}
+                    </Badge>
+                  ))}
+                  {!formData.valueChainIds?.length &&
+                    !formData.valueChainId && (
+                      <span className="text-slate-400">Chưa chọn</span>
+                    )}
+                </div>
               </div>
               <div className="col-span-2">
                 <span className="mb-1 block text-muted-foreground">Mô tả:</span>
@@ -62,13 +111,15 @@ export default function MaterialConfirmStep({
               </div>
               <div className="col-span-2">
                 <span className="text-muted-foreground">Hashtags:</span>{" "}
-                <div className="mt-1 inline-flex flex-wrap gap-1">
+                <div className="mt-1 inline-flex flex-wrap gap-1 min-w-0">
                   {hashtagsArr.map((tag) => (
-                    <Badge key={tag} variant="secondary" className="text-xs">
+                    <Badge key={tag} variant="secondary" className="text-xs max-w-full min-w-0 break-words">
                       #{tag}
                     </Badge>
                   ))}
-                  {hashtagsArr.length === 0 && <span className="text-slate-400">Không có hashtags</span>}
+                  {hashtagsArr.length === 0 && (
+                    <span className="text-slate-400">Không có hashtags</span>
+                  )}
                 </div>
               </div>
             </div>
@@ -84,50 +135,71 @@ export default function MaterialConfirmStep({
             <div className="space-y-4 text-sm">
               {formData.manufacturerOrigin && (
                 <div>
-                  <span className="text-muted-foreground block text-xs mb-1">Nhà sản xuất / Xuất xứ:</span>
-                  <div className="flex flex-wrap gap-1">
-                    <Badge variant="outline" className="bg-slate-50">{formData.manufacturerOrigin.name}</Badge>
+                  <span className="text-muted-foreground block text-xs mb-1">
+                    Nhà sản xuất / Xuất xứ:
+                  </span>
+                  <div className="flex flex-wrap gap-1 min-w-0">
+                    <Badge variant="outline" className="bg-slate-50 max-w-full min-w-0 break-words">
+                      {formData.manufacturerOrigin.name}
+                    </Badge>
                   </div>
                 </div>
               )}
 
               {formData.importerRegistrant && (
                 <div>
-                  <span className="text-muted-foreground block text-xs mb-1">Nhà nhập khẩu / Đăng ký:</span>
-                  <div className="flex flex-wrap gap-1">
-                    <Badge variant="outline" className="bg-slate-50">{formData.importerRegistrant.name}</Badge>
+                  <span className="text-muted-foreground block text-xs mb-1">
+                    Nhà nhập khẩu / Đăng ký:
+                  </span>
+                  <div className="flex flex-wrap gap-1 min-w-0">
+                    <Badge variant="outline" className="bg-slate-50 max-w-full min-w-0 break-words">
+                      {formData.importerRegistrant.name}
+                    </Badge>
                   </div>
                 </div>
               )}
 
               {formData.distributor && (
                 <div>
-                  <span className="text-muted-foreground block text-xs mb-1">Nhà phân phối:</span>
-                  <div className="flex flex-wrap gap-1">
-                    <Badge variant="outline" className="bg-slate-50">{formData.distributor.name}</Badge>
+                  <span className="text-muted-foreground block text-xs mb-1">
+                    Nhà phân phối:
+                  </span>
+                  <div className="flex flex-wrap gap-1 min-w-0">
+                    <Badge variant="outline" className="bg-slate-50 max-w-full min-w-0 break-words">
+                      {formData.distributor.name}
+                    </Badge>
                   </div>
                 </div>
               )}
 
-              {formData.packagingSpecs && formData.packagingSpecs.length > 0 && (
-                <div>
-                  <span className="text-muted-foreground block text-xs mb-1">Quy cách đóng gói:</span>
-                  <div className="flex flex-wrap gap-1">
-                    {formData.packagingSpecs.map((tag) => (
-                      <Badge key={tag} variant="secondary" className="text-xs">{tag}</Badge>
-                    ))}
+              {formData.packagingSpecs &&
+                formData.packagingSpecs.length > 0 && (
+                  <div>
+                    <span className="text-muted-foreground block text-xs mb-1">
+                      Quy cách đóng gói:
+                    </span>
+                    <div className="flex flex-wrap gap-1 min-w-0">
+                      {formData.packagingSpecs.map((tag) => (
+                        <Badge
+                          key={tag}
+                          variant="secondary"
+                          className="text-xs max-w-full min-w-0 break-words"
+                        >
+                          {tag}
+                        </Badge>
+                      ))}
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
 
-              {(!formData.manufacturerOrigin &&
+              {!formData.manufacturerOrigin &&
                 !formData.importerRegistrant &&
                 !formData.distributor &&
-                !formData.packagingSpecs?.length) && (
-                <div className="text-center py-6 text-xs text-muted-foreground border border-dashed rounded-lg bg-slate-50">
-                  Không cấu hình thông tin xuất xứ & phân phối
-                </div>
-              )}
+                !formData.packagingSpecs?.length && (
+                  <div className="text-center py-6 text-xs text-muted-foreground border border-dashed rounded-lg bg-slate-50">
+                    Không cấu hình thông tin xuất xứ & phân phối
+                  </div>
+                )}
             </div>
           </CardContent>
         </Card>

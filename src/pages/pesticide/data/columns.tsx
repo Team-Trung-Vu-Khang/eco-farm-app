@@ -14,7 +14,11 @@ export const pesticideColumns = (
   onNavigateDetail: (id: number) => void,
 ): Column<any>[] => [
   { key: "code", label: "Mã", render: (value) => <CodeBadge value={value} /> },
-  { key: "sku", label: "Mã SKU", render: (value) => <CodeBadge value={value} /> },
+  {
+    key: "sku",
+    label: "Mã SKU",
+    render: (value) => <CodeBadge value={value} />,
+  },
   {
     key: "name",
     label: "Tên thương mại",
@@ -56,13 +60,40 @@ export const pesticideColumns = (
           : row.domainCode === "AQUACULTURE"
             ? "control_residue_level"
             : "target_group";
-      const val = row.classifications?.find(
-        (c: any) => c.classification === type,
-      )?.group?.name;
-      return val ? (
-        <Badge variant="outline">{val}</Badge>
-      ) : (
-        <span className="text-muted-foreground text-xs">—</span>
+
+      const apiGroups =
+        row.classifications
+          ?.filter((c: any) => c.classification === type)
+          ?.map((c: any) => c.group?.name)
+          ?.filter(Boolean) || [];
+
+      const rawGroup = row.pesticideGroups || row.group;
+      const localGroups = Array.isArray(rawGroup)
+        ? rawGroup
+        : rawGroup
+          ? [rawGroup]
+          : [];
+
+      const combined = Array.from(
+        new Set([...apiGroups, ...localGroups]),
+      ).filter(Boolean);
+
+      if (combined.length === 0) {
+        return <span className="text-muted-foreground text-xs">—</span>;
+      }
+
+      return (
+        <div className="flex flex-wrap gap-1">
+          {combined.map((item, idx) => (
+            <Badge
+              key={idx}
+              variant="outline"
+              className="text-[11px] px-1.5 py-0"
+            >
+              {item}
+            </Badge>
+          ))}
+        </div>
       );
     },
   },

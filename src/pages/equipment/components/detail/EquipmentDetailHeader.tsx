@@ -13,8 +13,18 @@ interface EquipmentDetailHeaderProps {
 
 export const EquipmentDetailHeader = ({ item }: EquipmentDetailHeaderProps) => {
   // Gracefully handle values
-  const techLevel = item.technologyLevelGroup || item.technologyLevelId;
-  const financialMgmt = item.assetManagementGroup || item.financialManagementId;
+  const techGroups: string[] = (item as any).technologyLevelGroups?.length
+    ? (item as any).technologyLevelGroups
+    : item.technologyLevelGroup || item.technologyLevelId
+      ? [item.technologyLevelGroup || item.technologyLevelId]
+      : [];
+
+  const assetGroups: string[] = (item as any).assetManagementGroups?.length
+    ? (item as any).assetManagementGroups
+    : item.assetManagementGroup || item.financialManagementId
+      ? [item.assetManagementGroup || item.financialManagementId]
+      : [];
+
   const valChainGroup = Array.isArray(item.valueChainGroup)
     ? item.valueChainGroup
     : item.valueChainGroup && typeof item.valueChainGroup === "string"
@@ -23,9 +33,6 @@ export const EquipmentDetailHeader = ({ item }: EquipmentDetailHeaderProps) => {
         ? [item.valueChainId]
         : [];
   const maintSched = item.maintenanceSchedule || item.maintainanceInterval;
-
-  const techLabel = technologyLevelOptions.find((o) => o.id === techLevel || o.label === techLevel)?.label || techLevel || "N/A";
-  const finLabel = financialManagementOptions.find((o) => o.id === financialMgmt || o.label === financialMgmt)?.label || financialMgmt || "N/A";
 
   return (
     <Card className="overflow-hidden border-none shadow-md bg-white">
@@ -44,7 +51,9 @@ export const EquipmentDetailHeader = ({ item }: EquipmentDetailHeaderProps) => {
         <div className="flex-1">
           <div className="flex items-start justify-between">
             <div>
-              <h2 className="text-2xl font-bold text-slate-900">{item.machineName || item.name}</h2>
+              <h2 className="text-2xl font-bold text-slate-900">
+                {item.machineName || item.name}
+              </h2>
               <div className="flex items-center gap-3 mt-2 text-sm text-slate-600">
                 <span className="bg-white px-2 py-0.5 rounded border font-mono text-xs font-semibold">
                   {item.sku || item.code}
@@ -74,21 +83,42 @@ export const EquipmentDetailHeader = ({ item }: EquipmentDetailHeaderProps) => {
           </div>
 
           <div className="flex flex-wrap gap-2 mt-4">
-            <Badge
-              variant="outline"
-              className="bg-white/50 border-blue-200 text-blue-800"
-            >
-              {techLabel}
-            </Badge>
-            <Badge
-              variant="outline"
-              className="bg-white/50 border-amber-200 text-amber-800"
-            >
-              {finLabel}
-            </Badge>
-            
+            {techGroups.map((id) => {
+              const label =
+                technologyLevelOptions.find(
+                  (o) => o.id === id || o.label === id,
+                )?.label || id;
+              return (
+                <Badge
+                  key={id}
+                  variant="outline"
+                  className="bg-white/50 border-blue-200 text-blue-800"
+                >
+                  {label}
+                </Badge>
+              );
+            })}
+
+            {assetGroups.map((id) => {
+              const label =
+                financialManagementOptions.find(
+                  (o) => o.id === id || o.label === id,
+                )?.label || id;
+              return (
+                <Badge
+                  key={id}
+                  variant="outline"
+                  className="bg-white/50 border-amber-200 text-amber-800"
+                >
+                  {label}
+                </Badge>
+              );
+            })}
+
             {valChainGroup.map((id) => {
-              const label = valueChainOptions.find((o) => o.id === id || o.label === id)?.label || id;
+              const label =
+                valueChainOptions.find((o) => o.id === id || o.label === id)
+                  ?.label || id;
               return (
                 <Badge
                   key={id}

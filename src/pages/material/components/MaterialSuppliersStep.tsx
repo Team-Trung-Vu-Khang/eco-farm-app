@@ -11,7 +11,6 @@ import {
   SelectValue,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { Building2, Package, Plus, X, Search } from "lucide-react";
-import { packagingSpecsPresets } from "../data/constants";
 import type { MaterialFormData } from "../types/types";
 import { PartnerSelectorDialog } from "@/components/organizations/PartnerSelectorDialog";
 import { useQuery } from "@tanstack/react-query";
@@ -24,41 +23,6 @@ interface MaterialSuppliersStepProps {
     value: MaterialFormData[K],
   ) => void;
 }
-
-const MEASURE_UNIT_OPTIONS = [
-  "cái",
-  "cuộn",
-  "mét",
-  "kg",
-  "g",
-  "bộ",
-  "thùng",
-  "bao",
-  "hộp",
-  "lọ",
-  "kiện",
-  "gói",
-  "can",
-  "lít",
-  "ml",
-  "tấn",
-  "mm",
-];
-
-const PACKAGING_OPTIONS = [
-  "Bao",
-  "Bì",
-  "Hộp",
-  "Thùng",
-  "Túi",
-  "Chai",
-  "Lọ",
-  "Gói",
-  "Can",
-  "Cuộn",
-  "Kiện",
-  "Khay",
-];
 
 export default function MaterialSuppliersStep({
   formData,
@@ -77,15 +41,9 @@ export default function MaterialSuppliersStep({
     staleTime: 5 * 60 * 1000,
   });
 
-  const packagingList =
-    packagingTypes && packagingTypes.length > 0
-      ? packagingTypes.map((p) => p.name)
-      : PACKAGING_OPTIONS;
+  const packagingList = (packagingTypes ?? []).map((p) => p.name);
 
-  const unitList =
-    baseUnits && baseUnits.length > 0
-      ? baseUnits.map((u) => u.name)
-      : MEASURE_UNIT_OPTIONS;
+  const unitList = (baseUnits ?? []).map((u) => u.name);
 
   const [activeModal, setActiveModal] = useState<
     "manufacturerOrigin" | "importerRegistrant" | "distributor" | null
@@ -166,10 +124,6 @@ export default function MaterialSuppliersStep({
               <Search className="w-4 h-4 text-slate-500" />
             </Button>
           </div>
-          <p className="text-xs text-muted-foreground">
-            Tên công ty + quốc gia (Việt Nam, Ấn Độ, Trung Quốc, Đức, Mỹ,
-            Nhật...)
-          </p>
         </div>
 
         {/* Importer Registrant */}
@@ -374,39 +328,6 @@ export default function MaterialSuppliersStep({
               Thêm
             </Button>
           </div>
-
-          {/* Presets */}
-          {/* <div className="space-y-1 pt-2">
-            <p className="text-xs text-muted-foreground">Gợi ý phổ biến:</p>
-            <div className="flex flex-wrap gap-1.5">
-              {packagingSpecsPresets.map((preset) => {
-                const isSelected = packagingSpecsArr.includes(preset);
-                return (
-                  <button
-                    key={preset}
-                    type="button"
-                    onClick={() => {
-                      if (!isSelected) {
-                        onFormFieldChange("packagingSpecs", [
-                          ...packagingSpecsArr,
-                          preset,
-                        ]);
-                      } else {
-                        removeTag("packagingSpecs", preset);
-                      }
-                    }}
-                    className={`px-2.5 py-1 rounded-md border text-xs font-medium transition-all ${
-                      isSelected
-                        ? "bg-primary/10 border-primary text-primary"
-                        : "bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100"
-                    }`}
-                  >
-                    {preset}
-                  </button>
-                );
-              })}
-            </div>
-          </div> */}
 
           {/* Tags list */}
           {packagingSpecsArr.length > 0 && (

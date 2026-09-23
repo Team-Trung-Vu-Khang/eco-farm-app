@@ -32,7 +32,6 @@ import {
   Tag,
 } from "lucide-react";
 import { useLocation, useRoute } from "wouter";
-import { suppliers } from "./data/constants";
 
 const STANDARDS_META: Record<
   string,
@@ -278,15 +277,39 @@ const FertilizerDetailPage = () => {
                   label="Tên khoa học / Tên kỹ thuật"
                   value={item.scientificTechnicalName}
                 />
-                <InfoRow
-                  label="Nhóm phân bón (nguồn gốc)"
-                  value={item.fertilizerOriginGroup}
-                />
+                <div>
+                  <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">
+                    Nhóm phân bón
+                  </h4>
+                  <div className="flex flex-wrap gap-1.5">
+                    {(item.fertilizerOriginGroups?.length
+                      ? item.fertilizerOriginGroups
+                      : item.fertilizerOriginGroup
+                        ? [item.fertilizerOriginGroup]
+                        : []
+                    ).map((group: string) => (
+                      <Badge
+                        key={group}
+                        variant="outline"
+                        className="text-xs bg-slate-50"
+                      >
+                        {group}
+                      </Badge>
+                    ))}
+                    {!item.fertilizerOriginGroups?.length &&
+                      !item.fertilizerOriginGroup && (
+                        <span className="text-sm text-slate-400">N/A</span>
+                      )}
+                  </div>
+                </div>
                 <InfoRow
                   label="Thành phần dinh dưỡng chính"
                   value={item.nutritionalComponents}
                 />
-                <InfoRow label="Dạng phân bón" value={item.fertilizerType} />
+                <InfoRow
+                  label="Thành phần dinh dưỡng"
+                  value={item.fertilizerType}
+                />
                 <InfoRow label="Hình thái vật lý" value={item.physicalForm} />
                 <InfoRow label="Cơ chế tác động (MoA)" value={item.moaGroup} />
                 <InfoRow label="Tỷ lệ N-P-K" value={item.npkRatio} />
@@ -586,16 +609,13 @@ const FertilizerDetailPage = () => {
                   </h4>
                   <div className="space-y-1.5">
                     {item.supplierDetails.map((supDetail, idx) => {
-                      const sup = suppliers.find(
-                        (s) => s.id === supDetail.supplierId,
-                      );
                       return (
                         <div
                           key={idx}
                           className="flex justify-between p-2 rounded-lg bg-slate-50 text-xs border"
                         >
                           <span className="font-semibold text-slate-700 truncate mr-2">
-                            {sup?.name || supDetail.supplierId}
+                            {supDetail.supplierName || supDetail.supplierId}
                           </span>
                           <span className="text-muted-foreground shrink-0">
                             {supDetail.quantity} {supDetail.unit} (

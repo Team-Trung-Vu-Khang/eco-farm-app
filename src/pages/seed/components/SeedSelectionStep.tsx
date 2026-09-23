@@ -18,7 +18,7 @@ import { CropSelectorDialog } from "./CropSelectorDialog";
 import { CropGroupRemoteCombobox } from "./CropGroupRemoteCombobox";
 
 export function SeedSelectionStep() {
-  const { watch, setValue, control, getValues } =
+  const { watch, setValue, control } =
     useFormContext<CreateSeedFormValues>();
   const selectedCrop = watch("cropId");
   const selectedCropGroup = watch("cropGroupId");

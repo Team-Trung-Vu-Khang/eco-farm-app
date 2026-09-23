@@ -63,7 +63,8 @@ export interface PesticideFormData {
   activeIngredient: string;
   concentration: string;
   form: string;
-  group: string;
+  group: string | string[];
+  pesticideGroups?: string[];
   toxicityLevel: string;
   moaGroup: string;
   actionType: string;
@@ -108,4 +109,14 @@ export interface PesticideFormData {
   unit: string;
   packaging: string;
   formType?: "basic" | "advanced";
+
+  // Multi-select classifications
+  forms?: string[];
+  origins?: string[];
+  actionTypes?: string[];
+  toxicityLevels?: string[];
+  groups?: string[];
+  usageMethods?: string[];
+  controlLevels?: string[];
+  controlResidueLevels?: string[];
 }

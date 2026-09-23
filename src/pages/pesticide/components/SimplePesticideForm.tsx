@@ -1,3 +1,4 @@
+import { RemoteMultiSelect } from "@/components/RemoteMultiSelect";
 import { farmSupplyApi } from "@/features/farm-supply";
 import { useMasterData } from "@/features/master-data";
 import { useDebounce } from "@/shared/hooks/useDebounce";
@@ -43,39 +44,6 @@ const DOMAIN_LABELS: Record<
   animal: { item: "Thuốc / Vaccine", groupLabel: "Nhóm thuốc chăn nuôi" },
   aquaculture: { item: "Thuốc / Hóa chất", groupLabel: "Nhóm thuốc thủy sản" },
 };
-
-// Predefined measurement units
-const MEASURE_UNIT_OPTIONS = [
-  "ml",
-  "L",
-  "g",
-  "kg",
-  "viên",
-  "ống",
-  "vỉ",
-  "tấn",
-  "m",
-  "mm",
-  "cc",
-  "IU",
-];
-
-// Predefined packaging formats
-const PACKAGING_OPTIONS = [
-  "Chai",
-  "Lọ",
-  "Gói",
-  "Hộp",
-  "Bao",
-  "Bì",
-  "Can",
-  "Thùng",
-  "Túi",
-  "Vỉ",
-  "Ống",
-  "Chậu",
-  "Khay",
-];
 
 interface SimplePesticideFormProps {
   formData: PesticideFormData;
@@ -150,12 +118,10 @@ export default function SimplePesticideForm({
   const packagingList =
     packagingTypes && packagingTypes.length > 0
       ? packagingTypes.map((p) => p.name)
-      : PACKAGING_OPTIONS;
+      : [];
 
   const unitList =
-    baseUnits && baseUnits.length > 0
-      ? baseUnits.map((u) => u.name)
-      : MEASURE_UNIT_OPTIONS;
+    baseUnits && baseUnits.length > 0 ? baseUnits.map((u) => u.name) : [];
 
   const groupOptions = remoteGroups.map((group) => ({
     label: group.name,
@@ -239,12 +205,21 @@ export default function SimplePesticideForm({
             <Package className="w-4 h-4 text-slate-400" />
             {labels.groupLabel}
           </Label>
-          <RemoteAutoCompleteSelect
+          <RemoteMultiSelect
             options={groupOptions}
-            value={formData.group}
-            onChange={(value) => onFormFieldChange("group", value)}
+            value={
+              Array.isArray(formData.group)
+                ? formData.group
+                : formData.group
+                  ? [formData.group]
+                  : []
+            }
+            onChange={(vals) => {
+              onFormFieldChange("group", vals);
+              onFormFieldChange("pesticideGroups", vals);
+            }}
             onSearch={setGroupSearch}
-            placeholder={`Chọn nhóm ${labels.item.toLowerCase()}...`}
+            placeholder={`Chọn nhóm ${labels.item.toLowerCase()} (chọn nhiều)...`}
             searchPlaceholder="Tìm nhóm thuốc BVTV..."
             emptyText="Không tìm thấy nhóm thuốc BVTV"
             loading={isLoadingGroups}

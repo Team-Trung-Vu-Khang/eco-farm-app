@@ -45,15 +45,6 @@ export const initialMaterials: Material[] = [
   },
 ];
 
-export const materialTypes = [
-  "Vật tư tiêu hao",
-  "Dụng cụ lao động",
-  "Thiết bị tưới",
-  "Vật liệu nhà màng",
-  "Bao bì đóng gói",
-  "Khác",
-];
-
 export const commonHashtags = [
   "TietKiemChiPhi",
   "BenBi",
@@ -61,33 +52,9 @@ export const commonHashtags = [
   "CongNgheCao",
 ];
 
-export const suppliers = [
-  { id: "sup1", name: "Công ty Nhựa Rạng Đông", type: "enterprise" },
-  { id: "sup2", name: "Đại lý Vật tư Nông nghiệp A", type: "enterprise" },
-  { id: "sup3", name: "HTX Dịch vụ Nông nghiệp", type: "enterprise" },
-  { id: "sup4", name: "Cửa hàng Thiết bị tưới B", type: "enterprise" },
-];
-
+// Presentation-only — legacy display list consumed by out-of-scope
+// treatment-report page. Not a form option source.
 export const units = ["Cái", "Cuộn", "Mét", "Kg", "Bộ", "Thùng"];
-
-export const mockMaterialSuppliers = [
-  {
-    id: "sup1",
-    name: "Công ty Nhựa Rạng Đông",
-    type: "enterprise",
-    quantity: "50",
-    unit: "Cuộn",
-    packaging: "Cuộn 1000m",
-  },
-  {
-    id: "sup2",
-    name: "Đại lý VTNN Hòa Phát",
-    type: "enterprise",
-    quantity: "20",
-    unit: "Cuộn",
-    packaging: "Cuộn 500m",
-  },
-];
 
 // Unified Material Groups categorized by aspect
 export const materialGroups = [

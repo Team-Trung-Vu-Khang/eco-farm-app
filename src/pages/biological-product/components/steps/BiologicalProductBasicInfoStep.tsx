@@ -1,13 +1,9 @@
+import { RemoteMultiSelect } from "@/components/RemoteMultiSelect";
 import {
   Badge,
   Button,
   Input,
   Label,
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
   Textarea,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { Image as ImageIcon, Leaf, Plus, Tags, Upload, X } from "lucide-react";
@@ -16,6 +12,7 @@ import { commonHashtags } from "../../data/constants";
 import type { BiologicalProductFormData } from "../../types/types";
 import { useMasterData } from "@/features/master-data";
 import { SUPPLY_GROUP_CATALOG } from "../../data/constants";
+import { useDebounce } from "@/shared/hooks/useDebounce";
 
 interface BiologicalProductBasicInfoStepProps {
   formData: BiologicalProductFormData;
@@ -28,10 +25,23 @@ export const BiologicalProductBasicInfoStep = ({
 }: BiologicalProductBasicInfoStepProps) => {
   const isEdit = window.location.pathname.includes("/edit");
   const [paramHashtag, setParamHashtag] = useState("");
+  const [groupSearch, setGroupSearch] = useState("");
+  const debouncedGroupSearch = useDebounce(groupSearch, 300);
 
-  const { items: biologicalProductGroups } = useMasterData(
-    SUPPLY_GROUP_CATALOG,
-  );
+  const { items: biologicalProductGroups, loading: isLoadingGroups } =
+    useMasterData(SUPPLY_GROUP_CATALOG, {
+      params: {
+        keyword: debouncedGroupSearch.trim() || undefined,
+        status: "active",
+        page: 0,
+        size: 50,
+      },
+    });
+
+  const groupOptions = biologicalProductGroups.map((group) => ({
+    label: group.name,
+    value: group.name,
+  }));
 
   const handleAddHashtag = () => {
     const nextHashtag = paramHashtag.trim();
@@ -122,30 +132,26 @@ export const BiologicalProductBasicInfoStep = ({
             <Label className="flex items-center gap-1">
               Nhóm chế phẩm sinh học <span className="text-red-500">*</span>
             </Label>
-            <Select
-              value={formData.biologicalProductOriginGroup}
-              onValueChange={(val) =>
-                updateField("biologicalProductOriginGroup", val)
+            <RemoteMultiSelect
+              options={groupOptions}
+              value={
+                formData.biologicalProductOriginGroups &&
+                formData.biologicalProductOriginGroups.length > 0
+                  ? formData.biologicalProductOriginGroups
+                  : formData.biologicalProductOriginGroup
+                    ? [formData.biologicalProductOriginGroup]
+                    : []
               }
-            >
-              <SelectTrigger className="text-left h-auto py-2">
-                <SelectValue placeholder="Chọn nhóm chế phẩm sinh học từ danh mục..." />
-              </SelectTrigger>
-              <SelectContent className="max-h-72 overflow-y-auto">
-                {biologicalProductGroups.map((group) => (
-                  <SelectItem key={group.id} value={group.name}>
-                    <div className="flex flex-col">
-                      <span className="font-medium">{group.name}</span>
-                      {group.description && (
-                        <span className="text-xs text-muted-foreground truncate max-w-[400px]">
-                          {group.description}
-                        </span>
-                      )}
-                    </div>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              onChange={(vals) => {
+                updateField("biologicalProductOriginGroups", vals);
+                updateField("biologicalProductOriginGroup", vals[0] || "");
+              }}
+              onSearch={setGroupSearch}
+              placeholder="Chọn nhóm chế phẩm sinh học (cho phép chọn nhiều)..."
+              searchPlaceholder="Tìm nhóm chế phẩm sinh học..."
+              emptyText="Không tìm thấy nhóm chế phẩm sinh học"
+              loading={isLoadingGroups}
+            />
           </div>
 
           {/* Thành phần vi sinh */}

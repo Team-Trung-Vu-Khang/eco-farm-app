@@ -1,8 +1,8 @@
 import { AdminOrgStatsBlock } from "../components/AdminOrgStatsBlock";
 import { AdminActiveFarmerReportBlock } from "../components/AdminActiveFarmerReportBlock";
 import { CropVarietyHarvestBlock } from "../components/CropVarietyHarvestBlock";
-import { RecentDiaryEntries } from "../components/RecentDiaryEntries";
-import { UpcomingTasks } from "../components/UpcomingTasks";
+// import { RecentDiaryEntries } from "../components/RecentDiaryEntries";
+// import { UpcomingTasks } from "../components/UpcomingTasks";
 import type { DashboardZoneNode } from "../hooks/useDashboardData";
 
 interface AdminDashboardViewProps {
@@ -12,7 +12,7 @@ interface AdminDashboardViewProps {
     healthyTrees: number;
     sickTrees: number;
     treatingTrees: number;
-  };
+  } | null;
   taskStats?: {
     pending: number;
     inProgress: number;

@@ -98,6 +98,8 @@ export interface UpdateHistoryTableProps {
   searchable?: boolean;
   searchPlaceholder?: string;
   onSearch?: (val: string) => void;
+  showFilter?: boolean;
+  showDownload?: boolean;
 }
 
 export function UpdateHistoryTable({
@@ -118,6 +120,8 @@ export function UpdateHistoryTable({
   searchable = false,
   searchPlaceholder = "Tìm kiếm nhật ký...",
   onSearch,
+  showDownload = true,
+  showFilter = true,
 }: UpdateHistoryTableProps) {
   const [, setLocation] = useLocation();
 
@@ -557,6 +561,8 @@ export function UpdateHistoryTable({
       searchPlaceholder={searchPlaceholder}
       onSearch={onSearch}
       pageSize={pageSize}
+      downloadable={showDownload}
+      columnToggleable={showFilter}
       currentIndex={currentIndex}
       totalElements={totalElements}
       totalPages={totalPages}

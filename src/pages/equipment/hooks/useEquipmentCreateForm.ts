@@ -11,6 +11,7 @@ import { useImageUploadWithCache } from "@/features/storage/hooks/useImageUpload
 import { useQueryClient } from "@tanstack/react-query";
 import { z } from "zod";
 import { getApiErrorMessage } from "@/shared/lib/api-error";
+import { normalizeSku } from "@/shared/lib/sku";
 
 const equipmentSchema = z.object({
   machineName: z.string().trim().min(1),
@@ -125,7 +126,11 @@ export function useEquipmentCreateForm() {
   }, [isEdit, params?.id]);
 
   const updateField = (field: keyof EquipmentFormData, value: any) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
+    const nextValue =
+      (field === "sku" || field === "code") && typeof value === "string"
+        ? normalizeSku(value)
+        : value;
+    setFormData((prev) => ({ ...prev, [field]: nextValue }));
   };
 
   const addSupplierItem = () => {
@@ -152,7 +157,7 @@ export function useEquipmentCreateForm() {
 
   const handleConfirmSubmit = async () => {
     const generatedSku =
-      formData.sku?.trim() ||
+      (isEdit ? formData.sku?.trim() : normalizeSku(formData.sku)) ||
       `EQ-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
 
     updateField("sku", generatedSku);
@@ -206,28 +211,43 @@ export function useEquipmentCreateForm() {
 
       // Dynamic Classifications matching
       const classifications: any[] = [];
-      const addClass = (classKey: string, name: string) => {
-        if (!name) return;
-        const matched = allGroups.find(
-          (g) =>
-            g.classification === classKey &&
-            (g.name.toLowerCase() === name.toLowerCase() ||
-              g.code.toLowerCase() === name.toLocaleLowerCase()),
-        );
-        if (matched) {
-          classifications.push({
-            classification: classKey,
-            groupId: matched.id,
-            displayOrder: classifications.length,
-          });
-        }
+      const addClasses = (classKey: string, names: string | string[]) => {
+        const nameList = Array.isArray(names) ? names : names ? [names] : [];
+        nameList.forEach((name) => {
+          if (!name) return;
+          const matched = allGroups.find(
+            (g) =>
+              g.classification === classKey &&
+              (g.name?.toLowerCase() === name.toLowerCase() ||
+                g.code?.toLowerCase() === name.toLowerCase()),
+          );
+          if (matched) {
+            classifications.push({
+              classification: classKey,
+              groupId: matched.id,
+              displayOrder: classifications.length,
+            });
+          }
+        });
       };
 
-      addClass("technology_level", formData.technologyLevelGroup);
-      addClass("financial_aspect", formData.assetManagementGroup);
+      addClasses(
+        "technology_level",
+        formData.technologyLevelGroups &&
+          formData.technologyLevelGroups.length > 0
+          ? formData.technologyLevelGroups
+          : formData.technologyLevelGroup,
+      );
+      addClasses(
+        "financial_aspect",
+        formData.assetManagementGroups &&
+          formData.assetManagementGroups.length > 0
+          ? formData.assetManagementGroups
+          : formData.assetManagementGroup,
+      );
 
-      formData.valueChainGroup.forEach((chain) => {
-        addClass("value_chain", chain);
+      (formData.valueChainGroup || []).forEach((chain) => {
+        addClasses("value_chain", chain);
       });
 
       const payload: any = {
@@ -374,10 +394,20 @@ function mapResponseToEquipment(item: any): any {
       item.classifications?.find(
         (c: any) => c.classification === "technology_level",
       )?.group?.code || "",
+    technologyLevelGroups:
+      item.classifications
+        ?.filter((c: any) => c.classification === "technology_level")
+        ?.map((c: any) => c.group?.code)
+        ?.filter(Boolean) || [],
     assetManagementGroup:
       item.classifications?.find(
         (c: any) => c.classification === "financial_aspect",
       )?.group?.code || "",
+    assetManagementGroups:
+      item.classifications
+        ?.filter((c: any) => c.classification === "financial_aspect")
+        ?.map((c: any) => c.group?.code)
+        ?.filter(Boolean) || [],
     valueChainGroup:
       item.classifications
         ?.filter((c: any) => c.classification === "value_chain")

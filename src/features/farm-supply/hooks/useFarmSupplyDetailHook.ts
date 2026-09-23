@@ -77,43 +77,78 @@ function formatLegalStatus(status: string | null | undefined): string {
 function mapMedicineDetail(item: any) {
   if (!item) return null;
   const profile = item.profile || {};
+  const groups =
+    item.classifications
+      ?.filter(
+        (c: any) =>
+          c.classification === "target_group" || c.classification === "usage",
+      )
+      .map((c: any) => c.group?.name)
+      .filter(Boolean) || [];
+  const forms =
+    item.classifications
+      ?.filter((c: any) => c.classification === "dosage_form")
+      .map((c: any) => c.group?.name)
+      .filter(Boolean) || [];
+  const toxicityLevels =
+    item.classifications
+      ?.filter(
+        (c: any) =>
+          c.classification === "toxicity" ||
+          c.classification === "control_level" ||
+          c.classification === "control_residue_level",
+      )
+      .map((c: any) => c.group?.name)
+      .filter(Boolean) || [];
+  const actionTypes =
+    item.classifications
+      ?.filter(
+        (c: any) =>
+          c.classification === "mode_of_action" ||
+          c.classification === "usage_method",
+      )
+      .map((c: any) => c.group?.name)
+      .filter(Boolean) || [];
+  const origins =
+    item.classifications
+      ?.filter(
+        (c: any) =>
+          c.classification === "origin" ||
+          c.classification === "target_subject",
+      )
+      .map((c: any) => c.group?.name)
+      .filter(Boolean) || [];
+
   return {
     ...item,
     code: item.sku || item.code,
     activeIngredient: profile.activeIngredient || "",
     concentration: profile.concentration || "",
-    group:
-      item.classifications?.find(
-        (c: any) =>
-          c.classification === "target_group" || c.classification === "usage",
-      )?.group?.name || "",
-    form:
-      item.classifications?.find((c: any) => c.classification === "dosage_form")
-        ?.group?.name || "",
+    group: groups[0] || "",
+    groups: groups.length > 0 ? groups : groups[0] ? [groups[0]] : [],
+    form: forms[0] || "",
+    forms: forms.length > 0 ? forms : forms[0] ? [forms[0]] : [],
     toxicityLevel:
-      item.classifications?.find(
-        (c: any) =>
-          c.classification === "toxicity" ||
-          c.classification === "control_level" ||
-          c.classification === "control_residue_level",
-      )?.group?.name ||
+      toxicityLevels[0] ||
       (item.metadataJson && item.metadataJson?.toxicityLevel) ||
       "",
+    toxicityLevels:
+      toxicityLevels.length > 0
+        ? toxicityLevels
+        : toxicityLevels[0]
+          ? [toxicityLevels[0]]
+          : [],
     moaGroup: profile.moaGroupCode || profile.moaOrNutrientNote || "",
-    actionType:
-      item.classifications?.find(
-        (c: any) =>
-          c.classification === "mode_of_action" ||
-          c.classification === "usage_method",
-      )?.group?.name || "",
+    actionType: actionTypes[0] || "",
+    actionTypes:
+      actionTypes.length > 0
+        ? actionTypes
+        : actionTypes[0]
+          ? [actionTypes[0]]
+          : [],
     origin:
-      item.classifications?.find(
-        (c: any) =>
-          c.classification === "origin" ||
-          c.classification === "target_subject",
-      )?.group?.name ||
-      (item.metadataJson && item.metadataJson?.origin) ||
-      "",
+      origins[0] || (item.metadataJson && item.metadataJson?.origin) || "",
+    origins: origins.length > 0 ? origins : origins[0] ? [origins[0]] : [],
     imageUrl:
       item.imageUrl || (item.metadataJson && item.metadataJson?.imageUrl) || "",
 
@@ -157,6 +192,12 @@ function mapMedicineDetail(item: any) {
 function mapFertilizerDetail(item: any) {
   if (!item) return null;
   const profile = item.profile || {};
+  const fertilizerOriginGroups =
+    item.classifications
+      ?.filter((c: any) => c.classification === "origin")
+      .map((c: any) => c.group?.name)
+      .filter(Boolean) || [];
+
   return {
     ...item,
     code: item.sku || item.code,
@@ -168,9 +209,7 @@ function mapFertilizerDetail(item: any) {
       item.classifications?.find(
         (c: any) => c.classification === "nutrient_composition",
       )?.group?.name || "macronutrients",
-    originId:
-      item.classifications?.find((c: any) => c.classification === "origin")
-        ?.group?.name || "inorganic",
+    originId: fertilizerOriginGroups[0] || "inorganic",
     applicationStageId:
       item.classifications?.find(
         (c: any) => c.classification === "effect_stage",
@@ -184,11 +223,26 @@ function mapFertilizerDetail(item: any) {
 
     registrationNumber: item.registrationNumber || "",
     scientificTechnicalName: profile.scientificName || "",
-    fertilizerOriginGroup:
-      item.classifications?.find((c: any) => c.classification === "origin")
-        ?.group?.name || "",
+    fertilizerOriginGroup: fertilizerOriginGroups[0] || "",
+    fertilizerOriginGroups:
+      fertilizerOriginGroups.length > 0
+        ? fertilizerOriginGroups
+        : fertilizerOriginGroups[0]
+          ? [fertilizerOriginGroups[0]]
+          : [],
+    biologicalProductOriginGroup: fertilizerOriginGroups[0] || "",
+    biologicalProductOriginGroups:
+      fertilizerOriginGroups.length > 0
+        ? fertilizerOriginGroups
+        : fertilizerOriginGroups[0]
+          ? [fertilizerOriginGroups[0]]
+          : [],
     nutritionalComponents: profile.detailedComposition || "",
     fertilizerType:
+      item.classifications?.find(
+        (c: any) => c.classification === "nutrient_composition",
+      )?.group?.name || "",
+    biologicalProductType:
       item.classifications?.find(
         (c: any) => c.classification === "nutrient_composition",
       )?.group?.name || "",
@@ -245,6 +299,23 @@ function mapEquipmentDetail(item: any) {
         })()
       : item.metadataJson
     : {};
+
+  const techGroups =
+    item.classifications
+      ?.filter((c: any) => c.classification === "technology_level")
+      .map((c: any) => c.group?.name)
+      .filter(Boolean) || [];
+  const assetGroups =
+    item.classifications
+      ?.filter((c: any) => c.classification === "financial_aspect")
+      .map((c: any) => c.group?.name)
+      .filter(Boolean) || [];
+  const valChainGroups =
+    item.classifications
+      ?.filter((c: any) => c.classification === "value_chain")
+      .map((c: any) => c.group?.name)
+      .filter(Boolean) || [];
+
   return {
     ...item,
     code: item.code || "",
@@ -262,18 +333,17 @@ function mapEquipmentDetail(item: any) {
     manufactureYear: profile.manufactureYear
       ? String(profile.manufactureYear)
       : "",
-    technologyLevelGroup:
-      item.classifications?.find(
-        (c: any) => c.classification === "technology_level",
-      )?.group?.name || "",
-    assetManagementGroup:
-      item.classifications?.find(
-        (c: any) => c.classification === "financial_aspect",
-      )?.group?.name || "",
-    valueChainGroup:
-      item.classifications
-        ?.filter((c: any) => c.classification === "value_chain")
-        ?.map((c: any) => c.group?.name) || [],
+    technologyLevelGroup: techGroups[0] || "",
+    technologyLevelGroups:
+      techGroups.length > 0 ? techGroups : techGroups[0] ? [techGroups[0]] : [],
+    assetManagementGroup: assetGroups[0] || "",
+    assetManagementGroups:
+      assetGroups.length > 0
+        ? assetGroups
+        : assetGroups[0]
+          ? [assetGroups[0]]
+          : [],
+    valueChainGroup: valChainGroups,
     machineType: profile.typeTags || [],
     powerCapacity: profile.powerRating || "",
     workingCapacity: profile.capacity || "",
@@ -318,19 +388,29 @@ function mapEquipmentDetail(item: any) {
 
 function mapMaterialDetail(item: any) {
   if (!item) return null;
+  const techLevels =
+    item.classifications
+      ?.filter((c: any) => c.classification === "technology_level")
+      .map((c: any) => c.group?.name)
+      .filter(Boolean) || [];
+  const valChains =
+    item.classifications
+      ?.filter((c: any) => c.classification === "value_chain")
+      .map((c: any) => c.group?.name)
+      .filter(Boolean) || [];
+
   return {
     ...item,
     code: item.sku || item.code,
     name: item.name,
     description: item.description || "",
     status: item.status || "active",
-    technologyLevelId:
-      item.classifications?.find(
-        (c: any) => c.classification === "technology_level",
-      )?.group?.name || "",
-    valueChainId:
-      item.classifications?.find((c: any) => c.classification === "value_chain")
-        ?.group?.name || "",
+    technologyLevelId: techLevels[0] || "",
+    technologyLevelIds: techLevels,
+    technologyLevelNames: techLevels,
+    valueChainId: valChains[0] || "",
+    valueChainIds: valChains,
+    valueChainNames: valChains,
     materialGroupId: item.classifications?.[0]?.group?.name || "",
     manufacturerOrigin: item.manufacturerOrganization
       ? {

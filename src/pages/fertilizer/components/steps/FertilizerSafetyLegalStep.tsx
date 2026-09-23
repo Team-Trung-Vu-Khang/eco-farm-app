@@ -20,7 +20,6 @@ import {
   Shield,
 } from "lucide-react";
 
-import { standardsOptions } from "../../data/constants";
 import type { FertilizerFormData } from "../../types/types";
 import { useQuery } from "@tanstack/react-query";
 import { farmSupplyApi } from "@/features/farm-supply";
@@ -81,13 +80,10 @@ export default function FertilizerSafetyLegalStep({
     staleTime: 5 * 60 * 1000,
   });
 
-  const standardsMultiOptions =
-    apiStandards && apiStandards.length > 0
-      ? apiStandards.map((c: any) => ({ label: c.name, value: c.name }))
-      : standardsOptions.map((std) => ({
-          label: std,
-          value: std,
-        }));
+  const standardsMultiOptions = (apiStandards ?? []).map((c: any) => ({
+    label: c.name,
+    value: c.name,
+  }));
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500 max-w-4xl mx-auto">
       {/* Card: Toxicity & Protection */}

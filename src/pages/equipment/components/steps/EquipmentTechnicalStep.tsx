@@ -1,9 +1,7 @@
+import { RemoteMultiSelect } from "@/components/RemoteMultiSelect";
 import {
-  Badge,
-  Button,
   Input,
   Label,
-  MultiSelect,
   Select,
   SelectContent,
   SelectItem,
@@ -11,15 +9,13 @@ import {
   SelectValue,
   Textarea,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { Cpu, Plus, X } from "lucide-react";
+import { Cpu } from "lucide-react";
 import React, { useState } from "react";
-import {
-  fuelEnergyTypeOptions,
-  machineTypeOptions,
-} from "../../data/constants";
+import { fuelEnergyTypeOptions } from "../../data/constants";
 import type { EquipmentFormData } from "../../types";
 import { useQuery } from "@tanstack/react-query";
 import { farmSupplyApi, type DomainCode } from "@/features/farm-supply";
+import { useMasterData } from "@/features/master-data";
 
 interface EquipmentTechnicalStepProps {
   domainCode: DomainCode;
@@ -32,53 +28,63 @@ export const EquipmentTechnicalStep = ({
   domainCode,
   updateField,
 }: EquipmentTechnicalStepProps) => {
-  const [customMachineType, setCustomMachineType] = useState("");
+  const [techSearch, setTechSearch] = useState("");
+  const [assetSearch, setAssetSearch] = useState("");
+  const [chainSearch, setChainSearch] = useState("");
+  const [machineTypeSearch, setMachineTypeSearch] = useState("");
 
-  const { data: apiGroups } = useQuery({
+  const { items: equipmentToolGroups, isLoading: isEquipmentLoading } =
+    useMasterData("equipment-tool-groups", { params: { size: 100 } });
+
+  const { data: apiGroups, isLoading } = useQuery({
     queryKey: ["equipment-groups", domainCode],
-    queryFn: () => farmSupplyApi.getClassificationGroups("material"),
+    queryFn: () => farmSupplyApi.getClassificationGroups("equipment"),
     staleTime: 5 * 60 * 1000,
   });
 
+  const equipmentToolGroupOptions = React.useMemo(() => {
+    const list = equipmentToolGroups || [];
+    const filtered = machineTypeSearch.trim()
+      ? list.filter((item) =>
+          item.name.toLowerCase().includes(machineTypeSearch.toLowerCase()),
+        )
+      : list;
+    return filtered.map((item) => ({ label: item.name, value: item.name }));
+  }, [equipmentToolGroups, machineTypeSearch]);
+
   const technologyLevelOptions = React.useMemo(() => {
-    return (
+    const list =
       apiGroups?.filter((item) => item.classification === "technology_level") ??
-      []
+      [];
+    if (!techSearch.trim()) return list;
+    return list.filter((item) =>
+      item.name.toLowerCase().includes(techSearch.toLowerCase()),
     );
-  }, [apiGroups]);
+  }, [apiGroups, techSearch]);
 
-  const financialManagementOptions = React.useMemo(
-    () =>
+  const financialManagementOptions = React.useMemo(() => {
+    const list =
       apiGroups?.filter((item) => item.classification === "financial_aspect") ??
-      [],
-    [apiGroups],
-  );
+      [];
+    if (!assetSearch.trim()) return list;
+    return list.filter((item) =>
+      item.name.toLowerCase().includes(assetSearch.toLowerCase()),
+    );
+  }, [apiGroups, assetSearch]);
 
-  const valueChainOptions = React.useMemo(
-    () =>
-      (
-        apiGroups?.filter((item) => item.classification === "value_chain") ?? []
-      ).map((item) => ({ label: item.name, value: item.code })),
-    [apiGroups],
-  );
+  const valueChainOptions = React.useMemo(() => {
+    const list =
+      apiGroups?.filter((item) => item.classification === "value_chain") ?? [];
+    const filtered = chainSearch.trim()
+      ? list.filter((item) =>
+          item.name.toLowerCase().includes(chainSearch.toLowerCase()),
+        )
+      : list;
+    return filtered.map((item) => ({ label: item.name, value: item.code }));
+  }, [apiGroups, chainSearch]);
 
   const machineTypeArr = formData.machineType || [];
   const valueChainGroupArr = formData?.valueChainGroup || [];
-
-  const handleAddMachineType = () => {
-    const nextType = customMachineType.trim();
-    if (nextType && !machineTypeArr.includes(nextType)) {
-      updateField("machineType", [...machineTypeArr, nextType]);
-      setCustomMachineType("");
-    }
-  };
-
-  const removeMachineType = (tag: string) => {
-    updateField(
-      "machineType",
-      machineTypeArr.filter((t) => t !== tag),
-    );
-  };
 
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500 max-w-4xl mx-auto">
@@ -86,145 +92,99 @@ export const EquipmentTechnicalStep = ({
       <div className="bg-white p-6 rounded-xl shadow-sm border space-y-6">
         <h3 className="font-semibold text-lg flex items-center gap-2">
           <Cpu className="w-5 h-5 text-primary" />
-          Thông số & Đặc tính kỹ thuật
+          Thông số &amp; Đặc tính kỹ thuật
         </h3>
 
         {/* Groups */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-2">
-            <Label>Nhóm công nghệ (Năng lực vận hành)</Label>
-            <Select
-              value={formData.technologyLevelGroup || ""}
-              onValueChange={(v) => {
-                updateField("technologyLevelGroup", v);
-                updateField("technologyLevelId", v); // Sync legacy field
+            <Label>Mức độ công nghệ</Label>
+            <RemoteMultiSelect
+              options={technologyLevelOptions.map((t) => ({
+                label: t.name,
+                value: t.code,
+              }))}
+              value={
+                formData.technologyLevelGroups &&
+                formData.technologyLevelGroups.length > 0
+                  ? formData.technologyLevelGroups
+                  : formData.technologyLevelGroup
+                    ? [formData.technologyLevelGroup]
+                    : []
+              }
+              onChange={(vals) => {
+                updateField("technologyLevelGroups", vals);
+                updateField("technologyLevelGroup", vals[0] || "");
+                updateField("technologyLevelId", vals[0] || "");
               }}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Chọn mức độ công nghệ" />
-              </SelectTrigger>
-              <SelectContent>
-                {technologyLevelOptions.map((t) => (
-                  <SelectItem key={t.code} value={t.code}>
-                    {t.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              onSearch={setTechSearch}
+              placeholder="Chọn mức độ công nghệ (chọn nhiều)..."
+              searchPlaceholder="Tìm mức độ công nghệ..."
+              emptyText="Không tìm thấy mức độ công nghệ"
+              loading={isLoading}
+            />
           </div>
 
           <div className="space-y-2">
-            <Label>Nhóm tài sản (Quản lý tài chính)</Label>
-            <Select
-              value={formData.assetManagementGroup || ""}
-              onValueChange={(v) => {
-                updateField("assetManagementGroup", v);
-                updateField("financialManagementId", v); // Sync legacy field
+            <Label>Khía cạnh tài chính</Label>
+            <RemoteMultiSelect
+              options={financialManagementOptions.map((t) => ({
+                label: t.name,
+                value: t.code,
+              }))}
+              value={
+                formData.assetManagementGroups &&
+                formData.assetManagementGroups.length > 0
+                  ? formData.assetManagementGroups
+                  : formData.assetManagementGroup
+                    ? [formData.assetManagementGroup]
+                    : []
+              }
+              onChange={(vals) => {
+                updateField("assetManagementGroups", vals);
+                updateField("assetManagementGroup", vals[0] || "");
+                updateField("financialManagementId", vals[0] || "");
               }}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Chọn nhóm tài sản" />
-              </SelectTrigger>
-              <SelectContent>
-                {financialManagementOptions.map((t) => (
-                  <SelectItem key={t.code} value={t.code}>
-                    {t.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              onSearch={setAssetSearch}
+              placeholder="Chọn khía cạnh tài chính (chọn nhiều)..."
+              searchPlaceholder="Tìm khía cạnh tài chính..."
+              emptyText="Không tìm thấy khía cạnh tài chính"
+              loading={isLoading}
+            />
           </div>
         </div>
 
         {/* Process Group / Value Chain */}
         <div className="space-y-2">
-          <Label>Nhóm công cụ theo quy trình (Chuỗi giá trị)</Label>
-          <MultiSelect
+          <Label>Chuỗi giá trị</Label>
+          <RemoteMultiSelect
             options={valueChainOptions}
             value={valueChainGroupArr}
             onChange={(vals) => {
               updateField("valueChainGroup", vals);
               updateField("valueChainId", vals[0] || ""); // Sync legacy field (takes the first selected)
             }}
-            placeholder="Chọn khâu trong quy trình sản xuất..."
+            onSearch={setChainSearch}
+            placeholder="Chọn chuỗi giá trị (chọn nhiều)..."
+            searchPlaceholder="Tìm chuỗi giá trị..."
+            emptyText="Không tìm thấy chuỗi giá trị"
+            loading={isLoading}
           />
         </div>
 
         {/* Machine Type Tags */}
-        <div className="space-y-3">
-          <Label>Loại máy / Công dụng chi tiết</Label>
-          <div className="flex gap-2">
-            <Input
-              value={customMachineType}
-              onChange={(e) => setCustomMachineType(e.target.value)}
-              placeholder="Nhập loại máy (VD: Máy bơm chìm, Quạt nước...)"
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  e.preventDefault();
-                  handleAddMachineType();
-                }
-              }}
-            />
-            <Button
-              type="button"
-              onClick={handleAddMachineType}
-              variant="outline"
-            >
-              <Plus className="w-4 h-4" />
-            </Button>
-          </div>
-          {/* Quick presets */}
-          <div className="space-y-1">
-            <span className="text-xs text-muted-foreground">
-              Gợi ý loại máy phổ biến:
-            </span>
-            <div className="flex flex-wrap gap-1.5">
-              {machineTypeOptions.map((preset) => {
-                const isSelected = machineTypeArr.includes(preset);
-                return (
-                  <button
-                    key={preset}
-                    type="button"
-                    onClick={() => {
-                      if (!isSelected) {
-                        updateField("machineType", [...machineTypeArr, preset]);
-                      } else {
-                        removeMachineType(preset);
-                      }
-                    }}
-                    className={`px-2.5 py-1 rounded-md border text-xs font-medium transition-all ${
-                      isSelected
-                        ? "bg-primary/10 border-primary text-primary"
-                        : "bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100"
-                    }`}
-                  >
-                    {preset}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-          {/* Tag list */}
-          {machineTypeArr.filter((t) => !machineTypeOptions.includes(t))
-            .length > 0 && (
-            <div className="flex flex-wrap gap-2 pt-2">
-              {machineTypeArr
-                .filter((t) => !machineTypeOptions.includes(t))
-                .map((tag) => (
-                  <Badge
-                    key={tag}
-                    variant="secondary"
-                    className="flex items-center gap-1"
-                  >
-                    {tag}
-                    <X
-                      className="w-3.5 h-3.5 cursor-pointer ml-1 text-slate-400 hover:text-slate-600"
-                      onClick={() => removeMachineType(tag)}
-                    />
-                  </Badge>
-                ))}
-            </div>
-          )}
+        <div className="space-y-2">
+          <Label>Loại máy / Nhóm thiết bị</Label>
+          <RemoteMultiSelect
+            options={equipmentToolGroupOptions}
+            value={machineTypeArr}
+            onChange={(vals) => updateField("machineType", vals)}
+            onSearch={setMachineTypeSearch}
+            placeholder="Chọn loại máy / nhóm thiết bị (chọn nhiều)..."
+            searchPlaceholder="Tìm loại máy / nhóm thiết bị..."
+            emptyText="Không tìm thấy loại máy / nhóm thiết bị"
+            loading={isEquipmentLoading}
+          />
         </div>
 
         {/* Power & Working Capacity */}

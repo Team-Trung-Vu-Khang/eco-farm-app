@@ -1,10 +1,12 @@
 import { apiClient } from "@/shared/lib/axios";
 import type {
   SupplyType,
+  DomainCode,
   SupplyQueryParams,
   SupplyItemRequest,
   SupplyItemResponse,
   CatalogRef,
+  ClassificationGroup,
 } from "../types";
 import type { PageResponse } from "../../foundation/types/foundation.type";
 
@@ -118,16 +120,26 @@ export const farmSupplyApi = {
       .then((r) => r.data?.content ?? []);
   },
 
-  getClassificationGroups: (type: SupplyType, classification?: string) => {
+  getClassificationGroups: (
+    type: SupplyType,
+    classification?: string,
+    domainCode?: DomainCode,
+  ) => {
     const catalog =
       type === "equipment"
-        ? "equipment-tool-groups"
+        ? "material-groups"
         : type === "biological"
           ? "biological-product-groups"
           : `${type}-groups`;
     return apiClient
-      .get<PageResponse<any>>(`/api/master-data/${catalog}`, {
-        params: { status: "active", page: 0, size: 100, classification, domainCode: "CROP" },
+      .get<PageResponse<ClassificationGroup>>(`/api/master-data/${catalog}`, {
+        params: {
+          status: "active",
+          page: 0,
+          size: 100,
+          classification,
+          ...(domainCode ? { domainCode } : {}),
+        },
       })
       .then((r) => r.data?.content ?? []);
   },

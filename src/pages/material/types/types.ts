@@ -2,23 +2,28 @@ import type { OrganizationOption } from "@/components/organizations/PartnerSelec
 
 export interface Material {
   id: number;
-  code: string;
+  code?: string;
   name: string;
-  type: string;
-  description: string;
-  status: "active" | "inactive";
-  createdAt: string;
+  type?: string;
+  description?: string;
+  status?: "active" | "inactive";
+  createdAt?: string;
+  hashtags?: string[];
+  imageUrl?: string;
 
-  // Single classification group
+  // Single & Multi classification group
   materialGroupId?: string;
   technologyLevelId?: string;
   valueChainId?: string;
+  technologyLevelIds?: string[];
+  valueChainIds?: string[];
 
   // Origin & Supply fields
-  manufacturerOrigin?: string;
-  importerRegistrant?: string;
-  distributor?: string;
+  manufacturerOrigin?: OrganizationOption | string | null;
+  importerRegistrant?: OrganizationOption | string | null;
+  distributor?: OrganizationOption | string | null;
   packagingSpecs?: string[];
+  formType?: "basic" | "advanced";
 }
 
 export interface MaterialFormData {
@@ -33,6 +38,8 @@ export interface MaterialFormData {
   materialGroupId: string;
   technologyLevelId: string;
   valueChainId: string;
+  technologyLevelIds: string[];
+  valueChainIds: string[];
 
   // Origin & Supply fields
   manufacturerOrigin: OrganizationOption | null;

@@ -368,11 +368,20 @@ export type MaterialGroupRecord = MasterDataRecord<"material-groups">;
 export type MaterialGroupPageResponse =
   MasterDataPageResponse<MaterialGroupRecord>;
 export type MedicineGroupRecord = MasterDataRecord<"medicine-groups">;
+export type PesticideGroupRecord = MedicineGroupRecord;
+export type PesticideOriginRecord = MedicineGroupRecord;
+export type PesticideToxicityClassRecord = MedicineGroupRecord;
 export type PlanGroupRecord = MasterDataRecord<"plan-groups">;
 export type MedicineGroupCreateRequest =
   MasterDataCreateRequest<"medicine-groups">;
 export type MedicineGroupUpdateRequest =
   MasterDataUpdateRequest<"medicine-groups">;
+export type PesticideGroupCreateRequest = MedicineGroupCreateRequest;
+export type PesticideGroupUpdateRequest = MedicineGroupUpdateRequest;
+export type PesticideOriginCreateRequest = MedicineGroupCreateRequest;
+export type PesticideOriginUpdateRequest = MedicineGroupUpdateRequest;
+export type PesticideToxicityClassCreateRequest = MedicineGroupCreateRequest;
+export type PesticideToxicityClassUpdateRequest = MedicineGroupUpdateRequest;
 export type FertilizerGroupCreateRequest =
   MasterDataCreateRequest<"fertilizer-groups">;
 export type FertilizerGroupUpdateRequest =

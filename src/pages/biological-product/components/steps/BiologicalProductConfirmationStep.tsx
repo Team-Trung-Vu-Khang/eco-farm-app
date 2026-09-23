@@ -84,10 +84,31 @@ export const BiologicalProductConfirmationStep = ({
                 label="Tên khoa học"
                 value={formData.scientificTechnicalName}
               />
-              <Row
-                label="Nhóm chế phẩm"
-                value={formData.biologicalProductOriginGroup}
-              />
+<div className="min-w-0">
+                <span className="text-muted-foreground text-sm block mb-1">
+                  Nguồn gốc chế phẩm sinh học:
+                </span>
+                <div className="flex flex-wrap gap-1 min-w-0">
+                  {(formData.biologicalProductOriginGroups?.length
+                    ? formData.biologicalProductOriginGroups
+                    : formData.biologicalProductOriginGroup
+                      ? [formData.biologicalProductOriginGroup]
+                      : []
+                  ).map((group) => (
+                    <Badge
+                      key={group}
+                      variant="outline"
+                      className="text-xs bg-slate-50 max-w-full min-w-0 break-words"
+                    >
+                      {group}
+                    </Badge>
+                  ))}
+                  {!formData.biologicalProductOriginGroups?.length &&
+                    !formData.biologicalProductOriginGroup && (
+                      <span className="text-slate-400">Chưa chọn</span>
+                    )}
+                </div>
+              </div>
               <Row
                 label="Nhóm hoạt chất sinh học"
                 value={formData.nutritionalComponents}
@@ -121,9 +142,13 @@ export const BiologicalProductConfirmationStep = ({
               {formData.hashtags.length > 0 && (
                 <div className="col-span-2">
                   <span className="text-muted-foreground text-sm">Tags:</span>{" "}
-                  <div className="inline-flex gap-1 flex-wrap mt-1">
+                  <div className="inline-flex gap-1 flex-wrap mt-1 min-w-0">
                     {formData.hashtags.map((t) => (
-                      <Badge key={t} variant="secondary" className="text-xs">
+                      <Badge
+                        key={t}
+                        variant="secondary"
+                        className="text-xs max-w-full min-w-0 break-words"
+                      >
                         #{t}
                       </Badge>
                     ))}
@@ -160,9 +185,13 @@ export const BiologicalProductConfirmationStep = ({
                   <span className="text-muted-foreground text-sm">
                     Cây trồng áp dụng:
                   </span>{" "}
-                  <div className="inline-flex gap-1 flex-wrap mt-1">
+                  <div className="inline-flex gap-1 flex-wrap mt-1 min-w-0">
                     {formData.targetCrops.map((c) => (
-                      <Badge key={c} variant="outline" className="text-xs">
+                      <Badge
+                        key={c}
+                        variant="outline"
+                        className="text-xs max-w-full min-w-0 break-words"
+                      >
                         {c}
                       </Badge>
                     ))}
@@ -266,7 +295,10 @@ export const BiologicalProductConfirmationStep = ({
                   <span className="text-muted-foreground">
                     Tình trạng pháp lý:
                   </span>{" "}
-                  <Badge variant="outline" className="ml-1 bg-white">
+                  <Badge
+                    variant="outline"
+                    className="ml-1 bg-white max-w-full min-w-0 break-words"
+                  >
                     {formatLegalStatus(formData.legalStatus)}
                   </Badge>
                 </div>
@@ -277,12 +309,12 @@ export const BiologicalProductConfirmationStep = ({
                     <span className="text-muted-foreground block mb-1">
                       Tiêu chuẩn nông nghiệp:
                     </span>
-                    <div className="inline-flex gap-1 flex-wrap mt-1">
+                    <div className="inline-flex gap-1 flex-wrap mt-1 min-w-0">
                       {formData.standardsCompliance.map((std) => (
                         <Badge
                           key={std}
                           variant="secondary"
-                          className="text-xs"
+                          className="text-xs max-w-full min-w-0 break-words"
                         >
                           {std}
                         </Badge>
@@ -322,12 +354,12 @@ export const BiologicalProductConfirmationStep = ({
                     <span className="text-muted-foreground block mb-1.5">
                       Bao bì quy cách:
                     </span>
-                    <div className="inline-flex gap-1.5 flex-wrap">
+                    <div className="inline-flex gap-1.5 flex-wrap min-w-0">
                       {formData.packagingSpecs.map((s) => (
                         <Badge
                           key={s}
                           variant="outline"
-                          className="text-xs bg-slate-50"
+                          className="text-xs bg-slate-50 max-w-full min-w-0 break-words"
                         >
                           {s}
                         </Badge>

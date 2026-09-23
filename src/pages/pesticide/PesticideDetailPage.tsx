@@ -212,21 +212,42 @@ const PesticideDetailPage = () => {
                 </div>
 
                 <div className="flex flex-wrap gap-2 mt-4">
-                  <Badge variant="outline" className="bg-white/50">
-                    {item.group}
-                  </Badge>
-                  {item.form && (
-                    <Badge variant="outline" className="bg-white/50">
-                      {item.form}
+                  {(item.groups?.length
+                    ? item.groups
+                    : item.group
+                      ? [item.group]
+                      : []
+                  ).map((g: string) => (
+                    <Badge key={g} variant="outline" className="bg-white/50">
+                      {g}
                     </Badge>
-                  )}
-                  {item.toxicityLevel && (
-                    <span
-                      className={`px-2 py-0.5 rounded text-xs font-semibold border ${toxicityColorMap[item.toxicityLevel] ?? ""}`}
-                    >
-                      WHO {toxLabel?.label ?? item.toxicityLevel}
-                    </span>
-                  )}
+                  ))}
+                  {(item.forms?.length
+                    ? item.forms
+                    : item.form
+                      ? [item.form]
+                      : []
+                  ).map((f: string) => (
+                    <Badge key={f} variant="outline" className="bg-white/50">
+                      {f}
+                    </Badge>
+                  ))}
+                  {(item.toxicityLevels?.length
+                    ? item.toxicityLevels
+                    : item.toxicityLevel
+                      ? [item.toxicityLevel]
+                      : []
+                  ).map((tox: string) => {
+                    const toxItem = toxicityLevels.find((t) => t.value === tox);
+                    return (
+                      <span
+                        key={tox}
+                        className={`px-2 py-0.5 rounded text-xs font-semibold border ${toxicityColorMap[tox] ?? "bg-slate-100 text-slate-700 border-slate-200"}`}
+                      >
+                        WHO {toxItem?.label ?? tox}
+                      </span>
+                    );
+                  })}
                 </div>
               </div>
             </div>
@@ -247,21 +268,104 @@ const PesticideDetailPage = () => {
                   label="Hàm lượng / Nồng độ"
                   value={item.concentration}
                 />
-                <InfoRow label="Dạng bào chế" value={item.form} />
-                <InfoRow label="Cách xâm nhập" value={item.actionType} />
+                <div>
+                  <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">
+                    Dạng bào chế
+                  </h4>
+                  <div className="flex flex-wrap gap-1.5">
+                    {(item.forms?.length
+                      ? item.forms
+                      : item.form
+                        ? [item.form]
+                        : []
+                    ).map((f: string) => (
+                      <Badge
+                        key={f}
+                        variant="outline"
+                        className="text-xs bg-slate-50"
+                      >
+                        {f}
+                      </Badge>
+                    ))}
+                    {!item.forms?.length && !item.form && (
+                      <span className="text-sm text-slate-400">N/A</span>
+                    )}
+                  </div>
+                </div>
+                <div>
+                  <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">
+                    Cách xâm nhập
+                  </h4>
+                  <div className="flex flex-wrap gap-1.5">
+                    {(item.actionTypes?.length
+                      ? item.actionTypes
+                      : item.actionType
+                        ? [item.actionType]
+                        : []
+                    ).map((a: string) => (
+                      <Badge
+                        key={a}
+                        variant="outline"
+                        className="text-xs bg-slate-50"
+                      >
+                        {a}
+                      </Badge>
+                    ))}
+                    {!item.actionTypes?.length && !item.actionType && (
+                      <span className="text-sm text-slate-400">N/A</span>
+                    )}
+                  </div>
+                </div>
                 <InfoRow label="Nhóm MoA" value={item.moaGroup} />
-                <InfoRow label="Nguồn gốc" value={item.origin} />
-                {item.toxicityLevel && (
+                <div>
+                  <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">
+                    Nguồn gốc
+                  </h4>
+                  <div className="flex flex-wrap gap-1.5">
+                    {(item.origins?.length
+                      ? item.origins
+                      : item.origin
+                        ? [item.origin]
+                        : []
+                    ).map((o: string) => (
+                      <Badge
+                        key={o}
+                        variant="outline"
+                        className="text-xs bg-slate-50"
+                      >
+                        {o}
+                      </Badge>
+                    ))}
+                    {!item.origins?.length && !item.origin && (
+                      <span className="text-sm text-slate-400">N/A</span>
+                    )}
+                  </div>
+                </div>
+                {((item.toxicityLevels?.length ?? 0) > 0 ||
+                  item.toxicityLevel) && (
                   <div>
-                    <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1 flex items-center gap-1">
+                    <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5 flex items-center gap-1">
                       <ShieldAlert className="w-3.5 h-3.5 text-amber-500" />
                       Nhóm độc WHO
                     </h4>
-                    <span
-                      className={`px-2 py-1 rounded text-sm font-semibold border ${toxicityColorMap[item.toxicityLevel] ?? ""}`}
-                    >
-                      {toxLabel?.label ?? item.toxicityLevel}
-                    </span>
+                    <div className="flex flex-wrap gap-1.5">
+                      {(item.toxicityLevels?.length
+                        ? item.toxicityLevels
+                        : [item.toxicityLevel]
+                      ).map((tox: string) => {
+                        const toxItem = toxicityLevels.find(
+                          (t) => t.value === tox,
+                        );
+                        return (
+                          <span
+                            key={tox}
+                            className={`px-2 py-1 rounded text-xs font-semibold border ${toxicityColorMap[tox] ?? "bg-slate-100 text-slate-700 border-slate-200"}`}
+                          >
+                            WHO {toxItem?.label ?? tox}
+                          </span>
+                        );
+                      })}
+                    </div>
                   </div>
                 )}
               </div>

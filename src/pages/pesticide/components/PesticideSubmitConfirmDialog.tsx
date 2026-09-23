@@ -69,7 +69,7 @@ export default function PesticideSubmitConfirmDialog({
                     packagingSpecs.map((item) => (
                       <span
                         key={item}
-                        className="rounded-full bg-white px-2.5 py-1 text-xs font-medium text-slate-700 border border-slate-200"
+                        className="rounded-full bg-white px-2.5 py-1 text-xs font-medium text-slate-700 border border-slate-200 max-w-full min-w-0 break-words"
                       >
                         {item}
                       </span>

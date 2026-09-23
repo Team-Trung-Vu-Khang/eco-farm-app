@@ -83,7 +83,9 @@ export interface EquipmentFormData {
   countryOfOrigin: string;
   manufactureYear: number | "";
   technologyLevelGroup: string;
+  technologyLevelGroups?: string[];
   assetManagementGroup: string;
+  assetManagementGroups?: string[];
   valueChainGroup: string[];
   machineType: string[];
   powerCapacity: string;

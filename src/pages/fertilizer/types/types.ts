@@ -78,12 +78,14 @@ export interface FertilizerFormData {
   // New fields
   registrationNumber: string;
   scientificTechnicalName: string;
-  fertilizerOriginGroup: string;
+  fertilizerOriginGroup: string | string[];
+  fertilizerOriginGroups?: string[];
   nutritionalComponents: string;
   fertilizerType: string;
   physicalForm: string;
   mainIngredients: string;
   moaGroup: string;
+  moaGroups?: string[];
   npkRatio: string;
 
   // Step 2

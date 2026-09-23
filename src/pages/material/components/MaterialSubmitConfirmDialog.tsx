@@ -9,6 +9,7 @@ import {
   AlertDialogTitle,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { Loader2 } from "lucide-react";
+import { useSupplyCatalog } from "@/features/farm-supply";
 import { getMaterialGroupLabel } from "../data/constants";
 import type { MaterialFormData } from "../types/types";
 
@@ -29,6 +30,16 @@ export default function MaterialSubmitConfirmDialog({
   onConfirm,
   loading,
 }: MaterialSubmitConfirmDialogProps) {
+  const { groups } = useSupplyCatalog({ type: "material" });
+
+  const resolveGroupLabel = (code?: string) => {
+    if (!code) return "Chưa chọn";
+    const match = groups.find(
+      (g) => g.code?.toLowerCase() === code.toLowerCase(),
+    );
+    return match?.name || getMaterialGroupLabel(code) || code;
+  };
+
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
       <AlertDialogContent>
@@ -54,13 +65,13 @@ export default function MaterialSubmitConfirmDialog({
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Mức độ công nghệ:</span>
                 <span className="font-medium">
-                  {getMaterialGroupLabel(formData.technologyLevelId) || "Chưa chọn"}
+                  {resolveGroupLabel(formData.technologyLevelId)}
                 </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Giai đoạn áp dụng:</span>
                 <span className="font-medium">
-                  {getMaterialGroupLabel(formData.valueChainId) || "Chưa chọn"}
+                  {resolveGroupLabel(formData.valueChainId)}
                 </span>
               </div>
               <div className="space-y-1">
@@ -70,7 +81,7 @@ export default function MaterialSubmitConfirmDialog({
                     formData.packagingSpecs.map((item) => (
                       <span
                         key={item}
-                        className="rounded-full bg-white px-2.5 py-1 text-xs font-medium text-slate-700 border border-slate-200"
+                        className="rounded-full bg-white px-2.5 py-1 text-xs font-medium text-slate-700 border border-slate-200 max-w-full min-w-0 break-words"
                       >
                         {item}
                       </span>

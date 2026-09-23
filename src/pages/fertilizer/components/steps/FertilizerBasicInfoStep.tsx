@@ -1,20 +1,18 @@
+import { RemoteMultiSelect } from "@/components/RemoteMultiSelect";
+import { useMasterData } from "@/features/master-data";
 import {
   Badge,
   Button,
   Input,
   Label,
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+  MultiSelect,
   Textarea,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { Image as ImageIcon, Leaf, Plus, Tags, Upload, X } from "lucide-react";
 import { useState } from "react";
-import { useMasterData } from "@/features/master-data";
-import { commonHashtags, originOptions } from "../../data/constants";
+import { commonHashtags } from "../../data/constants";
 import type { FertilizerFormData } from "../../types/types";
+import { useDebounce } from "@/shared/hooks/useDebounce";
 
 interface FertilizerBasicInfoStepProps {
   formData: FertilizerFormData;
@@ -27,9 +25,21 @@ export const FertilizerBasicInfoStep = ({
 }: FertilizerBasicInfoStepProps) => {
   const isEdit = window.location.pathname.includes("/edit");
   const [paramHashtag, setParamHashtag] = useState("");
+  const [groupSearch, setGroupSearch] = useState("");
+  const debouncedGroupSearch = useDebounce(groupSearch, 300);
 
   // Fetch groups dynamically from master data (managed in FertilizerGroupPage.tsx)
-  const { items: fertilizerGroups } = useMasterData("fertilizer-groups");
+  const { items: fertilizerGroups, loading: isLoadingGroups } = useMasterData(
+    "fertilizer-groups",
+    {
+      params: {
+        keyword: debouncedGroupSearch.trim() || undefined,
+        status: "active",
+        page: 0,
+        size: 50,
+      },
+    },
+  );
 
   const handleAddHashtag = () => {
     const nextHashtag = paramHashtag.trim();
@@ -115,48 +125,34 @@ export const FertilizerBasicInfoStep = ({
             </div>
           </div>
 
-          {/* Single Fertilizer Group Selector (managed in Category page) */}
+          {/* Fertilizer Group Selector (remote multi-select) */}
           <div className="space-y-2">
             <Label className="flex items-center gap-1">
               Nhóm phân bón <span className="text-red-500">*</span>
             </Label>
-            <Select
-              value={formData.fertilizerOriginGroup}
-              onValueChange={(val) => {
-                updateField("fertilizerOriginGroup", val);
-                // Also set legacy field originId if there is a match or just sync
-                const matchedOption = originOptions.find(
-                  (o) => o.label === val,
-                );
-                if (matchedOption) {
-                  updateField("originId", matchedOption.id);
-                }
+            <RemoteMultiSelect
+              options={fertilizerGroups.map((g) => ({
+                label: g.name,
+                value: g.name,
+              }))}
+              value={
+                formData.fertilizerOriginGroups &&
+                formData.fertilizerOriginGroups.length > 0
+                  ? formData.fertilizerOriginGroups
+                  : formData.fertilizerOriginGroup
+                    ? [formData.fertilizerOriginGroup]
+                    : []
+              }
+              onChange={(vals) => {
+                updateField("fertilizerOriginGroups", vals);
+                updateField("fertilizerOriginGroup", vals[0] || "");
               }}
-            >
-              <SelectTrigger className="text-left h-auto py-2">
-                <SelectValue placeholder="Chọn nhóm phân bón từ danh mục..." />
-              </SelectTrigger>
-              <SelectContent>
-                {fertilizerGroups.map((g) => (
-                  <SelectItem key={g.id} value={g.name}>
-                    <div className="flex flex-col">
-                      <span className="font-medium">{g.name}</span>
-                      {g.description && (
-                        <span className="text-xs text-muted-foreground truncate max-w-[400px]">
-                          {g.description}
-                        </span>
-                      )}
-                    </div>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            {/* <p className="text-xs text-muted-foreground">
-              Danh mục được quản lý tại{" "}
-              <span className="text-primary font-medium">
-                Danh mục → Phân bón
-              </span>
-            </p> */}
+              onSearch={setGroupSearch}
+              placeholder="Chọn nhóm phân bón từ danh mục (chọn nhiều)..."
+              searchPlaceholder="Tìm nhóm phân bón..."
+              emptyText="Không tìm thấy nhóm phân bón"
+              loading={isLoadingGroups}
+            />
           </div>
 
           {/* MoA & NPK Ratio */}

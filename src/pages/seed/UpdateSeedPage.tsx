@@ -99,15 +99,17 @@ export default function UpdateSeedPage() {
 
       reset({
         cropGroupId: "0", // dummy value to pass validation
-        cropId: String(seed.crop.id),
-        cropVarietyId: String(seed.cropVariety.id),
-        code: seed.code || "",
-        name: seed.name || "",
-        cropName: seed.crop.name,
-        varietyName: seed.cropVariety.name,
-        varietyCode: seed.cropVariety.code || `SEED-${seed.cropVariety.id}`,
-        supplierOrganizationId: String(seed.supplier.id),
-        supplierName: seed.supplier.name,
+        cropId: String(seed?.crop?.id ?? ""),
+        cropVarietyId: String(seed?.cropVariety?.id ?? ""),
+        code: seed?.code || "",
+        name: seed?.name || "",
+        cropName: seed?.crop?.name ?? "",
+        varietyName: seed?.cropVariety?.name ?? "",
+        varietyCode:
+          seed?.cropVariety?.code ||
+          (seed?.cropVariety?.id ? `SEED-${seed.cropVariety.id}` : ""),
+        supplierOrganizationId: String(seed?.supplier?.id ?? ""),
+        supplierName: seed?.supplier?.name ?? "",
         origin: seed.origin || "",
         germinationRate: seed.germinationRate || 0,
         uniformity: seed.purityRate || 0,
@@ -181,10 +183,15 @@ export default function UpdateSeedPage() {
         const originalPdf = seed?.documents?.find(
           (doc) => doc.documentType === "pdf",
         );
-        let pdfUrl: string | undefined = existingPdf?.fileUrl || originalPdf?.fileUrl;
+        let pdfUrl: string | undefined =
+          existingPdf?.fileUrl || originalPdf?.fileUrl;
         let pdfName: string | undefined =
-          existingPdf?.fileName || existingPdf?.name || originalPdf?.fileName || originalPdf?.name;
-        let pdfSize: number | undefined = existingPdf?.sizeBytes ?? originalPdf?.sizeBytes;
+          existingPdf?.fileName ||
+          existingPdf?.name ||
+          originalPdf?.fileName ||
+          originalPdf?.name;
+        let pdfSize: number | undefined =
+          existingPdf?.sizeBytes ?? originalPdf?.sizeBytes;
         let pdfDocumentId: number | undefined = existingPdf?.id;
 
         if (data.pdfFile instanceof File && data.pdfFile.size > 0) {
@@ -239,7 +246,7 @@ export default function UpdateSeedPage() {
       await updateSeed.mutateAsync({
         id: seedId,
         data: {
-          cropVarietyId: seed!.cropVariety.id,
+          cropVarietyId: seed?.cropVariety?.id ?? Number(data.cropVarietyId),
           code: data.code || undefined,
           name: data.name,
           origin: data.origin,
@@ -250,7 +257,7 @@ export default function UpdateSeedPage() {
           supplierOrganizationId: supplierId,
           germinationRate: data.germinationRate,
           purityRate: data.uniformity,
-          status: seed!.status,
+          status: seed?.status ?? "active",
           metadataJson: {
             description: data.description,
             expiryDate: data.expiryDate?.toISOString(),

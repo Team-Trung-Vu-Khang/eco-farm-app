@@ -12,20 +12,9 @@ import {
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { ChevronLeft, Save, Plus, Trash2 } from "lucide-react";
 import { useUnitFormPage } from "./hooks/useUnitFormPage";
+import { DOMAIN_CODE_OPTIONS, SUPPLY_TYPE_OPTIONS } from "./data/constants";
 import type { ConversionRuleSupplyType } from "./types/types";
 import type { DomainCode } from "@/features/farm-supply";
-
-const SUPPLY_TYPE_OPTIONS = [
-  { value: "medicine", label: "Thuốc BVTV" },
-  { value: "fertilizer", label: "Phân bón" },
-  { value: "material", label: "Vật tư" },
-];
-
-const DOMAIN_CODE_OPTIONS = [
-  { value: "CROP", label: "Trồng trọt" },
-  { value: "LIVESTOCK", label: "Chăn nuôi" },
-  { value: "AQUACULTURE", label: "Thủy sản" },
-];
 
 const UnitCreatePage = () => {
   const {

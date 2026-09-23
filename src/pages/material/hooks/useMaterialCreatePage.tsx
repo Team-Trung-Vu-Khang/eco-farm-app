@@ -18,6 +18,7 @@ import {
 import { useImageUploadWithCache } from "@/features/storage/hooks/useImageUploadWithCache";
 import { z } from "zod";
 import { getApiErrorMessage } from "@/shared/lib/api-error";
+import { normalizeSku } from "@/shared/lib/sku";
 
 const materialSchema = z.object({
   name: z.string().trim().min(1),
@@ -27,9 +28,12 @@ const materialSchema = z.object({
 
 export function useMaterialCreatePage() {
   const [location, setLocation] = useLocation();
-  const [matchFarm, paramsFarm] = useRoute("/cultivation-material/material/:id/edit");
+  const [matchFarm, paramsFarm] = useRoute(
+    "/cultivation-material/material/:id/edit",
+  );
   const [matchAdmin, paramsAdmin] = useRoute("/admin/material/:id/edit");
-  const isEdit = (matchFarm || matchAdmin) && !!(paramsFarm?.id || paramsAdmin?.id);
+  const isEdit =
+    (matchFarm || matchAdmin) && !!(paramsFarm?.id || paramsAdmin?.id);
   const params = paramsFarm || paramsAdmin;
   const scope = matchAdmin || location.startsWith("/admin") ? "admin" : "farm";
   const { toast } = useToast();
@@ -54,7 +58,11 @@ export function useMaterialCreatePage() {
     field: K,
     value: MaterialFormData[K],
   ) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
+    const nextValue =
+      field === "code" && typeof value === "string"
+        ? (normalizeSku(value) as MaterialFormData[K])
+        : value;
+    setFormData((prev) => ({ ...prev, [field]: nextValue }));
   };
 
   useEffect(() => {
@@ -128,28 +136,41 @@ export function useMaterialCreatePage() {
 
       // Dynamic Classifications matching
       const classifications: any[] = [];
-      const addClass = (classKey: string, name: string) => {
-        if (!name) return;
-        const matched = allGroups.find(
-          (g) =>
-            g.classification === classKey &&
-            (g.code?.toLowerCase() === name.toLowerCase() ||
-              g.name?.toLowerCase() === name.toLowerCase()),
-        );
-        if (matched) {
-          classifications.push({
-            classification: classKey,
-            groupId: matched.id,
-            displayOrder: 0,
-          });
-        }
+      const addClasses = (classKey: string, names: string | string[]) => {
+        const nameList = Array.isArray(names) ? names : names ? [names] : [];
+        nameList.forEach((name, idx) => {
+          if (!name) return;
+          const matched = allGroups.find(
+            (g) =>
+              g.classification === classKey &&
+              (g.code?.toLowerCase() === name.toLowerCase() ||
+                g.name?.toLowerCase() === name.toLowerCase()),
+          );
+          if (matched) {
+            classifications.push({
+              classification: classKey,
+              groupId: matched.id,
+              displayOrder: idx,
+            });
+          }
+        });
       };
 
-      addClass("technology_level", formData.technologyLevelId);
-      addClass("value_chain", formData.valueChainId);
+      addClasses(
+        "technology_level",
+        formData.technologyLevelIds?.length > 0
+          ? formData.technologyLevelIds
+          : formData.technologyLevelId,
+      );
+      addClasses(
+        "value_chain",
+        formData.valueChainIds?.length > 0
+          ? formData.valueChainIds
+          : formData.valueChainId,
+      );
 
       const generatedSku =
-        formData.code?.trim() ||
+        (isEdit ? formData.code?.trim() : normalizeSku(formData.code)) ||
         `VL-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
 
       updateField("code", generatedSku);
@@ -178,7 +199,12 @@ export function useMaterialCreatePage() {
       };
 
       if (isEdit && params?.id) {
-        await farmSupplyApi.update("material", Number(params.id), payload, scope);
+        await farmSupplyApi.update(
+          "material",
+          Number(params.id),
+          payload,
+          scope,
+        );
         toast({
           title: "Thành công",
           description: "Đã cập nhật thông tin vật tư thành công",
@@ -190,8 +216,14 @@ export function useMaterialCreatePage() {
           description: "Đã thêm mới vật tư thành công",
         });
       }
-      queryClient.invalidateQueries({ queryKey: [scope === "admin" ? "admin-supplies" : "farm-supplies"] });
-      setLocation(scope === "admin" ? "/admin/material" : "/cultivation-material/material");
+      queryClient.invalidateQueries({
+        queryKey: [scope === "admin" ? "admin-supplies" : "farm-supplies"],
+      });
+      setLocation(
+        scope === "admin"
+          ? "/admin/material"
+          : "/cultivation-material/material",
+      );
     } catch (err: any) {
       if (err.response?.status === 409) {
         toast({
@@ -267,7 +299,12 @@ export function useMaterialCreatePage() {
     submitting,
     isDetailMode,
     setIsDetailMode,
-    goBack: () => setLocation(scope === "admin" ? "/admin/material" : "/cultivation-material/material"),
+    goBack: () =>
+      setLocation(
+        scope === "admin"
+          ? "/admin/material"
+          : "/cultivation-material/material",
+      ),
     handleComplete: () => setConfirmOpen(true),
     handleConfirmSubmit,
   };
@@ -296,6 +333,22 @@ function mapResponseToMaterial(item: any): any {
         ?.find((c: any) => c.classification === "value_chain")
         ?.group?.name?.toLowerCase() ||
       "",
+    technologyLevelIds:
+      item.classifications
+        ?.filter((c: any) => c.classification === "technology_level")
+        ?.map(
+          (c: any) =>
+            c.group?.code?.toLowerCase() || c.group?.name?.toLowerCase(),
+        )
+        ?.filter(Boolean) || [],
+    valueChainIds:
+      item.classifications
+        ?.filter((c: any) => c.classification === "value_chain")
+        ?.map(
+          (c: any) =>
+            c.group?.code?.toLowerCase() || c.group?.name?.toLowerCase(),
+        )
+        ?.filter(Boolean) || [],
     materialGroupId:
       item.classifications?.[0]?.group?.code?.toLowerCase() ||
       item.classifications?.[0]?.group?.name?.toLowerCase() ||

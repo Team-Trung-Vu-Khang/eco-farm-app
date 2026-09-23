@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { RemoteMultiSelect } from "@/components/RemoteMultiSelect";
 import {
   Badge,
   Button,
@@ -26,46 +27,8 @@ import {
   Loader2,
 } from "lucide-react";
 import type { MaterialFormData } from "../types/types";
-import {
-  commonHashtags,
-  materialGroups,
-  packagingSpecsPresets,
-} from "../data/constants";
-
-const MEASURE_UNIT_OPTIONS = [
-  "cái",
-  "cuộn",
-  "mét",
-  "kg",
-  "g",
-  "bộ",
-  "thùng",
-  "bao",
-  "hộp",
-  "lọ",
-  "kiện",
-  "gói",
-  "can",
-  "lít",
-  "ml",
-  "tấn",
-  "mm",
-];
-
-const PACKAGING_OPTIONS = [
-  "Bao",
-  "Bì",
-  "Hộp",
-  "Thùng",
-  "Túi",
-  "Chai",
-  "Lọ",
-  "Gói",
-  "Can",
-  "Cuộn",
-  "Kiện",
-  "Khay",
-];
+import { commonHashtags } from "../data/constants";
+import { useSupplyCatalog } from "@/features/farm-supply/hooks/useSupplyCatalog";
 
 interface SimpleMaterialFormProps {
   formData: MaterialFormData;
@@ -95,6 +58,33 @@ export default function SimpleMaterialForm({
   const [quantity, setQuantity] = useState("");
   const [unit, setUnit] = useState("");
   const [packaging, setPackaging] = useState("");
+
+  const { packagingTypes, baseUnits, groups } = useSupplyCatalog({
+    type: "material",
+  });
+
+  const [techSearch, setTechSearch] = useState("");
+  const [chainSearch, setChainSearch] = useState("");
+
+  const techLevelOptions = (groups || [])
+    .filter((g) => g.classification === "technology_level")
+    .filter((g) =>
+      techSearch.trim()
+        ? g.name.toLowerCase().includes(techSearch.toLowerCase())
+        : true,
+    )
+    .map((g) => ({ label: g.name, value: g.code }));
+  const valueChainOptions = (groups || [])
+    .filter((g) => g.classification === "value_chain")
+    .filter((g) =>
+      chainSearch.trim()
+        ? g.name.toLowerCase().includes(chainSearch.toLowerCase())
+        : true,
+    )
+    .map((g) => ({ label: g.name, value: g.code }));
+
+  const packagingTypeOptions = (packagingTypes || []).map((p) => p.name);
+  const baseUnitOptions = (baseUnits || []).map((u) => u.name);
 
   const packagingSpecsArr = formData.packagingSpecs || [];
 
@@ -238,43 +228,48 @@ export default function SimpleMaterialForm({
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <div className="space-y-2">
             <Label required>Mức độ công nghệ</Label>
-            <Select
-              value={formData.technologyLevelId || ""}
-              onValueChange={(value) => {
-                updateField("technologyLevelId", value);
-                updateField("materialGroupId", value);
+            <RemoteMultiSelect
+              options={techLevelOptions}
+              value={
+                formData.technologyLevelIds &&
+                formData.technologyLevelIds.length > 0
+                  ? formData.technologyLevelIds
+                  : formData.technologyLevelId
+                    ? [formData.technologyLevelId]
+                    : []
+              }
+              onChange={(vals) => {
+                updateField("technologyLevelIds", vals);
+                updateField("technologyLevelId", vals[0] || "");
+                updateField("materialGroupId", vals[0] || "");
               }}
-            >
-              <SelectTrigger className="text-left h-auto py-2">
-                <SelectValue placeholder="Chọn mức độ công nghệ..." />
-              </SelectTrigger>
-              <SelectContent>
-                {materialGroups[0].options.map((opt) => (
-                  <SelectItem key={opt.id} value={opt.id}>
-                    {opt.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              onSearch={setTechSearch}
+              placeholder="Chọn mức độ công nghệ (chọn nhiều)..."
+              searchPlaceholder="Tìm mức độ công nghệ..."
+              emptyText="Không tìm thấy mức độ công nghệ"
+            />
           </div>
 
           <div className="space-y-2">
             <Label required>Giai đoạn áp dụng</Label>
-            <Select
-              value={formData.valueChainId || ""}
-              onValueChange={(value) => updateField("valueChainId", value)}
-            >
-              <SelectTrigger className="text-left h-auto py-2">
-                <SelectValue placeholder="Chọn giai đoạn áp dụng..." />
-              </SelectTrigger>
-              <SelectContent>
-                {materialGroups[1].options.map((opt) => (
-                  <SelectItem key={opt.id} value={opt.id}>
-                    {opt.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <RemoteMultiSelect
+              options={valueChainOptions}
+              value={
+                formData.valueChainIds && formData.valueChainIds.length > 0
+                  ? formData.valueChainIds
+                  : formData.valueChainId
+                    ? [formData.valueChainId]
+                    : []
+              }
+              onChange={(vals) => {
+                updateField("valueChainIds", vals);
+                updateField("valueChainId", vals[0] || "");
+              }}
+              onSearch={setChainSearch}
+              placeholder="Chọn giai đoạn áp dụng (chọn nhiều)..."
+              searchPlaceholder="Tìm giai đoạn áp dụng..."
+              emptyText="Không tìm thấy giai đoạn áp dụng"
+            />
           </div>
         </div>
       </div>
@@ -394,7 +389,7 @@ export default function SimpleMaterialForm({
                       <SelectValue placeholder="Loại (Chai, Bao...)" />
                     </SelectTrigger>
                     <SelectContent>
-                      {PACKAGING_OPTIONS.map((item) => (
+                      {packagingTypeOptions.map((item) => (
                         <SelectItem key={item} value={item}>
                           {item}
                         </SelectItem>
@@ -431,7 +426,7 @@ export default function SimpleMaterialForm({
                       <SelectValue placeholder="Đơn vị (ml, kg...)" />
                     </SelectTrigger>
                     <SelectContent>
-                      {MEASURE_UNIT_OPTIONS.map((item) => (
+                      {baseUnitOptions.map((item) => (
                         <SelectItem key={item} value={item}>
                           {item}
                         </SelectItem>
@@ -450,7 +445,7 @@ export default function SimpleMaterialForm({
                     <SelectValue placeholder="Chọn đơn vị cơ sở (kg, lít, ml, viên...)" />
                   </SelectTrigger>
                   <SelectContent>
-                    {MEASURE_UNIT_OPTIONS.map((item) => (
+                    {baseUnitOptions.map((item) => (
                       <SelectItem key={item} value={item}>
                         {item}
                       </SelectItem>
@@ -473,38 +468,6 @@ export default function SimpleMaterialForm({
               <Plus className="w-4 h-4 mr-1" />
               Thêm
             </Button>
-          </div>
-
-          <div className="space-y-1 pt-2">
-            <p className="text-xs text-muted-foreground">Gợi ý phổ biến:</p>
-            <div className="flex flex-wrap gap-1.5">
-              {packagingSpecsPresets.map((preset) => {
-                const isSelected = packagingSpecsArr.includes(preset);
-                return (
-                  <button
-                    key={preset}
-                    type="button"
-                    onClick={() => {
-                      if (!isSelected) {
-                        updateField("packagingSpecs", [
-                          ...packagingSpecsArr,
-                          preset,
-                        ]);
-                      } else {
-                        removePackagingSpec(preset);
-                      }
-                    }}
-                    className={`px-2.5 py-1 rounded-md border text-xs font-medium transition-all ${
-                      isSelected
-                        ? "bg-primary/10 border-primary text-primary"
-                        : "bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100"
-                    }`}
-                  >
-                    {preset}
-                  </button>
-                );
-              })}
-            </div>
           </div>
 
           {packagingSpecsArr.length > 0 && (

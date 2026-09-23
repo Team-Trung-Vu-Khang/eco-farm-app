@@ -19,11 +19,7 @@ import {
   Search,
 } from "lucide-react";
 import { useState } from "react";
-import {
-  suppliers as presetSuppliers,
-  units,
-  packagingSpecsPresets,
-} from "../../data/constants";
+import { packagingSpecsPresets } from "../../data/constants";
 import type { EquipmentFormData, SupplierDetail } from "../../types";
 import { PartnerSelectorDialog } from "@/components/organizations/PartnerSelectorDialog";
 
@@ -45,7 +41,9 @@ export const EquipmentSuppliersStep = ({
   updateField,
 }: EquipmentSuppliersStepProps) => {
   const [pkgInput, setPkgInput] = useState("");
-  const [activeModal, setActiveModal] = useState<"manufacturerOrigin" | "importerRegistrant" | "distributor" | null>(null);
+  const [activeModal, setActiveModal] = useState<
+    "manufacturerOrigin" | "importerRegistrant" | "distributor" | null
+  >(null);
 
   const packagingSpecsArr = formData.packagingSpecs || [];
   const supplierDetailsArr = formData.supplierDetails || [];
@@ -91,7 +89,9 @@ export const EquipmentSuppliersStep = ({
                   {formData.manufacturerOrigin.name}
                 </Badge>
               ) : (
-                <span className="text-sm text-slate-400">Bấm để chọn nhà sản xuất...</span>
+                <span className="text-sm text-slate-400">
+                  Bấm để chọn nhà sản xuất...
+                </span>
               )}
             </div>
             <Button
@@ -103,10 +103,6 @@ export const EquipmentSuppliersStep = ({
               <Search className="w-4 h-4 text-slate-500" />
             </Button>
           </div>
-          <p className="text-xs text-muted-foreground">
-            Tên công ty + quốc gia (Việt Nam, Ấn Độ, Trung Quốc, Đức, Mỹ,
-            Nhật...)
-          </p>
         </div>
 
         {/* Importer Registrant */}
@@ -125,7 +121,9 @@ export const EquipmentSuppliersStep = ({
                   {formData.importerRegistrant.name}
                 </Badge>
               ) : (
-                <span className="text-sm text-slate-400">Bấm để chọn nhà nhập khẩu...</span>
+                <span className="text-sm text-slate-400">
+                  Bấm để chọn nhà nhập khẩu...
+                </span>
               )}
             </div>
             <Button
@@ -158,7 +156,9 @@ export const EquipmentSuppliersStep = ({
                   {formData.distributor.name}
                 </Badge>
               ) : (
-                <span className="text-sm text-slate-400">Bấm để chọn nhà phân phối...</span>
+                <span className="text-sm text-slate-400">
+                  Bấm để chọn nhà phân phối...
+                </span>
               )}
             </div>
             <Button
@@ -212,7 +212,7 @@ export const EquipmentSuppliersStep = ({
             </Button>
           </div>
           {/* Presets */}
-          <div className="space-y-1">
+          {/* <div className="space-y-1">
             <span className="text-xs text-muted-foreground">
               Gợi ý quy cách phổ biến:
             </span>
@@ -244,7 +244,7 @@ export const EquipmentSuppliersStep = ({
                 );
               })}
             </div>
-          </div>
+          </div> */}
           {/* Tags list */}
           {packagingSpecsArr.filter((t) => !packagingSpecsPresets.includes(t))
             .length > 0 && (
@@ -271,22 +271,34 @@ export const EquipmentSuppliersStep = ({
 
       <PartnerSelectorDialog
         open={activeModal === "manufacturerOrigin"}
-        onOpenChange={(open) => setActiveModal(open ? "manufacturerOrigin" : null)}
+        onOpenChange={(open) =>
+          setActiveModal(open ? "manufacturerOrigin" : null)
+        }
         title="Chọn nhà sản xuất / Xuất xứ"
         isMulti={false}
         returnById
-        selectedItems={formData.manufacturerOrigin ? [formData.manufacturerOrigin] : []}
-        onConfirmItems={(items) => updateField("manufacturerOrigin", items[0] || null)}
+        selectedItems={
+          formData.manufacturerOrigin ? [formData.manufacturerOrigin] : []
+        }
+        onConfirmItems={(items) =>
+          updateField("manufacturerOrigin", items[0] || null)
+        }
       />
 
       <PartnerSelectorDialog
         open={activeModal === "importerRegistrant"}
-        onOpenChange={(open) => setActiveModal(open ? "importerRegistrant" : null)}
+        onOpenChange={(open) =>
+          setActiveModal(open ? "importerRegistrant" : null)
+        }
         title="Chọn nhà nhập khẩu / Đăng ký"
         isMulti={false}
         returnById
-        selectedItems={formData.importerRegistrant ? [formData.importerRegistrant] : []}
-        onConfirmItems={(items) => updateField("importerRegistrant", items[0] || null)}
+        selectedItems={
+          formData.importerRegistrant ? [formData.importerRegistrant] : []
+        }
+        onConfirmItems={(items) =>
+          updateField("importerRegistrant", items[0] || null)
+        }
       />
 
       <PartnerSelectorDialog

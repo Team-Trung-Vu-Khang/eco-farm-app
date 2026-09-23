@@ -15,6 +15,7 @@ import {
 } from "@/features/farm-supply";
 import { useImageUploadWithCache } from "@/features/storage/hooks/useImageUploadWithCache";
 import { getApiErrorMessage } from "@/shared/lib/api-error";
+import { normalizeSku } from "@/shared/lib/sku";
 
 export function useFertilizerCreateForm() {
   const queryClient = useQueryClient();
@@ -148,7 +149,11 @@ export function useFertilizerCreateForm() {
   }, [formData.code]);
 
   const updateField = (field: keyof FertilizerFormData, value: any) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
+    const nextValue =
+      field === "code" && typeof value === "string"
+        ? normalizeSku(value)
+        : value;
+    setFormData((prev) => ({ ...prev, [field]: nextValue }));
   };
 
   const resetForm = () => {
@@ -185,32 +190,42 @@ export function useFertilizerCreateForm() {
 
       // Dynamic Classifications matching
       const classifications: any[] = [];
-      const addClass = (classKey: string, name: string) => {
-        if (!name) return;
-        const matched = allGroups.find(
-          (g) =>
-            g.classification === classKey &&
-            g.name.toLowerCase() === name.toLowerCase(),
-        );
-        if (matched) {
-          classifications.push({
-            classification: classKey,
-            groupId: matched.id,
-            displayOrder: 0,
-          });
-        }
+      const addClasses = (classKey: string, names: string | string[]) => {
+        const nameList = Array.isArray(names) ? names : names ? [names] : [];
+        nameList.forEach((name, idx) => {
+          if (!name) return;
+          const matched = allGroups.find(
+            (g) =>
+              g.classification === classKey &&
+              (g.name?.toLowerCase() === name.toLowerCase() ||
+                g.code?.toLowerCase() === name.toLowerCase()),
+          );
+          if (matched) {
+            classifications.push({
+              classification: classKey,
+              groupId: matched.id,
+              displayOrder: idx,
+            });
+          }
+        });
       };
 
-      addClass(
+      addClasses(
         "nutrient_composition",
         formData.fertilizerType || formData.nutritionalContentId,
       );
-      addClass("origin", formData.fertilizerOriginGroup || formData.originId);
-      addClass(
+      addClasses(
+        "origin",
+        formData.fertilizerOriginGroups &&
+          formData.fertilizerOriginGroups.length > 0
+          ? formData.fertilizerOriginGroups
+          : formData.fertilizerOriginGroup,
+      );
+      addClasses(
         "effect_stage",
         formData.applicationStage || formData.applicationStageId,
       );
-      addClass(
+      addClasses(
         "physical_form",
         formData.physicalForm || formData.physicalFormId,
       );
@@ -267,7 +282,7 @@ export function useFertilizerCreateForm() {
       }
 
       const generatedSku =
-        formData.code?.trim() ||
+        (isEdit ? formData.code?.trim() : normalizeSku(formData.code)) ||
         `PB-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
       const payload: any = {
         name: formData.name,
@@ -441,6 +456,11 @@ function mapResponseToFertilizer(item: any, certs: any[]): any {
         ?.group?.name ||
       item.metadataJson?.origin ||
       "",
+    fertilizerOriginGroups:
+      item.classifications
+        ?.filter((c: any) => c.classification === "origin")
+        ?.map((c: any) => c.group?.name)
+        ?.filter(Boolean) || [],
     nutritionalComponents: profile.detailedComposition || "",
     fertilizerType:
       item.classifications?.find(

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { RemoteMultiSelect } from "@/components/RemoteMultiSelect";
 import { useMasterData } from "@/features/master-data";
 import {
   Badge,
@@ -29,40 +30,9 @@ import {
   Loader2,
 } from "lucide-react";
 import type { FertilizerFormData } from "../types/types";
-import { originOptions, commonHashtags } from "../data/constants";
+import { commonHashtags } from "../data/constants";
 import { useQuery } from "@tanstack/react-query";
 import { farmSupplyApi } from "@/features/farm-supply";
-
-const MEASURE_UNIT_OPTIONS = [
-  "kg",
-  "g",
-  "L",
-  "ml",
-  "tấn",
-  "bao",
-  "can",
-  "thùng",
-  "viên",
-  "ống",
-  "vỉ",
-  "cc",
-  "IU",
-];
-
-const PACKAGING_OPTIONS = [
-  "Bao",
-  "Bì",
-  "Can",
-  "Chai",
-  "Hộp",
-  "Lọ",
-  "Gói",
-  "Thùng",
-  "Túi",
-  "Cuộn",
-  "Kiện",
-  "Khay",
-];
 
 interface SimpleFertilizerFormProps {
   formData: FertilizerFormData;
@@ -85,10 +55,20 @@ export default function SimpleFertilizerForm({
   loading,
 }: SimpleFertilizerFormProps) {
   const isEdit = window.location.pathname.includes("/edit");
-  // Fetch fertilizer groups from master data (same as advanced form)
   const { items: fertilizerGroups } = useMasterData("fertilizer-groups", {
     params: { size: 100 },
   });
+  const [groupSearch, setGroupSearch] = useState("");
+  const fertilizerGroupOptions = (fertilizerGroups || [])
+    .filter((g) =>
+      groupSearch.trim()
+        ? g.name.toLowerCase().includes(groupSearch.toLowerCase())
+        : true,
+    )
+    .map((g) => ({
+      label: g.name,
+      value: g.name,
+    }));
 
   // Dynamic API Fetching
   const { data: packagingTypes } = useQuery({
@@ -103,15 +83,9 @@ export default function SimpleFertilizerForm({
     staleTime: 5 * 60 * 1000,
   });
 
-  const packagingList =
-    packagingTypes && packagingTypes.length > 0
-      ? packagingTypes.map((p) => p.name)
-      : PACKAGING_OPTIONS;
+  const packagingList = (packagingTypes ?? []).map((p) => p.name);
 
-  const unitList =
-    baseUnits && baseUnits.length > 0
-      ? baseUnits.map((u) => u.name)
-      : MEASURE_UNIT_OPTIONS;
+  const unitList = (baseUnits ?? []).map((u) => u.name);
 
   const hasSimplePackagingRule =
     formData.configMode === "SPEC"
@@ -197,35 +171,24 @@ export default function SimpleFertilizerForm({
           <Package className="w-4 h-4 text-slate-400" />
           Nhóm phân bón
         </Label>
-        <Select
-          value={formData.fertilizerOriginGroup}
-          onValueChange={(val) => {
-            updateField("fertilizerOriginGroup", val);
-            // Sync legacy originId field if there's a match
-            const matchedOption = originOptions.find((o) => o.label === val);
-            if (matchedOption) {
-              updateField("originId", matchedOption.id);
-            }
+        <RemoteMultiSelect
+          options={fertilizerGroupOptions}
+          value={
+            Array.isArray(formData.fertilizerOriginGroup)
+              ? formData.fertilizerOriginGroup
+              : formData.fertilizerOriginGroup
+                ? [formData.fertilizerOriginGroup]
+                : []
+          }
+          onChange={(vals) => {
+            updateField("fertilizerOriginGroup", vals);
+            updateField("fertilizerOriginGroups", vals);
           }}
-        >
-          <SelectTrigger className="text-left h-auto py-2">
-            <SelectValue placeholder="Chọn nhóm phân bón từ danh mục..." />
-          </SelectTrigger>
-          <SelectContent>
-            {fertilizerGroups.map((g) => (
-              <SelectItem key={g.id} value={g.name}>
-                <div className="flex flex-col">
-                  <span className="font-medium">{g.name}</span>
-                  {g.description && (
-                    <span className="text-xs text-muted-foreground truncate max-w-[400px]">
-                      {g.description}
-                    </span>
-                  )}
-                </div>
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+          onSearch={setGroupSearch}
+          placeholder="Chọn nhóm phân bón từ danh mục (chọn nhiều)..."
+          searchPlaceholder="Tìm nhóm phân bón..."
+          emptyText="Không tìm thấy nhóm phân bón"
+        />
       </div>
 
       {/* ── Mã SKU ── */}

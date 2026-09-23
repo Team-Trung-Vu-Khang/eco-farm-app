@@ -2,7 +2,6 @@ import { Badge, type Column } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { CodeBadge } from "@/components/CodeBadge";
 import {
   technologyLevelOptions,
-  valueChainOptions,
   financialManagementOptions,
 } from "./constants";
 
@@ -16,7 +15,11 @@ export const getEquipmentColumns = (
   const onNameClick =
     typeof options === "function" ? options : options?.onNameClick;
   return [
-    { key: "code", label: "Mã", render: (value) => <CodeBadge value={value} /> },
+    {
+      key: "code",
+      label: "Mã",
+      render: (value) => <CodeBadge value={value} />,
+    },
     {
       key: "sku",
       label: "Mã SKU",
@@ -52,6 +55,34 @@ export const getEquipmentColumns = (
           {value === "MASTER" ? "Hệ thống" : "Nội bộ"}
         </Badge>
       ),
+    },
+    {
+      key: "machineType",
+      label: "Loại máy / Nhóm thiết bị",
+      render: (_: any, row: any) => {
+        const rawTypes = row.profile?.typeTags || row.machineType;
+        const typesList = Array.isArray(rawTypes)
+          ? rawTypes
+          : rawTypes
+            ? [rawTypes]
+            : [];
+        if (typesList.length === 0) {
+          return <span className="text-muted-foreground text-xs">—</span>;
+        }
+        return (
+          <div className="flex flex-wrap gap-1">
+            {typesList.map((t: string, idx: number) => (
+              <Badge
+                key={idx}
+                variant="outline"
+                className="text-[11px] px-1.5 py-0"
+              >
+                {t}
+              </Badge>
+            ))}
+          </div>
+        );
+      },
     },
     {
       key: "technologyLevelId",

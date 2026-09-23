@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { RemoteMultiSelect } from "@/components/RemoteMultiSelect";
 import {
   Badge,
   Button,
@@ -33,37 +34,6 @@ import { farmSupplyApi } from "@/features/farm-supply";
 import { useMasterData } from "@/features/master-data";
 import { SUPPLY_GROUP_CATALOG } from "../data/constants";
 
-const MEASURE_UNIT_OPTIONS = [
-  "kg",
-  "g",
-  "L",
-  "ml",
-  "tấn",
-  "bao",
-  "can",
-  "thùng",
-  "viên",
-  "ống",
-  "vỉ",
-  "cc",
-  "IU",
-];
-
-const PACKAGING_OPTIONS = [
-  "Bao",
-  "Bì",
-  "Can",
-  "Chai",
-  "Hộp",
-  "Lọ",
-  "Gói",
-  "Thùng",
-  "Túi",
-  "Cuộn",
-  "Kiện",
-  "Khay",
-];
-
 interface SimpleBiologicalProductFormProps {
   formData: BiologicalProductFormData;
   updateField: (
@@ -86,9 +56,20 @@ export default function SimpleBiologicalProductForm({
 }: SimpleBiologicalProductFormProps) {
   const isEdit = window.location.pathname.includes("/edit");
   const { items: biologicalProductGroups } = useMasterData(
-    SUPPLY_GROUP_CATALOG,
+    "biological-product-groups",
     { params: { size: 100 } },
   );
+  const [groupSearch, setGroupSearch] = useState("");
+  const biologicalProductGroupOptions = (biologicalProductGroups || [])
+    .filter((g) =>
+      groupSearch.trim()
+        ? g.name.toLowerCase().includes(groupSearch.toLowerCase())
+        : true,
+    )
+    .map((g) => ({
+      label: g.name,
+      value: g.name,
+    }));
   // Dynamic API Fetching
   const { data: packagingTypes } = useQuery({
     queryKey: ["packaging-types"],
@@ -102,15 +83,9 @@ export default function SimpleBiologicalProductForm({
     staleTime: 5 * 60 * 1000,
   });
 
-  const packagingList =
-    packagingTypes && packagingTypes.length > 0
-      ? packagingTypes.map((p) => p.name)
-      : PACKAGING_OPTIONS;
+  const packagingList = (packagingTypes ?? []).map((p) => p.name);
 
-  const unitList =
-    baseUnits && baseUnits.length > 0
-      ? baseUnits.map((u) => u.name)
-      : MEASURE_UNIT_OPTIONS;
+  const unitList = (baseUnits ?? []).map((u) => u.name);
 
   const hasSimplePackagingRule =
     formData.configMode === "SPEC"
@@ -224,30 +199,24 @@ export default function SimpleBiologicalProductForm({
           <Package className="w-4 h-4 text-slate-400" />
           Nhóm chế phẩm sinh học
         </Label>
-        <Select
-          value={formData.biologicalProductOriginGroup}
-          onValueChange={(val) =>
-            updateField("biologicalProductOriginGroup", val)
+        <RemoteMultiSelect
+          options={biologicalProductGroupOptions}
+          value={
+            Array.isArray(formData.biologicalProductOriginGroup)
+              ? formData.biologicalProductOriginGroup
+              : formData.biologicalProductOriginGroup
+                ? [formData.biologicalProductOriginGroup]
+                : []
           }
-        >
-          <SelectTrigger className="text-left h-auto py-2">
-            <SelectValue placeholder="Chọn nhóm chế phẩm sinh học từ danh mục..." />
-          </SelectTrigger>
-          <SelectContent className="max-h-72 overflow-y-auto">
-            {biologicalProductGroups.map((group) => (
-              <SelectItem key={group.id} value={group.name}>
-                <div className="flex flex-col">
-                  <span className="font-medium">{group.name}</span>
-                  {group.description && (
-                    <span className="text-xs text-muted-foreground truncate max-w-[400px]">
-                      {group.description}
-                    </span>
-                  )}
-                </div>
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+          onChange={(vals) => {
+            updateField("biologicalProductOriginGroup", vals);
+            updateField("biologicalProductOriginGroups", vals);
+          }}
+          onSearch={setGroupSearch}
+          placeholder="Chọn nhóm chế phẩm sinh học từ danh mục (chọn nhiều)..."
+          searchPlaceholder="Tìm nhóm chế phẩm sinh học..."
+          emptyText="Không tìm thấy nhóm chế phẩm sinh học"
+        />
       </div>
 
       {/* ── Cấu hình Đơn vị Vật tư ── */}
