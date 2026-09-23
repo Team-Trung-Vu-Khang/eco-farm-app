@@ -6,6 +6,7 @@ import {
   DialogTitle,
   Input,
   cn,
+  useIsMobile,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { Search, Package, CheckCircle2, Layers, Loader2 } from "lucide-react";
 import {
@@ -32,6 +33,7 @@ export function SupplySearchDialog({
   onSelectMaterial,
 }: SupplySearchDialogProps) {
   const [searchValue, setSearchValue] = useState("");
+  const isMobile = useIsMobile();
   const typeOptions = getSupplyTypeOptions(domainCode);
   const selectedTypeOption = typeOptions.find((opt) => opt.value === selectedType);
 
@@ -68,8 +70,18 @@ export function SupplySearchDialog({
         onOpenChange(val);
       }}
     >
-      <DialogContent className="max-w-xl bg-white rounded-2xl p-5 shadow-xl border border-slate-100">
-        <DialogHeader className="pb-3 border-b border-slate-100">
+      <DialogContent
+        className={
+          isMobile
+            ? "w-[92vw] max-w-xl gap-2 bg-white rounded-2xl p-4 shadow-xl border border-slate-100"
+            : "max-w-xl bg-white rounded-2xl p-5 shadow-xl border border-slate-100"
+        }
+      >
+        <DialogHeader
+          className={
+            isMobile ? "text-left pr-8" : "pb-3 border-b border-slate-100"
+          }
+        >
           <DialogTitle className="flex items-center justify-between gap-2 text-slate-900 font-bold text-base">
             <span className="flex items-center gap-2">
               <Package className="w-5 h-5 text-emerald-600" />
@@ -78,7 +90,7 @@ export function SupplySearchDialog({
           </DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-3 py-2">
+        <div className={isMobile ? "space-y-2" : "space-y-3 py-2"}>
           {/* Search Bar */}
           <div className="relative">
             <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
@@ -108,7 +120,11 @@ export function SupplySearchDialog({
           {/* Supply Items Scrollable Container */}
           <div
             onScroll={handleScroll}
-            className="h-[320px] overflow-y-auto rounded-xl border border-slate-200 bg-slate-50/40 p-2 scrollbar-thin"
+            className={
+              isMobile
+                ? "max-h-[50dvh] min-h-[120px] overflow-y-auto -mx-1 px-1 py-1"
+                : "h-[320px] overflow-y-auto rounded-xl border border-slate-200 bg-slate-50/40 p-2 scrollbar-thin"
+            }
           >
             {searchedMaterials.length > 0 ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -134,18 +150,37 @@ export function SupplySearchDialog({
                       key={item.id}
                       onClick={() => handleSelectItem(item)}
                       className={cn(
-                        "p-3 rounded-xl border transition-all cursor-pointer flex flex-col justify-between gap-1.5",
+                        isMobile
+                          ? "px-3 py-2.5 rounded-xl border transition-all cursor-pointer flex items-center gap-2"
+                          : "p-3 rounded-xl border transition-all cursor-pointer flex flex-col justify-between gap-1.5",
                         isSelected
                           ? "bg-emerald-50/90 border-emerald-500 ring-1 ring-emerald-500 shadow-2xs"
                           : "bg-white border-slate-200 hover:border-slate-300 hover:bg-slate-50",
                       )}
                     >
-                      <div className="flex items-start justify-between gap-2">
-                        <span className="text-xs font-bold text-slate-900 line-clamp-2">
+                      <div
+                        className={
+                          isMobile
+                            ? "contents"
+                            : "flex items-start justify-between gap-2"
+                        }
+                      >
+                        <span
+                          className={
+                            isMobile
+                              ? "min-w-0 flex-1 truncate text-sm font-semibold text-slate-900"
+                              : "text-xs font-bold text-slate-900 line-clamp-2"
+                          }
+                        >
                           {item.name}
                         </span>
                         {isSelected && (
-                          <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                          <CheckCircle2
+                            className={cn(
+                              "w-4 h-4 text-emerald-600 shrink-0",
+                              isMobile ? "order-last" : "mt-0.5",
+                            )}
+                          />
                         )}
                       </div>
 

@@ -55,7 +55,7 @@ export interface MockTaskItem {
 }
 
 export interface SupplyActualRecord {
-  id: number;
+  id: string | number;
   name: string;
   plannedQty?: string;
   actualQty: string;

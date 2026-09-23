@@ -10,7 +10,18 @@ import {
 } from "@/features/farm-plan-task-diary";
 import { useFarmPlans, useFarmWorkflows } from "@/features/farm-workflow/hooks";
 import { useDebounce } from "@/shared/hooks/useDebounce";
-import { Badge, Button, cn, Input } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import {
+  Badge,
+  Button,
+  cn,
+  Input,
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  useIsMobile,
+} from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import { MobileStatTiles } from "@/pages/dashboard/components/MobileStatTiles";
 import {
   Camera,
   ClipboardList,
@@ -238,7 +249,7 @@ export default function UpdateHistoryPage({
       apiPlans.map((p) => ({
         id: String(p.id),
         name: p.code ? `${p.code} - ${p.name}` : p.name,
-        workflowId: p.workflowId ? String(p.workflowId) : "",
+        workflowId: p.workflow?.id ? String(p.workflow.id) : "",
       })),
     [apiPlans],
   );
@@ -274,6 +285,14 @@ export default function UpdateHistoryPage({
     });
   }, [activeStatsData?.latestUpdatedAt]);
 
+  const isMobile = useIsMobile();
+  // Điện thoại: bộ lọc nâng cao mở dạng bottom sheet thay vì panel inline
+  const [isFilterSheetOpen, setIsFilterSheetOpen] = useState(false);
+  // Điện thoại: ô "Mới nhất" hẹp → chỉ hiện ngày/tháng
+  const shortLatestUpdate = activeStatsData?.latestUpdatedAt
+    ? formattedLatestUpdate.slice(0, 5)
+    : "—";
+
   const pageTitle = isAdHoc
     ? "Lịch sử cập nhật (Thường nhật)"
     : "Lịch sử cập nhật (Theo kế hoạch)";
@@ -287,119 +306,181 @@ export default function UpdateHistoryPage({
     : (plannedDiaryPageData?.totalElements ?? 0);
 
   return (
-    <PageWrapper title={pageTitle} description={pageDescription}>
-      <div className="space-y-6 pb-12">
-        {/* Stat Blocks */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-          {/* Block 1: Tổng số lần cập nhật */}
-          <div className="rounded-2xl border border-slate-100 bg-white shadow-sm p-5">
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-wide text-slate-400 mb-1">
-                  Tổng lần cập nhật
-                </p>
-                <p className="text-3xl font-extrabold text-slate-800 leading-none">
-                  {totalUpdates}
-                </p>
+    <PageWrapper
+      title={isMobile ? "Lịch sử cập nhật" : pageTitle}
+      description={isMobile ? undefined : pageDescription}
+    >
+      <div className={isMobile ? "space-y-4 pb-4" : "space-y-6 pb-12"}>
+        {/* Stat Blocks — điện thoại: 3 ô gọn */}
+        {isMobile ? (
+          <MobileStatTiles
+            tiles={[
+              {
+                label: "Tổng cập nhật",
+                value: String(totalUpdates),
+                icon: ClipboardList,
+                iconColor: "bg-green-100 text-green-600",
+              },
+              {
+                label: "Có ảnh",
+                value: String(withEvidence),
+                icon: Camera,
+                iconColor: "bg-blue-100 text-blue-600",
+              },
+              {
+                label: "Mới nhất",
+                value: shortLatestUpdate,
+                icon: Clock,
+                iconColor: "bg-amber-100 text-amber-600",
+              },
+            ]}
+          />
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+            {/* Block 1: Tổng số lần cập nhật */}
+            <div className="rounded-2xl border border-slate-100 bg-white shadow-sm p-5">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-400 mb-1">
+                    Tổng lần cập nhật
+                  </p>
+                  <p className="text-3xl font-extrabold text-slate-800 leading-none">
+                    {totalUpdates}
+                  </p>
+                </div>
+                <div className="h-10 w-10 rounded-xl bg-green-100 text-green-600 flex items-center justify-center shrink-0">
+                  <ClipboardList className="h-5 w-5" />
+                </div>
               </div>
-              <div className="h-10 w-10 rounded-xl bg-green-100 text-green-600 flex items-center justify-center shrink-0">
-                <ClipboardList className="h-5 w-5" />
+              <div className="mt-4 flex items-center gap-4">
+                <div className="flex items-center gap-1.5 text-xs text-slate-600">
+                  <Camera className="h-3.5 w-3.5 text-green-500" />
+                  <span className="font-bold text-green-600">
+                    {withEvidence}
+                  </span>
+                  <span className="text-slate-400">có bằng chứng</span>
+                </div>
+                <div className="w-px h-4 bg-slate-100" />
+                <div className="flex items-center gap-1.5 text-xs text-slate-600">
+                  <ImageOff className="h-3.5 w-3.5 text-slate-400" />
+                  <span className="font-bold text-slate-600">
+                    {withoutEvidence}
+                  </span>
+                  <span className="text-slate-400">không bằng chứng</span>
+                </div>
               </div>
             </div>
-            <div className="mt-4 flex items-center gap-4">
-              <div className="flex items-center gap-1.5 text-xs text-slate-600">
-                <Camera className="h-3.5 w-3.5 text-green-500" />
-                <span className="font-bold text-green-600">{withEvidence}</span>
-                <span className="text-slate-400">có bằng chứng</span>
-              </div>
-              <div className="w-px h-4 bg-slate-100" />
-              <div className="flex items-center gap-1.5 text-xs text-slate-600">
-                <ImageOff className="h-3.5 w-3.5 text-slate-400" />
-                <span className="font-bold text-slate-600">
-                  {withoutEvidence}
-                </span>
-                <span className="text-slate-400">không bằng chứng</span>
-              </div>
-            </div>
-          </div>
 
-          {/* Block 2: Tỷ lệ bằng chứng */}
-          <div className="rounded-2xl border border-slate-100 bg-white shadow-sm p-5">
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-wide text-slate-400 mb-1">
-                  Số nhật ký có ảnh
-                </p>
-                <p className="text-3xl font-extrabold text-slate-800 leading-none">
-                  {withEvidence}
-                </p>
+            {/* Block 2: Tỷ lệ bằng chứng */}
+            <div className="rounded-2xl border border-slate-100 bg-white shadow-sm p-5">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-400 mb-1">
+                    Số nhật ký có ảnh
+                  </p>
+                  <p className="text-3xl font-extrabold text-slate-800 leading-none">
+                    {withEvidence}
+                  </p>
+                </div>
+                <div className="h-10 w-10 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center shrink-0">
+                  <Camera className="h-5 w-5" />
+                </div>
               </div>
-              <div className="h-10 w-10 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center shrink-0">
-                <Camera className="h-5 w-5" />
-              </div>
+              <p className="mt-4 text-xs text-slate-400">
+                Chiếm{" "}
+                {totalUpdates > 0
+                  ? Math.round((withEvidence / totalUpdates) * 100)
+                  : 0}
+                % tổng số lượt ghi nhật ký
+              </p>
             </div>
-            <p className="mt-4 text-xs text-slate-400">
-              Chiếm{" "}
-              {totalUpdates > 0
-                ? Math.round((withEvidence / totalUpdates) * 100)
-                : 0}
-              % tổng số lượt ghi nhật ký
-            </p>
-          </div>
 
-          {/* Block 3: Cập nhật mới nhất */}
-          <div className="rounded-2xl border border-slate-100 bg-white shadow-sm p-5">
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-wide text-slate-400 mb-1">
-                  Cập nhật mới nhất
-                </p>
-                <p className="text-2xl font-extrabold text-slate-800 leading-none">
-                  {formattedLatestUpdate}
-                </p>
+            {/* Block 3: Cập nhật mới nhất */}
+            <div className="rounded-2xl border border-slate-100 bg-white shadow-sm p-5">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-400 mb-1">
+                    Cập nhật mới nhất
+                  </p>
+                  <p className="text-2xl font-extrabold text-slate-800 leading-none">
+                    {formattedLatestUpdate}
+                  </p>
+                </div>
+                <div className="h-10 w-10 rounded-xl bg-amber-100 text-amber-600 flex items-center justify-center shrink-0">
+                  <Clock className="h-5 w-5" />
+                </div>
               </div>
-              <div className="h-10 w-10 rounded-xl bg-amber-100 text-amber-600 flex items-center justify-center shrink-0">
-                <Clock className="h-5 w-5" />
-              </div>
+              <p className="mt-4 text-xs text-slate-400">
+                Thời gian ghi nhận mới nhất (UTC)
+              </p>
             </div>
-            <p className="mt-4 text-xs text-slate-400">
-              Thời gian ghi nhận mới nhất (UTC)
-            </p>
           </div>
-        </div>
+        )}
 
         {/* ── SEARCH & ADVANCED FILTER HEADER ── */}
-        <div className="relative z-30 bg-white border border-slate-200 rounded-2xl p-4 shadow-sm space-y-4">
-          <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
+        {/* Điện thoại: không đóng khung — ô tìm kiếm + nút lọc cùng 1 hàng */}
+        <div
+          className={
+            isMobile
+              ? "relative z-30 space-y-2"
+              : "relative z-30 bg-white border border-slate-200 rounded-2xl p-4 shadow-sm space-y-4"
+          }
+        >
+          <div
+            className={
+              isMobile
+                ? "flex items-center gap-2"
+                : "flex flex-col md:flex-row gap-4 items-center justify-between"
+            }
+          >
             <div className="relative flex-1 w-full group">
               <Search
-                className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 transition-colors group-focus-within:text-green-600"
+                className="absolute left-3.5 top-1/2 z-10 -translate-y-1/2 pointer-events-none text-slate-400 transition-colors group-focus-within:text-green-600"
                 size={18}
               />
               <Input
-                placeholder="Tìm kiếm nhật ký theo mã, tên công việc, ghi chú..."
-                className="pl-10 h-11 border-slate-200 focus:border-green-600 focus:ring-green-600/20 transition-all rounded-xl bg-slate-50/50"
+                placeholder={
+                  isMobile
+                    ? "Tìm nhật ký..."
+                    : "Tìm kiếm nhật ký theo mã, tên công việc, ghi chú..."
+                }
+                className={`pl-10 ${isMobile ? "h-10 bg-white" : "h-11"} border-slate-200 focus:border-green-600 focus:ring-green-600/20 transition-all rounded-xl ${isMobile ? "" : "bg-slate-50/50"}`}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
 
-            <div className="flex gap-2 w-full md:w-auto shrink-0">
+            <div
+              className={
+                isMobile
+                  ? "relative shrink-0"
+                  : "flex gap-2 w-full md:w-auto shrink-0"
+              }
+            >
               <Button
-                variant={isAdvancedSearchOpen ? "default" : "outline"}
+                variant={
+                  !isMobile && isAdvancedSearchOpen ? "default" : "outline"
+                }
+                aria-label="Bộ lọc nâng cao"
                 className={cn(
-                  "flex-1 md:w-48 justify-center h-11 px-4 rounded-xl font-bold border-slate-200 transition-all cursor-pointer",
-                  isAdvancedSearchOpen
+                  isMobile
+                    ? "relative h-10 w-10 p-0 rounded-xl border-slate-200 cursor-pointer"
+                    : "flex-1 md:w-48 justify-center h-11 px-4 rounded-xl font-bold border-slate-200 transition-all cursor-pointer",
+                  !isMobile && isAdvancedSearchOpen
                     ? "bg-green-600 hover:bg-green-700 text-white shadow-md shadow-green-600/20"
                     : activeFilterCount > 0
                       ? "border-green-400 bg-green-50 text-green-700"
                       : "bg-white hover:bg-slate-50 text-slate-700",
                 )}
-                onClick={() => setIsAdvancedSearchOpen(!isAdvancedSearchOpen)}
+                onClick={() =>
+                  isMobile
+                    ? setIsFilterSheetOpen(true)
+                    : setIsAdvancedSearchOpen(!isAdvancedSearchOpen)
+                }
               >
-                <Filter size={16} className="mr-2" />
-                <span>Bộ lọc nâng cao</span>
-                {activeFilterCount > 0 && (
+                <Filter size={16} className={isMobile ? "" : "mr-2"} />
+                {!isMobile && <span>Bộ lọc nâng cao</span>}
+                {activeFilterCount > 0 && !isMobile && (
                   <Badge
                     variant="default"
                     className="ml-2 h-5 px-1.5 min-w-[20px] justify-center bg-green-700 text-white border-none shadow-xs font-bold text-[10px]"
@@ -408,59 +489,120 @@ export default function UpdateHistoryPage({
                   </Badge>
                 )}
               </Button>
+              {/* Badge đặt ngoài Button vì Button cắt phần tràn */}
+              {activeFilterCount > 0 && isMobile && (
+                <span className="pointer-events-none absolute -top-1.5 right-0 flex h-5 min-w-5 items-center justify-center rounded-full bg-green-600 px-1 text-[10px] font-bold text-white ring-2 ring-white">
+                  {activeFilterCount}
+                </span>
+              )}
             </div>
           </div>
 
-          {/* DiaryAdvancedFilterPanel Component */}
-          <DiaryAdvancedFilterPanel
-            isOpen={isAdvancedSearchOpen}
-            filters={draftFilters}
-            onToggleFilter={toggleFilter}
-            onDateChange={setDateFilter}
-            onReset={resetFilters}
-            onApply={() => {
-              applyFilters();
-            }}
-            resultCount={currentResultCount}
-            workflowOptions={workflowOptions}
-            planOptions={planOptions}
-            workTypeOptions={workTypeOptions}
-            hidePlanFilter={isAdHoc}
-          />
-
-          {!isAdvancedSearchOpen && (
-            <div className="relative overflow-hidden rounded-xl border border-green-200 bg-gradient-to-r from-green-50 via-white to-green-50 p-3 shadow-2xs">
-              <div className="relative z-10 flex items-center justify-between gap-3">
-                <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-lg bg-white shadow-xs border border-green-100 flex items-center justify-center text-green-600 shrink-0">
-                    <Layers className="w-4.5 h-4.5" />
-                  </div>
-                  <div>
-                    <h3 className="text-xs font-extrabold text-green-900 uppercase tracking-wider">
-                      Tổng quan kết quả lọc
-                    </h3>
-                    <p className="text-xs text-green-700/80 font-medium mt-0.5">
-                      Có{" "}
-                      <span className="text-green-700 font-extrabold px-1.5 py-0.5 bg-white rounded-md border border-green-200 shadow-2xs">
-                        {currentResultCount}
-                      </span>{" "}
-                      nhật ký phù hợp với tiêu chí hiện tại.
-                    </p>
-                  </div>
+          {isMobile ? (
+            <Sheet open={isFilterSheetOpen} onOpenChange={setIsFilterSheetOpen}>
+              <SheetContent
+                side="bottom"
+                className="max-h-[85dvh] overflow-y-auto rounded-t-3xl px-3 pb-[calc(1rem+env(safe-area-inset-bottom))]"
+              >
+                <SheetHeader className="text-left px-1">
+                  <SheetTitle>Bộ lọc nâng cao</SheetTitle>
+                </SheetHeader>
+                <div className="mt-3">
+                  {/* DiaryAdvancedFilterPanel Component */}
+                  <DiaryAdvancedFilterPanel
+                    compact
+                    isOpen
+                    filters={draftFilters}
+                    onToggleFilter={toggleFilter}
+                    onDateChange={setDateFilter}
+                    onReset={resetFilters}
+                    onApply={() => {
+                      applyFilters();
+                      setIsFilterSheetOpen(false);
+                    }}
+                    resultCount={currentResultCount}
+                    workflowOptions={workflowOptions}
+                    planOptions={planOptions}
+                    workTypeOptions={workTypeOptions}
+                    hidePlanFilter={isAdHoc}
+                  />
                 </div>
+              </SheetContent>
+            </Sheet>
+          ) : (
+            <>
+              {/* DiaryAdvancedFilterPanel Component */}
+              <DiaryAdvancedFilterPanel
+                isOpen={isAdvancedSearchOpen}
+                filters={draftFilters}
+                onToggleFilter={toggleFilter}
+                onDateChange={setDateFilter}
+                onReset={resetFilters}
+                onApply={() => {
+                  applyFilters();
+                }}
+                resultCount={currentResultCount}
+                workflowOptions={workflowOptions}
+                planOptions={planOptions}
+                workTypeOptions={workTypeOptions}
+                hidePlanFilter={isAdHoc}
+              />
+            </>
+          )}
 
-                {activeFilterCount > 0 && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={resetFilters}
-                    className="text-xs font-bold text-slate-500 hover:text-red-600 underline"
-                  >
-                    Xóa tất cả bộ lọc ({activeFilterCount})
-                  </Button>
-                )}
-              </div>
+          {isMobile ? (
+            <div className="flex items-center justify-between gap-2 px-1 text-xs text-slate-500">
+              <span>
+                <span className="font-bold text-green-700">
+                  {currentResultCount}
+                </span>{" "}
+                nhật ký phù hợp
+              </span>
+              {activeFilterCount > 0 && (
+                <button
+                  type="button"
+                  onClick={resetFilters}
+                  className="font-semibold text-slate-500 underline"
+                >
+                  Xóa bộ lọc ({activeFilterCount})
+                </button>
+              )}
             </div>
+          ) : (
+            !isAdvancedSearchOpen && (
+              <div className="relative overflow-hidden rounded-xl border border-green-200 bg-gradient-to-r from-green-50 via-white to-green-50 p-3 shadow-2xs">
+                <div className="relative z-10 flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-lg bg-white shadow-xs border border-green-100 flex items-center justify-center text-green-600 shrink-0">
+                      <Layers className="w-4.5 h-4.5" />
+                    </div>
+                    <div>
+                      <h3 className="text-xs font-extrabold text-green-900 uppercase tracking-wider">
+                        Tổng quan kết quả lọc
+                      </h3>
+                      <p className="text-xs text-green-700/80 font-medium mt-0.5">
+                        Có{" "}
+                        <span className="text-green-700 font-extrabold px-1.5 py-0.5 bg-white rounded-md border border-green-200 shadow-2xs">
+                          {currentResultCount}
+                        </span>{" "}
+                        nhật ký phù hợp với tiêu chí hiện tại.
+                      </p>
+                    </div>
+                  </div>
+
+                  {activeFilterCount > 0 && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={resetFilters}
+                      className="text-xs font-bold text-slate-500 hover:text-red-600 underline"
+                    >
+                      Xóa tất cả bộ lọc ({activeFilterCount})
+                    </Button>
+                  )}
+                </div>
+              </div>
+            )
           )}
         </div>
 

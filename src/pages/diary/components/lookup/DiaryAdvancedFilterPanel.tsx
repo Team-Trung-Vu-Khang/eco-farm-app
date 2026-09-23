@@ -219,6 +219,8 @@ interface DiaryAdvancedFilterPanelProps {
   planOptions: Option[];
   workTypeOptions: Option[];
   hidePlanFilter?: boolean;
+  /** Bản gọn cho bottom sheet trên điện thoại: bỏ khung + header, nút ở cuối */
+  compact?: boolean;
 }
 
 export function DiaryAdvancedFilterPanel({
@@ -233,6 +235,7 @@ export function DiaryAdvancedFilterPanel({
   planOptions,
   workTypeOptions,
   hidePlanFilter = false,
+  compact = false,
 }: DiaryAdvancedFilterPanelProps) {
   const isWorkflowSelected =
     Boolean(filters.workflowIds) && filters.workflowIds.length > 0;
@@ -287,32 +290,44 @@ export function DiaryAdvancedFilterPanel({
   if (!isOpen) return null;
 
   return (
-    <div className="relative mt-2 overflow-visible rounded-xl border border-slate-200 bg-white shadow-md animate-in slide-in-from-top-2 duration-200 z-30">
-      <div className="px-6 py-4 bg-slate-50/80 border-b border-slate-200 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Filter size={18} className="text-green-600" />
-          <h4 className="font-black text-sm uppercase tracking-widest text-slate-800">
-            Cấu hình bộ lọc nâng cao
-          </h4>
+    <div
+      className={
+        compact
+          ? "relative"
+          : "relative mt-2 overflow-visible rounded-xl border border-slate-200 bg-white shadow-md animate-in slide-in-from-top-2 duration-200 z-30"
+      }
+    >
+      {!compact && (
+        <div className="px-6 py-4 bg-slate-50/80 border-b border-slate-200 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Filter size={18} className="text-green-600" />
+            <h4 className="font-black text-sm uppercase tracking-widest text-slate-800">
+              Cấu hình bộ lọc nâng cao
+            </h4>
+          </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onReset}
+            className="text-green-700 hover:text-green-800 font-bold text-xs uppercase tracking-wider px-2 hover:bg-green-50 rounded-lg cursor-pointer"
+          >
+            Xóa tất cả bộ lọc
+          </Button>
         </div>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={onReset}
-          className="text-green-700 hover:text-green-800 font-bold text-xs uppercase tracking-wider px-2 hover:bg-green-50 rounded-lg cursor-pointer"
-        >
-          Xóa tất cả bộ lọc
-        </Button>
-      </div>
+      )}
 
       <div
-        className={cn(
-          "p-6 grid grid-cols-1 sm:grid-cols-2 gap-4 items-start",
-          hidePlanFilter ? "lg:grid-cols-4" : "lg:grid-cols-5",
-        )}
+        className={
+          compact
+            ? "grid grid-cols-2 gap-3 items-start"
+            : cn(
+                "p-6 grid grid-cols-1 sm:grid-cols-2 gap-4 items-start",
+                hidePlanFilter ? "lg:grid-cols-4" : "lg:grid-cols-5",
+              )
+        }
       >
         {/* Vụ mùa / Vụ nuôi */}
-        <div className="space-y-2">
+        <div className={compact ? "col-span-2 space-y-1.5" : "space-y-2"}>
           <div className="flex items-center gap-1.5 text-slate-500 ml-1">
             <Sprout size={14} className="text-green-600" />
             <span className="text-[10px] font-black uppercase tracking-widest">
@@ -329,7 +344,7 @@ export function DiaryAdvancedFilterPanel({
 
         {/* Kế hoạch (Khóa khi chưa chọn Vụ mùa) */}
         {!hidePlanFilter && (
-          <div className="space-y-2">
+          <div className={compact ? "col-span-2 space-y-1.5" : "space-y-2"}>
             <div className="flex items-center gap-1.5 text-slate-500 ml-1">
               <ClipboardList size={14} className="text-green-600" />
               <span className="text-[10px] font-black uppercase tracking-widest">
@@ -351,7 +366,7 @@ export function DiaryAdvancedFilterPanel({
         )}
 
         {/* Loại công việc */}
-        <div className="space-y-2">
+        <div className={compact ? "col-span-2 space-y-1.5" : "space-y-2"}>
           <div className="flex items-center gap-1.5 text-slate-500 ml-1">
             <Layers size={14} className="text-green-600" />
             <span className="text-[10px] font-black uppercase tracking-widest">
@@ -367,7 +382,7 @@ export function DiaryAdvancedFilterPanel({
         </div>
 
         {/* Từ ngày */}
-        <div className="space-y-2">
+        <div className={compact ? "space-y-1.5" : "space-y-2"}>
           <div className="flex items-center gap-1.5 text-slate-500 ml-1">
             <CalendarDays size={14} className="text-green-600" />
             <span className="text-[10px] font-black uppercase tracking-widest">
@@ -417,22 +432,42 @@ export function DiaryAdvancedFilterPanel({
         </div>
       </div>
 
-      <div className="px-6 py-4 border-t border-slate-100 bg-slate-50/60 flex items-center justify-between gap-4 rounded-b-xl">
-        <p className="text-xs text-slate-500 font-medium">
-          Dựa trên các bộ lọc đã chọn, hệ thống tìm thấy{" "}
-          <span className="text-green-700 font-black px-2 py-0.5 bg-white rounded-md border border-slate-200 shadow-2xs">
-            {resultCount}
-          </span>{" "}
-          nhật ký phù hợp.
-        </p>
-        <Button
-          disabled={!dateValidation.isValid}
-          className="h-10 px-8 rounded-xl font-bold bg-green-600 hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed text-white shadow-md shadow-green-600/20 cursor-pointer shrink-0"
-          onClick={handleApply}
-        >
-          Áp dụng
-        </Button>
-      </div>
+      {compact ? (
+        <div className="mt-4 flex items-center gap-2">
+          <Button
+            variant="outline"
+            type="button"
+            onClick={onReset}
+            className="h-11 flex-1 rounded-xl font-semibold"
+          >
+            Xóa bộ lọc
+          </Button>
+          <Button
+            disabled={!dateValidation.isValid}
+            className="h-11 flex-[2] rounded-xl font-bold bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white"
+            onClick={handleApply}
+          >
+            Áp dụng ({resultCount})
+          </Button>
+        </div>
+      ) : (
+        <div className="px-6 py-4 border-t border-slate-100 bg-slate-50/60 flex items-center justify-between gap-4 rounded-b-xl">
+          <p className="text-xs text-slate-500 font-medium">
+            Dựa trên các bộ lọc đã chọn, hệ thống tìm thấy{" "}
+            <span className="text-green-700 font-black px-2 py-0.5 bg-white rounded-md border border-slate-200 shadow-2xs">
+              {resultCount}
+            </span>{" "}
+            nhật ký phù hợp.
+          </p>
+          <Button
+            disabled={!dateValidation.isValid}
+            className="h-10 px-8 rounded-xl font-bold bg-green-600 hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed text-white shadow-md shadow-green-600/20 cursor-pointer shrink-0"
+            onClick={handleApply}
+          >
+            Áp dụng
+          </Button>
+        </div>
+      )}
     </div>
   );
 }

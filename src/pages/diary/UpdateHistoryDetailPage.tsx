@@ -6,6 +6,7 @@ import {
   Dialog,
   DialogContent,
   Input,
+  useIsMobile,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import {
   Calendar,
@@ -398,12 +399,12 @@ export default function UpdateHistoryDetailPage() {
             (s.unitBaseId ? baseUnitMap.get(s.unitBaseId) : "") ||
             "";
           return {
-            id: String(s.supplyItemId || s.id),
+            id: String(s.supplyItem?.id ?? s.supplyItemId),
             name:
               s.supplyItemName ||
               s.supplyItem?.name ||
               s.name ||
-              `Vật tư #${s.supplyItemId || s.id}`,
+              `Vật tư #${s.supplyItemId}`,
             actualQty: String(s.quantityActual ?? 0),
             unit: unitName,
           };
@@ -426,7 +427,7 @@ export default function UpdateHistoryDetailPage() {
           `Người dùng #${entry.createdByUserId ?? 1}`,
         updaterRole: "Kỹ thuật viên",
         completionPercent: entryFirstLine?.progressPercent ?? 100,
-        status: "COMPLETED",
+        status: "COMPLETED" as const,
         note:
           entry.description ||
           entryFirstLine?.description ||
@@ -472,7 +473,7 @@ export default function UpdateHistoryDetailPage() {
       updaterName: personnelName,
       updaterRole: "Phân bổ",
       completionPercent: percent,
-      status: isDone ? "COMPLETED" : "DOING",
+      status: (isDone ? "COMPLETED" : "DOING") as "COMPLETED" | "DOING",
       note: realFarmTask.note || realFarmTask.name,
       supplies: defaultSupplies,
     };
@@ -589,6 +590,7 @@ export default function UpdateHistoryDetailPage() {
     return Array.from(map.values());
   }, [taskHistoryItem]);
 
+  const isMobile = useIsMobile();
   const currentPercent = taskHistoryItem?.latestUpdate?.completionPercent ?? 60;
 
   const isPlannedLoading =
@@ -645,13 +647,32 @@ export default function UpdateHistoryDetailPage() {
 
   return (
     <PageWrapper
-      title={`[${taskHistoryItem.taskCode}] ${taskHistoryItem.taskName}`}
-      description="Xem chi tiết các lần ghi nhận nhật ký của bản thân đối với hạng mục dự kiến này"
+      // Điện thoại: bỏ tiêu đề/mô tả (thẻ bên dưới đã có mã + tên), nút gọn
+      title={
+        isMobile
+          ? undefined
+          : `[${taskHistoryItem.taskCode}] ${taskHistoryItem.taskName}`
+      }
+      description={
+        isMobile
+          ? undefined
+          : "Xem chi tiết các lần ghi nhận nhật ký của bản thân đối với hạng mục dự kiến này"
+      }
       actions={
-        <div className="flex items-center gap-3">
+        <div
+          className={
+            isMobile
+              ? "flex w-full items-center justify-between gap-2 -mb-3"
+              : "flex items-center gap-3"
+          }
+        >
           <Button
-            variant="outline"
-            className="h-10 px-4 text-sm font-semibold gap-2 border-slate-200 hover:bg-slate-50 cursor-pointer"
+            variant={isMobile ? "ghost" : "outline"}
+            className={
+              isMobile
+                ? "h-8 -ml-2 px-2 text-sm font-semibold gap-1 text-slate-600"
+                : "h-10 px-4 text-sm font-semibold gap-2 border-slate-200 hover:bg-slate-50 cursor-pointer"
+            }
             onClick={() => {
               if (window.history.length > 1) {
                 window.history.back();
@@ -669,13 +690,13 @@ export default function UpdateHistoryDetailPage() {
           </Button>
           {dailyDiaryDetail?.editable && (
             <Button
-              className="h-10 px-4 text-sm font-bold text-white bg-emerald-600 hover:bg-emerald-700 gap-2 cursor-pointer"
+              className={`${isMobile ? "h-8 px-3" : "h-10 px-4"} text-sm font-bold text-white bg-emerald-600 hover:bg-emerald-700 gap-2 cursor-pointer`}
               onClick={() =>
                 setLocation(`/diary/incident?editId=${dailyDiaryDetail.id}`)
               }
             >
               <Edit3 className="h-4 w-4" />
-              Chỉnh sửa nhật ký
+              {isMobile ? "Sửa" : "Chỉnh sửa nhật ký"}
             </Button>
           )}
         </div>
@@ -686,15 +707,33 @@ export default function UpdateHistoryDetailPage() {
           {/* ── CỘT TRÁI (COL 8): THÔNG TIN HẠNG MỤC DỰ KIẾN & NỘI DUNG NHẬT KÝ ── */}
           <div className="lg:col-span-8 space-y-6">
             {/* Card 1: Thông tin hạng mục công việc dự kiến */}
-            <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm space-y-5">
-              <div className="flex items-center justify-between border-b border-slate-100 pb-4">
-                <div className="flex items-center gap-2">
+            <div
+              className={`rounded-2xl border border-slate-200 bg-white shadow-sm ${
+                isMobile ? "p-4 space-y-4" : "p-6 space-y-5"
+              }`}
+            >
+              <div
+                className={`flex items-center justify-between border-b border-slate-100 ${
+                  isMobile ? "gap-2 pb-3" : "pb-4"
+                }`}
+              >
+                <div
+                  className={
+                    isMobile
+                      ? "flex min-w-0 items-center gap-2"
+                      : "flex items-center gap-2"
+                  }
+                >
                   <div className="h-10 w-10 rounded-xl bg-green-100 text-green-700 flex items-center justify-center font-bold">
                     <ClipboardList className="h-5 w-5" />
                   </div>
-                  <div>
+                  <div className={isMobile ? "min-w-0" : undefined}>
                     <div className="flex items-center gap-2">
-                      <span className="text-xs font-mono font-bold text-slate-400">
+                      <span
+                        className={`text-xs font-mono font-bold text-slate-400 ${
+                          isMobile ? "truncate" : ""
+                        }`}
+                      >
                         {taskHistoryItem.taskCode}
                       </span>
                     </div>
@@ -766,46 +805,73 @@ export default function UpdateHistoryDetailPage() {
                 <WorkflowScopeMapModal workflow={selectedWorkflow} />
               )}
 
-              {/* Tiến độ hoàn thành hiện tại */}
-              <div className="space-y-2 rounded-xl border border-green-100 bg-green-50/40 p-4">
-                <div className="flex items-center justify-between text-xs font-bold">
-                  <span className="flex items-center gap-1.5 text-slate-800">
-                    <CheckCircle2 className="w-4 h-4 text-green-600" />
-                    Tiến độ hoàn thành hạng mục hiện tại
-                  </span>
-                  <div className="flex items-center gap-2">
+              {/* Tiến độ hoàn thành hiện tại — điện thoại: 1 dòng nhãn + % và thanh */}
+              {isMobile ? (
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="flex items-center gap-1.5 font-bold text-slate-700">
+                      <CheckCircle2 className="w-3.5 h-3.5 text-green-600" />
+                      Tiến độ hoàn thành
+                    </span>
                     <span
-                      className={`text-xs font-extrabold px-2.5 py-0.5 rounded-lg border ${
+                      className={`font-extrabold ${
                         currentPercent === 100
-                          ? "text-green-700 bg-green-100 border-green-200"
-                          : "text-amber-700 bg-amber-100 border-amber-200"
+                          ? "text-green-700"
+                          : "text-amber-700"
                       }`}
                     >
-                      {currentPercent}% hoàn thành
+                      {currentPercent}%
                     </span>
-                    {100 - currentPercent > 0 && (
-                      <span className="text-xs font-semibold text-slate-400">
-                        (Còn lại: {100 - currentPercent}%)
-                      </span>
-                    )}
+                  </div>
+                  <div className="w-full bg-slate-200 h-2 rounded-full overflow-hidden">
+                    <div
+                      className="bg-green-600 h-full rounded-full transition-all duration-500"
+                      style={{ width: `${currentPercent}%` }}
+                    />
                   </div>
                 </div>
+              ) : (
+                <div className="space-y-2 rounded-xl border border-green-100 bg-green-50/40 p-4">
+                  <div className="flex items-center justify-between text-xs font-bold">
+                    <span className="flex items-center gap-1.5 text-slate-800">
+                      <CheckCircle2 className="w-4 h-4 text-green-600" />
+                      Tiến độ hoàn thành hạng mục hiện tại
+                    </span>
+                    <div className="flex items-center gap-2">
+                      <span
+                        className={`text-xs font-extrabold px-2.5 py-0.5 rounded-lg border ${
+                          currentPercent === 100
+                            ? "text-green-700 bg-green-100 border-green-200"
+                            : "text-amber-700 bg-amber-100 border-amber-200"
+                        }`}
+                      >
+                        {currentPercent}% hoàn thành
+                      </span>
+                      {100 - currentPercent > 0 && (
+                        <span className="text-xs font-semibold text-slate-400">
+                          (Còn lại: {100 - currentPercent}%)
+                        </span>
+                      )}
+                    </div>
+                  </div>
 
-                <div className="w-full bg-slate-200 h-2.5 rounded-full overflow-hidden">
-                  <div
-                    className="bg-green-600 h-full rounded-full transition-all duration-500"
-                    style={{ width: `${currentPercent}%` }}
-                  />
+                  <div className="w-full bg-slate-200 h-2.5 rounded-full overflow-hidden">
+                    <div
+                      className="bg-green-600 h-full rounded-full transition-all duration-500"
+                      style={{ width: `${currentPercent}%` }}
+                    />
+                  </div>
                 </div>
-              </div>
+              )}
 
               {/* Tổng hợp Vật tư ghi nhận thực tế */}
               {aggregatedSupplies.length > 0 && (
                 <div className="space-y-2 pt-2 border-t border-slate-100">
                   <p className="text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
                     <PackageOpen className="w-4 h-4 text-amber-600" />
-                    Tổng hợp vật tư đã sử dụng qua các đợt cập nhật (
-                    {aggregatedSupplies.length}):
+                    {isMobile
+                      ? `Vật tư đã sử dụng (${aggregatedSupplies.length})`
+                      : `Tổng hợp vật tư đã sử dụng qua các đợt cập nhật (${aggregatedSupplies.length}):`}
                   </p>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                     {aggregatedSupplies.map((s, i) => (
@@ -858,22 +924,32 @@ export default function UpdateHistoryDetailPage() {
             </div>
 
             {/* Card 2: Lịch sử các lần ghi nhận nhật ký của bản thân (Timeline Audit) */}
-            <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm space-y-5">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-4">
+            <div
+              className={`rounded-2xl border border-slate-200 bg-white shadow-sm ${
+                isMobile ? "p-4 space-y-4" : "p-6 space-y-5"
+              }`}
+            >
+              <div
+                className={`flex flex-col sm:flex-row sm:items-center justify-between border-b border-slate-100 ${
+                  isMobile ? "gap-3 pb-3" : "gap-4 pb-4"
+                }`}
+              >
                 <div className="flex flex-1 items-center gap-2">
                   <div className="h-9 w-9 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center font-bold">
                     <History className="h-5 w-5" />
                   </div>
                   <div>
                     <h3 className="text-sm font-extrabold text-slate-900">
-                      Lịch sử ghi nhận nhật ký của bản thân
+                      {isMobile
+                        ? "Lịch sử ghi nhận"
+                        : "Lịch sử ghi nhận nhật ký của bản thân"}
                     </h3>
                     <p className="text-xs text-slate-500">
-                      Tổng số{" "}
+                      {!isMobile && "Tổng số "}
                       <span className="font-bold text-slate-800">
                         {taskHistoryItem.historyLogs.length} đợt
                       </span>{" "}
-                      cập nhật nhật ký được ghi nhận
+                      {isMobile ? "cập nhật" : "cập nhật nhật ký được ghi nhận"}
                     </p>
                   </div>
                 </div>
@@ -916,49 +992,92 @@ export default function UpdateHistoryDetailPage() {
                         />
                       </div>
 
-                      <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-2xs space-y-3 hover:border-slate-300 transition-all">
-                        {/* Header đợt nhật ký */}
-                        <div className="flex items-start justify-between gap-2">
-                          <div>
-                            <div className="flex items-center gap-2">
-                              <span className="text-xs font-bold text-slate-900 flex items-center gap-1">
-                                <User className="w-3.5 h-3.5 text-slate-400" />
-                                {log.updaterName}
+                      <div
+                        className={`rounded-2xl border border-slate-200 bg-white shadow-2xs hover:border-slate-300 transition-all ${
+                          isMobile ? "p-3 space-y-2.5" : "p-4 space-y-3"
+                        }`}
+                      >
+                        {/* Header đợt nhật ký — điện thoại: tên + % / thời gian · vai trò */}
+                        {isMobile ? (
+                          <div className="space-y-0.5">
+                            <div className="flex items-center justify-between gap-2">
+                              <span className="flex min-w-0 items-center gap-1 text-sm font-bold text-slate-900">
+                                <User className="w-3.5 h-3.5 shrink-0 text-slate-400" />
+                                <span className="truncate">
+                                  {log.updaterName}
+                                </span>
                               </span>
-                              {log.updaterRole && (
-                                <span className="text-[10px] font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md">
-                                  {log.updaterRole}
+                              {log.completionPercent !== undefined && (
+                                <span
+                                  className={`shrink-0 text-xs font-extrabold ${
+                                    log.completionPercent === 100
+                                      ? "text-green-700"
+                                      : "text-amber-700"
+                                  }`}
+                                >
+                                  {log.completionPercent}%
                                 </span>
                               )}
                             </div>
-                            <p className="text-[11px] text-slate-400 flex items-center gap-1 mt-0.5">
-                              <Clock className="w-3 h-3 text-slate-400" />
+                            <p className="truncate text-[11px] text-slate-400">
                               {formatDate(log.updatedAt)}
+                              {log.updaterRole ? ` · ${log.updaterRole}` : ""}
                             </p>
                           </div>
+                        ) : (
+                          <>
+                            {/* Header đợt nhật ký */}
+                            <div className="flex items-start justify-between gap-2">
+                              <div>
+                                <div className="flex items-center gap-2">
+                                  <span className="text-xs font-bold text-slate-900 flex items-center gap-1">
+                                    <User className="w-3.5 h-3.5 text-slate-400" />
+                                    {log.updaterName}
+                                  </span>
+                                  {log.updaterRole && (
+                                    <span className="text-[10px] font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md">
+                                      {log.updaterRole}
+                                    </span>
+                                  )}
+                                </div>
+                                <p className="text-[11px] text-slate-400 flex items-center gap-1 mt-0.5">
+                                  <Clock className="w-3 h-3 text-slate-400" />
+                                  {formatDate(log.updatedAt)}
+                                </p>
+                              </div>
 
-                          <div className="flex items-center gap-2 shrink-0">
-                            {log.completionPercent !== undefined && (
-                              <span
-                                className={`text-xs font-extrabold px-2.5 py-0.5 rounded-lg border ${
-                                  log.completionPercent === 100
-                                    ? "text-green-700 bg-green-50 border-green-200"
-                                    : "text-amber-700 bg-amber-50 border-amber-200"
-                                }`}
-                              >
-                                {log.completionPercent}% hoàn thành
-                              </span>
-                            )}
-                          </div>
-                        </div>
+                              <div className="flex items-center gap-2 shrink-0">
+                                {log.completionPercent !== undefined && (
+                                  <span
+                                    className={`text-xs font-extrabold px-2.5 py-0.5 rounded-lg border ${
+                                      log.completionPercent === 100
+                                        ? "text-green-700 bg-green-50 border-green-200"
+                                        : "text-amber-700 bg-amber-50 border-amber-200"
+                                    }`}
+                                  >
+                                    {log.completionPercent}% hoàn thành
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          </>
+                        )}
 
                         {/* Nội dung báo cáo đợt đó */}
                         <div className="space-y-1">
                           <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1">
                             <FileText className="w-3.5 h-3.5 text-slate-400" />
-                            Nội dung cập nhật đợt này:
+                            {isMobile
+                              ? "Nội dung"
+                              : "Nội dung cập nhật đợt này:"}
                           </p>
-                          <p className="text-xs text-slate-700 font-normal leading-relaxed bg-slate-50/70 p-3 rounded-xl border border-slate-100">
+                          <p
+                            className={
+                              isMobile
+                                ? "text-sm text-slate-700 leading-relaxed"
+                                : "text-xs text-slate-700 font-normal leading-relaxed bg-slate-50/70 p-3 rounded-xl border border-slate-100"
+                            }
+                          >
                             {log.note}
                           </p>
                         </div>
@@ -968,7 +1087,9 @@ export default function UpdateHistoryDetailPage() {
                           <div className="space-y-1.5 pt-1">
                             <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1">
                               <PackageOpen className="w-3.5 h-3.5 text-amber-600" />
-                              Vật tư sử dụng đợt này ({log.supplies.length}):
+                              {isMobile
+                                ? `Vật tư (${log.supplies.length})`
+                                : `Vật tư sử dụng đợt này (${log.supplies.length}):`}
                             </p>
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                               {log.supplies.map((s) => (

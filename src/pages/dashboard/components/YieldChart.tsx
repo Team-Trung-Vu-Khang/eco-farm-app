@@ -6,6 +6,7 @@ import {
   CardTitle,
   Badge,
   Button,
+  useIsMobile,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import {
   TrendingUp,
@@ -50,6 +51,7 @@ function formatBucketLabel(bucketStart: string): string {
 }
 
 export function YieldChart() {
+  const isMobile = useIsMobile();
   const fromDate = useMemo(
     () => dayjs().subtract(11, "month").startOf("month").format("YYYY-MM-DD"),
     [],
@@ -103,41 +105,71 @@ export function YieldChart() {
 
   return (
     <Card className="lg:col-span-2 shadow-sm border-slate-200/80 rounded-2xl overflow-hidden bg-white">
-      <CardHeader className="pb-3 border-b border-slate-100 bg-slate-50/50 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center border border-emerald-200/80 shrink-0 shadow-2xs">
-            <TrendingUp className="w-5 h-5" />
+      {isMobile ? (
+        <CardHeader className="p-3 border-b border-slate-100 bg-slate-50/50 flex flex-row items-center justify-between gap-3 space-y-0">
+          <div className="flex min-w-0 items-center gap-2.5">
+            <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center border border-emerald-200/80 shrink-0">
+              <TrendingUp className="w-4 h-4" />
+            </div>
+            <div className="min-w-0">
+              <CardTitle className="truncate font-bold text-sm text-slate-800 leading-tight">
+                Sản lượng thu hoạch (tấn)
+              </CardTitle>
+              <p className="truncate text-[11px] text-slate-500 font-medium mt-0.5">
+                12 tháng gần nhất · theo giống
+              </p>
+            </div>
           </div>
-          <div>
-            <CardTitle className="font-bold text-base text-slate-800 leading-tight">
-              Sản lượng thu hoạch nông hộ (tấn)
-            </CardTitle>
-            <p className="text-xs text-slate-500 font-medium mt-0.5">
-              Diễn biến sản lượng thu hoạch 12 tháng gần nhất theo từng giống
-            </p>
-          </div>
-        </div>
-        <div className="flex items-center gap-2">
-          <Badge className="bg-emerald-100 text-emerald-800 border-emerald-200 text-xs font-bold shrink-0 self-start sm:self-auto">
-            12 Tháng gần nhất
-          </Badge>
           <Button
             variant="outline"
             size="sm"
             disabled={isFetching}
             onClick={() => refetch()}
-            className="h-8 text-xs gap-1 border-slate-200 hover:bg-slate-100 cursor-pointer disabled:opacity-60"
-            title="Tải lại dữ liệu sản lượng"
+            className="h-8 w-8 p-0 shrink-0 border-slate-200 hover:bg-slate-100 cursor-pointer disabled:opacity-60"
+            aria-label="Tải lại dữ liệu sản lượng"
           >
             <RefreshCw
               className={`w-3.5 h-3.5 ${isFetching ? "animate-spin text-emerald-600" : ""}`}
             />
-            <span>{isFetching ? "Đang tải..." : "Tải lại"}</span>
           </Button>
-        </div>
-      </CardHeader>
+        </CardHeader>
+      ) : (
+        <CardHeader className="pb-3 border-b border-slate-100 bg-slate-50/50 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center border border-emerald-200/80 shrink-0 shadow-2xs">
+              <TrendingUp className="w-5 h-5" />
+            </div>
+            <div>
+              <CardTitle className="font-bold text-base text-slate-800 leading-tight">
+                Sản lượng thu hoạch nông hộ (tấn)
+              </CardTitle>
+              <p className="text-xs text-slate-500 font-medium mt-0.5">
+                Diễn biến sản lượng thu hoạch 12 tháng gần nhất theo từng giống
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <Badge className="bg-emerald-100 text-emerald-800 border-emerald-200 text-xs font-bold shrink-0 self-start sm:self-auto">
+              12 Tháng gần nhất
+            </Badge>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={isFetching}
+              onClick={() => refetch()}
+              className="h-8 text-xs gap-1 border-slate-200 hover:bg-slate-100 cursor-pointer disabled:opacity-60"
+              title="Tải lại dữ liệu sản lượng"
+            >
+              <RefreshCw
+                className={`w-3.5 h-3.5 ${isFetching ? "animate-spin text-emerald-600" : ""}`}
+              />
+              <span>{isFetching ? "Đang tải..." : "Tải lại"}</span>
+            </Button>
+          </div>
+        </CardHeader>
+      )}
 
-      <CardContent className="pt-5 pb-4">
+      <CardContent className={isMobile ? "px-3 pt-4 pb-4" : "pt-5 pb-4"}>
         {is503Error ? (
           <div className="p-8 text-center text-slate-600 text-xs bg-amber-50 rounded-2xl border border-amber-200 space-y-3">
             <AlertCircle className="w-6 h-6 text-amber-600 mx-auto" />

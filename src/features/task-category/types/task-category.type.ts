@@ -8,7 +8,7 @@ export interface TaskCategoryRecord {
   domainCode: DomainCode;
   /**
    * Chuỗi tag phân tách dấu phẩy, FE tự quy ước (BE không parse), tối đa 500 ký tự.
-   * Nên bọc dấu phẩy đầu/cuối, VD: ",group-CANHTAC,phase-CHAMCAYCON,".
+   * VD: "DINHDUONG:Bón phân,TUOITIEU:Bón phân".
    */
   tags: string | null;
   code: string;
@@ -41,7 +41,7 @@ export type TaskCategoryPageResponse = PageResponse<TaskCategoryRecord>;
 export type TaskCategoryLookupResponse = TaskCategoryRecord;
 
 export interface TaskCategoryLookupQueryParams {
-  /** Khớp một phần (LIKE %tags%, không phân biệt hoa/thường), VD: "group-CANHTAC" */
+  /** Khớp một phần (LIKE %tags%, không phân biệt hoa/thường), VD: "DINHDUONG:" */
   tags?: string;
   keyword?: string;
   domainCode?: DomainCode;

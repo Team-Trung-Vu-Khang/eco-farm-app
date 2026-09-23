@@ -2,6 +2,7 @@ import {
   AdminLayout,
   RadixToaster,
   TooltipProvider,
+  useIsMobile,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { Suspense, useEffect, useState } from "react";
 import AppRouter from "./AppRouter";
@@ -11,6 +12,9 @@ import { useRegions } from "./features/farm/hooks/useRegions";
 import { OnboardRegionDialog } from "./pages/region-chart/region-basic-distribution/components/OnboardRegionDialog";
 
 import { WorkspaceChangeHandler } from "./components/WorkspaceChangeHandler";
+import { MobileAppLayout } from "./layouts/mobile/MobileAppLayout";
+import { SwitchToMobileAppButton } from "./layouts/mobile/SwitchToMobileAppButton";
+import { useMobileUiMode } from "./shared/hooks/useMobileUiMode";
 import { useCurrentUser } from "./features/auth/hooks/useCurrentUser";
 
 interface OnboardCheckerProps {
@@ -70,17 +74,32 @@ const OnboardChecker: React.FC<OnboardCheckerProps> = ({ children }) => {
 };
 
 function App() {
+  const isMobile = useIsMobile();
+  const mobileUiMode = useMobileUiMode();
+  // Điện thoại mặc định dùng giao diện mobile (bottom nav); người dùng có thể
+  // chuyển về giao diện hiện tại trong trang Tài khoản.
+  const useMobileApp = isMobile && mobileUiMode === "app";
+
+  const content = (
+    <Suspense fallback={<AppLoadingState />}>
+      <WorkspaceChangeHandler />
+      <OnboardChecker>
+        <AppRouter />
+      </OnboardChecker>
+    </Suspense>
+  );
+
   return (
     <TooltipProvider>
       <AuthWrapper>
-        <AdminLayout isDev isMevi>
-          <Suspense fallback={<AppLoadingState />}>
-            <WorkspaceChangeHandler />
-            <OnboardChecker>
-              <AppRouter />
-            </OnboardChecker>
-          </Suspense>
-        </AdminLayout>
+        {useMobileApp ? (
+          <MobileAppLayout>{content}</MobileAppLayout>
+        ) : (
+          <AdminLayout isDev isMevi>
+            {content}
+          </AdminLayout>
+        )}
+        {isMobile && mobileUiMode === "classic" && <SwitchToMobileAppButton />}
         <RadixToaster />
       </AuthWrapper>
     </TooltipProvider>

@@ -13,6 +13,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
+  useIsMobile,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import {
   CheckCircle2,
@@ -122,6 +123,7 @@ export function WorkAllocationCard({
   onUpdateActualQuantity,
 }: WorkAllocationCardProps) {
   const [newStageInput, setNewStageInput] = useState<string>("");
+  const isMobile = useIsMobile();
   // Dropdown gợi ý hạng mục: chỉ là text gợi ý, user có thể chọn hoặc tự nhập.
   const [suggestionsOpen, setSuggestionsOpen] = useState(false);
   const blurTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -164,7 +166,13 @@ export function WorkAllocationCard({
   return (
     // overflow-visible để dropdown gợi ý hạng mục không bị Card cắt
     <Card className="border-none shadow-sm bg-white rounded-2xl overflow-visible">
-      <CardHeader className="pb-3 border-b border-slate-100 bg-white">
+      <CardHeader
+        className={
+          isMobile
+            ? "p-4 pb-3 border-b border-slate-100 bg-white"
+            : "pb-3 border-b border-slate-100 bg-white"
+        }
+      >
         <CardTitle className="text-base font-bold flex items-center justify-between">
           <span className="flex items-center gap-2 text-slate-900">
             <FileText className="w-4 h-4 text-emerald-600" />
@@ -178,12 +186,18 @@ export function WorkAllocationCard({
           </Badge>
         </CardTitle>
       </CardHeader>
-      <CardContent className="pt-5 space-y-5">
+      <CardContent
+        className={isMobile ? "p-4 pt-4 space-y-4" : "pt-5 space-y-5"}
+      >
         {/* Input thêm công việc mới + dropdown gợi ý */}
         <div className="flex gap-2">
           <div className="relative flex-1">
             <Input
-              placeholder="Thêm hạng mục / công việc mới (Làm đất, Gieo hạt...)"
+              placeholder={
+                isMobile
+                  ? "Thêm công việc (Làm đất...)"
+                  : "Thêm hạng mục / công việc mới (Làm đất, Gieo hạt...)"
+              }
               value={newStageInput}
               onChange={(e) => {
                 setNewStageInput(e.target.value);
@@ -205,7 +219,11 @@ export function WorkAllocationCard({
                   setSuggestionsOpen(false);
                 }
               }}
-              className="h-11 w-full bg-white border-slate-200 font-medium text-xs rounded-xl"
+              className={
+                isMobile
+                  ? "h-10 w-full bg-white border-slate-200 font-medium text-sm rounded-xl"
+                  : "h-11 w-full bg-white border-slate-200 font-medium text-xs rounded-xl"
+              }
             />
 
             {suggestionsOpen && suggestions.length > 0 && (
@@ -232,10 +250,15 @@ export function WorkAllocationCard({
           <Button
             type="button"
             onClick={handleAddStage}
-            className="h-11 rounded-xl px-5 text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white shrink-0 shadow-2xs cursor-pointer"
+            aria-label="Thêm công việc"
+            className={
+              isMobile
+                ? "h-10 w-10 p-0 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white shrink-0 shadow-2xs cursor-pointer"
+                : "h-11 rounded-xl px-5 text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white shrink-0 shadow-2xs cursor-pointer"
+            }
           >
-            <Plus className="w-4 h-4 mr-1" />
-            Thêm công việc
+            <Plus className={isMobile ? "w-5 h-5" : "w-4 h-4 mr-1"} />
+            {!isMobile && "Thêm công việc"}
           </Button>
         </div>
 
@@ -307,13 +330,31 @@ export function WorkAllocationCard({
                         <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-[11px] text-emerald-700 font-bold">
                           {index + 1}
                         </span>
-                        <span className="font-extrabold text-sm text-slate-900 truncate">
-                          {stage}
-                        </span>
+                        {isMobile ? (
+                          // Điện thoại: tên được xuống dòng, nhãn nguồn nằm dưới tên
+                          <div className="min-w-0">
+                            <p className="font-extrabold text-sm leading-snug text-slate-900 line-clamp-2 break-words">
+                              {stage}
+                            </p>
+                            <span
+                              className={`mt-0.5 inline-block text-[10px] font-bold ${
+                                isPlannedStage
+                                  ? "text-amber-700"
+                                  : "text-blue-700"
+                              }`}
+                            >
+                              {isPlannedStage ? "Kế hoạch" : "Phát sinh"}
+                            </span>
+                          </div>
+                        ) : (
+                          <span className="font-extrabold text-sm text-slate-900 truncate">
+                            {stage}
+                          </span>
+                        )}
                       </div>
 
                       <div className="flex items-center gap-2 shrink-0">
-                        {isPlannedStage ? (
+                        {isMobile ? null : isPlannedStage ? (
                           <span className="text-[10px] font-extrabold text-amber-700 bg-amber-50 border border-amber-200 px-2.5 py-0.5 rounded-lg">
                             Kế hoạch
                           </span>

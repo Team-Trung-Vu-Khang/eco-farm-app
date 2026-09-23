@@ -4,6 +4,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  useIsMobile,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
@@ -118,6 +119,7 @@ export function WorkflowScopeMapModal({
   workflow,
 }: WorkflowScopeMapModalProps) {
   const [isFullscreenOpen, setIsFullscreenOpen] = useState(false);
+  const isMobile = useIsMobile();
 
   // 1. Resolve active scope item and type
   const scopeItem: FarmWorkflowScopeResponse | Record<string, unknown> | null =
@@ -421,13 +423,15 @@ export function WorkflowScopeMapModal({
         <div className="flex items-center justify-between text-xs text-slate-500 font-medium px-1">
           <span className="flex items-center gap-1.5 font-bold text-slate-700">
             <Layers className="h-3.5 w-3.5 text-emerald-600" />
-            Bản đồ phạm vi áp dụng vụ mùa
+            {isMobile ? "Phạm vi vụ mùa" : "Bản đồ phạm vi áp dụng vụ mùa"}
           </span>
-          <span className="text-[11px] font-semibold text-slate-500">
-            Tọa độ trung tâm (Chấm đỏ)
-          </span>
+          {!isMobile && (
+            <span className="text-[11px] font-semibold text-slate-500">
+              Tọa độ trung tâm (Chấm đỏ)
+            </span>
+          )}
         </div>
-        {renderMapContent("h-56")}
+        {renderMapContent(isMobile ? "h-44" : "h-56")}
       </div>
 
       {/* Fullscreen Dialog */}
