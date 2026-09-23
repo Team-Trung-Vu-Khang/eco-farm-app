@@ -27,18 +27,55 @@ export const FertilizerBasicInfoStep = ({
 }: FertilizerBasicInfoStepProps) => {
   const isEdit = window.location.pathname.includes("/edit");
   const [paramHashtag, setParamHashtag] = useState("");
-  const [groupSearch, setGroupSearch] = useState("");
-  const debouncedGroupSearch = useDebounce(groupSearch, 300);
+  const [originSearch, setOriginSearch] = useState("");
+  const [typeSearch, setTypeSearch] = useState("");
+  const [stateSearch, setStateSearch] = useState("");
+  const [effectStageSearch, setEffectStageSearch] = useState("");
 
-  // Fetch groups dynamically from master data (managed in FertilizerGroupPage.tsx)
-  const { items: fertilizerGroups, loading: isLoadingGroups } = useMasterData(
+  const debouncedOriginSearch = useDebounce(originSearch, 300);
+  const debouncedTypeSearch = useDebounce(typeSearch, 300);
+  const debouncedStateSearch = useDebounce(stateSearch, 300);
+  const debouncedEffectStageSearch = useDebounce(effectStageSearch, 300);
+
+  const { items: loadedOrigins, loading: isLoadingOrigins } = useMasterData(
     "fertilizer-groups",
     {
       params: {
-        keyword: debouncedGroupSearch.trim() || undefined,
+        classification: "origin",
+        keyword: debouncedOriginSearch.trim() || undefined,
         status: "active",
-        page: 0,
-        size: 50,
+        size: 100,
+      },
+    },
+  );
+  const { items: loadedTypes, loading: isLoadingTypes } = useMasterData(
+    "fertilizer-groups",
+    {
+      params: {
+        classification: "nutrient_composition",
+        keyword: debouncedTypeSearch.trim() || undefined,
+        status: "active",
+        size: 100,
+      },
+    },
+  );
+  const { items: loadedEffectStages, loading: isLoadingEffectStages } =
+    useMasterData("fertilizer-groups", {
+      params: {
+        classification: "effect_stage",
+        keyword: debouncedEffectStageSearch.trim() || undefined,
+        status: "active",
+        size: 100,
+      },
+    });
+  const { items: loadedStates, loading: isLoadingStates } = useMasterData(
+    "fertilizer-groups",
+    {
+      params: {
+        classification: "physical_form",
+        keyword: debouncedStateSearch.trim() || undefined,
+        status: "active",
+        size: 100,
       },
     },
   );
@@ -129,34 +166,75 @@ export const FertilizerBasicInfoStep = ({
             </div>
           </div>
 
-          {/* Fertilizer Group Selector (remote multi-select) */}
-          <div className="space-y-2">
-            <Label className="flex items-center gap-1">
-              Nhóm phân bón <span className="text-red-500">*</span>
-            </Label>
-            <RemoteMultiSelect
-              options={fertilizerGroups.map((g) => ({
-                label: g.name,
-                value: g.name,
-              }))}
-              value={
-                formData.fertilizerOriginGroups &&
-                formData.fertilizerOriginGroups.length > 0
-                  ? formData.fertilizerOriginGroups
-                  : formData.fertilizerOriginGroup
-                    ? [formData.fertilizerOriginGroup]
-                    : []
-              }
-              onChange={(vals) => {
-                updateField("fertilizerOriginGroups", vals);
-                updateField("fertilizerOriginGroup", vals[0] || "");
-              }}
-              onSearch={setGroupSearch}
-              placeholder="Chọn nhóm phân bón từ danh mục (chọn nhiều)..."
-              searchPlaceholder="Tìm nhóm phân bón..."
-              emptyText="Không tìm thấy nhóm phân bón"
-              loading={isLoadingGroups}
-            />
+          {/* 4 Classification Fields 1:1 */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label>Nguồn gốc</Label>
+              <RemoteMultiSelect
+                options={(loadedOrigins || []).map((g) => ({
+                  label: g.name,
+                  value: g.name,
+                }))}
+                value={formData.fertilizerOrigins || []}
+                onChange={(vals) => updateField("fertilizerOrigins", vals)}
+                onSearch={setOriginSearch}
+                placeholder="Chọn nguồn gốc..."
+                searchPlaceholder="Tìm nguồn gốc..."
+                emptyText="Không có dữ liệu"
+                loading={isLoadingOrigins}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Thành phần dinh dưỡng</Label>
+              <RemoteMultiSelect
+                options={(loadedTypes || []).map((g) => ({
+                  label: g.name,
+                  value: g.name,
+                }))}
+                value={formData.fertilizerTypes || []}
+                onChange={(vals) => updateField("fertilizerTypes", vals)}
+                onSearch={setTypeSearch}
+                placeholder="Chọn thành phần dinh dưỡng..."
+                searchPlaceholder="Tìm thành phần dinh dưỡng..."
+                emptyText="Không có dữ liệu"
+                loading={isLoadingTypes}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Giai đoạn tác động</Label>
+              <RemoteMultiSelect
+                options={(loadedEffectStages || []).map((g) => ({
+                  label: g.name,
+                  value: g.name,
+                }))}
+                value={formData.fertilizerEffectStages || []}
+                onChange={(vals) => updateField("fertilizerEffectStages", vals)}
+                onSearch={setEffectStageSearch}
+                placeholder="Chọn giai đoạn tác động..."
+                searchPlaceholder="Tìm giai đoạn tác động..."
+                emptyText="Không có dữ liệu"
+                loading={isLoadingEffectStages}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Hình thái vật lý</Label>
+              <RemoteMultiSelect
+                options={(loadedStates || []).map((g) => ({
+                  label: g.name,
+                  value: g.name,
+                }))}
+                value={formData.fertilizerStates || []}
+                onChange={(vals) => updateField("fertilizerStates", vals)}
+                onSearch={setStateSearch}
+                placeholder="Chọn hình thái vật lý..."
+                searchPlaceholder="Tìm hình thái vật lý..."
+                emptyText="Không có dữ liệu"
+                loading={isLoadingStates}
+              />
+            </div>
           </div>
 
           {/* MoA & NPK Ratio */}

@@ -140,7 +140,7 @@ export default function PesticideBasicInfoStep({
         keyword: debouncedGroupSearch.trim() || undefined,
         status: "active",
         page: 0,
-        size: 20,
+        size: 100,
       },
     });
 
@@ -327,7 +327,7 @@ export default function PesticideBasicInfoStep({
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* Cơ chế tác động */}
                 <div className="space-y-2">
-                  <Label>Cơ chế tác động (Cách xâm nhập)</Label>
+                  <Label>Cơ chế tác động</Label>
                   <MultiSelect
                     options={pesticideModesOfAction.map((item) => ({
                       label: item.name,
@@ -352,7 +352,7 @@ export default function PesticideBasicInfoStep({
                 <div className="space-y-2">
                   <Label className="flex items-center gap-1.5">
                     <ShieldAlert className="w-4 h-4 text-amber-500" />
-                    Nhóm độc / Mức độ độc hại (WHO)
+                    Độc tính (WHO)
                   </Label>
                   <MultiSelect
                     options={pesticideToxicityClasses.map((item) => {

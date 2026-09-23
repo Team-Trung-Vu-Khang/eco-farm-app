@@ -235,7 +235,7 @@ export default function SimpleMaterialForm({
 
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <div className="space-y-2">
-            <Label>Mức độ công nghệ</Label>
+            <Label>Mức độ Công nghệ</Label>
             <RemoteMultiSelect
               options={techLevelOptions}
               value={
@@ -259,7 +259,7 @@ export default function SimpleMaterialForm({
           </div>
 
           <div className="space-y-2">
-            <Label>Giai đoạn áp dụng</Label>
+            <Label>Chuỗi giá trị</Label>
             <RemoteMultiSelect
               options={valueChainOptions}
               value={
@@ -274,9 +274,9 @@ export default function SimpleMaterialForm({
                 updateField("valueChainId", vals[0] || "");
               }}
               onSearch={setChainSearch}
-              placeholder="Chọn giai đoạn áp dụng (chọn nhiều)..."
-              searchPlaceholder="Tìm giai đoạn áp dụng..."
-              emptyText="Không tìm thấy giai đoạn áp dụng"
+              placeholder="Chọn chuỗi giá trị (chọn nhiều)..."
+              searchPlaceholder="Tìm chuỗi giá trị..."
+              emptyText="Không tìm thấy chuỗi giá trị"
             />
           </div>
         </div>

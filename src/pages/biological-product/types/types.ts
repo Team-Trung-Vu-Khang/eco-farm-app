@@ -83,6 +83,10 @@ export interface BiologicalProductFormData {
   biologicalProductOrigins?: string[];
   biologicalProductTypes?: string[];
   biologicalProductStates?: string[];
+  enzymes?: string[];
+  carriers?: string[];
+  bioExtracts?: string[];
+  supplements?: string[];
   nutritionalComponents: string;
   biologicalProductType: string;
   physicalForm: string;

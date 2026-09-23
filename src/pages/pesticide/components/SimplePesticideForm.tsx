@@ -267,7 +267,7 @@ export default function SimplePesticideForm({
         <div className="space-y-2">
           <Label className="flex items-center gap-1.5">
             <Package className="w-4 h-4 text-slate-400" />
-            {labels.groupLabel}
+            Công dụng thuốc
           </Label>
           <RemoteMultiSelect
             options={groupOptions}
@@ -283,9 +283,9 @@ export default function SimplePesticideForm({
               onFormFieldChange("pesticideGroups", vals);
             }}
             onSearch={setGroupSearch}
-            placeholder={`Chọn nhóm ${labels.item.toLowerCase()} (chọn nhiều)...`}
-            searchPlaceholder="Tìm nhóm thuốc BVTV..."
-            emptyText="Không tìm thấy nhóm thuốc BVTV"
+            placeholder="Chọn công dụng thuốc (chọn nhiều)..."
+            searchPlaceholder="Tìm công dụng thuốc..."
+            emptyText="Không tìm thấy công dụng thuốc"
             loading={isLoadingGroups}
           />
         </div>
@@ -295,16 +295,16 @@ export default function SimplePesticideForm({
           <div className="space-y-2">
             <Label className="flex items-center gap-1.5">
               <Tags className="w-4 h-4 text-slate-400" />
-              Nguồn gốc / Xuất xứ
+              Nguồn gốc
             </Label>
             <RemoteMultiSelect
               options={originOptions}
               value={formData.pesticideOrigins || []}
               onChange={(vals) => onFormFieldChange("pesticideOrigins", vals)}
               onSearch={setOriginSearch}
-              placeholder="Chọn xuất xứ..."
-              searchPlaceholder="Tìm xuất xứ..."
-              emptyText="Không có dữ liệu xuất xứ"
+              placeholder="Chọn nguồn gốc..."
+              searchPlaceholder="Tìm nguồn gốc..."
+              emptyText="Không có dữ liệu nguồn gốc"
               loading={isLoadingOrigins}
             />
           </div>
@@ -312,7 +312,7 @@ export default function SimplePesticideForm({
           <div className="space-y-2">
             <Label className="flex items-center gap-1.5">
               <Shield className="w-4 h-4 text-slate-400" />
-              Cấp độ độc tố
+              Độc tính
             </Label>
             <RemoteMultiSelect
               options={toxicityOptions}
@@ -321,9 +321,9 @@ export default function SimplePesticideForm({
                 onFormFieldChange("pesticideToxicityClasses", vals)
               }
               onSearch={setToxicitySearch}
-              placeholder="Chọn cấp độ độc tố..."
-              searchPlaceholder="Tìm độc tố..."
-              emptyText="Không có dữ liệu độc tố"
+              placeholder="Chọn độc tính..."
+              searchPlaceholder="Tìm độc tính..."
+              emptyText="Không có dữ liệu độc tính"
               loading={isLoadingToxicity}
             />
           </div>
@@ -350,7 +350,7 @@ export default function SimplePesticideForm({
           <div className="space-y-2">
             <Label className="flex items-center gap-1.5">
               <Package className="w-4 h-4 text-slate-400" />
-              Dạng chế phẩm / Dạng thuốc
+              Dạng bào chế
             </Label>
             <RemoteMultiSelect
               options={formulationOptions}
@@ -359,8 +359,8 @@ export default function SimplePesticideForm({
                 onFormFieldChange("pesticideFormulations", vals)
               }
               onSearch={setFormulationSearch}
-              placeholder="Chọn dạng thuốc..."
-              searchPlaceholder="Tìm dạng thuốc..."
+              placeholder="Chọn dạng bào chế..."
+              searchPlaceholder="Tìm dạng bào chế..."
               emptyText="Không có dữ liệu"
               loading={isLoadingFormulations}
             />

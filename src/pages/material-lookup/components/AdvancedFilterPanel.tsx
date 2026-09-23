@@ -158,7 +158,7 @@ export const AdvancedFilterPanel: FC<AdvancedFilterPanelProps> = ({
               <div className="flex items-center gap-2 text-red-500">
                 <ShieldAlert className="h-4 w-4" />
                 <h4 className="font-black text-xs uppercase tracking-widest">
-                  Độ độc (Thuốc BVTV)
+                  Độc tính (Thuốc BVTV)
                 </h4>
               </div>
               {isLoadingToxicity ? (

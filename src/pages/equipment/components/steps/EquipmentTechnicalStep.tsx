@@ -98,7 +98,7 @@ export const EquipmentTechnicalStep = ({
         {/* Groups */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-2">
-            <Label>Mức độ công nghệ</Label>
+            <Label>Mức độ Công nghệ</Label>
             <RemoteMultiSelect
               options={technologyLevelOptions.map((t) => ({
                 label: t.name,
@@ -126,7 +126,7 @@ export const EquipmentTechnicalStep = ({
           </div>
 
           <div className="space-y-2">
-            <Label>Khía cạnh tài chính</Label>
+            <Label>Khía cạnh Tài chính</Label>
             <RemoteMultiSelect
               options={financialManagementOptions.map((t) => ({
                 label: t.name,

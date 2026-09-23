@@ -218,7 +218,7 @@ export default function SimpleEquipmentForm({
 
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <div className="space-y-2">
-            <Label>Mức độ công nghệ</Label>
+            <Label>Mức độ Công nghệ</Label>
             <RemoteMultiSelect
               options={technologyLevelOptions}
               value={
@@ -243,7 +243,7 @@ export default function SimpleEquipmentForm({
           </div>
 
           <div className="space-y-2">
-            <Label>Khía cạnh tài chính</Label>
+            <Label>Khía cạnh Tài chính</Label>
             <RemoteMultiSelect
               options={financialManagementOptions}
               value={

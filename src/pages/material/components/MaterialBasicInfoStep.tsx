@@ -169,7 +169,7 @@ export default function MaterialBasicInfoStep({
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <div className="space-y-2">
               <Label>
-                Mức độ công nghệ <span className="text-red-500">*</span>
+                Mức độ Công nghệ <span className="text-red-500">*</span>
               </Label>
               <RemoteMultiSelect
                 options={techOptions}
