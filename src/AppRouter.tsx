@@ -2,11 +2,16 @@ import { lazy, useEffect } from "react";
 import { Route, Switch, useLocation, useParams } from "wouter";
 
 import { useFarmPlanById } from "@/features/farm-workflow/hooks";
+import { MOBILE_HOME_PATH } from "./layouts/mobile/mobileNav";
+import { useMobileUiMode } from "./shared/hooks/useMobileUiMode";
+import { useIsMobile } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { ReportProvider } from "./pages/reports/context/ReportContext";
 import { ReportPageContainer } from "./pages/reports/ReportPageContainer";
 import { AdminReportPage } from "./pages/reports/AdminReportPage";
 
 const DashboardPage = lazy(() => import("./pages/dashboard/Dashboard"));
+const MobileHomePage = lazy(() => import("./pages/mobile-home/MobileHomePage"));
+const ProfilePage = lazy(() => import("./pages/profile/ProfilePage"));
 const HistoryCreatePage = lazy(() => import("./pages/diary/HistoryCreatePage"));
 const HistoryPage = lazy(() => import("./pages/diary/HistoryPage"));
 const PlanDiaryPage = lazy(() => import("./pages/diary/PlanDiaryPage"));
@@ -980,10 +985,14 @@ const PlanAquacultureGrowthDetailRoute = () => (
 
 function RootRedirect() {
   const [, setLocation] = useLocation();
+  const isMobile = useIsMobile();
+  const mobileUiMode = useMobileUiMode();
+  const target =
+    isMobile && mobileUiMode === "app" ? MOBILE_HOME_PATH : "/dashboard";
 
   useEffect(() => {
-    setLocation("/dashboard", { replace: true });
-  }, [setLocation]);
+    setLocation(target, { replace: true });
+  }, [setLocation, target]);
 
   return null;
 }
@@ -1004,6 +1013,8 @@ function Router() {
       <Switch>
         <Route path="/" component={RootRedirect} />
         <Route path="/dashboard" component={DashboardPage} />
+        <Route path={MOBILE_HOME_PATH} component={MobileHomePage} />
+        <Route path="/profile" component={ProfilePage} />
         <Route path="/terrain" component={TerrainPage} />
         <Route path="/land-specs" component={LandSpecsPage} />
         <Route path="/task-category" component={TaskCategoryPage} />
