@@ -1,6 +1,7 @@
 import { CodeBadge } from "@/components/CodeBadge";
 import type { Column } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { Badge } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import { Badge, Button } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import { Loader2, Power } from "lucide-react";
 import { Link } from "wouter";
 import type {
   FarmCultivationZoneResponse,
@@ -14,13 +15,16 @@ const SCOPE_TYPE_LABELS: Record<string, string> = {
 };
 
 const STATUS_LABELS: Record<string, string> = {
-  active: "Đang canh tác",
-  inactive: "Ngừng canh tác",
+  active: "Đang hoạt động",
+  inactive: "Tạm dừng hoạt động",
   archived: "Lưu trữ",
 };
 
-export const getCultivationRegionColumns =
-  (): Column<FarmCultivationZoneResponse>[] => [
+export const getCultivationRegionColumns = (
+  /** Chuyển đổi trạng thái hoạt động <-> tạm dừng. */
+  onToggleStatus?: (row: FarmCultivationZoneResponse) => void,
+  togglingId?: number | null,
+): Column<FarmCultivationZoneResponse>[] => [
     {
       key: "code",
       label: "Mã",
@@ -96,12 +100,35 @@ export const getCultivationRegionColumns =
     {
       key: "status",
       label: "Trạng thái",
-      render: (value) => {
+      render: (value, row) => {
         const status = value as string;
+        const isActive = status === "active";
+        const isToggling = togglingId === row.id;
         return (
-          <Badge variant={status === "active" ? "default" : "secondary"}>
-            {STATUS_LABELS[status] ?? status}
-          </Badge>
+          <div className="flex items-center gap-2">
+            <Badge variant={isActive ? "default" : "secondary"}>
+              {STATUS_LABELS[status] ?? status}
+            </Badge>
+            {onToggleStatus && status !== "archived" && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-7 gap-1.5 px-2.5 text-xs font-medium text-muted-foreground hover:text-foreground"
+                disabled={isToggling}
+                onClick={(event) => {
+                  event.stopPropagation();
+                  onToggleStatus(row);
+                }}
+              >
+                {isToggling ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <Power className="h-3.5 w-3.5" />
+                )}
+                {isActive ? "Tạm dừng" : "Kích hoạt"}
+              </Button>
+            )}
+          </div>
         );
       },
     },

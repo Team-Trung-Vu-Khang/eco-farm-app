@@ -5,6 +5,11 @@ import { useDebounce } from "@/shared/hooks/useDebounce";
 import { useCatalog } from "@/features/foundation";
 import { useRearingMethods } from "@/features/master-data";
 import { useCultivationZones } from "@/features/farm/hooks/useCultivationZones";
+import { cultivationZoneApi } from "@/features/farm/api/farm.api";
+import type {
+  FarmCultivationZoneRequest,
+  FarmCultivationZoneResponse,
+} from "@/features/farm/types/farm.type";
 import { useCultivationZoneMutations } from "@/features/farm/hooks/useCultivationZoneMutations";
 import { getCultivationRegionColumns } from "../data/columns";
 import { getApiErrorMessage } from "@/shared/lib/api-error";
@@ -23,6 +28,7 @@ export const useCultivationRegionPage = () => {
 
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [togglingId, setTogglingId] = useState<number | null>(null);
 
   const handleSearch = (value: string) => {
     setSearch(value);
@@ -72,9 +78,8 @@ export const useCultivationRegionPage = () => {
         key: "status",
         label: "Trạng thái",
         options: [
-          { label: "Hoạt động", value: "active" },
-          { label: "Ngừng hoạt động", value: "inactive" },
-          { label: "Đã lưu trữ", value: "archived" },
+          { label: "Đang hoạt động", value: "active" },
+          { label: "Tạm dừng hoạt động", value: "inactive" },
         ],
       },
       {
@@ -108,7 +113,8 @@ export const useCultivationRegionPage = () => {
     },
   });
 
-  const { deleteCultivationZone } = useCultivationZoneMutations();
+  const { deleteCultivationZone, updateCultivationZone } =
+    useCultivationZoneMutations();
 
   const handleAdd = () => setLocation("/cultivation-region/create");
 
@@ -125,7 +131,79 @@ export const useCultivationRegionPage = () => {
     setDeleteOpen(true);
   };
 
-  const columns = useMemo(() => getCultivationRegionColumns(), []);
+  /**
+   * Chuyển đổi trạng thái hoạt động <-> tạm dừng.
+   * API chỉ có PUT full-replace nên phải dựng lại payload từ chi tiết hiện tại.
+   */
+  const handleToggleStatus = async (row: FarmCultivationZoneResponse) => {
+    const nextStatus = row.status === "active" ? "inactive" : "active";
+    setTogglingId(row.id);
+    try {
+      const detail = await cultivationZoneApi.getById(row.id);
+      const variantPayload =
+        detail.subjectVariants && detail.subjectVariants.length > 0
+          ? { subjectVariantIds: detail.subjectVariants.map((v) => v.id) }
+          : {
+              productionSubjectVariantIds: (
+                detail.productionSubjectVariants ?? []
+              ).map((v) => v.id),
+            };
+
+      const data: FarmCultivationZoneRequest = {
+        code: detail.code,
+        name: detail.name,
+        domainCode: detail.domainCode,
+        healthUpdateMode: detail.healthUpdateMode,
+        scopes: (detail.scopes ?? [])
+          .map((scope) => {
+            const target =
+              scope.scopeType === "REGION"
+                ? scope.region
+                : scope.scopeType === "AREA"
+                  ? scope.area
+                  : scope.plot;
+            return { scopeType: scope.scopeType, scopeId: Number(target?.id) };
+          })
+          .filter((scope) => !isNaN(scope.scopeId) && scope.scopeId > 0),
+        certificateIds: (detail.certificates ?? []).map((c) => c.id),
+        personnelIds: (detail.personnel ?? []).map((p) => p.id),
+        productionMethodId: Number(
+          detail.productionMethod?.id ?? detail.farmingMethod?.id,
+        ),
+        rearingMethodId: detail.rearingMethod?.id,
+        irrigationSystemId: detail.irrigationSystem?.id,
+        ...variantPayload,
+        notes: detail.notes,
+        status: nextStatus,
+        displayOrder: detail.displayOrder,
+        metadataJson: detail.metadataJson,
+      };
+
+      await updateCultivationZone.mutateAsync({ id: row.id, data });
+      toast({
+        title: "Thành công",
+        description:
+          nextStatus === "active"
+            ? "Đã chuyển vùng canh tác sang Đang hoạt động"
+            : "Đã tạm dừng hoạt động vùng canh tác",
+      });
+    } catch (error) {
+      toast({
+        title: "Lỗi",
+        description:
+          getApiErrorMessage(error) || "Không thể chuyển đổi trạng thái",
+        variant: "destructive",
+      });
+    } finally {
+      setTogglingId(null);
+    }
+  };
+
+  const columns = useMemo(
+    () => getCultivationRegionColumns(handleToggleStatus, togglingId),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [togglingId],
+  );
 
   const handleConfirmDelete = async () => {
     if (!deletingId) return;
@@ -158,6 +236,8 @@ export const useCultivationRegionPage = () => {
     handleSearch,
     handleDelete,
     handleConfirmDelete,
+    handleToggleStatus,
+    togglingId,
     pageSize,
     setPageSize,
     currentIndex,
