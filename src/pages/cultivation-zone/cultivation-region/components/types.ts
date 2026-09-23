@@ -88,3 +88,18 @@ export const makeEmptyPlant = (lat = 11.548, lng = 106.896): PlantEntry => ({
   coordinate: { lat, lng },
   isInvalidBoundary: false,
 });
+
+/** Trạng thái upload danh sách cây (bước 2) — giữ ở form để bước 3 hiển thị lại */
+export interface BulkUploadState {
+  scopeId: string;
+  varietyId: string;
+  file: File | null;
+  jobId: number | null;
+}
+
+export const EMPTY_BULK_UPLOAD_STATE: BulkUploadState = {
+  scopeId: "",
+  varietyId: "",
+  file: null,
+  jobId: null,
+};

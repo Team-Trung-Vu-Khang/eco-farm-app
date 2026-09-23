@@ -24,7 +24,11 @@ import { MapContainer } from "react-leaflet";
 import { PlantCard } from "./PlantCard";
 import { AllPlantsMapContent } from "./AllPlantsMapContent";
 import { BulkUploadPlantPanel } from "./BulkUploadPlantPanel";
-import { type PlantEntry, type VarietyOption } from "./types";
+import {
+  type BulkUploadState,
+  type PlantEntry,
+  type VarietyOption,
+} from "./types";
 
 interface Step2PlantEntryProps {
   plants: PlantEntry[];
@@ -56,6 +60,11 @@ interface Step2PlantEntryProps {
   radius?: number;
   setRadius?: (val: number) => void;
   hasOnlyCenterPoint?: boolean;
+  /** Chế độ: "card" (thêm thủ công) hoặc "table" (upload danh sách) */
+  viewMode: "card" | "table";
+  setViewMode: (mode: "card" | "table") => void;
+  bulkUpload: BulkUploadState;
+  setBulkUpload: (value: BulkUploadState) => void;
 }
 
 export const Step2PlantEntry: React.FC<Step2PlantEntryProps> = ({
@@ -80,10 +89,11 @@ export const Step2PlantEntry: React.FC<Step2PlantEntryProps> = ({
   radius = 100,
   setRadius,
   hasOnlyCenterPoint = false,
+  viewMode,
+  setViewMode,
+  bulkUpload,
+  setBulkUpload,
 }) => {
-  // Chế độ hiển thị: "card" (thêm thủ công — luôn ở view sửa, không cần danh sách)
-  // hoặc "table" (upload danh sách — gửi file Excel lên BE xử lý bất đồng bộ)
-  const [viewMode, setViewMode] = useState<"card" | "table">("card");
   // editingEntryId: cây đang sửa trong chế độ "table"; null = đang xem bảng
   const [editingEntryId, setEditingEntryId] = useState<string | null>(null);
 
@@ -353,6 +363,8 @@ export const Step2PlantEntry: React.FC<Step2PlantEntryProps> = ({
           cultivationZoneId={cultivationZoneId}
           scopedGeographicalUnits={scopedGeographicalUnits}
           productionVarietyOptions={productionVarietyOptions}
+          value={bulkUpload}
+          onChange={setBulkUpload}
         />
       ) : plants.length === 0 ? (
         /* Chế độ thêm thủ công, chưa có cây nào */

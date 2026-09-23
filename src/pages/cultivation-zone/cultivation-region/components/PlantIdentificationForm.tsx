@@ -1,12 +1,15 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { StepperForm, type Step } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import { useState } from "react";
 import { useLocation } from "wouter";
 import { type Plant } from "../../../region-chart/constants";
 import { ImportPlantDialog } from "./ImportPlantDialog";
 import { Step1GeographicalSelection } from "./Step1GeographicalSelection";
 import { Step2PlantEntry } from "./Step2PlantEntry";
 import { Step3Confirmation } from "./Step3Confirmation";
+import { useBulkUploadJob } from "../hooks/useBulkUploadJob";
 import { usePlantIdentificationForm } from "../hooks/usePlantIdentificationForm";
+import { EMPTY_BULK_UPLOAD_STATE, type BulkUploadState } from "./types";
 
 interface PlantIdentificationFormProps {
   initialData?: Partial<Plant>;
@@ -63,6 +66,29 @@ const PlantIdentificationForm = ({
     hasOnlyCenterPoint,
   } = usePlantIdentificationForm({ initialData, initialList, onSubmit });
 
+  // Chế độ bước 2: "card" (thêm thủ công) hoặc "table" (upload danh sách — BE tự tạo cây)
+  const [viewMode, setViewMode] = useState<"card" | "table">("card");
+  const [bulkUpload, setBulkUpload] = useState<BulkUploadState>(
+    EMPTY_BULK_UPLOAD_STATE,
+  );
+  const bulkUploadJob = useBulkUploadJob(bulkUpload.jobId);
+  const isBulkMode = viewMode === "table";
+
+  const bulkUploadSummary = isBulkMode
+    ? {
+        fileName: bulkUpload.file?.name ?? "",
+        scopeName:
+          scopedGeographicalUnits.find(
+            (unit: any) => unit.id === bulkUpload.scopeId,
+          )?.name ?? "",
+        varietyName:
+          productionVarietyOptions.find(
+            (option) => option.id === bulkUpload.varietyId,
+          )?.name ?? "",
+        result: bulkUploadJob.job?.result ?? null,
+      }
+    : undefined;
+
   const steps: Step[] = [
     {
       id: "selection",
@@ -96,7 +122,10 @@ const PlantIdentificationForm = ({
       // Optional step — user may proceed without adding any plant.
       // Plants that are added must still have a valid plot/boundary.
       // Mỗi cây phải có vị trí hợp lệ và ít nhất một Giống cây / Hạt giống (API bắt buộc)
-      isValid: plants.every(
+      // Upload danh sách: chỉ cho qua khi file đã xử lý xong và có cây được tạo
+      isValid: isBulkMode
+        ? bulkUploadJob.isSucceeded
+        : plants.every(
         (p) =>
           p.plotId &&
           !p.isInvalidBoundary &&
@@ -126,6 +155,10 @@ const PlantIdentificationForm = ({
           radius={radius}
           setRadius={setRadius}
           hasOnlyCenterPoint={hasOnlyCenterPoint}
+          viewMode={viewMode}
+          setViewMode={setViewMode}
+          bulkUpload={bulkUpload}
+          setBulkUpload={setBulkUpload}
         />
       ),
     },
@@ -144,6 +177,7 @@ const PlantIdentificationForm = ({
           farmingMethod={farmingMethod}
           irrigationMethod={irrigationMethod}
           selectedCropsData={selectedCropsData}
+          bulkUploadSummary={bulkUploadSummary}
         />
       ),
     },
@@ -153,9 +187,20 @@ const PlantIdentificationForm = ({
     <>
       <StepperForm
         steps={steps}
-        onComplete={handleComplete}
+        // Upload danh sách: cây đã được BE tạo, chỉ cần quay về danh sách
+        onComplete={
+          isBulkMode
+            ? () => setLocation("/plant-identification")
+            : handleComplete
+        }
         onCancel={() => setLocation("/plant-identification")}
-        completeLabel={initialData ? "Cập nhật cây trồng" : "Lưu cây trồng"}
+        completeLabel={
+          initialData
+            ? "Cập nhật cây trồng"
+            : isBulkMode
+              ? "Hoàn tất"
+              : "Lưu cây trồng"
+        }
         loading={loading}
       />
       <ImportPlantDialog

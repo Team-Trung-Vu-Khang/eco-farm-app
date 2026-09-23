@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useEffect, useRef } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   Button,
   Label,
@@ -24,8 +24,9 @@ import {
   plantKeys,
   type BulkUploadJobStatus,
 } from "@/features/farm";
+import { useBulkUploadJob } from "../hooks/useBulkUploadJob";
 import { SAMPLE_HEADERS } from "./ImportPlantDialog";
-import type { VarietyOption } from "./types";
+import type { BulkUploadState, VarietyOption } from "./types";
 
 interface GeoUnit {
   id: string;
@@ -39,13 +40,9 @@ interface BulkUploadPlantPanelProps {
   cultivationZoneId: string;
   scopedGeographicalUnits: GeoUnit[];
   productionVarietyOptions: VarietyOption[];
+  value: BulkUploadState;
+  onChange: (value: BulkUploadState) => void;
 }
-
-const RUNNING_STATUSES: BulkUploadJobStatus[] = [
-  "STARTING",
-  "STARTED",
-  "STOPPING",
-];
 
 const JOB_STATUS_LABELS: Partial<Record<BulkUploadJobStatus, string>> = {
   STARTING: "Đang khởi tạo",
@@ -87,16 +84,17 @@ export function BulkUploadPlantPanel({
   cultivationZoneId,
   scopedGeographicalUnits,
   productionVarietyOptions,
+  value,
+  onChange,
 }: BulkUploadPlantPanelProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [, setLocation] = useLocation();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const [scopeId, setScopeId] = useState("");
-  const [varietyId, setVarietyId] = useState("");
-  const [file, setFile] = useState<File | null>(null);
-  const [jobId, setJobId] = useState<number | null>(null);
+  const { scopeId, varietyId, file, jobId } = value;
+  const update = (partial: Partial<BulkUploadState>) =>
+    onChange({ ...value, ...partial });
 
   const selectedScope = scopedGeographicalUnits.find((u) => u.id === scopeId);
 
@@ -111,24 +109,12 @@ export function BulkUploadPlantPanel({
         cultivationZoneId: Number(cultivationZoneId),
         productionSubjectVariantId: Number(varietyId),
       }),
-    onSuccess: (res) => setJobId(res.jobExecutionId),
+    onSuccess: (res) => update({ jobId: res.jobExecutionId }),
     onError: (e: Error) =>
       toast({ variant: "destructive", title: "Lỗi", description: e.message }),
   });
 
-  const statusQuery = useQuery({
-    queryKey: ["plant-identification-bulk-upload", jobId],
-    queryFn: () => plantIdentificationApi.getBulkUploadStatus(jobId!),
-    enabled: jobId !== null,
-    refetchInterval: (query) => {
-      const status = query.state.data?.status;
-      return !status || RUNNING_STATUSES.includes(status) ? 2000 : false;
-    },
-  });
-
-  const job = statusQuery.data;
-  const isDone =
-    statusQuery.isError || (!!job && !RUNNING_STATUSES.includes(job.status));
+  const { statusQuery, job, isDone } = useBulkUploadJob(jobId);
   const isRunning = submit.isPending || (jobId !== null && !isDone);
   const result = job?.result;
   const progress = job?.progress;
@@ -141,8 +127,7 @@ export function BulkUploadPlantPanel({
   }, [isDone, result?.successRows, queryClient]);
 
   const reset = () => {
-    setJobId(null);
-    setFile(null);
+    update({ jobId: null, file: null });
     submit.reset();
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
@@ -156,7 +141,7 @@ export function BulkUploadPlantPanel({
           <Label required>Phạm vi (Vùng / Khu vực / Lô)</Label>
           <Select
             value={scopeId}
-            onValueChange={setScopeId}
+            onValueChange={(scopeId) => update({ scopeId })}
             disabled={isRunning || isDone}
           >
             <SelectTrigger>
@@ -175,7 +160,7 @@ export function BulkUploadPlantPanel({
           <Label required>Giống cây</Label>
           <Select
             value={varietyId}
-            onValueChange={setVarietyId}
+            onValueChange={(varietyId) => update({ varietyId })}
             disabled={isRunning || isDone}
           >
             <SelectTrigger>
@@ -227,7 +212,7 @@ export function BulkUploadPlantPanel({
             type="file"
             accept=".xlsx"
             className="hidden"
-            onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+            onChange={(e) => update({ file: e.target.files?.[0] ?? null })}
           />
         </div>
       </div>
