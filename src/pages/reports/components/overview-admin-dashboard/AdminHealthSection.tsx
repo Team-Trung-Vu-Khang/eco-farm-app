@@ -306,7 +306,7 @@ export const AdminHealthSection: React.FC<AdminHealthSectionProps> = ({
             </h3>
             {currentWorkspace && (
               <p className="text-xs text-slate-400 font-medium mt-0.5">
-                Workspace:{" "}
+                Đơn vị:{" "}
                 <span className="font-semibold text-slate-700">
                   {currentWorkspace.name}
                 </span>
