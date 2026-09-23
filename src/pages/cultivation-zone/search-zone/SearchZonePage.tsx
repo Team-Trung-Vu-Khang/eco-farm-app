@@ -1,20 +1,17 @@
 import PageWrapper from "@/components/PageWrapper";
 import { RemoteMultiSelect } from "@/components/RemoteMultiSelect";
-import type { CultivationRegion } from "@/stores/useCultivationRegionStore";
-import { ZoneDetailDialog } from "./components/ZoneDetailDialog";
 import {
   Badge,
   Button,
   cn,
   DataTable,
-  RemoteAutoCompleteSelect,
   Input,
   Label,
+  RemoteAutoCompleteSelect,
   useToast,
   type Column,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import {
-  Activity,
   Building2,
   ChevronRight,
   Layers,
@@ -23,10 +20,10 @@ import {
   PanelLeftOpen,
   Search,
   Sprout,
-  X,
 } from "lucide-react";
-import React, { useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { useLocation } from "wouter";
+import { ZoneDetailDialog } from "./components/ZoneDetailDialog";
 
 import {
   useAdminProductionZoneGroups,
@@ -36,20 +33,13 @@ import type {
   FarmAdminProductionZoneFilter,
   FarmAdminProductionZoneItem,
 } from "@/features/farm/types/admin-production-zone.type";
-import { useGeoProvinces, useGeoWards } from "@/features/master-data";
 import {
   useProductionSubjects,
   useProductionSubjectVariants,
 } from "@/features/foundation";
+import { useGeoProvinces, useGeoWards } from "@/features/master-data";
 import { useAdminWorkspaces } from "@/features/workspace/hooks/useAdminWorkspaces";
 import { useDebounce } from "@/shared/hooks/useDebounce";
-import {
-  LAND_TYPES,
-  type Coordinate,
-  type Region,
-} from "../../region-chart/constants";
-import { useCultivationRegionDetail } from "../cultivation-region/useCultivationRegionDetail";
-import { mockSearchZoneRegions } from "./searchZone.mock";
 
 interface AdvancedFiltersState {
   // Province/ward are selected by code (remote search) but the API
@@ -244,11 +234,6 @@ const SearchZonePage = () => {
       workspaceId: selectedWorkspaceId,
       filter: apiFilter,
     });
-
-  const zoneDetailData = useCultivationRegionDetail(
-    selectedZoneId ? String(selectedZoneId) : null,
-    selectedWorkspaceId,
-  );
 
   // Active workspace info
   const selectedWorkspace = useMemo(() => {
@@ -494,7 +479,7 @@ const SearchZonePage = () => {
                         <Input
                           type="number"
                           placeholder="Từ ha"
-                          min={0}
+                          min={1}
                           className={cn(
                             isAreaRangeInvalid &&
                               "border-red-500 focus-visible:ring-red-500 bg-red-50/50",
@@ -513,7 +498,7 @@ const SearchZonePage = () => {
                         <Input
                           type="number"
                           placeholder="Đến ha"
-                          min={0}
+                          min={1}
                           className={cn(
                             isAreaRangeInvalid &&
                               "border-red-500 focus-visible:ring-red-500 bg-red-50/50",
@@ -810,31 +795,12 @@ const SearchZonePage = () => {
         <ZoneDetailDialog
           open={isCultivationRegionDetailOpen}
           onOpenChange={setIsCultivationRegionDetailOpen}
-          area={
-            selectedZoneItem
-              ? {
-                  id: String(selectedZoneItem.id),
-                  name: selectedZoneItem.name,
-                  targetName: selectedZoneItem.name,
-                  targetIds: [String(selectedZoneItem.id)],
-                  scope: "region",
-                  enterpriseId: String(selectedZoneItem.workspaceId),
-                  managerIds: [],
-                  selectedCrops: selectedZoneItem.variantNames || [],
-                  certificateIds: [],
-                  note: "",
-                  createdAt: "",
-                  farmingMethodId: "N/A",
-                  irrigationMethodId: "N/A",
-                  status: (
-                    selectedZoneItem.status || "active"
-                  ).toLowerCase() as CultivationRegion["status"],
-                }
-              : null
-          }
-          details={zoneDetailData.details}
+          zoneId={selectedZoneId}
+          workspaceId={selectedWorkspaceId}
+          name={selectedZoneItem?.name}
           code={selectedZoneItem?.code}
           workspaceName={selectedWorkspace?.workspaceName}
+          status={selectedZoneItem?.status}
         />
       </div>
     </PageWrapper>

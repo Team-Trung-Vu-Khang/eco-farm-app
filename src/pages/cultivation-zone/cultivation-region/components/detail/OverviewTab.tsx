@@ -961,7 +961,8 @@ export const OverviewTab = ({
       <div
         className={cn(
           styles.areaMap,
-          "rounded-xl z-10 min-h-[65vh] h-full w-full overflow-hidden border border-slate-100 bg-slate-50 relative shadow-sm aspect-video",
+          // Fixed height: aspect-video made the map grow without bound on wide screens.
+          "relative z-10 h-[420px] w-full overflow-hidden rounded-xl border border-slate-100 bg-slate-50 shadow-sm",
         )}
       >
         <MapContainer
