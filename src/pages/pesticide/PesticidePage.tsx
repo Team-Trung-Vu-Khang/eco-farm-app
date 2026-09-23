@@ -62,7 +62,7 @@ export default function PesticidePage() {
       }
     >
       <DataTable
-        columns={pesticideColumns(navigateToDetail)}
+        columns={pesticideColumns(navigateToDetail, scope as "farm" | "admin")}
         data={pesticides}
         searchable
         searchPlaceholder="Tìm kiếm thuốc BVTV..."

@@ -12,158 +12,177 @@ const toxicityBadgeColor: Record<string, string> = {
 
 export const pesticideColumns = (
   onNavigateDetail: (id: number) => void,
-): Column<any>[] => [
-  { key: "code", label: "Mã", render: (value) => <CodeBadge value={value} /> },
-  {
-    key: "sku",
-    label: "Mã SKU",
-    render: (value) => <CodeBadge value={value} />,
-  },
-  {
-    key: "name",
-    label: "Tên thương mại",
-    render: (value, row) => (
-      <span
-        className="font-medium text-primary cursor-pointer hover:underline"
-        onClick={() => onNavigateDetail(row.id)}
-      >
-        {value}
-      </span>
-    ),
-  },
-  {
-    key: "source",
-    label: "Nguồn",
-    render: (value) => (
-      <Badge variant={value === "MASTER" ? "secondary" : "default"}>
-        {value === "MASTER" ? "Hệ thống" : "Nội bộ"}
-      </Badge>
-    ),
-  },
-  {
-    key: "registrationNumber",
-    label: "Số đăng ký",
-    render: (value) =>
-      value ? (
-        <span className="font-mono text-xs text-slate-600">{value}</span>
-      ) : (
-        <span className="text-muted-foreground text-xs">—</span>
-      ),
-  },
-  {
-    key: "group",
-    label: "Nhóm phân loại",
-    render: (_, row) => {
-      const type =
-        row.domainCode === "LIVESTOCK"
-          ? "control_level"
-          : row.domainCode === "AQUACULTURE"
-            ? "control_residue_level"
-            : "target_group";
+  scope?: "farm" | "admin",
+): Column<any>[] => {
+  const isAdmin = scope
+    ? scope === "admin"
+    : typeof window !== "undefined" &&
+      window.location.pathname.startsWith("/admin");
 
-      const apiGroups =
-        row.classifications
-          ?.filter((c: any) => c.classification === type)
-          ?.map((c: any) => c.group?.name)
-          ?.filter(Boolean) || [];
-
-      const rawGroup = row.pesticideGroups || row.group;
-      const localGroups = Array.isArray(rawGroup)
-        ? rawGroup
-        : rawGroup
-          ? [rawGroup]
-          : [];
-
-      const combined = Array.from(
-        new Set([...apiGroups, ...localGroups]),
-      ).filter(Boolean);
-
-      if (combined.length === 0) {
-        return <span className="text-muted-foreground text-xs">—</span>;
-      }
-
-      return (
-        <div className="flex flex-wrap gap-1">
-          {combined.map((item, idx) => (
-            <Badge
-              key={idx}
-              variant="outline"
-              className="text-[11px] px-1.5 py-0"
-            >
-              {item}
-            </Badge>
-          ))}
-        </div>
-      );
+  const cols: Column<any>[] = [
+    {
+      key: "code",
+      label: "Mã",
+      render: (value) => <CodeBadge value={value} />,
     },
-  },
-  {
-    key: "form",
-    label: "Dạng bào chế",
-    render: (_, row) => {
-      let val =
-        row.metadataJson && typeof row.metadataJson === "object"
-          ? row.metadataJson?.dosageForm
-          : undefined;
-
-      if (!val && row.metadataJson && typeof row.metadataJson === "string") {
-        try {
-          val = JSON.parse(row.metadataJson)?.dosageForm;
-        } catch {
-          // ignore malformed metadata
-        }
-      }
-
-      if (!val) {
-        val = row.classifications?.find(
-          (c: any) => c.classification === "dosage_form",
-        )?.group?.name;
-      }
-
-      return val || <span className="text-muted-foreground text-xs">—</span>;
+    {
+      key: "sku",
+      label: "Mã SKU",
+      render: (value) => <CodeBadge value={value} />,
     },
-  },
-  {
-    key: "toxicityLevel",
-    label: "Nhóm độc (WHO)",
-    render: (_, row) => {
-      let val = row.classifications?.find(
-        (c: any) => c.classification === "toxicity",
-      )?.group?.name;
-      if (!val && row.metadataJson) {
-        try {
-          const meta =
-            typeof row.metadataJson === "string"
-              ? JSON.parse(row.metadataJson)
-              : row.metadataJson;
-          val = meta?.toxicityLevel;
-        } catch {
-          // ignore
-        }
-      }
-      if (!val) {
-        val = row.toxicityLevel;
-      }
-      const displayLabel =
-        toxicityLevels.find((t) => t.value === val)?.label || val;
-      return val ? (
+    {
+      key: "name",
+      label: "Tên thương mại",
+      render: (value, row) => (
         <span
-          className={`px-2 py-0.5 rounded text-xs font-semibold border ${toxicityBadgeColor[val] ?? "bg-slate-100 text-slate-600"}`}
+          className="font-medium text-primary cursor-pointer hover:underline"
+          onClick={() => onNavigateDetail(row.id)}
         >
-          {displayLabel}
+          {value}
         </span>
-      ) : (
-        <span className="text-muted-foreground text-xs">—</span>
-      );
+      ),
     },
-  },
-  {
-    key: "status",
-    label: "Trạng thái",
-    render: (value) => (
-      <Badge variant={value === "active" ? "default" : "secondary"}>
-        {value === "active" ? "Hoạt động" : "Không hoạt động"}
-      </Badge>
-    ),
-  },
-];
+  ];
+
+  if (!isAdmin) {
+    cols.push({
+      key: "source",
+      label: "Nguồn",
+      render: (value) => (
+        <Badge variant={value === "MASTER" ? "secondary" : "default"}>
+          {value === "MASTER" ? "Hệ thống" : "Nội bộ"}
+        </Badge>
+      ),
+    });
+  }
+
+  return [
+    ...cols,
+    {
+      key: "registrationNumber",
+      label: "Số đăng ký",
+      render: (value) =>
+        value ? (
+          <span className="font-mono text-xs text-slate-600">{value}</span>
+        ) : (
+          <span className="text-muted-foreground text-xs">—</span>
+        ),
+    },
+    {
+      key: "group",
+      label: "Nhóm phân loại",
+      render: (_, row) => {
+        const type =
+          row.domainCode === "LIVESTOCK"
+            ? "control_level"
+            : row.domainCode === "AQUACULTURE"
+              ? "control_residue_level"
+              : "target_group";
+
+        const apiGroups =
+          row.classifications
+            ?.filter((c: any) => c.classification === type)
+            ?.map((c: any) => c.group?.name)
+            ?.filter(Boolean) || [];
+
+        const rawGroup = row.pesticideGroups || row.group;
+        const localGroups = Array.isArray(rawGroup)
+          ? rawGroup
+          : rawGroup
+            ? [rawGroup]
+            : [];
+
+        const combined = Array.from(
+          new Set([...apiGroups, ...localGroups]),
+        ).filter(Boolean);
+
+        if (combined.length === 0) {
+          return <span className="text-muted-foreground text-xs">—</span>;
+        }
+
+        return (
+          <div className="flex flex-wrap gap-1">
+            {combined.map((item, idx) => (
+              <Badge
+                key={idx}
+                variant="outline"
+                className="text-[11px] px-1.5 py-0"
+              >
+                {item}
+              </Badge>
+            ))}
+          </div>
+        );
+      },
+    },
+    {
+      key: "form",
+      label: "Dạng bào chế",
+      render: (_, row) => {
+        let val =
+          row.metadataJson && typeof row.metadataJson === "object"
+            ? row.metadataJson?.dosageForm
+            : undefined;
+
+        if (!val && row.metadataJson && typeof row.metadataJson === "string") {
+          try {
+            val = JSON.parse(row.metadataJson)?.dosageForm;
+          } catch {
+            // ignore malformed metadata
+          }
+        }
+
+        if (!val) {
+          val = row.classifications?.find(
+            (c: any) => c.classification === "dosage_form",
+          )?.group?.name;
+        }
+
+        return val || <span className="text-muted-foreground text-xs">—</span>;
+      },
+    },
+    {
+      key: "toxicityLevel",
+      label: "Nhóm độc (WHO)",
+      render: (_, row) => {
+        let val = row.classifications?.find(
+          (c: any) => c.classification === "toxicity",
+        )?.group?.name;
+        if (!val && row.metadataJson) {
+          try {
+            const meta =
+              typeof row.metadataJson === "string"
+                ? JSON.parse(row.metadataJson)
+                : row.metadataJson;
+            val = meta?.toxicityLevel;
+          } catch {
+            // ignore
+          }
+        }
+        if (!val) {
+          val = row.toxicityLevel;
+        }
+        const displayLabel =
+          toxicityLevels.find((t) => t.value === val)?.label || val;
+        return val ? (
+          <span
+            className={`px-2 py-0.5 rounded text-xs font-semibold border ${toxicityBadgeColor[val] ?? "bg-slate-100 text-slate-600"}`}
+          >
+            {displayLabel}
+          </span>
+        ) : (
+          <span className="text-muted-foreground text-xs">—</span>
+        );
+      },
+    },
+    {
+      key: "status",
+      label: "Trạng thái",
+      render: (value) => (
+        <Badge variant={value === "active" ? "default" : "secondary"}>
+          {value === "active" ? "Hoạt động" : "Không hoạt động"}
+        </Badge>
+      ),
+    },
+  ];
+};

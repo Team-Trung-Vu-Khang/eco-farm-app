@@ -161,19 +161,16 @@ export function useFertilizerCreateForm() {
   };
 
   const handleConfirmSubmit = async (isDetailMode?: boolean) => {
-    const hasSimplePackagingRule =
-      formData.configMode === "BASE_UNIT"
+    const hasPackagingSpec =
+      (formData.packagingSpecs && formData.packagingSpecs.length > 0) ||
+      (formData.configMode === "BASE_UNIT"
         ? Boolean(formData.unit)
-        : Boolean(formData.packaging && formData.quantity && formData.unit);
+        : Boolean(formData.packaging && formData.quantity && formData.unit));
 
-    const hasAdvancedPackagingRule = (formData.packagingSpecs || []).length > 0;
-
-    if (isDetailMode ? !hasAdvancedPackagingRule : !hasSimplePackagingRule) {
+    if (!hasPackagingSpec) {
       toast({
         title: "Thiếu thông tin",
-        description: isDetailMode
-          ? "Vui lòng thêm ít nhất một quy cách đóng gói."
-          : "Vui lòng nhập đủ quy cách, giá trị và đơn vị đóng gói.",
+        description: "Vui lòng nhập đủ quy cách, giá trị và đơn vị đóng gói.",
         variant: "destructive",
       });
       return;
@@ -301,7 +298,7 @@ export function useFertilizerCreateForm() {
         hashtags: formData.hashtags,
         imageUrl: uploadedImageUrl || undefined,
         packagingVariants: parsePackagingSpecs(
-          isDetailMode
+          formData.packagingSpecs && formData.packagingSpecs.length > 0
             ? formData.packagingSpecs
             : formData.packaging || formData.quantity || formData.unit
               ? [

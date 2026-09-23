@@ -168,9 +168,7 @@ export default function MaterialBasicInfoStep({
 
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <div className="space-y-2">
-              <Label>
-                Mức độ Công nghệ <span className="text-red-500">*</span>
-              </Label>
+              <Label>Mức độ Công nghệ</Label>
               <RemoteMultiSelect
                 options={techOptions}
                 value={selectedTechLevels}
@@ -188,9 +186,7 @@ export default function MaterialBasicInfoStep({
             </div>
 
             <div className="space-y-2">
-              <Label>
-                Chuỗi giá trị <span className="text-red-500">*</span>
-              </Label>
+              <Label>Chuỗi giá trị</Label>
               <RemoteMultiSelect
                 options={valueChainOptions}
                 value={selectedValueChains}

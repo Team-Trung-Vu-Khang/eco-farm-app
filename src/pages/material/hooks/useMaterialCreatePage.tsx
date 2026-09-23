@@ -22,8 +22,8 @@ import { normalizeSku } from "@/shared/lib/sku";
 
 const materialSchema = z.object({
   name: z.string().trim().min(1),
-  technologyLevelId: z.string().trim().min(1),
-  valueChainId: z.string().trim().min(1),
+  technologyLevelId: z.string().trim().optional(),
+  valueChainId: z.string().trim().optional(),
 });
 
 export function useMaterialCreatePage() {

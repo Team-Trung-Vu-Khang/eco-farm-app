@@ -70,7 +70,7 @@ const BiologicalProductCreatePage = () => {
           updateField={updateField}
         />
       ),
-      isValid: Boolean(formData.name && formData.biologicalProductOriginGroup),
+      isValid: Boolean(formData.name),
     },
     {
       id: "usage",

@@ -7,14 +7,23 @@ import {
 
 interface ColumnOptions {
   onNameClick: (id: number) => void;
+  scope?: "farm" | "admin";
 }
 
 export const getEquipmentColumns = (
   options: ColumnOptions | ((id: number) => void),
+  scope?: "farm" | "admin",
 ): Column<any>[] => {
   const onNameClick =
     typeof options === "function" ? options : options?.onNameClick;
-  return [
+  const targetScope =
+    typeof options === "object" && options.scope ? options.scope : scope;
+  const isAdmin = targetScope
+    ? targetScope === "admin"
+    : typeof window !== "undefined" &&
+      window.location.pathname.startsWith("/admin");
+
+  const cols: Column<any>[] = [
     {
       key: "code",
       label: "Mã",
@@ -47,7 +56,10 @@ export const getEquipmentColumns = (
         );
       },
     },
-    {
+  ];
+
+  if (!isAdmin) {
+    cols.push({
       key: "source",
       label: "Nguồn",
       render: (value) => (
@@ -55,7 +67,11 @@ export const getEquipmentColumns = (
           {value === "MASTER" ? "Hệ thống" : "Nội bộ"}
         </Badge>
       ),
-    },
+    });
+  }
+
+  return [
+    ...cols,
     {
       key: "machineType",
       label: "Loại máy / Nhóm thiết bị",

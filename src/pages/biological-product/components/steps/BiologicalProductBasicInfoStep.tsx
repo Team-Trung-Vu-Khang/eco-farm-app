@@ -27,23 +27,56 @@ export const BiologicalProductBasicInfoStep = ({
 }: BiologicalProductBasicInfoStepProps) => {
   const isEdit = window.location.pathname.includes("/edit");
   const [paramHashtag, setParamHashtag] = useState("");
-  const [groupSearch, setGroupSearch] = useState("");
-  const debouncedGroupSearch = useDebounce(groupSearch, 300);
+  const [enzymeSearch, setEnzymeSearch] = useState("");
+  const [carrierSearch, setCarrierSearch] = useState("");
+  const [bioExtractSearch, setBioExtractSearch] = useState("");
+  const [supplementSearch, setSupplementSearch] = useState("");
 
-  const { items: biologicalProductGroups, loading: isLoadingGroups } =
+  const debouncedEnzymeSearch = useDebounce(enzymeSearch, 300);
+  const debouncedCarrierSearch = useDebounce(carrierSearch, 300);
+  const debouncedBioExtractSearch = useDebounce(bioExtractSearch, 300);
+  const debouncedSupplementSearch = useDebounce(supplementSearch, 300);
+
+  const { items: loadedEnzymes, loading: isLoadingEnzymes } = useMasterData(
+    SUPPLY_GROUP_CATALOG,
+    {
+      params: {
+        classification: "enzyme",
+        keyword: debouncedEnzymeSearch.trim() || undefined,
+        status: "active",
+        size: 100,
+      },
+    },
+  );
+  const { items: loadedCarriers, loading: isLoadingCarriers } = useMasterData(
+    SUPPLY_GROUP_CATALOG,
+    {
+      params: {
+        classification: "carrier",
+        keyword: debouncedCarrierSearch.trim() || undefined,
+        status: "active",
+        size: 100,
+      },
+    },
+  );
+  const { items: loadedBioExtracts, loading: isLoadingBioExtracts } =
     useMasterData(SUPPLY_GROUP_CATALOG, {
       params: {
-        keyword: debouncedGroupSearch.trim() || undefined,
+        classification: "bio_extract",
+        keyword: debouncedBioExtractSearch.trim() || undefined,
         status: "active",
-        page: 0,
-        size: 50,
+        size: 100,
       },
     });
-
-  const groupOptions = biologicalProductGroups.map((group) => ({
-    label: group.name,
-    value: group.name,
-  }));
+  const { items: loadedSupplements, loading: isLoadingSupplements } =
+    useMasterData(SUPPLY_GROUP_CATALOG, {
+      params: {
+        classification: "supplement",
+        keyword: debouncedSupplementSearch.trim() || undefined,
+        status: "active",
+        size: 100,
+      },
+    });
 
   const handleAddHashtag = () => {
     const nextHashtag = paramHashtag.trim();
@@ -131,31 +164,75 @@ export const BiologicalProductBasicInfoStep = ({
             </div>
           </div>
 
-          {/* Nhóm chế phẩm (quản lý ở trang Danh mục) */}
-          <div className="space-y-2">
-            <Label className="flex items-center gap-1">
-              Nhóm chế phẩm sinh học <span className="text-red-500">*</span>
-            </Label>
-            <RemoteMultiSelect
-              options={groupOptions}
-              value={
-                formData.biologicalProductOriginGroups &&
-                formData.biologicalProductOriginGroups.length > 0
-                  ? formData.biologicalProductOriginGroups
-                  : formData.biologicalProductOriginGroup
-                    ? [formData.biologicalProductOriginGroup]
-                    : []
-              }
-              onChange={(vals) => {
-                updateField("biologicalProductOriginGroups", vals);
-                updateField("biologicalProductOriginGroup", vals[0] || "");
-              }}
-              onSearch={setGroupSearch}
-              placeholder="Chọn nhóm chế phẩm sinh học (cho phép chọn nhiều)..."
-              searchPlaceholder="Tìm nhóm chế phẩm sinh học..."
-              emptyText="Không tìm thấy nhóm chế phẩm sinh học"
-              loading={isLoadingGroups}
-            />
+          {/* 4 Microbial Classification Fields 1:1 */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label>Enzyme</Label>
+              <RemoteMultiSelect
+                options={(loadedEnzymes || []).map((g) => ({
+                  label: g.name,
+                  value: g.name,
+                }))}
+                value={formData.enzymes || []}
+                onChange={(vals) => updateField("enzymes", vals)}
+                onSearch={setEnzymeSearch}
+                placeholder="Chọn enzyme..."
+                searchPlaceholder="Tìm enzyme..."
+                emptyText="Không có dữ liệu"
+                loading={isLoadingEnzymes}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Chất mang / Dung môi</Label>
+              <RemoteMultiSelect
+                options={(loadedCarriers || []).map((g) => ({
+                  label: g.name,
+                  value: g.name,
+                }))}
+                value={formData.carriers || []}
+                onChange={(vals) => updateField("carriers", vals)}
+                onSearch={setCarrierSearch}
+                placeholder="Chọn chất mang / dung môi..."
+                searchPlaceholder="Tìm chất mang / dung môi..."
+                emptyText="Không có dữ liệu"
+                loading={isLoadingCarriers}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Chiết xuất sinh học</Label>
+              <RemoteMultiSelect
+                options={(loadedBioExtracts || []).map((g) => ({
+                  label: g.name,
+                  value: g.name,
+                }))}
+                value={formData.bioExtracts || []}
+                onChange={(vals) => updateField("bioExtracts", vals)}
+                onSearch={setBioExtractSearch}
+                placeholder="Chọn chiết xuất sinh học..."
+                searchPlaceholder="Tìm chiết xuất sinh học..."
+                emptyText="Không có dữ liệu"
+                loading={isLoadingBioExtracts}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Dinh dưỡng bổ sung</Label>
+              <RemoteMultiSelect
+                options={(loadedSupplements || []).map((g) => ({
+                  label: g.name,
+                  value: g.name,
+                }))}
+                value={formData.supplements || []}
+                onChange={(vals) => updateField("supplements", vals)}
+                onSearch={setSupplementSearch}
+                placeholder="Chọn dinh dưỡng bổ sung..."
+                searchPlaceholder="Tìm dinh dưỡng bổ sung..."
+                emptyText="Không có dữ liệu"
+                loading={isLoadingSupplements}
+              />
+            </div>
           </div>
 
           {/* Thành phần vi sinh */}

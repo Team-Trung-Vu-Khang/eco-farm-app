@@ -63,7 +63,7 @@ export default function MaterialPage() {
       }
     >
       <DataTable
-        columns={materialColumns(navigateToDetail)}
+        columns={materialColumns(navigateToDetail, scope as "farm" | "admin")}
         data={materials}
         searchable
         searchPlaceholder="Tìm kiếm vật tư..."

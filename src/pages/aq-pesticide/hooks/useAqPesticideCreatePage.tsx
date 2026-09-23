@@ -236,7 +236,7 @@ export function useAqPesticideCreatePage() {
         hashtags: formData.hashtags,
         imageUrl: uploadedImageUrl || undefined,
         packagingVariants: parsePackagingSpecs(
-          isDetailMode
+          formData.packagingSpecs && formData.packagingSpecs.length > 0
             ? formData.packagingSpecs
             : formData.packaging || formData.quantity || formData.unit
               ? [
@@ -353,7 +353,7 @@ export function useAqPesticideCreatePage() {
           onRemoveHashtag={handleRemoveHashtag}
         />
       ),
-      isValid: Boolean(formData.name && formData.group),
+      isValid: Boolean(formData.name),
     },
     {
       id: "usage",

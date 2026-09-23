@@ -68,7 +68,7 @@ const FertilizerCreatePage = () => {
           updateField={updateField}
         />
       ),
-      isValid: Boolean(formData.name && formData.fertilizerOriginGroup),
+      isValid: Boolean(formData.name),
     },
     {
       id: "usage",

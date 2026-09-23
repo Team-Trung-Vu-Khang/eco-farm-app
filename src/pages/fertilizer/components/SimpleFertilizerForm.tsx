@@ -152,12 +152,39 @@ export default function SimpleFertilizerForm({
 
   const unitList = (baseUnits ?? []).map((u) => u.name);
 
-  const hasSimplePackagingRule =
-    formData.configMode === "SPEC"
-      ? Boolean(formData.packaging && formData.quantity && formData.unit)
-      : Boolean(formData.unit);
+  const [configMode, setConfigMode] = useState<"SPEC" | "BASE_UNIT">("SPEC");
+  const [quantity, setQuantity] = useState("");
+  const [unit, setUnit] = useState("");
+  const [packaging, setPackaging] = useState("");
 
-  const isValid = Boolean(formData.name) && hasSimplePackagingRule;
+  const packagingSpecsArr = formData.packagingSpecs || [];
+
+  const addPackagingSpec = () => {
+    let spec = "";
+    if (configMode === "SPEC") {
+      const trimmedQty = quantity.trim();
+      if (!packaging || !trimmedQty || !unit) return;
+      spec = `${packaging} ${trimmedQty} ${unit}`;
+    } else {
+      if (!unit) return;
+      spec = `${unit}`;
+    }
+    if (!packagingSpecsArr.includes(spec)) {
+      updateField("packagingSpecs", [...packagingSpecsArr, spec]);
+    }
+    setQuantity("");
+    setUnit("");
+    setPackaging("");
+  };
+
+  const removePackagingSpec = (value: string) => {
+    updateField(
+      "packagingSpecs",
+      packagingSpecsArr.filter((v) => v !== value),
+    );
+  };
+
+  const isValid = Boolean(formData.name);
   const [paramHashtag, setParamHashtag] = useState("");
 
   const onAddHashtag = () => {
@@ -230,6 +257,34 @@ export default function SimpleFertilizerForm({
         )}
       </div>
 
+      {/* ── Mã SKU ── */}
+      <div className="space-y-2">
+        <Label className="flex items-center gap-1.5">
+          <FileText className="w-4 h-4 text-slate-400" />
+          Mã sản phẩm / SKU
+        </Label>
+        <Input
+          value={formData.code}
+          disabled={isEdit}
+          clearable={!isEdit}
+          onChange={(e) => updateField("code", normalizeSku(e.target.value))}
+          placeholder="Để trống để tự động tạo"
+        />
+      </div>
+
+      {/* ── Tên phân bón ── */}
+      <div className="space-y-2">
+        <Label required className="flex items-center gap-1.5">
+          <FileText className="w-4 h-4 text-slate-400" />
+          Tên phân bón
+        </Label>
+        <Input
+          value={formData.name}
+          onChange={(e) => updateField("name", e.target.value)}
+          placeholder="VD: NPK 20-20-15 Đầu Trâu, Phân hữu cơ vi sinh Sông Gianh..."
+        />
+      </div>
+
       {/* ── Phân loại phân bón ── */}
       <div className="space-y-4">
 
@@ -298,115 +353,93 @@ export default function SimpleFertilizerForm({
         </div>
       </div>
 
-      {/* ── Mã SKU ── */}
-      <div className="space-y-2">
-        <Label className="flex items-center gap-1.5">
-          <FileText className="w-4 h-4 text-slate-400" />
-          Mã sản phẩm / SKU
-        </Label>
-        <Input
-          value={formData.code}
-          disabled={isEdit}
-          clearable={!isEdit}
-          onChange={(e) => updateField("code", normalizeSku(e.target.value))}
-          placeholder="Để trống để tự động tạo"
-        />
-      </div>
-
-      {/* ── Tên phân bón ── */}
-      <div className="space-y-2">
-        <Label required className="flex items-center gap-1.5">
-          <FileText className="w-4 h-4 text-slate-400" />
-          Tên phân bón
-        </Label>
-        <Input
-          value={formData.name}
-          onChange={(e) => updateField("name", e.target.value)}
-          placeholder="VD: NPK 20-20-15 Đầu Trâu, Phân hữu cơ vi sinh Sông Gianh..."
-        />
-      </div>
-
-      {/* ── Cấu hình Đơn vị Vật tư ── */}
+      {/* ── Cấu hình Quy cách đóng gói & Đơn vị vật tư ── */}
       <div className="space-y-3">
         <Label className="flex items-center gap-1.5 font-semibold">
           <Package className="w-4 h-4 text-slate-400" />
-          Cấu hình Đơn vị Vật tư <span className="text-red-500">*</span>
+          Cấu hình Quy cách đóng gói &amp; Đơn vị vật tư
         </Label>
 
         {/* Mode switch */}
-        <div className="flex flex-wrap items-center p-1 bg-slate-100 rounded-xl text-xs font-medium w-fit max-w-full gap-1">
-          <button
-            type="button"
-            onClick={() => updateField("configMode", "SPEC")}
-            className={`px-3 py-1.5 rounded-lg transition-all ${
-              formData.configMode === "SPEC"
-                ? "bg-white text-primary shadow-xs font-bold"
-                : "text-slate-600 hover:text-slate-900"
-            }`}
-          >
-            Quy cách đầy đủ (Chai 500ml, Bao 25kg...)
-          </button>
-          <button
-            type="button"
-            onClick={() => updateField("configMode", "BASE_UNIT")}
-            className={`px-3 py-1.5 rounded-lg transition-all ${
-              formData.configMode === "BASE_UNIT"
-                ? "bg-white text-primary shadow-xs font-bold"
-                : "text-slate-600 hover:text-slate-900"
-            }`}
-          >
-            Không rõ quy cách (Chỉ chọn đơn vị cơ bản kg, l...)
-          </button>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="flex flex-wrap items-center p-1 bg-slate-100 rounded-xl text-xs font-medium gap-1">
+            <button
+              type="button"
+              onClick={() => setConfigMode("SPEC")}
+              className={`px-3 py-1.5 rounded-lg transition-all ${
+                configMode === "SPEC"
+                  ? "bg-white text-primary shadow-xs font-bold"
+                  : "text-slate-600 hover:text-slate-900"
+              }`}
+            >
+              Quy cách đầy đủ (Chai 500ml, Bao 25kg...)
+            </button>
+            <button
+              type="button"
+              onClick={() => setConfigMode("BASE_UNIT")}
+              className={`px-3 py-1.5 rounded-lg transition-all ${
+                configMode === "BASE_UNIT"
+                  ? "bg-white text-primary shadow-xs font-bold"
+                  : "text-slate-600 hover:text-slate-900"
+              }`}
+            >
+              Không rõ quy cách (Chỉ chọn đơn vị cơ bản kg, l...)
+            </button>
+          </div>
         </div>
 
-        <div className="flex gap-2 items-center">
-          {formData.configMode === "SPEC" ? (
+        <div className="flex gap-2 items-end">
+          {configMode === "SPEC" ? (
             <>
-              <div className="flex-1 min-w-[130px]">
-                <Select
-                  value={formData.packaging || formData.physicalForm}
-                  onValueChange={(v) => {
-                    updateField("packaging", v);
-                    updateField("physicalForm", v);
-                  }}
-                >
+              <div className="flex-1 space-y-1 min-w-[130px]">
+                <Label className="text-xs text-muted-foreground">
+                  Loại đóng gói
+                </Label>
+                <Select value={packaging} onValueChange={setPackaging}>
                   <SelectTrigger className="text-left h-auto py-2">
                     <SelectValue placeholder="Loại (Chai, Bao...)" />
                   </SelectTrigger>
                   <SelectContent>
-                    {packagingList.map((p) => (
-                      <SelectItem key={p} value={p}>
-                        {p}
+                    {packagingList.map((item) => (
+                      <SelectItem key={item} value={item}>
+                        {item}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
 
-              <div className="w-28">
+              <div className="w-28 space-y-1">
+                <Label className="text-xs text-muted-foreground">
+                  Số lượng
+                </Label>
                 <Input
                   type="number"
+                  value={quantity}
+                  onChange={(e) => setQuantity(e.target.value)}
+                  placeholder="VD: 500, 25"
                   min={1}
-                  placeholder="Số lượng"
-                  value={formData.quantity}
-                  onChange={(e) => {
-                    updateField("quantity", e.target.value);
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      addPackagingSpec();
+                    }
                   }}
                 />
               </div>
 
-              <div className="flex-1 min-w-[120px]">
-                <Select
-                  value={formData.unit}
-                  onValueChange={(v) => updateField("unit", v)}
-                >
+              <div className="flex-1 space-y-1 min-w-[120px]">
+                <Label className="text-xs text-muted-foreground">
+                  Đơn vị cơ sở
+                </Label>
+                <Select value={unit} onValueChange={setUnit}>
                   <SelectTrigger className="text-left h-auto py-2">
                     <SelectValue placeholder="Đơn vị (ml, kg...)" />
                   </SelectTrigger>
                   <SelectContent>
-                    {unitList.map((u) => (
-                      <SelectItem key={u} value={u}>
-                        {u}
+                    {unitList.map((item) => (
+                      <SelectItem key={item} value={item}>
+                        {item}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -414,30 +447,65 @@ export default function SimpleFertilizerForm({
               </div>
             </>
           ) : (
-            <div className="flex-1">
-              <Select
-                value={formData.unit}
-                onValueChange={(v) => updateField("unit", v)}
-              >
+            <div className="flex-1 space-y-1">
+              <Label className="text-xs text-muted-foreground">
+                Đơn vị cơ sở
+              </Label>
+              <Select value={unit} onValueChange={setUnit}>
                 <SelectTrigger className="text-left h-auto py-2">
                   <SelectValue placeholder="Chọn đơn vị cơ sở (kg, lít, ml, viên...)" />
                 </SelectTrigger>
                 <SelectContent>
-                  {unitList.map((u) => (
-                    <SelectItem key={u} value={u}>
-                      {u}
+                  {unitList.map((item) => (
+                    <SelectItem key={item} value={item}>
+                      {item}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
           )}
+
+          <Button
+            type="button"
+            onClick={addPackagingSpec}
+            disabled={
+              configMode === "SPEC"
+                ? !packaging || !quantity.trim() || !unit
+                : !unit
+            }
+            className="mb-0 shrink-0"
+          >
+            <Plus className="w-4 h-4 mr-1" />
+            Thêm
+          </Button>
         </div>
-        <p className="text-xs text-muted-foreground">
-          {formData.configMode === "SPEC"
-            ? "VD: Chai 500 ml, Bao 25 kg... Nhập loại đóng gói, số lượng và đơn vị."
-            : "VD: kg, Lít, ml... Chọn đơn vị cơ bản khi không rõ quy cách đóng gói."}
-        </p>
+
+        {packagingSpecsArr.length > 0 && (
+          <div className="bg-slate-50 rounded-xl border p-3 mt-2">
+            <p className="text-xs font-medium text-muted-foreground mb-2">
+              Đã thêm ({packagingSpecsArr.length} quy cách):
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {packagingSpecsArr.map((tag) => (
+                <Badge
+                  key={tag}
+                  variant="secondary"
+                  className="px-3 py-1 bg-white border border-slate-200 text-slate-700 shadow-2xs flex items-center gap-1.5"
+                >
+                  <span>{tag}</span>
+                  <button
+                    type="button"
+                    onClick={() => removePackagingSpec(tag)}
+                    className="hover:text-red-500 transition-colors"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                </Badge>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* ── Hạn sử dụng ── */}

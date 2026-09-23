@@ -68,7 +68,7 @@ export default function EquipmentPage() {
       }
     >
       <DataTable
-        columns={equipmentColumns(navigateToDetail)}
+        columns={equipmentColumns({ onNameClick: navigateToDetail, scope: scope as "farm" | "admin" })}
         data={equipments}
         searchable
         searchPlaceholder="Tìm kiếm thiết bị..."

@@ -226,10 +226,7 @@ export default function PesticideBasicInfoStep({
           </div>
 
           <div className="space-y-2">
-            <Label>
-              {isCultivation ? "Công dụng thuốc" : "Công dụng"}{" "}
-              <span className="text-red-500">*</span>
-            </Label>
+            <Label>{isCultivation ? "Công dụng thuốc" : "Công dụng"}</Label>
             <RemoteMultiSelect
               options={groupOptions}
               value={

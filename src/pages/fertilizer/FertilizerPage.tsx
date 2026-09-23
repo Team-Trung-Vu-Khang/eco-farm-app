@@ -64,7 +64,7 @@ export default function FertilizerPage() {
       }
     >
       <DataTable
-        columns={fertilizerColumns(navigateToDetail)}
+        columns={fertilizerColumns(navigateToDetail, scope as "farm" | "admin")}
         data={fertilizers}
         pageSize={pageSize}
         currentIndex={currentIndex}

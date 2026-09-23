@@ -209,6 +209,44 @@ export default function SimpleEquipmentForm({
         )}
       </div>
 
+      {/* ── Mã SKU ── */}
+      <div className="space-y-2">
+        <Label className="flex items-center gap-1.5">
+          <Wrench className="w-4 h-4 text-slate-400" />
+          Mã sản phẩm / Mã SKU {isEdit ? "" : " (Không bắt buộc)"}
+        </Label>
+        <Input
+          disabled={isEdit}
+          clearable={!isEdit}
+          value={formData.sku || ""}
+          onChange={(e) => {
+            const val = normalizeSku(e.target.value);
+            updateField("sku", val);
+            updateField("code", val);
+          }}
+          placeholder="VD: SKU-KUBOTA-L5018"
+        />
+        <p className="text-xs text-muted-foreground">
+          Nếu để trống, hệ thống sẽ tự động tạo mã SKU ngẫu nhiên khi lưu.
+        </p>
+      </div>
+
+      {/* ── Tên máy móc ── */}
+      <div className="space-y-2">
+        <Label required className="flex items-center gap-1.5">
+          <Settings className="w-4 h-4 text-slate-400" />
+          Tên máy móc / thiết bị
+        </Label>
+        <Input
+          value={formData.machineName || formData.name || ""}
+          onChange={(e) => {
+            updateField("machineName", e.target.value);
+            updateField("name", e.target.value);
+          }}
+          placeholder="VD: Máy cày Kubota L5018, Drone DJI Agras T40..."
+        />
+      </div>
+
       {/* ── Phân loại ── */}
       <div className="space-y-4 rounded-xl border bg-white p-6 shadow-sm">
         <h3 className="flex items-center gap-2 text-lg font-semibold">
@@ -306,44 +344,6 @@ export default function SimpleEquipmentForm({
             />
           </div>
         </div>
-      </div>
-
-      {/* ── Mã SKU ── */}
-      <div className="space-y-2">
-        <Label className="flex items-center gap-1.5">
-          <Wrench className="w-4 h-4 text-slate-400" />
-          Mã sản phẩm / Mã SKU {isEdit ? "" : " (Không bắt buộc)"}
-        </Label>
-        <Input
-          disabled={isEdit}
-          clearable={!isEdit}
-          value={formData.sku || ""}
-          onChange={(e) => {
-            const val = normalizeSku(e.target.value);
-            updateField("sku", val);
-            updateField("code", val);
-          }}
-          placeholder="VD: SKU-KUBOTA-L5018"
-        />
-        <p className="text-xs text-muted-foreground">
-          Nếu để trống, hệ thống sẽ tự động tạo mã SKU ngẫu nhiên khi lưu.
-        </p>
-      </div>
-
-      {/* ── Tên máy móc ── */}
-      <div className="space-y-2">
-        <Label required className="flex items-center gap-1.5">
-          <Settings className="w-4 h-4 text-slate-400" />
-          Tên máy móc / thiết bị
-        </Label>
-        <Input
-          value={formData.machineName || formData.name || ""}
-          onChange={(e) => {
-            updateField("machineName", e.target.value);
-            updateField("name", e.target.value);
-          }}
-          placeholder="VD: Máy cày Kubota L5018, Drone DJI Agras T40..."
-        />
       </div>
 
       {/* ── Ghi chú ── */}
