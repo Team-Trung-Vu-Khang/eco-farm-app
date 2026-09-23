@@ -6,7 +6,11 @@ export type TaskCategoryStatus = "active" | "inactive" | "archived";
 export interface TaskCategoryRecord {
   id: number;
   domainCode: DomainCode;
-  stage: string;
+  /**
+   * Chuỗi tag phân tách dấu phẩy, FE tự quy ước (BE không parse), tối đa 500 ký tự.
+   * Nên bọc dấu phẩy đầu/cuối, VD: ",group-CANHTAC,phase-CHAMCAYCON,".
+   */
+  tags: string | null;
   code: string;
   name: string;
   example: string;
@@ -19,8 +23,9 @@ export interface TaskCategoryRecord {
 
 export interface CreateTaskCategoryRequest {
   domainCode: DomainCode;
-  stage: string;
-  code: string;
+  tags?: string;
+  /** Bỏ trống khi tạo — BE tự sinh */
+  code?: string;
   name: string;
   example: string;
   displayOrder: number;
@@ -32,19 +37,12 @@ export type UpdateTaskCategoryRequest = CreateTaskCategoryRequest;
 
 export type TaskCategoryPageResponse = PageResponse<TaskCategoryRecord>;
 
-// GET /api/master-data/task-categories/stages returns a bare string[] of
-// stage names (not objects).
-export type TaskCategoryStageResponse = string;
-
 /** @deprecated Use TaskCategoryRecord. Kept for existing consumers. */
 export type TaskCategoryLookupResponse = TaskCategoryRecord;
 
-export interface TaskCategoryStageQueryParams {
-  domainCode?: DomainCode;
-}
-
 export interface TaskCategoryLookupQueryParams {
-  stage?: string;
+  /** Khớp một phần (LIKE %tags%, không phân biệt hoa/thường), VD: "group-CANHTAC" */
+  tags?: string;
   keyword?: string;
   domainCode?: DomainCode;
   status?: TaskCategoryStatus;

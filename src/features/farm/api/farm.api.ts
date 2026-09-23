@@ -19,6 +19,9 @@ import type {
   FarmPlantIdentificationRequest,
   FarmPlantIdentificationResponse,
   FarmPlantIdentificationResolveLocationResponse,
+  FarmPlantIdentificationBulkUploadRequest,
+  FarmPlantIdentificationBulkUploadSubmitResponse,
+  FarmPlantIdentificationBulkUploadStatusResponse,
   PlantIdentificationQueryParams,
   PlantIdentificationResolveLocationQueryParams,
   FarmProductionHealthMetricRequest,
@@ -427,7 +430,7 @@ export const cultivationZoneApi = {
  * API nhận danh sách id dạng `ids=1,2` (axios mặc định gửi `ids[]=1&ids[]=2`),
  * nên phẳng hoá mảng thành chuỗi phân tách bằng dấu phẩy trước khi gửi.
  */
-const withCsvArrayParams = <T extends Record<string, unknown>>(
+const withCsvArrayParams = <T extends object>(
   params?: T,
 ): Record<string, unknown> | undefined => {
   if (!params) return params;
@@ -492,6 +495,30 @@ export const plantIdentificationApi = {
 
   delete: (id: number) =>
     apiClient.delete(`${FARM_ENDPOINTS.plantIdentifications}/${id}`),
+
+  /** POST bulk-upload (202) — chạy bất đồng bộ, trả `jobExecutionId` để poll `getBulkUploadStatus`. */
+  bulkUpload: (file: File, request: FarmPlantIdentificationBulkUploadRequest) => {
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append(
+      "request",
+      new Blob([JSON.stringify(request)], { type: "application/json" }),
+    );
+    return apiClient
+      .post<FarmPlantIdentificationBulkUploadSubmitResponse>(
+        FARM_ENDPOINTS.plantIdentificationBulkUpload,
+        formData,
+        { headers: { "Content-Type": "multipart/form-data" } },
+      )
+      .then((r) => r.data);
+  },
+
+  getBulkUploadStatus: (jobExecutionId: number | string) =>
+    apiClient
+      .get<FarmPlantIdentificationBulkUploadStatusResponse>(
+        `${FARM_ENDPOINTS.plantIdentificationBulkUpload}/${jobExecutionId}`,
+      )
+      .then((r) => r.data),
 };
 
 // ─── Production Health Metrics API ──────────────────────────────────────────

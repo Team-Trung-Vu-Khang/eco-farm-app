@@ -2,21 +2,15 @@ import { useState } from "react";
 import { useToast } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { useQuery } from "@tanstack/react-query";
 import {
+  parseTaskCategoryTags,
+  serializeTaskCategoryTags,
   taskCategoryApi,
   type TaskCategoryRecord,
   type TaskCategoryStatus,
 } from "@/features/task-category";
 import { emptyTaskCategoryFormData } from "../data/constants";
-import { taskCategoryDomainLabel } from "../data/constants";
 import type { TaskCategoryDomain, TaskCategoryFormData } from "../types/types";
 import { useDebounce } from "@/shared/hooks/useDebounce";
-import { getTaskCategoryHashtags } from "../utils/hashtags";
-
-const domainCodePrefix: Record<TaskCategoryDomain, string> = {
-  crop: "CV",
-  animal: "LV",
-  aquaculture: "AQ",
-};
 
 const domainCodeMap: Record<
   TaskCategoryDomain,
@@ -34,8 +28,8 @@ export function useTaskCategoryPage() {
   const { toast } = useToast();
   const [activeDomain, setActiveDomain] = useState<TaskCategoryDomain>("crop");
   const [search, setSearch] = useState("");
-  const [stage, setStage] = useState<string>();
   const [status, setStatus] = useState<StatusFilter>();
+  const [tag, setTag] = useState<string>();
   const [pageSize, setPageSize] = useState(10);
   const [currentIndex, setCurrentIndex] = useState(1);
 
@@ -57,8 +51,8 @@ export function useTaskCategoryPage() {
       "admin-task-categories",
       domainCode,
       searchDebounce,
-      stage,
       status,
+      tag,
       pageSize,
       currentIndex,
     ],
@@ -66,18 +60,11 @@ export function useTaskCategoryPage() {
       taskCategoryApi.listAdmin({
         domainCode,
         keyword: searchDebounce.trim() || undefined,
-        stage: stage || undefined,
         status: status === ALL ? undefined : status,
+        tags: tag,
         page: Math.max(currentIndex - 1, 0),
         size: pageSize,
       }),
-    staleTime: 5 * 60 * 1000,
-    refetchOnWindowFocus: false,
-  });
-
-  const stagesQuery = useQuery({
-    queryKey: ["admin-task-category-stages", domainCode],
-    queryFn: () => taskCategoryApi.listAdminStages({ domainCode }),
     staleTime: 5 * 60 * 1000,
     refetchOnWindowFocus: false,
   });
@@ -100,7 +87,7 @@ export function useTaskCategoryPage() {
           : item.domainCode === "LIVESTOCK"
             ? "animal"
             : "aquaculture",
-      hashtags: getTaskCategoryHashtags(item),
+      hashtags: parseTaskCategoryTags(item.tags),
       status: item.status === "archived" ? "inactive" : item.status,
     });
     setFormOpen(true);
@@ -117,18 +104,14 @@ export function useTaskCategoryPage() {
       const domainCode = domainCodeMap[values.domain];
       const payload = {
         domainCode,
-        stage: editItem?.stage || taskCategoryDomainLabel[values.domain],
-        code:
-          editItem?.code || `${domainCodePrefix[values.domain]}-${Date.now()}`,
+        // Tạo mới không gửi code (BE tự sinh), sửa thì giữ code cũ
+        code: editItem?.code,
         name: values.name.trim(),
         example: values.description.trim(),
         displayOrder: editItem?.displayOrder || 10,
         status: values.status || "active",
-        // Backend chưa có field hashtags riêng → lưu trong metadataJson.hashtags
-        metadataJson: {
-          ...(editItem?.metadataJson || { source: "manual" }),
-          hashtags: values.hashtags,
-        },
+        tags: serializeTaskCategoryTags(values.hashtags) ?? "",
+        metadataJson: editItem?.metadataJson || { source: "manual" },
       } as const;
 
       if (editItem) {
@@ -181,12 +164,10 @@ export function useTaskCategoryPage() {
   return {
     taskCategories: categoriesQuery.data?.content ?? [],
     response: categoriesQuery.data ?? null,
-    stages: stagesQuery.data ?? [],
     activeDomain,
     setActiveDomain: (domain: TaskCategoryDomain) => {
       setActiveDomain(domain);
       setCurrentIndex(1);
-      setStage("");
     },
     search,
     handleSearch: (value: string) => {
@@ -194,11 +175,11 @@ export function useTaskCategoryPage() {
       setCurrentIndex(1);
     },
     handleFilterChange: (key: string, value: string) => {
-      if (key === "stage") {
-        setStage(value === ALL ? undefined : value);
-      }
       if (key === "status") {
         setStatus(value === ALL ? undefined : (value as TaskCategoryStatus));
+      }
+      if (key === "tag") {
+        setTag(value === ALL ? undefined : value);
       }
       setCurrentIndex(1);
     },
@@ -221,7 +202,7 @@ export function useTaskCategoryPage() {
     handleDelete,
     handleSubmit,
     handleConfirmDelete,
-    loading: categoriesQuery.isLoading || stagesQuery.isLoading,
+    loading: categoriesQuery.isLoading,
     error: categoriesQuery.error?.message ?? null,
     isPending: isPending || categoriesQuery.isFetching,
   };

@@ -214,6 +214,18 @@ export interface FarmPersonnelQueryParams extends FarmBaseQueryParams {
   departmentId?: number;
 }
 
+/** GET /api/admin/farm/personnel — không dùng X-Workspace-Id. */
+export interface AdminFarmPersonnelQueryParams {
+  workspaceId: number;
+  /** Chỉ trả nhân sự đã gắn vào Vùng canh tác này */
+  cultivationZoneId?: number;
+  keyword?: string;
+  status?: FarmMasterDataStatus;
+  teamId?: number;
+  page?: number;
+  size?: number;
+}
+
 export interface FarmPersonnelRequest {
   fullName?: string;
   phone?: string;

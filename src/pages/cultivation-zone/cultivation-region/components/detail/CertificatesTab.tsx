@@ -1,19 +1,29 @@
 import React from "react";
+import { useQuery } from "@tanstack/react-query";
+import dayjs from "dayjs";
 import {
   Card,
   CardContent,
   Badge,
   Separator,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { Award, ShieldCheck, Hash, FileText } from "lucide-react";
-import type {
-  CultivationRegionDetails,
-  CertificateItem,
-} from "../../useCultivationRegionDetail";
+import { Award, ShieldCheck, Hash, CalendarClock } from "lucide-react";
+import {
+  farmCertificateApi,
+  type FarmCertificateRecord,
+} from "@/features/farm-certificate";
 
 interface CertificatesTabProps {
-  details: CultivationRegionDetails;
+  zoneId: number;
+  /** Có khi xem vùng của workspace khác (admin) → dùng API admin */
+  workspaceId?: number | null;
 }
+
+const STATUS_BADGE: Record<string, { label: string; className: string }> = {
+  valid: { label: "Đang hiệu lực", className: "text-green-600" },
+  expired: { label: "Hết hạn", className: "text-orange-600" },
+  revoked: { label: "Đã thu hồi", className: "text-red-600" },
+};
 
 // Map well-known certificate codes to visual metadata
 const CERT_VISUAL: Record<
@@ -60,12 +70,20 @@ const DEFAULT_VISUAL = {
 
 const getVisual = (code: string) => CERT_VISUAL[code] ?? DEFAULT_VISUAL;
 
+const formatDate = (value?: string) =>
+  value && dayjs(value).isValid() ? dayjs(value).format("DD/MM/YYYY") : "---";
+
 interface CertCardProps {
-  cert: CertificateItem;
+  cert: FarmCertificateRecord;
 }
 
 const CertCard = ({ cert }: CertCardProps) => {
-  const visual = getVisual(cert.code);
+  const standard = cert.agricultureCertificate;
+  const visual = getVisual(standard?.code ?? cert.code);
+  const status = STATUS_BADGE[cert.status] ?? {
+    label: cert.status,
+    className: "text-slate-600",
+  };
 
   return (
     <Card
@@ -77,8 +95,10 @@ const CertCard = ({ cert }: CertCardProps) => {
       >
         {/* Status badge */}
         <div className="absolute top-4 right-4">
-          <Badge className="bg-white/90 backdrop-blur-md text-green-600 border-none shadow-lg font-black text-[10px] tracking-wider px-3 py-1 uppercase">
-            Đang hiệu lực
+          <Badge
+            className={`bg-white/90 backdrop-blur-md ${status.className} border-none shadow-lg font-black text-[10px] tracking-wider px-3 py-1 uppercase`}
+          >
+            {status.label}
           </Badge>
         </div>
 
@@ -95,7 +115,7 @@ const CertCard = ({ cert }: CertCardProps) => {
             className={`flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] mb-2 ${visual.color}`}
           >
             <ShieldCheck className="w-3.5 h-3.5" />
-            Tiêu chuẩn nông nghiệp
+            {standard?.name ?? "Tiêu chuẩn nông nghiệp"}
           </div>
           <h3
             className={`text-xl font-black text-slate-900 leading-tight group-hover:${visual.color} transition-colors`}
@@ -117,7 +137,7 @@ const CertCard = ({ cert }: CertCardProps) => {
             </div>
             <div>
               <span className="block text-[10px] text-slate-400 font-black uppercase tracking-wider mb-0.5">
-                Mã tiêu chuẩn
+                Mã chứng nhận
               </span>
               <span className="text-sm font-black text-slate-800 tracking-tight">
                 {cert.code}
@@ -125,19 +145,19 @@ const CertCard = ({ cert }: CertCardProps) => {
             </div>
           </div>
 
-          {/* ID */}
+          {/* Hiệu lực */}
           <div className="flex items-start gap-3">
             <div
               className={`w-8 h-8 rounded-xl ${visual.bg} border ${visual.border} flex items-center justify-center shrink-0 mt-0.5`}
             >
-              <FileText className={`w-3.5 h-3.5 ${visual.color}`} />
+              <CalendarClock className={`w-3.5 h-3.5 ${visual.color}`} />
             </div>
             <div>
               <span className="block text-[10px] text-slate-400 font-black uppercase tracking-wider mb-0.5">
-                ID chứng nhận
+                Hiệu lực
               </span>
               <span className="text-sm font-black text-slate-800 tracking-tight">
-                #{cert.id}
+                {formatDate(cert.issuedDate)} – {formatDate(cert.expiryDate)}
               </span>
             </div>
           </div>
@@ -149,7 +169,7 @@ const CertCard = ({ cert }: CertCardProps) => {
             className={`inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-full ${visual.badgeBg}`}
           >
             <ShieldCheck className="w-3 h-3" />
-            {cert.code}
+            {standard?.code ?? cert.code}
           </span>
         </div>
       </CardContent>
@@ -157,8 +177,21 @@ const CertCard = ({ cert }: CertCardProps) => {
   );
 };
 
-export const CertificatesTab = ({ details }: CertificatesTabProps) => {
-  const certificates = details.certificates ?? [];
+export const CertificatesTab = ({ zoneId, workspaceId }: CertificatesTabProps) => {
+  // Chỉ chứng nhận thực sự áp dụng cho vùng (BE lọc theo cultivationZoneId)
+  const { data, isLoading } = useQuery({
+    queryKey: ["farm-certificates", "by-zone", workspaceId ?? "current", zoneId],
+    queryFn: () =>
+      workspaceId
+        ? farmCertificateApi.listAdmin({
+            workspaceId,
+            cultivationZoneId: zoneId,
+            size: 100,
+          })
+        : farmCertificateApi.list({ cultivationZoneId: zoneId, size: 100 }),
+    enabled: !!zoneId,
+  });
+  const certificates = data?.content ?? [];
 
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -179,7 +212,11 @@ export const CertificatesTab = ({ details }: CertificatesTabProps) => {
         </div>
       </div>
 
-      {certificates.length > 0 ? (
+      {isLoading ? (
+        <p className="py-12 text-center text-sm text-slate-400">
+          Đang tải chứng nhận...
+        </p>
+      ) : certificates.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {certificates.map((cert) => (
             <CertCard key={cert.id} cert={cert} />

@@ -21,6 +21,7 @@ import {
 import { useCultivationRegionDetail } from "../useCultivationRegionDetail";
 import { useRegions } from "@/features/farm/hooks/useRegions";
 import { areaApi, plotApi } from "@/features/farm/api/farm.api";
+import { useSelectedWorkspaceId } from "@/features/workspace";
 
 // Subcomponents
 import { OverviewTab } from "./detail/OverviewTab";
@@ -48,6 +49,8 @@ export const CultivationRegionDetailView = ({
   const params = useParams<{ id: string }>();
   const resolvedId = id ?? params?.id;
   const [, setLocation] = useLocation();
+  const selectedWorkspaceId = useSelectedWorkspaceId();
+  const zoneId = Number(resolvedId);
 
   const handleBack = () => {
     setLocation("/cultivation-region");
@@ -238,23 +241,27 @@ export const CultivationRegionDetailView = ({
 
       {showAllTabs && (
         <TabsContent value="staff" className="space-y-6">
-          <StaffTab details={details} />
+          <StaffTab
+            zoneId={zoneId}
+            workspaceId={
+              workspaceId ??
+              (typeof selectedWorkspaceId === "number"
+                ? selectedWorkspaceId
+                : null)
+            }
+          />
         </TabsContent>
       )}
 
       {/* Certificates Tab */}
       <TabsContent value="certificates" className="space-y-8">
-        <CertificatesTab details={details} />
+        <CertificatesTab zoneId={zoneId} workspaceId={workspaceId} />
       </TabsContent>
 
       {showAllTabs && (
         <>
           <TabsContent value="plans" className="space-y-6 overflow-hidden">
-            <PlansTab
-              area={area}
-              regionIndex={regionIndex}
-              resolvedId={resolvedId ?? ""}
-            />
+            <PlansTab zoneId={zoneId} workspaceId={workspaceId} />
           </TabsContent>
           <TabsContent value="statistics" className="space-y-6 overflow-hidden">
             <StatisticsTab details={details} />

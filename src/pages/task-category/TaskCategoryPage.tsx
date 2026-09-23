@@ -3,20 +3,12 @@ import {
   Button,
   DataTable,
   DeleteDialog,
-  // TODO: Tạm ẩn tabs lĩnh vực, mặc định là "Trồng trọt"
-  // Tabs,
-  // TabsContent,
-  // TabsList,
-  // TabsTrigger,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { Plus } from "lucide-react";
 import { useDialogBugWorkaround } from "../../shared/hooks/useDialogBugWorkaround";
 import { TaskCategoryFormDialog } from "./components/TaskCategoryFormDialog";
 import { taskCategoryColumns } from "./data/columns";
-import {
-  taskCategoryDomainLabel,
-  // taskCategoryDomainOptions,
-} from "./data/constants";
+import { taskCategoryDomainLabel } from "./data/constants";
 import { useTaskCategoryPage } from "./hooks/useTaskCategoryPage";
 // import type { TaskCategoryDomain } from "./types/types";
 
@@ -37,7 +29,6 @@ export default function TaskCategoryPage() {
     loading,
     isPending,
     response,
-    stages,
     activeDomain,
     // setActiveDomain,
     handleSearch,
@@ -97,11 +88,6 @@ export default function TaskCategoryPage() {
             onSearch={handleSearch}
             onFilterChange={handleFilterChange}
             filters={[
-              {
-                key: "stage",
-                label: "Giai đoạn",
-                options: [...stages.map((item) => ({ value: item, label: item }))],
-              },
               {
                 key: "status",
                 label: "Trạng thái",

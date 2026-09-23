@@ -109,6 +109,7 @@ const PlantIdentificationForm = ({
           removePlant={removePlant}
           updatePlant={updatePlant}
           scopedGeographicalUnits={scopedGeographicalUnits}
+          cultivationZoneId={cultivationRegionId}
           productionVarietyOptions={productionVarietyOptions}
           initialData={initialData}
           isImportOpen={isImportOpen}

@@ -83,8 +83,17 @@ export interface FarmCertificateQueryParams {
   status?: FarmCertificateStatus;
   standardType?: string;
   targetType?: FarmCertificateTargetType;
+  /** Chỉ lấy chứng nhận áp dụng cho vùng (WORKSPACE + REGION chứa scope vùng); không gộp MASTER. */
+  cultivationZoneId?: number;
+  onlyOwner?: boolean;
   page?: number;
   size?: number;
+}
+
+/** GET /api/admin/farm/certificates — chỉ OWNER của workspace, không dùng X-Workspace-Id. */
+export interface AdminFarmCertificateQueryParams
+  extends Omit<FarmCertificateQueryParams, "onlyOwner"> {
+  workspaceId: number;
 }
 
 export interface FarmCertificateCreateRequest {

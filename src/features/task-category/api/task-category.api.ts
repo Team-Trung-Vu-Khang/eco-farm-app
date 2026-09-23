@@ -7,8 +7,6 @@ import type {
   UpdateTaskCategoryRequest,
   TaskCategoryLookupQueryParams,
   TaskCategoryLookupResponse,
-  TaskCategoryStageQueryParams,
-  TaskCategoryStageResponse,
 } from "../types/task-category.type";
 
 const TASK_CATEGORY_PATH = "/api/master-data/task-categories" as const;
@@ -16,14 +14,6 @@ const ADMIN_TASK_CATEGORY_PATH =
   "/api/admin/master-data/task-categories" as const;
 
 export const taskCategoryApi = {
-  listStages(params?: TaskCategoryStageQueryParams) {
-    return apiClient
-      .get<TaskCategoryStageResponse[]>(`${TASK_CATEGORY_PATH}/stages`, {
-        params,
-      })
-      .then((response) => response.data);
-  },
-
   search(params?: TaskCategoryLookupQueryParams) {
     return apiClient
       .get<PageResponse<TaskCategoryLookupResponse>>(TASK_CATEGORY_PATH, {
@@ -36,19 +26,6 @@ export const taskCategoryApi = {
   listAdmin(params?: TaskCategoryLookupQueryParams) {
     return apiClient
       .get<TaskCategoryPageResponse>(ADMIN_TASK_CATEGORY_PATH, { params })
-      .then((response) => response.data);
-  },
-
-  /**
-   * GET /api/admin/master-data/task-categories/stages
-   * Returns distinct stage names for the selected domain.
-   */
-  listAdminStages(params: TaskCategoryStageQueryParams = { domainCode: "CROP" }) {
-    return apiClient
-      .get<TaskCategoryStageResponse[]>(
-        `${ADMIN_TASK_CATEGORY_PATH}/stages`,
-        { params },
-      )
       .then((response) => response.data);
   },
 

@@ -17,6 +17,7 @@ import type {
   FarmTeamRequest,
   FarmTeamResponse,
   FarmPersonnelQueryParams,
+  AdminFarmPersonnelQueryParams,
   FarmPersonnelRequest,
   FarmPersonnelResponse,
 } from "../types/farm-master-data.type";
@@ -231,6 +232,15 @@ export const farmPersonnelApi = {
       .get<FarmPageResponse<FarmPersonnelResponse>>(`${BASE}/personnel`, {
         params,
         headers: getHeaders(workspaceId),
+      })
+      .then((r) => r.data),
+
+  /** GET /api/admin/farm/personnel (MEVI_ADMIN / MEVI_FARM_ADMIN / MEVI_SUPER_ADMIN) */
+  listAdmin: (params: AdminFarmPersonnelQueryParams) =>
+    apiClient
+      .get<FarmPageResponse<FarmPersonnelResponse>>("/api/admin/farm/personnel", {
+        params,
+        headers: { skipWorkspaceHeader: "true" },
       })
       .then((r) => r.data),
 

@@ -276,6 +276,9 @@ export interface FarmPlanResponse {
 
 export interface FarmPlanQueryParams {
   workflowId?: number;
+  /** Lọc KH có scope Workflow khớp (cùng node hoặc cha–con) với scope Vùng canh tác. Không dùng cho `/workflows/{id}/plans`. */
+  cultivationZoneId?: number;
+  purpose?: FarmPlanPurpose;
   keyword?: string;
   status?: FarmPlanStatus;
   domainCode?: DomainCode;

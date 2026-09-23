@@ -48,7 +48,7 @@ interface TempPlant extends Partial<Plant> {
 }
 
 /** Tiêu đề cột của file mẫu — phải khớp với phần nhận diện cột khi đọc file */
-const SAMPLE_HEADERS = [
+export const SAMPLE_HEADERS = [
   "Chiều cao (m)",
   "Độ tuổi",
   "Đơn vị tuổi",

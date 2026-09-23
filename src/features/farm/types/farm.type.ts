@@ -454,6 +454,54 @@ export interface FarmPlantIdentificationRequest {
   healthStatus?: FarmPlantHealthStatus;
 }
 
+/** Phần JSON `request` của bulk-upload — dùng chung cho mọi dòng trong file Excel. */
+export interface FarmPlantIdentificationBulkUploadRequest {
+  domainCode?: "CROP" | "LIVESTOCK" | "AQUACULTURE";
+  location: FarmCultivationZoneScopeRequest;
+  cultivationZoneId?: number;
+  /** Bắt buộc ít nhất 1 trong 2: `productionSubjectVariantId` / `subjectVariantId` */
+  productionSubjectVariantId?: number;
+  subjectVariantId?: number;
+  /**
+   * Map code → label để dịch giá trị trong file (VD: "healthStatus.HEALTHY": "Khỏe mạnh",
+   * "durationUnit.DAY": "ngày"). Thiếu code nào thì BE fallback nhãn tiếng Việt mặc định.
+   */
+  i18n?: Partial<
+    Record<
+      `healthStatus.${FarmPlantHealthStatus}` | `durationUnit.${"DAY" | "MONTH" | "YEAR"}`,
+      string
+    >
+  >;
+}
+
+/** Giá trị Spring Batch gốc — FE tự map label. */
+export type BulkUploadJobStatus =
+  | "STARTING"
+  | "STARTED"
+  | "STOPPING"
+  | "STOPPED"
+  | "COMPLETED"
+  | "FAILED"
+  | "ABANDONED"
+  | "UNKNOWN";
+
+export interface FarmPlantIdentificationBulkUploadSubmitResponse {
+  jobExecutionId: number;
+  status: BulkUploadJobStatus;
+}
+
+export interface FarmPlantIdentificationBulkUploadStatusResponse {
+  status: BulkUploadJobStatus;
+  progress: { totalRows: number; processedRows: number } | null;
+  /** Có khi job kết thúc; job vẫn COMPLETED dù có dòng lỗi (partial success) */
+  result: {
+    totalRows: number;
+    successRows: number;
+    failedRows: number;
+    errors: { rowNumber: number; message: string }[];
+  } | null;
+}
+
 export interface FarmPlantIdentificationResponse {
   id: number;
   workspaceId?: number;

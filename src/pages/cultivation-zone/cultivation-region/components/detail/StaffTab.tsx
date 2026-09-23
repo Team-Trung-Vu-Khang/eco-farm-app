@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import {
   Card,
   CardContent,
@@ -10,20 +11,38 @@ import {
   type Column,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { Contact, User } from "lucide-react";
-import type {
-  CultivationRegionDetails,
-  PersonnelItem,
-} from "../../useCultivationRegionDetail";
+import { farmPersonnelApi } from "@/features/master-data/api/farm-master-data.api";
+import type { PersonnelItem } from "../../useCultivationRegionDetail";
 import { StaffDetailPanel, StaffDetailEmpty } from "./StaffDetailPanel";
 
 interface StaffTabProps {
-  details: CultivationRegionDetails;
+  zoneId: number;
+  /** Workspace sở hữu vùng — API admin bắt buộc */
+  workspaceId: number | null;
 }
 
-export const StaffTab = ({ details }: StaffTabProps) => {
+export const StaffTab = ({ zoneId, workspaceId }: StaffTabProps) => {
   const [selectedStaffId, setSelectedStaffId] = useState<number | null>(null);
 
-  const personnel = details.personnel ?? [];
+  // Nhân sự đã gắn vào vùng canh tác (API admin theo workspace)
+  const { data, isLoading } = useQuery({
+    queryKey: ["admin-farm-personnel", workspaceId, zoneId],
+    queryFn: () =>
+      farmPersonnelApi.listAdmin({
+        workspaceId: workspaceId!,
+        cultivationZoneId: zoneId,
+        size: 100,
+      }),
+    enabled: !!workspaceId && !!zoneId,
+  });
+
+  const personnel: PersonnelItem[] = (data?.content ?? []).map((p) => ({
+    id: p.id,
+    fullName: p.fullName ?? "",
+    avatarUrl: p.avatarUrl ?? null,
+    positionName: p.position?.name ?? "",
+    positionCode: p.position?.code ?? "",
+  }));
 
   const staffColumns: Column<PersonnelItem>[] = [
     {
@@ -81,7 +100,11 @@ export const StaffTab = ({ details }: StaffTabProps) => {
           </CardHeader>
           <CardContent>
             <div className="mt-4">
-              {personnel.length === 0 ? (
+              {isLoading ? (
+                <p className="py-12 text-center text-sm text-slate-400">
+                  Đang tải nhân viên...
+                </p>
+              ) : personnel.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-12 text-slate-400">
                   <User className="w-10 h-10 mb-3 text-slate-200" />
                   <p className="text-sm font-medium">Chưa có nhân viên nào</p>
@@ -103,7 +126,7 @@ export const StaffTab = ({ details }: StaffTabProps) => {
       <div className="lg:col-span-4">
         <div className="sticky top-1">
           {selectedStaff ? (
-            <StaffDetailPanel staff={selectedStaff} />
+            <StaffDetailPanel staff={selectedStaff} workspaceId={workspaceId} />
           ) : (
             <StaffDetailEmpty />
           )}

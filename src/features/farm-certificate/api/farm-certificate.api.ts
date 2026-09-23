@@ -1,5 +1,6 @@
 import { apiClient } from "@/shared/lib/axios";
 import type {
+  AdminFarmCertificateQueryParams,
   FarmCertificateCreateRequest,
   FarmCertificateCreateResponse,
   FarmCertificateDeleteResponse,
@@ -11,6 +12,7 @@ import type {
 } from "../types/farm-certificate.type";
 
 const FARM_CERTIFICATE_PATH = "/api/farm/certificates" as const;
+const ADMIN_FARM_CERTIFICATE_PATH = "/api/admin/farm/certificates" as const;
 
 export const farmCertificateApi = {
   list(params: FarmCertificateQueryParams = {}) {
@@ -18,6 +20,16 @@ export const farmCertificateApi = {
       .get<FarmCertificatePageResponse<FarmCertificateRecord>>(
         FARM_CERTIFICATE_PATH,
         { params },
+      )
+      .then((response) => response.data);
+  },
+
+  /** GET /api/admin/farm/certificates (MEVI_ADMIN / MEVI_FARM_ADMIN / MEVI_SUPER_ADMIN) */
+  listAdmin(params: AdminFarmCertificateQueryParams) {
+    return apiClient
+      .get<FarmCertificatePageResponse<FarmCertificateRecord>>(
+        ADMIN_FARM_CERTIFICATE_PATH,
+        { params, headers: { skipWorkspaceHeader: "true" } },
       )
       .then((response) => response.data);
   },

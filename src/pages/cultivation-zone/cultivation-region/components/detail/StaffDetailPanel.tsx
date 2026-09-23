@@ -10,18 +10,20 @@ import {
   Loader2,
 } from "lucide-react";
 import { useFarmPersonnelById } from "@/features/master-data";
-import { useSelectedWorkspaceId } from "@/features/workspace";
 import type { PersonnelItem } from "../../useCultivationRegionDetail";
 
 interface StaffDetailPanelProps {
   staff: PersonnelItem;
+  /** Workspace sở hữu vùng (có thể khác workspace đang chọn) */
+  workspaceId: number | null;
 }
 
-export const StaffDetailPanel = ({ staff }: StaffDetailPanelProps) => {
-  const workspaceId = useSelectedWorkspaceId();
-
+export const StaffDetailPanel = ({
+  staff,
+  workspaceId,
+}: StaffDetailPanelProps) => {
   const { data: detail, isLoading } = useFarmPersonnelById(staff.id, {
-    workspaceId: typeof workspaceId === "number" ? workspaceId : undefined,
+    workspaceId: workspaceId ?? undefined,
     enabled: !!staff.id,
   });
 

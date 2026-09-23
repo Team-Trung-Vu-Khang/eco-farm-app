@@ -38,7 +38,10 @@ export const farmWorkflowApi = {
       .then((response) => response.data);
   },
 
-  listPlans(workflowId: number | string, params?: Omit<FarmPlanQueryParams, "workflowId">) {
+  listPlans(
+    workflowId: number | string,
+    params?: Omit<FarmPlanQueryParams, "workflowId" | "cultivationZoneId" | "purpose">,
+  ) {
     return apiClient
       .get<FarmPlanPageResponse>(`${FARM_WORKFLOW_PATH}/${workflowId}/plans`, {
         params,
@@ -64,9 +67,13 @@ export const farmWorkflowApi = {
 };
 
 export const farmPlanApi = {
-  list(params?: FarmPlanQueryParams) {
+  /** `workspaceId` ghi đè X-Workspace-Id (xem KH của vùng thuộc workspace khác) */
+  list(params?: FarmPlanQueryParams, workspaceId?: number) {
     return apiClient
-      .get<FarmPlanPageResponse>(FARM_PLAN_PATH, { params })
+      .get<FarmPlanPageResponse>(FARM_PLAN_PATH, {
+        params,
+        headers: workspaceId ? { "X-Workspace-Id": workspaceId } : undefined,
+      })
       .then((response) => response.data);
   },
 

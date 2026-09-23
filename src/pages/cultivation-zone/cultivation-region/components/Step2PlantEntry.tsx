@@ -23,7 +23,7 @@ import { useState } from "react";
 import { MapContainer } from "react-leaflet";
 import { PlantCard } from "./PlantCard";
 import { AllPlantsMapContent } from "./AllPlantsMapContent";
-import { PlantEntryTable } from "./PlantEntryTable";
+import { BulkUploadPlantPanel } from "./BulkUploadPlantPanel";
 import { type PlantEntry, type VarietyOption } from "./types";
 
 interface Step2PlantEntryProps {
@@ -32,6 +32,8 @@ interface Step2PlantEntryProps {
   removePlant: (id: string) => void;
   updatePlant: (id: string, partial: Partial<PlantEntry>) => void;
   scopedGeographicalUnits: any[];
+  /** Vùng canh tác chọn ở bước 1 — dùng cho upload danh sách */
+  cultivationZoneId: string;
   /** Giống cây (Foundation) của vùng canh tác chọn ở bước 1 */
   productionVarietyOptions?: VarietyOption[];
   initialData: any;
@@ -62,6 +64,7 @@ export const Step2PlantEntry: React.FC<Step2PlantEntryProps> = ({
   removePlant,
   updatePlant,
   scopedGeographicalUnits,
+  cultivationZoneId,
   productionVarietyOptions = [],
   initialData,
   setIsImportOpen,
@@ -79,7 +82,7 @@ export const Step2PlantEntry: React.FC<Step2PlantEntryProps> = ({
   hasOnlyCenterPoint = false,
 }) => {
   // Chế độ hiển thị: "card" (thêm thủ công — luôn ở view sửa, không cần danh sách)
-  // hoặc "table" (upload theo danh sách — bảng + Sửa để vào view sửa có nút Xong)
+  // hoặc "table" (upload danh sách — gửi file Excel lên BE xử lý bất đồng bộ)
   const [viewMode, setViewMode] = useState<"card" | "table">("card");
   // editingEntryId: cây đang sửa trong chế độ "table"; null = đang xem bảng
   const [editingEntryId, setEditingEntryId] = useState<string | null>(null);
@@ -100,18 +103,6 @@ export const Step2PlantEntry: React.FC<Step2PlantEntryProps> = ({
   const gridPlantIndex = gridPlant
     ? plants.findIndex((p) => p.entryId === gridPlant.entryId)
     : 0;
-
-  const startEdit = (entryId: string) => {
-    setSuggestedCorrection(null);
-    handleSetActiveEntry(entryId);
-    setEditingEntryId(entryId);
-  };
-
-  const exitEdit = () => {
-    setIsMapExpanded(false);
-    setSuggestedCorrection(null);
-    setEditingEntryId(null);
-  };
 
   const handleAddPlant = () => {
     const entryId = addPlant();
@@ -166,8 +157,8 @@ export const Step2PlantEntry: React.FC<Step2PlantEntryProps> = ({
             </div>
           </div>
 
-          {/* Right: add + import buttons (ẩn khi đang edit trong chế độ bảng) */}
-          {!(viewMode === "table" && currentEditing) && (
+          {/* Right: add + import buttons (chỉ ở chế độ thủ công) */}
+          {viewMode === "card" && (
             <div className="flex items-center gap-2 flex-wrap shrink-0">
               {!initialData && (
                 <Button
@@ -325,36 +316,45 @@ export const Step2PlantEntry: React.FC<Step2PlantEntryProps> = ({
               </span>
             )}
           </div>
-          <div className="inline-flex items-center gap-0.5 p-0.5 bg-slate-100 border border-slate-200 rounded-lg shrink-0 w-max">
-            <button
-              type="button"
-              onClick={() => setViewMode("card")}
-              className={cn(
-                "px-3 py-1.5 text-xs font-semibold rounded-md transition-all",
-                viewMode === "card"
-                  ? "bg-white shadow-sm text-blue-700"
-                  : "text-slate-500 hover:text-slate-700",
-              )}
-            >
-              Thêm thủ công
-            </button>
-            <button
-              type="button"
-              onClick={() => setViewMode("table")}
-              className={cn(
-                "px-3 py-1.5 text-xs font-semibold rounded-md transition-all",
-                viewMode === "table"
-                  ? "bg-white shadow-sm text-blue-700"
-                  : "text-slate-500 hover:text-slate-700",
-              )}
-            >
-              Upload danh sách
-            </button>
-          </div>
+          {/* Trang sửa 1 cây: không có upload danh sách */}
+          {!initialData && (
+            <div className="inline-flex items-center gap-0.5 p-0.5 bg-slate-100 border border-slate-200 rounded-lg shrink-0 w-max">
+              <button
+                type="button"
+                onClick={() => setViewMode("card")}
+                className={cn(
+                  "px-3 py-1.5 text-xs font-semibold rounded-md transition-all",
+                  viewMode === "card"
+                    ? "bg-white shadow-sm text-blue-700"
+                    : "text-slate-500 hover:text-slate-700",
+                )}
+              >
+                Thêm thủ công
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewMode("table")}
+                className={cn(
+                  "px-3 py-1.5 text-xs font-semibold rounded-md transition-all",
+                  viewMode === "table"
+                    ? "bg-white shadow-sm text-blue-700"
+                    : "text-slate-500 hover:text-slate-700",
+                )}
+              >
+                Upload danh sách
+              </button>
+            </div>
+          )}
         </div>
       )}
 
-      {viewMode === "card" && plants.length === 0 ? (
+      {viewMode === "table" ? (
+        <BulkUploadPlantPanel
+          cultivationZoneId={cultivationZoneId}
+          scopedGeographicalUnits={scopedGeographicalUnits}
+          productionVarietyOptions={productionVarietyOptions}
+        />
+      ) : plants.length === 0 ? (
         /* Chế độ thêm thủ công, chưa có cây nào */
         <div className="py-16 text-center text-sm text-slate-400 border border-dashed border-slate-200 rounded-2xl">
           Chưa có cây nào. Bấm{" "}
@@ -377,7 +377,6 @@ export const Step2PlantEntry: React.FC<Step2PlantEntryProps> = ({
               canRemove={!initialData}
               isInvalidBoundary={gridPlant.isInvalidBoundary}
               forceExpanded
-              onExitEdit={viewMode === "table" ? exitEdit : undefined}
             />
           </div>
 
@@ -518,17 +517,7 @@ export const Step2PlantEntry: React.FC<Step2PlantEntryProps> = ({
             </Card>
           </div>
         </div>
-      ) : (
-        /* Chế độ bảng (upload danh sách): DataTable full-width, không hiển thị bản đồ */
-        <PlantEntryTable
-          plants={plants}
-          allPlants={plants}
-          geographicalUnits={scopedGeographicalUnits}
-          canRemove={!initialData}
-          onEdit={startEdit}
-          onRemove={handleRemovePlant}
-        />
-      )}
+      ) : null}
 
       {/* Expanded map dialog — chỉ khả dụng khi đang sửa cây */}
       {gridPlant && (

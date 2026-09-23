@@ -1,15 +1,3 @@
-import type { TaskCategoryRecord } from "@/features/task-category";
-
-/** Hashtags được lưu trong `metadataJson.hashtags` (backend chưa có field riêng). */
-export const getTaskCategoryHashtags = (
-  item: Pick<TaskCategoryRecord, "metadataJson">,
-): string[] => {
-  const hashtags = item.metadataJson?.hashtags;
-  return Array.isArray(hashtags)
-    ? hashtags.filter((tag): tag is string => typeof tag === "string")
-    : [];
-};
-
 /** "Cải tạo đất" → "CAITAODAT": bỏ dấu, viết hoa, bỏ ký tự không phải chữ/số. */
 export const toTagCode = (label: string) =>
   label
