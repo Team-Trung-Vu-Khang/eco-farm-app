@@ -17,7 +17,6 @@ import {
   Maximize2,
   Plus,
   Sprout,
-  Upload,
 } from "lucide-react";
 import { useState } from "react";
 import { MapContainer } from "react-leaflet";
@@ -76,7 +75,6 @@ export const Step2PlantEntry: React.FC<Step2PlantEntryProps> = ({
   cultivationZoneId,
   productionVarietyOptions = [],
   initialData,
-  setIsImportOpen,
   isMapExpanded,
   setIsMapExpanded,
   effectiveActiveId,
@@ -162,12 +160,12 @@ export const Step2PlantEntry: React.FC<Step2PlantEntryProps> = ({
               <p className="text-sm text-blue-700/80">
                 {gridPlant
                   ? "Chọn vị trí trên bản đồ hoặc điền trực tiếp. Dữ liệu được lưu ngay khi chỉnh sửa."
-                  : "Chọn một cây để sửa chi tiết, hoặc thêm mới / nhập từ Excel."}
+                  : "Chọn một cây để sửa chi tiết, hoặc thêm mới."}
               </p>
             </div>
           </div>
 
-          {/* Right: add + import buttons (chỉ ở chế độ thủ công) */}
+          {/* Right: add button (chỉ ở chế độ thủ công) */}
           {viewMode === "card" && (
             <div className="flex items-center gap-2 flex-wrap shrink-0">
               {!initialData && (
@@ -178,16 +176,6 @@ export const Step2PlantEntry: React.FC<Step2PlantEntryProps> = ({
                   className="bg-white hover:bg-blue-50 text-blue-700 border-blue-200 shrink-0"
                 >
                   <Plus className="w-4 h-4 mr-1.5" /> Thêm cây
-                </Button>
-              )}
-              {!initialData && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setIsImportOpen(true)}
-                  className="bg-white hover:bg-blue-50 text-blue-700 border-blue-200 shrink-0"
-                >
-                  <Upload className="w-4 h-4 mr-2" /> Nhập từ Excel
                 </Button>
               )}
             </div>
@@ -370,8 +358,7 @@ export const Step2PlantEntry: React.FC<Step2PlantEntryProps> = ({
         /* Chế độ thêm thủ công, chưa có cây nào */
         <div className="py-16 text-center text-sm text-slate-400 border border-dashed border-slate-200 rounded-2xl">
           Chưa có cây nào. Bấm{" "}
-          <span className="font-semibold text-blue-600">Thêm cây</span> hoặc{" "}
-          <span className="font-semibold text-blue-600">Nhập từ Excel</span>.
+          <span className="font-semibold text-blue-600">Thêm cây</span>.
         </div>
       ) : gridPlant ? (
         /* View chỉnh sửa: card form bên trái + bản đồ bên phải.
