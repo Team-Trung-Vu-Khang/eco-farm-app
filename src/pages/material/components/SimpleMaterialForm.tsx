@@ -31,6 +31,7 @@ import { commonHashtags } from "../data/constants";
 import { useSupplyCatalog } from "@/features/farm-supply/hooks/useSupplyCatalog";
 
 import { normalizeSku } from "@/shared/lib/sku";
+import { useDebounce } from "@/shared/hooks/useDebounce";
 
 interface SimpleMaterialFormProps {
   formData: MaterialFormData;
@@ -68,19 +69,22 @@ export default function SimpleMaterialForm({
   const [techSearch, setTechSearch] = useState("");
   const [chainSearch, setChainSearch] = useState("");
 
+  const debouncedTechSearch = useDebounce(techSearch, 300);
+  const debouncedChainSearch = useDebounce(chainSearch, 300);
+
   const techLevelOptions = (groups || [])
     .filter((g) => g.classification === "technology_level")
     .filter((g) =>
-      techSearch.trim()
-        ? g.name.toLowerCase().includes(techSearch.toLowerCase())
+      debouncedTechSearch.trim()
+        ? g.name.toLowerCase().includes(debouncedTechSearch.toLowerCase())
         : true,
     )
     .map((g) => ({ label: g.name, value: g.code }));
   const valueChainOptions = (groups || [])
     .filter((g) => g.classification === "value_chain")
     .filter((g) =>
-      chainSearch.trim()
-        ? g.name.toLowerCase().includes(chainSearch.toLowerCase())
+      debouncedChainSearch.trim()
+        ? g.name.toLowerCase().includes(debouncedChainSearch.toLowerCase())
         : true,
     )
     .map((g) => ({ label: g.name, value: g.code }));
@@ -195,7 +199,9 @@ export default function SimpleMaterialForm({
               value={formData.code}
               disabled={isEdit}
               clearable={!isEdit}
-              onChange={(e) => updateField("code", normalizeSku(e.target.value))}
+              onChange={(e) =>
+                updateField("code", normalizeSku(e.target.value))
+              }
               placeholder="VD: VL001"
             />
           </div>
@@ -229,7 +235,7 @@ export default function SimpleMaterialForm({
 
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <div className="space-y-2">
-            <Label required>Mức độ công nghệ</Label>
+            <Label>Mức độ công nghệ</Label>
             <RemoteMultiSelect
               options={techLevelOptions}
               value={
@@ -253,7 +259,7 @@ export default function SimpleMaterialForm({
           </div>
 
           <div className="space-y-2">
-            <Label required>Giai đoạn áp dụng</Label>
+            <Label>Giai đoạn áp dụng</Label>
             <RemoteMultiSelect
               options={valueChainOptions}
               value={

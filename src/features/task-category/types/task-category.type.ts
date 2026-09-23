@@ -8,7 +8,8 @@ export interface TaskCategoryRecord {
   domainCode: DomainCode;
   /**
    * Chuỗi tag phân tách dấu phẩy, FE tự quy ước (BE không parse), tối đa 500 ký tự.
-   * VD: "DINHDUONG:Bón phân,TUOITIEU:Bón phân".
+   * Convention mới: VD: "nutrition:Bón phân,irrigation:Bón phân".
+   * Vẫn nhận dữ liệu cũ dạng label-derived VD: "DINHDUONG:Bón phân,TUOITIEU:Bón phân".
    */
   tags: string | null;
   code: string;

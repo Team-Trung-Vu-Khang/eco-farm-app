@@ -2153,6 +2153,7 @@ export function HistoryFormContent({
             workTaskDetails={workTaskDetails}
             materialAllocations={formData.materialAllocations}
             domainCode={workflowDomainCode as DomainCode}
+            workType={formData.workType}
             errors={errors}
             onAddStage={addStage}
             onRemoveStage={removeStage}

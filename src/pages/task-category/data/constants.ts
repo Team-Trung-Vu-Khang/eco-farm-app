@@ -1,5 +1,4 @@
 import { WORK_TYPE_OPTIONS } from "@/pages/diary/constants/history-form.constants";
-import { toTagCode } from "../utils/hashtags";
 import type {
   TaskCategory,
   TaskCategoryDomain,
@@ -35,15 +34,17 @@ export const taskCategoryDomainLabel: Record<TaskCategoryDomain, string> = {
 };
 
 /**
- * Loại công việc chọn trong form (lưu mã, VD: "DINHDUONG"). Khi submit mỗi mã
- * được ghép với tên công việc thành tag `<MÃ>:<Tên công việc>` (VD: "DINHDUONG:Bón phân").
+ * Loại công việc chọn trong form (lưu mã code-value, VD: "nutrition"). Khi
+ * submit mỗi mã được ghép với tên công việc thành tag `<MÃ>:<Tên công việc>`
+ * (VD: "nutrition:Bón phân"). FE vẫn lọc/hiểu được dữ liệu cũ dùng mã
+ * bắt nguồn từ label (VD: "DINHDUONG:Bón phân") để không vỡ data cũ.
  */
 export const taskCategoryTagFields = [
   {
     key: "workType",
     label: "Loại công việc",
     options: WORK_TYPE_OPTIONS.map((option) => ({
-      tag: toTagCode(option.label),
+      tag: option.value,
       label: option.label,
       icon: option.icon,
       activeClass: option.activeClass,

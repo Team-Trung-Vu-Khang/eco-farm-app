@@ -80,6 +80,9 @@ export interface FertilizerFormData {
   scientificTechnicalName: string;
   fertilizerOriginGroup: string | string[];
   fertilizerOriginGroups?: string[];
+  fertilizerOrigins?: string[];
+  fertilizerTypes?: string[];
+  fertilizerStates?: string[];
   nutritionalComponents: string;
   fertilizerType: string;
   physicalForm: string;

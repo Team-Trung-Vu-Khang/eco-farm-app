@@ -88,7 +88,7 @@ export default function Dashboard() {
         {/* {roleView === "admin" ? null : <DashboardAlerts />} */}
 
         {/* 2. Render View tương ứng dựa trên role người dùng */}
-        {roleView === "farmer" ? (
+        {roleView === "admin" ? (
           <AdminDashboardView
             zoneTreeData={zoneTreeData}
             cropHealthMetrics={cropHealthMetrics}

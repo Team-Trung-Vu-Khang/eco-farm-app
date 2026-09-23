@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { RemoteMultiSelect } from "@/components/RemoteMultiSelect";
+import { useDebounce } from "@/shared/hooks/useDebounce";
 import {
   Badge,
   Button,
@@ -26,8 +27,11 @@ import {
   Wrench,
   X,
   Loader2,
+  Cpu,
 } from "lucide-react";
 import { useMasterData } from "@/features/master-data";
+import { useQuery } from "@tanstack/react-query";
+import { farmSupplyApi } from "@/features/farm-supply";
 import type { EquipmentFormData } from "../types";
 import { maintenanceIntervals } from "../data/constants";
 
@@ -71,18 +75,64 @@ export default function SimpleEquipmentForm({
   completeLabel = "Hoàn tất & Lưu",
   loading,
 }: SimpleEquipmentFormProps) {
-  const { items: equipmentToolGroups } = useMasterData(
-    "equipment-tool-groups",
-    { params: { size: 100 } },
-  );
   const [machineTypeSearch, setMachineTypeSearch] = useState("");
-  const equipmentToolGroupOptions = (equipmentToolGroups || [])
-    .filter((g) =>
-      machineTypeSearch.trim()
-        ? g.name.toLowerCase().includes(machineTypeSearch.toLowerCase())
+  const [techSearch, setTechSearch] = useState("");
+  const [assetSearch, setAssetSearch] = useState("");
+  const [chainSearch, setChainSearch] = useState("");
+
+  const debouncedMachineTypeSearch = useDebounce(machineTypeSearch, 300);
+
+  const { items: equipmentToolGroups, loading: isEquipmentLoading } =
+    useMasterData("equipment-tool-groups", {
+      params: {
+        keyword: debouncedMachineTypeSearch.trim() || undefined,
+        size: 100,
+      },
+    });
+
+  const { data: apiGroups, isLoading: isGroupsLoading } = useQuery({
+    queryKey: ["equipment-groups", domain],
+    queryFn: () => farmSupplyApi.getClassificationGroups("equipment"),
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const equipmentToolGroupOptions = (equipmentToolGroups || []).map((g) => ({
+    label: g.name,
+    value: g.name,
+  }));
+
+  const technologyLevelOptions = (
+    apiGroups?.filter((item) => item.classification === "technology_level") ??
+    []
+  )
+    .filter((item) =>
+      techSearch.trim()
+        ? item.name.toLowerCase().includes(techSearch.toLowerCase())
         : true,
     )
-    .map((g) => ({ label: g.name, value: g.name }));
+    .map((item) => ({ label: item.name, value: item.code }));
+
+  const financialManagementOptions = (
+    apiGroups?.filter((item) => item.classification === "financial_aspect") ??
+    []
+  )
+    .filter((item) =>
+      assetSearch.trim()
+        ? item.name.toLowerCase().includes(assetSearch.toLowerCase())
+        : true,
+    )
+    .map((item) => ({ label: item.name, value: item.code }));
+
+  const valueChainOptions = (
+    apiGroups?.filter((item) => item.classification === "value_chain") ?? []
+  )
+    .filter((item) =>
+      chainSearch.trim()
+        ? item.name.toLowerCase().includes(chainSearch.toLowerCase())
+        : true,
+    )
+    .map((item) => ({ label: item.name, value: item.code }));
+
   const domainLabel = DOMAIN_LABELS[domain];
   const isValid = Boolean(formData.machineName || formData.name);
   const [paramHashtag, setParamHashtag] = useState("");
@@ -160,26 +210,102 @@ export default function SimpleEquipmentForm({
       </div>
 
       {/* ── Phân loại ── */}
-      <div className="space-y-2">
-        <Label className="flex items-center gap-1.5">
-          <Tag className="w-4 h-4 text-slate-400" />
-          Loại {domainLabel.toLowerCase()}
-        </Label>
-        <RemoteMultiSelect
-          options={equipmentToolGroupOptions}
-          value={
-            Array.isArray(formData.machineType)
-              ? formData.machineType
-              : formData.machineType
-                ? [formData.machineType]
-                : []
-          }
-          onChange={(vals) => updateField("machineType", vals)}
-          onSearch={setMachineTypeSearch}
-          placeholder={`Chọn loại ${domainLabel.toLowerCase()} (chọn nhiều)...`}
-          searchPlaceholder="Tìm loại thiết bị..."
-          emptyText="Không tìm thấy loại thiết bị"
-        />
+      <div className="space-y-4 rounded-xl border bg-white p-6 shadow-sm">
+        <h3 className="flex items-center gap-2 text-lg font-semibold">
+          <Tag className="h-5 w-5 text-primary" />
+          Phân loại thiết bị
+        </h3>
+
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+          <div className="space-y-2">
+            <Label>Mức độ công nghệ</Label>
+            <RemoteMultiSelect
+              options={technologyLevelOptions}
+              value={
+                formData.technologyLevelGroups &&
+                formData.technologyLevelGroups.length > 0
+                  ? formData.technologyLevelGroups
+                  : formData.technologyLevelGroup
+                    ? [formData.technologyLevelGroup]
+                    : []
+              }
+              onChange={(vals) => {
+                updateField("technologyLevelGroups", vals);
+                updateField("technologyLevelGroup", vals[0] || "");
+                updateField("technologyLevelId", vals[0] || "");
+              }}
+              onSearch={setTechSearch}
+              placeholder="Chọn mức độ công nghệ (chọn nhiều)..."
+              searchPlaceholder="Tìm mức độ công nghệ..."
+              emptyText="Không tìm thấy mức độ công nghệ"
+              loading={isGroupsLoading}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label>Khía cạnh tài chính</Label>
+            <RemoteMultiSelect
+              options={financialManagementOptions}
+              value={
+                formData.assetManagementGroups &&
+                formData.assetManagementGroups.length > 0
+                  ? formData.assetManagementGroups
+                  : formData.assetManagementGroup
+                    ? [formData.assetManagementGroup]
+                    : []
+              }
+              onChange={(vals) => {
+                updateField("assetManagementGroups", vals);
+                updateField("assetManagementGroup", vals[0] || "");
+                updateField("financialManagementId", vals[0] || "");
+              }}
+              onSearch={setAssetSearch}
+              placeholder="Chọn khía cạnh tài chính (chọn nhiều)..."
+              searchPlaceholder="Tìm khía cạnh tài chính..."
+              emptyText="Không tìm thấy khía cạnh tài chính"
+              loading={isGroupsLoading}
+            />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+          <div className="space-y-2">
+            <Label>Chuỗi giá trị</Label>
+            <RemoteMultiSelect
+              options={valueChainOptions}
+              value={formData.valueChainGroup || []}
+              onChange={(vals) => {
+                updateField("valueChainGroup", vals);
+                updateField("valueChainId", vals[0] || "");
+              }}
+              onSearch={setChainSearch}
+              placeholder="Chọn chuỗi giá trị (chọn nhiều)..."
+              searchPlaceholder="Tìm chuỗi giá trị..."
+              emptyText="Không tìm thấy chuỗi giá trị"
+              loading={isGroupsLoading}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label>Loại {domainLabel.toLowerCase()}</Label>
+            <RemoteMultiSelect
+              options={equipmentToolGroupOptions}
+              value={
+                Array.isArray(formData.machineType)
+                  ? formData.machineType
+                  : formData.machineType
+                    ? [formData.machineType]
+                    : []
+              }
+              onChange={(vals) => updateField("machineType", vals)}
+              onSearch={setMachineTypeSearch}
+              placeholder={`Chọn loại ${domainLabel.toLowerCase()} (chọn nhiều)...`}
+              searchPlaceholder="Tìm loại thiết bị..."
+              emptyText="Không tìm thấy loại thiết bị"
+              loading={isEquipmentLoading}
+            />
+          </div>
+        </div>
       </div>
 
       {/* ── Mã SKU ── */}

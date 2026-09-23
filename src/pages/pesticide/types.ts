@@ -119,4 +119,8 @@ export interface PesticideFormData {
   usageMethods?: string[];
   controlLevels?: string[];
   controlResidueLevels?: string[];
+  pesticideOrigins?: string[];
+  pesticideToxicityClasses?: string[];
+  pesticideModesOfAction?: string[];
+  pesticideFormulations?: string[];
 }

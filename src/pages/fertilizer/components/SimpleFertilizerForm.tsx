@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { RemoteMultiSelect } from "@/components/RemoteMultiSelect";
 import { useMasterData } from "@/features/master-data";
+import { useDebounce } from "@/shared/hooks/useDebounce";
 import {
   Badge,
   Button,
@@ -57,20 +58,68 @@ export default function SimpleFertilizerForm({
   loading,
 }: SimpleFertilizerFormProps) {
   const isEdit = window.location.pathname.includes("/edit");
-  const { items: fertilizerGroups } = useMasterData("fertilizer-groups", {
-    params: { size: 100 },
-  });
+
   const [groupSearch, setGroupSearch] = useState("");
-  const fertilizerGroupOptions = (fertilizerGroups || [])
-    .filter((g) =>
-      groupSearch.trim()
-        ? g.name.toLowerCase().includes(groupSearch.toLowerCase())
-        : true,
-    )
-    .map((g) => ({
-      label: g.name,
-      value: g.name,
-    }));
+  const [originSearch, setOriginSearch] = useState("");
+  const [typeSearch, setTypeSearch] = useState("");
+  const [stateSearch, setStateSearch] = useState("");
+
+  const debouncedGroupSearch = useDebounce(groupSearch, 300);
+  const debouncedOriginSearch = useDebounce(originSearch, 300);
+  const debouncedTypeSearch = useDebounce(typeSearch, 300);
+  const debouncedStateSearch = useDebounce(stateSearch, 300);
+
+  const { items: fertilizerGroups, loading: isGroupLoading } = useMasterData(
+    "fertilizer-groups",
+    {
+      params: {
+        keyword: debouncedGroupSearch.trim() || undefined,
+        size: 100,
+      },
+    },
+  );
+  const { items: loadedFertilizerOrigins, loading: isOriginLoading } =
+    useMasterData("fertilizer-groups", {
+      params: {
+        classification: "origin",
+        keyword: debouncedOriginSearch.trim() || undefined,
+        size: 100,
+      },
+    });
+  const { items: loadedFertilizerTypes, loading: isTypeLoading } =
+    useMasterData("fertilizer-groups", {
+      params: {
+        classification: "nutrient_composition",
+        keyword: debouncedTypeSearch.trim() || undefined,
+        size: 100,
+      },
+    });
+  const { items: loadedFertilizerStates, loading: isStateLoading } =
+    useMasterData("fertilizer-groups", {
+      params: {
+        classification: "physical_form",
+        keyword: debouncedStateSearch.trim() || undefined,
+        size: 100,
+      },
+    });
+
+  const fertilizerGroupOptions = (fertilizerGroups || []).map((g) => ({
+    label: g.name,
+    value: g.name,
+  }));
+
+  const originOptions = (loadedFertilizerOrigins || []).map((g) => ({
+    label: g.name,
+    value: g.name,
+  }));
+  const typeOptions = (loadedFertilizerTypes || []).map((g) => ({
+    label: g.name,
+    value: g.name,
+  }));
+  const stateOptions = (loadedFertilizerStates || []).map((g) => ({
+    label: g.name,
+    value: g.name,
+  }));
 
   // Dynamic API Fetching
   const { data: packagingTypes } = useQuery({
@@ -167,30 +216,81 @@ export default function SimpleFertilizerForm({
         )}
       </div>
 
-      {/* ── Nhóm phân bón ── */}
-      <div className="space-y-2">
-        <Label className="flex items-center gap-1.5">
-          <Package className="w-4 h-4 text-slate-400" />
-          Nhóm phân bón
-        </Label>
-        <RemoteMultiSelect
-          options={fertilizerGroupOptions}
-          value={
-            Array.isArray(formData.fertilizerOriginGroup)
-              ? formData.fertilizerOriginGroup
-              : formData.fertilizerOriginGroup
-                ? [formData.fertilizerOriginGroup]
-                : []
-          }
-          onChange={(vals) => {
-            updateField("fertilizerOriginGroup", vals);
-            updateField("fertilizerOriginGroups", vals);
-          }}
-          onSearch={setGroupSearch}
-          placeholder="Chọn nhóm phân bón từ danh mục (chọn nhiều)..."
-          searchPlaceholder="Tìm nhóm phân bón..."
-          emptyText="Không tìm thấy nhóm phân bón"
-        />
+      {/* ── Nhóm phân bón & Phân loại bổ sung ── */}
+      <div className="space-y-4">
+        <div className="space-y-2">
+          <Label className="flex items-center gap-1.5">
+            <Package className="w-4 h-4 text-slate-400" />
+            Nhóm phân bón
+          </Label>
+          <RemoteMultiSelect
+            options={fertilizerGroupOptions}
+            value={
+              Array.isArray(formData.fertilizerOriginGroup)
+                ? formData.fertilizerOriginGroup
+                : formData.fertilizerOriginGroup
+                  ? [formData.fertilizerOriginGroup]
+                  : []
+            }
+            onChange={(vals) => {
+              updateField("fertilizerOriginGroup", vals);
+              updateField("fertilizerOriginGroups", vals);
+            }}
+            onSearch={setGroupSearch}
+            placeholder="Chọn nhóm phân bón từ danh mục (chọn nhiều)..."
+            searchPlaceholder="Tìm nhóm phân bón..."
+            emptyText="Không tìm thấy nhóm phân bón"
+            loading={isGroupLoading}
+          />
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="space-y-2">
+            <Label className="flex items-center gap-1.5">
+              Xuất xứ / Nguồn gốc
+            </Label>
+            <RemoteMultiSelect
+              options={originOptions}
+              value={formData?.fertilizerOrigins || []}
+              onChange={(vals) => updateField("fertilizerOrigins", vals)}
+              onSearch={setOriginSearch}
+              placeholder="Chọn xuất xứ..."
+              searchPlaceholder="Tìm xuất xứ..."
+              emptyText="Không có dữ liệu"
+              loading={isOriginLoading}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label className="flex items-center gap-1.5">Loại phân bón</Label>
+            <RemoteMultiSelect
+              options={typeOptions}
+              value={formData.fertilizerTypes || []}
+              onChange={(vals) => updateField("fertilizerTypes", vals)}
+              onSearch={setTypeSearch}
+              placeholder="Chọn loại phân bón..."
+              searchPlaceholder="Tìm loại phân bón..."
+              emptyText="Không có dữ liệu"
+              loading={isTypeLoading}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label className="flex items-center gap-1.5">
+              Trạng thái / Dạng phân bón
+            </Label>
+            <RemoteMultiSelect
+              options={stateOptions}
+              value={formData.fertilizerStates || []}
+              onChange={(vals) => updateField("fertilizerStates", vals)}
+              onSearch={setStateSearch}
+              placeholder="Chọn dạng phân bón..."
+              searchPlaceholder="Tìm dạng phân bón..."
+              emptyText="Không có dữ liệu"
+              loading={isStateLoading}
+            />
+          </div>
+        </div>
       </div>
 
       {/* ── Mã SKU ── */}

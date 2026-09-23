@@ -35,6 +35,7 @@ import { useMasterData } from "@/features/master-data";
 import { SUPPLY_GROUP_CATALOG } from "../data/constants";
 
 import { normalizeSku } from "@/shared/lib/sku";
+import { useDebounce } from "@/shared/hooks/useDebounce";
 
 interface SimpleBiologicalProductFormProps {
   formData: BiologicalProductFormData;
@@ -57,21 +58,68 @@ export default function SimpleBiologicalProductForm({
   loading,
 }: SimpleBiologicalProductFormProps) {
   const isEdit = window.location.pathname.includes("/edit");
-  const { items: biologicalProductGroups } = useMasterData(
-    "biological-product-groups",
-    { params: { size: 100 } },
-  );
+
   const [groupSearch, setGroupSearch] = useState("");
-  const biologicalProductGroupOptions = (biologicalProductGroups || [])
-    .filter((g) =>
-      groupSearch.trim()
-        ? g.name.toLowerCase().includes(groupSearch.toLowerCase())
-        : true,
-    )
-    .map((g) => ({
+  const [originSearch, setOriginSearch] = useState("");
+  const [typeSearch, setTypeSearch] = useState("");
+  const [stateSearch, setStateSearch] = useState("");
+
+  const debouncedGroupSearch = useDebounce(groupSearch, 300);
+  const debouncedOriginSearch = useDebounce(originSearch, 300);
+  const debouncedTypeSearch = useDebounce(typeSearch, 300);
+  const debouncedStateSearch = useDebounce(stateSearch, 300);
+
+  const { items: biologicalProductGroups, loading: isGroupLoading } =
+    useMasterData("biological-product-groups", {
+      params: {
+        keyword: debouncedGroupSearch.trim() || undefined,
+        size: 100,
+      },
+    });
+  const { items: loadedBiologicalProductOrigins, loading: isOriginLoading } =
+    useMasterData("biological-product-groups", {
+      params: {
+        classification: "origin",
+        keyword: debouncedOriginSearch.trim() || undefined,
+        size: 100,
+      },
+    });
+  const { items: loadedBiologicalProductTypes, loading: isTypeLoading } =
+    useMasterData("biological-product-groups", {
+      params: {
+        classification: "nutrient_composition",
+        keyword: debouncedTypeSearch.trim() || undefined,
+        size: 100,
+      },
+    });
+  const { items: loadedBiologicalProductStates, loading: isStateLoading } =
+    useMasterData("biological-product-groups", {
+      params: {
+        classification: "physical_form",
+        keyword: debouncedStateSearch.trim() || undefined,
+        size: 100,
+      },
+    });
+
+  const biologicalProductGroupOptions = (biologicalProductGroups || []).map(
+    (g) => ({
       label: g.name,
       value: g.name,
-    }));
+    }),
+  );
+
+  const originOptions = (loadedBiologicalProductOrigins || []).map((g) => ({
+    label: g.name,
+    value: g.name,
+  }));
+  const typeOptions = (loadedBiologicalProductTypes || []).map((g) => ({
+    label: g.name,
+    value: g.name,
+  }));
+  const stateOptions = (loadedBiologicalProductStates || []).map((g) => ({
+    label: g.name,
+    value: g.name,
+  }));
   // Dynamic API Fetching
   const { data: packagingTypes } = useQuery({
     queryKey: ["packaging-types"],
@@ -195,30 +243,83 @@ export default function SimpleBiologicalProductForm({
         />
       </div>
 
-      {/* ── Nhóm chế phẩm sinh học ── */}
-      <div className="space-y-2">
-        <Label className="flex items-center gap-1.5">
-          <Package className="w-4 h-4 text-slate-400" />
-          Nhóm chế phẩm sinh học
-        </Label>
-        <RemoteMultiSelect
-          options={biologicalProductGroupOptions}
-          value={
-            Array.isArray(formData.biologicalProductOriginGroup)
-              ? formData.biologicalProductOriginGroup
-              : formData.biologicalProductOriginGroup
-                ? [formData.biologicalProductOriginGroup]
-                : []
-          }
-          onChange={(vals) => {
-            updateField("biologicalProductOriginGroup", vals);
-            updateField("biologicalProductOriginGroups", vals);
-          }}
-          onSearch={setGroupSearch}
-          placeholder="Chọn nhóm chế phẩm sinh học từ danh mục (chọn nhiều)..."
-          searchPlaceholder="Tìm nhóm chế phẩm sinh học..."
-          emptyText="Không tìm thấy nhóm chế phẩm sinh học"
-        />
+      {/* ── Nhóm chế phẩm sinh học & Phân loại bổ sung ── */}
+      <div className="space-y-4">
+        <div className="space-y-2">
+          <Label className="flex items-center gap-1.5">
+            <Package className="w-4 h-4 text-slate-400" />
+            Nhóm chế phẩm sinh học
+          </Label>
+          <RemoteMultiSelect
+            options={biologicalProductGroupOptions}
+            value={
+              Array.isArray(formData.biologicalProductOriginGroup)
+                ? formData.biologicalProductOriginGroup
+                : formData.biologicalProductOriginGroup
+                  ? [formData.biologicalProductOriginGroup]
+                  : []
+            }
+            onChange={(vals) => {
+              updateField("biologicalProductOriginGroup", vals);
+              updateField("biologicalProductOriginGroups", vals);
+            }}
+            onSearch={setGroupSearch}
+            placeholder="Chọn nhóm chế phẩm sinh học từ danh mục (chọn nhiều)..."
+            searchPlaceholder="Tìm nhóm chế phẩm sinh học..."
+            emptyText="Không tìm thấy nhóm chế phẩm sinh học"
+            loading={isGroupLoading}
+          />
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="space-y-2">
+            <Label className="flex items-center gap-1.5 text-xs">
+              Xuất xứ / Nguồn gốc
+            </Label>
+            <RemoteMultiSelect
+              options={originOptions}
+              value={formData.biologicalProductOrigins || []}
+              onChange={(vals) => updateField("biologicalProductOrigins", vals)}
+              onSearch={setOriginSearch}
+              placeholder="Chọn xuất xứ..."
+              searchPlaceholder="Tìm xuất xứ..."
+              emptyText="Không có dữ liệu"
+              loading={isOriginLoading}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label className="flex items-center gap-1.5 text-xs">
+              Công dụng / Loại chế phẩm
+            </Label>
+            <RemoteMultiSelect
+              options={typeOptions}
+              value={formData.biologicalProductTypes || []}
+              onChange={(vals) => updateField("biologicalProductTypes", vals)}
+              onSearch={setTypeSearch}
+              placeholder="Chọn loại chế phẩm..."
+              searchPlaceholder="Tìm loại chế phẩm..."
+              emptyText="Không có dữ liệu"
+              loading={isTypeLoading}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label className="flex items-center gap-1.5 text-xs">
+              Dạng chế phẩm
+            </Label>
+            <RemoteMultiSelect
+              options={stateOptions}
+              value={formData.biologicalProductStates || []}
+              onChange={(vals) => updateField("biologicalProductStates", vals)}
+              onSearch={setStateSearch}
+              placeholder="Chọn dạng chế phẩm..."
+              searchPlaceholder="Tìm dạng chế phẩm..."
+              emptyText="Không có dữ liệu"
+              loading={isStateLoading}
+            />
+          </div>
+        </div>
       </div>
 
       {/* ── Cấu hình Đơn vị Vật tư ── */}

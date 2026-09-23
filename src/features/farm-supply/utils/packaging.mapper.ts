@@ -14,37 +14,62 @@ function findBaseUnit(
     return null;
   }
 
-  // Strip trailing bracketed code tags like (UN010)
+  // Strip trailing bracketed code tags like (UN010) or (UN001)
   const cleanStr = searchStr
     .replace(/\s*\([A-Z0-9_\-]+\)$/i, "")
     .trim()
     .toLowerCase();
   if (!cleanStr) return null;
 
-  // 1. Exact match on name
-  let matched = baseUnits.find((u) => u.name.toLowerCase() === cleanStr);
-  if (matched) return matched;
-
-  // 2. Exact match on code
-  matched = baseUnits.find((u) => u.code && u.code.toLowerCase() === cleanStr);
-  if (matched) return matched;
-
-  // 3. Match parenthetical symbol inside u.name (e.g., "Mililit (ml)" -> symbol "ml")
-  for (const u of baseUnits) {
+  // Pre-parse units info for strict matching
+  const parsedUnits = baseUnits.map((u) => {
+    const fullName = u.name.trim().toLowerCase();
+    const mainName = u.name
+      .replace(/\s*\([^)]+\)/, "")
+      .trim()
+      .toLowerCase();
     const symbolMatch = u.name.match(/\(([^)]+)\)/);
-    if (symbolMatch && symbolMatch[1]) {
-      const symbol = symbolMatch[1].trim().toLowerCase();
-      if (symbol === cleanStr) return u;
-    }
+    const symbol =
+      symbolMatch && symbolMatch[1] ? symbolMatch[1].trim().toLowerCase() : "";
+    const code = u.code ? u.code.trim().toLowerCase() : "";
+    return { unit: u, fullName, mainName, symbol, code };
+  });
+
+  // 1. Exact match on fullName (e.g., "kilogam (kg)", "gam (g)", "lít (l)")
+  let matched = parsedUnits.find((p) => p.fullName === cleanStr);
+  if (matched) return matched.unit;
+
+  // 2. Exact match on mainName (e.g., "kilogam", "gam", "lít", "mililit", "tấn")
+  matched = parsedUnits.find((p) => p.mainName === cleanStr);
+  if (matched) return matched.unit;
+
+  // 3. Exact match on symbol inside parentheses (e.g., "kg", "g", "l", "ml", "m")
+  matched = parsedUnits.find((p) => p.symbol && p.symbol === cleanStr);
+  if (matched) return matched.unit;
+
+  // 4. Exact match on code (e.g., "un001", "un008")
+  matched = parsedUnits.find((p) => p.code && p.code === cleanStr);
+  if (matched) return matched.unit;
+
+  // 5. Clean parenthetical symbols from cleanStr if present
+  const cleanWithoutSymbol = cleanStr.replace(/\s*\([^)]+\)/, "").trim();
+  if (cleanWithoutSymbol && cleanWithoutSymbol !== cleanStr) {
+    matched = parsedUnits.find(
+      (p) =>
+        p.mainName === cleanWithoutSymbol || p.symbol === cleanWithoutSymbol,
+    );
+    if (matched) return matched.unit;
   }
 
-  // 4. Substring / includes match
-  matched = baseUnits.find(
-    (u) =>
-      cleanStr.includes(u.name.toLowerCase()) ||
-      u.name.toLowerCase().includes(cleanStr),
+  // 6. Whole-word / token match (e.g., token match without arbitrary substring inclusion)
+  const tokens = cleanStr.split(/\s+/);
+  matched = parsedUnits.find(
+    (p) =>
+      tokens.includes(p.mainName) ||
+      (p.symbol && tokens.includes(p.symbol)) ||
+      (p.code && tokens.includes(p.code)),
   );
-  if (matched) return matched;
+  if (matched) return matched.unit;
 
   return null;
 }
@@ -64,20 +89,34 @@ function findPackagingType(
 
   const cleanStr = searchStr.trim().toLowerCase();
 
-  let matched = packagingTypes.find((t) => t.name.toLowerCase() === cleanStr);
-  if (matched) return matched;
+  const parsedTypes = packagingTypes.map((t) => {
+    const fullName = t.name.trim().toLowerCase();
+    const mainName = t.name
+      .replace(/\s*\([^)]+\)/, "")
+      .trim()
+      .toLowerCase();
+    const code = t.code ? t.code.trim().toLowerCase() : "";
+    return { type: t, fullName, mainName, code };
+  });
 
-  matched = packagingTypes.find(
-    (t) => t.code && t.code.toLowerCase() === cleanStr,
-  );
-  if (matched) return matched;
+  // 1. Exact match on fullName
+  let matched = parsedTypes.find((p) => p.fullName === cleanStr);
+  if (matched) return matched.type;
 
-  matched = packagingTypes.find(
-    (t) =>
-      cleanStr.includes(t.name.toLowerCase()) ||
-      t.name.toLowerCase().includes(cleanStr),
+  // 2. Exact match on mainName
+  matched = parsedTypes.find((p) => p.mainName === cleanStr);
+  if (matched) return matched.type;
+
+  // 3. Exact match on code
+  matched = parsedTypes.find((p) => p.code && p.code === cleanStr);
+  if (matched) return matched.type;
+
+  // 4. Whole-word / token match
+  const tokens = cleanStr.split(/\s+/);
+  matched = parsedTypes.find(
+    (p) => tokens.includes(p.mainName) || (p.code && tokens.includes(p.code)),
   );
-  if (matched) return matched;
+  if (matched) return matched.type;
 
   return null;
 }

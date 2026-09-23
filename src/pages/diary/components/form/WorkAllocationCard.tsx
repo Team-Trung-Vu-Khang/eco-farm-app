@@ -1,4 +1,11 @@
 import type { DomainCode, SupplyType } from "@/features/farm-supply";
+import { useTaskCategorySearch } from "@/features/task-category/hooks/useTaskCategory";
+import type { TaskCategoryRecord } from "@/features/task-category/types/task-category.type";
+import { parseTaskCategoryTags } from "@/features/task-category/utils/tags";
+import {
+  getTaskCategoryTagType,
+  toTagCode,
+} from "@/pages/task-category/utils/hashtags";
 import { getSupplyTypeOptions } from "@/shared/hooks/useRemoteSupplySearch";
 import {
   Badge,
@@ -24,7 +31,7 @@ import {
   X,
 } from "lucide-react";
 import { useMemo, useRef, useState } from "react";
-import { WORK_TASK_SUGGESTIONS } from "../../constants/history-form.constants";
+import { WORK_TYPE_OPTIONS } from "../../constants/history-form.constants";
 import {
   StageMaterialPicker,
   type MaterialAllocation,
@@ -70,6 +77,7 @@ export interface WorkAllocationCardProps {
   workTaskDetails?: Record<string, WorkTaskDetail>;
   materialAllocations?: MaterialAllocation[];
   domainCode: DomainCode;
+  workType?: string;
   errors?: Record<string, string>;
   onAddStage: (stageName: string) => void;
   onRemoveStage: (stageName: string) => void;
@@ -114,6 +122,7 @@ export function WorkAllocationCard({
   workTaskDetails = {},
   materialAllocations = [],
   domainCode,
+  workType,
   errors = {},
   onAddStage,
   onRemoveStage,
@@ -133,13 +142,39 @@ export function WorkAllocationCard({
   // item closes whichever other item was open, so at most one stays open.
   const [expandedStage, setExpandedStage] = useState<string | null>(null);
 
-  const suggestions = useMemo(() => {
+  // Gợi ý hạng mục / công việc đến từ API /api/master-data/task-categories
+  // (đã có dữ liệu active của domain hiện tại thay vì list local cứng).
+  const { items: taskCategoryItems } = useTaskCategorySearch({
+    params: { domainCode },
+  });
+
+  // Tag mới lưu theo code-value ("nutrition:Bón phân"); dữ liệu cũ lưu mã
+  // label-derived ("DINHDUONG:Bón phân") hoặc legacy "group-DINHDUONG".
+  // Chấp nhận mọi convention của workType đang chọn để không vỡ data cũ.
+  const workTypeTagTypes = useMemo(() => {
+    if (!workType) return null;
+    const label =
+      WORK_TYPE_OPTIONS.find((o) => o.value === workType)?.label ?? workType;
+    return new Set<string>([workType, toTagCode(label)]);
+  }, [workType]);
+
+  const suggestions = useMemo<TaskCategoryRecord[]>(() => {
     const keyword = normalize(newStageInput.trim());
-    return WORK_TASK_SUGGESTIONS.filter(
-      // Ẩn những hạng mục đã được thêm vào danh sách
-      (item) => !selectedStages.includes(item),
-    ).filter((item) => !keyword || normalize(item).includes(keyword));
-  }, [newStageInput, selectedStages]);
+    return (
+      taskCategoryItems
+        .filter(
+          (item) =>
+            !workTypeTagTypes ||
+            parseTaskCategoryTags(item.tags).some((tag) =>
+              workTypeTagTypes.has(getTaskCategoryTagType(tag)),
+            ),
+        )
+        // Ẩn những hạng mục đã được thêm vào danh sách
+        .filter((item) => !selectedStages.includes(item.name))
+        .filter((item) => !keyword || normalize(item.name).includes(keyword))
+        .slice(0, 20)
+    );
+  }, [newStageInput, selectedStages, taskCategoryItems, workTypeTagTypes]);
 
   const handleSelectSuggestion = (name: string) => {
     if (blurTimeout.current) clearTimeout(blurTimeout.current);
@@ -233,15 +268,15 @@ export function WorkAllocationCard({
                 </div>
                 {suggestions.map((item) => (
                   <button
-                    key={item}
+                    key={item.id}
                     type="button"
                     // onMouseDown chạy trước onBlur của input nên không bị mất click.
                     onMouseDown={(e) => e.preventDefault()}
-                    onClick={() => handleSelectSuggestion(item)}
+                    onClick={() => handleSelectSuggestion(item.name)}
                     className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs font-medium text-slate-700 hover:bg-emerald-50 hover:text-emerald-700 cursor-pointer"
                   >
                     <Plus className="w-3 h-3 shrink-0 text-slate-400" />
-                    {item}
+                    {item.name}
                   </button>
                 ))}
               </div>

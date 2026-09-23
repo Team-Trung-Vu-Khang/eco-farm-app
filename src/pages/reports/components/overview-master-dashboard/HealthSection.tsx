@@ -426,7 +426,7 @@ export const HealthSection: React.FC<HealthSectionProps> = ({
               </div>
 
               {/* Status Filter — client-side only (API doesn't support health status filter) */}
-              <div className="w-full sm:w-48">
+              {/* <div className="w-full sm:w-48">
                 <Select value={statusFilter} onValueChange={setStatusFilter}>
                   <SelectTrigger className="w-full text-xs bg-white border border-slate-105 rounded-lg h-9">
                     <SelectValue placeholder="Lọc trạng thái" />
@@ -439,7 +439,7 @@ export const HealthSection: React.FC<HealthSectionProps> = ({
                     <SelectItem value="data">Có dữ liệu sản lượng</SelectItem>
                   </SelectContent>
                 </Select>
-              </div>
+              </div> */}
             </div>
           </div>
 

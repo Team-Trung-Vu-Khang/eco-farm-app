@@ -80,6 +80,10 @@ export default function SimplePesticideForm({
   const isValid = Boolean(formData.name) && hasBasicPackagingRule;
   const [paramHashtag, setParamHashtag] = useState("");
   const [groupSearch, setGroupSearch] = useState("");
+  const [originSearch, setOriginSearch] = useState("");
+  const [toxicitySearch, setToxicitySearch] = useState("");
+  const [modeOfActionSearch, setModeOfActionSearch] = useState("");
+  const [formulationSearch, setFormulationSearch] = useState("");
 
   const domainCode =
     domain === "cultivation"
@@ -89,6 +93,10 @@ export default function SimplePesticideForm({
         : "AQUACULTURE";
   const classification = domain === "cultivation" ? "target_group" : "usage";
   const debouncedGroupSearch = useDebounce(groupSearch, 300);
+  const debouncedOriginSearch = useDebounce(originSearch, 300);
+  const debouncedToxicitySearch = useDebounce(toxicitySearch, 300);
+  const debouncedModeOfActionSearch = useDebounce(modeOfActionSearch, 300);
+  const debouncedFormulationSearch = useDebounce(formulationSearch, 300);
 
   // Dynamic API Fetching
   const { data: packagingTypes } = useQuery({
@@ -112,10 +120,47 @@ export default function SimplePesticideForm({
         keyword: debouncedGroupSearch.trim() || undefined,
         status: "active",
         page: 0,
-        size: 20,
+        size: 100,
       },
     },
   );
+
+  const { items: loadedPesticideOrigins, loading: isLoadingOrigins } =
+    useMasterData("medicine-groups", {
+      params: {
+        domainCode,
+        classification: "origin",
+        keyword: debouncedOriginSearch.trim() || undefined,
+        size: 100,
+      },
+    });
+  const { items: loadedPesticideToxicityClasses, loading: isLoadingToxicity } =
+    useMasterData("medicine-groups", {
+      params: {
+        domainCode,
+        classification: "toxicity",
+        keyword: debouncedToxicitySearch.trim() || undefined,
+        size: 100,
+      },
+    });
+  const { items: loadedPesticideModesOfAction, loading: isLoadingModes } =
+    useMasterData("medicine-groups", {
+      params: {
+        domainCode,
+        classification: "mode_of_action",
+        keyword: debouncedModeOfActionSearch.trim() || undefined,
+        size: 100,
+      },
+    });
+  const { items: loadedPesticideFormulations, loading: isLoadingFormulations } =
+    useMasterData("medicine-groups", {
+      params: {
+        domainCode,
+        classification: "dosage_form",
+        keyword: debouncedFormulationSearch.trim() || undefined,
+        size: 100,
+      },
+    });
 
   const packagingList =
     packagingTypes && packagingTypes.length > 0
@@ -128,6 +173,23 @@ export default function SimplePesticideForm({
   const groupOptions = remoteGroups.map((group) => ({
     label: group.name,
     value: group.name,
+  }));
+
+  const originOptions = (loadedPesticideOrigins || []).map((g) => ({
+    label: g.name,
+    value: g.name,
+  }));
+  const toxicityOptions = (loadedPesticideToxicityClasses || []).map((g) => ({
+    label: g.name,
+    value: g.name,
+  }));
+  const modeOfActionOptions = (loadedPesticideModesOfAction || []).map((g) => ({
+    label: g.name,
+    value: g.name,
+  }));
+  const formulationOptions = (loadedPesticideFormulations || []).map((g) => ({
+    label: g.name,
+    value: g.name,
   }));
 
   const onAddHashtag = () => {
@@ -226,6 +288,83 @@ export default function SimplePesticideForm({
             emptyText="Không tìm thấy nhóm thuốc BVTV"
             loading={isLoadingGroups}
           />
+        </div>
+
+        {/* ── Phân loại bổ sung (Không bắt buộc) ── */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label className="flex items-center gap-1.5">
+              <Tags className="w-4 h-4 text-slate-400" />
+              Nguồn gốc / Xuất xứ
+            </Label>
+            <RemoteMultiSelect
+              options={originOptions}
+              value={formData.pesticideOrigins || []}
+              onChange={(vals) => onFormFieldChange("pesticideOrigins", vals)}
+              onSearch={setOriginSearch}
+              placeholder="Chọn xuất xứ..."
+              searchPlaceholder="Tìm xuất xứ..."
+              emptyText="Không có dữ liệu xuất xứ"
+              loading={isLoadingOrigins}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label className="flex items-center gap-1.5">
+              <Shield className="w-4 h-4 text-slate-400" />
+              Cấp độ độc tố
+            </Label>
+            <RemoteMultiSelect
+              options={toxicityOptions}
+              value={formData.pesticideToxicityClasses || []}
+              onChange={(vals) =>
+                onFormFieldChange("pesticideToxicityClasses", vals)
+              }
+              onSearch={setToxicitySearch}
+              placeholder="Chọn cấp độ độc tố..."
+              searchPlaceholder="Tìm độc tố..."
+              emptyText="Không có dữ liệu độc tố"
+              loading={isLoadingToxicity}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label className="flex items-center gap-1.5">
+              <Info className="w-4 h-4 text-slate-400" />
+              Cơ chế tác động
+            </Label>
+            <RemoteMultiSelect
+              options={modeOfActionOptions}
+              value={formData.pesticideModesOfAction || []}
+              onChange={(vals) =>
+                onFormFieldChange("pesticideModesOfAction", vals)
+              }
+              onSearch={setModeOfActionSearch}
+              placeholder="Chọn cơ chế tác động..."
+              searchPlaceholder="Tìm cơ chế tác động..."
+              emptyText="Không có dữ liệu"
+              loading={isLoadingModes}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label className="flex items-center gap-1.5">
+              <Package className="w-4 h-4 text-slate-400" />
+              Dạng chế phẩm / Dạng thuốc
+            </Label>
+            <RemoteMultiSelect
+              options={formulationOptions}
+              value={formData.pesticideFormulations || []}
+              onChange={(vals) =>
+                onFormFieldChange("pesticideFormulations", vals)
+              }
+              onSearch={setFormulationSearch}
+              placeholder="Chọn dạng thuốc..."
+              searchPlaceholder="Tìm dạng thuốc..."
+              emptyText="Không có dữ liệu"
+              loading={isLoadingFormulations}
+            />
+          </div>
         </div>
 
         <div className="space-y-2">
