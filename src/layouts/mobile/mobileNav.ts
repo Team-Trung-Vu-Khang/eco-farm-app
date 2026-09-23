@@ -28,9 +28,9 @@ export const MOBILE_NAV_ITEMS: MobileNavItem[] = [
   },
   {
     label: "Vùng trồng",
-    href: "/cultivation-region",
+    href: "/dashboard",
     icon: Map,
-    matchPrefixes: ["/cultivation-region"],
+    matchPrefixes: ["/dashboard"],
   },
   {
     label: "Cập nhật",

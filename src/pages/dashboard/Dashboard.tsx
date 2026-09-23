@@ -5,10 +5,16 @@ import { AdminDashboardView } from "./views/AdminDashboardView";
 import { FarmerDashboardView } from "./views/FarmerDashboardView";
 import { useDashboardData } from "./hooks/useDashboardData";
 import { useCurrentUser } from "@/features/auth/hooks/useCurrentUser";
+import { useIsMobile } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import { useMobileUiMode } from "@/shared/hooks/useMobileUiMode";
 // import { Building2, UserCheck, RefreshCw } from "lucide-react";
 
 export default function Dashboard() {
   const { currentUser } = useCurrentUser();
+  const isMobile = useIsMobile();
+  const mobileUiMode = useMobileUiMode();
+  // Giao diện mobile: cảnh báo hiển thị qua chuông thông báo trên header
+  const showAlertsCard = !(isMobile && mobileUiMode === "app");
   const userRoles = currentUser?.roleCodes ?? [];
   const isAdmin = userRoles.some((role) =>
     ["MEVI_SUPER_ADMIN", "MEVI_ADMIN", "MEVI_FARM_ADMIN"].includes(role),
@@ -27,10 +33,10 @@ export default function Dashboard() {
 
   return (
     <PageWrapper
-      title="Dashboard"
-      description="Tổng quan hệ thống quản lý nông trại"
+      title={isMobile ? "Tổng quan" : "Dashboard"}
+      description={isMobile ? undefined : "Tổng quan hệ thống quản lý nông trại"}
     >
-      <div className="space-y-6">
+      <div className={isMobile ? "space-y-4" : "space-y-6"}>
         {/* Công tắc chuyển đổi Role View cho mục đích kiểm thử (commented out)
         <div className="flex items-center justify-between bg-slate-100/80 p-2 rounded-xl border border-slate-200">
           <div className="flex items-center gap-2 px-2">
@@ -77,7 +83,7 @@ export default function Dashboard() {
         */}
 
         {/* 1. Khối Cảnh báo hiển thị ở góc nhìn Nông hộ */}
-        {roleView === "admin" ? null : <DashboardAlerts />}
+        {roleView === "admin" || !showAlertsCard ? null : <DashboardAlerts />}
 
         {/* 2. Render View tương ứng dựa trên role người dùng */}
         {roleView === "admin" ? (

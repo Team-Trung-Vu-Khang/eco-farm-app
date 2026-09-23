@@ -3,6 +3,7 @@ import { Sprout } from "lucide-react";
 import type { ReactNode } from "react";
 import { Link, useLocation } from "wouter";
 import { MOBILE_NAV_ITEMS, isNavItemActive } from "./mobileNav";
+import { NotificationBell } from "./NotificationBell";
 import { useEnsureWorkspace } from "./useEnsureWorkspace";
 
 interface MobileAppLayoutProps {
@@ -23,7 +24,7 @@ export function MobileAppLayout({ children }: MobileAppLayoutProps) {
         <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
           <Sprout className="h-5 w-5" />
         </div>
-        <div className="min-w-0">
+        <div className="min-w-0 flex-1">
           <p className="text-sm font-bold leading-tight text-slate-900">
             Eco Farm
           </p>
@@ -33,6 +34,7 @@ export function MobileAppLayout({ children }: MobileAppLayoutProps) {
               "Đang tải đơn vị..."}
           </p>
         </div>
+        <NotificationBell />
       </header>
 
       {/* Chừa chỗ cho thanh điều hướng nổi + vùng an toàn (thanh home iOS) */}

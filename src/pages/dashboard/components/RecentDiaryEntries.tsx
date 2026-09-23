@@ -6,6 +6,7 @@ import {
   CardTitle,
   Badge,
   Button,
+  useIsMobile,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import {
   ClipboardList,
@@ -54,8 +55,7 @@ const PURPOSE_MAP: Record<string, { label: string; className: string }> = {
   },
   PEST_DISEASE: {
     label: FARM_PLAN_PURPOSE_LABELS.PEST_DISEASE,
-    className:
-      "bg-amber-50 text-amber-700 border border-amber-200 font-bold",
+    className: "bg-amber-50 text-amber-700 border border-amber-200 font-bold",
   },
   WEED_CONTROL: {
     label: FARM_PLAN_PURPOSE_LABELS.WEED_CONTROL,
@@ -72,6 +72,7 @@ const PURPOSE_MAP: Record<string, { label: string; className: string }> = {
 };
 
 export function RecentDiaryEntries() {
+  const isMobile = useIsMobile();
   // Call API for daily diary entries
   const { data: apiData, isLoading } = useFarmDailyDiaryEntries({
     params: { page: 0, size: 5 },
@@ -130,7 +131,13 @@ export function RecentDiaryEntries() {
 
   return (
     <Card className="rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden bg-white">
-      <CardHeader className="flex flex-row items-center justify-between pb-3 border-b border-slate-100 bg-slate-50/50">
+      <CardHeader
+        className={
+          isMobile
+            ? "flex flex-row items-center justify-between gap-2 space-y-0 p-3 border-b border-slate-100 bg-slate-50/50"
+            : "flex flex-row items-center justify-between pb-3 border-b border-slate-100 bg-slate-50/50"
+        }
+      >
         <CardTitle className="text-sm font-bold flex items-center gap-2 text-slate-800">
           <div className="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center border border-emerald-200 shrink-0">
             <ClipboardList className="w-4 h-4" />
@@ -144,12 +151,12 @@ export function RecentDiaryEntries() {
           onClick={handleOpenHistoryPage}
           className="text-xs font-semibold text-emerald-700 hover:text-emerald-800 bg-emerald-50/60 hover:bg-emerald-100 border-emerald-200 rounded-xl h-8 px-3"
         >
-          <span>Xem tất cả nhật ký</span>
+          <span>{isMobile ? "Tất cả" : "Xem tất cả nhật ký"}</span>
           <ChevronRight className="w-3.5 h-3.5 ml-1" />
         </Button>
       </CardHeader>
 
-      <CardContent className="p-4 space-y-3.5">
+      <CardContent className={isMobile ? "p-3 space-y-3.5" : "p-4 space-y-3.5"}>
         {isLoading ? (
           <div className="py-8 text-center text-xs text-slate-400 italic">
             Đang tải dữ liệu nhật ký...
