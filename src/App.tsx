@@ -12,10 +12,10 @@ import { useRegions } from "./features/farm/hooks/useRegions";
 import { OnboardRegionDialog } from "./pages/region-chart/region-basic-distribution/components/OnboardRegionDialog";
 
 import { WorkspaceChangeHandler } from "./components/WorkspaceChangeHandler";
+import { useCurrentUser } from "./features/auth/hooks/useCurrentUser";
 import { MobileAppLayout } from "./layouts/mobile/MobileAppLayout";
 import { SwitchToMobileAppButton } from "./layouts/mobile/SwitchToMobileAppButton";
 import { useMobileUiMode } from "./shared/hooks/useMobileUiMode";
-import { useCurrentUser } from "./features/auth/hooks/useCurrentUser";
 
 interface OnboardCheckerProps {
   children: React.ReactNode;

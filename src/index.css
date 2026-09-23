@@ -23,3 +23,13 @@
     @apply mb-1;
   }
 }
+
+/* eco-shared-ui dùng cú pháp Tailwind v3 `w-[--radix-popover-trigger-width]`,
+   Tailwind v4 không sinh ra class này → popover co giãn theo nội dung và tràn màn hình.
+   Định nghĩa lại để dropdown rộng bằng ô chọn, và không vượt quá vùng hiển thị. */
+.w-\[--radix-popover-trigger-width\] {
+  width: var(--radix-popover-trigger-width);
+}
+[data-radix-popper-content-wrapper] > * {
+  max-width: var(--radix-popper-available-width, 100vw);
+}

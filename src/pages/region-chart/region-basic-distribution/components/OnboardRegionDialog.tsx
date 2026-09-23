@@ -6,6 +6,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  useIsMobile,
   useToast,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { useRegionMutations } from "@/features/farm/hooks/useRegionMutations";
@@ -29,6 +30,7 @@ export const OnboardRegionDialog: React.FC<OnboardRegionDialogProps> = ({
   open,
   onSuccess,
 }) => {
+  const isMobile = useIsMobile();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -147,6 +149,45 @@ export const OnboardRegionDialog: React.FC<OnboardRegionDialogProps> = ({
     }
   };
 
+  const formContent = (
+    <RegionBasicDistributionForm
+      form={form}
+      onSubmit={handleComplete}
+      onCancel={() => {}}
+      isLoading={isSubmitting}
+      isEditMode={false}
+      isDialogMode={true}
+      completeLabel={isMobile ? "Hoàn tất" : "Hoàn tất và Khởi tạo"}
+      bypassSeedSelection={false}
+    />
+  );
+
+  // Điện thoại: hiển thị dạng trang toàn màn hình (phủ cả header + bottom nav)
+  if (isMobile) {
+    if (!open) return null;
+    return (
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="onboard-region-title"
+        className="fixed inset-0 z-[45] flex flex-col bg-slate-50"
+      >
+        <header className="shrink-0 border-b border-slate-200 bg-white px-4 pb-3 pt-[calc(0.75rem+env(safe-area-inset-top))]">
+          <p className="text-xs font-semibold text-primary">Bắt đầu</p>
+          <h1
+            id="onboard-region-title"
+            className="text-lg font-bold leading-snug text-slate-900"
+          >
+            Tạo vùng trồng đầu tiên của bạn
+          </h1>
+        </header>
+        <div className="flex-1 overflow-y-auto overscroll-contain px-4 pt-4 pb-[calc(1.5rem+env(safe-area-inset-bottom))]">
+          {formContent}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <>
       {open && <div className="fixed inset-0 z-49 backdrop-blur-md" />}
@@ -163,18 +204,7 @@ export const OnboardRegionDialog: React.FC<OnboardRegionDialogProps> = ({
             </DialogTitle>
           </DialogHeader>
 
-          <div className="flex-1 overflow-y-auto pr-1">
-            <RegionBasicDistributionForm
-              form={form}
-              onSubmit={handleComplete}
-              onCancel={() => {}}
-              isLoading={isSubmitting}
-              isEditMode={false}
-              isDialogMode={true}
-              completeLabel="Hoàn tất và Khởi tạo"
-              bypassSeedSelection={false}
-            />
-          </div>
+          <div className="flex-1 overflow-y-auto pr-1">{formContent}</div>
         </DialogContent>
       </Dialog>
     </>

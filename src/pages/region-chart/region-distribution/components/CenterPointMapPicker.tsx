@@ -6,6 +6,7 @@ import {
   DialogContent,
   Input,
   Label,
+  useIsMobile,
   useToast,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import L from "leaflet";
@@ -96,9 +97,13 @@ const PickerContent = ({
   lat,
   lng,
 }: PickerContentProps) => {
+  const isMobile = useIsMobile();
+  // Điện thoại (bản nhúng): nhãn ngắn, khoảng cách gọn, bản đồ thấp hơn
+  const compact = isMobile && !isLarge;
+
   return (
     <div
-      className={`space-y-4 ${
+      className={`${compact ? "space-y-3" : "space-y-4"} ${
         isLarge ? "p-6 pt-0 flex flex-col h-full overflow-y-auto" : ""
       }`}
     >
@@ -107,7 +112,11 @@ const PickerContent = ({
         <Label className="text-sm font-medium">Địa chỉ</Label>
         <div className="flex gap-2">
           <Input
-            placeholder="Nhập địa chỉ cần xác định (ví dụ: Bảo Lộc, Lâm Đồng)..."
+            placeholder={
+              compact
+                ? "Nhập địa chỉ (VD: Bảo Lộc)..."
+                : "Nhập địa chỉ cần xác định (ví dụ: Bảo Lộc, Lâm Đồng)..."
+            }
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             onKeyDown={(e) => {
@@ -151,10 +160,11 @@ const PickerContent = ({
       </div>
 
       {/* Coordinates Inputs */}
-      <div className="grid grid-cols-2 gap-4">
+      <div className={`grid grid-cols-2 ${compact ? "gap-2" : "gap-4"}`}>
         <div className="space-y-1.5">
           <Label className="text-sm font-medium">
-            Vĩ độ (Latitude) <span className="text-red-500">*</span>
+            {compact ? "Vĩ độ" : "Vĩ độ (Latitude)"}{" "}
+            <span className="text-red-500">*</span>
           </Label>
           <div className="min-h-10 rounded-md border bg-white px-3 py-2 text-sm font-medium text-slate-700">
             {formatCoordinate(lat)}
@@ -162,7 +172,8 @@ const PickerContent = ({
         </div>
         <div className="space-y-1.5">
           <Label className="text-sm font-medium">
-            Kinh độ (Longitude) <span className="text-red-500">*</span>
+            {compact ? "Kinh độ" : "Kinh độ (Longitude)"}{" "}
+            <span className="text-red-500">*</span>
           </Label>
           <div className="min-h-10 rounded-md border bg-white px-3 py-2 text-sm font-medium text-slate-700">
             {formatCoordinate(lng)}
@@ -175,11 +186,13 @@ const PickerContent = ({
         className={`space-y-2 ${isLarge ? "flex-1 flex flex-col min-h-0" : ""}`}
       >
         <Label className="text-sm font-medium">
-          Chọn vị trí trực quan trên bản đồ (Click hoặc Kéo thả ghim)
+          {compact
+            ? "Chạm hoặc kéo ghim trên bản đồ"
+            : "Chọn vị trí trực quan trên bản đồ (Click hoặc Kéo thả ghim)"}
         </Label>
         <div
           className={`rounded-lg border overflow-hidden relative z-0 ${
-            isLarge ? "flex-1 min-h-[350px]" : "h-72"
+            isLarge ? "flex-1 min-h-[350px]" : compact ? "h-56" : "h-72"
           }`}
         >
           <MapContainer
@@ -210,6 +223,7 @@ const PickerContent = ({
 };
 
 export const CenterPointMapPicker = () => {
+  const isMobile = useIsMobile();
   const { watch, setValue } = useFormContext<RegionFormValues>();
   const { toast } = useToast();
 
@@ -372,8 +386,20 @@ export const CenterPointMapPicker = () => {
   }, [debouncedSearchQuery, handleAddressSearch]);
 
   return (
-    <div className="space-y-4 border p-4 rounded-lg bg-slate-50/50">
-      <div className="flex items-center justify-between border-b pb-2 mb-2">
+    <div
+      className={
+        isMobile
+          ? "space-y-3"
+          : "space-y-4 border p-4 rounded-lg bg-slate-50/50"
+      }
+    >
+      <div
+        className={
+          isMobile
+            ? "flex items-center justify-between"
+            : "flex items-center justify-between border-b pb-2 mb-2"
+        }
+      >
         <h3 className="font-semibold text-sm text-slate-800">
           Vị trí vùng trồng
         </h3>
