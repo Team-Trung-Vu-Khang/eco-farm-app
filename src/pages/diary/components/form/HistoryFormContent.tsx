@@ -96,6 +96,7 @@ export function HistoryFormContent({
   initialWorkflowId = "",
   pageTitle = "Ghi nhận nhật ký nông hộ",
   backUrl = "/diary/daily-history",
+  onReset,
 }: HistoryFormContentProps) {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
@@ -1313,7 +1314,9 @@ export function HistoryFormContent({
         )
       }
     >
-      <div className="mx-auto w-full max-w-5xl pb-24 space-y-6">
+      <div
+        className={`mx-auto w-full max-w-5xl space-y-6 ${isMobileApp ? "" : "pb-24"}`}
+      >
         {/* Block 1: Thông tin chung & Nhật ký */}
         <div className="space-y-6">
           <Card className="border-none bg-white shadow-sm">
@@ -2181,9 +2184,11 @@ export function HistoryFormContent({
               ? "h-11 flex-1 rounded-xl text-sm font-semibold"
               : "h-11 px-6 rounded-xl text-sm font-semibold"
           }
-          onClick={() => setLocation(backUrl)}
+          onClick={() =>
+            isMobileApp && onReset ? onReset() : setLocation(backUrl)
+          }
         >
-          Hủy bỏ
+          {isMobileApp && onReset ? "Làm mới" : "Hủy bỏ"}
         </Button>
         <Button
           type="button"

@@ -58,6 +58,8 @@ export interface HistoryFormContentProps {
   initialWorkflowId?: string;
   pageTitle?: string;
   backUrl?: string;
+  /** Giao diện mobile: nút "Làm mới" gọi hàm này (trang cha remount lại form) */
+  onReset?: () => void;
 }
 
 export interface RawSupplyLineItem {
