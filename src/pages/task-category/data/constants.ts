@@ -1,3 +1,5 @@
+import { WORK_TYPE_OPTIONS } from "@/pages/diary/constants/history-form.constants";
+import { buildTag } from "../utils/hashtags";
 import type {
   TaskCategory,
   TaskCategoryDomain,
@@ -31,6 +33,26 @@ export const taskCategoryDomainLabel: Record<TaskCategoryDomain, string> = {
   animal: "Chăn nuôi",
   aquaculture: "Nuôi trồng thủy sản",
 };
+
+/**
+ * Các trường thông tin liên kết, khi submit được lưu vào hashtags dạng `<prefix>-<CODE>`
+ * để lúc đọc lại biết tag thuộc trường nào (VD: group-CANHTAC).
+ * Mở rộng thêm trường mới (VD: giai đoạn → prefix "phase") chỉ cần thêm 1 phần tử.
+ */
+export const taskCategoryTagFields = [
+  {
+    key: "workType",
+    label: "Loại công việc",
+    prefix: "group",
+    options: WORK_TYPE_OPTIONS.map((option) => ({
+      tag: buildTag("group", option.label),
+      label: option.label,
+      icon: option.icon,
+      activeClass: option.activeClass,
+      iconClass: option.iconClass,
+    })),
+  },
+];
 
 export const emptyTaskCategoryFormData: TaskCategoryFormData = {
   name: "",

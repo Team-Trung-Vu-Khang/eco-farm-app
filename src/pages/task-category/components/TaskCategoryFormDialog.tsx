@@ -1,9 +1,8 @@
-import { useEffect, useState, type KeyboardEvent } from "react";
+import { useEffect } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import {
-  Badge,
   FormDialog,
   Input,
   Select,
@@ -13,14 +12,13 @@ import {
   SelectValue,
   Textarea,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { X } from "lucide-react";
 // TODO: Tạm ẩn chọn "Nhóm công việc", mặc định luôn là "Trồng trọt" (crop)
 // import {
 //   taskCategoryDomainLabel,
 //   taskCategoryDomainOptions,
 // } from "../data/constants";
 import type { TaskCategoryFormData } from "../types/types";
-import { normalizeHashtag } from "../utils/hashtags";
+import { taskCategoryTagFields } from "../data/constants";
 
 const formSchema = z.object({
   name: z.string().min(1, { message: "Tên công việc là bắt buộc" }),
@@ -47,7 +45,6 @@ export function TaskCategoryFormDialog({
   onSubmit,
   isSubmitting,
 }: TaskCategoryFormDialogProps) {
-  const [hashtagInput, setHashtagInput] = useState("");
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -69,27 +66,14 @@ export function TaskCategoryFormDialog({
         status: initialData.status || "active",
       });
     }
-    setHashtagInput("");
   }, [open, initialData, form]);
 
-  const addHashtag = (hashtags: string[], onChange: (v: string[]) => void) => {
-    const tag = normalizeHashtag(hashtagInput);
-    if (tag && !hashtags.includes(tag)) onChange([...hashtags, tag]);
-    setHashtagInput("");
-  };
-
   const handleSubmit = (values: z.infer<typeof formSchema>) => {
-    // Gộp luôn hashtag đang gõ dở nhưng chưa nhấn Enter
-    const pending = normalizeHashtag(hashtagInput);
-    const hashtags =
-      pending && !values.hashtags.includes(pending)
-        ? [...values.hashtags, pending]
-        : values.hashtags;
     onSubmit({
       name: values.name,
       description: values.description || "",
       domain: values.domain,
-      hashtags,
+      hashtags: values.hashtags,
       status: values.status,
     });
   };
@@ -172,46 +156,50 @@ export function TaskCategoryFormDialog({
           control={form.control}
           name="hashtags"
           render={({ field }) => (
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Hashtags</label>
-              <Input
-                placeholder="Nhập hashtag rồi nhấn Enter"
-                data-testid="input-hashtag"
-                value={hashtagInput}
-                onChange={(e) => setHashtagInput(e.target.value)}
-                onKeyDown={(e: KeyboardEvent<HTMLInputElement>) => {
-                  if (e.key === "Enter" || e.key === ",") {
-                    e.preventDefault();
-                    addHashtag(field.value, field.onChange);
-                  } else if (
-                    e.key === "Backspace" &&
-                    !hashtagInput &&
-                    field.value.length
-                  ) {
-                    field.onChange(field.value.slice(0, -1));
-                  }
-                }}
-              />
-              {field.value.length > 0 && (
-                <div className="flex flex-wrap gap-2">
-                  {field.value.map((tag) => (
-                    <Badge
-                      key={tag}
-                      variant="secondary"
-                      className="flex items-center gap-1"
-                    >
-                      #{tag}
-                      <X
-                        className="h-3.5 w-3.5 cursor-pointer"
-                        onClick={() =>
-                          field.onChange(field.value.filter((t) => t !== tag))
-                        }
-                      />
-                    </Badge>
-                  ))}
+            <>
+              {taskCategoryTagFields.map((tagField) => (
+                <div key={tagField.key} className="space-y-2">
+                  <label className="text-sm font-medium">{tagField.label}</label>
+                  <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                    {tagField.options.map((option) => {
+                      const isActive = field.value.includes(option.tag);
+                      return (
+                        <button
+                          key={option.tag}
+                          type="button"
+                          data-testid={`tag-${option.tag}`}
+                          onClick={() =>
+                            field.onChange(
+                              isActive
+                                ? field.value.filter((t) => t !== option.tag)
+                                : [...field.value, option.tag],
+                            )
+                          }
+                          className={`flex items-center gap-2 rounded-xl border-2 px-3 py-2 text-left transition-all ${
+                            isActive
+                              ? option.activeClass
+                              : "border-slate-100 bg-white text-slate-600 hover:border-slate-200"
+                          }`}
+                        >
+                          <div
+                            className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg ${
+                              isActive
+                                ? option.iconClass
+                                : "bg-slate-100 text-slate-600"
+                            }`}
+                          >
+                            <option.icon className="h-4 w-4" />
+                          </div>
+                          <span className="text-xs font-semibold uppercase">
+                            {option.label}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
-              )}
-            </div>
+              ))}
+            </>
           )}
         />
 
