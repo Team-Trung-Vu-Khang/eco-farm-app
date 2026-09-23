@@ -1,5 +1,10 @@
 import { useCurrentUser } from "@/features/auth";
 import {
+  useSelectedWorkspaceId,
+  useWorkspaceById,
+  type WorkspaceRecord,
+} from "@/features/workspace";
+import {
   Avatar,
   AvatarFallback,
   AvatarImage,
@@ -16,7 +21,7 @@ import {
   SelectValue,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { Building2, Search, Sprout } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Controller, useFormContext, useWatch } from "react-hook-form";
 import type { Standard } from "../../../stores/useEnterpriseCertificateStore";
 import type { EnterpriseCertificateFormValues } from "../data/enterprise-certificate-form.schema";
@@ -63,27 +68,33 @@ export function CertificateBasicInfoFields({ standards }: BasicInfoProps) {
     role.toLowerCase().includes("admin"),
   );
   const shouldShowFarmerSelector = isAdmin;
+  const selectedWorkspaceId = useSelectedWorkspaceId();
+  const { item: currentWorkspace, loading: isLoadingWorkspace } =
+    useWorkspaceById(selectedWorkspaceId ?? "", {
+      enabled: !!currentUser && !isAdmin,
+    });
 
+  const applyFarmer = useCallback(
+    (workspace: WorkspaceRecord, shouldDirty: boolean) => {
+      const options = { shouldDirty, shouldValidate: true };
+      setValue("farmerId", String(workspace.id), options);
+      setValue("farmerName", workspace.name, options);
+      setValue("farmerCode", workspace.code || String(workspace.id), options);
+      setValue(
+        "farmerType",
+        workspace.organizationType?.type || "farm",
+        options,
+      );
+    },
+    [setValue],
+  );
+
+  // Non-admin users always issue certificates for their own workspace.
   useEffect(() => {
-    if (!currentUser || isAdmin || farmerId) return;
-
-    setValue("farmerId", String(currentUser.id), {
-      shouldDirty: false,
-      shouldValidate: true,
-    });
-    setValue("farmerName", currentUser.fullName || currentUser.username, {
-      shouldDirty: false,
-      shouldValidate: true,
-    });
-    setValue("farmerCode", currentUser.username || String(currentUser.id), {
-      shouldDirty: false,
-      shouldValidate: true,
-    });
-    setValue("farmerType", "farm", {
-      shouldDirty: false,
-      shouldValidate: true,
-    });
-  }, [currentUser, farmerId, isAdmin, setValue]);
+    if (isAdmin || !currentWorkspace) return;
+    if (farmerId === String(currentWorkspace.id)) return;
+    applyFarmer(currentWorkspace, false);
+  }, [applyFarmer, currentWorkspace, farmerId, isAdmin]);
 
   return (
     <div className="space-y-4">
@@ -111,6 +122,10 @@ export function CertificateBasicInfoFields({ standards }: BasicInfoProps) {
                         Mã: {farmerCode || farmerId || "Chưa cập nhật"}
                       </p>
                     </>
+                  ) : !isAdmin && isLoadingWorkspace ? (
+                    <p className="text-sm text-muted-foreground">
+                      Đang tải thông tin nông hộ...
+                    </p>
                   ) : (
                     <>
                       <p className="font-semibold text-slate-900">
@@ -307,24 +322,7 @@ export function CertificateBasicInfoFields({ standards }: BasicInfoProps) {
         open={isFarmerDialogOpen}
         onOpenChange={setIsFarmerDialogOpen}
         selectedId={farmerId}
-        onConfirm={(farmer) => {
-          setValue("farmerId", String(farmer.id), {
-            shouldDirty: true,
-            shouldValidate: true,
-          });
-          setValue("farmerName", farmer.name, {
-            shouldDirty: true,
-            shouldValidate: true,
-          });
-          setValue("farmerCode", farmer.code || String(farmer.id), {
-            shouldDirty: true,
-            shouldValidate: true,
-          });
-          setValue("farmerType", farmer.type || "farm", {
-            shouldDirty: true,
-            shouldValidate: true,
-          });
-        }}
+        onConfirm={(workspace) => applyFarmer(workspace, true)}
       />
     </div>
   );

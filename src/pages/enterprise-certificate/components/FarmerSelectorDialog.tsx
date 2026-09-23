@@ -1,5 +1,4 @@
-import { organizationApi, type OrganizationRecord } from "@/features/organization";
-import { useSelectedWorkspaceId } from "@/features/workspace";
+import { adminWorkspaceApi, type WorkspaceRecord } from "@/features/workspace";
 import { useDebounce } from "@/shared/hooks/useDebounce";
 import {
   Avatar,
@@ -22,7 +21,7 @@ interface FarmerSelectorDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   selectedId?: string;
-  onConfirm: (farmer: OrganizationRecord) => void;
+  onConfirm: (farmer: WorkspaceRecord) => void;
 }
 
 export const getOrganizationTypeLabel = (organization?: {
@@ -51,7 +50,6 @@ export function FarmerSelectorDialog({
   selectedId,
   onConfirm,
 }: FarmerSelectorDialogProps) {
-  const workspaceId = useSelectedWorkspaceId();
   const [keyword, setKeyword] = useState("");
   const [tempSelectedId, setTempSelectedId] = useState(selectedId || "");
   const debouncedKeyword = useDebounce(keyword, 300);
@@ -66,22 +64,17 @@ export function FarmerSelectorDialog({
   const farmersQuery = useInfiniteQuery({
     queryKey: [
       "enterprise-certificate",
-      "farmers",
-      workspaceId ?? "missing",
+      "farmer-workspaces",
       debouncedKeyword,
     ] as const,
     queryFn: ({ pageParam }) =>
-      organizationApi.search(
-        {
-          keyword: debouncedKeyword.trim() || undefined,
-          type: "farm",
-          status: "active",
-          page: pageParam,
-          size: 20,
-        },
-        workspaceId ?? "missing",
-      ),
-    enabled: open && workspaceId !== null && workspaceId !== undefined,
+      adminWorkspaceApi.list({
+        keyword: debouncedKeyword.trim() || undefined,
+        status: "active",
+        page: pageParam,
+        size: 20,
+      }),
+    enabled: open,
     initialPageParam: 0,
     getNextPageParam: (lastPage) =>
       lastPage.last ? undefined : lastPage.page + 1,
