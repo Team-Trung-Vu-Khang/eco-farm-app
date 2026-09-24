@@ -14,5 +14,6 @@ jobs:
           host: ${{ secrets.SERVER_IP }}
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: 234
           script: |
             bash /data/MeviFarm-FE/deploy.sh
