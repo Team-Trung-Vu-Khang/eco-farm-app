@@ -1,4 +1,7 @@
 import { RemoteMultiSelect } from "@/components/RemoteMultiSelect";
+import { useMasterData } from "@/features/master-data";
+import { useDebounce } from "@/shared/hooks/useDebounce";
+import { normalizeSku } from "@/shared/lib/sku";
 import {
   Badge,
   Button,
@@ -8,75 +11,61 @@ import {
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { Image as ImageIcon, Leaf, Plus, Tags, Upload, X } from "lucide-react";
 import { useState } from "react";
-import { commonHashtags } from "../../data/constants";
-import type { BiologicalProductFormData } from "../../types/types";
-import { useMasterData } from "@/features/master-data";
-import { SUPPLY_GROUP_CATALOG } from "../../data/constants";
-import { useDebounce } from "@/shared/hooks/useDebounce";
+import { commonHashtags, SUPPLY_GROUP_CATALOG } from "../../data/constants";
+import type { ByProductFormData } from "../../types/types";
 
-import { normalizeSku } from "@/shared/lib/sku";
-
-interface BiologicalProductBasicInfoStepProps {
-  formData: BiologicalProductFormData;
-  updateField: (field: keyof BiologicalProductFormData, value: any) => void;
+interface ByProductBasicInfoStepProps {
+  formData: ByProductFormData;
+  updateField: (field: keyof ByProductFormData, value: any) => void;
 }
 
-export const BiologicalProductBasicInfoStep = ({
+export const ByProductBasicInfoStep = ({
   formData,
   updateField,
-}: BiologicalProductBasicInfoStepProps) => {
+}: ByProductBasicInfoStepProps) => {
   const isEdit = window.location.pathname.includes("/edit");
   const [paramHashtag, setParamHashtag] = useState("");
-  const [enzymeSearch, setEnzymeSearch] = useState("");
-  const [carrierSearch, setCarrierSearch] = useState("");
-  const [bioExtractSearch, setBioExtractSearch] = useState("");
-  const [supplementSearch, setSupplementSearch] = useState("");
 
-  const debouncedEnzymeSearch = useDebounce(enzymeSearch, 300);
-  const debouncedCarrierSearch = useDebounce(carrierSearch, 300);
-  const debouncedBioExtractSearch = useDebounce(bioExtractSearch, 300);
-  const debouncedSupplementSearch = useDebounce(supplementSearch, 300);
+  const [originSearch, setOriginSearch] = useState("");
+  const [physicoSearch, setPhysicoSearch] = useState("");
+  const [toxicitySearch, setToxicitySearch] = useState("");
 
-  const { items: loadedEnzymes, loading: isLoadingEnzymes } = useMasterData(
+  const debouncedOriginSearch = useDebounce(originSearch, 300);
+  const debouncedPhysicoSearch = useDebounce(physicoSearch, 300);
+  const debouncedToxicitySearch = useDebounce(toxicitySearch, 300);
+
+  const { items: loadedOrigins, loading: isOriginLoading } = useMasterData(
     SUPPLY_GROUP_CATALOG,
     {
       params: {
-        classification: "enzyme",
-        keyword: debouncedEnzymeSearch.trim() || undefined,
-        status: "active",
+        classification: "origin",
+        keyword: debouncedOriginSearch.trim() || undefined,
         size: 100,
       },
     },
   );
-  const { items: loadedCarriers, loading: isLoadingCarriers } = useMasterData(
+
+  const { items: loadedPhysicos, loading: isPhysicoLoading } = useMasterData(
     SUPPLY_GROUP_CATALOG,
     {
       params: {
-        classification: "carrier",
-        keyword: debouncedCarrierSearch.trim() || undefined,
-        status: "active",
+        classification: "physico_chemical",
+        keyword: debouncedPhysicoSearch.trim() || undefined,
         size: 100,
       },
     },
   );
-  const { items: loadedBioExtracts, loading: isLoadingBioExtracts } =
-    useMasterData(SUPPLY_GROUP_CATALOG, {
+
+  const { items: loadedToxicities, loading: isToxicityLoading } = useMasterData(
+    SUPPLY_GROUP_CATALOG,
+    {
       params: {
-        classification: "bio_extract",
-        keyword: debouncedBioExtractSearch.trim() || undefined,
-        status: "active",
+        classification: "toxicity_regulation",
+        keyword: debouncedToxicitySearch.trim() || undefined,
         size: 100,
       },
-    });
-  const { items: loadedSupplements, loading: isLoadingSupplements } =
-    useMasterData(SUPPLY_GROUP_CATALOG, {
-      params: {
-        classification: "supplement",
-        keyword: debouncedSupplementSearch.trim() || undefined,
-        status: "active",
-        size: 100,
-      },
-    });
+    },
+  );
 
   const handleAddHashtag = () => {
     const nextHashtag = paramHashtag.trim();
@@ -100,7 +89,7 @@ export const BiologicalProductBasicInfoStep = ({
         <div className="bg-white p-6 rounded-xl shadow-sm border space-y-5">
           <h3 className="font-semibold text-lg flex items-center gap-2">
             <Leaf className="w-5 h-5 text-primary" />
-            Định danh & Phân loại Chế phẩm sinh học
+            Định danh & Phân loại Phụ phẩm
           </h3>
 
           {/* SKU & Commercial Name */}
@@ -114,25 +103,25 @@ export const BiologicalProductBasicInfoStep = ({
                 onChange={(e) =>
                   updateField("code", normalizeSku(e.target.value))
                 }
-                placeholder="VD: CPSH-TRI-01"
+                placeholder="VD: BYP-COFFEE-01"
                 disabled={isEdit}
                 clearable={!isEdit}
               />
               <p className="text-xs text-muted-foreground">
-                Rất quan trọng để truy xuất nguồn gốc
+                Rất quan trọng để truy xuất nguồn gốc phụ phẩm
               </p>
             </div>
             <div className="space-y-2">
               <Label className="flex items-center gap-1">
-                Tên thương mại <span className="text-red-500">*</span>
+                Tên phụ phẩm <span className="text-red-500">*</span>
               </Label>
               <Input
                 value={formData.name}
                 onChange={(e) => updateField("name", e.target.value)}
-                placeholder="VD: Chế phẩm Trichoderma đối kháng"
+                placeholder="VD: Vỏ cà phê ủ hoai, Bã mía đã qua xử lý"
               />
               <p className="text-xs text-muted-foreground">
-                Tên thương mại nhãn hiệu chế phẩm sinh học
+                Tên thương mại hoặc tên loại phụ phẩm
               </p>
             </div>
           </div>
@@ -140,16 +129,16 @@ export const BiologicalProductBasicInfoStep = ({
           {/* Registration Number & Scientific/Technical Name */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label>Số đăng ký quyết định lưu hành</Label>
+              <Label>Số đăng ký / Quyết định lưu hành</Label>
               <Input
                 value={formData.registrationNumber}
                 onChange={(e) =>
                   updateField("registrationNumber", e.target.value)
                 }
-                placeholder="VD: LH-5821/GP-PB"
+                placeholder="VD: QĐ-LH-2026-BYP"
               />
               <p className="text-xs text-muted-foreground">
-                Số quyết định công nhận chế phẩm sinh học lưu hành tại VN
+                Số quyết định hoặc giấy phép lưu hành (nếu có)
               </p>
             </div>
             <div className="space-y-2">
@@ -159,104 +148,93 @@ export const BiologicalProductBasicInfoStep = ({
                 onChange={(e) =>
                   updateField("scientificTechnicalName", e.target.value)
                 }
-                placeholder="VD: Trichoderma harzianum"
+                placeholder="VD: Saccharum officinarum (bagasse)"
               />
             </div>
           </div>
 
-          {/* 4 Microbial Classification Fields 1:1 */}
+          {/* 3 Classification Fields */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label>Enzyme</Label>
+              <Label>Nguồn gốc</Label>
               <RemoteMultiSelect
-                options={(loadedEnzymes || []).map((g) => ({
+                options={(loadedOrigins || []).map((g) => ({
                   label: g.name,
                   value: g.name,
                 }))}
-                value={formData.enzymes || []}
-                onChange={(vals) => updateField("enzymes", vals)}
-                onSearch={setEnzymeSearch}
-                placeholder="Chọn enzyme..."
-                searchPlaceholder="Tìm enzyme..."
+                value={formData.byProductOrigins || []}
+                onChange={(vals) => updateField("byProductOrigins", vals)}
+                onSearch={setOriginSearch}
+                placeholder="Chọn nguồn gốc..."
+                searchPlaceholder="Tìm nguồn gốc..."
                 emptyText="Không có dữ liệu"
-                loading={isLoadingEnzymes}
+                loading={isOriginLoading}
               />
             </div>
 
             <div className="space-y-2">
-              <Label>Chất mang / Dung môi</Label>
+              <Label>Sinh học (Lý - Hóa)</Label>
               <RemoteMultiSelect
-                options={(loadedCarriers || []).map((g) => ({
+                options={(loadedPhysicos || []).map((g) => ({
                   label: g.name,
                   value: g.name,
                 }))}
-                value={formData.carriers || []}
-                onChange={(vals) => updateField("carriers", vals)}
-                onSearch={setCarrierSearch}
-                placeholder="Chọn chất mang / dung môi..."
-                searchPlaceholder="Tìm chất mang / dung môi..."
+                value={formData.byProductPhysicoChemicals || []}
+                onChange={(vals) =>
+                  updateField("byProductPhysicoChemicals", vals)
+                }
+                onSearch={setPhysicoSearch}
+                placeholder="Chọn đặc tính..."
+                searchPlaceholder="Tìm đặc tính..."
                 emptyText="Không có dữ liệu"
-                loading={isLoadingCarriers}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label>Chiết xuất sinh học</Label>
-              <RemoteMultiSelect
-                options={(loadedBioExtracts || []).map((g) => ({
-                  label: g.name,
-                  value: g.name,
-                }))}
-                value={formData.bioExtracts || []}
-                onChange={(vals) => updateField("bioExtracts", vals)}
-                onSearch={setBioExtractSearch}
-                placeholder="Chọn chiết xuất sinh học..."
-                searchPlaceholder="Tìm chiết xuất sinh học..."
-                emptyText="Không có dữ liệu"
-                loading={isLoadingBioExtracts}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label>Dinh dưỡng bổ sung</Label>
-              <RemoteMultiSelect
-                options={(loadedSupplements || []).map((g) => ({
-                  label: g.name,
-                  value: g.name,
-                }))}
-                value={formData.supplements || []}
-                onChange={(vals) => updateField("supplements", vals)}
-                onSearch={setSupplementSearch}
-                placeholder="Chọn dinh dưỡng bổ sung..."
-                searchPlaceholder="Tìm dinh dưỡng bổ sung..."
-                emptyText="Không có dữ liệu"
-                loading={isLoadingSupplements}
+                loading={isPhysicoLoading}
               />
             </div>
           </div>
 
-          {/* Thành phần vi sinh */}
           <div className="space-y-2">
-            <Label>Thành phần vi sinh</Label>
+            <Label>Mức độ độc hại & Quy chuẩn quản lý</Label>
+            <RemoteMultiSelect
+              options={(loadedToxicities || []).map((g) => ({
+                label: g.name,
+                value: g.name,
+              }))}
+              value={formData.byProductToxicityRegulations || []}
+              onChange={(vals) =>
+                updateField("byProductToxicityRegulations", vals)
+              }
+              onSearch={setToxicitySearch}
+              placeholder="Chọn quy chuẩn..."
+              searchPlaceholder="Tìm quy chuẩn..."
+              emptyText="Không có dữ liệu"
+              loading={isToxicityLoading}
+            />
+          </div>
+
+          {/* Detailed Composition */}
+          <div className="space-y-2">
+            <Label>Thành phần chi tiết & Hàm lượng</Label>
             <Textarea
-              value={formData.mainIngredients}
-              onChange={(e) => updateField("mainIngredients", e.target.value)}
-              placeholder="VD: Bacillus subtilis - 10^9 CFU/g"
+              value={formData.detailedComposition}
+              onChange={(e) =>
+                updateField("detailedComposition", e.target.value)
+              }
+              placeholder="VD: Hữu cơ: 45%, Tỷ lệ C/N: 18, Độ ẩm: 25%, Vi sinh vật phân giải cellulose: 10^6 CFU/g"
               rows={4}
             />
             <p className="text-xs text-muted-foreground">
-              Lưu chi tiết tên chủng vi sinh và mật độ. Cần thiết cho báo cáo kỹ
-              thuật.
+              Lưu thông số kỹ thuật, tỷ lệ dinh dưỡng/hữu cơ. Cần thiết cho báo
+              cáo chất lượng.
             </p>
           </div>
 
           {/* Description */}
           <div className="space-y-2">
-            <Label>Mô tả tóm tắt sản phẩm</Label>
+            <Label>Mô tả tóm tắt phụ phẩm</Label>
             <Textarea
               value={formData.description}
               onChange={(e) => updateField("description", e.target.value)}
-              placeholder="Mô tả công dụng chung, ưu điểm vượt trội..."
+              placeholder="Mô tả nguồn gốc thu gom, phương pháp xử lý, đặc điểm tổng quan..."
               rows={3}
             />
           </div>
@@ -329,7 +307,7 @@ export const BiologicalProductBasicInfoStep = ({
         <div className="bg-white p-6 rounded-xl shadow-sm border space-y-4">
           <h3 className="font-semibold text-lg flex items-center gap-2">
             <ImageIcon className="w-5 h-5 text-primary" />
-            Hình ảnh sản phẩm
+            Hình ảnh phụ phẩm
           </h3>
           {formData.imageUrl ? (
             <div className="relative group w-full max-w-[240px] mx-auto">
@@ -354,7 +332,7 @@ export const BiologicalProductBasicInfoStep = ({
               <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-4 text-primary">
                 <Upload className="w-8 h-8" />
               </div>
-              <p className="font-medium text-slate-900">Tải lên ảnh sản phẩm</p>
+              <p className="font-medium text-slate-900">Tải lên ảnh phụ phẩm</p>
               <p className="text-sm text-muted-foreground mt-1">
                 Kéo thả hoặc click để chọn file
               </p>

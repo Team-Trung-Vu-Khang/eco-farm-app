@@ -35,6 +35,7 @@ import {
   useVariantCard,
 } from "@/features/farm/hooks/useFarmReport";
 import { useDebounce } from "@/shared/hooks/useDebounce";
+import { useSelectedWorkspaceId, useWorkspaceById } from "@/features/workspace";
 
 // ─── Domain → API domainCode mapping ─────────────────────────────────────────
 // URL param "aqua" maps to BE domainCode "AQUACULTURE" (consistent with the rest of the codebase)
@@ -133,12 +134,17 @@ const VariantCard: React.FC<VariantCardProps> = ({
 }) => {
   const today = useMemo(() => new Date().toISOString().slice(0, 10), []);
 
-  const { data, isLoading } = useVariantCard({
-    variantCode,
-    domainCode,
-    ...locationFilter,
-    date: today,
-  });
+  const selectedWorkspaceId = useSelectedWorkspaceId();
+
+  const { data, isLoading } = useVariantCard(
+    {
+      variantCode,
+      domainCode,
+      ...locationFilter,
+      date: today,
+    },
+    { workspaceId: selectedWorkspaceId },
+  );
 
   /** Build recharts data from health.byPlot */
   const chartData = useMemo(() => {
@@ -383,13 +389,18 @@ export const HealthSection: React.FC<HealthSectionProps> = ({
     return Sprout;
   }, [domainType]);
 
-  const { items, isLoading, total } = useProductionVariants({
-    domainCode,
-    ...locationFilter,
-    search: debouncedSearch || undefined,
-    page,
-    size: 20,
-  });
+  const workspaceId = useSelectedWorkspaceId();
+
+  const { items, isLoading, total } = useProductionVariants(
+    {
+      domainCode,
+      ...locationFilter,
+      search: debouncedSearch || undefined,
+      page,
+      size: 20,
+    },
+    { workspaceId },
+  );
 
   const handleResetFilters = () => {
     setSearchInput("");

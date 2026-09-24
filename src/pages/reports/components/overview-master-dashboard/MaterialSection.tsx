@@ -19,6 +19,7 @@ import {
 import type { TreeNode } from "../../constants/mockReportData";
 import { useSupplyConsumption } from "@/features/farm/hooks/useFarmReport";
 import type { SupplyType } from "@/features/farm/types/farm-report.type";
+import { useSelectedWorkspaceId } from "@/features/workspace";
 
 interface MaterialSectionProps {
   selectedLocation: TreeNode | null;
@@ -31,6 +32,7 @@ const SUPPLY_LABEL: Record<SupplyType, string> = {
   MEDICINE: "Thuốc BVTV canh tác",
   FERTILIZER: "Phân bón chất lượng cao",
   BIOLOGICAL_PRODUCT: "Chế phẩm sinh học",
+  BY_PRODUCT: "Phụ phẩm nông nghiệp",
   EQUIPMENT: "Máy móc & thiết bị",
   MATERIAL: "Vật tư canh tác khác",
 };
@@ -39,6 +41,7 @@ const SUPPLY_ICON: Record<SupplyType, React.ReactNode> = {
   MEDICINE: <ShieldAlert className="w-4 h-4 text-rose-500" />,
   FERTILIZER: <Leaf className="w-4 h-4 text-emerald-500" />,
   BIOLOGICAL_PRODUCT: <FlaskConical className="w-4 h-4 text-purple-500" />,
+  BY_PRODUCT: <Leaf className="w-4 h-4 text-teal-500" />,
   EQUIPMENT: <Wrench className="w-4 h-4 text-amber-500" />,
   MATERIAL: <Layers className="w-4 h-4 text-sky-500" />,
 };
@@ -57,14 +60,18 @@ const SupplyCard: React.FC<SupplyCardProps> = ({
   supplyType,
   locationFilter,
 }) => {
+  const selectedWorkspaceId = useSelectedWorkspaceId();
   const today = new Date().toISOString().slice(0, 10);
-  const { data, isLoading } = useSupplyConsumption({
-    supplyType,
-    ...locationFilter,
-    comparePreviousPeriod: true,
-    size: 3,
-    date: today,
-  });
+  const { data, isLoading } = useSupplyConsumption(
+    {
+      supplyType,
+      ...locationFilter,
+      comparePreviousPeriod: true,
+      size: 3,
+      date: today,
+    },
+    { workspaceId: selectedWorkspaceId ?? undefined },
+  );
 
   const title = SUPPLY_LABEL[supplyType];
   const icon = SUPPLY_ICON[supplyType];
@@ -207,6 +214,7 @@ const SUPPLY_TYPES: SupplyType[] = [
   "BIOLOGICAL_PRODUCT",
   "EQUIPMENT",
   "MATERIAL",
+  "BY_PRODUCT",
 ];
 
 export const MaterialSection: React.FC<MaterialSectionProps> = ({
@@ -236,7 +244,7 @@ export const MaterialSection: React.FC<MaterialSectionProps> = ({
         </div>
       </div>
 
-      {/* 4 supply cards — each fetches its own data in parallel */}
+      {/* 6 supply cards — each fetches its own data in parallel */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {SUPPLY_TYPES.map((type) => (
           <SupplyCard

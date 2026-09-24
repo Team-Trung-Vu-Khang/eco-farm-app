@@ -24,6 +24,7 @@ const SUPPLY_TYPE_OPTIONS_BY_DOMAIN: Record<DomainCode, SupplyTypeOption[]> = {
     { value: "medicine", label: "Thuốc BVTV" },
     { value: "fertilizer", label: "Phân bón" },
     { value: "biological", label: "Chế phẩm sinh học" },
+    { value: "by_product", label: "Phụ phẩm" },
     { value: "material", label: "Vật tư khác" },
     { value: "equipment", label: "Dụng cụ - Máy móc" },
   ],

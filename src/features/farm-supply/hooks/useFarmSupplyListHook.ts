@@ -29,7 +29,9 @@ export function getSupplyBasePath(
             ? `${splash}material`
             : type === "biological"
               ? `${splash}biological-product`
-              : `${splash}equipment`;
+              : type === "by_product"
+                ? `${splash}byproduct`
+                : `${splash}equipment`;
 
     const domainPrefix =
       domainCode === "CROP" ? "" : domainCode === "LIVESTOCK" ? "/ah-" : "/aq-";
@@ -53,7 +55,9 @@ export function getSupplyBasePath(
           ? "/material"
           : type === "biological"
             ? "/biological-product"
-            : "/equipment";
+            : type === "by_product"
+              ? "/byproduct"
+              : "/equipment";
 
   return `${domainPrefix}${typeSuffix}`;
 }

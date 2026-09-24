@@ -16,7 +16,8 @@ type MicrobialProductGroupTab =
   | "supplement";
 
 const MicrobialProductGroupPage = () => {
-  const [activeTab, setActiveTab] = useState<MicrobialProductGroupTab>("enzyme");
+  const [activeTab, setActiveTab] =
+    useState<MicrobialProductGroupTab>("enzyme");
 
   return (
     <PageWrapper

@@ -7,6 +7,7 @@ import { HealthSection } from "./HealthSection";
 import { MaterialSection } from "./MaterialSection";
 import { OperationsSection } from "./OperationsSection";
 import { useGeoSummary } from "@/features/farm/hooks/useFarmReport";
+import { useSelectedWorkspaceId } from "@/features/workspace";
 
 interface OverviewMasterDashboardProps {
   domainType: "crops" | "livestock" | "aqua";
@@ -23,13 +24,14 @@ export const OverviewMasterDashboard: React.FC<
   const [selectedLocation, setSelectedLocation] = useState<TreeNode | null>(
     null,
   );
+  const selectedWorkspaceId = useSelectedWorkspaceId();
 
   const {
     regionCount,
     areaCount,
     plotCount,
     isLoading: geoLoading,
-  } = useGeoSummary();
+  } = useGeoSummary({ workspaceId: selectedWorkspaceId ?? undefined });
 
   /** Derive { regionId?, areaId?, plotId? } from the selected sidebar node */
   const locationFilter = useMemo(() => {

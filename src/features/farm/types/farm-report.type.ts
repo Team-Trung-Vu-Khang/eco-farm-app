@@ -89,7 +89,8 @@ export type SupplyType =
   | "FERTILIZER"
   | "EQUIPMENT"
   | "MATERIAL"
-  | "BIOLOGICAL_PRODUCT";
+  | "BIOLOGICAL_PRODUCT"
+  | "BY_PRODUCT";
 
 export type PeriodType = "MONTHLY" | "YEARLY" | "WEEKLY";
 

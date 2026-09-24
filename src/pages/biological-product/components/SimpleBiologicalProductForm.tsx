@@ -32,7 +32,6 @@ import { commonHashtags } from "../data/constants";
 import { useQuery } from "@tanstack/react-query";
 import { farmSupplyApi } from "@/features/farm-supply";
 import { useMasterData } from "@/features/master-data";
-import { SUPPLY_GROUP_CATALOG } from "../data/constants";
 
 import { normalizeSku } from "@/shared/lib/sku";
 import { useDebounce } from "@/shared/hooks/useDebounce";

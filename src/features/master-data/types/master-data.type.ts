@@ -108,6 +108,9 @@ export interface MasterDataRequestExtraFieldsMap {
   "biological-product-groups": {
     classification: string;
   };
+  "by-product-groups": {
+    classification: string;
+  };
   "irrigation-systems": EmptyExtraFields;
   "iot-device-groups": {
     classification: string;
@@ -157,6 +160,9 @@ export interface MasterDataRecordExtraFieldsMap {
     classification: string;
   };
   "biological-product-groups": {
+    classification: string;
+  };
+  "by-product-groups": {
     classification: string;
   };
   "irrigation-systems": EmptyExtraFields;
@@ -362,6 +368,7 @@ export type IoTDeviceGroupRecord = MasterDataRecord<"iot-device-groups">;
 export type FertilizerGroupRecord = MasterDataRecord<"fertilizer-groups">;
 export type MicrobialProductGroupRecord =
   MasterDataRecord<"biological-product-groups">;
+export type ByProductGroupRecord = MasterDataRecord<"by-product-groups">;
 export type IrrigationSystemRecord = MasterDataRecord<"irrigation-systems">;
 export type RearingMethodRecord = MasterDataRecord<"rearing-methods">;
 export type MaterialGroupRecord = MasterDataRecord<"material-groups">;
@@ -390,6 +397,10 @@ export type MicrobialProductGroupCreateRequest =
   MasterDataCreateRequest<"biological-product-groups">;
 export type MicrobialProductGroupUpdateRequest =
   MasterDataUpdateRequest<"biological-product-groups">;
+export type ByProductGroupCreateRequest =
+  MasterDataCreateRequest<"by-product-groups">;
+export type ByProductGroupUpdateRequest =
+  MasterDataUpdateRequest<"by-product-groups">;
 export type IrrigationSystemCreateRequest =
   MasterDataCreateRequest<"irrigation-systems">;
 export type IrrigationSystemUpdateRequest =

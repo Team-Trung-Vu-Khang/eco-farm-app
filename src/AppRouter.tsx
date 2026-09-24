@@ -191,6 +191,12 @@ const BiologicalProductCreatePage = lazy(
 const BiologicalProductDetailPage = lazy(
   () => import("./pages/biological-product/BiologicalProductDetailPage"),
 );
+const ByProductCreatePage = lazy(
+  () => import("./pages/by-product/ByProductCreatePage"),
+);
+const ByProductDetailPage = lazy(
+  () => import("./pages/by-product/ByProductDetailPage"),
+);
 const MaterialCreatePage = lazy(
   () => import("./pages/material/MaterialCreatePage"),
 );
@@ -575,6 +581,7 @@ const FertilizerPage = lazy(() => import("./pages/fertilizer/FertilizerPage"));
 const BiologicalProductPage = lazy(
   () => import("./pages/biological-product/BiologicalProductPage"),
 );
+const ByProductPage = lazy(() => import("./pages/by-product/ByProductPage"));
 const ContractPage = lazy(() => import("./pages/contract/ContractPage"));
 const EquipmentPage = lazy(() => import("./pages/equipment/EquipmentPage"));
 const UnitPage = lazy(() => import("./pages/unit/UnitPage"));
@@ -684,6 +691,9 @@ const FertilizerGroupPage = lazy(
 );
 const MicrobialProductGroupPage = lazy(
   () => import("./pages/microbial-product-group/MicrobialProductGroupPage"),
+);
+const ByProductGroupPage = lazy(
+  () => import("./pages/by-product-group/ByProductGroupPage"),
 );
 const PesticideGroupPage = lazy(
   () => import("./pages/pesticide-group/PesticideGroupPage"),
@@ -1565,6 +1575,23 @@ function Router() {
           path="/cultivation-material/biological-product/:id"
           component={BiologicalProductDetailPage}
         />
+        <Route path="/byproduct" component={ByProductGroupPage} />
+        <Route
+          path="/cultivation-material/byproduct"
+          component={ByProductPage}
+        />
+        <Route
+          path="/cultivation-material/byproduct/create"
+          component={ByProductCreatePage}
+        />
+        <Route
+          path="/cultivation-material/byproduct/:id/edit"
+          component={ByProductCreatePage}
+        />
+        <Route
+          path="/cultivation-material/byproduct/:id"
+          component={ByProductDetailPage}
+        />
         <Route path="/cultivation-material/material" component={MaterialPage} />
         <Route path="/material-group" component={MaterialGroupPage} />
         <Route
@@ -1623,7 +1650,10 @@ function Router() {
         />
         <Route path="/admin/fertilizer/:id" component={FertilizerDetailPage} />
 
-        <Route path="/admin/biological-product" component={BiologicalProductPage} />
+        <Route
+          path="/admin/biological-product"
+          component={BiologicalProductPage}
+        />
         <Route
           path="/admin/biological-product/create"
           component={BiologicalProductCreatePage}
@@ -1636,6 +1666,14 @@ function Router() {
           path="/admin/biological-product/:id"
           component={BiologicalProductDetailPage}
         />
+
+        <Route path="/admin/byproduct" component={ByProductPage} />
+        <Route path="/admin/byproduct/create" component={ByProductCreatePage} />
+        <Route
+          path="/admin/byproduct/:id/edit"
+          component={ByProductCreatePage}
+        />
+        <Route path="/admin/byproduct/:id" component={ByProductDetailPage} />
 
         <Route path="/admin/equipment" component={EquipmentPage} />
         <Route path="/admin/equipment/create" component={EquipmentCreatePage} />

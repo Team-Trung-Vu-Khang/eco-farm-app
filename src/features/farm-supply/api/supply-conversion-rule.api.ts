@@ -30,6 +30,7 @@ const SUPPLY_PATH_SEGMENTS: Record<SupplyType, string> = {
   material: "materials",
   equipment: "equipment",
   biological: "biological-products",
+  by_product: "by-products",
 };
 
 // ─── API ─────────────────────────────────────────────────────────────────────

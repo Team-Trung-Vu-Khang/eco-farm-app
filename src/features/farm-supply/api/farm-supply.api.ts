@@ -16,6 +16,7 @@ const SUPPLY_PATHS: Record<SupplyType, string> = {
   material: "materials",
   equipment: "equipment", // singular!
   biological: "biological-products",
+  by_product: "by-products",
 };
 
 export const farmSupplyApi = {
@@ -130,7 +131,9 @@ export const farmSupplyApi = {
         ? "material-groups"
         : type === "biological"
           ? "biological-product-groups"
-          : `${type}-groups`;
+          : type === "by_product"
+            ? "by-product-groups"
+            : `${type}-groups`;
     return apiClient
       .get<PageResponse<ClassificationGroup>>(`/api/master-data/${catalog}`, {
         params: {

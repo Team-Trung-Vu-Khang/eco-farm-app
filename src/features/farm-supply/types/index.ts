@@ -3,7 +3,8 @@ export type SupplyType =
   | "fertilizer"
   | "material"
   | "equipment"
-  | "biological";
+  | "biological"
+  | "by_product";
 export type DomainCode = "CROP" | "LIVESTOCK" | "AQUACULTURE";
 export type LegalStatus = "allowed" | "restricted" | "banned";
 export type MasterDataStatus = "active" | "inactive" | "archived";
@@ -112,6 +113,21 @@ export interface FertilizerProfile {
   poisoningTreatment?: string;
 }
 
+export interface ByProductProfile {
+  documents?: ProfileDocumentRequest[];
+  scientificName?: string;
+  detailedComposition?: string;
+  mainUsage?: string;
+  effectStage?: string;
+  shelfLife?: string;
+  recommendedDosage?: string;
+  usageMethod?: string;
+  usageNotes?: string;
+  toxicityDescription?: string;
+  protectiveMeasures?: string;
+  poisoningTreatment?: string;
+}
+
 export interface EquipmentProfile {
   documents?: ProfileDocumentRequest[];
   model?: string;
@@ -175,6 +191,7 @@ export interface SupplyItemRequest {
   moaOrNutrientNote?: string;
   npkRatio?: string;
   detailedComposition?: string;
+  effectStage?: string;
 
   model?: string;
   brand?: string;
@@ -246,6 +263,7 @@ export interface SupplyItemResponse {
     moaOrNutrientNote?: string;
     npkRatio?: string;
     detailedComposition?: string;
+    effectStage?: string;
     documents?: ProfileDocumentResponse[];
 
     model?: string;

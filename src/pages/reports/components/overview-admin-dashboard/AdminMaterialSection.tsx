@@ -34,6 +34,7 @@ const SUPPLY_LABEL: Record<SupplyType, string> = {
   MEDICINE: "Thuốc BVTV canh tác",
   FERTILIZER: "Phân bón chất lượng cao",
   BIOLOGICAL_PRODUCT: "Chế phẩm sinh học",
+  BY_PRODUCT: "Phụ phẩm nông nghiệp",
   EQUIPMENT: "Máy móc & thiết bị",
   MATERIAL: "Vật tư canh tác khác",
 };
@@ -42,6 +43,7 @@ const SUPPLY_ICON: Record<SupplyType, React.ReactNode> = {
   MEDICINE: <ShieldAlert className="w-4 h-4 text-rose-500" />,
   FERTILIZER: <Leaf className="w-4 h-4 text-emerald-500" />,
   BIOLOGICAL_PRODUCT: <FlaskConical className="w-4 h-4 text-purple-500" />,
+  BY_PRODUCT: <Leaf className="w-4 h-4 text-teal-500" />,
   EQUIPMENT: <Wrench className="w-4 h-4 text-amber-500" />,
   MATERIAL: <Layers className="w-4 h-4 text-sky-500" />,
 };
@@ -131,7 +133,8 @@ const SupplyCard: React.FC<{
                     <span className="truncate">{item.supplyItemName}</span>
                     <div className="flex items-center gap-1.5 font-mono text-slate-650 shrink-0">
                       <span>
-                        {formatNumber(item.quantity)} {item.unit?.name || ""} ({pct}%)
+                        {formatNumber(item.quantity)} {item.unit?.name || ""} (
+                        {pct}%)
                       </span>
                     </div>
                   </div>
@@ -165,6 +168,7 @@ export const AdminMaterialSection: React.FC<AdminMaterialSectionProps> = ({
     "BIOLOGICAL_PRODUCT",
     "EQUIPMENT",
     "MATERIAL",
+    "BY_PRODUCT",
   ];
 
   return (
@@ -176,7 +180,8 @@ export const AdminMaterialSection: React.FC<AdminMaterialSectionProps> = ({
             Giám sát tiêu thụ vật tư nông nghiệp
           </h4>
           <p className="text-[11px] text-slate-400 font-medium mt-0.5">
-            Tổng hợp dữ liệu tiêu thụ phân bón, thuốc BVTV, chế phẩm sinh học & thiết bị
+            Tổng hợp dữ liệu tiêu thụ phân bón, thuốc BVTV, chế phẩm sinh học &
+            thiết bị
             {currentWorkspace ? ` cho ${currentWorkspace.name}` : ""}
           </p>
         </div>
@@ -184,7 +189,8 @@ export const AdminMaterialSection: React.FC<AdminMaterialSectionProps> = ({
         <div className="flex items-start gap-2 bg-emerald-50/30 border border-emerald-100/60 rounded-lg px-3 py-2 text-[10px] text-emerald-800 font-medium md:max-w-md">
           <Info className="w-3.5 h-3.5 text-emerald-600 shrink-0 mt-0.5" />
           <span>
-            Chỉ số <strong>% trong ngoặc</strong> thể hiện tỷ trọng tiêu thụ so với tổng nhóm chính.
+            Chỉ số <strong>% trong ngoặc</strong> thể hiện tỷ trọng tiêu thụ so
+            với tổng nhóm chính.
           </span>
         </div>
       </div>
