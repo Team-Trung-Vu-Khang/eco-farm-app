@@ -148,3 +148,27 @@ export function useProductionMethodById(
     enabled: enabled && !!id,
   });
 }
+
+/** Chi tiết giống cây (endpoint public) */
+export function usePublicProductionSubjectVariantById(
+  id: number,
+  { enabled = true }: { enabled?: boolean } = {},
+) {
+  return useQuery<ProductionSubjectVariantResponse, Error>({
+    queryKey: [...productionSubjectVariantKeys.detail(id), "public"],
+    queryFn: () => productionSubjectVariantApi.getPublicById(id),
+    enabled: enabled && !!id,
+  });
+}
+
+/** Chi tiết cây trồng (endpoint public) */
+export function usePublicProductionSubjectById(
+  id: number,
+  { enabled = true }: { enabled?: boolean } = {},
+) {
+  return useQuery<ProductionSubjectResponse, Error>({
+    queryKey: [...productionSubjectKeys.detail(id), "public"],
+    queryFn: () => productionSubjectApi.getPublicById(id),
+    enabled: enabled && !!id,
+  });
+}

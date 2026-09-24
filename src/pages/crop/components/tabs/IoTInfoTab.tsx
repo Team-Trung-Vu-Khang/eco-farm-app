@@ -13,6 +13,13 @@ interface IoTInfoTabProps {
 }
 
 export function IoTInfoTab({ crop }: IoTInfoTabProps) {
+  const current = crop.iotData?.current ?? [];
+  const hasHistory = [
+    crop.iotData?.history3Days,
+    crop.iotData?.history1Week,
+    crop.iotData?.history1Month,
+  ].some((data) => data && data.length > 0);
+
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-500">
       <div>
@@ -21,7 +28,12 @@ export function IoTInfoTab({ crop }: IoTInfoTabProps) {
           Chỉ số thời gian thực
         </h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {crop.iotData?.current.map((metric, idx) => (
+          {current.length === 0 && (
+            <p className="text-sm font-medium text-slate-400">
+              Chưa có thông tin
+            </p>
+          )}
+          {current.map((metric, idx) => (
             <Card
               key={idx}
               className="border-none shadow-sm ring-1 ring-slate-200/50 bg-white rounded-xl overflow-hidden"
@@ -69,54 +81,61 @@ export function IoTInfoTab({ crop }: IoTInfoTabProps) {
         </div>
       </div>
 
-      <Separator className="bg-slate-100" />
+      {hasHistory && (
+        <>
+          <Separator className="bg-slate-100" />
 
-      <div>
-        <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-widest mb-4 flex items-center gap-2">
-          <History className="w-4 h-4" />
-          Lịch sử so sánh
-        </h3>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {[
-            {
-              label: "Cách đây 3 ngày",
-              data: crop.iotData?.history3Days,
-            },
-            {
-              label: "Cách đây 1 tuần",
-              data: crop.iotData?.history1Week,
-            },
-            {
-              label: "Cách đây 1 tháng",
-              data: crop.iotData?.history1Month,
-            },
-          ].map((comparative, idx) => (
-            <Card
-              key={idx}
-              className="border-none shadow-sm ring-1 ring-slate-200/50 bg-slate-50/50 rounded-xl"
-            >
-              <CardHeader className="pb-2 border-b border-slate-100">
-                <CardTitle className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                  {comparative.label}
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3 pt-3">
-                {comparative.data?.map((m, i) => (
-                  <div key={i} className="flex items-center justify-between">
-                    <p className="text-[10px] font-semibold text-slate-400 uppercase">
-                      {m.label}
-                    </p>
-                    <p className="text-sm font-bold text-slate-700">
-                      {m.value}
-                      {m.unit}
-                    </p>
-                  </div>
-                ))}
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      </div>
+          <div>
+            <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-widest mb-4 flex items-center gap-2">
+              <History className="w-4 h-4" />
+              Lịch sử so sánh
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              {[
+                {
+                  label: "Cách đây 3 ngày",
+                  data: crop.iotData?.history3Days,
+                },
+                {
+                  label: "Cách đây 1 tuần",
+                  data: crop.iotData?.history1Week,
+                },
+                {
+                  label: "Cách đây 1 tháng",
+                  data: crop.iotData?.history1Month,
+                },
+              ].map((comparative, idx) => (
+                <Card
+                  key={idx}
+                  className="border-none shadow-sm ring-1 ring-slate-200/50 bg-slate-50/50 rounded-xl"
+                >
+                  <CardHeader className="pb-2 border-b border-slate-100">
+                    <CardTitle className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                      {comparative.label}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3 pt-3">
+                    {comparative.data?.map((m, i) => (
+                      <div
+                        key={i}
+                        className="flex items-center justify-between"
+                      >
+                        <p className="text-[10px] font-semibold text-slate-400 uppercase">
+                          {m.label}
+                        </p>
+                        <p className="text-sm font-bold text-slate-700">
+                          {m.value}
+                          {m.unit}
+                        </p>
+                      </div>
+                    ))}
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 }

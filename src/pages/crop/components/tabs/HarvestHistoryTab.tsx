@@ -5,7 +5,11 @@ interface HarvestHistoryTabProps {
   crop: Crop;
 }
 
+const EMPTY_TEXT = "Chưa có thông tin";
+
 export function HarvestHistoryTab({ crop }: HarvestHistoryTabProps) {
+  const history = crop.harvestHistory ?? [];
+
   return (
     <Card className="border-none shadow-sm ring-1 ring-slate-200/50 bg-white rounded-xl overflow-hidden animate-in fade-in slide-in-from-bottom-2 duration-500">
       <div className="overflow-x-auto">
@@ -24,22 +28,24 @@ export function HarvestHistoryTab({ crop }: HarvestHistoryTabProps) {
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
-            {crop.harvestHistory?.map((entry) => (
-              <tr
-                key={entry.id}
-                className="hover:bg-slate-50/50 transition-colors"
-              >
-                <td className="px-6 py-3.5 text-sm font-medium text-slate-600">
-                  {entry.time}
-                </td>
-                <td className="px-6 py-3.5 text-sm font-bold text-emerald-600">
-                  {entry.yield}
-                </td>
-                <td className="px-6 py-3.5 text-sm font-medium text-slate-600">
-                  {entry.harvester}
-                </td>
-              </tr>
-            )) || (
+            {history.length > 0 ? (
+              history.map((entry) => (
+                <tr
+                  key={entry.id}
+                  className="hover:bg-slate-50/50 transition-colors"
+                >
+                  <td className="px-6 py-3.5 text-sm font-medium text-slate-600">
+                    {entry.time}
+                  </td>
+                  <td className="px-6 py-3.5 text-sm font-bold text-emerald-600">
+                    {entry.yield || EMPTY_TEXT}
+                  </td>
+                  <td className="px-6 py-3.5 text-sm font-medium text-slate-600">
+                    {entry.harvester || EMPTY_TEXT}
+                  </td>
+                </tr>
+              ))
+            ) : (
               <tr>
                 <td
                   colSpan={3}

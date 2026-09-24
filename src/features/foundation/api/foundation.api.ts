@@ -306,6 +306,13 @@ export const productionSubjectApi = {
         `/api/admin/foundation/production/subjects/${id}`,
       )
       .then((r) => r.data),
+  /** Endpoint public (không cần quyền admin) */
+  getPublicById: (id: number) =>
+    apiClient
+      .get<ProductionSubjectResponse>(
+        `/api/foundation/production/subjects/${id}`,
+      )
+      .then((r) => r.data),
 };
 
 export const productionSubjectGroupApi = {
@@ -352,6 +359,13 @@ export const productionSubjectVariantApi = {
     apiClient
       .get<ProductionSubjectVariantResponse>(
         `/api/admin/foundation/production/subject-variants/${id}`,
+      )
+      .then((r) => r.data),
+  /** Endpoint public (không cần quyền admin) */
+  getPublicById: (id: number) =>
+    apiClient
+      .get<ProductionSubjectVariantResponse>(
+        `/api/foundation/production/subject-variants/${id}`,
       )
       .then((r) => r.data),
 };

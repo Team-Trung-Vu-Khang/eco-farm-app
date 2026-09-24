@@ -1,3 +1,5 @@
+import type { FarmPlanPurpose } from "@/features/farm-daily-diary/types/farm-daily-diary.type";
+
 export const FARM_BASE_PATH = "/api/farm";
 
 /**
@@ -8,6 +10,21 @@ export const FARM_BASE_PATH = "/api/farm";
 export const ENABLE_NEW_PURPOSE_ENUMS = true;
 
 /** Nhãn hiển thị chung cho toàn bộ enum mục đích kế hoạch (FarmPlanPurpose). */
+/** Nhóm mục đích nhật ký theo tab lịch sử cây trồng (Canh tác / Bệnh / Thu hoạch) */
+export const DIARY_PURPOSE_GROUPS = {
+  farming: [
+    "CULTIVATION",
+    "NUTRITION",
+    "PLANT_CARE",
+    "SOIL_IMPROVEMENT",
+    "WEED_CONTROL",
+    "IRRIGATION",
+    "OTHER",
+  ],
+  disease: ["PEST_DISEASE", "TREATMENT"],
+  harvest: ["HARVEST"],
+} as const satisfies Record<string, readonly FarmPlanPurpose[]>;
+
 export const FARM_PLAN_PURPOSE_LABELS: Record<string, string> = {
   CULTIVATION: "Canh tác",
   FACILITY_UPGRADE: "Nâng cấp CSVC",

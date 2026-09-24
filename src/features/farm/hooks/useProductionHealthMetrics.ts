@@ -10,7 +10,20 @@ export const productionHealthMetricKeys = {
   workspace: () => ["farm", "production-health-metrics", "workspace"] as const,
   scope: (params?: ProductionHealthMetricScopeQueryParams) =>
     ["farm", "production-health-metrics", "scope", params ?? {}] as const,
+  zone: (zoneId: number) =>
+    ["farm", "production-health-metrics", "zone", zoneId] as const,
 };
+
+export function useProductionZoneHealthMetric(
+  zoneId: number,
+  { enabled = true }: { enabled?: boolean } = {},
+) {
+  return useQuery<FarmProductionHealthMetricResponse, Error>({
+    queryKey: productionHealthMetricKeys.zone(zoneId),
+    queryFn: () => productionHealthMetricsApi.getByZone(zoneId),
+    enabled: enabled && !!zoneId,
+  });
+}
 
 interface UseProductionHealthMetricByScopeOptions {
   params?: ProductionHealthMetricScopeQueryParams;

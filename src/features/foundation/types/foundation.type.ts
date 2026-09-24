@@ -445,9 +445,22 @@ export interface ProductionSubjectResponse {
   code: string;
   name: string;
   subjectGroupId?: number;
+  subjectGroup?: {
+    id: number;
+    code?: string;
+    name?: string;
+  };
+  harvestMethod?: string;
   scientificName?: string;
   family?: string;
   origin?: string;
+  temperatureFrom?: number | null;
+  temperatureTo?: number | null;
+  humidityFrom?: number | null;
+  humidityTo?: number | null;
+  phFrom?: number | null;
+  phTo?: number | null;
+  densityDescription?: string;
   imageUrl?: string;
   status: FoundationStatus;
   createdAt: string;

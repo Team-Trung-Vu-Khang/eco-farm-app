@@ -49,7 +49,7 @@ export function TechnicalSpecsTab({ crop }: TechnicalSpecsTabProps) {
                 >
                   <span className="text-sm text-slate-500">{item.label}</span>
                   <span className="text-sm font-bold text-slate-900">
-                    {item.value || "---"}
+                    {item.value || "Chưa có thông tin"}
                   </span>
                 </div>
               ))}
@@ -67,7 +67,7 @@ export function TechnicalSpecsTab({ crop }: TechnicalSpecsTabProps) {
                   <span className="text-xs font-bold uppercase">Nhiệt độ</span>
                 </div>
                 <p className="text-lg font-bold text-slate-900">
-                  {crop.technicalSpecs?.tempRange || "--"}
+                  {crop.technicalSpecs?.tempRange || "Chưa có thông tin"}
                 </p>
               </div>
               <div className="p-4 rounded-xl bg-blue-50/50 border border-blue-100 space-y-2">
@@ -76,7 +76,7 @@ export function TechnicalSpecsTab({ crop }: TechnicalSpecsTabProps) {
                   <span className="text-xs font-bold uppercase">Độ ẩm</span>
                 </div>
                 <p className="text-lg font-bold text-slate-900">
-                  {crop.technicalSpecs?.humidityRange || "--"}
+                  {crop.technicalSpecs?.humidityRange || "Chưa có thông tin"}
                 </p>
               </div>
               <div className="p-4 rounded-xl bg-purple-50/50 border border-purple-100 space-y-2">
@@ -85,7 +85,7 @@ export function TechnicalSpecsTab({ crop }: TechnicalSpecsTabProps) {
                   <span className="text-xs font-bold uppercase">Độ pH đất</span>
                 </div>
                 <p className="text-lg font-bold text-slate-900">
-                  {crop.technicalSpecs?.phRange || "--"}
+                  {crop.technicalSpecs?.phRange || "Chưa có thông tin"}
                 </p>
               </div>
               <div className="p-4 rounded-xl bg-amber-50/50 border border-amber-100 space-y-2">
@@ -94,7 +94,7 @@ export function TechnicalSpecsTab({ crop }: TechnicalSpecsTabProps) {
                   <span className="text-xs font-bold uppercase">Mật độ</span>
                 </div>
                 <p className="text-sm font-bold text-slate-900 line-clamp-2">
-                  {crop.technicalSpecs?.plantingDensity || "--"}
+                  {crop.technicalSpecs?.plantingDensity || "Chưa có thông tin"}
                 </p>
               </div>
             </div>

@@ -530,6 +530,14 @@ export const plantIdentificationApi = {
 // ─── Production Health Metrics API ──────────────────────────────────────────
 
 export const productionHealthMetricsApi = {
+  /** Chỉ số sức khỏe theo vùng canh tác */
+  getByZone: (zoneId: number) =>
+    apiClient
+      .get<FarmProductionHealthMetricResponse>(
+        `${FARM_ENDPOINTS.cultivationZones}/${zoneId}/health-metrics`,
+      )
+      .then((r) => normalizeProductionHealthMetric(r.data)),
+
   listWorkspace: () =>
     apiClient
       .get<FarmProductionHealthMetricResponse>(

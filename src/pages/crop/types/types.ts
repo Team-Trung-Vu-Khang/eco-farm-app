@@ -2,25 +2,27 @@ import type { SerializedEditorState } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 
 export interface SeedInfo {
   supplier: string;
-  importDate: string;
-  importLink: string;
-  contractId: string;
-  documents: { name: string; url: string }[];
+  importDate?: string;
+  importLink?: string;
+  contractId?: string;
+  documents: { name: string; url: string; sizeBytes?: number }[];
 }
 
 export interface CropStatus {
   area: string;
   location: string;
   lote: string;
-  owner: string; // Doanh nghiệp/Nông hộ
+  owner?: string; // Doanh nghiệp/Nông hộ
   plantDate: string;
   age: string; // years-months
   status: string; // Hiện trạng sức khỏe
-  responsiblePerson: {
+  responsiblePerson?: {
     executor: string;
     manager: string;
     inspector: string;
   };
+  /** Nhân sự phụ trách lấy từ vùng canh tác (API), ưu tiên hơn responsiblePerson */
+  personnel?: { name: string; role?: string }[];
 }
 
 export interface FarmingHistoryItem {
@@ -110,14 +112,14 @@ export interface DocumentSection {
 
 // ... existing code ...
 export interface TechnicalSpecs {
-  scientificName: string;
-  family: string;
-  origin: string;
-  tempRange: string;
-  humidityRange: string;
-  phRange: string;
-  plantingDensity: string;
-  watering: string;
+  scientificName?: string;
+  family?: string;
+  origin?: string;
+  tempRange?: string;
+  humidityRange?: string;
+  phRange?: string;
+  plantingDensity?: string;
+  watering?: string;
 }
 
 export interface CreateCropForm {

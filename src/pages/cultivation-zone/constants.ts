@@ -8,6 +8,8 @@ export interface CropDetail {
   image: string;
   plantedDate: string;
   seedType: string; // Loại hạt giống
+  subjectVariantId?: number; // ID hạt giống (FarmSeed)
+  productionZoneId?: number; // ID vùng canh tác
   variety: string; // Giống cây
   groupCropName: string; // Nhóm cây trồng
   notes: string;
