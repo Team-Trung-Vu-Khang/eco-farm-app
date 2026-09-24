@@ -80,7 +80,7 @@ export const getVarietyName = (plant: PlantItem) =>
   "Chưa có giống";
 
 /** Lô / Khu vực / Vùng trồng theo phạm vi cây được gán (REGION | AREA | PLOT) */
-const resolveLocation = (plant: PlantItem) => {
+export const resolveLocation = (plant: PlantItem) => {
   const plot = plant.location?.plot;
   const area = plant.location?.area ?? plot?.area;
   const region = plant.location?.region ?? area?.region;
@@ -128,6 +128,8 @@ export const toCropDetail = (plant: PlantItem): CropDetail => {
     image: treeMarkerIcon,
     plantedDate: getPlantedDate(plant) ?? "",
     seedType: plant.subjectVariant?.name ?? "",
+    subjectVariantId: plant.subjectVariant?.id,
+    productionZoneId: plant.productionZone?.id ?? plant.cultivationZone?.id,
     variety: plant.productionSubjectVariant?.name ?? "",
     groupCropName: "",
     notes: plant.notes ?? "",

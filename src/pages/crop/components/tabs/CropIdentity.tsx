@@ -7,6 +7,8 @@ interface CropIdentityProps {
   crop: Crop;
 }
 
+const EMPTY_TEXT = "Chưa có thông tin";
+
 export function CropIdentity({ crop }: CropIdentityProps) {
   return (
     <Card className="border-none shadow-lg shadow-slate-200/40 bg-white rounded-3xl overflow-hidden">
@@ -33,16 +35,22 @@ export function CropIdentity({ crop }: CropIdentityProps) {
             <div className="flex flex-col h-full justify-center space-y-6">
               <div>
                 <h2 className="text-3xl font-black text-slate-900 tracking-tight mb-3">
-                  {crop.name}
+                  {crop.name || EMPTY_TEXT}
                 </h2>
-                <div className="flex flex-wrap items-center gap-2">
-                  <Badge className="bg-blue-50 text-blue-700 hover:bg-blue-100 border-none px-3 py-1 text-xs font-bold transition-colors">
-                    {crop.cropGroup}
-                  </Badge>
-                  <Badge className="bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border-none px-3 py-1 text-xs font-bold transition-colors">
-                    {crop.cropType}
-                  </Badge>
-                </div>
+                {(crop.cropGroup || crop.cropType) && (
+                  <div className="flex flex-wrap items-center gap-2">
+                    {crop.cropGroup && (
+                      <Badge className="bg-blue-50 text-blue-700 hover:bg-blue-100 border-none px-3 py-1 text-xs font-bold transition-colors">
+                        {crop.cropGroup}
+                      </Badge>
+                    )}
+                    {crop.cropType && (
+                      <Badge className="bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border-none px-3 py-1 text-xs font-bold transition-colors">
+                        {crop.cropType}
+                      </Badge>
+                    )}
+                  </div>
+                )}
               </div>
 
               <div className="flex flex-wrap gap-x-16 gap-y-6 pt-2 border-t border-slate-50">
@@ -55,7 +63,7 @@ export function CropIdentity({ crop }: CropIdentityProps) {
                       <Hash className="w-3.5 h-3.5" />
                     </div>
                     <span className="font-mono text-sm font-bold text-slate-700">
-                      {crop.code}
+                      {crop.code || EMPTY_TEXT}
                     </span>
                   </div>
                 </div>
@@ -70,8 +78,11 @@ export function CropIdentity({ crop }: CropIdentityProps) {
                     </div>
                     <span className="text-sm font-bold text-slate-700">
                       {harvestMethodOptions.find(
-                        (opt) => opt.value === crop.harvestMethod,
-                      )?.label || crop.harvestMethod}
+                        (opt) =>
+                          opt.value === crop.harvestMethod?.toLowerCase(),
+                      )?.label ||
+                        crop.harvestMethod ||
+                        EMPTY_TEXT}
                     </span>
                   </div>
                 </div>
