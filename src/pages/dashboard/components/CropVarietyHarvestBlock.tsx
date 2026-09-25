@@ -43,12 +43,15 @@ import {
   useAdminHarvestByVariant,
   useAdminHarvestByVariantDetail,
 } from "@/features/farm/hooks/useAdminDashboard";
-import type { HarvestByVariantItem } from "@/features/farm/types/admin-dashboard.type";
 
 import dayjs from "dayjs";
 
 const CURRENT_MONTH = dayjs().format("YYYY-MM");
 const DEFAULT_FROM_MONTH = dayjs().subtract(11, "month").format("YYYY-MM");
+const MONTH_OPTIONS = Array.from({ length: 36 }, (_, i) => {
+  const month = dayjs().subtract(i, "month");
+  return { value: month.format("YYYY-MM"), label: month.format("MM/YYYY") };
+});
 
 const LINE_COLORS = [
   "#f59e0b", // Amber (Top 1)
@@ -149,29 +152,26 @@ export function CropVarietyHarvestBlock() {
 
   // Set default selected variety code when data arrives
   const activeVarietyCode =
-    selectedVarietyCode ||
-    selectableVariants[0]?.variantCode ||
-    "";
+    selectedVarietyCode || selectableVariants[0]?.variantCode || "";
 
   // 2. Fetch Harvest Detail for selected variety
-  const {
-    data: detailData,
-    isLoading: isDetailLoading,
-  } = useAdminHarvestByVariantDetail(
-    {
-      variantCode: activeVarietyCode,
-      domainCode: "CROP",
-      fromMonth,
-      toMonth,
-      limit: 10,
-    },
-    Boolean(activeVarietyCode) && !rangeError,
-  );
+  const { data: detailData, isLoading: isDetailLoading } =
+    useAdminHarvestByVariantDetail(
+      {
+        variantCode: activeVarietyCode,
+        domainCode: "CROP",
+        fromMonth,
+        toMonth,
+        limit: 10,
+      },
+      Boolean(activeVarietyCode) && !rangeError,
+    );
 
   // Transform monthly buckets for line chart view
   const chartData = useMemo(() => {
-    if (!detailData?.topFarmers || detailData.topFarmers.length === 0) return [];
-    
+    if (!detailData?.topFarmers || detailData.topFarmers.length === 0)
+      return [];
+
     // Get unique monthly bucket starts from the first farmer
     const firstFarmer = detailData.topFarmers[0];
     if (!firstFarmer.monthly) return [];
@@ -219,16 +219,19 @@ export function CropVarietyHarvestBlock() {
   const dataThrough = overviewData?.period?.dataThrough;
 
   return (
-    <Card className="flex flex-col shadow-sm border-slate-200/80 rounded-2xl overflow-hidden bg-white">
-      <CardHeader className="pb-3 border-b border-slate-100 bg-slate-50/50 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+    <Card className="@container flex flex-col shadow-sm border-slate-200/80 rounded-2xl overflow-hidden bg-white">
+      <CardHeader className="pb-3 @max-xl:px-3 @max-xl:pt-3 border-b border-slate-100 bg-slate-50/50 flex flex-col @xl:flex-row @xl:items-center justify-between gap-3">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center border border-emerald-200 shrink-0">
-            <Sprout className="w-5 h-5" />
+          <div className="w-10 h-10 @max-xl:w-8 @max-xl:h-8 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center border border-emerald-200 shrink-0">
+            <Sprout className="w-5 h-5 @max-xl:w-4 @max-xl:h-4" />
           </div>
           <div>
             <div className="flex items-center gap-2 flex-wrap">
-              <CardTitle className="font-bold text-base text-slate-800 leading-tight">
-                Phân bổ Sản lượng Thu hoạch theo Giống cây trồng
+              <CardTitle className="font-bold text-base @max-xl:text-sm text-slate-800 leading-tight">
+                <span className="@xl:hidden">Sản lượng theo Giống</span>
+                <span className="hidden @xl:inline">
+                  Phân bổ Sản lượng Thu hoạch theo Giống cây trồng
+                </span>
               </CardTitle>
               {dataThrough && (
                 <Badge
@@ -239,7 +242,7 @@ export function CropVarietyHarvestBlock() {
                 </Badge>
               )}
             </div>
-            <p className="text-xs text-slate-500 font-medium mt-0.5">
+            <p className="text-xs text-slate-500 font-medium mt-0.5 @max-xl:hidden">
               Thống kê sản lượng tổng thể toàn hệ thống cho Quản trị viên theo
               kỳ tháng
             </p>
@@ -247,9 +250,9 @@ export function CropVarietyHarvestBlock() {
         </div>
 
         {/* Month Range Selector & Variety Selection Dropdown */}
-        <div className="flex flex-wrap items-center gap-2.5 shrink-0">
+        <div className="flex flex-wrap items-center gap-2.5 @max-xl:gap-2 shrink-0 @max-xl:w-full">
           {/* Month Range Picker (fromMonth - toMonth) */}
-          <div className="flex items-center gap-1.5 bg-white border border-slate-200 p-1 rounded-xl shadow-2xs">
+          <div className="hidden @xl:flex items-center gap-1.5 bg-white border border-slate-200 p-1 rounded-xl shadow-2xs">
             <Calendar className="w-3.5 h-3.5 text-slate-400 ml-1.5 shrink-0" />
             <input
               type="month"
@@ -270,13 +273,52 @@ export function CropVarietyHarvestBlock() {
             />
           </div>
 
+          {/* Month Range Picker gọn cho màn hình hẹp */}
+          <div className="grid w-full grid-cols-2 gap-2 @xl:hidden">
+            {(
+              [
+                {
+                  label: "Từ",
+                  value: fromMonth,
+                  onChange: handleFromMonthChange,
+                },
+                { label: "Đến", value: toMonth, onChange: handleToMonthChange },
+              ] as const
+            ).map((field) => (
+              <Select
+                key={field.label}
+                value={field.value}
+                onValueChange={field.onChange}
+              >
+                <SelectTrigger className="h-9 w-full gap-1.5 rounded-xl border-slate-200 bg-white text-xs font-bold text-slate-700 shadow-2xs">
+                  <Calendar className="h-3.5 w-3.5 shrink-0 text-slate-400" />
+                  <span className="font-medium text-slate-400">
+                    {field.label}
+                  </span>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="max-h-64 overflow-y-auto">
+                  {MONTH_OPTIONS.map((m) => (
+                    <SelectItem
+                      key={m.value}
+                      value={m.value}
+                      className="cursor-pointer text-xs font-medium"
+                    >
+                      {m.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            ))}
+          </div>
+
           {/* Variety Dropdown */}
           {selectableVariants.length > 0 && (
             <Select
               value={activeVarietyCode}
               onValueChange={(val) => setSelectedVarietyCode(val)}
             >
-              <SelectTrigger className="w-[220px] text-xs font-bold text-emerald-800 bg-emerald-50 border-emerald-200 rounded-xl focus:ring-emerald-500 shadow-2xs">
+              <SelectTrigger className="w-[220px] @max-xl:w-full text-xs font-bold text-emerald-800 bg-emerald-50 border-emerald-200 rounded-xl focus:ring-emerald-500 shadow-2xs">
                 <SelectValue placeholder="Chọn giống cây" />
               </SelectTrigger>
               <SelectContent>
@@ -302,15 +344,16 @@ export function CropVarietyHarvestBlock() {
         </div>
       )}
 
-      <CardContent className="pt-5 pb-6">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+      <CardContent className="pt-5 pb-6 @max-xl:px-3 @max-xl:pt-3 @max-xl:pb-3">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 @max-xl:gap-4 items-start">
           {/* LEFT COLUMN (lg:col-span-4): Crop Variety Donut Chart & Legend */}
-          <div className="lg:col-span-4 bg-slate-50/60 p-3.5 rounded-2xl border border-slate-100 space-y-3.5">
+          <div className="lg:col-span-4 bg-slate-50/60 p-3.5 @max-xl:p-3 rounded-2xl border border-slate-100 space-y-3.5 @max-xl:space-y-3">
             <div className="flex items-center justify-between border-b border-slate-200/60 pb-2.5">
               <div className="flex items-center gap-2">
                 <PieChartIcon className="w-4 h-4 text-emerald-600" />
                 <span className="text-xs font-bold uppercase tracking-wider text-slate-700">
-                  Tỷ lệ sản lượng (% Tổng)
+                  Tỷ lệ sản lượng
+                  <span className="hidden @xl:inline"> (% Tổng)</span>
                 </span>
               </div>
               <Badge
@@ -322,7 +365,7 @@ export function CropVarietyHarvestBlock() {
             </div>
 
             {/* Donut Chart Canvas */}
-            <div className="h-[210px] w-full relative flex items-center justify-center">
+            <div className="h-[210px] @max-xl:h-[150px] w-full relative flex items-center justify-center">
               {isOverviewLoading ? (
                 <Loader2 className="w-6 h-6 animate-spin text-emerald-600" />
               ) : items.length === 0 ? (
@@ -337,12 +380,13 @@ export function CropVarietyHarvestBlock() {
                         data={items}
                         cx="50%"
                         cy="50%"
-                        innerRadius={50}
-                        outerRadius={86}
+                        innerRadius="48%"
+                        outerRadius="82%"
                         paddingAngle={3}
                         dataKey="percentage"
-                        onClick={(entry: HarvestByVariantItem) => {
-                          if (entry.variantCode && entry.groupKey !== "OTHER") {
+                        onClick={(_, index) => {
+                          const entry = items[index];
+                          if (entry?.variantCode && entry.groupKey !== "OTHER") {
                             setSelectedVarietyCode(entry.variantCode);
                           }
                         }}
@@ -369,10 +413,14 @@ export function CropVarietyHarvestBlock() {
                           props: any,
                         ) => {
                           const numVal =
-                            typeof value === "number" ? value : Number(value) || 0;
+                            typeof value === "number"
+                              ? value
+                              : Number(value) || 0;
                           const qty =
                             props?.payload?.quantityTon != null
-                              ? Number(props.payload.quantityTon).toLocaleString("vi-VN")
+                              ? Number(
+                                  props.payload.quantityTon,
+                                ).toLocaleString("vi-VN")
                               : "0";
                           const label = props?.payload?.groupLabel || "";
                           return [`${numVal}% (${qty} tấn)`, label];
@@ -419,7 +467,8 @@ export function CropVarietyHarvestBlock() {
                     key={item.groupKey}
                     disabled={!isClickable}
                     onClick={() => {
-                      if (isClickable) setSelectedVarietyCode(item.variantCode!);
+                      if (isClickable)
+                        setSelectedVarietyCode(item.variantCode!);
                     }}
                     className={`w-full text-left flex items-center justify-between px-2.5 py-1.5 rounded-xl transition-all ${
                       isSelected
@@ -479,7 +528,7 @@ export function CropVarietyHarvestBlock() {
                 </span>
               </div>
             ) : detailData ? (
-              <div className="bg-emerald-50/80 border border-emerald-200/80 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="bg-emerald-50/80 border border-emerald-200/80 rounded-2xl p-4 flex flex-col @xl:flex-row @xl:items-center justify-between gap-3">
                 <div className="space-y-1">
                   <div className="flex items-center gap-2">
                     <Badge className="bg-emerald-600 text-white font-bold text-[10px] uppercase px-2 py-0.5">
@@ -519,7 +568,7 @@ export function CropVarietyHarvestBlock() {
 
             {/* Top Farmers Ranking / Growth Chart Section */}
             <div className="space-y-2">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs font-bold text-slate-500 uppercase tracking-wider px-1 pb-1">
+              <div className="flex flex-col @xl:flex-row @xl:items-center justify-between gap-2 text-xs font-bold text-slate-500 uppercase tracking-wider px-1 pb-1">
                 <div className="flex items-center gap-2">
                   <Award className="w-4 h-4 text-amber-500" />
                   <span>
@@ -562,7 +611,8 @@ export function CropVarietyHarvestBlock() {
 
               {!detailData?.topFarmers || detailData.topFarmers.length === 0 ? (
                 <div className="p-8 text-center text-slate-400 text-xs bg-slate-50 rounded-2xl border border-dashed border-slate-200">
-                  Chưa có thông tin thu hoạch cho giống cây này trong kỳ đã chọn.
+                  Chưa có thông tin thu hoạch cho giống cây này trong kỳ đã
+                  chọn.
                 </div>
               ) : rightViewMode === "list" ? (
                 <div className="space-y-2 max-h-[380px] overflow-y-auto pr-1">
@@ -572,9 +622,7 @@ export function CropVarietyHarvestBlock() {
                     const isTop3 = farmer.rank === 3;
 
                     const areaStr =
-                      farmer.acreageHa != null
-                        ? `${farmer.acreageHa} ha`
-                        : "—";
+                      farmer.acreageHa != null ? `${farmer.acreageHa} ha` : "—";
 
                     const yieldStr =
                       farmer.yieldTonPerHa != null
@@ -584,7 +632,7 @@ export function CropVarietyHarvestBlock() {
                     return (
                       <div
                         key={farmer.workspaceId}
-                        className="bg-white border border-slate-200/80 hover:border-emerald-300 rounded-xl px-3.5 py-2.5 shadow-2xs transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 hover:shadow-xs"
+                        className="bg-white border border-slate-200/80 hover:border-emerald-300 rounded-xl px-3.5 py-2.5 shadow-2xs transition-all flex flex-col @xl:flex-row @xl:items-center justify-between gap-2.5 hover:shadow-xs"
                       >
                         {/* Left Info */}
                         <div className="flex items-center gap-3 min-w-0">
@@ -629,7 +677,7 @@ export function CropVarietyHarvestBlock() {
                         </div>
 
                         {/* Right Info */}
-                        <div className="text-right shrink-0 flex items-center sm:flex-col sm:items-end justify-between sm:justify-center gap-1 pt-1.5 sm:pt-0">
+                        <div className="text-right shrink-0 flex items-center @xl:flex-col @xl:items-end justify-between @xl:justify-center gap-1 pt-1.5 @xl:pt-0">
                           <div className="text-xs font-black text-slate-900">
                             {farmer.quantityTon.toLocaleString("vi-VN")}t{" "}
                             <span className="text-[10px] font-medium text-slate-400">

@@ -228,19 +228,22 @@ export function AdminActiveFarmerReportBlock() {
   const isBusyConflict = (createError as any)?.response?.status === 409;
 
   return (
-    <Card className="shadow-sm border-slate-200/80 rounded-2xl overflow-hidden bg-white">
-      <CardHeader className="pb-3 border-b border-slate-100 bg-slate-50/50">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 w-full">
+    <Card className="@container shadow-sm border-slate-200/80 rounded-2xl overflow-hidden bg-white">
+      <CardHeader className="pb-3 @max-xl:px-3 @max-xl:pt-3 border-b border-slate-100 bg-slate-50/50">
+        <div className="flex flex-col @xl:flex-row @xl:items-center justify-between gap-3 w-full">
           {/* Left Side: Title & Info + Month Selector */}
-          <div className="flex flex-col sm:flex-row sm:items-center gap-3 min-w-0">
+          <div className="flex flex-col @xl:flex-row @xl:items-center gap-3 min-w-0">
             <div className="flex items-center gap-3 min-w-0">
-              <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center border border-emerald-200/80 shrink-0 shadow-2xs">
-                <Activity className="w-5 h-5" />
+              <div className="w-10 h-10 @max-xl:w-8 @max-xl:h-8 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center border border-emerald-200/80 shrink-0 shadow-2xs">
+                <Activity className="w-5 h-5 @max-xl:w-4 @max-xl:h-4" />
               </div>
               <div className="min-w-0 space-y-0.5">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <CardTitle className="font-bold text-base text-slate-800 leading-tight">
-                    Báo cáo Tình hình Hoạt động Nông hộ (Active Farmers)
+                  <CardTitle className="font-bold text-base @max-xl:text-sm text-slate-800 leading-tight">
+                    <span className="@xl:hidden">Hoạt động Nông hộ</span>
+                    <span className="hidden @xl:inline">
+                      Báo cáo Tình hình Hoạt động Nông hộ (Active Farmers)
+                    </span>
                   </CardTitle>
                   <Tooltip>
                     <TooltipTrigger className="cursor-pointer inline-flex items-center">
@@ -271,7 +274,7 @@ export function AdminActiveFarmerReportBlock() {
                     </Badge>
                   )}
                 </div>
-                <p className="text-xs text-slate-500 font-medium">
+                <p className="text-xs text-slate-500 font-medium @max-xl:hidden">
                   Theo dõi mức độ tuân thủ cập nhật nhật ký &amp; minh chứng vật
                   tư thực tế
                 </p>
@@ -279,12 +282,12 @@ export function AdminActiveFarmerReportBlock() {
             </div>
 
             {/* Month Selector */}
-            <div className="shrink-0 sm:ml-1">
+            <div className="shrink-0 @xl:ml-1">
               <Select
                 value={selectedMonth}
                 onValueChange={(val) => setSelectedMonth(val)}
               >
-                <SelectTrigger className="w-[170px] h-8 text-xs font-bold text-slate-700 bg-white border-slate-200 rounded-lg focus:ring-emerald-500 shadow-2xs gap-1.5 cursor-pointer">
+                <SelectTrigger className="w-[170px] @max-xl:w-full h-8 text-xs font-bold text-slate-700 bg-white border-slate-200 rounded-lg focus:ring-emerald-500 shadow-2xs gap-1.5 cursor-pointer">
                   <Calendar className="w-3.5 h-3.5 text-slate-400 shrink-0" />
                   <SelectValue placeholder="Chọn tháng" />
                 </SelectTrigger>
@@ -304,13 +307,13 @@ export function AdminActiveFarmerReportBlock() {
           </div>
 
           {/* Right Side: The 2 Export Action Buttons */}
-          <div className="flex items-center gap-2 shrink-0 justify-start sm:justify-end">
+          <div className="flex items-center gap-2 shrink-0 justify-start @xl:justify-end @max-xl:grid @max-xl:grid-cols-[repeat(2,minmax(0,1fr))]">
             <Button
               variant="outline"
               size="sm"
               disabled={isExporting}
               onClick={handleExportTop20Active}
-              className="text-xs font-semibold h-8 border-slate-200 hover:border-emerald-500 hover:text-emerald-700 hover:bg-emerald-50 text-slate-700 rounded-lg gap-1.5 cursor-pointer shadow-2xs disabled:opacity-60"
+              className="text-xs font-semibold h-8 border-slate-200 hover:border-emerald-500 hover:text-emerald-700 hover:bg-emerald-50 text-slate-700 rounded-lg gap-1.5 cursor-pointer shadow-2xs disabled:opacity-60 @max-xl:min-w-0 @max-xl:w-full"
               title="Tải về file Excel danh sách Top 20 Nông hộ Active"
             >
               {isExporting ? (
@@ -321,7 +324,14 @@ export function AdminActiveFarmerReportBlock() {
               <span>
                 {isExporting
                   ? "Đang xuất file..."
-                  : "Tải Top 20 Active (.XLSX)"}
+                  : (
+                    <>
+                      <span className="@xl:hidden">Top 20 Active</span>
+                      <span className="hidden @xl:inline">
+                        Tải Top 20 Active (.XLSX)
+                      </span>
+                    </>
+                  )}
               </span>
             </Button>
 
@@ -330,7 +340,7 @@ export function AdminActiveFarmerReportBlock() {
               size="sm"
               disabled={isExporting}
               onClick={handleExportInactive}
-              className="text-xs font-semibold h-8 border-amber-200 bg-amber-50/50 hover:bg-amber-100 hover:border-amber-300 text-amber-800 rounded-lg gap-1.5 cursor-pointer shadow-2xs disabled:opacity-60"
+              className="text-xs font-semibold h-8 border-amber-200 bg-amber-50/50 hover:bg-amber-100 hover:border-amber-300 text-amber-800 rounded-lg gap-1.5 cursor-pointer shadow-2xs disabled:opacity-60 @max-xl:min-w-0 @max-xl:w-full"
               title="Tải về file Excel danh sách Nông hộ chưa Active để đội Mevi đôn đốc"
             >
               {isExporting ? (
@@ -339,7 +349,16 @@ export function AdminActiveFarmerReportBlock() {
                 <Download className="w-3.5 h-3.5 text-amber-600 shrink-0" />
               )}
               <span>
-                {isExporting ? "Đang xuất..." : "Tải DS Inactive (.XLSX)"}
+                {isExporting
+                  ? "Đang xuất..."
+                  : (
+                    <>
+                      <span className="@xl:hidden">DS Inactive</span>
+                      <span className="hidden @xl:inline">
+                        Tải DS Inactive (.XLSX)
+                      </span>
+                    </>
+                  )}
               </span>
             </Button>
           </div>
@@ -353,10 +372,10 @@ export function AdminActiveFarmerReportBlock() {
         )}
       </CardHeader>
 
-      <CardContent className="pt-5 pb-6">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+      <CardContent className="pt-5 pb-6 @max-xl:px-3 @max-xl:pt-3 @max-xl:pb-3">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 @max-xl:gap-4 items-start">
           {/* LEFT COLUMN (lg:col-span-4): Donut Chart & Active Standards */}
-          <div className="lg:col-span-4 bg-slate-50/60 p-4 rounded-2xl border border-slate-100 space-y-4">
+          <div className="lg:col-span-4 bg-slate-50/60 p-4 rounded-2xl border border-slate-100 space-y-4 @max-xl:p-3 @max-xl:space-y-3">
             <div className="flex items-center justify-between border-b border-slate-200/60 pb-2.5">
               <span className="text-xs font-bold uppercase tracking-wider text-slate-700">
                 Tỷ lệ Active{" "}
@@ -371,15 +390,15 @@ export function AdminActiveFarmerReportBlock() {
             </div>
 
             {/* Donut Chart Canvas */}
-            <div className="h-[200px] w-full relative flex items-center justify-center">
+            <div className="h-[200px] @max-xl:h-[150px] w-full relative flex items-center justify-center">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
                     data={pieChartData}
                     cx="50%"
                     cy="50%"
-                    innerRadius={52}
-                    outerRadius={84}
+                    innerRadius="52%"
+                    outerRadius="84%"
                     paddingAngle={3}
                     dataKey="value"
                   >
@@ -448,7 +467,7 @@ export function AdminActiveFarmerReportBlock() {
                 </span>
               </div>
 
-              <div className="pt-2 border-t border-slate-100 text-[11px] text-slate-500 font-medium leading-relaxed bg-slate-50 p-2 rounded-lg">
+              <div className="pt-2 border-t border-slate-100 @max-xl:hidden text-[11px] text-slate-500 font-medium leading-relaxed bg-slate-50 p-2 rounded-lg">
                 💡 <strong>Điều kiện Active:</strong> ≥ {criteria.minActiveDays}{" "}
                 ngày hoạt động/tháng &amp; ≥ {criteria.minSupplyEntries} lần
                 nhập số liệu vật tư thực tế.
@@ -461,7 +480,12 @@ export function AdminActiveFarmerReportBlock() {
             <div className="flex items-center justify-between text-xs font-bold text-slate-600 uppercase tracking-wider px-1">
               <div className="flex items-center gap-2">
                 <Award className="w-4 h-4 text-amber-500" />
-                <span>Xếp hạng Top Nông hộ Active nhất trong tháng</span>
+                <span>
+                  <span className="@xl:hidden">Top Nông hộ Active</span>
+                  <span className="hidden @xl:inline">
+                    Xếp hạng Top Nông hộ Active nhất trong tháng
+                  </span>
+                </span>
               </div>
               <span className="text-[11px] font-semibold text-slate-400">
                 {items.length} Hộ dẫn đầu
@@ -478,7 +502,7 @@ export function AdminActiveFarmerReportBlock() {
                 Không có dữ liệu nông hộ Active cho tháng {selectedMonth}.
               </div>
             ) : (
-              <div className="space-y-2.5 max-h-[460px] overflow-y-auto pr-1">
+              <div className="space-y-2.5 @max-xl:space-y-2 max-h-[460px] @max-xl:max-h-[360px] overflow-y-auto pr-1">
                 {items.map((farmer: ActiveFarmerItem, idx: number) => {
                   const rankNum = farmer.rank ?? idx + 1;
                   const isTop1 = rankNum === 1;
@@ -498,7 +522,7 @@ export function AdminActiveFarmerReportBlock() {
                   return (
                     <div
                       key={farmer.workspaceId}
-                      className="bg-white border border-slate-200/80 hover:border-emerald-300 rounded-xl p-3 shadow-2xs transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:shadow-xs"
+                      className="bg-white border border-slate-200/80 hover:border-emerald-300 rounded-xl p-3 @max-xl:p-2.5 shadow-2xs transition-all flex flex-col @xl:flex-row @xl:items-center justify-between gap-3 @max-xl:gap-2 hover:shadow-xs"
                     >
                       {/* Left: Rank & Farm ID & Name & Location & Last Active Date & Activity */}
                       <div className="flex items-start gap-3 min-w-0 flex-1">
@@ -540,8 +564,8 @@ export function AdminActiveFarmerReportBlock() {
                                 {farmer.lastActiveDate || "—"}
                               </strong>
                             </span>
-                            <span>•</span>
-                            <span className="text-emerald-700 font-semibold truncate max-w-[240px]">
+                            <span className="@max-xl:hidden">•</span>
+                            <span className="text-emerald-700 font-semibold truncate max-w-[240px] @max-xl:hidden">
                               {latestActivityText}
                             </span>
                           </div>
@@ -549,7 +573,7 @@ export function AdminActiveFarmerReportBlock() {
                       </div>
 
                       {/* Right Stats */}
-                      <div className="flex items-center justify-between sm:justify-end gap-3 shrink-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-100 text-right">
+                      <div className="flex items-center justify-between @xl:justify-end gap-3 shrink-0 pt-2 @max-xl:pt-1.5 @xl:pt-0 border-t @xl:border-t-0 border-slate-100 text-right">
                         <div className="space-y-0.5">
                           <div className="flex items-center gap-1 text-xs font-black text-slate-800 justify-end">
                             <FileCheck2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />

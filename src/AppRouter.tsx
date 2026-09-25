@@ -2,9 +2,8 @@ import { lazy, useEffect } from "react";
 import { Route, Switch, useLocation, useParams } from "wouter";
 
 import { useFarmPlanById } from "@/features/farm-workflow/hooks";
-import { MOBILE_HOME_PATH } from "./layouts/mobile/mobileNav";
 import { useMobileUiMode } from "./shared/hooks/useMobileUiMode";
-import { useIsMobile } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import { MOBILE_HOME_PATH, useIsMobile } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { ReportProvider } from "./pages/reports/context/ReportContext";
 import { ReportPageContainer } from "./pages/reports/ReportPageContainer";
 import { AdminReportPage } from "./pages/reports/AdminReportPage";

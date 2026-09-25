@@ -1,5 +1,6 @@
 import {
   AdminLayout,
+  MobileAppLayout,
   RadixToaster,
   TooltipProvider,
   useIsMobile,
@@ -13,7 +14,7 @@ import { OnboardRegionDialog } from "./pages/region-chart/region-basic-distribut
 
 import { WorkspaceChangeHandler } from "./components/WorkspaceChangeHandler";
 import { useCurrentUser } from "./features/auth/hooks/useCurrentUser";
-import { MobileAppLayout } from "./layouts/mobile/MobileAppLayout";
+import { NotificationBell } from "./layouts/mobile/NotificationBell";
 import { SwitchToMobileAppButton } from "./layouts/mobile/SwitchToMobileAppButton";
 import { useMobileUiMode } from "./shared/hooks/useMobileUiMode";
 
@@ -93,7 +94,9 @@ function App() {
     <TooltipProvider>
       <AuthWrapper>
         {useMobileApp ? (
-          <MobileAppLayout>{content}</MobileAppLayout>
+          <MobileAppLayout headerActions={<NotificationBell />}>
+            {content}
+          </MobileAppLayout>
         ) : (
           <AdminLayout isDev isMevi>
             {content}
