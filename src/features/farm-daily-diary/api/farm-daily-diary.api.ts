@@ -19,9 +19,12 @@ export const farmDailyDiaryApi = {
       .then((response) => response.data);
   },
 
-  listGeneral(params: FarmDiaryQueryParams) {
+  listGeneral(params: FarmDiaryQueryParams, workspaceId?: number | string) {
     return apiClient
-      .get<PageResponseFarmDailyDiaryEntryResponse>("/api/farm/diary-entries", { params })
+      .get<PageResponseFarmDailyDiaryEntryResponse>("/api/farm/diary-entries", {
+        params,
+        headers: workspaceId ? { "X-Workspace-Id": String(workspaceId) } : undefined,
+      })
       .then((response) => response.data);
   },
 

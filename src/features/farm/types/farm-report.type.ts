@@ -44,10 +44,11 @@ export interface VariantCardResponse {
   code: string;
   name: string;
   domainCode: string;
-  cultivationScale: {
+  workspaceCount?: number;
+  cultivationScale?: {
     quantity: number | null;
     unit: string | null;
-  };
+  } | null;
   totalHarvest: {
     quantityKg: number;
     changePercent: number | null;

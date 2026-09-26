@@ -107,6 +107,7 @@ export interface PlanTaskDiaryEntryResponse {
   stage?: StageSnapshotRef | null;
   purpose?: FarmPlanPurpose | null;
   hasEvidence?: boolean;
+  hasSupply?: boolean;
   submittedByPersonnel?: SubmittedByPersonnelRef | null;
   description?: string | null;
   createdByUserId?: number | null;

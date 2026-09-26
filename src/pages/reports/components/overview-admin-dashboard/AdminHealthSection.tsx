@@ -98,12 +98,18 @@ const VariantHealthCard: React.FC<{
         {/* Quy mô */}
         <div className="flex items-baseline justify-between">
           <span className="text-sm text-slate-500 font-medium">
-            Quy mô canh tác
+            {data.workspaceCount !== undefined && data.workspaceCount !== null
+              ? "Số đơn vị canh tác"
+              : "Quy mô canh tác"}
           </span>
           <span className="text-2xl font-display font-extrabold text-slate-850">
-            {formatNumber(data.cultivationScale?.quantity)}{" "}
+            {data.workspaceCount !== undefined && data.workspaceCount !== null
+              ? formatNumber(data.workspaceCount)
+              : formatNumber(data.cultivationScale?.quantity)}{" "}
             <span className="text-xs font-normal text-slate-500">
-              {data.cultivationScale?.unit || "đơn vị"}
+              {data.workspaceCount !== undefined && data.workspaceCount !== null
+                ? "đơn vị"
+                : data.cultivationScale?.unit || "đơn vị"}
             </span>
           </span>
         </div>

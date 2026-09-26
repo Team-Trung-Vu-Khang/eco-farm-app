@@ -156,6 +156,7 @@ export interface FarmDailyDiaryEntryResponse {
   workflowId: number;
   workflow?: WorkflowSnapshot | null;
   hasEvidence?: boolean;
+  hasSupply?: boolean;
   seasonId?: number;
   purpose: FarmPlanPurpose;
   description?: string | null;
