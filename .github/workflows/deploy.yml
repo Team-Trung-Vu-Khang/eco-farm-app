@@ -1,0 +1,19 @@
+name: Deploy Frontend Mevi Farm
+
+on:
+  push:
+    branches: [ "feat/full-develop" ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Kết nối Server và Chạy Kịch Bản Deploy
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SERVER_IP }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: 234
+          script: |
+            bash /data/MeviFarm-FE/deploy.sh
