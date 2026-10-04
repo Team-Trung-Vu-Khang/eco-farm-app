@@ -1,6 +1,5 @@
-@import "tailwindcss";
-
 @import "@Team-Trung-Vu-Khang/eco-shared-ui/index.css";
+@import "tailwindcss";
 @import "reactflow/dist/style.css";
 
 @layer base {
