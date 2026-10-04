@@ -15,5 +15,8 @@ jobs:
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: 234
+          script_stop: true
           script: |
+            cd /data/MeviFarm-FE
+            git checkout -- yarn.lock
             bash /data/MeviFarm-FE/deploy.sh
