@@ -52,6 +52,8 @@ function formatBucketLabel(bucketStart: string): string {
 
 export function YieldChart() {
   const isMobile = useIsMobile();
+  const [groupBy, setGroupBy] = useState<"ZONE" | "SUBJECT">("ZONE");
+
   const fromDate = useMemo(
     () => dayjs().subtract(11, "month").startOf("month").format("YYYY-MM-DD"),
     [],
@@ -63,9 +65,12 @@ export function YieldChart() {
       periodType: "MONTHLY",
       fromDate,
       toDate,
+      groupBy,
     });
 
-  const is503Error = (error as any)?.response?.status === 503;
+  const is503Error =
+    (error as { response?: { status?: number } } | null)?.response?.status ===
+    503;
   const series = data?.series;
 
   // Transform Recharts Data
@@ -73,7 +78,12 @@ export function YieldChart() {
     if (!series || !Array.isArray(series) || series.length === 0) return [];
 
     // Collect all unique bucketStarts
-    const bucketMap = new Map<string, Record<string, any>>();
+    type ChartRowData = {
+      bucketStart: string;
+      monthLabel: string;
+      [key: string]: string | number;
+    };
+    const bucketMap = new Map<string, ChartRowData>();
 
     series.forEach((s) => {
       if (Array.isArray(s.points)) {
@@ -99,7 +109,7 @@ export function YieldChart() {
 
     // Sort buckets chronologically
     return Array.from(bucketMap.values()).sort((a, b) =>
-      a.bucketStart.localeCompare(b.bucketStart),
+      String(a.bucketStart || "").localeCompare(String(b.bucketStart || "")),
     );
   }, [series]);
 
@@ -148,7 +158,25 @@ export function YieldChart() {
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl">
+              <Button
+                variant={groupBy === "ZONE" ? "default" : "ghost"}
+                size="sm"
+                className="h-7 text-xs font-bold rounded-lg cursor-pointer"
+                onClick={() => setGroupBy("ZONE")}
+              >
+                Theo Vùng
+              </Button>
+              <Button
+                variant={groupBy === "SUBJECT" ? "default" : "ghost"}
+                size="sm"
+                className="h-7 text-xs font-bold rounded-lg cursor-pointer"
+                onClick={() => setGroupBy("SUBJECT")}
+              >
+                Theo Cây trồng
+              </Button>
+            </div>
             <Badge className="bg-emerald-100 text-emerald-800 border-emerald-200 text-xs font-bold shrink-0 self-start sm:self-auto">
               12 Tháng gần nhất
             </Badge>

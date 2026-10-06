@@ -9,5 +9,8 @@ export * from "./hooks/usePlantIdentifications";
 export * from "./hooks/usePlantIdentificationMutations";
 export * from "./hooks/useGrowthCycleSeasons";
 export * from "./hooks/useGrowthCycleSeasonMutations";
+export * from "./hooks/useProductionZoneHarvestStats";
+export * from "./hooks/useProductionZoneHarvestChart";
+export * from "./hooks/useProductionZoneHarvestBySubject";
 
 export * from "@/shared/constants/farm.constants";

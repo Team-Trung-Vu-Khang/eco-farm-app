@@ -30,6 +30,7 @@ import {
 import type { CultivationRegionDetails } from "../../useCultivationRegionDetail";
 import { useProductionZoneHarvestStats } from "@/features/farm/hooks/useProductionZoneHarvestStats";
 import { useProductionZoneHarvestChart } from "@/features/farm/hooks/useProductionZoneHarvestChart";
+import { useProductionZoneHarvestBySubject } from "@/features/farm/hooks/useProductionZoneHarvestBySubject";
 import { useFarmDiaryEntries } from "@/features/farm-daily-diary/hooks/useFarmDiaryEntries";
 
 interface StatisticsTabProps {
@@ -39,14 +40,35 @@ interface StatisticsTabProps {
 
 export const StatisticsTab = ({ details, zoneId }: StatisticsTabProps) => {
   const [periodType, setPeriodType] = useState<"MONTHLY" | "YEARLY">("MONTHLY");
+  const [selectedSubjectCode, setSelectedSubjectCode] = useState<string>("all");
+
+  const filterParams = useMemo(
+    () => ({
+      productionSubjectCode:
+        selectedSubjectCode === "all" ? undefined : selectedSubjectCode,
+    }),
+    [selectedSubjectCode],
+  );
 
   // 1. Fetch 3 Summary Cards Data
   const { data: statsData, isLoading: isStatsLoading } =
-    useProductionZoneHarvestStats(zoneId);
+    useProductionZoneHarvestStats(zoneId, filterParams);
 
   // 2. Fetch Yield Chart Data
   const { data: chartData, isLoading: isChartLoading } =
-    useProductionZoneHarvestChart(zoneId, { periodType });
+    useProductionZoneHarvestChart(zoneId, {
+      periodType,
+      ...filterParams,
+    });
+
+  // 2b. Fetch Harvest By Subject Breakdown Chart Data
+  const { data: subjectChartData } = useProductionZoneHarvestBySubject(zoneId, {
+    periodType,
+  });
+
+  const hasSubjectBreakdown = useMemo(() => {
+    return (subjectChartData?.series?.length ?? 0) > 0;
+  }, [subjectChartData]);
 
   // 3. Fetch Harvest Diary Entries List (diaryType: DAILY, purpose: HARVEST)
   const { data: diaryData, isLoading: isDiaryLoading } = useFarmDiaryEntries(
@@ -106,7 +128,7 @@ export const StatisticsTab = ({ details, zoneId }: StatisticsTabProps) => {
       }
     }
     return rows;
-  }, [diaryData?.content]);
+  }, [diaryData]);
 
   // Transform Chart Points
   const chartPoints = useMemo(() => {
@@ -125,7 +147,7 @@ export const StatisticsTab = ({ details, zoneId }: StatisticsTabProps) => {
         volume: pt.quantityKg ?? 0,
       };
     });
-  }, [chartData?.points, periodType]);
+  }, [chartData, periodType]);
 
   const totalVolumeDisplay =
     statsData?.totalQuantityKg != null
@@ -153,6 +175,23 @@ export const StatisticsTab = ({ details, zoneId }: StatisticsTabProps) => {
   const avgChange =
     statsData?.averageChangePercent ?? details?.harvestStats?.avgChange ?? null;
   const batchCount = statsData?.batchCount ?? null;
+
+  const subjectOptions = useMemo(() => {
+    const detailsRecord = details as unknown as Record<string, unknown>;
+    const rawSubjects =
+      (detailsRecord?.subjects as Array<Record<string, unknown>>) ||
+      (detailsRecord?.crops as Array<Record<string, unknown>>) ||
+      [];
+    return [
+      { value: "all", label: "Tất cả cây trồng" },
+      ...rawSubjects.map((s) => ({
+        value: String(s.productionSubjectCode || s.code || s.id || ""),
+        label: String(
+          s.productionSubjectName || s.name || s.code || `Cây trồng #${s.id}`,
+        ),
+      })),
+    ];
+  }, [details]);
 
   return (
     <div className="space-y-6 overflow-hidden">
@@ -306,25 +345,43 @@ export const StatisticsTab = ({ details, zoneId }: StatisticsTabProps) => {
                 </CardTitle>
                 <CardDescription>
                   Theo dõi biến động sản lượng qua các đợt thu hoạch
+                  {hasSubjectBreakdown
+                    ? ` (${subjectChartData?.series?.length} cây trồng)`
+                    : ""}
                 </CardDescription>
               </div>
-              <div className="flex items-center gap-1.5 bg-slate-100 p-1 rounded-xl">
-                <Button
-                  variant={periodType === "MONTHLY" ? "default" : "ghost"}
-                  size="sm"
-                  className="h-8 text-xs font-bold rounded-lg"
-                  onClick={() => setPeriodType("MONTHLY")}
-                >
-                  Theo Tháng
-                </Button>
-                <Button
-                  variant={periodType === "YEARLY" ? "default" : "ghost"}
-                  size="sm"
-                  className="h-8 text-xs font-bold rounded-lg"
-                  onClick={() => setPeriodType("YEARLY")}
-                >
-                  Theo Năm
-                </Button>
+              <div className="flex items-center gap-3">
+                {subjectOptions.length > 1 && (
+                  <select
+                    value={selectedSubjectCode}
+                    onChange={(e) => setSelectedSubjectCode(e.target.value)}
+                    className="h-8 rounded-lg border border-slate-200 bg-white px-2.5 text-xs font-semibold text-slate-700 shadow-2xs focus:border-emerald-500 focus:outline-none cursor-pointer"
+                  >
+                    {subjectOptions.map((opt) => (
+                      <option key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </option>
+                    ))}
+                  </select>
+                )}
+                <div className="flex items-center gap-1.5 bg-slate-100 p-1 rounded-xl">
+                  <Button
+                    variant={periodType === "MONTHLY" ? "default" : "ghost"}
+                    size="sm"
+                    className="h-8 text-xs font-bold rounded-lg"
+                    onClick={() => setPeriodType("MONTHLY")}
+                  >
+                    Theo Tháng
+                  </Button>
+                  <Button
+                    variant={periodType === "YEARLY" ? "default" : "ghost"}
+                    size="sm"
+                    className="h-8 text-xs font-bold rounded-lg"
+                    onClick={() => setPeriodType("YEARLY")}
+                  >
+                    Theo Năm
+                  </Button>
+                </div>
               </div>
             </div>
           </CardHeader>
@@ -441,7 +498,7 @@ export const StatisticsTab = ({ details, zoneId }: StatisticsTabProps) => {
                   {
                     key: "volume",
                     label: "Sản lượng",
-                    render: (val: number | null, item: any) => (
+                    render: (val: number | null, item: { unit?: string }) => (
                       <div className="flex items-baseline gap-1">
                         <span className="font-bold text-slate-900">
                           {val != null ? val.toLocaleString("vi-VN") : "_"}

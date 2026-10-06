@@ -1,10 +1,5 @@
 import React from "react";
-import {
-  FormProvider,
-  type UseFormReturn,
-  useWatch,
-  useFormState,
-} from "react-hook-form";
+import { FormProvider, type UseFormReturn, useWatch } from "react-hook-form";
 import { StepperForm } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { RegionInfoStep } from "../../region-distribution/components/RegionInfoStep";
 import { ZoneConfigurationStep } from "../../../cultivation-zone/cultivation-region/components/ZoneConfigurationStep";
@@ -36,17 +31,61 @@ export const RegionBasicDistributionForm: React.FC<
 }) => {
   const { control, handleSubmit } = form;
 
-  const [name, farmingMethodId] = useWatch({
+  const [
+    name,
+    provinceId,
+    wardId,
+    centerPoint,
+    farmingMethodId,
+    cropIds,
+    varietyIds,
+    useSpecificSeeds,
+    varietySeedMap,
+    isSeedSelectionValid,
+  ] = useWatch({
     control,
-    name: ["name", "farmingMethodId", "seedIds"],
+    name: [
+      "name",
+      "provinceId",
+      "wardId",
+      "centerPoint",
+      "farmingMethodId",
+      "cropIds",
+      "varietyIds",
+      "useSpecificSeeds",
+      "varietySeedMap",
+      "isSeedSelectionValid",
+    ],
   });
 
-  const { errors } = useFormState({ control });
+  const step1Valid =
+    !!name?.trim() &&
+    !!provinceId?.trim() &&
+    !!wardId?.trim() &&
+    centerPoint?.lat !== undefined &&
+    centerPoint?.lng !== undefined &&
+    !isNaN(Number(centerPoint.lat)) &&
+    !isNaN(Number(centerPoint.lng));
 
-  const step1Valid = !!name && name.trim().length > 0 && !errors.name;
+  const hasCrops = (cropIds?.length ?? 0) > 0;
+  const hasVarieties = (varietyIds?.length ?? 0) > 0;
 
-  // seedIds (Giống / Hạt giống) is optional — user may leave it unselected.
-  const step2Valid = !!farmingMethodId && farmingMethodId > 0;
+  const isSeedConfigValid = useSpecificSeeds
+    ? hasCrops &&
+      hasVarieties &&
+      (varietyIds ?? []).every((vId: number) => {
+        const vSeeds = (varietySeedMap as Record<string, number[]>)?.[
+          String(vId)
+        ];
+        return Array.isArray(vSeeds) && vSeeds.length > 0;
+      })
+    : hasCrops;
+
+  const step2Valid =
+    !!farmingMethodId &&
+    farmingMethodId > 0 &&
+    isSeedConfigValid &&
+    isSeedSelectionValid !== false;
 
   const steps = [
     {

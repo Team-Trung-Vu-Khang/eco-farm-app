@@ -10,21 +10,15 @@ import {
   SelectTrigger,
   SelectValue,
   Textarea,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-  MultiSelect,
+  Label,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import AddressSearchInput from "@/components/AddressSearchInput";
 import { OrganizationSelector } from "@/pages/cultivation-zone/cultivation-region/components";
-import { useFormContext } from "react-hook-form";
+import { useFormContext, Controller } from "react-hook-form";
 import { AddressRemoteCombobox } from "@/components/AddressRemoteCombobox";
 import { useAddressOptions } from "@/features/master-data/hooks/useAddressOptions";
 import { useCatalog } from "@/features/foundation/hooks/useCatalog";
-import { useProductionSubjects } from "@/features/foundation/hooks/useProductionSubjects";
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState } from "react";
 import type { RegionFormValues } from "../data/region-form.schema";
 import { CenterPointMapPicker } from "./CenterPointMapPicker";
 
@@ -39,17 +33,6 @@ export const RegionInfoStep = ({
 }: RegionInfoStepProps = {}) => {
   const { items: lands } = useCatalog("soil-types");
   const { items: terrains } = useCatalog("terrain-features");
-  const { items: subjects } = useProductionSubjects({
-    params: { domainCode: "CROP", size: 100, status: "active" },
-  });
-
-  const cropOptions = useMemo(() => {
-    return subjects.map((crop) => ({
-      value: crop.id.toString(),
-      label: crop.name,
-      image: crop.imageUrl,
-    }));
-  }, [subjects]);
 
   const { control, setValue, watch } = useFormContext<RegionFormValues>();
   const provinceId = watch("provinceId");
@@ -86,214 +69,229 @@ export const RegionInfoStep = ({
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-          <FormField
+          <Controller
             control={control}
             name="name"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>
+            render={({ field, fieldState: { error } }) => (
+              <div className="space-y-2">
+                <Label>
                   Tên vùng <span className="text-red-500">*</span>
-                </FormLabel>
-                <FormControl>
-                  <Input {...field} placeholder="Tên vùng trồng" />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
+                </Label>
+                <Input {...field} placeholder="Tên vùng trồng" />
+                {error && (
+                  <p className="text-sm font-medium text-destructive">
+                    {error.message}
+                  </p>
+                )}
+              </div>
             )}
           />
 
-          <FormField
+          <Controller
             control={control}
             name="area"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Diện tích (ha)</FormLabel>
-                <FormControl>
-                  <Input
-                    type="number"
-                    className="border-slate-300 focus:border-primary focus:ring-primary/20"
-                    clearable={false}
-                    value={field.value ?? ""}
-                    onChange={(e) => {
-                      const val = e.target.value;
-                      field.onChange(val === "" ? undefined : parseFloat(val));
-                    }}
-                    placeholder="Nhập diện tích"
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
+            render={({ field, fieldState: { error } }) => (
+              <div className="space-y-2">
+                <Label>Diện tích (ha)</Label>
+                <Input
+                  type="number"
+                  className="border-slate-300 focus:border-primary focus:ring-primary/20"
+                  clearable={false}
+                  value={field.value ?? ""}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    field.onChange(val === "" ? undefined : parseFloat(val));
+                  }}
+                  placeholder="Nhập diện tích"
+                />
+                {error && (
+                  <p className="text-sm font-medium text-destructive">
+                    {error.message}
+                  </p>
+                )}
+              </div>
             )}
           />
         </div>
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-          {showEnterprise && (
-            <FormField
-              control={control}
-              name="enterpriseId"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>
-                    Đơn vị sở hữu <span className="text-red-500">*</span>
-                  </FormLabel>
-                  <FormControl>
-                    <OrganizationSelector
-                      selectedId={field?.value ?? ""}
-                      onSelect={(value, selectedEnterprise) => {
-                        if (selectedEnterprise) {
-                          const normalize = (input: string) =>
-                            input
-                              .toLowerCase()
-                              .replace(/^(tỉnh|thành phố|tp\.)\s+/i, "")
-                              .trim();
 
-                          const matchedProvince = provinces.find(
-                            (item) =>
-                              normalize(item.name) ===
-                              normalize(selectedEnterprise.province || ""),
-                          );
-
-                          setValue("enterpriseId", value);
-                          if (selectedEnterprise.address) {
-                            setValue("address", selectedEnterprise.address);
-                          }
-
-                          if (matchedProvince) {
-                            setValue("provinceId", matchedProvince.code);
-                            // Schedule ward match after wards load
-                            if (selectedEnterprise.district) {
-                              setPendingWardName(selectedEnterprise.district);
-                            }
-                          }
-                        } else {
-                          setValue("enterpriseId", value);
-                        }
-                      }}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          )}
-
-          {/* <FormField
+        {showEnterprise && (
+          <Controller
             control={control}
-            name="cropIds"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>
-                  Cây trồng chính
-                  <span className="text-red-500">*</span>
-                </FormLabel>
-                <FormControl>
-                  <MultiSelect
-                    options={cropOptions}
-                    value={field.value ?? []}
-                    onChange={field.onChange}
-                    placeholder="Chọn cây trồng..."
-                    searchPlaceholder="Tìm kiếm cây trồng..."
-                    emptyText="Không tìm thấy cây trồng"
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
+            name="enterpriseId"
+            render={({ field, fieldState: { error } }) => (
+              <div className="space-y-2">
+                <Label>
+                  Đơn vị sở hữu <span className="text-red-500">*</span>
+                </Label>
+                <OrganizationSelector
+                  selectedId={field?.value ?? ""}
+                  onSelect={(value, selectedEnterprise) => {
+                    if (selectedEnterprise) {
+                      const normalize = (input: string) =>
+                        input
+                          .toLowerCase()
+                          .replace(/^(tỉnh|thành phố|tp\.)\s+/i, "")
+                          .trim();
+
+                      const matchedProvince = provinces.find(
+                        (item) =>
+                          normalize(item.name) ===
+                          normalize(selectedEnterprise.province || ""),
+                      );
+
+                      setValue("enterpriseId", value);
+                      if (selectedEnterprise.address) {
+                        setValue("address", selectedEnterprise.address);
+                      }
+
+                      if (matchedProvince) {
+                        setValue("provinceId", matchedProvince.code);
+                        // Schedule ward match after wards load
+                        if (selectedEnterprise.district) {
+                          setPendingWardName(selectedEnterprise.district);
+                        }
+                      }
+                    } else {
+                      setValue("enterpriseId", value);
+                    }
+                  }}
+                />
+                {error && (
+                  <p className="text-sm font-medium text-destructive">
+                    {error.message}
+                  </p>
+                )}
+              </div>
             )}
-          /> */}
-        </div>
+          />
+        )}
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <FormField
+          <Controller
             control={control}
             name="provinceId"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel required>Tỉnh / Thành phố</FormLabel>
-                <FormControl>
-                  <AddressRemoteCombobox
-                    type="province"
-                    value={field.value ?? ""}
-                    onChange={(val) => {
-                      field.onChange(val);
-                      setValue("wardId", ""); // Reset ward when province changes
-                    }}
-                    placeholder="Chọn Tỉnh / Thành phố"
-                    searchPlaceholder="Tìm Tỉnh / Thành phố..."
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
+            render={({ field, fieldState: { error } }) => (
+              <div className="space-y-2">
+                <Label>
+                  Tỉnh / Thành phố <span className="text-red-500">*</span>
+                </Label>
+                <AddressRemoteCombobox
+                  type="province"
+                  value={field.value ?? ""}
+                  onChange={(val) => {
+                    field.onChange(val);
+                    setValue("wardId", ""); // Reset ward when province changes
+                  }}
+                  placeholder="Chọn Tỉnh / Thành phố"
+                  searchPlaceholder="Tìm Tỉnh / Thành phố..."
+                />
+                {error && (
+                  <p className="text-sm font-medium text-destructive">
+                    {error.message}
+                  </p>
+                )}
+              </div>
             )}
           />
 
-          <FormField
+          <Controller
             control={control}
             name="wardId"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel required>Phường / Xã</FormLabel>
-                <FormControl>
-                  <AddressRemoteCombobox
-                    type="ward"
-                    value={field.value ?? ""}
-                    onChange={field.onChange}
-                    provinceCode={provinceId}
-                    disabled={!provinceId}
-                    placeholder={
-                      provinceId
-                        ? "Chọn Phường / Xã"
-                        : "Chọn Tỉnh / Thành phố trước"
-                    }
-                    searchPlaceholder="Tìm Phường / Xã..."
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
+            render={({ field, fieldState: { error } }) => (
+              <div className="space-y-2">
+                <Label>
+                  Phường / Xã <span className="text-red-500">*</span>
+                </Label>
+                <AddressRemoteCombobox
+                  type="ward"
+                  value={field.value ?? ""}
+                  onChange={field.onChange}
+                  provinceCode={provinceId}
+                  disabled={!provinceId}
+                  placeholder={
+                    provinceId
+                      ? "Chọn Phường / Xã"
+                      : "Chọn Tỉnh / Thành phố trước"
+                  }
+                  searchPlaceholder="Tìm Phường / Xã..."
+                />
+                {error && (
+                  <p className="text-sm font-medium text-destructive">
+                    {error.message}
+                  </p>
+                )}
+              </div>
             )}
           />
         </div>
 
-        <FormField
+        <Controller
           control={control}
           name="address"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Địa chỉ chi tiết</FormLabel>
-              <FormControl>
-                <AddressSearchInput
-                  value={field.value ?? ""}
-                  onChange={field.onChange}
-                  onSelectLocation={({ address, latitude, longitude }) => {
-                    setValue("address", address, { shouldDirty: true });
-                    setValue(
-                      "centerPoint",
-                      { lat: latitude, lng: longitude },
-                      { shouldDirty: true },
-                    );
-                  }}
-                  latitude={centerPoint?.lat}
-                  longitude={centerPoint?.lng}
-                  placeholder="Số nhà, đường, thôn/xóm..."
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
+          render={({ field, fieldState: { error } }) => (
+            <div className="space-y-2">
+              <Label>Địa chỉ chi tiết</Label>
+              <AddressSearchInput
+                value={field.value ?? ""}
+                onChange={field.onChange}
+                onSelectLocation={({ address, latitude, longitude }) => {
+                  setValue("address", address, { shouldDirty: true });
+                  setValue(
+                    "centerPoint",
+                    { lat: latitude, lng: longitude },
+                    { shouldDirty: true, shouldValidate: true },
+                  );
+                }}
+                latitude={centerPoint?.lat}
+                longitude={centerPoint?.lng}
+                onLatitudeChange={(lat) => {
+                  setValue(
+                    "centerPoint",
+                    {
+                      lat,
+                      lng: centerPoint?.lng ?? 0,
+                    },
+                    {
+                      shouldDirty: true,
+                      shouldValidate: true,
+                    },
+                  );
+                }}
+                onLongitudeChange={(lng) => {
+                  setValue(
+                    "centerPoint",
+                    {
+                      lat: centerPoint?.lat ?? 0,
+                      lng,
+                    },
+                    {
+                      shouldDirty: true,
+                      shouldValidate: true,
+                    },
+                  );
+                }}
+                placeholder="Số nhà, đường, thôn/xóm..."
+              />
+              {error && (
+                <p className="text-sm font-medium text-destructive">
+                  {error.message}
+                </p>
+              )}
+            </div>
           )}
         />
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <FormField
+          <Controller
             control={control}
             name="landType"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Loại đất</FormLabel>
+            render={({ field, fieldState: { error } }) => (
+              <div className="space-y-2">
+                <Label>Loại đất</Label>
                 <Select value={field.value} onValueChange={field.onChange}>
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Chọn loại đất" />
-                    </SelectTrigger>
-                  </FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Chọn loại đất" />
+                  </SelectTrigger>
                   <SelectContent>
                     {lands.map((land) => (
                       <SelectItem
@@ -305,23 +303,25 @@ export const RegionInfoStep = ({
                     ))}
                   </SelectContent>
                 </Select>
-                <FormMessage />
-              </FormItem>
+                {error && (
+                  <p className="text-sm font-medium text-destructive">
+                    {error.message}
+                  </p>
+                )}
+              </div>
             )}
           />
 
-          <FormField
+          <Controller
             control={control}
             name="terrain"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Địa hình</FormLabel>
+            render={({ field, fieldState: { error } }) => (
+              <div className="space-y-2">
+                <Label>Địa hình</Label>
                 <Select value={field.value} onValueChange={field.onChange}>
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Chọn địa hình" />
-                    </SelectTrigger>
-                  </FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Chọn địa hình" />
+                  </SelectTrigger>
                   <SelectContent>
                     {terrains.map((terrain) => (
                       <SelectItem
@@ -333,25 +333,31 @@ export const RegionInfoStep = ({
                     ))}
                   </SelectContent>
                 </Select>
-                <FormMessage />
-              </FormItem>
+                {error && (
+                  <p className="text-sm font-medium text-destructive">
+                    {error.message}
+                  </p>
+                )}
+              </div>
             )}
           />
         </div>
 
         {showCenterPoint && <CenterPointMapPicker />}
 
-        <FormField
+        <Controller
           control={control}
           name="note"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Ghi chú</FormLabel>
-              <FormControl>
-                <Textarea {...field} rows={3} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
+          render={({ field, fieldState: { error } }) => (
+            <div className="space-y-2">
+              <Label>Ghi chú</Label>
+              <Textarea {...field} rows={3} />
+              {error && (
+                <p className="text-sm font-medium text-destructive">
+                  {error.message}
+                </p>
+              )}
+            </div>
           )}
         />
       </CardContent>

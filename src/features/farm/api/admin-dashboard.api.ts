@@ -31,10 +31,13 @@ export const adminDashboardApi = {
     size?: number;
   }): Promise<ActiveFarmersReportResponse> =>
     apiClient
-      .get<ActiveFarmersReportResponse>("/api/admin/farm/report/active-farmers", {
-        ...SKIP_WORKSPACE_CONFIG,
-        params,
-      })
+      .get<ActiveFarmersReportResponse>(
+        "/api/admin/farm/report/active-farmers",
+        {
+          ...SKIP_WORKSPACE_CONFIG,
+          params,
+        },
+      )
       .then((r) => r.data),
 
   // 3. Active Farmers Workspaces — List Active/Inactive with pagination (be-mevi-farm)
@@ -80,10 +83,13 @@ export const adminDashboardApi = {
     top?: number;
   }): Promise<HarvestByVariantResponse> =>
     apiClient
-      .get<HarvestByVariantResponse>("/api/admin/farm/report/harvest-by-variant", {
-        ...SKIP_WORKSPACE_CONFIG,
-        params,
-      })
+      .get<HarvestByVariantResponse>(
+        "/api/admin/farm/report/harvest-by-variant",
+        {
+          ...SKIP_WORKSPACE_CONFIG,
+          params,
+        },
+      )
       .then((r) => r.data),
 
   // 7. Harvest by Variant Detail — Single variant detail + top farmers & monthly chart (be-mevi-farm)
@@ -97,6 +103,23 @@ export const adminDashboardApi = {
     apiClient
       .get<HarvestByVariantDetailResponse>(
         "/api/admin/farm/report/harvest-by-variant/detail",
+        {
+          ...SKIP_WORKSPACE_CONFIG,
+          params,
+        },
+      )
+      .then((r) => r.data),
+
+  // 8. Harvest by Subject — Top production subjects report (be-mevi-farm)
+  getHarvestBySubject: (params?: {
+    domainCode?: string;
+    fromMonth?: string;
+    toMonth?: string;
+    top?: number;
+  }): Promise<HarvestByVariantResponse> =>
+    apiClient
+      .get<HarvestByVariantResponse>(
+        "/api/admin/farm/report/harvest-by-subject",
         {
           ...SKIP_WORKSPACE_CONFIG,
           params,

@@ -27,8 +27,10 @@ import type {
   ProductionSubjectGroupResponse,
   ProductionSubjectGroupRequest,
   ProductionSubjectResponse,
+  ProductionSubjectRequest,
   ProductionSubjectVariantQueryParams,
   ProductionSubjectVariantResponse,
+  ProductionSubjectVariantRequest,
   ProductionMethodQueryParams,
   ProductionMethodResponse,
   ProductionMethodRequest,
@@ -44,55 +46,69 @@ import { apiClient } from "@/shared/lib/axios";
 export const catalogApi = {
   list: (catalog: CatalogType, params?: CatalogQueryParams) =>
     apiClient
-      .get<
-        PageResponse<CatalogRecordResponse>
-      >(catalog === "crop-groups"
-        ? FOUNDATION_ENDPOINTS.cropGroups
-        : catalog === "farming-methods"
-          ? FOUNDATION_ENDPOINTS.farmingMethods
-          : `${FOUNDATION_BASE_PATH}/${catalog}`, {
-        params: ["crop-groups", "farming-methods"].includes(catalog)
-          ? { ...params, domainCode: "CROP" }
-          : params,
-      })
+      .get<PageResponse<CatalogRecordResponse>>(
+        catalog === "crop-groups"
+          ? FOUNDATION_ENDPOINTS.cropGroups
+          : catalog === "farming-methods"
+            ? FOUNDATION_ENDPOINTS.farmingMethods
+            : `${FOUNDATION_BASE_PATH}/${catalog}`,
+        {
+          params: ["crop-groups", "farming-methods"].includes(catalog)
+            ? { ...params, domainCode: "CROP" }
+            : params,
+        },
+      )
       .then((r) => r.data),
 
   getById: (catalog: CatalogType, id: number) =>
     apiClient
-      .get<CatalogRecordResponse>(`${catalog === "crop-groups"
-        ? FOUNDATION_ENDPOINTS.cropGroups
-        : catalog === "farming-methods"
-          ? FOUNDATION_ENDPOINTS.farmingMethods
-          : `${FOUNDATION_BASE_PATH}/${catalog}`}/${id}`)
+      .get<CatalogRecordResponse>(
+        `${
+          catalog === "crop-groups"
+            ? FOUNDATION_ENDPOINTS.cropGroups
+            : catalog === "farming-methods"
+              ? FOUNDATION_ENDPOINTS.farmingMethods
+              : `${FOUNDATION_BASE_PATH}/${catalog}`
+        }/${id}`,
+      )
       .then((r) => r.data),
 
   create: (catalog: CatalogType, data: CatalogRecordRequest) =>
     apiClient
-      .post<CatalogRecordResponse>(catalog === "crop-groups"
-        ? FOUNDATION_ENDPOINTS.cropGroups
-        : catalog === "farming-methods"
-          ? FOUNDATION_ENDPOINTS.farmingMethods
-          : `${FOUNDATION_BASE_PATH}/${catalog}`, data)
+      .post<CatalogRecordResponse>(
+        catalog === "crop-groups"
+          ? FOUNDATION_ENDPOINTS.cropGroups
+          : catalog === "farming-methods"
+            ? FOUNDATION_ENDPOINTS.farmingMethods
+            : `${FOUNDATION_BASE_PATH}/${catalog}`,
+        data,
+      )
       .then((r) => r.data),
 
   update: (catalog: CatalogType, id: number, data: CatalogRecordRequest) =>
     apiClient
       .put<CatalogRecordResponse>(
-        `${catalog === "crop-groups"
-          ? FOUNDATION_ENDPOINTS.cropGroups
-          : catalog === "farming-methods"
-            ? FOUNDATION_ENDPOINTS.farmingMethods
-            : `${FOUNDATION_BASE_PATH}/${catalog}`}/${id}`,
+        `${
+          catalog === "crop-groups"
+            ? FOUNDATION_ENDPOINTS.cropGroups
+            : catalog === "farming-methods"
+              ? FOUNDATION_ENDPOINTS.farmingMethods
+              : `${FOUNDATION_BASE_PATH}/${catalog}`
+        }/${id}`,
         data,
       )
       .then((r) => r.data),
 
   delete: (catalog: CatalogType, id: number) =>
-    apiClient.delete(`${catalog === "crop-groups"
-      ? FOUNDATION_ENDPOINTS.cropGroups
-      : catalog === "farming-methods"
-        ? FOUNDATION_ENDPOINTS.farmingMethods
-        : `${FOUNDATION_BASE_PATH}/${catalog}`}/${id}`),
+    apiClient.delete(
+      `${
+        catalog === "crop-groups"
+          ? FOUNDATION_ENDPOINTS.cropGroups
+          : catalog === "farming-methods"
+            ? FOUNDATION_ENDPOINTS.farmingMethods
+            : `${FOUNDATION_BASE_PATH}/${catalog}`
+      }/${id}`,
+    ),
 };
 
 // ─── Crop API ─────────────────────────────────────────────────────────────────
@@ -243,12 +259,16 @@ export const farmingMethodCropApi = {
 export const lifecycleTemplateApi = {
   list: (params?: LifecycleTemplateQueryParams) =>
     apiClient
-      .get<PageResponse<LifecycleTemplate>>(FOUNDATION_ENDPOINTS.lifecycleTemplates, { params })
+      .get<
+        PageResponse<LifecycleTemplate>
+      >(FOUNDATION_ENDPOINTS.lifecycleTemplates, { params })
       .then((r) => r.data),
 
   getById: (id: number) =>
     apiClient
-      .get<LifecycleTemplate>(`${FOUNDATION_ENDPOINTS.lifecycleTemplates}/${id}`)
+      .get<LifecycleTemplate>(
+        `${FOUNDATION_ENDPOINTS.lifecycleTemplates}/${id}`,
+      )
       .then((r) => r.data),
 
   create: (data: LifecycleTemplate) =>
@@ -258,7 +278,10 @@ export const lifecycleTemplateApi = {
 
   update: (id: number, data: LifecycleTemplate) =>
     apiClient
-      .put<LifecycleTemplate>(`${FOUNDATION_ENDPOINTS.lifecycleTemplates}/${id}`, data)
+      .put<LifecycleTemplate>(
+        `${FOUNDATION_ENDPOINTS.lifecycleTemplates}/${id}`,
+        data,
+      )
       .then((r) => r.data),
 
   delete: (id: number) =>
@@ -268,22 +291,32 @@ export const lifecycleTemplateApi = {
 export const userLifecycleTemplateApi = {
   list: (params?: LifecycleTemplateQueryParams) =>
     apiClient
-      .get<PageResponse<LifecycleTemplate>>("/api/foundation/production/lifecycle-templates", { params })
+      .get<
+        PageResponse<LifecycleTemplate>
+      >("/api/foundation/production/lifecycle-templates", { params })
       .then((r) => r.data),
 
   getById: (id: number) =>
     apiClient
-      .get<LifecycleTemplate>(`/api/foundation/production/lifecycle-templates/${id}`)
+      .get<LifecycleTemplate>(
+        `/api/foundation/production/lifecycle-templates/${id}`,
+      )
       .then((r) => r.data),
 
   create: (data: LifecycleTemplate) =>
     apiClient
-      .post<LifecycleTemplate>("/api/foundation/production/lifecycle-templates", data)
+      .post<LifecycleTemplate>(
+        "/api/foundation/production/lifecycle-templates",
+        data,
+      )
       .then((r) => r.data),
 
   update: (id: number, data: LifecycleTemplate) =>
     apiClient
-      .put<LifecycleTemplate>(`/api/foundation/production/lifecycle-templates/${id}`, data)
+      .put<LifecycleTemplate>(
+        `/api/foundation/production/lifecycle-templates/${id}`,
+        data,
+      )
       .then((r) => r.data),
 
   delete: (id: number) =>
@@ -292,36 +325,69 @@ export const userLifecycleTemplateApi = {
 
 // ─── Production Subjects & Variants API ───────────────────────────────────────
 export const productionSubjectApi = {
+  // ─── User / Dropdown Endpoints (Public) ───
   list: (params?: ProductionSubjectQueryParams) =>
     apiClient
-      .get<PageResponse<ProductionSubjectResponse>>(
-        "/api/admin/foundation/production/subjects",
-        { params },
-      )
+      .get<
+        PageResponse<ProductionSubjectResponse>
+      >("/api/foundation/production/subjects", { params })
       .then((r) => r.data),
 
   getById: (id: number) =>
     apiClient
       .get<ProductionSubjectResponse>(
-        `/api/admin/foundation/production/subjects/${id}`,
+        `/api/foundation/production/subjects/${id}`,
       )
       .then((r) => r.data),
-  /** Endpoint public (không cần quyền admin) */
+
   getPublicById: (id: number) =>
     apiClient
       .get<ProductionSubjectResponse>(
         `/api/foundation/production/subjects/${id}`,
       )
       .then((r) => r.data),
+
+  // ─── Admin Foundation Management Endpoints ───
+  adminList: (params?: ProductionSubjectQueryParams) =>
+    apiClient
+      .get<
+        PageResponse<ProductionSubjectResponse>
+      >("/api/admin/foundation/production/subjects", { params })
+      .then((r) => r.data),
+
+  adminGetById: (id: number) =>
+    apiClient
+      .get<ProductionSubjectResponse>(
+        `/api/admin/foundation/production/subjects/${id}`,
+      )
+      .then((r) => r.data),
+
+  adminCreate: (data: ProductionSubjectRequest) =>
+    apiClient
+      .post<ProductionSubjectResponse>(
+        "/api/admin/foundation/production/subjects",
+        data,
+      )
+      .then((r) => r.data),
+
+  adminUpdate: (id: number, data: ProductionSubjectRequest) =>
+    apiClient
+      .put<ProductionSubjectResponse>(
+        `/api/admin/foundation/production/subjects/${id}`,
+        data,
+      )
+      .then((r) => r.data),
+
+  adminDelete: (id: number) =>
+    apiClient.delete(`/api/admin/foundation/production/subjects/${id}`),
 };
 
 export const productionSubjectGroupApi = {
   list: (params: ProductionSubjectGroupQueryParams) =>
     apiClient
-      .get<PageResponse<ProductionSubjectGroupResponse>>(
-        "/api/foundation/production/subject-groups",
-        { params },
-      )
+      .get<
+        PageResponse<ProductionSubjectGroupResponse>
+      >("/api/foundation/production/subject-groups", { params })
       .then((r) => r.data),
 
   create: (data: ProductionSubjectGroupRequest) =>
@@ -347,45 +413,78 @@ export const productionSubjectGroupApi = {
 };
 
 export const productionSubjectVariantApi = {
+  // ─── User / Dropdown Endpoints (Public) ───
   list: (params?: ProductionSubjectVariantQueryParams) =>
     apiClient
-      .get<PageResponse<ProductionSubjectVariantResponse>>(
-        "/api/admin/foundation/production/subject-variants",
-        { params },
-      )
+      .get<
+        PageResponse<ProductionSubjectVariantResponse>
+      >("/api/foundation/production/subject-variants", { params })
       .then((r) => r.data),
 
   getById: (id: number) =>
     apiClient
       .get<ProductionSubjectVariantResponse>(
-        `/api/admin/foundation/production/subject-variants/${id}`,
+        `/api/foundation/production/subject-variants/${id}`,
       )
       .then((r) => r.data),
-  /** Endpoint public (không cần quyền admin) */
+
   getPublicById: (id: number) =>
     apiClient
       .get<ProductionSubjectVariantResponse>(
         `/api/foundation/production/subject-variants/${id}`,
       )
       .then((r) => r.data),
+
+  // ─── Admin Foundation Management Endpoints ───
+  adminList: (params?: ProductionSubjectVariantQueryParams) =>
+    apiClient
+      .get<
+        PageResponse<ProductionSubjectVariantResponse>
+      >("/api/admin/foundation/production/subject-variants", { params })
+      .then((r) => r.data),
+
+  adminGetById: (id: number) =>
+    apiClient
+      .get<ProductionSubjectVariantResponse>(
+        `/api/admin/foundation/production/subject-variants/${id}`,
+      )
+      .then((r) => r.data),
+
+  adminCreate: (data: ProductionSubjectVariantRequest) =>
+    apiClient
+      .post<ProductionSubjectVariantResponse>(
+        "/api/admin/foundation/production/subject-variants",
+        data,
+      )
+      .then((r) => r.data),
+
+  adminUpdate: (id: number, data: ProductionSubjectVariantRequest) =>
+    apiClient
+      .put<ProductionSubjectVariantResponse>(
+        `/api/admin/foundation/production/subject-variants/${id}`,
+        data,
+      )
+      .then((r) => r.data),
+
+  adminDelete: (id: number) =>
+    apiClient.delete(`/api/admin/foundation/production/subject-variants/${id}`),
 };
 
 export const productionMethodApi = {
+  // ─── User / Dropdown Endpoints (Public) ───
   list: (params?: ProductionMethodQueryParams) =>
     apiClient
-      .get<PageResponse<ProductionMethodResponse>>(
-        "/api/admin/foundation/production/methods",
-        { params },
-      )
+      .get<
+        PageResponse<ProductionMethodResponse>
+      >("/api/foundation/production/methods", { params })
       .then((r) => r.data),
 
   getById: (id: number) =>
     apiClient
-      .get<ProductionMethodResponse>(
-        `/api/admin/foundation/production/methods/${id}`,
-      )
+      .get<ProductionMethodResponse>(`/api/foundation/production/methods/${id}`)
       .then((r) => r.data),
 
+  // ─── Admin Foundation Management Endpoints ───
   create: (data: ProductionMethodRequest) =>
     apiClient
       .post<ProductionMethodResponse>(
@@ -409,10 +508,9 @@ export const productionMethodApi = {
 export const methodApplicationApi = {
   list: (params?: MethodApplicationQueryParams) =>
     apiClient
-      .get<PageResponse<MethodApplication>>(
-        `${FOUNDATION_BASE_PATH}/production/method-applications`,
-        { params },
-      )
+      .get<
+        PageResponse<MethodApplication>
+      >(`${FOUNDATION_BASE_PATH}/production/method-applications`, { params })
       .then((r) => r.data),
 
   getById: (id: number) =>
@@ -439,5 +537,7 @@ export const methodApplicationApi = {
       .then((r) => r.data),
 
   delete: (id: number) =>
-    apiClient.delete(`${FOUNDATION_BASE_PATH}/production/method-applications/${id}`),
+    apiClient.delete(
+      `${FOUNDATION_BASE_PATH}/production/method-applications/${id}`,
+    ),
 };

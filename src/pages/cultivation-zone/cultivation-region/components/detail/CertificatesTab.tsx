@@ -178,18 +178,20 @@ const CertCard = ({ cert }: CertCardProps) => {
   );
 };
 
-export const CertificatesTab = ({ zoneId, workspaceId }: CertificatesTabProps) => {
+export const CertificatesTab = ({
+  zoneId,
+  workspaceId,
+}: CertificatesTabProps) => {
   // Chỉ chứng nhận thực sự áp dụng cho vùng (BE lọc theo cultivationZoneId)
   const { data, isLoading } = useQuery({
-    queryKey: ["farm-certificates", "by-zone", workspaceId ?? "current", zoneId],
+    queryKey: [
+      "farm-certificates",
+      "by-zone",
+      workspaceId ?? "current",
+      zoneId,
+    ],
     queryFn: () =>
-      workspaceId
-        ? farmCertificateApi.listAdmin({
-            workspaceId,
-            cultivationZoneId: zoneId,
-            size: 100,
-          })
-        : farmCertificateApi.list({ cultivationZoneId: zoneId, size: 100 }),
+      farmCertificateApi.list({ cultivationZoneId: zoneId, size: 100 }),
     enabled: !!zoneId,
   });
   const certificates = data?.content ?? [];

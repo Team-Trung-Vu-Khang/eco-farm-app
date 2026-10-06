@@ -149,7 +149,7 @@ export const farmSupplyApi = {
 
   getTargetSubjects: (domainCode: string) => {
     return apiClient
-      .get<PageResponse<any>>("/api/admin/foundation/production/subjects", {
+      .get<PageResponse<any>>("/api/foundation/production/subjects", {
         params: { status: "active", page: 0, size: 100, domainCode },
       })
       .then((r) => r.data?.content ?? []);

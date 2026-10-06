@@ -43,7 +43,11 @@ import {
   useAquacultureGrowthWorkflowDraftStore,
   type DiagramInfoRecord,
 } from "./hooks/useAquacultureGrowthWorkflowDraftStore";
-import type { GeographicalSelection, GrowthCycleSelection, Plan } from "./types";
+import type {
+  GeographicalSelection,
+  GrowthCycleSelection,
+  Plan,
+} from "./types";
 import type { GrowthCycle } from "../growth-cycle/types/types";
 import {
   getFallbackPlans,
@@ -143,7 +147,10 @@ export default function PlanAquacultureGrowthWorkflowInfoFormPage() {
   const systemSeasonsQuery = useInfiniteQuery({
     queryKey: ["workflow-seasons", "system", seasonQueryParams],
     queryFn: ({ pageParam }) =>
-      systemGrowthCycleSeasonApi.list({ ...seasonQueryParams, page: pageParam }),
+      systemGrowthCycleSeasonApi.list({
+        ...seasonQueryParams,
+        page: pageParam,
+      }),
     initialPageParam: 0,
     getNextPageParam: (lastPage: any) =>
       lastPage.last ? undefined : Number(lastPage.page) + 1,
@@ -151,8 +158,12 @@ export default function PlanAquacultureGrowthWorkflowInfoFormPage() {
   const growthCycles = useMemo(() => {
     const byId = new Map<number, any>();
     [
-      ...systemSeasonsQuery.data?.pages.flatMap((page: any) => page.content || []) || [],
-      ...userSeasonsQuery.data?.pages.flatMap((page: any) => page.content || []) || [],
+      ...(systemSeasonsQuery.data?.pages.flatMap(
+        (page: any) => page.content || [],
+      ) || []),
+      ...(userSeasonsQuery.data?.pages.flatMap(
+        (page: any) => page.content || [],
+      ) || []),
     ].forEach((season) => {
       if (season?.id != null) byId.set(Number(season.id), season);
     });
@@ -164,12 +175,16 @@ export default function PlanAquacultureGrowthWorkflowInfoFormPage() {
     userSeasonsQuery.isFetchingNextPage ||
     systemSeasonsQuery.isFetchingNextPage;
   const seasonsHaveMore =
-    Boolean(userSeasonsQuery.hasNextPage) || Boolean(systemSeasonsQuery.hasNextPage);
+    Boolean(userSeasonsQuery.hasNextPage) ||
+    Boolean(systemSeasonsQuery.hasNextPage);
   const loadMoreSeasons = () => {
     if (userSeasonsQuery.hasNextPage && !userSeasonsQuery.isFetchingNextPage) {
       void userSeasonsQuery.fetchNextPage();
     }
-    if (systemSeasonsQuery.hasNextPage && !systemSeasonsQuery.isFetchingNextPage) {
+    if (
+      systemSeasonsQuery.hasNextPage &&
+      !systemSeasonsQuery.isFetchingNextPage
+    ) {
       void systemSeasonsQuery.fetchNextPage();
     }
   };
@@ -177,10 +192,16 @@ export default function PlanAquacultureGrowthWorkflowInfoFormPage() {
     () => mapCultivationZonesToRegionTree(cultivationZones),
     [cultivationZones],
   );
-  const infoNodes = useAquacultureGrowthWorkflowDraftStore((state) => state.infoNodes);
-  const setInfoNodes = useAquacultureGrowthWorkflowDraftStore((state) => state.setInfoNodes);
+  const infoNodes = useAquacultureGrowthWorkflowDraftStore(
+    (state) => state.infoNodes,
+  );
+  const setInfoNodes = useAquacultureGrowthWorkflowDraftStore(
+    (state) => state.setInfoNodes,
+  );
   const nodes = useAquacultureGrowthWorkflowDraftStore((state) => state.nodes);
-  const addNode = useAquacultureGrowthWorkflowDraftStore((state) => state.addNode);
+  const addNode = useAquacultureGrowthWorkflowDraftStore(
+    (state) => state.addNode,
+  );
   const { createWorkflow, updateWorkflow } = useFarmWorkflowMutations();
 
   const localRecord = nodeId
@@ -397,7 +418,9 @@ export default function PlanAquacultureGrowthWorkflowInfoFormPage() {
         // like opening a different (persisted) workflow, and the canvas
         // page's API-detail fetch would wipe the starter plan node just
         // added below.
-        useAquacultureGrowthWorkflowDraftStore.setState({ activeWorkflowId: record.id });
+        useAquacultureGrowthWorkflowDraftStore.setState({
+          activeWorkflowId: record.id,
+        });
 
         // First info node in an empty draft seeds the tree with a starter plan
         // node, mirroring the previous dialog-driven flow.
@@ -435,14 +458,17 @@ export default function PlanAquacultureGrowthWorkflowInfoFormPage() {
       toast({
         variant: "destructive",
         title: "Lỗi",
-        description: getApiErrorMessage(error) || "Không thể lưu sơ đồ quy trình",
+        description:
+          getApiErrorMessage(error) || "Không thể lưu sơ đồ quy trình",
       });
     }
   };
 
   return (
     <PageWrapper
-      title={isEdit ? "Chỉnh sửa thông tin vụ nuôi" : "Khởi tạo thông tin vụ mới"}
+      title={
+        isEdit ? "Chỉnh sửa thông tin vụ nuôi" : "Khởi tạo thông tin vụ mới"
+      }
       description="Mô tả thông tin canh tác áp dụng cho vụ nuôi trồng thủy sản này"
       actions={
         <div className="flex flex-wrap gap-2">
@@ -460,7 +486,7 @@ export default function PlanAquacultureGrowthWorkflowInfoFormPage() {
             onClick={form.handleSubmit(handleSave)}
           >
             <Save className="mr-2 h-4 w-4" />
-            {isSaving ? "Đang lưu..." : "Lưu sơ đồ"}
+            {isSaving ? "Đang lưu..." : "Lưu thông tin"}
           </Button>
         </div>
       }
@@ -560,7 +586,8 @@ export default function PlanAquacultureGrowthWorkflowInfoFormPage() {
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <label className="text-xs text-muted-foreground font-black uppercase tracking-widest">
-                    Vùng nuôi trồng thủy sản <span className="text-red-500">*</span>
+                    Vùng nuôi trồng thủy sản{" "}
+                    <span className="text-red-500">*</span>
                   </label>
                   <span className="text-[10px] text-emerald-700 bg-emerald-100 px-2 py-1 rounded-full font-semibold">
                     Chọn 1 khu vực/lô từ sơ đồ ban đầu

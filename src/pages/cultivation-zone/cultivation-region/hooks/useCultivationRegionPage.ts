@@ -140,14 +140,26 @@ export const useCultivationRegionPage = () => {
     setTogglingId(row.id);
     try {
       const detail = await cultivationZoneApi.getById(row.id);
-      const variantPayload =
-        detail.subjectVariants && detail.subjectVariants.length > 0
-          ? { subjectVariantIds: detail.subjectVariants.map((v) => v.id) }
-          : {
-              productionSubjectVariantIds: (
-                detail.productionSubjectVariants ?? []
-              ).map((v) => v.id),
-            };
+      const subjectsPayload =
+        detail.subjects && detail.subjects.length > 0
+          ? {
+              subjects: detail.subjects.map((s) => ({
+                productionSubjectId: s.id,
+                variants: (s.variants ?? []).map((v) => ({
+                  productionSubjectVariantId: v.id,
+                  ...(v.seeds && v.seeds.length > 0
+                    ? { seedIds: v.seeds.map((seed) => seed.id) }
+                    : {}),
+                })),
+              })),
+            }
+          : detail.subjectVariants && detail.subjectVariants.length > 0
+            ? { subjectVariantIds: detail.subjectVariants.map((v) => v.id) }
+            : {
+                productionSubjectVariantIds: (
+                  detail.productionSubjectVariants ?? []
+                ).map((v) => v.id),
+              };
 
       const data: FarmCultivationZoneRequest = {
         code: detail.code,
@@ -172,7 +184,7 @@ export const useCultivationRegionPage = () => {
         ),
         rearingMethodId: detail.rearingMethod?.id,
         irrigationSystemId: detail.irrigationSystem?.id,
-        ...variantPayload,
+        ...subjectsPayload,
         notes: detail.notes,
         status: nextStatus,
         displayOrder: detail.displayOrder,

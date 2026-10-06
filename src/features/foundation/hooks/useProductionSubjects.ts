@@ -46,8 +46,9 @@ export function useProductionSubjects({
     queryKey: productionSubjectKeys.list(params),
     queryFn: () => productionSubjectApi.list(params),
     enabled,
-    gcTime: 10 * 60 * 1000,
-    staleTime: 5 * 60 * 1000,
+    staleTime: 2 * 60 * 1000,
+    gcTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: false,
   });
 
   return {
@@ -67,6 +68,9 @@ export function useProductionSubjectById(
     queryKey: productionSubjectKeys.detail(id),
     queryFn: () => productionSubjectApi.getById(id),
     enabled: enabled && !!id,
+    staleTime: 2 * 60 * 1000,
+    gcTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: false,
   });
 }
 
@@ -84,8 +88,9 @@ export function useProductionSubjectVariants({
     queryKey: productionSubjectVariantKeys.list(params),
     queryFn: () => productionSubjectVariantApi.list(params),
     enabled,
-    staleTime: 5 * 60 * 1000, // Cache trong 5 phút
-    gcTime: 10 * 60 * 1000, // Giữ trong garbage collector 10 phút
+    staleTime: 2 * 60 * 1000,
+    gcTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: false,
   });
 
   return {
@@ -105,6 +110,9 @@ export function useProductionSubjectVariantById(
     queryKey: productionSubjectVariantKeys.detail(id),
     queryFn: () => productionSubjectVariantApi.getById(id),
     enabled: enabled && !!id,
+    staleTime: 2 * 60 * 1000,
+    gcTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: false,
   });
 }
 
@@ -127,6 +135,9 @@ export function useProductionMethods({
     queryKey: productionMethodKeys.list(params),
     queryFn: () => productionMethodApi.list(params),
     enabled,
+    staleTime: 2 * 60 * 1000,
+    gcTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: false,
   });
 
   return {
@@ -146,6 +157,9 @@ export function useProductionMethodById(
     queryKey: productionMethodKeys.detail(id),
     queryFn: () => productionMethodApi.getById(id),
     enabled: enabled && !!id,
+    staleTime: 2 * 60 * 1000,
+    gcTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: false,
   });
 }
 
@@ -158,6 +172,9 @@ export function usePublicProductionSubjectVariantById(
     queryKey: [...productionSubjectVariantKeys.detail(id), "public"],
     queryFn: () => productionSubjectVariantApi.getPublicById(id),
     enabled: enabled && !!id,
+    staleTime: 2 * 60 * 1000,
+    gcTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: false,
   });
 }
 
@@ -170,5 +187,8 @@ export function usePublicProductionSubjectById(
     queryKey: [...productionSubjectKeys.detail(id), "public"],
     queryFn: () => productionSubjectApi.getPublicById(id),
     enabled: enabled && !!id,
+    staleTime: 2 * 60 * 1000,
+    gcTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: false,
   });
 }

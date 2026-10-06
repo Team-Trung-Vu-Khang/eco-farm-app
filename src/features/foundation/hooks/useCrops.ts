@@ -41,6 +41,9 @@ export function useCrops({ params, enabled = true }: UseCropsOptions = {}) {
     queryKey: cropKeys.list(params),
     queryFn: () => cropApi.list(params),
     enabled,
+    staleTime: 2 * 60 * 1000,
+    gcTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: false,
   });
 
   return {
@@ -72,5 +75,8 @@ export function useCropById(
     queryKey: cropKeys.detail(id),
     queryFn: () => cropApi.getById(id),
     enabled: enabled && !!id,
+    staleTime: 2 * 60 * 1000,
+    gcTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: false,
   });
 }

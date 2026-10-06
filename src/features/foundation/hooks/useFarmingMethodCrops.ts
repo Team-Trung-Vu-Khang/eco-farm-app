@@ -45,6 +45,9 @@ export function useFarmingMethodCrops({
     queryKey: farmingMethodCropKeys.list(params),
     queryFn: () => farmingMethodCropApi.list(params),
     enabled,
+    staleTime: 2 * 60 * 1000,
+    gcTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: false,
   });
 
   return {
@@ -76,5 +79,8 @@ export function useFarmingMethodCropById(
     queryKey: farmingMethodCropKeys.detail(id),
     queryFn: () => farmingMethodCropApi.getById(id),
     enabled: enabled && !!id,
+    staleTime: 2 * 60 * 1000,
+    gcTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: false,
   });
 }

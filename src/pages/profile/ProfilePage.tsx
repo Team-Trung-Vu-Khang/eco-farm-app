@@ -1,5 +1,6 @@
 import { useAuth } from "@/features/auth";
 import {
+  formatWorkspaceLabel,
   setSelectedWorkspaceId,
   useSelectedWorkspaceId,
   useWorkspaces,
@@ -10,12 +11,8 @@ import {
 } from "@/shared/hooks/useMobileUiMode";
 import {
   Button,
+  Combobox,
   Label,
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
   Switch,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import {
@@ -88,7 +85,10 @@ export default function ProfilePage() {
           label="Người giới thiệu"
           value={
             currentUser?.referrer
-              ? [currentUser.referrer.fullName, currentUser.referrer.phoneNumber]
+              ? [
+                  currentUser.referrer.fullName,
+                  currentUser.referrer.phoneNumber,
+                ]
                   .filter(Boolean)
                   .join(" · ")
               : null
@@ -102,22 +102,19 @@ export default function ProfilePage() {
             <Building2 className="h-4 w-4 text-slate-400" /> Đơn vị đang làm
             việc
           </Label>
-          <Select
-            value={selectedWorkspaceId !== null ? String(selectedWorkspaceId) : ""}
-            onValueChange={(value) => setSelectedWorkspaceId(value)}
+          <Combobox
+            options={workspaces.map((w) => ({
+              value: String(w.id),
+              label: formatWorkspaceLabel(w),
+            }))}
+            value={
+              selectedWorkspaceId !== null ? String(selectedWorkspaceId) : ""
+            }
+            placeholder="Chọn đơn vị..."
+            searchPlaceholder="Tìm đơn vị..."
             disabled={workspaces.length === 1}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Chọn đơn vị" />
-            </SelectTrigger>
-            <SelectContent>
-              {workspaces.map((workspace) => (
-                <SelectItem key={workspace.id} value={String(workspace.id)}>
-                  {workspace.brandName || workspace.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+            onChange={(value) => setSelectedWorkspaceId(value)}
+          />
         </section>
       )}
 

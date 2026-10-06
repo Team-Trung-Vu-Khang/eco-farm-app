@@ -41,7 +41,8 @@ export function useCatalog<T = CatalogRecordResponse>(
     queryKey: catalogKeys.list(catalog, params),
     queryFn: () => catalogApi.list(catalog, params) as Promise<PageResponse<T>>,
     enabled,
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    staleTime: 2 * 60 * 1000, // 2 minutes
+    gcTime: 5 * 60 * 1000, // 5 minutes
     refetchOnWindowFocus: false,
   });
 
@@ -75,7 +76,8 @@ export function useCatalogById<T = CatalogRecordResponse>(
     queryKey: catalogKeys.detail(catalog, id),
     queryFn: () => catalogApi.getById(catalog, id) as Promise<T>,
     enabled: enabled && !!id,
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    staleTime: 2 * 60 * 1000, // 2 minutes
+    gcTime: 5 * 60 * 1000, // 5 minutes
     refetchOnWindowFocus: false,
   });
 }

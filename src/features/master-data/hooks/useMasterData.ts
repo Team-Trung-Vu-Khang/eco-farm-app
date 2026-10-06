@@ -33,7 +33,8 @@ export function useMasterData<C extends MasterDataCatalog>(
     queryKey: masterDataKeys.list(catalog, params),
     queryFn: () => masterDataApi.list(catalog, params),
     enabled,
-    staleTime: 5 * 60 * 1000,
+    staleTime: 2 * 60 * 1000,
+    gcTime: 5 * 60 * 1000,
     refetchOnWindowFocus: false,
   });
 
@@ -59,7 +60,8 @@ export function useMasterDataById<C extends MasterDataCatalog>(
     queryKey: masterDataKeys.detail(catalog, id),
     queryFn: () => masterDataApi.getById(catalog, id),
     enabled: enabled && id !== null && id !== undefined && id !== "",
-    staleTime: 5 * 60 * 1000,
+    staleTime: 2 * 60 * 1000,
+    gcTime: 5 * 60 * 1000,
     refetchOnWindowFocus: false,
   });
 }
@@ -70,11 +72,22 @@ export function usePositionResponsibilities(
   { enabled = true }: UseMasterDataOptions = {},
 ) {
   return useQuery<PositionResponsibilitiesResponse, Error>({
-    queryKey: ["master-data", "positions", positionId, "responsibilities", params ?? {}] as const,
+    queryKey: [
+      "master-data",
+      "positions",
+      positionId,
+      "responsibilities",
+      params ?? {},
+    ] as const,
     queryFn: () =>
       masterDataApi.listPositionResponsibilities(positionId, params),
-    enabled: enabled && positionId !== null && positionId !== undefined && positionId !== "",
-    staleTime: 5 * 60 * 1000,
+    enabled:
+      enabled &&
+      positionId !== null &&
+      positionId !== undefined &&
+      positionId !== "",
+    staleTime: 2 * 60 * 1000,
+    gcTime: 5 * 60 * 1000,
     refetchOnWindowFocus: false,
   });
 }

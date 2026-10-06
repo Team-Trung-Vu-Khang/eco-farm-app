@@ -13,6 +13,10 @@ import type { RegionBasicFormValues } from "../data/region-basic-form.schema";
 
 import { useCultivationZoneById } from "@/features/farm/hooks/useCultivationZones";
 import { useCultivationZoneMutations } from "@/features/farm/hooks/useCultivationZoneMutations";
+import {
+  buildProductionZoneSubjects,
+  parseProductionZoneSubjects,
+} from "@/features/farm/utils/production-zone-subject.utils";
 import type { FarmCultivationZoneRequest } from "@/features/farm/types/farm.type";
 import { useMemo } from "react";
 
@@ -71,6 +75,11 @@ export function useRegionBasicCreateForm(
 
     if (isEditMode) {
       if (zoneData && (!regionId || regionDataResponse)) {
+        const parsedSubjects =
+          zoneData.subjects && zoneData.subjects.length > 0
+            ? parseProductionZoneSubjects(zoneData.subjects)
+            : null;
+
         const cropSources: RegionCropSource[] =
           (
             regionDataResponse as FarmRegionResponse & {
@@ -81,10 +90,12 @@ export function useRegionBasicCreateForm(
           [];
 
         // Build varietyLabels and varietyCropMap
-        const varietyLabels: Record<string, string> = {};
-        const varietyCropMap: Record<string, string> = {};
+        const varietyLabels: Record<string, string> =
+          parsedSubjects?.varietyLabels || {};
+        const varietyCropMap: Record<string, string> =
+          parsedSubjects?.varietyCropMap || {};
 
-        if (zoneData) {
+        if (!parsedSubjects && zoneData) {
           (zoneData.productionSubjectVariants ?? []).forEach((v) => {
             if (!v.id) return;
             varietyLabels[String(v.id)] = v.name || "";
@@ -95,28 +106,35 @@ export function useRegionBasicCreateForm(
           (zoneData.subjectVariants ?? []).forEach((s) => {
             const vId = s.cropVariety?.id || s.subjectVariant?.id || s.id;
             if (!vId) return;
-            varietyLabels[String(vId)] = s.cropVariety?.name || s.subjectVariant?.name || s.name || "";
-            const cId = s.productionSubject?.id || s.crop?.id || s.productionSubjectId;
+            varietyLabels[String(vId)] =
+              s.cropVariety?.name || s.subjectVariant?.name || s.name || "";
+            const cId =
+              s.productionSubject?.id || s.crop?.id || s.productionSubjectId;
             if (cId) varietyCropMap[String(vId)] = String(cId);
           });
         }
+
+        const resolvedCropIds =
+          parsedSubjects?.cropIds && parsedSubjects.cropIds.length > 0
+            ? parsedSubjects.cropIds
+            : cropSources
+                .map((c) =>
+                  (
+                    c.cropId ||
+                    c.crop?.id ||
+                    c.productionSubjectId ||
+                    c.productionSubject?.id ||
+                    c.id ||
+                    0
+                  ).toString(),
+                )
+                .filter((id) => id !== "0");
 
         reset({
           id: regionDataResponse?.id || undefined,
           code: regionDataResponse?.code,
           name: regionDataResponse?.name || zoneData.name || "",
-          cropIds: cropSources
-            .map((c) =>
-              (
-                c.cropId ||
-                c.crop?.id ||
-                c.productionSubjectId ||
-                c.productionSubject?.id ||
-                c.id ||
-                0
-              ).toString(),
-            )
-            .filter((id) => id !== "0"),
+          cropIds: resolvedCropIds,
           area:
             regionDataResponse?.acreage ||
             (zoneData.metadataJson?.area as number) ||
@@ -155,19 +173,30 @@ export function useRegionBasicCreateForm(
           farmingMethodId: zoneData?.productionMethod?.id || undefined,
           rearingMethodId: zoneData?.rearingMethod?.id || undefined,
           // subjectVariants = owner seeds; load into seedIds
-          seedIds: (zoneData?.subjectVariants ?? []).map((s) => s.id),
+          seedIds:
+            parsedSubjects?.seedIds && parsedSubjects.seedIds.length > 0
+              ? parsedSubjects.seedIds
+              : (zoneData?.subjectVariants ?? []).map((s) => s.id),
           cropSeedToggles:
-            (zoneData?.metadataJson?.cropSeedToggles as Record<string, boolean>) || {},
-          // varietyIds: prefer productionSubjectVariants (Foundation), fallback subjectVariants
+            (zoneData?.metadataJson?.cropSeedToggles as Record<
+              string,
+              boolean
+            >) || {},
           varietyIds:
-            (zoneData?.productionSubjectVariants ?? []).length > 0
-              ? (zoneData?.productionSubjectVariants ?? []).map((v) => v.id)
-              : (zoneData?.subjectVariants ?? []).map(
-                  (s) => s.cropVariety?.id || s.subjectVariant?.id || 0,
-                ).filter((id) => id > 0),
-          useSpecificSeeds: (zoneData?.subjectVariants ?? []).length > 0,
+            parsedSubjects?.varietyIds && parsedSubjects.varietyIds.length > 0
+              ? parsedSubjects.varietyIds
+              : (zoneData?.productionSubjectVariants ?? []).length > 0
+                ? (zoneData?.productionSubjectVariants ?? []).map((v) => v.id)
+                : (zoneData?.subjectVariants ?? [])
+                    .map((s) => s.cropVariety?.id || s.subjectVariant?.id || 0)
+                    .filter((id) => id > 0),
+          useSpecificSeeds:
+            parsedSubjects?.useSpecificSeeds ??
+            (zoneData?.subjectVariants ?? []).length > 0,
           varietyLabels,
           varietyCropMap,
+          varietySeedMap: parsedSubjects?.varietySeedMap || {},
+          seedLabels: parsedSubjects?.seedLabels || {},
         });
         // eslint-disable-next-line react-hooks/set-state-in-effect
         setHasInitialized(true);
@@ -214,12 +243,6 @@ export function useRegionBasicCreateForm(
   const handleComplete = async (data: RegionBasicFormValues) => {
     setIsSubmitting(true);
     try {
-      // Build variant payload — mutually exclusive per API spec
-      const buildVariantPayload = (useSpecific: boolean, sIds: number[], vIds: number[]) => {
-        if (useSpecific) return { subjectVariantIds: sIds };
-        return { productionSubjectVariantIds: vIds };
-      };
-
       const regionRequest: FarmRegionRequest = {
         code: data.code || undefined,
         name: data.name,
@@ -272,7 +295,9 @@ export function useRegionBasicCreateForm(
         regionDataResponse.centerPoint?.longitude !== data.centerPoint?.lng ||
         JSON.stringify(
           (regionDataResponse.crops || [])
-            .map((c: RegionCropSource) => (c.cropId || c.crop?.id || 0).toString())
+            .map((c: RegionCropSource) =>
+              (c.cropId || c.crop?.id || 0).toString(),
+            )
             .sort(),
         ) !== JSON.stringify([...(data.cropIds || [])].sort());
 
@@ -298,11 +323,14 @@ export function useRegionBasicCreateForm(
           domainCode: "CROP",
           productionMethodId: data.farmingMethodId || 0,
           rearingMethodId: data.rearingMethodId || undefined,
-          ...buildVariantPayload(
-            !!data.useSpecificSeeds,
-            (data.seedIds ?? []).map(Number).filter(Boolean),
-            (data.varietyIds ?? []).filter((id) => id > 0),
-          ),
+          subjects: buildProductionZoneSubjects({
+            cropIds: data.cropIds,
+            varietyIds: data.varietyIds,
+            varietyCropMap: data.varietyCropMap,
+            varietySeedMap: data.varietySeedMap,
+            seedIds: data.seedIds,
+            useSpecificSeeds: !!data.useSpecificSeeds,
+          }),
           status: data.status,
           scopes: [
             {
@@ -333,11 +361,14 @@ export function useRegionBasicCreateForm(
             domainCode: "CROP",
             productionMethodId: data.farmingMethodId || 0,
             rearingMethodId: data.rearingMethodId || undefined,
-            ...buildVariantPayload(
-              !!data.useSpecificSeeds,
-              (data.seedIds ?? []).map(Number).filter(Boolean),
-              (data.varietyIds ?? []).filter((id) => id > 0),
-            ),
+            subjects: buildProductionZoneSubjects({
+              cropIds: data.cropIds,
+              varietyIds: data.varietyIds,
+              varietyCropMap: data.varietyCropMap,
+              varietySeedMap: data.varietySeedMap,
+              seedIds: data.seedIds,
+              useSpecificSeeds: !!data.useSpecificSeeds,
+            }),
             status: data.status,
             scopes: [
               {

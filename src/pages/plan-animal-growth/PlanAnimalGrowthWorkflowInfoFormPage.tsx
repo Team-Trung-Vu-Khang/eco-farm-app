@@ -66,15 +66,15 @@ function toWorkflowScopes(
         : selection.type === "area"
           ? "AREA"
           : "REGION",
-    scopeId: Number(
-      selection.plotId || selection.areaId || selection.regionId,
-    ),
+    scopeId: Number(selection.plotId || selection.areaId || selection.regionId),
   }));
 }
 
 function toDurationDays(years: string, months: string, days: string) {
   const totalDays =
-    (Number(years) || 0) * 365 + (Number(months) || 0) * 30 + (Number(days) || 0);
+    (Number(years) || 0) * 365 +
+    (Number(months) || 0) * 30 +
+    (Number(days) || 0);
   return Math.max(1, totalDays);
 }
 
@@ -142,7 +142,10 @@ export default function PlanAnimalGrowthWorkflowInfoFormPage() {
   const systemSeasonsQuery = useInfiniteQuery({
     queryKey: ["animal-workflow-seasons", "system", seasonQueryParams],
     queryFn: ({ pageParam }) =>
-      systemGrowthCycleSeasonApi.list({ ...seasonQueryParams, page: pageParam }),
+      systemGrowthCycleSeasonApi.list({
+        ...seasonQueryParams,
+        page: pageParam,
+      }),
     initialPageParam: 0,
     getNextPageParam: (lastPage: any) =>
       lastPage.last ? undefined : Number(lastPage.page) + 1,
@@ -150,8 +153,12 @@ export default function PlanAnimalGrowthWorkflowInfoFormPage() {
   const growthCycles = useMemo(() => {
     const byId = new Map<number, any>();
     [
-      ...(systemSeasonsQuery.data?.pages.flatMap((page: any) => page.content || []) || []),
-      ...(userSeasonsQuery.data?.pages.flatMap((page: any) => page.content || []) || []),
+      ...(systemSeasonsQuery.data?.pages.flatMap(
+        (page: any) => page.content || [],
+      ) || []),
+      ...(userSeasonsQuery.data?.pages.flatMap(
+        (page: any) => page.content || [],
+      ) || []),
     ].forEach((season) => {
       if (season?.id != null) byId.set(Number(season.id), season);
     });
@@ -163,12 +170,16 @@ export default function PlanAnimalGrowthWorkflowInfoFormPage() {
     userSeasonsQuery.isFetchingNextPage ||
     systemSeasonsQuery.isFetchingNextPage;
   const seasonsHaveMore =
-    Boolean(userSeasonsQuery.hasNextPage) || Boolean(systemSeasonsQuery.hasNextPage);
+    Boolean(userSeasonsQuery.hasNextPage) ||
+    Boolean(systemSeasonsQuery.hasNextPage);
   const loadMoreSeasons = () => {
     if (userSeasonsQuery.hasNextPage && !userSeasonsQuery.isFetchingNextPage) {
       void userSeasonsQuery.fetchNextPage();
     }
-    if (systemSeasonsQuery.hasNextPage && !systemSeasonsQuery.isFetchingNextPage) {
+    if (
+      systemSeasonsQuery.hasNextPage &&
+      !systemSeasonsQuery.isFetchingNextPage
+    ) {
       void systemSeasonsQuery.fetchNextPage();
     }
   };
@@ -226,22 +237,35 @@ export default function PlanAnimalGrowthWorkflowInfoFormPage() {
   const [plannedDurationDays, setPlannedDurationDays] = useState(
     editingRecord?.plannedDurationDays ?? "",
   );
-  const [seasonIds, setSeasonIds] = useState<number[]>(editingRecord?.seasonIds ?? []);
-  const [seasonNames, setSeasonNames] = useState<string[]>(editingRecord?.seasonNames ?? []);
-  const [growthCycleSelections, setGrowthCycleSelections] = useState<GrowthCycleSelection[]>(
+  const [seasonIds, setSeasonIds] = useState<number[]>(
+    editingRecord?.seasonIds ?? [],
+  );
+  const [seasonNames, setSeasonNames] = useState<string[]>(
+    editingRecord?.seasonNames ?? [],
+  );
+  const [growthCycleSelections, setGrowthCycleSelections] = useState<
+    GrowthCycleSelection[]
+  >(
     (editingRecord?.seasonIds ?? []).map((seasonId) => ({
       id: `season-${seasonId}`,
       type: "cycle",
       cycleId: String(seasonId),
     })),
   );
-  const growthCycleSummary = useMemo(() =>
-    growthCycleSelections
-      .map((selection) => {
-        const cycle = growthCycles.find((item) => item.id === selection.cycleId);
-        return cycle ? { cycleName: cycle.name, items: ["Toàn bộ chu kỳ"] } : null;
-      })
-      .filter((item): item is { cycleName: string; items: string[] } => Boolean(item)),
+  const growthCycleSummary = useMemo(
+    () =>
+      growthCycleSelections
+        .map((selection) => {
+          const cycle = growthCycles.find(
+            (item) => item.id === selection.cycleId,
+          );
+          return cycle
+            ? { cycleName: cycle.name, items: ["Toàn bộ chu kỳ"] }
+            : null;
+        })
+        .filter((item): item is { cycleName: string; items: string[] } =>
+          Boolean(item),
+        ),
     [growthCycleSelections, growthCycles],
   );
 
@@ -275,7 +299,11 @@ export default function PlanAnimalGrowthWorkflowInfoFormPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [workflowDetail]);
 
-  if (isEdit && !editingRecord && !(isPersistedNodeId && isLoadingWorkflowDetail)) {
+  if (
+    isEdit &&
+    !editingRecord &&
+    !(isPersistedNodeId && isLoadingWorkflowDetail)
+  ) {
     return (
       <PageWrapper title="Không tìm thấy node quy trình" description="">
         <Card>
@@ -344,7 +372,8 @@ export default function PlanAnimalGrowthWorkflowInfoFormPage() {
               seasonIds,
               seasonNames,
               isActive: true,
-              position: editingRecord?.position ?? getNextInfoNodePosition(infoNodes),
+              position:
+                editingRecord?.position ?? getNextInfoNodePosition(infoNodes),
             };
 
       if (editingRecord && isPersistedWorkflowId(editingRecord.id)) {
@@ -400,14 +429,19 @@ export default function PlanAnimalGrowthWorkflowInfoFormPage() {
       toast({
         variant: "destructive",
         title: "Lỗi",
-        description: getApiErrorMessage(error) || "Không thể lưu sơ đồ quy trình",
+        description:
+          getApiErrorMessage(error) || "Không thể lưu sơ đồ quy trình",
       });
     }
   };
 
   return (
     <PageWrapper
-      title={isEdit ? "Chỉnh sửa thông tin vụ chăn nuôi" : "Khởi tạo thông tin vụ mới"}
+      title={
+        isEdit
+          ? "Chỉnh sửa thông tin vụ chăn nuôi"
+          : "Khởi tạo thông tin vụ mới"
+      }
       description="Mô tả thông tin canh tác áp dụng cho vụ chăn nuôi này"
       actions={
         <div className="flex flex-wrap gap-2">
@@ -425,7 +459,7 @@ export default function PlanAnimalGrowthWorkflowInfoFormPage() {
             onClick={form.handleSubmit(handleSave)}
           >
             <Save className="mr-2 h-4 w-4" />
-            {isSaving ? "Đang lưu..." : "Lưu sơ đồ"}
+            {isSaving ? "Đang lưu..." : "Lưu thông tin"}
           </Button>
         </div>
       }
@@ -470,11 +504,20 @@ export default function PlanAnimalGrowthWorkflowInfoFormPage() {
                     onConfirm={(nextSelections) => {
                       setGrowthCycleSelections(nextSelections);
                       const ids = Array.from(
-                        new Set(nextSelections.map((selection) => Number(selection.cycleId))),
+                        new Set(
+                          nextSelections.map((selection) =>
+                            Number(selection.cycleId),
+                          ),
+                        ),
                       ).filter((id) => Number.isFinite(id));
                       setSeasonIds(ids);
                       setSeasonNames(
-                        ids.map((id) => growthCycles.find((cycle) => cycle.id === String(id))?.name || `#${id}`),
+                        ids.map(
+                          (id) =>
+                            growthCycles.find(
+                              (cycle) => cycle.id === String(id),
+                            )?.name || `#${id}`,
+                        ),
                       );
                     }}
                   />
@@ -484,8 +527,14 @@ export default function PlanAnimalGrowthWorkflowInfoFormPage() {
                         <Sprout className="w-3 h-3" /> Chu kỳ đã chọn
                       </div>
                       {growthCycleSummary.map((group) => (
-                        <div key={group.cycleName} className="flex flex-wrap gap-1.5">
-                          <Badge variant="outline" className="text-[10px] border-emerald-100 bg-emerald-100 text-emerald-800">
+                        <div
+                          key={group.cycleName}
+                          className="flex flex-wrap gap-1.5"
+                        >
+                          <Badge
+                            variant="outline"
+                            className="text-[10px] border-emerald-100 bg-emerald-100 text-emerald-800"
+                          >
                             {group.cycleName}
                           </Badge>
                         </div>
@@ -510,7 +559,9 @@ export default function PlanAnimalGrowthWorkflowInfoFormPage() {
                       placeholder="0"
                       className="w-16 h-9 border-0 bg-transparent px-0 text-center text-base shadow-none focus-visible:ring-0"
                     />
-                    <span className="text-sm text-slate-500 whitespace-nowrap">năm</span>
+                    <span className="text-sm text-slate-500 whitespace-nowrap">
+                      năm
+                    </span>
                   </div>
                   <div className="flex items-center gap-2">
                     <Input
@@ -521,7 +572,9 @@ export default function PlanAnimalGrowthWorkflowInfoFormPage() {
                       placeholder="0"
                       className="w-16 h-9 border-0 bg-transparent px-0 text-center text-base shadow-none focus-visible:ring-0"
                     />
-                    <span className="text-sm text-slate-500 whitespace-nowrap">tháng</span>
+                    <span className="text-sm text-slate-500 whitespace-nowrap">
+                      tháng
+                    </span>
                   </div>
                   <div className="flex items-center gap-2">
                     <Input
@@ -532,29 +585,31 @@ export default function PlanAnimalGrowthWorkflowInfoFormPage() {
                       placeholder="0"
                       className="w-16 h-9 border-0 bg-transparent px-0 text-center text-base shadow-none focus-visible:ring-0"
                     />
-                    <span className="text-sm text-slate-500 whitespace-nowrap">ngày</span>
+                    <span className="text-sm text-slate-500 whitespace-nowrap">
+                      ngày
+                    </span>
                   </div>
                 </div>
               </div>
 
               <div className="order-3">
                 <FormField
-                control={form.control}
-                name="description"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Mô tả sơ bộ</FormLabel>
-                    <FormControl>
-                      <Textarea
-                        placeholder="Mô tả sơ bộ về sơ đồ quy trình"
-                        rows={3}
-                        data-testid="input-diagram-description"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
+                  control={form.control}
+                  name="description"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Mô tả sơ bộ</FormLabel>
+                      <FormControl>
+                        <Textarea
+                          placeholder="Mô tả sơ bộ về sơ đồ quy trình"
+                          rows={3}
+                          data-testid="input-diagram-description"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
                 />
               </div>
 

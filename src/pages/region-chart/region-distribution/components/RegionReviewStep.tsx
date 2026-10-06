@@ -1,20 +1,19 @@
+import { useCatalog } from "@/features/foundation/hooks/useCatalog";
+import { useAddressOptions } from "@/features/master-data/hooks/useAddressOptions";
+import { useOrganizationById } from "@/features/organization/hooks/useOrganizationById";
+import { useSelectedWorkspaceId } from "@/features/workspace";
 import {
   Card,
   CardContent,
   CardHeader,
   CardTitle,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { MapContainer, Polygon, TileLayer, Tooltip } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
-import type { RegionFormValues } from "../data/region-form.schema";
-import { useAddressOptions } from "@/features/master-data/hooks/useAddressOptions";
-import { useCatalog } from "@/features/foundation/hooks/useCatalog";
-import { useCrops } from "@/features/foundation/hooks/useCrops";
-import { useOrganizationById } from "@/features/organization/hooks/useOrganizationById";
-import { useSelectedWorkspaceId } from "@/features/workspace";
-import { useFormContext } from "react-hook-form";
 import { useMemo } from "react";
+import { useFormContext } from "react-hook-form";
+import { MapContainer, Polygon, TileLayer, Tooltip } from "react-leaflet";
+import type { RegionFormValues } from "../data/region-form.schema";
 import { getBoundsFromPoints } from "../utils";
 
 interface RegionReviewStepProps {
@@ -31,7 +30,9 @@ export const RegionReviewStep = ({
   const { items: terrains } = useCatalog("terrain-features", {
     params: { size: 100 },
   });
-  const { data: cropsData } = useCrops({ params: { size: 100 } });
+  // const { data: cropsData } = useCrops({
+  //   params: { size: 100, domainCode: "CROP" },
+  // });
 
   const workspaceId = useSelectedWorkspaceId();
   const parsedWorkspaceId =
@@ -61,15 +62,15 @@ export const RegionReviewStep = ({
     return coordinates.map((c) => L.latLng(c.lat, c.lng));
   }, [formData.coordinates]);
 
-  const cropIds = formData.cropIds;
-  const selectedCropsText = useMemo(() => {
-    if (!cropIds || cropIds.length === 0) return "";
-    const cropsList = cropsData?.content || [];
-    return cropIds
-      .map((id) => cropsList.find((c) => c.id.toString() === id)?.name)
-      .filter(Boolean)
-      .join(", ");
-  }, [cropIds, cropsData?.content]);
+  // const cropIds = formData.cropIds;
+  // const selectedCropsText = useMemo(() => {
+  //   if (!cropIds || cropIds.length === 0) return "";
+  //   const cropsList = cropsData?.content || [];
+  //   return cropIds
+  //     .map((id) => cropsList.find((c) => c.id.toString() === id)?.name)
+  //     .filter(Boolean)
+  //     .join(", ");
+  // }, [cropIds, cropsData?.content]);
 
   return (
     <div className="space-y-5">

@@ -13,7 +13,8 @@ export const subjectGroupKeys = {
   all: () => ["foundation", "subject-groups"] as const,
   list: (params?: ProductionSubjectGroupQueryParams) =>
     ["foundation", "subject-groups", "list", params ?? {}] as const,
-  detail: (id: number) => ["foundation", "subject-groups", "detail", id] as const,
+  detail: (id: number) =>
+    ["foundation", "subject-groups", "detail", id] as const,
 };
 
 // ─── useProductionSubjectGroups ────────────────────────────────────────────────
@@ -38,6 +39,9 @@ export function useProductionSubjectGroups({
     queryKey: subjectGroupKeys.list(params),
     queryFn: () => productionSubjectGroupApi.list(params),
     enabled,
+    staleTime: 2 * 60 * 1000,
+    gcTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: false,
   });
 
   return {

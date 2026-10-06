@@ -5,8 +5,9 @@ import type { CreateExportJobPayload } from "../types/admin-dashboard.type";
 
 const STALE_TIME_2_5_MIN = 150000; // 2.5 minutes (half of BE's 5-minute Redis TTL)
 
-export function useAdminWorkspaceStats() {
+export function useAdminWorkspaceStats(enabled: boolean = true) {
   return useQuery({
+    enabled,
     queryKey: ["admin", "dashboard", "workspaces"],
     queryFn: () => adminDashboardApi.getWorkspaceStats(),
     staleTime: STALE_TIME_2_5_MIN,
@@ -17,11 +18,15 @@ export function useAdminWorkspaceStats() {
   });
 }
 
-export function useAdminActiveFarmersReport(params?: {
-  month?: string;
-  size?: number;
-}) {
+export function useAdminActiveFarmersReport(
+  params?: {
+    month?: string;
+    size?: number;
+  },
+  enabled: boolean = true,
+) {
   return useQuery({
+    enabled,
     queryKey: ["admin", "farm", "report", "active-farmers", params],
     queryFn: () => adminDashboardApi.getActiveFarmersReport(params),
     staleTime: STALE_TIME_2_5_MIN,
@@ -53,13 +58,17 @@ export function useAdminActiveFarmersWorkspaces(
   });
 }
 
-export function useAdminHarvestByVariant(params?: {
-  domainCode?: string;
-  fromMonth?: string;
-  toMonth?: string;
-  top?: number;
-}) {
+export function useAdminHarvestByVariant(
+  params?: {
+    domainCode?: string;
+    fromMonth?: string;
+    toMonth?: string;
+    top?: number;
+  },
+  enabled: boolean = true,
+) {
   return useQuery({
+    enabled,
     queryKey: ["admin", "farm", "report", "harvest-by-variant", params],
     queryFn: () => adminDashboardApi.getHarvestByVariant(params),
     staleTime: STALE_TIME_2_5_MIN,

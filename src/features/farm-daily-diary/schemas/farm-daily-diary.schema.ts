@@ -21,19 +21,23 @@ export const photoRequestSchema = z.object({
 });
 
 export const supplyUsageSchema = z.object({
-  supplyItemId: z.number({ required_error: "Vui lòng chọn vật tư" }).positive(),
-  unitBaseId: z.number({ required_error: "Vui lòng chọn đơn vị tính" }).positive(),
-  quantityActual: z.number({ required_error: "Vui lòng nhập số lượng thực tế" }).min(0, "Số lượng phải lớn hơn hoặc bằng 0"),
+  supplyItemId: z.number({ error: "Vui lòng chọn vật tư" }).positive(),
+  unitBaseId: z.number({ error: "Vui lòng chọn đơn vị tính" }).positive(),
+  quantityActual: z
+    .number({ error: "Vui lòng nhập số lượng thực tế" })
+    .min(0, "Số lượng phải lớn hơn hoặc bằng 0"),
 });
 export const supplyUsageRequestSchema = supplyUsageSchema;
-
 
 export const dailyDiaryLineSchema = z
   .object({
     dailyTaskId: z.number().nullable().optional(),
     name: z.string().min(1, "Tên công việc không được để trống"),
     taskCategoryId: z.number().nullable().optional(),
-    priority: z.enum(["LOW", "MEDIUM", "HIGH", "URGENT"]).optional().default("MEDIUM"),
+    priority: z
+      .enum(["LOW", "MEDIUM", "HIGH", "URGENT"])
+      .optional()
+      .default("MEDIUM"),
     startDate: z.string().min(1, "Vui lòng chọn ngày bắt đầu"),
     endDate: z.string().min(1, "Vui lòng chọn ngày kết thúc"),
     scopeType: z.enum(["REGION", "AREA", "PLOT"]).nullable().optional(),
@@ -55,17 +59,23 @@ export const dailyDiaryLineSchema = z
   );
 
 export const harvestItemSchema = z.object({
-  targetType: z.enum(["ZONE", "ZONE_SUBJECT_VARIANT"], {
-    required_error: "Vui lòng chọn loại đối tượng thu hoạch",
+  targetType: z.enum(["ZONE", "ZONE_SUBJECT", "ZONE_SUBJECT_VARIANT"], {
+    error: "Vui lòng chọn loại đối tượng thu hoạch",
   }),
-  targetId: z.number({ required_error: "Vui lòng chọn vị trí/cây thu hoạch" }).positive(),
-  quantity: z.number({ required_error: "Vui lòng nhập sản lượng thu hoạch" }).positive("Sản lượng phải lớn hơn 0"),
-  unitBaseId: z.number({ required_error: "Vui lòng chọn đơn vị tính" }).positive(),
+  targetId: z
+    .number({ error: "Vui lòng chọn vị trí/cây thu hoạch" })
+    .positive(),
+  quantity: z
+    .number({ error: "Vui lòng nhập sản lượng thu hoạch" })
+    .positive("Sản lượng phải lớn hơn 0"),
+  unitBaseId: z.number({ error: "Vui lòng chọn đơn vị tính" }).positive(),
 });
 
 export const createDailyDiaryEntrySchema = z
   .object({
-    workflowId: z.number({ required_error: "Vui lòng chọn quy trình canh tác" }).positive("Vui lòng chọn quy trình canh tác"),
+    workflowId: z
+      .number({ error: "Vui lòng chọn quy trình canh tác" })
+      .positive("Vui lòng chọn quy trình canh tác"),
     seasonId: z.number().optional(),
     purpose: z.enum(
       [
@@ -81,8 +91,9 @@ export const createDailyDiaryEntrySchema = z
         "IRRIGATION",
         "OTHER",
       ],
-      { required_error: "Vui lòng chọn mục đích" },
+      { error: "Vui lòng chọn mục đích" },
     ),
+    warning: z.boolean().optional(),
     description: z.string().optional().default(""),
     photos: z.array(photoRequestSchema).optional().default([]),
     lines: z.array(dailyDiaryLineSchema).optional().default([]),
@@ -90,10 +101,14 @@ export const createDailyDiaryEntrySchema = z
   })
   .refine(
     (data) => {
-      const hasDescription = Boolean(data.description && data.description.trim().length > 0);
+      const hasDescription = Boolean(
+        data.description && data.description.trim().length > 0,
+      );
       const hasPhotos = Boolean(data.photos && data.photos.length > 0);
       const hasLines = Boolean(data.lines && data.lines.length > 0);
-      const hasHarvest = Boolean(data.harvestItems && data.harvestItems.length > 0);
+      const hasHarvest = Boolean(
+        data.harvestItems && data.harvestItems.length > 0,
+      );
       return hasDescription || hasPhotos || hasLines || hasHarvest;
     },
     {
@@ -103,4 +118,6 @@ export const createDailyDiaryEntrySchema = z
     },
   );
 
-export type CreateDailyDiaryEntryFormValues = z.infer<typeof createDailyDiaryEntrySchema>;
+export type CreateDailyDiaryEntryFormValues = z.infer<
+  typeof createDailyDiaryEntrySchema
+>;

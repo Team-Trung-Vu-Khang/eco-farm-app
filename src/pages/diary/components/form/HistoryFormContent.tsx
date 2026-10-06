@@ -38,11 +38,13 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
+  Switch,
   Textarea,
   useIsMobile,
   useToast,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import {
+  AlertTriangle,
   Apple,
   CheckCircle2,
   ChevronLeft,
@@ -117,6 +119,7 @@ export function HistoryFormContent({
   const [formData, setFormData] = useState<HistoryFormData>({
     regimenId: initialWorkflowId || urlWorkflowId,
     workType: "",
+    warning: false,
     harvestScope: "region",
     harvestTargets: [],
     harvestDetails: [],
@@ -280,6 +283,7 @@ export function HistoryFormContent({
       ...prev,
       regimenId: String(detail.workflowId ?? prev.regimenId),
       workType,
+      warning: Boolean(detail.warning),
       harvestScope,
       harvestTargets: newHarvestDetails.map((d) => String(d.targetId)),
       description: detail.description || "",
@@ -1029,6 +1033,7 @@ export function HistoryFormContent({
         planId,
         stageId,
         submittedByPersonnelId: undefined,
+        warning: formData.warning,
         description: formData.description,
         photos: [],
         lines,
@@ -1072,6 +1077,7 @@ export function HistoryFormContent({
           planId,
           stageId,
           submittedByPersonnelId: undefined,
+          warning: formData.warning,
           description: formData.description || null,
           photos: combinedPhotos.length > 0 ? combinedPhotos : undefined,
           lines,
@@ -1192,6 +1198,7 @@ export function HistoryFormContent({
       workflowId,
       seasonId,
       purpose,
+      warning: formData.warning,
       description: formData.description,
       photos: [],
       lines,
@@ -1236,6 +1243,7 @@ export function HistoryFormContent({
         workflowId,
         seasonId,
         purpose,
+        warning: formData.warning,
         description: formData.description || null,
         photos: combinedPhotos.length > 0 ? combinedPhotos : undefined,
         lines: lines.length > 0 ? lines : undefined,
@@ -1278,8 +1286,8 @@ export function HistoryFormContent({
       // Điện thoại: không hiện nút Quay lại (đã có thanh điều hướng dưới)
       actions={
         isMobile ? undefined : (
-        <div className="flex items-center gap-3">
-          {/* {allowModeToggle && (
+          <div className="flex items-center gap-3">
+            {/* {allowModeToggle && (
             <div className="flex items-center gap-2 bg-slate-100 px-1.5 py-1 rounded-lg border border-slate-200/80 shrink-0">
               <span className="text-xs font-extrabold px-2 py-1 rounded-md transition-all">
                 Kế hoạch vụ mùa
@@ -1302,15 +1310,15 @@ export function HistoryFormContent({
               />
             </div>
           )} */}
-          <Button
-            variant="outline"
-            className="h-10 rounded-lg px-4 text-sm gap-2"
-            onClick={() => setLocation(backUrl)}
-          >
-            <ChevronLeft className="h-4 w-4" />
-            Quay lại
-          </Button>
-        </div>
+            <Button
+              variant="outline"
+              className="h-10 rounded-lg px-4 text-sm gap-2"
+              onClick={() => setLocation(backUrl)}
+            >
+              <ChevronLeft className="h-4 w-4" />
+              Quay lại
+            </Button>
+          </div>
         )
       }
     >
@@ -1561,7 +1569,7 @@ export function HistoryFormContent({
               {/* Chọn Loại công việc */}
               <div className="space-y-3">
                 <Label required>Loại công việc</Label>
-                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+                <div className="grid gap-2.5 max-sm:grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
                   {WORK_TYPE_OPTIONS.map((option) => {
                     const isActive = formData.workType === option.value;
                     return (
@@ -1579,7 +1587,7 @@ export function HistoryFormContent({
                             setErrors((prev) => ({ ...prev, workType: "" }));
                           }
                         }}
-                        className={`rounded-2xl border-2 px-3 py-4 transition-all flex flex-col items-center text-center gap-1.5 group ${
+                        className={`rounded-xl border-2 px-2 py-3 transition-all flex flex-col items-center text-center gap-1.5 group ${
                           isPlannedMode
                             ? "cursor-not-allowed"
                             : "cursor-pointer"
@@ -1730,9 +1738,34 @@ export function HistoryFormContent({
                 </div>
               )}
 
+              {/* Cảnh báo (Warning) */}
+              <div className="flex items-center justify-between rounded-xl border border-amber-200 bg-amber-50/50 p-3.5">
+                <div className="flex items-center gap-3">
+                  <AlertTriangle className="h-5 w-5 text-amber-600 shrink-0" />
+                  <div>
+                    <Label
+                      htmlFor="diary-warning-switch"
+                      className="text-sm font-semibold text-amber-900 cursor-pointer"
+                    >
+                      Đánh dấu cảnh báo cho nhật ký này
+                    </Label>
+                    <p className="text-xs text-amber-700">
+                      Bật để gắn cờ cảnh báo đối với nhật ký thực hiện
+                    </p>
+                  </div>
+                </div>
+                <Switch
+                  id="diary-warning-switch"
+                  checked={formData.warning}
+                  onCheckedChange={(checked) =>
+                    setFormData((prev) => ({ ...prev, warning: checked }))
+                  }
+                />
+              </div>
+
               {/* Mô tả */}
               <div className="space-y-2">
-                <Label>Mô tả chi tiết lần cập nhật</Label>
+                <Label>Mô tả chi tiết</Label>
                 <Textarea
                   placeholder="Nhập mô tả hoặc ghi chú lần cập nhật..."
                   rows={4}
@@ -1749,7 +1782,7 @@ export function HistoryFormContent({
 
               {/* Upload hình ảnh đợt cập nhật */}
               <div className="space-y-2 pt-1">
-                <Label>Hình ảnh / Chứng từ đợt cập nhật (nếu có)</Label>
+                <Label>Hình ảnh (nếu có)</Label>
                 <div
                   onDragOver={(e) => {
                     e.preventDefault();

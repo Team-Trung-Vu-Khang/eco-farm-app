@@ -1,5 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
-import { lifecycleTemplateApi, userLifecycleTemplateApi } from "../api/foundation.api";
+import {
+  lifecycleTemplateApi,
+  userLifecycleTemplateApi,
+} from "../api/foundation.api";
 import type {
   LifecycleTemplateQueryParams,
   LifecycleTemplate,
@@ -34,6 +37,9 @@ export function useLifecycleTemplates({
     queryKey: lifecycleTemplateKeys.list(params),
     queryFn: () => lifecycleTemplateApi.list(params),
     enabled,
+    staleTime: 2 * 60 * 1000,
+    gcTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: false,
   });
 
   return {
@@ -57,6 +63,9 @@ export function useLifecycleTemplateById(
     queryKey: lifecycleTemplateKeys.detail(id),
     queryFn: () => lifecycleTemplateApi.getById(id),
     enabled: enabled && !!id,
+    staleTime: 2 * 60 * 1000,
+    gcTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: false,
   });
 }
 
@@ -66,8 +75,7 @@ export const userLifecycleTemplateKeys = {
   all: () => ["user-lifecycle-templates"] as const,
   list: (params?: LifecycleTemplateQueryParams) =>
     ["user-lifecycle-templates", "list", params ?? {}] as const,
-  detail: (id: number) =>
-    ["user-lifecycle-templates", "detail", id] as const,
+  detail: (id: number) => ["user-lifecycle-templates", "detail", id] as const,
 };
 
 export function useUserLifecycleTemplates({
@@ -78,6 +86,9 @@ export function useUserLifecycleTemplates({
     queryKey: userLifecycleTemplateKeys.list(params),
     queryFn: () => userLifecycleTemplateApi.list(params),
     enabled,
+    staleTime: 2 * 60 * 1000,
+    gcTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: false,
   });
 
   return {
@@ -97,6 +108,8 @@ export function useUserLifecycleTemplateById(
     queryKey: userLifecycleTemplateKeys.detail(id),
     queryFn: () => userLifecycleTemplateApi.getById(id),
     enabled: enabled && !!id,
+    staleTime: 2 * 60 * 1000,
+    gcTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: false,
   });
 }
-

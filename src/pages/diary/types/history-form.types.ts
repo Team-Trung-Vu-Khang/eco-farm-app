@@ -33,10 +33,10 @@ export interface CropSubjectVariantItem {
   regionName?: string;
 }
 
-
 export interface HistoryFormData {
   regimenId: string;
   workType: string;
+  warning: boolean;
   harvestScope: "region" | "crop";
   harvestTargets: string[];
   harvestDetails: HarvestDetail[];

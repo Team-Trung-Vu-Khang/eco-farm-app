@@ -1,27 +1,24 @@
 import { useQuery } from "@tanstack/react-query";
 import { productionZoneHarvestApi } from "../api/farm.api";
-import type {
-  FarmZoneHarvestStatsQueryParams,
-  FarmZoneHarvestStatsResponse,
-} from "../types/farm.type";
+import type { FarmZoneHarvestBySubjectResponse } from "../types/farm.type";
 
-export function useProductionZoneHarvestStats(
+export function useProductionZoneHarvestBySubject(
   zoneId: number | string | undefined | null,
-  params?: FarmZoneHarvestStatsQueryParams,
+  params?: { periodType?: "MONTHLY" | "YEARLY" },
   options?: { enabled?: boolean },
 ) {
   const numericZoneId = zoneId ? Number(zoneId) : 0;
   const isEnabled = (options?.enabled ?? true) && numericZoneId > 0;
 
-  return useQuery<FarmZoneHarvestStatsResponse>({
+  return useQuery<FarmZoneHarvestBySubjectResponse>({
     queryKey: [
       "farm",
       "production-zones",
       numericZoneId,
-      "harvest-stats",
+      "harvest-by-subject",
       params,
     ],
-    queryFn: () => productionZoneHarvestApi.getStats(numericZoneId, params),
+    queryFn: () => productionZoneHarvestApi.getBySubject(numericZoneId, params),
     enabled: isEnabled,
     staleTime: 5 * 60 * 1000,
   });

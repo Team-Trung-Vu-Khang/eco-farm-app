@@ -44,6 +44,9 @@ export function useMethodApplications({
     queryKey: methodApplicationKeys.list(params),
     queryFn: () => methodApplicationApi.list(params),
     enabled,
+    staleTime: 2 * 60 * 1000,
+    gcTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: false,
   });
 
   return {
@@ -72,5 +75,8 @@ export function useMethodApplicationById(
     queryKey: methodApplicationKeys.detail(id),
     queryFn: () => methodApplicationApi.getById(id),
     enabled: enabled && !!id,
+    staleTime: 2 * 60 * 1000,
+    gcTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: false,
   });
 }

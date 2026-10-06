@@ -1,4 +1,7 @@
-import { FARM_ENDPOINTS } from "@/shared/constants/farm.constants";
+import {
+  FARM_BASE_PATH,
+  FARM_ENDPOINTS,
+} from "@/shared/constants/farm.constants";
 import { apiClient } from "../../../shared/lib/axios";
 import type {
   FarmSeedRequest,
@@ -30,6 +33,8 @@ import type {
   FarmZoneHarvestStatsResponse,
   FarmZoneHarvestChartResponse,
   FarmZoneHarvestChartQueryParams,
+  FarmZoneHarvestStatsQueryParams,
+  FarmZoneHarvestBySubjectResponse,
 } from "../types/farm.type";
 import type { PageResponse } from "../../foundation/types/foundation.type";
 
@@ -567,10 +572,14 @@ export const productionHealthMetricsApi = {
 // ─── Production Zone Harvest Stats & Chart API ──────────────────────────────
 
 export const productionZoneHarvestApi = {
-  getStats: (zoneId: number | string) =>
+  getStats: (
+    zoneId: number | string,
+    params?: FarmZoneHarvestStatsQueryParams,
+  ) =>
     apiClient
       .get<FarmZoneHarvestStatsResponse>(
         FARM_ENDPOINTS.productionZoneHarvestStats(zoneId),
+        { params },
       )
       .then((r) => r.data),
 
@@ -581,6 +590,17 @@ export const productionZoneHarvestApi = {
     apiClient
       .get<FarmZoneHarvestChartResponse>(
         FARM_ENDPOINTS.productionZoneHarvestChart(zoneId),
+        { params },
+      )
+      .then((r) => r.data),
+
+  getBySubject: (
+    zoneId: number | string,
+    params?: { periodType?: "MONTHLY" | "YEARLY" },
+  ) =>
+    apiClient
+      .get<FarmZoneHarvestBySubjectResponse>(
+        `${FARM_BASE_PATH}/production-zones/${zoneId}/harvest-by-subject`,
         { params },
       )
       .then((r) => r.data),

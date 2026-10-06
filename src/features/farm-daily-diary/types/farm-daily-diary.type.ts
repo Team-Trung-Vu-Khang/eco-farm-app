@@ -119,7 +119,7 @@ export interface DailyDiaryLineRequest {
 }
 
 export interface HarvestItemResponse {
-  targetType: "ZONE" | "ZONE_SUBJECT_VARIANT" | string;
+  targetType: "ZONE" | "ZONE_SUBJECT" | "ZONE_SUBJECT_VARIANT" | string;
   targetId: number;
   quantity: number;
   unitBaseId: number;
@@ -133,7 +133,7 @@ export interface HarvestItemResponse {
 }
 
 export interface HarvestItemRequest {
-  targetType: "ZONE" | "ZONE_SUBJECT_VARIANT";
+  targetType: "ZONE" | "ZONE_SUBJECT" | "ZONE_SUBJECT_VARIANT";
   targetId: number;
   quantity: number;
   unitBaseId: number;
@@ -143,6 +143,7 @@ export interface CreateFarmDailyDiaryEntryRequest {
   workflowId: number;
   seasonId?: number;
   purpose: FarmPlanPurpose;
+  warning?: boolean;
   description?: string | null;
   photos?: PhotoRequest[];
   lines?: DailyDiaryLineRequest[];
@@ -155,6 +156,7 @@ export interface FarmDailyDiaryEntryResponse {
   workspaceId: number;
   workflowId: number;
   workflow?: WorkflowSnapshot | null;
+  warning?: boolean;
   hasEvidence?: boolean;
   hasSupply?: boolean;
   seasonId?: number;
@@ -183,6 +185,7 @@ export interface FarmDailyDiaryStatsResponse {
   totalUpdates: number;
   withEvidence: number;
   withoutEvidence: number;
+  withWarning?: number;
   latestUpdatedAt: string | null;
 }
 
@@ -191,6 +194,7 @@ export interface FarmDailyDiaryQueryParams {
   size?: number;
   workflowId?: number;
   purpose?: FarmPlanPurpose | FarmPlanPurpose[];
+  warning?: boolean;
   keyword?: string;
   fromDate?: string;
   toDate?: string;
@@ -202,5 +206,3 @@ export interface FarmDiaryQueryParams extends FarmDailyDiaryQueryParams {
   planId?: number;
   stageId?: number;
 }
-
-

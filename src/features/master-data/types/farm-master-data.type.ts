@@ -212,6 +212,8 @@ export interface FarmTeamResponse {
 export interface FarmPersonnelQueryParams extends FarmBaseQueryParams {
   teamId?: number;
   departmentId?: number;
+  /** Lọc nhân sự theo Vùng canh tác */
+  cultivationZoneId?: number;
 }
 
 /** GET /api/admin/farm/personnel — không dùng X-Workspace-Id. */

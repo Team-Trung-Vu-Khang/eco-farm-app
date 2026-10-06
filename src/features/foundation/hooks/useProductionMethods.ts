@@ -22,7 +22,8 @@ export function useProductionMethods(
     queryKey: productionMethodKeys.list(params),
     queryFn: () => productionMethodApi.list(params),
     enabled,
-    staleTime: 5 * 60 * 1000,
+    staleTime: 2 * 60 * 1000,
+    gcTime: 5 * 60 * 1000,
     refetchOnWindowFocus: false,
   });
 
@@ -40,7 +41,8 @@ export function useProductionMethodById(id: number, enabled: boolean = true) {
     queryKey: productionMethodKeys.detail(id),
     queryFn: () => productionMethodApi.getById(id),
     enabled: enabled && !!id,
-    staleTime: 5 * 60 * 1000,
+    staleTime: 2 * 60 * 1000,
+    gcTime: 5 * 60 * 1000,
     refetchOnWindowFocus: false,
   });
 }

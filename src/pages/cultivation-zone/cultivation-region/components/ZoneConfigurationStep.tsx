@@ -477,11 +477,6 @@ export const CropCard = ({
           </div>
         ) : varieties.length > 0 ? (
           <div className="space-y-3 pt-1">
-            {!varieties.some((v) => selectedVarietyIds.includes(v.id)) && (
-              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-50 border border-amber-200 text-amber-800 text-[11px] font-semibold">
-                <span>⚠️ Bắt buộc chọn ít nhất 1 giống cây trồng</span>
-              </div>
-            )}
             {/* Search input */}
             {varieties.length > 4 && (
               <div className="relative">
@@ -736,7 +731,9 @@ export const ZoneConfigurationStep: React.FC<ZoneConfigurationStepProps> = ({
 
   const subjectsForSelection = useMemo(() => {
     const mergedMap = new Map<number, SeedSubjectGroup>();
-    cachedSubjects.forEach((subject) => mergedMap.set(subject.subjectId, subject));
+    cachedSubjects.forEach((subject) =>
+      mergedMap.set(subject.subjectId, subject),
+    );
     subjects.forEach((subject) => mergedMap.set(subject.subjectId, subject));
     return Array.from(mergedMap.values());
   }, [cachedSubjects, subjects]);
@@ -805,7 +802,8 @@ export const ZoneConfigurationStep: React.FC<ZoneConfigurationStepProps> = ({
 
     subjectsForSelection.forEach((subj) => {
       subj.variants.forEach((v) => {
-        if (selectedVarietyIds.includes(v.id)) linkVariety(v.id, subj.subjectId);
+        if (selectedVarietyIds.includes(v.id))
+          linkVariety(v.id, subj.subjectId);
       });
     });
 
@@ -834,59 +832,63 @@ export const ZoneConfigurationStep: React.FC<ZoneConfigurationStepProps> = ({
       return;
     }
 
-    // 2. Must have at least 1 variety selected
-    if (selectedVarietyIds.length === 0) {
-      setValue("isSeedSelectionValid", false);
-      return;
-    }
-
-    // 3. Every selected crop MUST have at least 1 variety checked
-    const varietyCropMap: Record<string, string> =
-      watch("varietyCropMap") || {};
-    const allCropsHaveVarieties = selectedCropIds.every((cropIdStr) => {
-      const cropIdNum = parseInt(cropIdStr, 10);
-      const cropGroup = subjectsForSelection.find(
-        (s) => s.subjectId === cropIdNum,
-      );
-      const variants = cropGroup?.variants ?? [];
-
-      if (variants.length > 0) {
-        return variants.some((v) => selectedVarietyIds.includes(v.id));
+    // 2. Nếu dùng hạt giống cụ thể (useSpecificSeeds = true):
+    // Cả vùng phải chọn tới cấp hạt giống: mọi cây trồng có giống, mọi giống có hạt giống
+    if (useSpecificSeeds) {
+      if (selectedVarietyIds.length === 0) {
+        setValue("isSeedSelectionValid", false);
+        return;
       }
 
-      const mappedVarietyIds = Object.entries(varietyCropMap)
-        .filter(([_, cId]) => String(cId) === cropIdStr)
-        .map(([vId]) => Number(vId));
+      const varietyCropMap: Record<string, string> =
+        watch("varietyCropMap") || {};
+      const allCropsHaveVarieties = selectedCropIds.every((cropIdStr) => {
+        const cropIdNum = parseInt(cropIdStr, 10);
+        const cropGroup = subjectsForSelection.find(
+          (s) => s.subjectId === cropIdNum,
+        );
+        const variants = cropGroup?.variants ?? [];
 
-      const foundationVarietyIds = allFoundationVarieties
-        .filter((v) => (v.subjectId ?? v.subject?.id) === cropIdNum)
-        .map((v) => v.id);
+        if (variants.length > 0) {
+          return variants.some((v) => selectedVarietyIds.includes(v.id));
+        }
 
-      const combined = Array.from(
-        new Set([...mappedVarietyIds, ...foundationVarietyIds]),
-      );
-      if (combined.length > 0) {
-        return combined.some((vId) => selectedVarietyIds.includes(vId));
+        const mappedVarietyIds = Object.entries(varietyCropMap)
+          .filter(([_, cId]) => String(cId) === cropIdStr)
+          .map(([vId]) => Number(vId));
+
+        const foundationVarietyIds = allFoundationVarieties
+          .filter((v) => (v.subjectId ?? v.subject?.id) === cropIdNum)
+          .map((v) => v.id);
+
+        const combined = Array.from(
+          new Set([...mappedVarietyIds, ...foundationVarietyIds]),
+        );
+        if (combined.length > 0) {
+          return combined.some((vId) => selectedVarietyIds.includes(vId));
+        }
+
+        return false;
+      });
+
+      if (!allCropsHaveVarieties) {
+        setValue("isSeedSelectionValid", false);
+        return;
       }
 
-      return true;
-    });
-
-    if (!allCropsHaveVarieties) {
-      setValue("isSeedSelectionValid", false);
-      return;
+      // Check if any VarietyItem declared invalid (e.g. missing seeds when useSpecificSeeds is true)
+      if (hasInvalidVarieties) {
+        setValue("isSeedSelectionValid", false);
+        return;
+      }
     }
 
-    // 4. Check if any VarietyItem declared invalid (e.g. missing seeds when useSpecificSeeds is true)
-    if (hasInvalidVarieties) {
-      setValue("isSeedSelectionValid", false);
-      return;
-    }
-
+    // 3. Vùng không dùng hạt giống: Cho phép chọn Cây trồng tự do (có hoặc không có Giống)
     setValue("isSeedSelectionValid", true);
   }, [
     selectedCropIds,
     selectedVarietyIds,
+    useSpecificSeeds,
     subjectsForSelection,
     allFoundationVarieties,
     hasInvalidVarieties,
@@ -897,20 +899,22 @@ export const ZoneConfigurationStep: React.FC<ZoneConfigurationStepProps> = ({
   const availableCropOptions = useMemo(() => {
     const keyword = debouncedCropSearch.toLowerCase().trim();
 
-    return subjects
-      .filter((s) => !selectedCropIds.includes(String(s.subjectId)))
-      // Nhóm từ methodApplications nằm sẵn trong bộ nhớ nên vẫn phải lọc tay;
-      // riêng allProductionSubjects đã được API lọc theo cùng từ khoá.
-      .filter(
-        (s) =>
-          !keyword ||
-          s.subjectName?.toLowerCase().includes(keyword) ||
-          s.subjectCode?.toLowerCase().includes(keyword),
-      )
-      .map((s) => ({
-        label: s.subjectName || "",
-        value: String(s.subjectId),
-      }));
+    return (
+      subjects
+        .filter((s) => !selectedCropIds.includes(String(s.subjectId)))
+        // Nhóm từ methodApplications nằm sẵn trong bộ nhớ nên vẫn phải lọc tay;
+        // riêng allProductionSubjects đã được API lọc theo cùng từ khoá.
+        .filter(
+          (s) =>
+            !keyword ||
+            s.subjectName?.toLowerCase().includes(keyword) ||
+            s.subjectCode?.toLowerCase().includes(keyword),
+        )
+        .map((s) => ({
+          label: s.subjectName || "",
+          value: String(s.subjectId),
+        }))
+    );
   }, [subjects, selectedCropIds, debouncedCropSearch]);
 
   const handleSelectCrop = (cropIdStr: string) => {
@@ -1172,31 +1176,45 @@ export const ZoneConfigurationStep: React.FC<ZoneConfigurationStepProps> = ({
           <CardHeader className="pb-3 border-b bg-linear-to-r from-green-50/50 to-white">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <CardTitle className="flex items-center gap-2 text-base">
-                <div className="w-8 h-8 rounded-lg bg-green-100 flex items-center justify-center">
-                  <Leaf className="w-4 h-4 text-green-600" />
+                <div
+                  className={cn(
+                    "w-8 h-8 rounded-lg flex items-center justify-center transition-colors",
+                    useSpecificSeeds
+                      ? "bg-amber-100 text-amber-600"
+                      : "bg-emerald-100 text-emerald-600",
+                  )}
+                >
+                  {useSpecificSeeds ? (
+                    <Sprout className="w-4 h-4 text-amber-600" />
+                  ) : (
+                    <Leaf className="w-4 h-4 text-emerald-600" />
+                  )}
                 </div>
                 <Controller
                   control={control}
                   name="useSpecificSeeds"
                   render={({ field }) => (
                     <span>
-                      <span>
-                        {showSeedSelection
-                          ? field.value
-                            ? "Giống cây trồng"
-                            : "Hạt giống"
-                          : "Giống cây trồng"}
-                      </span>
+                      {showSeedSelection
+                        ? field.value
+                          ? "Hạt giống cây trồng"
+                          : "Giống cây trồng"
+                        : "Giống cây trồng"}
                     </span>
                   )}
                 />
               </CardTitle>
 
               {showSeedSelection && (
-                <div className="flex items-center gap-3 bg-white/90 backdrop-blur-xs border border-slate-200/80 rounded-full px-3.5 py-1.5 shadow-2xs">
+                <div className="flex items-center gap-1.5 bg-slate-100/90 backdrop-blur-xs border border-slate-200/80 rounded-full p-1 shadow-2xs">
                   {/* Option 1: Giống cơ bản */}
                   <div
-                    className="flex items-center gap-1.5 cursor-pointer select-none"
+                    className={cn(
+                      "flex items-center font-bold gap-1.5 px-3 py-1 rounded-full cursor-pointer select-none transition-all border",
+                      !useSpecificSeeds
+                        ? "bg-white text-emerald-700 shadow-xs border-emerald-200"
+                        : "bg-transparent text-slate-500 hover:text-slate-700 border-transparent",
+                    )}
                     onClick={() => {
                       setValue("useSpecificSeeds", false, {
                         shouldDirty: true,
@@ -1212,22 +1230,13 @@ export const ZoneConfigurationStep: React.FC<ZoneConfigurationStepProps> = ({
                           : "text-slate-400",
                       )}
                     />
-                    <span
-                      className={cn(
-                        "text-xs font-semibold transition-colors",
-                        !useSpecificSeeds
-                          ? "text-emerald-700 font-bold"
-                          : "text-slate-500 hover:text-slate-700",
-                      )}
-                    >
-                      Giống cơ bản
-                    </span>
+                    <span className="text-xs">Giống cơ bản</span>
                   </div>
 
-                  {/* Switch */}
+                  {/* Switch with active colors for both states */}
                   <Switch
                     checked={useSpecificSeeds}
-                    className="data-[state=checked]:bg-emerald-600 data-[state=unchecked]:bg-slate-300"
+                    className="data-[state=checked]:bg-amber-500 data-[state=unchecked]:bg-emerald-500"
                     onCheckedChange={(checked) => {
                       setValue("useSpecificSeeds", checked, {
                         shouldDirty: true,
@@ -1240,27 +1249,21 @@ export const ZoneConfigurationStep: React.FC<ZoneConfigurationStepProps> = ({
 
                   {/* Option 2: Hạt giống cụ thể */}
                   <div
-                    className="flex items-center gap-1.5 cursor-pointer select-none"
+                    className={cn(
+                      "flex items-center font-bold gap-1.5 px-3 py-1 rounded-full cursor-pointer select-none transition-all border",
+                      useSpecificSeeds
+                        ? "bg-white text-amber-700 shadow-xs border-amber-200"
+                        : "bg-transparent text-slate-500 hover:text-slate-700 border-transparent",
+                    )}
                     onClick={() => {
                       setValue("useSpecificSeeds", true, { shouldDirty: true });
                     }}
                   >
-                    <span
-                      className={cn(
-                        "text-xs font-semibold transition-colors",
-                        useSpecificSeeds
-                          ? "text-emerald-700 font-bold"
-                          : "text-slate-500 hover:text-slate-700",
-                      )}
-                    >
-                      Hạt giống cây trồng
-                    </span>
+                    <span className="text-xs">Hạt giống cây trồng</span>
                     <Sprout
                       className={cn(
                         "w-3.5 h-3.5 transition-colors",
-                        useSpecificSeeds
-                          ? "text-emerald-600"
-                          : "text-slate-400",
+                        useSpecificSeeds ? "text-amber-600" : "text-slate-400",
                       )}
                     />
                   </div>

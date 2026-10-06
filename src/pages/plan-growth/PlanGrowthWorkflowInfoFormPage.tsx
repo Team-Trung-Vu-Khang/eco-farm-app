@@ -479,7 +479,7 @@ export default function PlanGrowthWorkflowInfoFormPage() {
             onClick={form.handleSubmit(handleSave)}
           >
             <Save className="mr-2 h-4 w-4" />
-            {isSaving ? "Đang lưu..." : "Lưu sơ đồ"}
+            {isSaving ? "Đang lưu..." : "Lưu thông tin"}
           </Button>
         </div>
       }

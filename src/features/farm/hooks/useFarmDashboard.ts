@@ -8,7 +8,8 @@ const STALE_TIME_5_MIN = 300000;
 export function useFarmDashboardAlerts() {
   const certsQuery = useQuery({
     queryKey: ["farm", "certificates", "expiring_soon"],
-    queryFn: () => farmDashboardApi.getExpiringCertificates({ page: 0, size: 20 }),
+    queryFn: () =>
+      farmDashboardApi.getExpiringCertificates({ page: 0, size: 20 }),
     staleTime: STALE_TIME_1_MIN,
   });
 
@@ -28,7 +29,10 @@ export function useFarmDashboardAlerts() {
     certCount: certsQuery.data?.totalElements ?? 0,
     lowStockData: lowStockQuery.data,
     contractData: contractsQuery.data,
-    isLoading: certsQuery.isLoading || lowStockQuery.isLoading || contractsQuery.isLoading,
+    isLoading:
+      certsQuery.isLoading ||
+      lowStockQuery.isLoading ||
+      contractsQuery.isLoading,
     refetchAll: () => {
       certsQuery.refetch();
       lowStockQuery.refetch();
@@ -37,15 +41,18 @@ export function useFarmDashboardAlerts() {
   };
 }
 
-export function useFarmProductionHealth() {
+export function useFarmProductionHealth(options?: { enabled?: boolean }) {
   return useQuery({
     queryKey: ["farm", "dashboard", "production-health"],
     queryFn: () => farmDashboardApi.getProductionHealth(),
+    enabled: options?.enabled ?? true,
     staleTime: STALE_TIME_5_MIN,
   });
 }
 
-export function useFarmHarvestProduction(params?: HarvestProductionQueryParams) {
+export function useFarmHarvestProduction(
+  params?: HarvestProductionQueryParams,
+) {
   return useQuery({
     queryKey: ["farm", "dashboard", "harvest-production", params],
     queryFn: () => farmDashboardApi.getHarvestProduction(params),

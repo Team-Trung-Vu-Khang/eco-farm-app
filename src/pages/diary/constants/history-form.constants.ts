@@ -140,12 +140,11 @@ export function getHarvestLabel(scope: "region" | "crop") {
 
 export function getHarvestUnitOptions() {
   return [
-    { label: "g (Gram)", value: "g" },
-    { label: "kg (Kilogram)", value: "kg" },
-    { label: "Tạ (100 kg)", value: "tạ" },
-    { label: "Tấn (1.000 kg)", value: "tấn" },
-    { label: "ml (Mililit / cc)", value: "ml" },
-    { label: "l / L (Lít)", value: "l" },
+    { label: "gam", value: "g" },
+    { label: "kg", value: "kg" },
+    { label: "Tạ", value: "tạ" },
+    { label: "Tấn", value: "tấn" },
+    { label: "ml", value: "ml" },
+    { label: "l", value: "l" },
   ];
 }
-

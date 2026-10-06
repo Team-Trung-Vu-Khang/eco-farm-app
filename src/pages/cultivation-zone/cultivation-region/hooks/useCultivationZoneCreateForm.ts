@@ -3,6 +3,10 @@ import { useLocation, useRoute } from "wouter";
 import { useToast } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { useCultivationZoneMutations } from "@/features/farm/hooks/useCultivationZoneMutations";
 import { useCultivationZoneById } from "@/features/farm/hooks/useCultivationZones";
+import {
+  buildProductionZoneSubjects,
+  parseProductionZoneSubjects,
+} from "@/features/farm/utils/production-zone-subject.utils";
 import type { FarmCultivationZoneRequest } from "@/features/farm/types/farm.type";
 import { useSelectedWorkspaceId } from "@/features/workspace";
 import type { CultivationZoneFormValues } from "../data/cultivation-zone-form.schema";
@@ -38,19 +42,28 @@ export function useCultivationZoneCreateForm(
     if (isEditMode) {
       if (!zoneData) return; // wait for data
 
+      const parsedSubjects =
+        zoneData.subjects && zoneData.subjects.length > 0
+          ? parseProductionZoneSubjects(zoneData.subjects)
+          : null;
+
       // Build varietyLabels and varietyCropMap
-      const varietyLabels: Record<string, string> = {};
-      const varietyCropMap: Record<string, string> = {};
+      const varietyLabels: Record<string, string> =
+        parsedSubjects?.varietyLabels || {};
+      const varietyCropMap: Record<string, string> =
+        parsedSubjects?.varietyCropMap || {};
 
-      (zoneData.productionSubjectVariants ?? []).forEach((v) => {
-        if (!v.id) return;
-        varietyLabels[String(v.id)] = v.name || "";
-      });
+      if (!parsedSubjects) {
+        (zoneData.productionSubjectVariants ?? []).forEach((v) => {
+          if (!v.id) return;
+          varietyLabels[String(v.id)] = v.name || "";
+        });
 
-      (zoneData.subjectVariants ?? []).forEach((s) => {
-        if (!s.id) return;
-        varietyLabels[String(s.id)] = s.subjectVariantName || "";
-      });
+        (zoneData.subjectVariants ?? []).forEach((s) => {
+          if (!s.id) return;
+          varietyLabels[String(s.id)] = s.subjectVariantName || "";
+        });
+      }
 
       reset({
         id: zoneData.id,
@@ -89,28 +102,38 @@ export function useCultivationZoneCreateForm(
         farmingMethodId:
           zoneData.farmingMethod?.id ?? zoneData?.productionMethod?.id ?? 0,
         rearingMethodId: zoneData.rearingMethod?.id ?? 0,
-        // Load seedIds from subjectVariants (owner seeds) if present
-        seedIds: (zoneData.subjectVariants ?? []).map((s) => s.id),
-        // Crop IDs from metadataJson (set by previous form saves)
+        // Load seedIds
+        seedIds:
+          parsedSubjects?.seedIds && parsedSubjects.seedIds.length > 0
+            ? parsedSubjects.seedIds
+            : (zoneData.subjectVariants ?? []).map((s) => s.id),
+        // Crop IDs
         cropIds:
-          (zoneData.metadataJson?.selectedCropIds as string[]) ||
-          (zoneData.metadataJson?.cropIds as string[]) ||
-          [],
+          parsedSubjects?.cropIds && parsedSubjects.cropIds.length > 0
+            ? parsedSubjects.cropIds
+            : (zoneData.metadataJson?.selectedCropIds as string[]) ||
+              (zoneData.metadataJson?.cropIds as string[]) ||
+              [],
         cropSeedToggles:
           (zoneData.metadataJson?.cropSeedToggles as Record<string, boolean>) ||
           {},
-        // Load varietyIds: prefer productionSubjectVariants (Foundation), fallback subjectVariants
         varietyIds:
-          (zoneData.productionSubjectVariants ?? [])
-            .map((v) => v.id)
-            .filter((id) => id > 0).length > 0
-            ? (zoneData.productionSubjectVariants ?? []).map((v) => v.id)
-            : (zoneData.subjectVariants ?? [])
-                .map((s) => s.id)
-                .filter((id) => id > 0),
-        useSpecificSeeds: (zoneData.subjectVariants ?? []).length > 0,
+          parsedSubjects?.varietyIds && parsedSubjects.varietyIds.length > 0
+            ? parsedSubjects.varietyIds
+            : (zoneData.productionSubjectVariants ?? [])
+                  .map((v) => v.id)
+                  .filter((id) => id > 0).length > 0
+              ? (zoneData.productionSubjectVariants ?? []).map((v) => v.id)
+              : (zoneData.subjectVariants ?? [])
+                  .map((s) => s.id)
+                  .filter((id) => id > 0),
+        useSpecificSeeds:
+          parsedSubjects?.useSpecificSeeds ??
+          (zoneData.subjectVariants ?? []).length > 0,
         varietyLabels,
         varietyCropMap,
+        varietySeedMap: parsedSubjects?.varietySeedMap || {},
+        seedLabels: parsedSubjects?.seedLabels || {},
         healthUpdateMethod:
           zoneData.healthUpdateMode === "individual" ||
           zoneData.healthUpdateMode === "INDIVIDUAL" ||
@@ -157,26 +180,6 @@ export function useCultivationZoneCreateForm(
   ) => {
     setIsSubmitting(true);
     try {
-      // Build variant payload — mutually exclusive per API spec
-      const buildVariantPayload = (
-        useSpecific: boolean,
-        seedIds: number[],
-        varietyIds: number[],
-      ) => {
-        if (useSpecific) {
-          // User selected owner seeds → subjectVariantIds
-          return { subjectVariantIds: seedIds };
-        } else {
-          // User selected Foundation varieties → productionSubjectVariantIds
-          return { productionSubjectVariantIds: varietyIds };
-        }
-      };
-
-      const seedIds = (data.seedIds ?? [])
-        .map(Number)
-        .filter((id) => !isNaN(id) && id > 0);
-      const varietyIds = (data.varietyIds ?? []).filter((id) => id > 0);
-
       const healthUpdateMode: "zone" | "individual" =
         data.healthUpdateMethod === "INDIVIDUAL_PLANT" ||
         data.healthUpdateMethod === "individual" ||
@@ -214,7 +217,14 @@ export function useCultivationZoneCreateForm(
         rearingMethodId: data.rearingMethodId
           ? Number(data.rearingMethodId)
           : undefined,
-        ...buildVariantPayload(!!data.useSpecificSeeds, seedIds, varietyIds),
+        subjects: buildProductionZoneSubjects({
+          cropIds: data.cropIds,
+          varietyIds: data.varietyIds,
+          varietyCropMap: data.varietyCropMap,
+          varietySeedMap: data.varietySeedMap,
+          seedIds: data.seedIds,
+          useSpecificSeeds: !!data.useSpecificSeeds,
+        }),
         certificateIds: (data.certificateIds ?? [])
           .map(Number)
           .filter((id) => !isNaN(id)),
@@ -252,7 +262,8 @@ export function useCultivationZoneCreateForm(
     } catch (error) {
       toast({
         title: "Lỗi",
-        description: getApiErrorMessage(error) || "Đã xảy ra lỗi khi lưu thông tin",
+        description:
+          getApiErrorMessage(error) || "Đã xảy ra lỗi khi lưu thông tin",
         variant: "destructive",
       });
     } finally {

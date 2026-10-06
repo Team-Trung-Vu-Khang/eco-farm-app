@@ -17,23 +17,25 @@ import { StaffDetailPanel, StaffDetailEmpty } from "./StaffDetailPanel";
 
 interface StaffTabProps {
   zoneId: number;
-  /** Workspace sở hữu vùng — API admin bắt buộc */
+  /** Workspace sở hữu vùng (nếu xem ngoài active workspace) */
   workspaceId: number | null;
 }
 
 export const StaffTab = ({ zoneId, workspaceId }: StaffTabProps) => {
   const [selectedStaffId, setSelectedStaffId] = useState<number | null>(null);
 
-  // Nhân sự đã gắn vào vùng canh tác (API admin theo workspace)
+  // Nhân sự đã gắn vào vùng canh tác (Farm API)
   const { data, isLoading } = useQuery({
-    queryKey: ["admin-farm-personnel", workspaceId, zoneId],
+    queryKey: ["farm-personnel", workspaceId, zoneId],
     queryFn: () =>
-      farmPersonnelApi.listAdmin({
-        workspaceId: workspaceId!,
-        cultivationZoneId: zoneId,
-        size: 100,
-      }),
-    enabled: !!workspaceId && !!zoneId,
+      farmPersonnelApi.list(
+        {
+          cultivationZoneId: zoneId,
+          size: 100,
+        },
+        workspaceId ? Number(workspaceId) : undefined,
+      ),
+    enabled: !!zoneId,
   });
 
   const personnel: PersonnelItem[] = (data?.content ?? []).map((p) => ({

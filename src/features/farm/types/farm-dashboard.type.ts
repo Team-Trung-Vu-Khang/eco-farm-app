@@ -1,4 +1,8 @@
-export type SupplyTypeKey = "medicine" | "fertilizer" | "material" | "equipment";
+export type SupplyTypeKey =
+  | "medicine"
+  | "fertilizer"
+  | "material"
+  | "equipment";
 
 export interface LowStockCountByType {
   medicine: number;
@@ -57,4 +61,6 @@ export interface HarvestProductionQueryParams {
   periodType?: "MONTHLY" | "YEARLY";
   fromDate?: string;
   toDate?: string;
+  groupBy?: "ZONE" | "SUBJECT";
+  productionSubjectCode?: string;
 }

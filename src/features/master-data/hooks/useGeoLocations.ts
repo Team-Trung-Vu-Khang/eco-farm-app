@@ -29,7 +29,8 @@ export function useGeoProvinces({
     queryKey: geoLocationKeys.provinces(params),
     queryFn: () => masterDataApi.listGeoProvinces(params),
     enabled,
-    staleTime: 5 * 60 * 1000,
+    staleTime: 30 * 60 * 1000,
+    gcTime: 60 * 60 * 1000,
     refetchOnWindowFocus: false,
   });
 
@@ -47,15 +48,13 @@ interface UseGeoWardsOptions {
   enabled?: boolean;
 }
 
-export function useGeoWards({
-  params,
-  enabled = true,
-}: UseGeoWardsOptions) {
+export function useGeoWards({ params, enabled = true }: UseGeoWardsOptions) {
   const query = useQuery<MasterDataPageResponse<ProvinceWardRecord>, Error>({
     queryKey: geoLocationKeys.wards(params),
     queryFn: () => masterDataApi.listGeoWards(params),
     enabled,
-    staleTime: 5 * 60 * 1000,
+    staleTime: 30 * 60 * 1000,
+    gcTime: 60 * 60 * 1000,
     refetchOnWindowFocus: false,
   });
 

@@ -21,7 +21,7 @@ interface FarmerDashboardViewProps {
     completed: number;
     overdue: number;
     total: number;
-  };
+  } | null;
   isLoading?: boolean;
 }
 

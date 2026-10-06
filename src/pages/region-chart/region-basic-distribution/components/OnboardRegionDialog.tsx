@@ -11,6 +11,7 @@ import {
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { useRegionMutations } from "@/features/farm/hooks/useRegionMutations";
 import { useCultivationZoneMutations } from "@/features/farm/hooks/useCultivationZoneMutations";
+import { buildProductionZoneSubjects } from "@/features/farm/utils/production-zone-subject.utils";
 import type {
   FarmRegionRequest,
   FarmCultivationZoneRequest,
@@ -63,6 +64,10 @@ export const OnboardRegionDialog: React.FC<OnboardRegionDialogProps> = ({
       farmingMethodId: undefined,
       rearingMethodId: undefined,
       seedIds: [],
+      varietyIds: [],
+      varietyCropMap: {},
+      varietySeedMap: {},
+      useSpecificSeeds: false,
     },
   });
 
@@ -111,9 +116,14 @@ export const OnboardRegionDialog: React.FC<OnboardRegionDialogProps> = ({
         domainCode: "CROP",
         productionMethodId: data.farmingMethodId || 0,
         rearingMethodId: data.rearingMethodId || undefined,
-        // Onboard has no owner seeds — always Foundation varieties
-        productionSubjectVariantIds:
-          (data.varietyIds ?? []).length > 0 ? data.varietyIds : [],
+        subjects: buildProductionZoneSubjects({
+          cropIds: data.cropIds,
+          varietyIds: data.varietyIds,
+          varietyCropMap: data.varietyCropMap,
+          varietySeedMap: data.varietySeedMap,
+          seedIds: data.seedIds,
+          useSpecificSeeds: !!data.useSpecificSeeds,
+        }),
         status: data.status,
         scopes: [
           {

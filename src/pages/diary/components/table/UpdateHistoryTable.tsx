@@ -4,7 +4,15 @@ import {
   DataTable,
   type Column,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { Camera, Clock, Eye, Edit3, PackageOpen, Sprout } from "lucide-react";
+import {
+  AlertTriangle,
+  Camera,
+  Clock,
+  Eye,
+  Edit3,
+  PackageOpen,
+  Sprout,
+} from "lucide-react";
 import { useMemo } from "react";
 import { useLocation } from "wouter";
 import type { TaskHistoryItem } from "../../mock/history.mock";
@@ -136,6 +144,11 @@ export function UpdateHistoryTable({
               <span className="text-[11px] font-mono font-bold text-blue-700 bg-blue-50 px-1.5 py-0.5 rounded border border-blue-200">
                 {row.code}
               </span>
+              {row.warning && (
+                <Badge className="bg-amber-100 text-amber-800 border-amber-300 gap-1 text-[10px] font-bold">
+                  <AlertTriangle className="w-3 h-3 text-amber-600" /> Cảnh báo
+                </Badge>
+              )}
             </div>
             <div className="flex items-center gap-1.5 text-[11px] text-slate-500 font-medium">
               <Clock className="w-3 h-3 text-slate-400 shrink-0" />
@@ -384,6 +397,11 @@ export function UpdateHistoryTable({
               <span className="text-[11px] font-mono font-bold text-green-700 bg-green-50 px-1.5 py-0.5 rounded border border-green-200">
                 {row.code}
               </span>
+              {row.warning && (
+                <Badge className="bg-amber-100 text-amber-800 border-amber-300 gap-1 text-[10px] font-bold">
+                  <AlertTriangle className="w-3 h-3 text-amber-600" /> Cảnh báo
+                </Badge>
+              )}
             </div>
             <div className="flex items-center gap-1.5 text-[11px] text-slate-500 font-medium">
               <Clock className="w-3 h-3 text-slate-400 shrink-0" />
@@ -548,10 +566,19 @@ export function UpdateHistoryTable({
     [setLocation, onOpenDailyDetail],
   );
 
-  const columnsToUse = isDaily
-    ? (dailyColumns as any)
-    : (plannedEntryColumns as any);
-  const dataToUse = isDaily ? dailyEntries : (plannedEntries ?? []);
+  const hasPlannedEntries = Boolean(
+    plannedEntries && plannedEntries.length > 0,
+  );
+  const columnsToUse = (isDaily
+    ? dailyColumns
+    : hasPlannedEntries
+      ? plannedEntryColumns
+      : plannedColumns) as unknown as Column<Record<string, unknown>>[];
+  const dataToUse = (isDaily
+    ? dailyEntries
+    : hasPlannedEntries
+      ? plannedEntries
+      : data) as unknown as Record<string, unknown>[];
 
   return (
     <DataTable

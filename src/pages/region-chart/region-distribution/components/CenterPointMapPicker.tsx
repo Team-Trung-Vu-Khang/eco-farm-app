@@ -80,6 +80,8 @@ interface PickerContentProps {
   handleMapClick: (latlng: L.LatLng) => void;
   lat: number | string | undefined;
   lng: number | string | undefined;
+  onLatChange: (val?: number) => void;
+  onLngChange: (val?: number) => void;
 }
 
 const PickerContent = ({
@@ -96,6 +98,8 @@ const PickerContent = ({
   handleMapClick,
   lat,
   lng,
+  onLatChange,
+  onLngChange,
 }: PickerContentProps) => {
   const isMobile = useIsMobile();
   // Điện thoại (bản nhúng): nhãn ngắn, khoảng cách gọn, bản đồ thấp hơn
@@ -166,18 +170,36 @@ const PickerContent = ({
             {compact ? "Vĩ độ" : "Vĩ độ (Latitude)"}{" "}
             <span className="text-red-500">*</span>
           </Label>
-          <div className="min-h-10 rounded-md border bg-white px-3 py-2 text-sm font-medium text-slate-700">
-            {formatCoordinate(lat)}
-          </div>
+          <Input
+            type="number"
+            step="any"
+            placeholder={compact ? "Vĩ độ..." : "VD: 11.540000"}
+            value={lat ?? ""}
+            onChange={(e) => {
+              const val =
+                e.target.value === "" ? undefined : parseFloat(e.target.value);
+              onLatChange(val);
+            }}
+            className="bg-white"
+          />
         </div>
         <div className="space-y-1.5">
           <Label className="text-sm font-medium">
             {compact ? "Kinh độ" : "Kinh độ (Longitude)"}{" "}
             <span className="text-red-500">*</span>
           </Label>
-          <div className="min-h-10 rounded-md border bg-white px-3 py-2 text-sm font-medium text-slate-700">
-            {formatCoordinate(lng)}
-          </div>
+          <Input
+            type="number"
+            step="any"
+            placeholder={compact ? "Kinh độ..." : "VD: 106.895000"}
+            value={lng ?? ""}
+            onChange={(e) => {
+              const val =
+                e.target.value === "" ? undefined : parseFloat(e.target.value);
+              onLngChange(val);
+            }}
+            className="bg-white"
+          />
         </div>
       </div>
 
@@ -257,6 +279,26 @@ export const CenterPointMapPicker = () => {
 
   const markerRef = useRef<L.Marker>(null);
   const markerRefLarge = useRef<L.Marker>(null);
+
+  const handleLatChange = useCallback(
+    (value?: number) => {
+      setValue("centerPoint.lat", value, {
+        shouldValidate: true,
+        shouldDirty: true,
+      });
+    },
+    [setValue],
+  );
+
+  const handleLngChange = useCallback(
+    (value?: number) => {
+      setValue("centerPoint.lng", value, {
+        shouldValidate: true,
+        shouldDirty: true,
+      });
+    },
+    [setValue],
+  );
 
   const handleMarkerDrag = useCallback(() => {
     const marker = markerRef.current;
@@ -429,6 +471,8 @@ export const CenterPointMapPicker = () => {
         handleMapClick={handleMapClick}
         lat={lat}
         lng={lng}
+        onLatChange={handleLatChange}
+        onLngChange={handleLngChange}
       />
 
       <Dialog open={isFullscreen} onOpenChange={setIsFullscreen}>
@@ -453,6 +497,8 @@ export const CenterPointMapPicker = () => {
               handleMapClick={handleMapClick}
               lat={lat}
               lng={lng}
+              onLatChange={handleLatChange}
+              onLngChange={handleLngChange}
             />
           )}
         </DialogContent>

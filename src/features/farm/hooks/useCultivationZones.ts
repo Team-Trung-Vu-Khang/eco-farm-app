@@ -34,6 +34,9 @@ export function useCultivationZones({
     queryKey: cultivationZoneKeys.list(params),
     queryFn: () => cultivationZoneApi.list(params),
     enabled,
+    staleTime: 2 * 60 * 1000,
+    gcTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: false,
   });
 
   return {
@@ -58,6 +61,8 @@ export function useCultivationZoneById(
     queryKey: cultivationZoneKeys.detail(id, workspaceId),
     queryFn: () => cultivationZoneApi.getById(id, workspaceId),
     enabled: enabled && !!id,
+    staleTime: 2 * 60 * 1000,
+    gcTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: false,
   });
 }
-

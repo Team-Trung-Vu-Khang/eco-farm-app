@@ -1,4 +1,5 @@
 import PageWrapper from "@/components/PageWrapper";
+import { AdminGuard } from "@/features/auth";
 import {
   Button,
   DataTable,
@@ -37,55 +38,57 @@ export default function WorkspacePage() {
   } = useWorkspacePage();
 
   return (
-    <PageWrapper
-      title="Danh sách workspace"
-      description="Quản lý danh sách workspace"
-      actions={
-        <Button onClick={handleAdd}>
-          <Plus className="mr-2 h-4 w-4" />
-          Thêm workspace
-        </Button>
-      }
-    >
-      {workspaceError ? (
-        <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-          {workspaceError}
-        </div>
-      ) : null}
+    <AdminGuard>
+      <PageWrapper
+        title="Danh sách workspace"
+        description="Quản lý danh sách workspace"
+        actions={
+          <Button onClick={handleAdd}>
+            <Plus className="mr-2 h-4 w-4" />
+            Thêm workspace
+          </Button>
+        }
+      >
+        {workspaceError ? (
+          <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+            {workspaceError}
+          </div>
+        ) : null}
 
-      <DataTable
-        columns={workspaceColumns}
-        data={workspaceItems}
-        searchable
-        searchPlaceholder="Tìm workspace theo mã, tên, brand..."
-        loading={workspaceLoading}
-        pageSize={pageSize}
-        currentIndex={currentIndex}
-        totalPages={totalPages}
-        totalElements={totalElements}
-        onSearch={setSearch}
-        onPageSize={setPageSize}
-        onIndexChange={setCurrentIndex}
-        filters={filters}
-        onFilterChange={handleFilterChange}
-        onEdit={handleEdit}
-        onDelete={handleDelete}
-      />
+        <DataTable
+          columns={workspaceColumns}
+          data={workspaceItems}
+          searchable
+          searchPlaceholder="Tìm workspace theo mã, tên, brand..."
+          loading={workspaceLoading}
+          pageSize={pageSize}
+          currentIndex={currentIndex}
+          totalPages={totalPages}
+          totalElements={totalElements}
+          onSearch={setSearch}
+          onPageSize={setPageSize}
+          onIndexChange={setCurrentIndex}
+          filters={filters}
+          onFilterChange={handleFilterChange}
+          onEdit={handleEdit}
+          onDelete={handleDelete}
+        />
 
-      <WorkspaceFormDialog
-        open={formOpen}
-        onOpenChange={setFormOpen}
-        editItem={editItem}
-        loading={savingWorkspace}
-        onSubmit={handleSubmit}
-      />
+        <WorkspaceFormDialog
+          open={formOpen}
+          onOpenChange={setFormOpen}
+          editItem={editItem}
+          loading={savingWorkspace}
+          onSubmit={handleSubmit}
+        />
 
-      <DeleteDialog
-        open={deleteOpen}
-        onOpenChange={setDeleteOpen}
-        onConfirm={handleConfirmDelete}
-        description="Bạn có chắc chắn muốn xóa workspace này không?"
-      />
-    </PageWrapper>
+        <DeleteDialog
+          open={deleteOpen}
+          onOpenChange={setDeleteOpen}
+          onConfirm={handleConfirmDelete}
+          description="Bạn có chắc chắn muốn xóa workspace này không?"
+        />
+      </PageWrapper>
+    </AdminGuard>
   );
 }

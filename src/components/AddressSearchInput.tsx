@@ -32,7 +32,10 @@ interface AddressSearchInputProps {
   }) => void;
   latitude?: number;
   longitude?: number;
+  onLatitudeChange?: (latitude?: number) => void;
+  onLongitudeChange?: (longitude?: number) => void;
   placeholder?: string;
+  showCoordinateInputs?: boolean;
 }
 
 const buildGoongUrl = (path: string, params: Record<string, string>) => {
@@ -51,7 +54,10 @@ export default function AddressSearchInput({
   onSelectLocation,
   latitude,
   longitude,
+  onLatitudeChange,
+  onLongitudeChange,
   placeholder = "Tìm kiếm địa chỉ...",
+  showCoordinateInputs = true,
 }: AddressSearchInputProps) {
   const [results, setResults] = useState<SearchResult[]>([]);
   const [isSearching, setIsSearching] = useState(false);
@@ -116,6 +122,8 @@ export default function AddressSearchInput({
         latitude: location.lat,
         longitude: location.lng,
       });
+      onLatitudeChange?.(location.lat);
+      onLongitudeChange?.(location.lng);
     } catch {
       // Giữ địa chỉ đã chọn, không cập nhật tọa độ khi lỗi mạng
     } finally {
@@ -124,41 +132,99 @@ export default function AddressSearchInput({
   };
 
   return (
-    <div className="relative">
-      <Input
-        value={value}
-        onChange={(event) => {
-          selectedQueryRef.current = "";
-          userTypedQueryRef.current = event.target.value;
-          onChange(event.target.value);
-        }}
-        placeholder={placeholder}
-      />
-      {isSearching && (
-        <Loader2 className="absolute right-8 top-3 h-4 w-4 animate-spin text-slate-400" />
-      )}
-      {results.length > 0 && (
-        <div className="absolute z-[9999] mt-1 max-h-60 w-full overflow-y-auto rounded-md border bg-white p-1 shadow-lg">
-          {results.map((result) => (
-            <button
-              key={result.place_id}
-              type="button"
-              className="flex w-full items-start gap-2 rounded px-3 py-2 text-left text-sm hover:bg-slate-100"
-              onPointerDown={(event) => {
-                event.preventDefault();
-                void selectResult(result);
+    <div className="space-y-3">
+      <div className="relative">
+        <Input
+          value={value}
+          onChange={(event) => {
+            selectedQueryRef.current = "";
+            userTypedQueryRef.current = event.target.value;
+            onChange(event.target.value);
+          }}
+          placeholder={placeholder}
+        />
+        {isSearching && (
+          <Loader2 className="absolute right-8 top-3 h-4 w-4 animate-spin text-slate-400" />
+        )}
+        {results.length > 0 && (
+          <div className="absolute z-[9999] mt-1 max-h-60 w-full overflow-y-auto rounded-md border bg-white p-1 shadow-lg">
+            {results.map((result) => (
+              <button
+                key={result.place_id}
+                type="button"
+                className="flex w-full items-start gap-2 rounded px-3 py-2 text-left text-sm hover:bg-slate-100"
+                onPointerDown={(event) => {
+                  event.preventDefault();
+                  void selectResult(result);
+                }}
+              >
+                <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" />
+                <span>{result.description}</span>
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {showCoordinateInputs && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+          <div className="space-y-1">
+            <label className="text-xs font-semibold text-slate-700 flex items-center gap-1">
+              <span>Vĩ độ (Latitude)</span>
+              <span className="text-red-500">*</span>
+            </label>
+            <Input
+              type="number"
+              step="any"
+              placeholder="VD: 11.540000"
+              value={latitude ?? ""}
+              onChange={(e) => {
+                const val =
+                  e.target.value === ""
+                    ? undefined
+                    : parseFloat(e.target.value);
+                if (onLatitudeChange) {
+                  onLatitudeChange(val);
+                } else if (onSelectLocation) {
+                  onSelectLocation({
+                    address: value,
+                    latitude: val ?? 0,
+                    longitude: longitude ?? 0,
+                  });
+                }
               }}
-            >
-              <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" />
-              <span>{result.description}</span>
-            </button>
-          ))}
+              className="bg-white text-xs h-9"
+            />
+          </div>
+          <div className="space-y-1">
+            <label className="text-xs font-semibold text-slate-700 flex items-center gap-1">
+              <span>Kinh độ (Longitude)</span>
+              <span className="text-red-500">*</span>
+            </label>
+            <Input
+              type="number"
+              step="any"
+              placeholder="VD: 106.895000"
+              value={longitude ?? ""}
+              onChange={(e) => {
+                const val =
+                  e.target.value === ""
+                    ? undefined
+                    : parseFloat(e.target.value);
+                if (onLongitudeChange) {
+                  onLongitudeChange(val);
+                } else if (onSelectLocation) {
+                  onSelectLocation({
+                    address: value,
+                    latitude: latitude ?? 0,
+                    longitude: val ?? 0,
+                  });
+                }
+              }}
+              className="bg-white text-xs h-9"
+            />
+          </div>
         </div>
-      )}
-      {Number.isFinite(latitude) && Number.isFinite(longitude) && (
-        <p className="mt-1 text-xs text-slate-500">
-          Tọa độ: {latitude?.toFixed(6)}, {longitude?.toFixed(6)}
-        </p>
       )}
     </div>
   );

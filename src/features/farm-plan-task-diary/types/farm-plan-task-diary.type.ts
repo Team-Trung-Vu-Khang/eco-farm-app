@@ -76,6 +76,7 @@ export interface CreatePlanTaskDiaryEntryRequest {
   workflowId?: number | null;
   seasonId?: number | null;
   submittedByPersonnelId?: number | null;
+  warning?: boolean | null;
   description?: string | null;
   photos?: PhotoRequest[] | null;
   lines: PlanTaskDiaryLineRequest[];
@@ -88,6 +89,7 @@ export interface UpdatePlanTaskDiaryEntryRequest {
   workflowId?: number | null;
   seasonId?: number | null;
   submittedByPersonnelId?: number | null;
+  warning?: boolean | null;
   description?: string | null;
   photos?: PhotoRequest[] | null;
   lines?: PlanTaskDiaryLineRequest[] | null;
@@ -106,6 +108,7 @@ export interface PlanTaskDiaryEntryResponse {
   stageId: number;
   stage?: StageSnapshotRef | null;
   purpose?: FarmPlanPurpose | null;
+  warning?: boolean;
   hasEvidence?: boolean;
   hasSupply?: boolean;
   submittedByPersonnel?: SubmittedByPersonnelRef | null;
@@ -126,6 +129,7 @@ export interface PlanTaskDiaryStatsResponse {
   totalUpdates: number;
   withEvidence: number;
   withoutEvidence: number;
+  withWarning?: number;
   latestUpdatedAt: string | null;
 }
 
@@ -139,7 +143,7 @@ export interface PlanTaskDiaryQueryParams {
   seasonId?: number;
   taskId?: number;
   purpose?: FarmPlanPurpose | FarmPlanPurpose[];
+  warning?: boolean;
   fromDate?: string;
   toDate?: string;
 }
-

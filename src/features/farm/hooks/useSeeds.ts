@@ -32,9 +32,11 @@ type UseSeedsResult = ReturnType<
  * const { items, loading } = useSeeds();
  * const { items } = useSeeds({ params: { keyword: "Ri6", status: "active" } });
  */
-export function useSeeds(
-  { params, enabled = true, staleTime }: UseSeedsOptions = {},
-) {
+export function useSeeds({
+  params,
+  enabled = true,
+  staleTime = 2 * 60 * 1000,
+}: UseSeedsOptions = {}) {
   const queryResult: UseSeedsResult = useQuery<
     PageResponse<FarmSeedResponse>,
     Error
@@ -43,6 +45,8 @@ export function useSeeds(
     queryFn: () => seedApi.list(params),
     enabled,
     staleTime,
+    gcTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: false,
   });
 
   return {
@@ -74,5 +78,8 @@ export function useSeedById(
     queryKey: seedKeys.detail(id),
     queryFn: () => seedApi.getById(id),
     enabled: enabled && !!id,
+    staleTime: 2 * 60 * 1000,
+    gcTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: false,
   });
 }

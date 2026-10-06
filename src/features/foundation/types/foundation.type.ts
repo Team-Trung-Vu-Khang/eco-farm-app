@@ -413,6 +413,9 @@ export interface ProductionSubjectQueryParams extends BaseQueryParams {
   domainCode: "CROP" | "LIVESTOCK" | "AQUACULTURE";
 }
 
+export type ProductionSubjectRequest = FoundationCropRequest;
+export type ProductionSubjectVariantRequest = FoundationCropVarietyRequest;
+
 export interface ProductionSubjectGroupResponse {
   id: number;
   domainCode: "CROP" | "LIVESTOCK" | "AQUACULTURE";

@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { useCultivationZoneById } from "@/features/farm/hooks/useCultivationZones";
 import { useSeeds } from "@/features/farm/hooks/useSeeds";
-import { useAdminWorkspaceById } from "@/features/workspace/hooks/useAdminWorkspaceById";
+import { useWorkspaceById } from "@/features/workspace/hooks/useWorkspaceById";
 import { useProductionHealthMetricByScope } from "@/features/farm/hooks/useProductionHealthMetrics";
 import useRegionStore from "../../../stores/useRegionStore";
 import usePersonnelStore from "../../../stores/usePersonnelStore";
@@ -101,7 +101,7 @@ export const useCultivationRegionDetail = (
   });
 
   // Owning unit (Đơn vị sở hữu) for the staff tab
-  const { data: workspaceData } = useAdminWorkspaceById(workspaceId ?? "", {
+  const { data: workspaceData } = useWorkspaceById(workspaceId ?? "", {
     enabled: !!workspaceId,
   });
 
@@ -402,92 +402,127 @@ export const useCultivationRegionDetail = (
         origin?: string;
       }>;
     }> =
-      areaData.productionSubjectVariants &&
-      areaData.productionSubjectVariants.length > 0
-        ? // New API: Foundation varieties (productionSubjectVariants)
-          areaData.productionSubjectVariants.map((psv: any) => ({
-            id: String(psv.id),
-            varietyName: psv.name ?? "",
-            varietyCode: psv.code ?? "",
-            crop: "", // Foundation variants don't carry crop name directly
-            illustration: "",
-            seedType: "Giống Foundation",
-            isFoundation: true,
-            selectedSeeds: [],
-          }))
-        : areaData.subjectVariants && areaData.subjectVariants.length > 0
-          ? // Owner seeds path (subjectVariants)
-            areaData.subjectVariants.map((sv: any) => ({
-              id: String(sv.id),
-              varietyName: sv.subjectVariantName ?? sv.name ?? "",
-              varietyCode: sv.subjectVariantCode ?? sv.code ?? "",
-              crop: sv.productionSubjectName ?? "Khác",
+      areaData.subjects && areaData.subjects.length > 0
+        ? // New 3-level API: subjects (Cây trồng -> Giống -> Hạt giống)
+          areaData.subjects.flatMap((subj) => {
+            const cropName = subj.name ?? "";
+            if (!subj.variants || subj.variants.length === 0) {
+              return [
+                {
+                  id: `subject-${subj.id}`,
+                  varietyName: "Chưa chọn giống",
+                  varietyCode: subj.code ?? "",
+                  crop: cropName,
+                  illustration: "",
+                  seedType: "Cây trồng",
+                  isFoundation: true,
+                  selectedSeeds: [],
+                },
+              ];
+            }
+            return subj.variants.map((v) => ({
+              id: String(v.id),
+              varietyName: v.name ?? "",
+              varietyCode: v.code ?? "",
+              crop: cropName,
               illustration: "",
-              seedType: "Hạt giống",
+              seedType:
+                v.seeds && v.seeds.length > 0
+                  ? "Hạt giống"
+                  : "Giống Foundation",
+              isFoundation: !v.seeds || v.seeds.length === 0,
+              selectedSeeds: (v.seeds ?? []).map((s) => ({
+                id: String(s.id),
+                varietyName: s.name ?? "",
+              })),
+            }));
+          })
+        : areaData.productionSubjectVariants &&
+            areaData.productionSubjectVariants.length > 0
+          ? // New API: Foundation varieties (productionSubjectVariants)
+            areaData.productionSubjectVariants.map((psv: any) => ({
+              id: String(psv.id),
+              varietyName: psv.name ?? "",
+              varietyCode: psv.code ?? "",
+              crop: "", // Foundation variants don't carry crop name directly
+              illustration: "",
+              seedType: "Giống Foundation",
+              isFoundation: true,
               selectedSeeds: [],
             }))
-          : // Legacy seeds array fallback — group by productionSubject (cây trồng)
-            Array.from(
-              new Map(
-                (areaData.seeds ?? [])
-                  .map((s: any) => allSeeds.find((fs) => fs.id === s.id))
-                  .filter(
-                    (fs): fs is NonNullable<typeof fs> =>
-                      !!fs && !!(fs.subjectVariant?.id ?? fs.cropVariety?.id),
-                  )
-                  .map((fs) => {
-                    // Support both new field (subjectVariant) and old field (cropVariety)
-                    const variantId = String(
-                      fs.subjectVariant?.id ?? fs.cropVariety?.id,
-                    );
-                    const variantName =
-                      fs.subjectVariant?.name ?? fs.cropVariety?.name ?? "";
-                    const variantCode =
-                      fs.subjectVariant?.code ?? fs.cropVariety?.code ?? "";
-                    const cropName =
-                      (fs as any).productionSubject?.name ??
-                      (fs as any).crop?.name ??
-                      "Khác";
+          : areaData.subjectVariants && areaData.subjectVariants.length > 0
+            ? // Owner seeds path (subjectVariants)
+              areaData.subjectVariants.map((sv: any) => ({
+                id: String(sv.id),
+                varietyName: sv.subjectVariantName ?? sv.name ?? "",
+                varietyCode: sv.subjectVariantCode ?? sv.code ?? "",
+                crop: sv.productionSubjectName ?? "Khác",
+                illustration: "",
+                seedType: "Hạt giống",
+                selectedSeeds: [],
+              }))
+            : // Legacy seeds array fallback — group by productionSubject (cây trồng)
+              Array.from(
+                new Map(
+                  (areaData.seeds ?? [])
+                    .map((s: any) => allSeeds.find((fs) => fs.id === s.id))
+                    .filter(
+                      (fs): fs is NonNullable<typeof fs> =>
+                        !!fs && !!(fs.subjectVariant?.id ?? fs.cropVariety?.id),
+                    )
+                    .map((fs) => {
+                      // Support both new field (subjectVariant) and old field (cropVariety)
+                      const variantId = String(
+                        fs.subjectVariant?.id ?? fs.cropVariety?.id,
+                      );
+                      const variantName =
+                        fs.subjectVariant?.name ?? fs.cropVariety?.name ?? "";
+                      const variantCode =
+                        fs.subjectVariant?.code ?? fs.cropVariety?.code ?? "";
+                      const cropName =
+                        (fs as any).productionSubject?.name ??
+                        (fs as any).crop?.name ??
+                        "Khác";
 
-                    const selectedSeedsForVariety = (areaData.seeds ?? [])
-                      .map((seed: any) =>
-                        allSeeds.find((fsSeed) => fsSeed.id === seed.id),
-                      )
-                      .filter(
-                        (fsSeed): fsSeed is NonNullable<typeof fsSeed> => {
-                          const fVariantId =
-                            fsSeed?.subjectVariant?.id ??
-                            fsSeed?.cropVariety?.id;
-                          const thisVariantId =
-                            fs.subjectVariant?.id ?? fs.cropVariety?.id;
-                          return !!fsSeed && fVariantId === thisVariantId;
+                      const selectedSeedsForVariety = (areaData.seeds ?? [])
+                        .map((seed: any) =>
+                          allSeeds.find((fsSeed) => fsSeed.id === seed.id),
+                        )
+                        .filter(
+                          (fsSeed): fsSeed is NonNullable<typeof fsSeed> => {
+                            const fVariantId =
+                              fsSeed?.subjectVariant?.id ??
+                              fsSeed?.cropVariety?.id;
+                            const thisVariantId =
+                              fs.subjectVariant?.id ?? fs.cropVariety?.id;
+                            return !!fsSeed && fVariantId === thisVariantId;
+                          },
+                        )
+                        .map((fsSeed) => ({
+                          id: String(fsSeed.id),
+                          varietyName:
+                            fsSeed.name ??
+                            fsSeed.subjectVariant?.name ??
+                            fsSeed.cropVariety?.name ??
+                            "Hạt giống",
+                          origin: fsSeed.origin || "Việt Nam",
+                        }));
+
+                      return [
+                        variantId,
+                        {
+                          id: variantId,
+                          varietyName: variantName,
+                          varietyCode: variantCode,
+                          crop: cropName,
+                          illustration: (fs as any).imageUrl || "",
+                          seedType: "Hạt giống",
+                          selectedSeeds: selectedSeedsForVariety,
                         },
-                      )
-                      .map((fsSeed) => ({
-                        id: String(fsSeed.id),
-                        varietyName:
-                          fsSeed.name ??
-                          fsSeed.subjectVariant?.name ??
-                          fsSeed.cropVariety?.name ??
-                          "Hạt giống",
-                        origin: fsSeed.origin || "Việt Nam",
-                      }));
-
-                    return [
-                      variantId,
-                      {
-                        id: variantId,
-                        varietyName: variantName,
-                        varietyCode: variantCode,
-                        crop: cropName,
-                        illustration: (fs as any).imageUrl || "",
-                        seedType: "Hạt giống",
-                        selectedSeeds: selectedSeedsForVariety,
-                      },
-                    ];
-                  }),
-              ).values(),
-            );
+                      ];
+                    }),
+                ).values(),
+              );
 
     // Region-level stats from the production health metrics API.
     // pestCount is the API's "under treatment" figure; it exposes

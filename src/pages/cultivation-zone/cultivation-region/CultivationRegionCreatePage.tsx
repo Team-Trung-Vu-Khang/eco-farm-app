@@ -72,23 +72,22 @@ const CultivationRegionCreatePage = () => {
   const hasCrops = (cropIds?.length ?? 0) > 0;
   const hasVarieties = (varietyIds?.length ?? 0) > 0;
 
-  const allVarietiesHaveSeeds =
-    !useSpecificSeeds ||
-    (hasVarieties &&
-      varietyIds.every((vId: number) => {
+  const isSeedConfigValid = useSpecificSeeds
+    ? hasCrops &&
+      hasVarieties &&
+      (varietyIds ?? []).every((vId: number) => {
         const vSeeds = (varietySeedMap as Record<string, number[]>)?.[
           String(vId)
         ];
         return Array.isArray(vSeeds) && vSeeds.length > 0;
-      }));
+      })
+    : hasCrops;
 
   const step2Valid =
     !!farmingMethodId &&
     farmingMethodId > 0 &&
     !!healthUpdateMethod &&
-    hasCrops &&
-    hasVarieties &&
-    allVarietiesHaveSeeds &&
+    isSeedConfigValid &&
     isSeedSelectionValid !== false;
 
   const steps: Step[] = [

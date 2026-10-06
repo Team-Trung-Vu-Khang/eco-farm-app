@@ -1,6 +1,9 @@
 import { useQuery } from "@tanstack/react-query";
 import { growthCycleTemplateApi } from "../api/foundation.api";
-import { farmGrowthCycleSeasonApi, systemGrowthCycleSeasonApi } from "../../farm/api/growth-cycle-season.api";
+import {
+  farmGrowthCycleSeasonApi,
+  systemGrowthCycleSeasonApi,
+} from "../../farm/api/growth-cycle-season.api";
 import type {
   GrowthCycleTemplateQueryParams,
   FoundationGrowthCycleTemplateResponse,
@@ -28,6 +31,9 @@ export function useGrowthCycleTemplates({
     queryKey: growthCycleTemplateKeys.list(params),
     queryFn: () => growthCycleTemplateApi.list(params),
     enabled,
+    staleTime: 2 * 60 * 1000,
+    gcTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: false,
   });
 
   return {
@@ -52,6 +58,9 @@ export function useGrowthCycleTemplateById(
     queryKey: growthCycleTemplateKeys.detail(id),
     queryFn: () => growthCycleTemplateApi.getById(id),
     enabled: enabled && !!id,
+    staleTime: 2 * 60 * 1000,
+    gcTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: false,
   });
 }
 
@@ -65,15 +74,22 @@ export const userGrowthCycleTemplateKeys = {
 
 export const systemGrowthCycleTemplateKeys = {
   all: () => ["system-growth-cycles"] as const,
-  list: (params?: any) => ["system-growth-cycles", "list", params ?? {}] as const,
+  list: (params?: any) =>
+    ["system-growth-cycles", "list", params ?? {}] as const,
   detail: (id: number) => ["system-growth-cycles", "detail", id] as const,
 };
 
-export function useUserGrowthCycleTemplates({ params, enabled = true }: { params?: any; enabled?: boolean } = {}) {
+export function useUserGrowthCycleTemplates({
+  params,
+  enabled = true,
+}: { params?: any; enabled?: boolean } = {}) {
   const queryResult = useQuery<PageResponse<any>, Error>({
     queryKey: userGrowthCycleTemplateKeys.list(params),
     queryFn: () => farmGrowthCycleSeasonApi.list(params),
     enabled,
+    staleTime: 2 * 60 * 1000,
+    gcTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: false,
   });
 
   return {
@@ -85,11 +101,17 @@ export function useUserGrowthCycleTemplates({ params, enabled = true }: { params
   };
 }
 
-export function useSystemGrowthCycleTemplates({ params, enabled = true }: { params?: any; enabled?: boolean } = {}) {
+export function useSystemGrowthCycleTemplates({
+  params,
+  enabled = true,
+}: { params?: any; enabled?: boolean } = {}) {
   const queryResult = useQuery<PageResponse<any>, Error>({
     queryKey: systemGrowthCycleTemplateKeys.list(params),
     queryFn: () => systemGrowthCycleSeasonApi.list(params),
     enabled,
+    staleTime: 2 * 60 * 1000,
+    gcTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: false,
   });
 
   return {
@@ -101,18 +123,30 @@ export function useSystemGrowthCycleTemplates({ params, enabled = true }: { para
   };
 }
 
-export function useUserGrowthCycleTemplateById(id: number, { enabled = true }: { enabled?: boolean } = {}) {
+export function useUserGrowthCycleTemplateById(
+  id: number,
+  { enabled = true }: { enabled?: boolean } = {},
+) {
   return useQuery<any, Error>({
     queryKey: userGrowthCycleTemplateKeys.detail(id),
     queryFn: () => farmGrowthCycleSeasonApi.getById(id),
     enabled: enabled && !!id,
+    staleTime: 2 * 60 * 1000,
+    gcTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: false,
   });
 }
 
-export function useSystemGrowthCycleTemplateById(id: number, { enabled = true }: { enabled?: boolean } = {}) {
+export function useSystemGrowthCycleTemplateById(
+  id: number,
+  { enabled = true }: { enabled?: boolean } = {},
+) {
   return useQuery<any, Error>({
     queryKey: systemGrowthCycleTemplateKeys.detail(id),
     queryFn: () => systemGrowthCycleSeasonApi.getById(id),
     enabled: enabled && !!id,
+    staleTime: 2 * 60 * 1000,
+    gcTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: false,
   });
 }

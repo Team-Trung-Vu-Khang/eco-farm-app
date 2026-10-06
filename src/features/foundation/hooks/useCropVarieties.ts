@@ -46,6 +46,9 @@ export function useCropVarieties({
     queryKey: cropVarietyKeys.list(params),
     queryFn: () => cropVarietyApi.list(params),
     enabled,
+    staleTime: 2 * 60 * 1000,
+    gcTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: false,
   });
 
   return {
@@ -77,5 +80,8 @@ export function useCropVarietyById(
     queryKey: cropVarietyKeys.detail(id),
     queryFn: () => cropVarietyApi.getById(id),
     enabled: enabled && !!id,
+    staleTime: 2 * 60 * 1000,
+    gcTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: false,
   });
 }

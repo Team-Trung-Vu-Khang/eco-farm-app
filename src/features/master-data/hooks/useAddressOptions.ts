@@ -23,7 +23,8 @@ export function useAddressOptions(provinceCode?: string) {
       }
       return allProvinces;
     },
-    staleTime: 5 * 60 * 1000,
+    staleTime: 30 * 60 * 1000, // 30 mins
+    gcTime: 60 * 60 * 1000, // 1 hour
   });
 
   // Phường/Xã (Một tỉnh có thể có > 500 phường/xã, cần fetch tất cả các trang)
@@ -52,7 +53,8 @@ export function useAddressOptions(provinceCode?: string) {
       return allWards;
     },
     enabled: !!provinceCode,
-    staleTime: 5 * 60 * 1000,
+    staleTime: 30 * 60 * 1000, // 30 mins
+    gcTime: 60 * 60 * 1000, // 1 hour
   });
 
   return {

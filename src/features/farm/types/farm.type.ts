@@ -317,10 +317,16 @@ export interface SeedRef {
 export interface SubjectVariantRef {
   linkId?: number;
   id: number;
+  name?: string;
   subjectVariantCode?: string;
   subjectVariantName?: string;
   productionSubjectCode?: string;
   productionSubjectName?: string;
+  productionSubjectId?: number;
+  productionSubject?: { id?: number; name?: string };
+  cropVariety?: { id?: number; name?: string };
+  subjectVariant?: { id?: number; name?: string };
+  crop?: { id?: number; name?: string };
 }
 
 export interface FarmCultivationZoneScopeResponse {
@@ -328,6 +334,39 @@ export interface FarmCultivationZoneScopeResponse {
   region?: RegionRef;
   area?: AreaRef;
   plot?: PlotRef;
+}
+
+export interface FarmProductionZoneSeedResponse {
+  linkId?: number;
+  id: number;
+  code?: string;
+  name?: string;
+}
+
+export interface FarmProductionZoneSubjectVariantResponse {
+  linkId?: number;
+  id: number;
+  code?: string;
+  name?: string;
+  seeds?: FarmProductionZoneSeedResponse[];
+}
+
+export interface FarmProductionZoneSubjectResponse {
+  linkId: number;
+  id: number;
+  code?: string;
+  name?: string;
+  variants?: FarmProductionZoneSubjectVariantResponse[];
+}
+
+export interface FarmProductionZoneSubjectVariantRequest {
+  productionSubjectVariantId: number;
+  seedIds?: number[];
+}
+
+export interface FarmProductionZoneSubjectRequest {
+  productionSubjectId: number;
+  variants?: FarmProductionZoneSubjectVariantRequest[];
 }
 
 export interface FarmCultivationZoneRequest {
@@ -342,15 +381,15 @@ export interface FarmCultivationZoneRequest {
   rearingMethodId?: number;
   irrigationSystemId?: number;
   /**
-   * Giống Foundation (productionSubjectVariant IDs).
-   * Gửi khi user chọn giống từ danh mục foundation, KHÔNG có hạt giống owner.
-   * Loại trừ lẫn nhau với subjectVariantIds.
+   * Cấu trúc phân cấp mới: Cây trồng -> Giống -> Hạt giống
+   */
+  subjects?: FarmProductionZoneSubjectRequest[];
+  /**
+   * @deprecated Dùng subjects thay thế
    */
   productionSubjectVariantIds?: number[];
   /**
-   * Hạt giống / con giống owner (subjectVariant IDs từ /api/farm/seeds).
-   * Gửi khi user chọn hạt giống đã đăng ký của farm.
-   * Loại trừ lẫn nhau với productionSubjectVariantIds.
+   * @deprecated Dùng subjects thay thế
    */
   subjectVariantIds?: number[];
   /** Phương thức cập nhật tình trạng sức khỏe vùng canh tác: "zone" / "individual" */
@@ -377,14 +416,18 @@ export interface FarmCultivationZoneResponse {
   irrigationSystem?: CatalogRef;
   seeds?: SeedRef[];
   notes?: string;
-  /** Giống Foundation đang được gán (khi không dùng hạt giống owner) */
+  /** Cấu trúc phân cấp 3 cấp: Cây trồng -> Giống -> Hạt giống */
+  subjects?: FarmProductionZoneSubjectResponse[];
+  /** @deprecated Giống Foundation đang được gán (khi không dùng hạt giống owner) */
   productionSubjectVariants?: Array<{
     linkId?: number;
     id: number;
     code?: string;
     name?: string;
+    productionSubject?: { id?: number; name?: string };
+    crop?: { id?: number; name?: string };
   }>;
-  /** Hạt giống / con giống owner đang được gán */
+  /** @deprecated Hạt giống / con giống owner đang được gán */
   subjectVariants?: SubjectVariantRef[];
   status?: FarmCultivationZoneStatus;
   displayOrder?: number;
@@ -406,6 +449,7 @@ export interface CultivationZoneQueryParams {
   farmingMethodId?: number;
   rearingMethodId?: number;
   domainCode?: "CROP" | "LIVESTOCK" | "AQUACULTURE";
+  productionSubjectId?: number;
   includeDetails?: boolean;
   page?: number;
   size?: number;
@@ -618,6 +662,10 @@ export interface FarmPlantIdentificationResolveLocationResponse {
 
 // ─── Production Zone Harvest Stats & Chart ─────────────────────────
 
+export interface FarmZoneHarvestStatsQueryParams {
+  productionSubjectCode?: string;
+}
+
 export interface FarmZoneHarvestStatsResponse {
   zoneId: number;
   batchCount: number;
@@ -644,4 +692,23 @@ export interface FarmZoneHarvestChartQueryParams {
   periodType?: "MONTHLY" | "YEARLY";
   fromDate?: string;
   toDate?: string;
+  productionSubjectCode?: string;
+}
+
+export interface HarvestSubjectPoint {
+  date: string;
+  quantityKg: number;
+}
+
+export interface HarvestSubjectSeries {
+  productionSubjectCode: string;
+  productionSubjectName: string;
+  points: HarvestSubjectPoint[];
+}
+
+export interface FarmZoneHarvestBySubjectResponse {
+  zoneId: number;
+  periodType: "MONTHLY" | "YEARLY";
+  series: HarvestSubjectSeries[];
+  unassignedPoints: HarvestSubjectPoint[];
 }

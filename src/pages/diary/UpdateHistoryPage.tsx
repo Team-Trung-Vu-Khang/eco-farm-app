@@ -23,6 +23,7 @@ import {
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { MobileStatTiles } from "@/pages/dashboard/components/MobileStatTiles";
 import {
+  AlertTriangle,
   Camera,
   ClipboardList,
   Clock,
@@ -71,6 +72,9 @@ export default function UpdateHistoryPage({
   const debouncedSearchQuery = useDebounce(searchQuery, 400);
 
   const [isAdvancedSearchOpen, setIsAdvancedSearchOpen] = useState(true);
+  const [warningFilter, setWarningFilter] = useState<boolean | undefined>(
+    undefined,
+  );
 
   // Reset page to 0 when search query changes
   useEffect(() => {
@@ -119,6 +123,7 @@ export default function UpdateHistoryPage({
       size,
       workflowId: selectedWorkflowId,
       purpose: activePurposes,
+      warning: warningFilter,
       keyword: debouncedSearchQuery.trim() || undefined,
       fromDate: appliedFilters.fromDate || undefined,
       toDate: appliedFilters.toDate || undefined,
@@ -128,6 +133,7 @@ export default function UpdateHistoryPage({
       size,
       selectedWorkflowId,
       activePurposes,
+      warningFilter,
       debouncedSearchQuery,
       appliedFilters.fromDate,
       appliedFilters.toDate,
@@ -157,6 +163,7 @@ export default function UpdateHistoryPage({
       workflowId: selectedWorkflowId,
       planId: selectedPlanId,
       purpose: activePurposes,
+      warning: warningFilter,
       fromDate: appliedFilters.fromDate || undefined,
       toDate: appliedFilters.toDate || undefined,
     }),
@@ -167,6 +174,7 @@ export default function UpdateHistoryPage({
       selectedWorkflowId,
       selectedPlanId,
       activePurposes,
+      warningFilter,
       appliedFilters.fromDate,
       appliedFilters.toDate,
     ],
@@ -268,6 +276,7 @@ export default function UpdateHistoryPage({
       ? (dailyDiaryPageData?.totalElements ?? 0)
       : (plannedDiaryPageData?.totalElements ?? 0));
   const withEvidence = activeStatsData?.withEvidence ?? 0;
+  const withWarning = activeStatsData?.withWarning ?? 0;
   const withoutEvidence =
     activeStatsData?.withoutEvidence ??
     Math.max(0, totalUpdates - withEvidence);
@@ -311,7 +320,7 @@ export default function UpdateHistoryPage({
       description={isMobile ? undefined : pageDescription}
     >
       <div className={isMobile ? "space-y-4 pb-4" : "space-y-6 pb-12"}>
-        {/* Stat Blocks — điện thoại: 3 ô gọn */}
+        {/* Stat Blocks — điện thoại: 4 ô gọn */}
         {isMobile ? (
           <MobileStatTiles
             tiles={[
@@ -328,15 +337,21 @@ export default function UpdateHistoryPage({
                 iconColor: "bg-blue-100 text-blue-600",
               },
               {
+                label: "Cảnh báo",
+                value: String(withWarning),
+                icon: AlertTriangle,
+                iconColor: "bg-amber-100 text-amber-600",
+              },
+              {
                 label: "Mới nhất",
                 value: shortLatestUpdate,
                 icon: Clock,
-                iconColor: "bg-amber-100 text-amber-600",
+                iconColor: "bg-slate-100 text-slate-600",
               },
             ]}
           />
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+          <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 mb-6">
             {/* Block 1: Tổng số lần cập nhật */}
             <div className="rounded-2xl border border-slate-100 bg-white shadow-sm p-5">
               <div className="flex items-start justify-between gap-3">
@@ -360,18 +375,10 @@ export default function UpdateHistoryPage({
                   </span>
                   <span className="text-slate-400">có bằng chứng</span>
                 </div>
-                <div className="w-px h-4 bg-slate-100" />
-                <div className="flex items-center gap-1.5 text-xs text-slate-600">
-                  <ImageOff className="h-3.5 w-3.5 text-slate-400" />
-                  <span className="font-bold text-slate-600">
-                    {withoutEvidence}
-                  </span>
-                  <span className="text-slate-400">không bằng chứng</span>
-                </div>
               </div>
             </div>
 
-            {/* Block 2: Tỷ lệ bằng chứng */}
+            {/* Block 2: Số nhật ký có ảnh */}
             <div className="rounded-2xl border border-slate-100 bg-white shadow-sm p-5">
               <div className="flex items-start justify-between gap-3">
                 <div>
@@ -391,11 +398,31 @@ export default function UpdateHistoryPage({
                 {totalUpdates > 0
                   ? Math.round((withEvidence / totalUpdates) * 100)
                   : 0}
-                % tổng số lượt ghi nhật ký
+                % tổng số lượt ghi
               </p>
             </div>
 
-            {/* Block 3: Cập nhật mới nhất */}
+            {/* Block 3: Số nhật ký có cảnh báo */}
+            <div className="rounded-2xl border border-slate-100 bg-white shadow-sm p-5">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-amber-700 mb-1">
+                    Nhật ký cảnh báo
+                  </p>
+                  <p className="text-3xl font-extrabold text-amber-900 leading-none">
+                    {withWarning}
+                  </p>
+                </div>
+                <div className="h-10 w-10 rounded-xl bg-amber-100 text-amber-600 flex items-center justify-center shrink-0">
+                  <AlertTriangle className="h-5 w-5" />
+                </div>
+              </div>
+              <p className="mt-4 text-xs text-amber-600 font-medium">
+                Cần lưu ý theo dõi
+              </p>
+            </div>
+
+            {/* Block 4: Cập nhật mới nhất */}
             <div className="rounded-2xl border border-slate-100 bg-white shadow-sm p-5">
               <div className="flex items-start justify-between gap-3">
                 <div>
@@ -406,7 +433,7 @@ export default function UpdateHistoryPage({
                     {formattedLatestUpdate}
                   </p>
                 </div>
-                <div className="h-10 w-10 rounded-xl bg-amber-100 text-amber-600 flex items-center justify-center shrink-0">
+                <div className="h-10 w-10 rounded-xl bg-slate-100 text-slate-600 flex items-center justify-center shrink-0">
                   <Clock className="h-5 w-5" />
                 </div>
               </div>
@@ -488,6 +515,27 @@ export default function UpdateHistoryPage({
                     {activeFilterCount}
                   </Badge>
                 )}
+              </Button>
+              <Button
+                type="button"
+                variant={warningFilter === true ? "default" : "outline"}
+                className={cn(
+                  "h-11 px-3.5 rounded-xl font-bold border-slate-200 transition-all cursor-pointer gap-1.5 text-xs",
+                  warningFilter === true
+                    ? "bg-amber-600 hover:bg-amber-700 text-white shadow-md shadow-amber-600/20 border-amber-600"
+                    : "bg-white hover:bg-amber-50 text-slate-700 hover:text-amber-800",
+                )}
+                onClick={() =>
+                  setWarningFilter((prev) => (prev === true ? undefined : true))
+                }
+              >
+                <AlertTriangle
+                  size={15}
+                  className={
+                    warningFilter === true ? "text-white" : "text-amber-600"
+                  }
+                />
+                <span>Có cảnh báo</span>
               </Button>
               {/* Badge đặt ngoài Button vì Button cắt phần tràn */}
               {activeFilterCount > 0 && isMobile && (

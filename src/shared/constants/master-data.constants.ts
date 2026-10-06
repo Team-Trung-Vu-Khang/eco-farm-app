@@ -2,6 +2,33 @@ export const MASTER_DATA_BASE_PATH = "/api/admin/master-data" as const;
 export const PUBLIC_MASTER_DATA_BASE_PATH = "/api/master-data" as const;
 
 export const MASTER_DATA_PATHS = {
+  base: PUBLIC_MASTER_DATA_BASE_PATH,
+  banks: `${PUBLIC_MASTER_DATA_BASE_PATH}/banks`,
+  businessLines: `${PUBLIC_MASTER_DATA_BASE_PATH}/business-lines`,
+  certificateIssuers: `${PUBLIC_MASTER_DATA_BASE_PATH}/certificate-issuers`,
+  certificateStandards: `${PUBLIC_MASTER_DATA_BASE_PATH}/certificate-standards`,
+  organizationTypes: `${PUBLIC_MASTER_DATA_BASE_PATH}/organization-types`,
+  geoProvinces: `${PUBLIC_MASTER_DATA_BASE_PATH}/geo/provinces`,
+  geoWards: `${PUBLIC_MASTER_DATA_BASE_PATH}/geo/wards`,
+  equipmentToolGroups: `${PUBLIC_MASTER_DATA_BASE_PATH}/equipment-tool-groups`,
+  fertilizerGroups: `${PUBLIC_MASTER_DATA_BASE_PATH}/fertilizer-groups`,
+  biologicalProductGroups: `${PUBLIC_MASTER_DATA_BASE_PATH}/biological-product-groups`,
+  byProductGroups: `${PUBLIC_MASTER_DATA_BASE_PATH}/by-product-groups`,
+  irrigationSystems: `${PUBLIC_MASTER_DATA_BASE_PATH}/rearing-methods`,
+  rearingMethods: `${PUBLIC_MASTER_DATA_BASE_PATH}/rearing-methods`,
+  materialGroups: `${PUBLIC_MASTER_DATA_BASE_PATH}/material-groups`,
+  medicineGroups: `${PUBLIC_MASTER_DATA_BASE_PATH}/medicine-groups`,
+  pesticideGroups: `${PUBLIC_MASTER_DATA_BASE_PATH}/medicine-groups`,
+  pesticideOrigins: `${PUBLIC_MASTER_DATA_BASE_PATH}/medicine-groups`,
+  pesticideToxicityClasses: `${PUBLIC_MASTER_DATA_BASE_PATH}/medicine-groups`,
+  planGroups: `${PUBLIC_MASTER_DATA_BASE_PATH}/plan-groups`,
+  planTypes: `${PUBLIC_MASTER_DATA_BASE_PATH}/plan-types`,
+  vsicIndustries: `${PUBLIC_MASTER_DATA_BASE_PATH}/vsic-industries`,
+  vsicIndustryTree: `${PUBLIC_MASTER_DATA_BASE_PATH}/vsic-industries/tree`,
+  seasons: `${PUBLIC_MASTER_DATA_BASE_PATH}/seasons`,
+} as const;
+
+export const ADMIN_MASTER_DATA_PATHS = {
   base: MASTER_DATA_BASE_PATH,
   banks: `${MASTER_DATA_BASE_PATH}/banks`,
   businessLines: `${MASTER_DATA_BASE_PATH}/business-lines`,

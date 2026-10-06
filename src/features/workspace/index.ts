@@ -9,3 +9,5 @@ export * from "./hooks/useUpdateAdminWorkspace";
 export * from "./hooks/useDeleteAdminWorkspace";
 export * from "./hooks/useSelectedWorkspaceId";
 export * from "./types/workspace.type";
+export * from "./utils/workspaceFormatUtils";
+
