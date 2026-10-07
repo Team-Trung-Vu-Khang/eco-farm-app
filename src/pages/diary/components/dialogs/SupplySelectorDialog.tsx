@@ -13,7 +13,11 @@ import {
   getSupplyTypeOptions,
   useRemoteSupplySearch,
 } from "@/shared/hooks/useRemoteSupplySearch";
-import type { DomainCode, SupplyType, SupplyItemResponse } from "@/features/farm-supply";
+import type {
+  DomainCode,
+  SupplyType,
+  SupplyItemResponse,
+} from "@/features/farm-supply";
 
 interface SupplySearchDialogProps {
   open: boolean;
@@ -35,7 +39,9 @@ export function SupplySearchDialog({
   const [searchValue, setSearchValue] = useState("");
   const isMobile = useIsMobile();
   const typeOptions = getSupplyTypeOptions(domainCode);
-  const selectedTypeOption = typeOptions.find((opt) => opt.value === selectedType);
+  const selectedTypeOption = typeOptions.find(
+    (opt) => opt.value === selectedType,
+  );
 
   const {
     items: searchedMaterials,
@@ -135,8 +141,8 @@ export function SupplySearchDialog({
                   ).filter((v) =>
                     Boolean(
                       v.packagingType &&
-                        v.packagingType.name &&
-                        (v.quantity ?? 0) > 0,
+                      v.packagingType.name &&
+                      (v.quantity ?? 0) > 0,
                     ),
                   );
                   const rawBasicName =
@@ -184,7 +190,7 @@ export function SupplySearchDialog({
                         )}
                       </div>
 
-                      {validPackagingSpecs.length > 0 ? (
+                      {/* {validPackagingSpecs.length > 0 ? (
                         <div className="flex items-center gap-1 text-[10px] text-amber-700 font-medium bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200/80 self-start">
                           <Layers className="w-3 h-3" />
                           <span>
@@ -198,7 +204,7 @@ export function SupplySearchDialog({
                             {basicUnitName ? `: ${basicUnitName}` : ""}
                           </span>
                         </div>
-                      )}
+                      )} */}
                     </div>
                   );
                 })}
