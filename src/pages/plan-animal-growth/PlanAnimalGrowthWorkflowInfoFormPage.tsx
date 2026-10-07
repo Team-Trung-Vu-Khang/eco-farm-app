@@ -695,7 +695,7 @@ export default function PlanAnimalGrowthWorkflowInfoFormPage() {
                     Vùng chăn nuôi <span className="text-red-500">*</span>
                   </label>
                   <span className="text-[10px] text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full font-medium">
-                    Chọn một hoặc nhiều vùng
+                    Chọn 1 vùng
                   </span>
                 </div>
                 <GeographicalSelector
@@ -703,7 +703,7 @@ export default function PlanAnimalGrowthWorkflowInfoFormPage() {
                   enterpriseId=""
                   existingSelections={zoneSelections}
                   regionOnly={true}
-                  multiSelect={true}
+                  multiSelect={false}
                   triggerLabel="Chọn Vùng chăn nuôi"
                   dialogTitle="Chọn Vùng chăn nuôi với Quy trình"
                   onConfirm={(newSelections) => {

@@ -39,6 +39,7 @@ import {
 import {
   formatToDatetimeLocal,
   formatDatetimeLocalToIsoWithTimezone,
+  getCurrentTimeString,
 } from "../../utils/history-form.utils";
 
 /** Bỏ dấu tiếng Việt để tìm kiếm gợi ý không phụ thuộc dấu. */
@@ -551,7 +552,7 @@ export function WorkAllocationCard({
                                       type="datetime-local"
                                       value={formatToDatetimeLocal(
                                         detail.startDate,
-                                        "00:00",
+                                        getCurrentTimeString(),
                                       )}
                                       onChange={(e) =>
                                         onUpdateWorkTaskDetail(stage, {
@@ -673,7 +674,7 @@ export function WorkAllocationCard({
                                   type="datetime-local"
                                   value={formatToDatetimeLocal(
                                     detail.startDate,
-                                    "00:00",
+                                    getCurrentTimeString(),
                                   )}
                                   onChange={(e) =>
                                     onUpdateWorkTaskDetail(stage, {

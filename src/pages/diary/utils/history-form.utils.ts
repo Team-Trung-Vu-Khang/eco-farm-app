@@ -363,14 +363,22 @@ export function extractCropSubjectVariants(
   return items;
 }
 
+export function getCurrentTimeString(): string {
+  const d = new Date();
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
 /**
  * Chuyển đổi chuỗi ISO UTC / YYYY-MM-DD từ API thành định dạng `YYYY-MM-DDTHH:mm` cho <input type="datetime-local" />
  */
 export function formatToDatetimeLocal(
   isoOrDateStr?: string | null,
-  defaultTime = "00:00",
+  defaultTime?: string,
 ): string {
   if (!isoOrDateStr) return "";
+
+  const timeToUse = defaultTime || getCurrentTimeString();
 
   // Nếu đã là YYYY-MM-DDTHH:mm (local)
   if (
@@ -383,7 +391,7 @@ export function formatToDatetimeLocal(
 
   // Nếu chỉ có ngày YYYY-MM-DD
   if (/^\d{4}-\d{2}-\d{2}$/.test(isoOrDateStr)) {
-    return `${isoOrDateStr}T${defaultTime}`;
+    return `${isoOrDateStr}T${timeToUse}`;
   }
 
   const d = new Date(isoOrDateStr);

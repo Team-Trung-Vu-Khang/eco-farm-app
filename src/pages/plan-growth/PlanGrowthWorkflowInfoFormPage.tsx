@@ -658,7 +658,7 @@ export default function PlanGrowthWorkflowInfoFormPage() {
                     Vùng canh tác <span className="text-red-500">*</span>
                   </label>
                   <span className="text-[10px] text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full font-medium">
-                    Chọn một hoặc nhiều vùng
+                    Chọn 1 vùng
                   </span>
                 </div>
                 <GeographicalSelector
@@ -666,7 +666,7 @@ export default function PlanGrowthWorkflowInfoFormPage() {
                   enterpriseId=""
                   existingSelections={zoneSelections}
                   regionOnly={true}
-                  multiSelect={true}
+                  multiSelect={false}
                   triggerLabel="Chọn Vùng canh tác"
                   dialogTitle="Chọn Vùng canh tác với Quy trình"
                   onConfirm={(newSelections) => {

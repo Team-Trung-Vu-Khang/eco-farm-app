@@ -666,7 +666,7 @@ export default function PlanAquacultureGrowthWorkflowInfoFormPage() {
                     <span className="text-red-500">*</span>
                   </label>
                   <span className="text-[10px] text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full font-medium">
-                    Chọn một hoặc nhiều vùng
+                    Chọn 1 vùng
                   </span>
                 </div>
                 <GeographicalSelector
@@ -674,7 +674,7 @@ export default function PlanAquacultureGrowthWorkflowInfoFormPage() {
                   enterpriseId=""
                   existingSelections={zoneSelections}
                   regionOnly={true}
-                  multiSelect={true}
+                  multiSelect={false}
                   triggerLabel="Chọn Vùng nuôi trồng thủy sản"
                   dialogTitle="Chọn Vùng nuôi trồng thủy sản với Quy trình"
                   onConfirm={(newSelections) => {
