@@ -88,7 +88,9 @@ export function mapWorkflowResponseToWorkflow(
     description: workflow.description || "",
     selections: [],
     seasonIds: (workflow.seasons || []).map((season) => season.id),
-    seasonNames: (workflow.seasons || []).map((season) => season.name || season.code || `#${season.id}`),
+    seasonNames: (workflow.seasons || []).map(
+      (season) => season.name || season.code || `#${season.id}`,
+    ),
     isActive: workflow.status === "active",
     createdAt: workflow.createdAt || new Date().toISOString(),
     planCount: workflow.planCount ?? 0,
@@ -174,14 +176,27 @@ export function mapWorkflowResponseToInfoRecord(
   workflow: FarmWorkflowResponse,
   position: { x: number; y: number },
 ): DiagramInfoRecord {
+  const zoneNames = (workflow.productionZones || [])
+    .map((zone) => zone.name || zone.code)
+    .filter((name): name is string => Boolean(name));
+
+  const regionLabels =
+    zoneNames.length > 0
+      ? zoneNames
+      : mapWorkflowScopesToRegionLabels(workflow.scopes);
+
   return {
     id: String(workflow.id),
     name: workflow.name,
     description: workflow.description || "",
     selections: mapWorkflowScopesToSelections(workflow.scopes),
-    regionLabels: mapWorkflowScopesToRegionLabels(workflow.scopes),
+    regionLabels,
     seasonIds: (workflow.seasons || []).map((season) => season.id),
-    seasonNames: (workflow.seasons || []).map((season) => season.name || season.code || `#${season.id}`),
+    seasonNames: (workflow.seasons || []).map(
+      (season) => season.name || season.code || `#${season.id}`,
+    ),
+    productionZoneIds: (workflow.productionZones || []).map((zone) => zone.id),
+    productionZones: workflow.productionZones || [],
     ...mapDurationDaysToParts(workflow.durationDays),
     isActive: workflow.status === "active",
     position,
@@ -283,7 +298,11 @@ export function getApiStageKey(stage: FarmPlanStageResponse) {
 // one that already exists on the backend and must be preserved on update.
 const MAX_PLAUSIBLE_BACKEND_ID = 1_000_000_000;
 function isBackendId(id: number | undefined | null): id is number {
-  return typeof id === "number" && Number.isFinite(id) && id < MAX_PLAUSIBLE_BACKEND_ID;
+  return (
+    typeof id === "number" &&
+    Number.isFinite(id) &&
+    id < MAX_PLAUSIBLE_BACKEND_ID
+  );
 }
 
 export function mapPlanResponseToPlan(plan: FarmPlanResponse): Plan {
@@ -323,23 +342,20 @@ export function mapPlanResponseToPlan(plan: FarmPlanResponse): Plan {
         return true;
       })
       .map((line) => ({
-      id: line.id,
-      stageId: getApiStageKey(stage),
-      supplyType: line.supplyItem?.supplyType || undefined,
-      materialCategory: line.supplyItem?.supplyType || "",
-      materialType: line.supplyItem?.supplyType || "",
-      materialName: line.supplyItem?.name || "",
-      quantity: String(line.quantity),
-      unit:
-        line.unitBase?.name ||
-        line.packagingVariant?.unitBase?.name ||
-        "",
-      supplyItemId: line.supplyItem?.id,
-      unitBaseId:
-        line.unitBase?.id ?? line.packagingVariant?.unitBase?.id,
-      unitOptions: [line.unitBase ?? line.packagingVariant?.unitBase]
-        .filter(Boolean)
-        .map((unit) => ({ id: unit.id, name: unit.name })),
+        id: line.id,
+        stageId: getApiStageKey(stage),
+        supplyType: line.supplyItem?.supplyType || undefined,
+        materialCategory: line.supplyItem?.supplyType || "",
+        materialType: line.supplyItem?.supplyType || "",
+        materialName: line.supplyItem?.name || "",
+        quantity: String(line.quantity),
+        unit:
+          line.unitBase?.name || line.packagingVariant?.unitBase?.name || "",
+        supplyItemId: line.supplyItem?.id,
+        unitBaseId: line.unitBase?.id ?? line.packagingVariant?.unitBase?.id,
+        unitOptions: [line.unitBase ?? line.packagingVariant?.unitBase]
+          .filter(Boolean)
+          .map((unit) => ({ id: unit.id, name: unit.name })),
       })),
   );
   const taskAllocations = stages.flatMap((stage) =>
@@ -415,24 +431,24 @@ export function buildFarmPlanStagesRequest(
 
   return stageKeys.map((stageKey) => {
     const separatorIndex = stageKey.indexOf(":");
-    const stagePrefix = separatorIndex >= 0
-      ? stageKey.slice(0, separatorIndex)
-      : "";
-    const stageName = separatorIndex >= 0
-      ? stageKey.slice(separatorIndex + 1)
-      : stageKey;
+    const stagePrefix =
+      separatorIndex >= 0 ? stageKey.slice(0, separatorIndex) : "";
+    const stageName =
+      separatorIndex >= 0 ? stageKey.slice(separatorIndex + 1) : stageKey;
     const existingStage = existingStages.find(
       (stage) => getApiStageKey(stage) === stageKey,
     );
 
     const supplyLines = groupMaterialAllocations(formData.materialAllocations)
       .map((material) => {
-        const isEquipment =
-          [material.materialCategory, material.materialType].some(
-            (value) =>
-              typeof value === "string" &&
-              /equipment|dụng cụ\s*-\s*máy móc/i.test(value),
-          );
+        const isEquipment = [
+          material.materialCategory,
+          material.materialType,
+        ].some(
+          (value) =>
+            typeof value === "string" &&
+            /equipment|dụng cụ\s*-\s*máy móc/i.test(value),
+        );
         const unitBaseId = isEquipment ? 6 : material.unitBaseId;
 
         return material.stageId === stageKey &&
@@ -470,20 +486,24 @@ export function buildFarmPlanStagesRequest(
         durationUnit: task.durationUnit,
       }));
 
-    const selectedCycleStage = formData.growthCycleSelections.find((selection) => {
-      if (selection.type !== "stage" || selection.stageId == null) return false;
-      if (stagePrefix.startsWith("api-stage-")) {
-        return String(selection.stageId) === stagePrefix.slice("api-stage-".length);
-      }
-      if (stageKey.includes(":")) {
-        const [cycleId, ...nameParts] = stageKey.split(":");
-        return (
-          selection.cycleId === cycleId &&
-          nameParts.join(":") === stageName
-        );
-      }
-      return selection.stageName === stageName;
-    });
+    const selectedCycleStage = formData.growthCycleSelections.find(
+      (selection) => {
+        if (selection.type !== "stage" || selection.stageId == null)
+          return false;
+        if (stagePrefix.startsWith("api-stage-")) {
+          return (
+            String(selection.stageId) === stagePrefix.slice("api-stage-".length)
+          );
+        }
+        if (stageKey.includes(":")) {
+          const [cycleId, ...nameParts] = stageKey.split(":");
+          return (
+            selection.cycleId === cycleId && nameParts.join(":") === stageName
+          );
+        }
+        return selection.stageName === stageName;
+      },
+    );
 
     return {
       ...(isBackendId(existingStage?.id) ? { id: existingStage.id } : {}),
@@ -512,7 +532,9 @@ export function upsertFallbackPlan(plan: Plan) {
     return;
   }
 
-  fallbackPlans = fallbackPlans.map((item) => (item.id === plan.id ? plan : item));
+  fallbackPlans = fallbackPlans.map((item) =>
+    item.id === plan.id ? plan : item,
+  );
 }
 
 export function deleteFallbackPlan(id: number) {
@@ -554,7 +576,9 @@ export function upsertFallbackWorkflow(workflow: Workflow) {
 }
 
 export function deleteFallbackWorkflow(id: string) {
-  fallbackWorkflows = fallbackWorkflows.filter((workflow) => workflow.id !== id);
+  fallbackWorkflows = fallbackWorkflows.filter(
+    (workflow) => workflow.id !== id,
+  );
 }
 
 export function duplicateFallbackWorkflow(sourceId: string) {
@@ -623,7 +647,10 @@ export function mapCultivationZonesToRegionTree(
 
   function handleScope(scope: FarmCultivationZoneScopeResponse) {
     if (scope.scopeType === "REGION" && scope.region) {
-      ensureRegion(scope.region.id, scope.region.name || `Vùng #${scope.region.id}`);
+      ensureRegion(
+        scope.region.id,
+        scope.region.name || `Vùng #${scope.region.id}`,
+      );
       return;
     }
 

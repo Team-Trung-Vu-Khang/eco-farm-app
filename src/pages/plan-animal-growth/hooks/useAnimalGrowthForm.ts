@@ -275,12 +275,17 @@ export function useAnimalGrowthForm(
   const workflowInfo = useMemo(() => {
     if (!draftWorkflowInfo) return undefined;
     const workflow = workflowDetailQuery.data;
-    if (!workflow) return draftWorkflowInfo;
 
-    const apiSeasonIds = (workflow.seasons || []).map((season) => season.id);
-    const apiSeasonNames = (workflow.seasons || []).map(
-      (season) => season.name || season.code || `#${season.id}`,
+    const apiSeasonIds = ((workflow as any)?.seasons || []).map(
+      (season: any) => season.id,
     );
+    const apiSeasonNames = ((workflow as any)?.seasons || []).map(
+      (season: any) => season.name || season.code || `#${season.id}`,
+    );
+    const productionZones =
+      (workflow as any)?.productionZones ||
+      draftWorkflowInfo.productionZones ||
+      [];
 
     return {
       ...draftWorkflowInfo,
@@ -296,6 +301,8 @@ export function useAnimalGrowthForm(
         apiSeasonNames.length > 0
           ? apiSeasonNames
           : draftWorkflowInfo.seasonNames || [],
+      productionZones,
+      productionZoneIds: productionZones.map((z: any) => z.id),
     };
   }, [draftWorkflowInfo, workflowDetailQuery.data]);
   const { createPlan, updatePlan } = useFarmPlanMutations();

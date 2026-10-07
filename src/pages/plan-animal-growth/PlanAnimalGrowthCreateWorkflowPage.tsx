@@ -222,8 +222,14 @@ function buildPlanNodesFromApi(
     for (const entry of remaining) {
       const parentPlanId = entry.plan.metadataJson?.parentId;
       const parentNodeId =
-        parentPlanId != null ? nodeIdByPlanId.get(Number(parentPlanId)) : undefined;
-      if (parentPlanId != null && parentNodeId && !placedNodeIds.has(parentNodeId)) {
+        parentPlanId != null
+          ? nodeIdByPlanId.get(Number(parentPlanId))
+          : undefined;
+      if (
+        parentPlanId != null &&
+        parentNodeId &&
+        !placedNodeIds.has(parentNodeId)
+      ) {
         stillPending.push(entry);
         continue;
       }
@@ -272,10 +278,23 @@ function getStageTags(stageNames: string[]) {
 function getRegionLabelsFromPlan(
   plan: Plan,
   regions: ReturnType<typeof useRegionStore.getState>["regions"],
+  primaryWorkflowRecord?: DiagramInfoRecord,
 ) {
-  // Prefer the API's own scopes (via selectionSummary) — a local-only draft
-  // plan won't have this, so it falls back to matching selectedRegionIds/etc
-  // against the mock region tree.
+  const infoZoneNames = (primaryWorkflowRecord?.productionZones || [])
+    .map((z) => z.name || z.code)
+    .filter((name): name is string => Boolean(name));
+
+  if (infoZoneNames.length > 0) {
+    return infoZoneNames;
+  }
+
+  if (
+    primaryWorkflowRecord?.regionLabels &&
+    primaryWorkflowRecord.regionLabels.length > 0
+  ) {
+    return primaryWorkflowRecord.regionLabels;
+  }
+
   const summary = plan.selectionSummary?.length
     ? plan.selectionSummary
     : summarizePlanSelections(plan, regions);
@@ -329,6 +348,7 @@ function toDisplayNode(
   handlers: NodeHandlers,
   regions: ReturnType<typeof useRegionStore.getState>["regions"],
   plans: Plan[],
+  primaryWorkflowRecord?: DiagramInfoRecord,
 ): Node<WorkflowCardNodeData> {
   const { id, data } = node;
   const outlineCode = getPlanOutlineCode(id, allNodes);
@@ -416,7 +436,11 @@ function toDisplayNode(
       targetTopHandleId: `${id}-target-top`,
       sourceBottomHandleId: `${id}-source-bottom`,
       tags: getStageTags(plan.seasonStageNames ?? []),
-      regionLabels: getRegionLabelsFromPlan(plan, regions),
+      regionLabels: getRegionLabelsFromPlan(
+        plan,
+        regions,
+        primaryWorkflowRecord,
+      ),
       summaries: [
         { label: "Nhân lực", value: String(laborCount) },
         ...materialSummaries.map((item) => ({
@@ -444,6 +468,17 @@ function toInfoDisplayNode(
   regions: ReturnType<typeof useRegionStore.getState>["regions"],
   handlers: InfoNodeHandlers,
 ): Node<WorkflowCardNodeData> {
+  const zoneNames = (record.productionZones || [])
+    .map((z) => z.name || z.code)
+    .filter((name): name is string => Boolean(name));
+
+  const regionLabels =
+    zoneNames.length > 0
+      ? zoneNames
+      : record.regionLabels && record.regionLabels.length > 0
+        ? record.regionLabels
+        : getRegionLabelsFromSelections(record.selections, regions);
+
   return {
     id: record.id,
     type: "workflowCard",
@@ -459,9 +494,7 @@ function toInfoDisplayNode(
       title: record.name,
       wide: true,
       description: record.description || "Chưa có mô tả cho node này.",
-      regionLabels:
-        record.regionLabels ??
-        getRegionLabelsFromSelections(record.selections, regions),
+      regionLabels,
       actions: [
         {
           label: "Chỉnh sửa",
@@ -482,7 +515,9 @@ export default function PlanAnimalGrowthCreateWorkflowPage() {
   const addPlan = useAnimalGrowthPlanStore((state) => state.addPlan);
   const updatePlan = useAnimalGrowthPlanStore((state) => state.updatePlan);
   const deletePlanLocal = useAnimalGrowthPlanStore((state) => state.deletePlan);
-  const upsertWorkflow = useAnimalGrowthWorkflowStore((state) => state.upsertWorkflow);
+  const upsertWorkflow = useAnimalGrowthWorkflowStore(
+    (state) => state.upsertWorkflow,
+  );
   const { createPlan, deletePlan } = useFarmPlanMutations();
   const { updateWorkflow } = useFarmWorkflowMutations();
 
@@ -502,10 +537,18 @@ export default function PlanAnimalGrowthCreateWorkflowPage() {
   const removeNodeCascade = useAnimalGrowthWorkflowDraftStore(
     (state) => state.removeNodeCascade,
   );
-  const infoNodes = useAnimalGrowthWorkflowDraftStore((state) => state.infoNodes);
-  const setInfoNodes = useAnimalGrowthWorkflowDraftStore((state) => state.setInfoNodes);
-  const loadWorkflow = useAnimalGrowthWorkflowDraftStore((state) => state.loadWorkflow);
-  const resetDraft = useAnimalGrowthWorkflowDraftStore((state) => state.resetDraft);
+  const infoNodes = useAnimalGrowthWorkflowDraftStore(
+    (state) => state.infoNodes,
+  );
+  const setInfoNodes = useAnimalGrowthWorkflowDraftStore(
+    (state) => state.setInfoNodes,
+  );
+  const loadWorkflow = useAnimalGrowthWorkflowDraftStore(
+    (state) => state.loadWorkflow,
+  );
+  const resetDraft = useAnimalGrowthWorkflowDraftStore(
+    (state) => state.resetDraft,
+  );
   const activeWorkflowId = useAnimalGrowthWorkflowDraftStore(
     (state) => state.activeWorkflowId,
   );
@@ -518,15 +561,11 @@ export default function PlanAnimalGrowthCreateWorkflowPage() {
     : false;
   const { data: workflowDetail, isLoading: isLoadingWorkflowDetail } =
     useFarmWorkflowById(routeWorkflowId ?? "", {
-      enabled:
-        !!routeWorkflowId &&
-        isRoutePersistedId,
+      enabled: !!routeWorkflowId && isRoutePersistedId,
     });
   const { items: workflowPlans, loading: isLoadingWorkflowPlans } =
     useFarmWorkflowPlans(routeWorkflowId ?? "", {
-      enabled:
-        !!routeWorkflowId &&
-        isRoutePersistedId,
+      enabled: !!routeWorkflowId && isRoutePersistedId,
     });
 
   useEffect(() => {
@@ -539,7 +578,9 @@ export default function PlanAnimalGrowthCreateWorkflowPage() {
     if (!workflowId || workflowId === activeWorkflowId) return;
     if (isPersistedWorkflowId(workflowId)) return;
 
-    const saved = useAnimalGrowthWorkflowStore.getState().getWorkflowById(workflowId);
+    const saved = useAnimalGrowthWorkflowStore
+      .getState()
+      .getWorkflowById(workflowId);
     if (!saved) return;
 
     loadWorkflow({
@@ -651,7 +692,13 @@ export default function PlanAnimalGrowthCreateWorkflowPage() {
     // stable across renders and the seedingWorkflowIdRef guard above already
     // prevents duplicate submissions.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [workflowDetail, isLoadingWorkflowPlans, workflowPlans, loadWorkflow, toast]);
+  }, [
+    workflowDetail,
+    isLoadingWorkflowPlans,
+    workflowPlans,
+    loadWorkflow,
+    toast,
+  ]);
 
   const [confirmAction, setConfirmAction] = useState<ConfirmActionState | null>(
     null,
@@ -696,16 +743,21 @@ export default function PlanAnimalGrowthCreateWorkflowPage() {
           ? nodes.find((node) => node.id === sourceNodeId)
           : undefined;
         const parentPlanId =
-          sourceNode?.data.setupKind === "plan" ? sourceNode.data.planId : undefined;
-        const parentPlan = parentPlanId != null
-          ? plans.find((item) => item.id === parentPlanId)
-          : undefined;
+          sourceNode?.data.setupKind === "plan"
+            ? sourceNode.data.planId
+            : undefined;
+        const parentPlan =
+          parentPlanId != null
+            ? plans.find((item) => item.id === parentPlanId)
+            : undefined;
 
         const created = await createPlan.mutateAsync({
           workflowId: activeWorkflowId,
           payload: {
             name: planName || DEFAULT_DRAFT_PLAN_NAME,
-            purpose: parentPlan ? mapPurpose(parentPlan.purpose) : "CULTIVATION",
+            purpose: parentPlan
+              ? mapPurpose(parentPlan.purpose)
+              : "CULTIVATION",
             durationDays: 1,
             status: "DRAFT",
             ...(parentPlanId != null
@@ -727,7 +779,8 @@ export default function PlanAnimalGrowthCreateWorkflowPage() {
         toast({
           variant: "destructive",
           title: "Lỗi",
-          description: getApiErrorMessage(error) || "Không thể tạo kế hoạch nháp mới",
+          description:
+            getApiErrorMessage(error) || "Không thể tạo kế hoạch nháp mới",
         });
       }
       return;
@@ -791,7 +844,8 @@ export default function PlanAnimalGrowthCreateWorkflowPage() {
             toast({
               variant: "destructive",
               title: "Lỗi",
-              description: getApiErrorMessage(error) || "Không thể xóa kế hoạch",
+              description:
+                getApiErrorMessage(error) || "Không thể xóa kế hoạch",
             });
           }
           return;
@@ -825,7 +879,8 @@ export default function PlanAnimalGrowthCreateWorkflowPage() {
     // Multiple info cards can exist in one draft, but only one drives the
     // plan tree today (see useAnimalGrowthForm's workflowInfo lookup) — so
     // every plan in this draft gets linked to that same primary workflow.
-    const primaryWorkflow = infoNodes.find((item) => item.isActive) ?? infoNodes[0];
+    const primaryWorkflow =
+      infoNodes.find((item) => item.isActive) ?? infoNodes[0];
 
     // Node positions (plan nodes + the info/workflow node itself) only ever
     // live in this local draft — reopening a persisted workflow always
@@ -833,7 +888,11 @@ export default function PlanAnimalGrowthCreateWorkflowPage() {
     // INFO_NODE_X/0 fallback above). Save them onto the workflow's own
     // metadataJson, keyed by plan id (the only thing stable across reloads,
     // since node ids are regenerated every time).
-    if (activeWorkflowId && isPersistedWorkflowId(activeWorkflowId) && workflowDetail) {
+    if (
+      activeWorkflowId &&
+      isPersistedWorkflowId(activeWorkflowId) &&
+      workflowDetail
+    ) {
       const nodePositions: Record<number, { x: number; y: number }> = {};
       nodes.forEach((node) => {
         if (node.data.setupKind !== "plan") return;
@@ -854,9 +913,14 @@ export default function PlanAnimalGrowthCreateWorkflowPage() {
             durationDays: workflowDetail.durationDays,
             scopes: workflowDetail.scopes
               .map(toWorkflowScopeRequest)
-              .filter((scope): scope is FarmWorkflowScopeRequest => scope !== null),
-            seasonIds: (workflowDetail.seasons || []).map((season) => season.id),
-            status: workflowDetail.status.toUpperCase() as FarmWorkflowRequestStatus,
+              .filter(
+                (scope): scope is FarmWorkflowScopeRequest => scope !== null,
+              ),
+            seasonIds: (workflowDetail.seasons || []).map(
+              (season) => season.id,
+            ),
+            status:
+              workflowDetail.status.toUpperCase() as FarmWorkflowRequestStatus,
             metadataJson: {
               ...workflowDetail.metadataJson,
               nodePositions,
@@ -868,7 +932,8 @@ export default function PlanAnimalGrowthCreateWorkflowPage() {
         toast({
           variant: "destructive",
           title: "Lỗi",
-          description: getApiErrorMessage(error) || "Không thể lưu vị trí sơ đồ",
+          description:
+            getApiErrorMessage(error) || "Không thể lưu vị trí sơ đồ",
         });
         return;
       }
@@ -908,8 +973,10 @@ export default function PlanAnimalGrowthCreateWorkflowPage() {
     onEdit: handleOpenEditInfoNode,
   };
 
+  const primaryWorkflowRecord = infoNodes.length > 0 ? infoNodes[0] : undefined;
+
   const displayNodes = nodes.map((node) =>
-    toDisplayNode(node, nodes, handlers, regions, plans),
+    toDisplayNode(node, nodes, handlers, regions, plans, primaryWorkflowRecord),
   );
 
   infoNodes.forEach((record) => {
@@ -1011,8 +1078,8 @@ export default function PlanAnimalGrowthCreateWorkflowPage() {
           <div className="rounded-3xl border border-dashed border-slate-300 bg-white p-10 text-center shadow-sm">
             <Workflow className="mx-auto h-10 w-10 text-slate-400" />
             <p className="mx-auto mt-4 max-w-md text-sm text-slate-600">
-              Bắt đầu vụ chăn nuôi mới trước khi xây dựng các kế hoạch liên
-              kết với nhau.
+              Bắt đầu vụ chăn nuôi mới trước khi xây dựng các kế hoạch liên kết
+              với nhau.
             </p>
             <Button className="mt-6" onClick={handleOpenCreateInfoNode}>
               <Plus className="mr-2 h-4 w-4" />
@@ -1087,7 +1154,9 @@ export default function PlanAnimalGrowthCreateWorkflowPage() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={createPlan.isPending || deletePlan.isPending}>
+            <AlertDialogCancel
+              disabled={createPlan.isPending || deletePlan.isPending}
+            >
               Hủy
             </AlertDialogCancel>
             <AlertDialogAction

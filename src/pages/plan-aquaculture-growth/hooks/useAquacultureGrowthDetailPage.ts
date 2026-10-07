@@ -9,6 +9,7 @@ import { useTreatmentStore } from "../../../stores/useTreatmentStore";
 import {
   useFarmPlanById,
   useFarmPlanMutations,
+  useFarmWorkflowById,
 } from "@/features/farm-workflow/hooks";
 import type { TreatmentProcedure } from "@/pages/treatment/types/treatment.types";
 import type { GeographicalSelection, Plan } from "../types";
@@ -25,13 +26,28 @@ type AmendmentRegimenSummary = {
   procedures?: TreatmentProcedure[];
 };
 
-export function useAquacultureGrowthDetailPage(basePath = "/plan-aquaculture-growth") {
+export function useAquacultureGrowthDetailPage(
+  basePath = "/plan-aquaculture-growth",
+) {
   const params = useParams();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
 
   const planId = params.id || "";
   const planQuery = useFarmPlanById(planId, { enabled: !!planId });
+  const workflowId =
+    (planQuery.data as any)?.workflow?.id ??
+    (planQuery.data as any)?.workflowId;
+  const workflowQuery = useFarmWorkflowById(
+    workflowId ? String(workflowId) : "",
+    {
+      enabled: !!workflowId,
+    },
+  );
+  const productionZones = (workflowQuery.data?.productionZones ||
+    (planQuery.data as any)?.workflow?.productionZones ||
+    []) as Array<{ id: number; code?: string; name?: string }>;
+
   const { deletePlan } = useFarmPlanMutations();
   const { regions } = useRegionStore();
   const { growthCycles } = useGrowthCycleStore();
@@ -94,7 +110,14 @@ export function useAquacultureGrowthDetailPage(basePath = "/plan-aquaculture-gro
       });
       setLocation(basePath);
     }
-  }, [basePath, plan, planQuery.isLoading, planQuery.isError, setLocation, toast]);
+  }, [
+    basePath,
+    plan,
+    planQuery.isLoading,
+    planQuery.isError,
+    setLocation,
+    toast,
+  ]);
 
   useEffect(() => {
     if (planQuery.isError) {
@@ -140,8 +163,10 @@ export function useAquacultureGrowthDetailPage(basePath = "/plan-aquaculture-gro
     deleteOpen,
     setDeleteOpen,
     selectionSummary,
-    summarizeTaskSelections: (selections: GeographicalSelection[] | undefined) =>
-      summarizeTaskSelections(selections, regions),
+    productionZones,
+    summarizeTaskSelections: (
+      selections: GeographicalSelection[] | undefined,
+    ) => summarizeTaskSelections(selections, regions),
     handleEdit: () =>
       setLocation(`${basePath}/create/workflow/plan/${params.id}/edit`),
     handleDelete: () => setDeleteOpen(true),

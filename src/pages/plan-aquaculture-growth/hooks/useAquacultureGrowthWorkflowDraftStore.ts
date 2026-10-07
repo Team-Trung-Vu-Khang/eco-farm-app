@@ -1,7 +1,12 @@
 import { applyEdgeChanges, applyNodeChanges } from "reactflow";
 import type { Edge, EdgeChange, Node, NodeChange } from "reactflow";
 import { create } from "zustand";
-import type { Plan, GeographicalSelection, GrowthCycleSelection } from "../types";
+import type {
+  Plan,
+  GeographicalSelection,
+  GrowthCycleSelection,
+} from "../types";
+import type { FarmWorkflowProductionZoneRef } from "@/features/farm-workflow/types/farm-workflow.type";
 
 export type WorkflowSetupKind = "plan" | "stage" | "detail";
 
@@ -48,6 +53,8 @@ export type DiagramInfoRecord = {
   // selected farming zone(s) — local-only, the backend workflow scope
   // schema has no growth-cycle concept yet. At most one entry.
   growthCycleSelections?: GrowthCycleSelection[];
+  productionZoneIds?: number[];
+  productionZones?: FarmWorkflowProductionZoneRef[];
   isActive: boolean;
   position: { x: number; y: number };
 };
@@ -106,7 +113,9 @@ function buildAutoPlanCode() {
   return `KH-DRAFT-${stamp}`;
 }
 
-export function createEmptyPlanDraft(name = ""): Omit<Plan, "id" | "createdAt"> {
+export function createEmptyPlanDraft(
+  name = "",
+): Omit<Plan, "id" | "createdAt"> {
   return {
     code: buildAutoPlanCode(),
     name,
@@ -136,13 +145,22 @@ export function getParentId(node: DraftNode): string | undefined {
   return node.data.parentId;
 }
 
-export function getDirectChildren(nodes: DraftNode[], parentId: string): DraftNode[] {
+export function getDirectChildren(
+  nodes: DraftNode[],
+  parentId: string,
+): DraftNode[] {
   return nodes.filter((node) => getParentId(node) === parentId);
 }
 
-export function getDescendantNodes(nodes: DraftNode[], parentId: string): DraftNode[] {
+export function getDescendantNodes(
+  nodes: DraftNode[],
+  parentId: string,
+): DraftNode[] {
   const directChildren = getDirectChildren(nodes, parentId);
-  return directChildren.flatMap((child) => [child, ...getDescendantNodes(nodes, child.id)]);
+  return directChildren.flatMap((child) => [
+    child,
+    ...getDescendantNodes(nodes, child.id),
+  ]);
 }
 
 const LEVEL_HEIGHT = 320;
@@ -184,9 +202,16 @@ interface PlanWorkflowDraftState {
   setEdges: (updater: Edge[] | ((current: Edge[]) => Edge[])) => void;
   addNode: (node: DraftNode) => void;
   addNodeWithEdge: (node: DraftNode, edge: Edge) => void;
-  updateNodePayload: (nodeId: string, payload: StagePayload | DetailPayload) => void;
+  updateNodePayload: (
+    nodeId: string,
+    payload: StagePayload | DetailPayload,
+  ) => void;
   removeNodeCascade: (nodeId: string) => void;
-  setInfoNodes: (updater: DiagramInfoRecord[] | ((current: DiagramInfoRecord[]) => DiagramInfoRecord[])) => void;
+  setInfoNodes: (
+    updater:
+      | DiagramInfoRecord[]
+      | ((current: DiagramInfoRecord[]) => DiagramInfoRecord[]),
+  ) => void;
   loadWorkflow: (data: {
     nodes: DraftNode[];
     edges: Edge[];
@@ -196,96 +221,109 @@ interface PlanWorkflowDraftState {
   resetDraft: () => void;
 }
 
-export const useAquacultureGrowthWorkflowDraftStore = create<PlanWorkflowDraftState>()((set, get) => ({
-  nodes: [],
-  edges: [],
-  infoNodes: [],
-  activeWorkflowId: null,
+export const useAquacultureGrowthWorkflowDraftStore =
+  create<PlanWorkflowDraftState>()((set, get) => ({
+    nodes: [],
+    edges: [],
+    infoNodes: [],
+    activeWorkflowId: null,
 
-  onNodesChange: (changes) => {
-    set((state) => {
-      const knownIds = new Set(state.nodes.map((node) => node.id));
-      const relevantChanges = changes.filter((change) =>
-        "id" in change ? knownIds.has(change.id) : true,
-      );
-      // Nodes rendered outside this store (e.g. DiagramInfo cards) still emit
-      // dimension/position changes here. Returning the same state reference
-      // (instead of a fresh array with no matching ids) lets zustand skip the
-      // update — otherwise those foreign, ever-unmeasured nodes trigger an
-      // infinite re-render loop.
-      if (relevantChanges.length === 0) return state;
-      return { ...state, nodes: applyNodeChanges(relevantChanges, state.nodes) as DraftNode[] };
-    });
-  },
+    onNodesChange: (changes) => {
+      set((state) => {
+        const knownIds = new Set(state.nodes.map((node) => node.id));
+        const relevantChanges = changes.filter((change) =>
+          "id" in change ? knownIds.has(change.id) : true,
+        );
+        // Nodes rendered outside this store (e.g. DiagramInfo cards) still emit
+        // dimension/position changes here. Returning the same state reference
+        // (instead of a fresh array with no matching ids) lets zustand skip the
+        // update — otherwise those foreign, ever-unmeasured nodes trigger an
+        // infinite re-render loop.
+        if (relevantChanges.length === 0) return state;
+        return {
+          ...state,
+          nodes: applyNodeChanges(relevantChanges, state.nodes) as DraftNode[],
+        };
+      });
+    },
 
-  onEdgesChange: (changes) => {
-    set({ edges: applyEdgeChanges(changes, get().edges) });
-  },
+    onEdgesChange: (changes) => {
+      set({ edges: applyEdgeChanges(changes, get().edges) });
+    },
 
-  setEdges: (updater) => {
-    set((state) => ({
-      edges: typeof updater === "function" ? updater(state.edges) : updater,
-    }));
-  },
+    setEdges: (updater) => {
+      set((state) => ({
+        edges: typeof updater === "function" ? updater(state.edges) : updater,
+      }));
+    },
 
-  addNode: (node) => {
-    set((state) => ({
-      nodes: [
-        ...state.nodes,
-        { ...node, position: placeNewNode(state.nodes, getParentId(node)) },
-      ],
-    }));
-  },
+    addNode: (node) => {
+      set((state) => ({
+        nodes: [
+          ...state.nodes,
+          { ...node, position: placeNewNode(state.nodes, getParentId(node)) },
+        ],
+      }));
+    },
 
-  addNodeWithEdge: (node, edge) => {
-    set((state) => ({
-      nodes: [
-        ...state.nodes,
-        { ...node, position: placeNewNode(state.nodes, getParentId(node)) },
-      ],
-      edges: [...state.edges, edge],
-    }));
-  },
+    addNodeWithEdge: (node, edge) => {
+      set((state) => ({
+        nodes: [
+          ...state.nodes,
+          { ...node, position: placeNewNode(state.nodes, getParentId(node)) },
+        ],
+        edges: [...state.edges, edge],
+      }));
+    },
 
-  updateNodePayload: (nodeId, payload) => {
-    set((state) => ({
-      nodes: state.nodes.map((node) => {
-        if (node.id !== nodeId) return node;
-        if (node.data.setupKind === "stage") {
-          return { ...node, data: { ...node.data, payload: payload as StagePayload } };
-        }
-        if (node.data.setupKind === "detail") {
-          return { ...node, data: { ...node.data, payload: payload as DetailPayload } };
-        }
-        return node;
-      }),
-    }));
-  },
+    updateNodePayload: (nodeId, payload) => {
+      set((state) => ({
+        nodes: state.nodes.map((node) => {
+          if (node.id !== nodeId) return node;
+          if (node.data.setupKind === "stage") {
+            return {
+              ...node,
+              data: { ...node.data, payload: payload as StagePayload },
+            };
+          }
+          if (node.data.setupKind === "detail") {
+            return {
+              ...node,
+              data: { ...node.data, payload: payload as DetailPayload },
+            };
+          }
+          return node;
+        }),
+      }));
+    },
 
-  removeNodeCascade: (nodeId) => {
-    const { nodes, edges } = get();
-    const removable = new Set([
-      nodeId,
-      ...getDescendantNodes(nodes, nodeId).map((node) => node.id),
-    ]);
+    removeNodeCascade: (nodeId) => {
+      const { nodes, edges } = get();
+      const removable = new Set([
+        nodeId,
+        ...getDescendantNodes(nodes, nodeId).map((node) => node.id),
+      ]);
 
-    set({
-      nodes: nodes.filter((node) => !removable.has(node.id)),
-      edges: edges.filter((edge) => !removable.has(edge.source) && !removable.has(edge.target)),
-    });
-  },
+      set({
+        nodes: nodes.filter((node) => !removable.has(node.id)),
+        edges: edges.filter(
+          (edge) => !removable.has(edge.source) && !removable.has(edge.target),
+        ),
+      });
+    },
 
-  setInfoNodes: (updater) => {
-    set((state) => ({
-      infoNodes: typeof updater === "function" ? updater(state.infoNodes) : updater,
-    }));
-  },
+    setInfoNodes: (updater) => {
+      set((state) => ({
+        infoNodes:
+          typeof updater === "function" ? updater(state.infoNodes) : updater,
+      }));
+    },
 
-  loadWorkflow: ({ nodes, edges, infoNodes, activeWorkflowId }) => {
-    set({ nodes, edges, infoNodes, activeWorkflowId });
-  },
+    loadWorkflow: ({ nodes, edges, infoNodes, activeWorkflowId }) => {
+      set({ nodes, edges, infoNodes, activeWorkflowId });
+    },
 
-  resetDraft: () => {
-    set({ nodes: [], edges: [], infoNodes: [], activeWorkflowId: null });
-  },
-}));
+    resetDraft: () => {
+      set({ nodes: [], edges: [], infoNodes: [], activeWorkflowId: null });
+    },
+  }));

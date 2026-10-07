@@ -28,6 +28,7 @@ import {
   Wrench,
   Bug,
   ExternalLink,
+  AlertTriangle,
 } from "lucide-react";
 import { useLocation, useParams, useSearch } from "wouter";
 import { useFarmDailyDiaryEntryDetail } from "@/features/farm-daily-diary";
@@ -315,6 +316,7 @@ export default function UpdateHistoryDetailPage() {
         dailyDiaryDetail.purpose ||
         firstLine?.taskCategory?.name ||
         purposeLabel,
+      warning: Boolean(dailyDiaryDetail.warning),
       latestUpdate: {
         id: dailyDiaryDetail.id,
         updatedAt: dailyDiaryDetail.createdAt,
@@ -493,6 +495,10 @@ export default function UpdateHistoryDetailPage() {
         realFarmTask.plan?.purpose ||
         realFarmTask.taskCategory?.name ||
         "Canh tác",
+      warning: Boolean(
+        (realFarmTask as any)?.warning ??
+        (taskDiaryHistory?.[0] as any)?.warning,
+      ),
       latestUpdate: latestLog,
       historyLogs: logsFromHistory.length > 0 ? logsFromHistory : [latestLog],
     };
@@ -728,7 +734,7 @@ export default function UpdateHistoryDetailPage() {
                     <ClipboardList className="h-5 w-5" />
                   </div>
                   <div className={isMobile ? "min-w-0" : undefined}>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
                       <span
                         className={`text-xs font-mono font-bold text-slate-400 ${
                           isMobile ? "truncate" : ""
@@ -736,6 +742,12 @@ export default function UpdateHistoryDetailPage() {
                       >
                         {taskHistoryItem.taskCode}
                       </span>
+                      {taskHistoryItem.warning && (
+                        <Badge className="bg-amber-100 text-amber-800 border-amber-300 gap-1 text-[11px] font-bold">
+                          <AlertTriangle className="w-3.5 h-3.5 text-amber-600" />{" "}
+                          Cảnh báo
+                        </Badge>
+                      )}
                     </div>
                     <h2 className="text-base font-extrabold text-slate-900 mt-0.5">
                       {taskHistoryItem.taskName}

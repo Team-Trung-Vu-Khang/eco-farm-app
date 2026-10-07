@@ -36,6 +36,10 @@ import {
   StageMaterialPicker,
   type MaterialAllocation,
 } from "./StageMaterialPicker";
+import {
+  formatToDatetimeLocal,
+  formatDatetimeLocalToIsoWithTimezone,
+} from "../../utils/history-form.utils";
 
 /** Bỏ dấu tiếng Việt để tìm kiếm gợi ý không phụ thuộc dấu. */
 const normalize = (value: string) =>
@@ -544,11 +548,17 @@ export function WorkAllocationCard({
                                 ) : (
                                   <>
                                     <Input
-                                      type="date"
-                                      value={detail.startDate || ""}
+                                      type="datetime-local"
+                                      value={formatToDatetimeLocal(
+                                        detail.startDate,
+                                        "00:00",
+                                      )}
                                       onChange={(e) =>
                                         onUpdateWorkTaskDetail(stage, {
-                                          startDate: e.target.value,
+                                          startDate:
+                                            formatDatetimeLocalToIsoWithTimezone(
+                                              e.target.value,
+                                            ),
                                         })
                                       }
                                       className={`h-9 text-xs bg-white border-slate-200 rounded-lg font-medium ${
@@ -573,11 +583,17 @@ export function WorkAllocationCard({
                                   <span className="text-red-500">*</span>
                                 </span>
                                 <Input
-                                  type="date"
-                                  value={detail.endDate}
+                                  type="datetime-local"
+                                  value={formatToDatetimeLocal(
+                                    detail.endDate,
+                                    "23:59",
+                                  )}
                                   onChange={(e) =>
                                     onUpdateWorkTaskDetail(stage, {
-                                      endDate: e.target.value,
+                                      endDate:
+                                        formatDatetimeLocalToIsoWithTimezone(
+                                          e.target.value,
+                                        ),
                                     })
                                   }
                                   className={`h-9 text-xs bg-white border-slate-200 rounded-lg font-medium ${
@@ -654,11 +670,17 @@ export function WorkAllocationCard({
                                   <span className="text-red-500">*</span>
                                 </span>
                                 <Input
-                                  type="date"
-                                  value={detail.startDate || ""}
+                                  type="datetime-local"
+                                  value={formatToDatetimeLocal(
+                                    detail.startDate,
+                                    "00:00",
+                                  )}
                                   onChange={(e) =>
                                     onUpdateWorkTaskDetail(stage, {
-                                      startDate: e.target.value,
+                                      startDate:
+                                        formatDatetimeLocalToIsoWithTimezone(
+                                          e.target.value,
+                                        ),
                                     })
                                   }
                                   className={`h-9 text-xs bg-white border-slate-200 rounded-lg font-medium ${
@@ -681,11 +703,17 @@ export function WorkAllocationCard({
                                   <span className="text-red-500">*</span>
                                 </span>
                                 <Input
-                                  type="date"
-                                  value={detail.endDate || ""}
+                                  type="datetime-local"
+                                  value={formatToDatetimeLocal(
+                                    detail.endDate,
+                                    "23:59",
+                                  )}
                                   onChange={(e) =>
                                     onUpdateWorkTaskDetail(stage, {
-                                      endDate: e.target.value,
+                                      endDate:
+                                        formatDatetimeLocalToIsoWithTimezone(
+                                          e.target.value,
+                                        ),
                                     })
                                   }
                                   className={`h-9 text-xs bg-white border-slate-200 rounded-lg font-medium ${

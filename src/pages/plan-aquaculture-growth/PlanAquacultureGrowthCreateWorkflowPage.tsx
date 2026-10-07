@@ -220,8 +220,14 @@ function buildPlanNodesFromApi(
     for (const entry of remaining) {
       const parentPlanId = entry.plan.metadataJson?.parentId;
       const parentNodeId =
-        parentPlanId != null ? nodeIdByPlanId.get(Number(parentPlanId)) : undefined;
-      if (parentPlanId != null && parentNodeId && !placedNodeIds.has(parentNodeId)) {
+        parentPlanId != null
+          ? nodeIdByPlanId.get(Number(parentPlanId))
+          : undefined;
+      if (
+        parentPlanId != null &&
+        parentNodeId &&
+        !placedNodeIds.has(parentNodeId)
+      ) {
         stillPending.push(entry);
         continue;
       }
@@ -269,10 +275,23 @@ function getStageTags(stageNames: string[]) {
 function getRegionLabelsFromPlan(
   plan: Plan,
   regions: ReturnType<typeof useRegionStore.getState>["regions"],
+  primaryWorkflowRecord?: DiagramInfoRecord,
 ) {
-  // Prefer the API's own scopes (via selectionSummary) — a local-only draft
-  // plan won't have this, so it falls back to matching selectedRegionIds/etc
-  // against the mock region tree.
+  const infoZoneNames = (primaryWorkflowRecord?.productionZones || [])
+    .map((z) => z.name || z.code)
+    .filter((name): name is string => Boolean(name));
+
+  if (infoZoneNames.length > 0) {
+    return infoZoneNames;
+  }
+
+  if (
+    primaryWorkflowRecord?.regionLabels &&
+    primaryWorkflowRecord.regionLabels.length > 0
+  ) {
+    return primaryWorkflowRecord.regionLabels;
+  }
+
   const summary = plan.selectionSummary?.length
     ? plan.selectionSummary
     : summarizePlanSelections(plan, regions);
@@ -326,6 +345,7 @@ function toDisplayNode(
   handlers: NodeHandlers,
   regions: ReturnType<typeof useRegionStore.getState>["regions"],
   plans: Plan[],
+  primaryWorkflowRecord?: DiagramInfoRecord,
 ): Node<WorkflowCardNodeData> {
   const { id, data } = node;
   const outlineCode = getPlanOutlineCode(id, allNodes);
@@ -416,7 +436,11 @@ function toDisplayNode(
       // plan stages are still kept in the plan data and edit form, but do not
       // belong in the workflow stage badges.
       tags: getStageTags(plan.seasonStageNames ?? []),
-      regionLabels: getRegionLabelsFromPlan(plan, regions),
+      regionLabels: getRegionLabelsFromPlan(
+        plan,
+        regions,
+        primaryWorkflowRecord,
+      ),
       summaries: [
         { label: "Nhân lực", value: String(laborCount) },
         ...materialSummaries.map((item) => ({
@@ -444,6 +468,17 @@ function toInfoDisplayNode(
   regions: ReturnType<typeof useRegionStore.getState>["regions"],
   handlers: InfoNodeHandlers,
 ): Node<WorkflowCardNodeData> {
+  const zoneNames = (record.productionZones || [])
+    .map((z) => z.name || z.code)
+    .filter((name): name is string => Boolean(name));
+
+  const regionLabels =
+    zoneNames.length > 0
+      ? zoneNames
+      : record.regionLabels && record.regionLabels.length > 0
+        ? record.regionLabels
+        : getRegionLabelsFromSelections(record.selections, regions);
+
   return {
     id: record.id,
     type: "workflowCard",
@@ -459,9 +494,7 @@ function toInfoDisplayNode(
       title: record.name,
       wide: true,
       description: record.description || "Chưa có mô tả cho node này.",
-      regionLabels:
-        record.regionLabels ??
-        getRegionLabelsFromSelections(record.selections, regions),
+      regionLabels,
       actions: [
         {
           label: "Chỉnh sửa",
@@ -494,18 +527,30 @@ export default function PlanAquacultureGrowthCreateWorkflowPage() {
   const onEdgesChange = useAquacultureGrowthWorkflowDraftStore(
     (state) => state.onEdgesChange,
   );
-  const setEdges = useAquacultureGrowthWorkflowDraftStore((state) => state.setEdges);
-  const addNode = useAquacultureGrowthWorkflowDraftStore((state) => state.addNode);
+  const setEdges = useAquacultureGrowthWorkflowDraftStore(
+    (state) => state.setEdges,
+  );
+  const addNode = useAquacultureGrowthWorkflowDraftStore(
+    (state) => state.addNode,
+  );
   const addNodeWithEdge = useAquacultureGrowthWorkflowDraftStore(
     (state) => state.addNodeWithEdge,
   );
   const removeNodeCascade = useAquacultureGrowthWorkflowDraftStore(
     (state) => state.removeNodeCascade,
   );
-  const infoNodes = useAquacultureGrowthWorkflowDraftStore((state) => state.infoNodes);
-  const setInfoNodes = useAquacultureGrowthWorkflowDraftStore((state) => state.setInfoNodes);
-  const loadWorkflow = useAquacultureGrowthWorkflowDraftStore((state) => state.loadWorkflow);
-  const resetDraft = useAquacultureGrowthWorkflowDraftStore((state) => state.resetDraft);
+  const infoNodes = useAquacultureGrowthWorkflowDraftStore(
+    (state) => state.infoNodes,
+  );
+  const setInfoNodes = useAquacultureGrowthWorkflowDraftStore(
+    (state) => state.setInfoNodes,
+  );
+  const loadWorkflow = useAquacultureGrowthWorkflowDraftStore(
+    (state) => state.loadWorkflow,
+  );
+  const resetDraft = useAquacultureGrowthWorkflowDraftStore(
+    (state) => state.resetDraft,
+  );
   const activeWorkflowId = useAquacultureGrowthWorkflowDraftStore(
     (state) => state.activeWorkflowId,
   );
@@ -516,19 +561,13 @@ export default function PlanAquacultureGrowthCreateWorkflowPage() {
   const isRoutePersistedId = routeWorkflowId
     ? isPersistedWorkflowId(routeWorkflowId)
     : false;
-  const {
-    data: workflowDetail,
-    isLoading: isLoadingWorkflowDetail,
-  } = useFarmWorkflowById(routeWorkflowId ?? "", {
-    enabled:
-      !!routeWorkflowId &&
-      isRoutePersistedId,
-  });
+  const { data: workflowDetail, isLoading: isLoadingWorkflowDetail } =
+    useFarmWorkflowById(routeWorkflowId ?? "", {
+      enabled: !!routeWorkflowId && isRoutePersistedId,
+    });
   const { items: workflowPlans, loading: isLoadingWorkflowPlans } =
     useFarmWorkflowPlans(routeWorkflowId ?? "", {
-      enabled:
-        !!routeWorkflowId &&
-        isRoutePersistedId,
+      enabled: !!routeWorkflowId && isRoutePersistedId,
     });
 
   useEffect(() => {
@@ -652,7 +691,13 @@ export default function PlanAquacultureGrowthCreateWorkflowPage() {
     // stable across renders and the seedingWorkflowIdRef guard above already
     // prevents duplicate submissions.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [workflowDetail, isLoadingWorkflowPlans, workflowPlans, loadWorkflow, toast]);
+  }, [
+    workflowDetail,
+    isLoadingWorkflowPlans,
+    workflowPlans,
+    loadWorkflow,
+    toast,
+  ]);
 
   const [confirmAction, setConfirmAction] = useState<ConfirmActionState | null>(
     null,
@@ -697,16 +742,21 @@ export default function PlanAquacultureGrowthCreateWorkflowPage() {
           ? nodes.find((node) => node.id === sourceNodeId)
           : undefined;
         const parentPlanId =
-          sourceNode?.data.setupKind === "plan" ? sourceNode.data.planId : undefined;
-        const parentPlan = parentPlanId != null
-          ? plans.find((item) => item.id === parentPlanId)
-          : undefined;
+          sourceNode?.data.setupKind === "plan"
+            ? sourceNode.data.planId
+            : undefined;
+        const parentPlan =
+          parentPlanId != null
+            ? plans.find((item) => item.id === parentPlanId)
+            : undefined;
 
         const created = await createPlan.mutateAsync({
           workflowId: activeWorkflowId,
           payload: {
             name: planName || DEFAULT_DRAFT_PLAN_NAME,
-            purpose: parentPlan ? mapPurpose(parentPlan.purpose) : "CULTIVATION",
+            purpose: parentPlan
+              ? mapPurpose(parentPlan.purpose)
+              : "CULTIVATION",
             durationDays: 1,
             status: "DRAFT",
             ...(parentPlanId != null
@@ -728,7 +778,8 @@ export default function PlanAquacultureGrowthCreateWorkflowPage() {
         toast({
           variant: "destructive",
           title: "Lỗi",
-          description: getApiErrorMessage(error) || "Không thể tạo kế hoạch nháp mới",
+          description:
+            getApiErrorMessage(error) || "Không thể tạo kế hoạch nháp mới",
         });
       }
       return;
@@ -792,7 +843,8 @@ export default function PlanAquacultureGrowthCreateWorkflowPage() {
             toast({
               variant: "destructive",
               title: "Lỗi",
-              description: getApiErrorMessage(error) || "Không thể xóa kế hoạch",
+              description:
+                getApiErrorMessage(error) || "Không thể xóa kế hoạch",
             });
           }
           return;
@@ -807,7 +859,9 @@ export default function PlanAquacultureGrowthCreateWorkflowPage() {
   const handlers: NodeHandlers = {
     onCreatePlan: (sourceNodeId) => handleRequestCreatePlan(sourceNodeId),
     onEditPlan: (planId) =>
-      setLocation(`/plan-aquaculture-growth/create/workflow/plan/${planId}/edit`),
+      setLocation(
+        `/plan-aquaculture-growth/create/workflow/plan/${planId}/edit`,
+      ),
     onAllocateWork: (planId) => setLocation(`/task?planId=${planId}`),
     onRequestDeletePlan: (nodeId) => handleRequestDeletePlan(nodeId),
   };
@@ -826,7 +880,8 @@ export default function PlanAquacultureGrowthCreateWorkflowPage() {
     // Multiple info cards can exist in one draft, but only one drives the
     // plan tree today (see useAquacultureGrowthForm's workflowInfo lookup) — so every
     // plan in this draft gets linked to that same primary workflow.
-    const primaryWorkflow = infoNodes.find((item) => item.isActive) ?? infoNodes[0];
+    const primaryWorkflow =
+      infoNodes.find((item) => item.isActive) ?? infoNodes[0];
 
     // Node positions (plan nodes + the info/workflow node itself) only ever
     // live in this local draft — reopening a persisted workflow always
@@ -834,7 +889,11 @@ export default function PlanAquacultureGrowthCreateWorkflowPage() {
     // INFO_NODE_X/0 fallback above). Save them onto the workflow's own
     // metadataJson, keyed by plan id (the only thing stable across reloads,
     // since node ids are regenerated every time).
-    if (activeWorkflowId && isPersistedWorkflowId(activeWorkflowId) && workflowDetail) {
+    if (
+      activeWorkflowId &&
+      isPersistedWorkflowId(activeWorkflowId) &&
+      workflowDetail
+    ) {
       const nodePositions: Record<number, { x: number; y: number }> = {};
       nodes.forEach((node) => {
         if (node.data.setupKind !== "plan") return;
@@ -855,9 +914,14 @@ export default function PlanAquacultureGrowthCreateWorkflowPage() {
             durationDays: workflowDetail.durationDays,
             scopes: workflowDetail.scopes
               .map(toWorkflowScopeRequest)
-              .filter((scope): scope is FarmWorkflowScopeRequest => scope !== null),
-            seasonIds: (workflowDetail.seasons || []).map((season) => season.id),
-            status: workflowDetail.status.toUpperCase() as FarmWorkflowRequestStatus,
+              .filter(
+                (scope): scope is FarmWorkflowScopeRequest => scope !== null,
+              ),
+            seasonIds: (workflowDetail.seasons || []).map(
+              (season) => season.id,
+            ),
+            status:
+              workflowDetail.status.toUpperCase() as FarmWorkflowRequestStatus,
             metadataJson: {
               ...workflowDetail.metadataJson,
               nodePositions,
@@ -869,7 +933,8 @@ export default function PlanAquacultureGrowthCreateWorkflowPage() {
         toast({
           variant: "destructive",
           title: "Lỗi",
-          description: getApiErrorMessage(error) || "Không thể lưu vị trí sơ đồ",
+          description:
+            getApiErrorMessage(error) || "Không thể lưu vị trí sơ đồ",
         });
         return;
       }
@@ -908,8 +973,10 @@ export default function PlanAquacultureGrowthCreateWorkflowPage() {
     onEdit: handleOpenEditInfoNode,
   };
 
+  const primaryWorkflowRecord = infoNodes.length > 0 ? infoNodes[0] : undefined;
+
   const displayNodes = nodes.map((node) =>
-    toDisplayNode(node, nodes, handlers, regions, plans),
+    toDisplayNode(node, nodes, handlers, regions, plans, primaryWorkflowRecord),
   );
 
   infoNodes.forEach((record) => {
@@ -1011,8 +1078,8 @@ export default function PlanAquacultureGrowthCreateWorkflowPage() {
           <div className="rounded-3xl border border-dashed border-slate-300 bg-white p-10 text-center shadow-sm">
             <Workflow className="mx-auto h-10 w-10 text-slate-400" />
             <p className="mx-auto mt-4 max-w-md text-sm text-slate-600">
-              Bắt đầu vụ nuôi trồng thủy sản mới trước khi xây dựng các kế
-              hoạch liên kết với nhau.
+              Bắt đầu vụ nuôi trồng thủy sản mới trước khi xây dựng các kế hoạch
+              liên kết với nhau.
             </p>
             <Button className="mt-6" onClick={handleOpenCreateInfoNode}>
               <Plus className="mr-2 h-4 w-4" />

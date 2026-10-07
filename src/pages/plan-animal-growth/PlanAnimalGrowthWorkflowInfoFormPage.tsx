@@ -31,7 +31,8 @@ import * as z from "zod";
 import {
   useFarmWorkflowById,
   useFarmWorkflowMutations,
-} from "@/features/farm-workflow/hooks";
+  buildFinalWorkflowScopes,
+} from "@/features/farm-workflow";
 import type { FarmWorkflowScopeRequest } from "@/features/farm-workflow/types/farm-workflow.type";
 import GeographicalSelector from "./components/GeographicalSelector";
 import GrowthCycleSelector from "../plan-growth/components/GrowthCycleSelector";
@@ -187,6 +188,15 @@ export default function PlanAnimalGrowthWorkflowInfoFormPage() {
     () => mapCultivationZonesToRegionTree(cultivationZones),
     [cultivationZones],
   );
+  const productionZoneOptions = useMemo(
+    () =>
+      (cultivationZones || []).map((zone) => ({
+        id: zone.id,
+        code: zone.code || `CZ-${zone.id}`,
+        name: zone.name || `Vùng chăn nuôi #${zone.id}`,
+      })),
+    [cultivationZones],
+  );
   const infoNodes = useAnimalGrowthWorkflowDraftStore(
     (state) => state.infoNodes,
   );
@@ -243,6 +253,16 @@ export default function PlanAnimalGrowthWorkflowInfoFormPage() {
   const [seasonNames, setSeasonNames] = useState<string[]>(
     editingRecord?.seasonNames ?? [],
   );
+  const [zoneSelections, setZoneSelections] = useState<GeographicalSelection[]>(
+    () =>
+      (editingRecord?.productionZones || []).map((z) => ({
+        id: String(z.id),
+        type: "region" as const,
+        regionId: String(z.id),
+        name: z.name || z.code || `Vùng #${z.id}`,
+        regionName: z.name || z.code || `Vùng #${z.id}`,
+      })),
+  );
   const [growthCycleSelections, setGrowthCycleSelections] = useState<
     GrowthCycleSelection[]
   >(
@@ -296,6 +316,17 @@ export default function PlanAnimalGrowthWorkflowInfoFormPage() {
         cycleId: String(seasonId),
       })),
     );
+    if (record.productionZones) {
+      setZoneSelections(
+        record.productionZones.map((z) => ({
+          id: String(z.id),
+          type: "region" as const,
+          regionId: String(z.id),
+          name: z.name || z.code || `Vùng #${z.id}`,
+          regionName: z.name || z.code || `Vùng #${z.id}`,
+        })),
+      );
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [workflowDetail]);
 
@@ -327,12 +358,33 @@ export default function PlanAnimalGrowthWorkflowInfoFormPage() {
   const isSaving = createWorkflow.isPending || updateWorkflow.isPending;
 
   const handleSave = async (values: z.infer<typeof formSchema>) => {
-    if (selections.length === 0) {
+    if (zoneSelections.length === 0 && selections.length === 0) {
       setRegionsTouched(true);
       return;
     }
 
+    const scopes = buildFinalWorkflowScopes(
+      selections,
+      zoneSelections,
+      cultivationZones,
+    );
+
+    if (scopes.length === 0) {
+      setRegionsTouched(true);
+      toast({
+        title: "Chưa chọn vùng chăn nuôi hợp lệ",
+        description:
+          "Vui lòng chọn Vùng chăn nuôi có chứa thông tin vùng địa lý.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     const isFirstInfoNode = infoNodes.length === 0;
+    const productionZoneIds = zoneSelections
+      .map((s) => Number(s.regionId))
+      .filter(Boolean);
+
     const payload = {
       domainCode: WORKFLOW_DOMAIN_CODE,
       name: values.name,
@@ -342,8 +394,9 @@ export default function PlanAnimalGrowthWorkflowInfoFormPage() {
         plannedDurationMonths,
         plannedDurationDays,
       ),
-      scopes: toWorkflowScopes(selections),
+      scopes,
       seasonIds,
+      productionZoneIds,
       status: "ACTIVE" as const,
     };
 
@@ -360,6 +413,7 @@ export default function PlanAnimalGrowthWorkflowInfoFormPage() {
               plannedDurationDays,
               seasonIds,
               seasonNames,
+              productionZoneIds,
             }
           : {
               id: "",
@@ -371,6 +425,7 @@ export default function PlanAnimalGrowthWorkflowInfoFormPage() {
               plannedDurationDays,
               seasonIds,
               seasonNames,
+              productionZoneIds,
               isActive: true,
               position:
                 editingRecord?.position ?? getNextInfoNodePosition(infoNodes),
@@ -613,14 +668,12 @@ export default function PlanAnimalGrowthWorkflowInfoFormPage() {
                 />
               </div>
 
+              {/* Tạm ẩn trường phạm vi vùng địa lý ở trên
               <div className="order-4 space-y-2">
                 <div className="flex items-center justify-between">
                   <label className="text-xs text-muted-foreground font-black uppercase tracking-widest">
-                    Vùng chăn nuôi <span className="text-red-500">*</span>
+                    Phạm vi vùng địa lý
                   </label>
-                  <span className="text-[10px] text-emerald-700 bg-emerald-100 px-2 py-1 rounded-full font-semibold">
-                    Chọn 1 khu vực/lô từ sơ đồ ban đầu
-                  </span>
                 </div>
                 <GeographicalSelector
                   regions={regions || []}
@@ -631,57 +684,88 @@ export default function PlanAnimalGrowthWorkflowInfoFormPage() {
                     setRegionsTouched(true);
                   }}
                 />
-                {regionsTouched && selections.length === 0 && (
-                  <p className="text-xs text-destructive">
-                    Vui lòng chọn ít nhất một vùng chăn nuôi
-                  </p>
-                )}
+              </div>
+              */}
 
-                {selectionSummary.length > 0 && (
-                  <div className="mt-4 p-4 rounded-xl bg-white/50 border border-emerald-100/50 space-y-3">
+              {/* Vùng chăn nuôi (productionZoneIds) */}
+              <div className="order-5 space-y-2 pt-1">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs text-muted-foreground font-black uppercase tracking-widest flex items-center gap-1.5">
+                    <Sprout className="w-3.5 h-3.5 text-emerald-600" />
+                    Vùng chăn nuôi <span className="text-red-500">*</span>
+                  </label>
+                  <span className="text-[10px] text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full font-medium">
+                    Chọn một hoặc nhiều vùng
+                  </span>
+                </div>
+                <GeographicalSelector
+                  regions={productionZoneOptions || []}
+                  enterpriseId=""
+                  existingSelections={zoneSelections}
+                  regionOnly={true}
+                  multiSelect={true}
+                  triggerLabel="Chọn Vùng chăn nuôi"
+                  dialogTitle="Chọn Vùng chăn nuôi với Quy trình"
+                  onConfirm={(newSelections) => {
+                    setZoneSelections(newSelections);
+                    setRegionsTouched(true);
+                  }}
+                />
+                {regionsTouched &&
+                  zoneSelections.length === 0 &&
+                  selections.length === 0 && (
+                    <p className="text-xs text-destructive">
+                      Vui lòng chọn ít nhất một Vùng chăn nuôi
+                    </p>
+                  )}
+                {zoneSelections.length > 0 && (
+                  <div className="mt-3 p-4 rounded-xl bg-white/50 border border-emerald-100/50 space-y-3">
                     <div className="text-[10px] font-bold text-emerald-800/60 uppercase tracking-widest flex items-center gap-2">
-                      <Layers className="w-3 h-3" />
-                      Phạm vi đã chọn
+                      <Layers className="w-3 h-3 text-emerald-600" />
+                      Vùng chăn nuôi đã chọn
                     </div>
-                    <div className="space-y-3">
-                      {selectionSummary.map((group) => (
-                        <div key={group.regionId} className="space-y-2">
-                          <div className="flex items-center gap-1.5 text-[11px] font-bold text-slate-700">
-                            <div className="w-1 h-1 rounded-full bg-emerald-500" />
-                            {group.regionName}
-                          </div>
-                          <div className="flex flex-wrap gap-1.5 pl-2.5">
-                            {group.items.map((item, idx) => (
-                              <Badge
-                                key={idx}
-                                variant="outline"
-                                className={cn(
-                                  "text-[10px] py-0 px-2 h-5 font-medium border-emerald-100 shadow-sm",
-                                  item.type === "region"
-                                    ? "bg-emerald-100 text-emerald-800"
-                                    : item.type === "area"
-                                      ? "bg-blue-50 text-blue-700 border-blue-100"
-                                      : "bg-white text-slate-600 border-slate-200",
-                                )}
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-1.5 text-[11px] font-bold text-slate-700">
+                        <div className="w-1 h-1 rounded-full bg-emerald-500" />
+                        Vùng chăn nuôi
+                      </div>
+                      <div className="flex flex-wrap gap-1.5 pl-2.5">
+                        {zoneSelections.map((sel) => {
+                          const zoneObj = cultivationZones?.find(
+                            (z) => String(z.id) === sel.regionId,
+                          );
+                          const displayName =
+                            sel.regionName ||
+                            sel.name ||
+                            zoneObj?.name ||
+                            `Vùng #${sel.regionId}`;
+                          return (
+                            <Badge
+                              key={sel.regionId}
+                              variant="outline"
+                              className="text-[10px] py-0 px-2 h-5.5 font-medium bg-emerald-100 text-emerald-800 border-emerald-100 shadow-sm"
+                            >
+                              <span className="opacity-70 mr-1 uppercase text-[8px] font-black">
+                                VÙNG
+                              </span>
+                              {displayName}
+                              <button
+                                type="button"
+                                className="ml-1 text-emerald-600 hover:text-red-600 font-bold cursor-pointer"
+                                onClick={() =>
+                                  setZoneSelections((prev) =>
+                                    prev.filter(
+                                      (p) => p.regionId !== sel.regionId,
+                                    ),
+                                  )
+                                }
                               >
-                                <span className="opacity-70 mr-1 uppercase text-[8px] font-black">
-                                  {item.type === "region"
-                                    ? "Vùng"
-                                    : item.type === "area"
-                                      ? "Khu"
-                                      : "Lô"}
-                                </span>
-                                {item.name}
-                                {item.parentName && (
-                                  <span className="ml-1 opacity-50 font-normal italic">
-                                    ({item.parentName})
-                                  </span>
-                                )}
-                              </Badge>
-                            ))}
-                          </div>
-                        </div>
-                      ))}
+                                ×
+                              </button>
+                            </Badge>
+                          );
+                        })}
+                      </div>
                     </div>
                   </div>
                 )}

@@ -170,6 +170,8 @@ interface SimplePlanFormProps {
     name?: string;
     seasonIds?: number[];
     growthCycleSelections?: GrowthCycleSelection[];
+    productionZones?: { id: number; code?: string; name?: string }[];
+    productionZoneIds?: number[];
   } | null;
   growthCycles: GrowthCycle[];
   personnel: PersonnelOption[];
@@ -546,7 +548,27 @@ export default function SimplePlanForm({
             />
           )}
 
-          {selectionSummary.length > 0 && (
+          {isWorkflowContext &&
+          workflowInfo?.productionZones &&
+          workflowInfo.productionZones.length > 0 ? (
+            <div className="p-4 rounded-xl bg-white/50 border border-emerald-100/50 space-y-3">
+              <div className="text-[10px] font-bold text-emerald-800/60 uppercase tracking-widest flex items-center gap-2">
+                <Layers className="w-3 h-3" />
+                Vùng chăn nuôi đã chọn
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                {workflowInfo.productionZones.map((zone) => (
+                  <Badge
+                    key={zone.id}
+                    variant="outline"
+                    className="text-[11px] py-1 px-2.5 font-medium border-emerald-200 bg-emerald-50 text-emerald-800 shadow-sm"
+                  >
+                    {zone.name || zone.code || `Vùng #${zone.id}`}
+                  </Badge>
+                ))}
+              </div>
+            </div>
+          ) : selectionSummary.length > 0 ? (
             <div className="p-4 rounded-xl bg-white/50 border border-emerald-100/50 space-y-3">
               <div className="text-[10px] font-bold text-emerald-800/60 uppercase tracking-widest flex items-center gap-2">
                 <Layers className="w-3 h-3" />
@@ -593,9 +615,11 @@ export default function SimplePlanForm({
                 ))}
               </div>
             </div>
-          )}
+          ) : null}
 
-          {isWorkflowContext && selectionSummary.length === 0 && (
+          {isWorkflowContext &&
+            !workflowInfo?.productionZones?.length &&
+            selectionSummary.length === 0 && (
             <p className="text-xs text-emerald-800/60 italic text-center py-2">
               Quy trình chưa có vùng chăn nuôi được thiết lập
             </p>

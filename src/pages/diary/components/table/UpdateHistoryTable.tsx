@@ -25,9 +25,11 @@ import type { PlanTaskDiaryEntryResponse } from "@/features/farm-plan-task-diary
 function formatDate(isoString: string) {
   if (!isoString) return "";
   const d = new Date(isoString);
+  if (isNaN(d.getTime())) return isoString;
   const timeStr = d.toLocaleTimeString("vi-VN", {
     hour: "2-digit",
     minute: "2-digit",
+    second: "2-digit",
   });
   const dateStr = d.toLocaleDateString("vi-VN", {
     day: "2-digit",

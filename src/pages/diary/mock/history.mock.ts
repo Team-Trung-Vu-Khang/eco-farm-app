@@ -106,6 +106,7 @@ export interface TaskHistoryItem {
   planName?: string;
   planId?: number | string;
   taskCategoryName?: string;
+  warning?: boolean;
   latestUpdate: UpdateLogEntry;
   historyLogs: UpdateLogEntry[];
 }

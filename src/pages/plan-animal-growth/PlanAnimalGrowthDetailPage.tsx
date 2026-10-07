@@ -51,6 +51,7 @@ export default function PlanAnimalGrowthDetailPage({
     deleteOpen,
     setDeleteOpen,
     selectionSummary,
+    productionZones,
     summarizeTaskSelections: getTaskSelectionSummary,
     handleEdit,
     handleDelete,
@@ -271,51 +272,64 @@ export default function PlanAnimalGrowthDetailPage({
                   Chi tiết phạm vi chăn nuôi
                 </label>
                 <div className="space-y-3">
-                  {selectionSummary.length === 0 && (
+                  {productionZones && productionZones.length > 0 ? (
+                    <div className="flex flex-wrap gap-2 pt-1">
+                      {productionZones.map((zone) => (
+                        <Badge
+                          key={zone.id}
+                          variant="outline"
+                          className="text-xs py-1 px-3 font-semibold border-emerald-200 bg-emerald-50 text-emerald-800 shadow-sm"
+                        >
+                          {zone.name || zone.code || `Vùng #${zone.id}`}
+                        </Badge>
+                      ))}
+                    </div>
+                  ) : selectionSummary.length === 0 ? (
                     <p className="text-sm italic text-slate-400">
                       Chưa xác định vùng chọn
                     </p>
-                  )}
-                  {selectionSummary.map((group) => (
-                    <div
-                      key={group.regionId}
-                      className="space-y-2 p-3 rounded-xl border border-slate-100 bg-slate-50/50"
-                    >
-                      <div className="flex items-center gap-2 text-xs font-bold text-slate-700">
-                        <MapPin className="w-3.5 h-3.5 text-emerald-600" />
-                        {group.regionName}
-                      </div>
-                      <div className="flex flex-wrap gap-1.5 pl-0">
-                        {group.items.map((item, idx) => (
-                          <Badge
-                            key={idx}
-                            variant="outline"
-                            className={cn(
-                              "text-[10px] py-0 px-2 h-5 font-medium shadow-xs border-emerald-100 bg-white",
-                              item.type === "region" &&
-                                "bg-emerald-50 text-emerald-800",
-                              item.type === "area" &&
-                                "bg-blue-50 text-blue-700 border-blue-100",
-                            )}
-                          >
-                            <span className="opacity-70 mr-1 uppercase text-[8px] font-black">
-                              {item.type === "region"
-                                ? "Vùng"
-                                : item.type === "area"
-                                  ? "Khu"
-                                  : "Lô"}
-                            </span>
-                            {item.name}
-                            {item.parentName && (
-                              <span className="ml-1 opacity-50 font-normal italic">
-                                ({item.parentName})
+                  ) : (
+                    selectionSummary.map((group) => (
+                      <div
+                        key={group.regionId}
+                        className="space-y-2 p-3 rounded-xl border border-slate-100 bg-slate-50/50"
+                      >
+                        <div className="flex items-center gap-2 text-xs font-bold text-slate-700">
+                          <MapPin className="w-3.5 h-3.5 text-emerald-600" />
+                          {group.regionName}
+                        </div>
+                        <div className="flex flex-wrap gap-1.5 pl-0">
+                          {group.items.map((item, idx) => (
+                            <Badge
+                              key={idx}
+                              variant="outline"
+                              className={cn(
+                                "text-[10px] py-0 px-2 h-5 font-medium shadow-xs border-emerald-100 bg-white",
+                                item.type === "region" &&
+                                  "bg-emerald-50 text-emerald-800",
+                                item.type === "area" &&
+                                  "bg-blue-50 text-blue-700 border-blue-100",
+                              )}
+                            >
+                              <span className="opacity-70 mr-1 uppercase text-[8px] font-black">
+                                {item.type === "region"
+                                  ? "Vùng"
+                                  : item.type === "area"
+                                    ? "Khu"
+                                    : "Lô"}
                               </span>
-                            )}
-                          </Badge>
-                        ))}
+                              {item.name}
+                              {item.parentName && (
+                                <span className="ml-1 opacity-50 font-normal italic">
+                                  ({item.parentName})
+                                </span>
+                              )}
+                            </Badge>
+                          ))}
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    ))
+                  )}
                 </div>
               </div>
 

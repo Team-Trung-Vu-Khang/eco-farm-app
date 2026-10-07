@@ -17,6 +17,7 @@ import {
   RefreshCw,
   Search,
   User,
+  AlertTriangle,
 } from "lucide-react";
 import type { TaskHistoryItem } from "../../mock/history.mock";
 
@@ -108,7 +109,7 @@ export function UpdateDetailDialog({
     >
       <DialogContent className="max-w-2xl h-[85vh] flex flex-col p-6 rounded-2xl bg-white border border-slate-200 shadow-xl overflow-hidden">
         <DialogHeader className="pb-3 border-b border-slate-100 shrink-0">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <Badge
               variant="outline"
               className="bg-amber-50 text-amber-700 border-amber-200 font-bold"
@@ -119,6 +120,11 @@ export function UpdateDetailDialog({
             <span className="text-xs font-mono font-bold text-slate-400">
               {task.taskCode}
             </span>
+            {task.warning && (
+              <Badge className="bg-amber-100 text-amber-800 border-amber-300 gap-1 text-[10px] font-bold">
+                <AlertTriangle className="w-3 h-3 text-amber-600" /> Cảnh báo
+              </Badge>
+            )}
           </div>
           <DialogTitle className="text-lg font-extrabold text-slate-900 mt-1">
             {task.taskName}

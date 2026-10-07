@@ -40,7 +40,11 @@ let fallbackWorkflows: Workflow[] = initialAnimalGrowthWorkflows as Workflow[];
 // one that already exists on the backend and must be preserved on update.
 const MAX_PLAUSIBLE_BACKEND_ID = 1_000_000_000;
 function isBackendId(id: number | undefined | null): id is number {
-  return typeof id === "number" && Number.isFinite(id) && id < MAX_PLAUSIBLE_BACKEND_ID;
+  return (
+    typeof id === "number" &&
+    Number.isFinite(id) &&
+    id < MAX_PLAUSIBLE_BACKEND_ID
+  );
 }
 
 export function mapScopeToSelection(
@@ -92,7 +96,9 @@ export function mapWorkflowResponseToWorkflow(
     description: workflow.description || "",
     selections: [],
     seasonIds: (workflow.seasons || []).map((season) => season.id),
-    seasonNames: (workflow.seasons || []).map((season) => season.name || season.code || `#${season.id}`),
+    seasonNames: (workflow.seasons || []).map(
+      (season) => season.name || season.code || `#${season.id}`,
+    ),
     isActive: workflow.status === "active",
     createdAt: workflow.createdAt || new Date().toISOString(),
     planCount: workflow.planCount ?? 0,
@@ -178,14 +184,27 @@ export function mapWorkflowResponseToInfoRecord(
   workflow: FarmWorkflowResponse,
   position: { x: number; y: number },
 ): DiagramInfoRecord {
+  const zoneNames = (workflow.productionZones || [])
+    .map((zone) => zone.name || zone.code)
+    .filter((name): name is string => Boolean(name));
+
+  const regionLabels =
+    zoneNames.length > 0
+      ? zoneNames
+      : mapWorkflowScopesToRegionLabels(workflow.scopes);
+
   return {
     id: String(workflow.id),
     name: workflow.name,
     description: workflow.description || "",
     selections: mapWorkflowScopesToSelections(workflow.scopes),
-    regionLabels: mapWorkflowScopesToRegionLabels(workflow.scopes),
+    regionLabels,
     seasonIds: (workflow.seasons || []).map((season) => season.id),
-    seasonNames: (workflow.seasons || []).map((season) => season.name || season.code || `#${season.id}`),
+    seasonNames: (workflow.seasons || []).map(
+      (season) => season.name || season.code || `#${season.id}`,
+    ),
+    productionZoneIds: (workflow.productionZones || []).map((zone) => zone.id),
+    productionZones: workflow.productionZones || [],
     ...mapDurationDaysToParts(workflow.durationDays),
     isActive: workflow.status === "active",
     position,
@@ -366,24 +385,24 @@ export function buildFarmPlanStagesRequest(
 
   return stageKeys.map((stageKey) => {
     const separatorIndex = stageKey.indexOf(":");
-    const stagePrefix = separatorIndex >= 0
-      ? stageKey.slice(0, separatorIndex)
-      : "";
-    const stageName = separatorIndex >= 0
-      ? stageKey.slice(separatorIndex + 1)
-      : stageKey;
+    const stagePrefix =
+      separatorIndex >= 0 ? stageKey.slice(0, separatorIndex) : "";
+    const stageName =
+      separatorIndex >= 0 ? stageKey.slice(separatorIndex + 1) : stageKey;
     const existingStage = existingStages?.find(
       (stage) => stage.name === stageName,
     );
 
     const supplyLines = groupMaterialAllocations(formData.materialAllocations)
       .map((material) => {
-        const isEquipment =
-          [material.materialCategory, material.materialType].some(
-            (value) =>
-              typeof value === "string" &&
-              /equipment|dụng cụ\s*-\s*máy móc/i.test(value),
-          );
+        const isEquipment = [
+          material.materialCategory,
+          material.materialType,
+        ].some(
+          (value) =>
+            typeof value === "string" &&
+            /equipment|dụng cụ\s*-\s*máy móc/i.test(value),
+        );
         const unitBaseId = isEquipment ? 6 : material.unitBaseId;
 
         return material.stageId === stageKey &&
@@ -421,20 +440,24 @@ export function buildFarmPlanStagesRequest(
         durationUnit: task.durationUnit,
       }));
 
-    const selectedCycleStage = formData.growthCycleSelections?.find((selection) => {
-      if (selection.type !== "stage" || selection.stageId == null) return false;
-      if (stagePrefix.startsWith("api-stage-")) {
-        return String(selection.stageId) === stagePrefix.slice("api-stage-".length);
-      }
-      if (stageKey.includes(":")) {
-        const [cycleId, ...nameParts] = stageKey.split(":");
-        return (
-          selection.cycleId === cycleId &&
-          nameParts.join(":") === stageName
-        );
-      }
-      return selection.stageName === stageName;
-    });
+    const selectedCycleStage = formData.growthCycleSelections?.find(
+      (selection) => {
+        if (selection.type !== "stage" || selection.stageId == null)
+          return false;
+        if (stagePrefix.startsWith("api-stage-")) {
+          return (
+            String(selection.stageId) === stagePrefix.slice("api-stage-".length)
+          );
+        }
+        if (stageKey.includes(":")) {
+          const [cycleId, ...nameParts] = stageKey.split(":");
+          return (
+            selection.cycleId === cycleId && nameParts.join(":") === stageName
+          );
+        }
+        return selection.stageName === stageName;
+      },
+    );
 
     return {
       ...(isBackendId(existingStage?.id) ? { id: existingStage.id } : {}),

@@ -362,3 +362,71 @@ export function extractCropSubjectVariants(
 
   return items;
 }
+
+/**
+ * Chuyển đổi chuỗi ISO UTC / YYYY-MM-DD từ API thành định dạng `YYYY-MM-DDTHH:mm` cho <input type="datetime-local" />
+ */
+export function formatToDatetimeLocal(
+  isoOrDateStr?: string | null,
+  defaultTime = "00:00",
+): string {
+  if (!isoOrDateStr) return "";
+
+  // Nếu đã là YYYY-MM-DDTHH:mm (local)
+  if (
+    /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(isoOrDateStr) &&
+    !isoOrDateStr.endsWith("Z") &&
+    !isoOrDateStr.includes("+")
+  ) {
+    return isoOrDateStr.slice(0, 16);
+  }
+
+  // Nếu chỉ có ngày YYYY-MM-DD
+  if (/^\d{4}-\d{2}-\d{2}$/.test(isoOrDateStr)) {
+    return `${isoOrDateStr}T${defaultTime}`;
+  }
+
+  const d = new Date(isoOrDateStr);
+  if (isNaN(d.getTime())) return "";
+
+  const pad = (n: number) => String(n).padStart(2, "0");
+  const year = d.getFullYear();
+  const month = pad(d.getMonth() + 1);
+  const day = pad(d.getDate());
+  const hours = pad(d.getHours());
+  const minutes = pad(d.getMinutes());
+
+  return `${year}-${month}-${day}T${hours}:${minutes}`;
+}
+
+/**
+ * Chuyển đổi giá trị `YYYY-MM-DDTHH:mm` từ `<input type="datetime-local" />` sang chuỗi ISO kèm múi giờ local (+07:00).
+ */
+export function formatDatetimeLocalToIsoWithTimezone(
+  datetimeLocalStr?: string | null,
+): string {
+  if (!datetimeLocalStr) return "";
+
+  if (/^\d{4}-\d{2}-\d{2}$/.test(datetimeLocalStr)) {
+    return datetimeLocalStr;
+  }
+
+  const d = new Date(datetimeLocalStr);
+  if (isNaN(d.getTime())) return datetimeLocalStr;
+
+  const pad = (n: number) => String(n).padStart(2, "0");
+  const year = d.getFullYear();
+  const month = pad(d.getMonth() + 1);
+  const day = pad(d.getDate());
+  const hours = pad(d.getHours());
+  const minutes = pad(d.getMinutes());
+  const seconds = pad(d.getSeconds());
+
+  const offsetMinutes = -d.getTimezoneOffset();
+  const offsetSign = offsetMinutes >= 0 ? "+" : "-";
+  const absOffsetMinutes = Math.abs(offsetMinutes);
+  const offsetHours = pad(Math.floor(absOffsetMinutes / 60));
+  const offsetMins = pad(absOffsetMinutes % 60);
+
+  return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}${offsetSign}${offsetHours}:${offsetMins}`;
+}

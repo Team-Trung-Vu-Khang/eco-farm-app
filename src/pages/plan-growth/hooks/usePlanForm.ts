@@ -273,6 +273,12 @@ export function usePlanForm(
               ? embeddedWorkflow.seasons
               : [];
 
+        const productionZones =
+          workflow.productionZones ||
+          embeddedWorkflow?.productionZones ||
+          draftWorkflowInfo?.productionZones ||
+          [];
+
         return {
           ...(draftWorkflowInfo || {}),
           id: String(workflow.id),
@@ -286,6 +292,8 @@ export function usePlanForm(
             (season: { id?: number | string; name?: string; code?: string }) =>
               season.name || season.code || `#${season.id}`,
           ),
+          productionZones,
+          productionZoneIds: productionZones.map((z: any) => z.id),
           isActive: workflow.status === "active",
           position: draftWorkflowInfo?.position || { x: 0, y: 0 },
         };
@@ -302,6 +310,15 @@ export function usePlanForm(
           seasonIds: (embeddedWorkflow.seasons || [])
             .map((season: { id?: number | string }) => Number(season.id))
             .filter((id: number) => Number.isFinite(id)),
+          productionZones:
+            embeddedWorkflow.productionZones ||
+            draftWorkflowInfo?.productionZones ||
+            [],
+          productionZoneIds: (
+            embeddedWorkflow.productionZones ||
+            draftWorkflowInfo?.productionZones ||
+            []
+          ).map((z: any) => z.id),
           isActive: embeddedWorkflow.status === "active",
           position: draftWorkflowInfo?.position || { x: 0, y: 0 },
         }

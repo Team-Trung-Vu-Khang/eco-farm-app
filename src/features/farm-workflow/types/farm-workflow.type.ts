@@ -84,6 +84,12 @@ export interface FarmWorkflowStatusBreakdown {
   cancelled?: number;
 }
 
+export interface FarmWorkflowProductionZoneRef {
+  id: number;
+  code?: string;
+  name?: string;
+}
+
 export interface FarmWorkflowRequest {
   domainCode: DomainCode;
   code?: string | null;
@@ -93,6 +99,8 @@ export interface FarmWorkflowRequest {
   scopes: FarmWorkflowScopeRequest[];
   /** Optional season links. The API replaces the complete set on update. */
   seasonIds?: number[];
+  /** Optional production zone links (/api/farm/production-zones). The API replaces the complete set on update. */
+  productionZoneIds?: number[];
   status?: FarmWorkflowRequestStatus;
   metadataJson?: Record<string, any>;
 }
@@ -106,6 +114,7 @@ export interface FarmWorkflowResponse {
   durationDays: number;
   scopes: FarmWorkflowScopeResponse[];
   seasons?: FarmWorkflowSeasonRef[];
+  productionZones?: FarmWorkflowProductionZoneRef[];
   status: FarmWorkflowResponseStatus;
   metadataJson?: Record<string, any>;
   planCount?: number;
@@ -127,6 +136,7 @@ export interface FarmWorkflowQueryParams {
   keyword?: string;
   status?: FarmWorkflowRequestStatus | FarmWorkflowResponseStatus;
   domainCode?: DomainCode;
+  productionZoneId?: number;
   page?: number;
   size?: number;
 }

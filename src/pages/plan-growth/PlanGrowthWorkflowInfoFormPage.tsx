@@ -7,7 +7,8 @@ import {
 import {
   useFarmWorkflowById,
   useFarmWorkflowMutations,
-} from "@/features/farm-workflow/hooks";
+  buildFinalWorkflowScopes,
+} from "@/features/farm-workflow";
 import type { FarmWorkflowScopeRequest } from "@/features/farm-workflow/types/farm-workflow.type";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useInfiniteQuery } from "@tanstack/react-query";
@@ -192,6 +193,15 @@ export default function PlanGrowthWorkflowInfoFormPage() {
     () => mapCultivationZonesToRegionTree(cultivationZones),
     [cultivationZones],
   );
+  const productionZoneOptions = useMemo(
+    () =>
+      (cultivationZones || []).map((zone) => ({
+        id: zone.id,
+        code: zone.code || `CZ-${zone.id}`,
+        name: zone.name || `Vùng canh tác #${zone.id}`,
+      })),
+    [cultivationZones],
+  );
   const infoNodes = usePlanWorkflowDraftStore((state) => state.infoNodes);
   const setInfoNodes = usePlanWorkflowDraftStore((state) => state.setInfoNodes);
   const nodes = usePlanWorkflowDraftStore((state) => state.nodes);
@@ -255,6 +265,16 @@ export default function PlanGrowthWorkflowInfoFormPage() {
   const [seasonIds, setSeasonIds] = useState<number[]>(
     editingRecord?.seasonIds ?? [],
   );
+  const [zoneSelections, setZoneSelections] = useState<GeographicalSelection[]>(
+    () =>
+      (editingRecord?.productionZones || []).map((z) => ({
+        id: String(z.id),
+        type: "region" as const,
+        regionId: String(z.id),
+        name: z.name || z.code || `Vùng #${z.id}`,
+        regionName: z.name || z.code || `Vùng #${z.id}`,
+      })),
+  );
 
   const selectionSummary = useMemo(
     () => summarizeSelections(selections, regions || []),
@@ -312,6 +332,17 @@ export default function PlanGrowthWorkflowInfoFormPage() {
         cycleId: String(seasonId),
       })),
     );
+    if (record.productionZones) {
+      setZoneSelections(
+        record.productionZones.map((z) => ({
+          id: String(z.id),
+          type: "region" as const,
+          regionId: String(z.id),
+          name: z.name || z.code || `Vùng #${z.id}`,
+          regionName: z.name || z.code || `Vùng #${z.id}`,
+        })),
+      );
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [workflowDetail]);
 
@@ -343,12 +374,33 @@ export default function PlanGrowthWorkflowInfoFormPage() {
   const isSaving = createWorkflow.isPending || updateWorkflow.isPending;
 
   const handleSave = async (values: z.infer<typeof formSchema>) => {
-    if (selections.length === 0) {
+    if (zoneSelections.length === 0 && selections.length === 0) {
       setRegionsTouched(true);
       return;
     }
 
+    const scopes = buildFinalWorkflowScopes(
+      selections,
+      zoneSelections,
+      cultivationZones,
+    );
+
+    if (scopes.length === 0) {
+      setRegionsTouched(true);
+      toast({
+        title: "Chưa chọn vùng canh tác hợp lệ",
+        description:
+          "Vui lòng chọn Vùng canh tác có chứa thông tin vùng địa lý.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     const isFirstInfoNode = infoNodes.length === 0;
+    const productionZoneIds = zoneSelections
+      .map((s) => Number(s.regionId))
+      .filter(Boolean);
+
     const payload = {
       domainCode: WORKFLOW_DOMAIN_CODE,
       name: values.name,
@@ -358,8 +410,9 @@ export default function PlanGrowthWorkflowInfoFormPage() {
         plannedDurationMonths,
         plannedDurationDays,
       ),
-      scopes: toWorkflowScopes(selections),
+      scopes,
       seasonIds,
+      productionZoneIds,
       status: "ACTIVE" as const,
     };
 
@@ -376,6 +429,7 @@ export default function PlanGrowthWorkflowInfoFormPage() {
               plannedDurationDays,
               growthCycleSelections,
               seasonIds,
+              productionZoneIds,
             }
           : {
               id: "",
@@ -387,6 +441,7 @@ export default function PlanGrowthWorkflowInfoFormPage() {
               plannedDurationDays,
               growthCycleSelections,
               seasonIds,
+              productionZoneIds,
               isActive: true,
               position:
                 editingRecord?.position ?? getNextInfoNodePosition(infoNodes),
@@ -576,14 +631,12 @@ export default function PlanGrowthWorkflowInfoFormPage() {
                 )}
               />
 
+              {/* Tạm ẩn trường phạm vi vùng địa lý ở trên
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <label className="text-xs text-muted-foreground font-black uppercase tracking-widest">
-                    Vùng canh tác <span className="text-red-500">*</span>
+                    Phạm vi vùng địa lý
                   </label>
-                  <span className="text-[10px] text-emerald-700 bg-emerald-100 px-2 py-1 rounded-full font-semibold">
-                    Chọn 1 khu vực/lô từ sơ đồ ban đầu
-                  </span>
                 </div>
                 <GeographicalSelector
                   regions={regions || []}
@@ -594,63 +647,94 @@ export default function PlanGrowthWorkflowInfoFormPage() {
                     setRegionsTouched(true);
                   }}
                 />
-                {regionsTouched && selections.length === 0 && (
-                  <p className="text-xs text-destructive">
-                    Vui lòng chọn ít nhất một vùng canh tác
-                  </p>
-                )}
+              </div>
+              */}
 
-                {selectionSummary.length > 0 && (
-                  <div className="mt-4 p-4 rounded-xl bg-white/50 border border-emerald-100/50 space-y-3">
+              {/* Vùng canh tác (productionZoneIds) */}
+              <div className="space-y-2 pt-1">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs text-muted-foreground font-black uppercase tracking-widest flex items-center gap-1.5">
+                    <Sprout className="w-3.5 h-3.5 text-emerald-600" />
+                    Vùng canh tác <span className="text-red-500">*</span>
+                  </label>
+                  <span className="text-[10px] text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full font-medium">
+                    Chọn một hoặc nhiều vùng
+                  </span>
+                </div>
+                <GeographicalSelector
+                  regions={productionZoneOptions || []}
+                  enterpriseId=""
+                  existingSelections={zoneSelections}
+                  regionOnly={true}
+                  multiSelect={true}
+                  triggerLabel="Chọn Vùng canh tác"
+                  dialogTitle="Chọn Vùng canh tác với Quy trình"
+                  onConfirm={(newSelections) => {
+                    setZoneSelections(newSelections);
+                    setRegionsTouched(true);
+                  }}
+                />
+                {regionsTouched &&
+                  zoneSelections.length === 0 &&
+                  selections.length === 0 && (
+                    <p className="text-xs text-destructive">
+                      Vui lòng chọn ít nhất một Vùng canh tác
+                    </p>
+                  )}
+                {zoneSelections.length > 0 && (
+                  <div className="mt-3 p-4 rounded-xl bg-white/50 border border-emerald-100/50 space-y-3">
                     <div className="text-[10px] font-bold text-emerald-800/60 uppercase tracking-widest flex items-center gap-2">
-                      <Layers className="w-3 h-3" />
-                      Phạm vi đã chọn
+                      <Layers className="w-3 h-3 text-emerald-600" />
+                      Vùng canh tác đã chọn
                     </div>
-                    <div className="space-y-3">
-                      {selectionSummary.map((group) => (
-                        <div key={group.regionId} className="space-y-2">
-                          <div className="flex items-center gap-1.5 text-[11px] font-bold text-slate-700">
-                            <div className="w-1 h-1 rounded-full bg-emerald-500" />
-                            {group.regionName}
-                          </div>
-                          <div className="flex flex-wrap gap-1.5 pl-2.5">
-                            {group.items.map((item, idx) => (
-                              <Badge
-                                key={idx}
-                                variant="outline"
-                                className={cn(
-                                  "text-[10px] py-0 px-2 h-5 font-medium border-emerald-100 shadow-sm",
-                                  item.type === "region"
-                                    ? "bg-emerald-100 text-emerald-800"
-                                    : item.type === "area"
-                                      ? "bg-blue-50 text-blue-700 border-blue-100"
-                                      : "bg-white text-slate-600 border-slate-200",
-                                )}
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-1.5 text-[11px] font-bold text-slate-700">
+                        <div className="w-1 h-1 rounded-full bg-emerald-500" />
+                        Vùng canh tác
+                      </div>
+                      <div className="flex flex-wrap gap-1.5 pl-2.5">
+                        {zoneSelections.map((sel) => {
+                          const zoneObj = cultivationZones?.find(
+                            (z) => String(z.id) === sel.regionId,
+                          );
+                          const displayName =
+                            sel.regionName ||
+                            sel.name ||
+                            zoneObj?.name ||
+                            `Vùng #${sel.regionId}`;
+                          return (
+                            <Badge
+                              key={sel.regionId}
+                              variant="outline"
+                              className="text-[10px] py-0 px-2 h-5.5 font-medium bg-emerald-100 text-emerald-800 border-emerald-100 shadow-sm"
+                            >
+                              <span className="opacity-70 mr-1 uppercase text-[8px] font-black">
+                                VÙNG
+                              </span>
+                              {displayName}
+                              <button
+                                type="button"
+                                className="ml-1 text-emerald-600 hover:text-red-600 font-bold cursor-pointer"
+                                onClick={() =>
+                                  setZoneSelections((prev) =>
+                                    prev.filter(
+                                      (p) => p.regionId !== sel.regionId,
+                                    ),
+                                  )
+                                }
                               >
-                                <span className="opacity-70 mr-1 uppercase text-[8px] font-black">
-                                  {item.type === "region"
-                                    ? "Vùng"
-                                    : item.type === "area"
-                                      ? "Khu"
-                                      : "Lô"}
-                                </span>
-                                {item.name}
-                                {item.parentName && (
-                                  <span className="ml-1 opacity-50 font-normal italic">
-                                    ({item.parentName})
-                                  </span>
-                                )}
-                              </Badge>
-                            ))}
-                          </div>
-                        </div>
-                      ))}
+                                ×
+                              </button>
+                            </Badge>
+                          );
+                        })}
+                      </div>
                     </div>
                   </div>
                 )}
               </div>
 
-              {selections.length > 0 && (
+              {(zoneSelections.length > 0 || selections.length > 0) && (
                 <div className="space-y-2">
                   <label className="text-xs text-muted-foreground font-black uppercase tracking-widest">
                     Giai đoạn sinh trưởng
