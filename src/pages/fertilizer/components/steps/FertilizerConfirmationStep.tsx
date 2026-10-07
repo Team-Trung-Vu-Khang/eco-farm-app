@@ -85,7 +85,7 @@ export const FertilizerConfirmationStep = ({
                 label="Tên khoa học"
                 value={formData.scientificTechnicalName}
               />
-<div className="min-w-0">
+              <div className="min-w-0">
                 <span className="text-muted-foreground text-sm block mb-1">
                   Nguồn gốc:
                 </span>
@@ -109,6 +109,7 @@ export const FertilizerConfirmationStep = ({
                       <span className="text-slate-400">Chưa chọn</span>
                     )}
                 </div>
+              </div>
               <div className="col-span-1">
                 <span className="text-muted-foreground text-sm block mb-1">
                   Giai đoạn tác động:
