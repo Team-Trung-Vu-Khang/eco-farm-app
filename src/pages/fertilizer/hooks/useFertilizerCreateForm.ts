@@ -185,47 +185,79 @@ export function useFertilizerCreateForm() {
         "fertilizer",
       );
 
-      // Dynamic Classifications matching
+      // Dynamic Classifications matching according to api.json (Fertilizer: nutrient_composition, origin, effect_stage, physical_form)
       const classifications: any[] = [];
-      const addClasses = (classKey: string, names: string | string[]) => {
+      const addClasses = (classKey: string, names: any) => {
         const nameList = Array.isArray(names) ? names : names ? [names] : [];
-        nameList.forEach((name, idx) => {
-          if (!name) return;
-          const matched = allGroups.find(
-            (g) =>
-              g.classification === classKey &&
-              (g.name?.toLowerCase() === name.toLowerCase() ||
-                g.code?.toLowerCase() === name.toLowerCase()),
-          );
-          if (matched) {
-            classifications.push({
-              classification: classKey,
-              groupId: matched.id,
-              displayOrder: idx,
-            });
+        nameList.forEach((rawItem: any, idx: number) => {
+          if (rawItem === undefined || rawItem === null || rawItem === "")
+            return;
+
+          let matched: any = null;
+          let targetId: number | null = null;
+
+          let item = rawItem;
+          if (typeof item === "object" && item !== null) {
+            if (item.id || item.groupId) {
+              targetId = Number(item.id || item.groupId);
+            } else {
+              item = item.name || item.code || item.value || "";
+            }
+          }
+
+          if (targetId && !isNaN(targetId)) {
+            matched = allGroups.find((g) => Number(g.id) === targetId);
+          } else {
+            const strVal = String(item).trim();
+            const numVal = Number(strVal);
+            const isNum = !isNaN(numVal) && numVal > 0;
+
+            matched = allGroups.find(
+              (g) =>
+                (g.classification === classKey || !g.classification) &&
+                ((isNum && Number(g.id) === numVal) ||
+                  g.name?.toLowerCase() === strVal.toLowerCase() ||
+                  g.code?.toLowerCase() === strVal.toLowerCase()),
+            );
+
+            if (!matched) {
+              matched = allGroups.find(
+                (g) =>
+                  (isNum && Number(g.id) === numVal) ||
+                  g.name?.toLowerCase() === strVal.toLowerCase() ||
+                  g.code?.toLowerCase() === strVal.toLowerCase(),
+              );
+            }
+
+            if (!matched && isNum) {
+              targetId = numVal;
+            }
+          }
+
+          const finalGroupId = matched ? Number(matched.id) : targetId;
+          const finalClassification = matched?.classification || classKey;
+
+          if (finalGroupId && !isNaN(finalGroupId) && finalGroupId > 0) {
+            const exists = classifications.some(
+              (c: any) =>
+                c.classification === finalClassification &&
+                c.groupId === finalGroupId,
+            );
+            if (!exists) {
+              classifications.push({
+                classification: finalClassification,
+                groupId: finalGroupId,
+                displayOrder: idx,
+              });
+            }
           }
         });
       };
 
-      addClasses(
-        "nutrient_composition",
-        formData.fertilizerType || formData.nutritionalContentId,
-      );
-      addClasses(
-        "origin",
-        formData.fertilizerOriginGroups &&
-          formData.fertilizerOriginGroups.length > 0
-          ? formData.fertilizerOriginGroups
-          : formData.fertilizerOriginGroup,
-      );
-      addClasses(
-        "effect_stage",
-        formData.applicationStage || formData.applicationStageId,
-      );
-      addClasses(
-        "physical_form",
-        formData.physicalForm || formData.physicalFormId,
-      );
+      addClasses("nutrient_composition", formData.fertilizerTypeGroups || []);
+      addClasses("origin", formData.fertilizerOriginGroups || []);
+      addClasses("effect_stage", formData.applicationStageGroups || []);
+      addClasses("physical_form", formData.physicalFormGroups || []);
 
       // Dynamic Subjects mapping
       const targetSubjectIds = formData.targetCrops
@@ -426,47 +458,32 @@ function mapResponseToFertilizer(item: any, certs: any[]): any {
     imageFile: null,
     formType: item.metadataJson?.formType || "basic",
 
-    nutritionalContentId:
-      item.classifications?.find(
-        (c: any) => c.classification === "nutrient_composition",
-      )?.group?.name || "macronutrients",
-    originId:
-      item.classifications?.find((c: any) => c.classification === "origin")
-        ?.group?.name ||
-      item.metadataJson?.origin ||
-      "inorganic",
-    applicationStageId:
-      item.classifications?.find(
-        (c: any) => c.classification === "effect_stage",
-      )?.group?.name || "top_dressing",
-    physicalFormId:
-      item.classifications?.find(
-        (c: any) => c.classification === "physical_form",
-      )?.group?.name || "soil_application",
     nutrientContent: profile.detailedComposition || "",
     description: item.description || "",
 
     registrationNumber: item.registrationNumber || "",
     scientificTechnicalName: profile.scientificName || "",
-    fertilizerOriginGroup:
-      item.classifications?.find((c: any) => c.classification === "origin")
-        ?.group?.name ||
-      item.metadataJson?.origin ||
-      "",
     fertilizerOriginGroups:
       item.classifications
         ?.filter((c: any) => c.classification === "origin")
-        ?.map((c: any) => c.group?.name)
+        ?.map((c: any) => c.group?.name || c.group?.code || String(c.groupId))
+        ?.filter(Boolean) || [],
+    fertilizerTypeGroups:
+      item.classifications
+        ?.filter((c: any) => c.classification === "nutrient_composition")
+        ?.map((c: any) => c.group?.name || c.group?.code || String(c.groupId))
+        ?.filter(Boolean) || [],
+    applicationStageGroups:
+      item.classifications
+        ?.filter((c: any) => c.classification === "effect_stage")
+        ?.map((c: any) => c.group?.name || c.group?.code || String(c.groupId))
+        ?.filter(Boolean) || [],
+    physicalFormGroups:
+      item.classifications
+        ?.filter((c: any) => c.classification === "physical_form")
+        ?.map((c: any) => c.group?.name || c.group?.code || String(c.groupId))
         ?.filter(Boolean) || [],
     nutritionalComponents: profile.detailedComposition || "",
-    fertilizerType:
-      item.classifications?.find(
-        (c: any) => c.classification === "nutrient_composition",
-      )?.group?.name || "",
-    physicalForm:
-      item.classifications?.find(
-        (c: any) => c.classification === "physical_form",
-      )?.group?.name || "",
     mainIngredients: item.metadataJson?.mainIngredients || "",
     moaGroup: profile.moaOrNutrientNote || "",
     npkRatio: profile.npkRatio || "",

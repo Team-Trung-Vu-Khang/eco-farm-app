@@ -109,6 +109,25 @@ export const FertilizerConfirmationStep = ({
                       <span className="text-slate-400">Chưa chọn</span>
                     )}
                 </div>
+              <div className="col-span-1">
+                <span className="text-muted-foreground text-sm block mb-1">
+                  Giai đoạn tác động:
+                </span>
+                <div className="flex flex-wrap gap-1 min-w-0">
+                  {(formData.applicationStageGroups || []).map((group) => (
+                    <Badge
+                      key={group}
+                      variant="outline"
+                      className="text-xs bg-slate-50 max-w-full min-w-0 break-words"
+                    >
+                      {group}
+                    </Badge>
+                  ))}
+                  {(!formData.applicationStageGroups ||
+                    formData.applicationStageGroups.length === 0) && (
+                    <span className="text-slate-400">Chưa chọn</span>
+                  )}
+                </div>
               </div>
               <Row
                 label="Thành phần dinh dưỡng"
@@ -175,10 +194,6 @@ export const FertilizerConfirmationStep = ({
                   <span className="font-medium">{formData.indications}</span>
                 </div>
               )}
-              <Row
-                label="Giai đoạn tác động"
-                value={formData.applicationStage}
-              />
               <Row label="Hạn sử dụng" value={formData.shelfLife} />
               {formData.targetCrops && formData.targetCrops.length > 0 && (
                 <div className="col-span-2">

@@ -88,6 +88,7 @@ export const OnboardRegionDialog: React.FC<OnboardRegionDialogProps> = ({
         status: data.status,
         metadataJson: {
           address: data.metadataJson?.address,
+          addressLocation: data.addressLocation,
           formType: "basic",
         },
         centerPoint:

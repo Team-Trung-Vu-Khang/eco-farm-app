@@ -37,6 +37,12 @@ export const regionFormSchema = regionInfoSchema
   .extend({
     isDetailed: z.boolean().optional(),
     coordinates: z.array(coordinateSchema).optional(),
+    addressLocation: z
+      .object({
+        lat: z.number().optional(),
+        lng: z.number().optional(),
+      })
+      .optional(),
     centerPoint: z
       .object({
         lat: z.number({ error: "Vĩ độ phải là số" }).optional(),

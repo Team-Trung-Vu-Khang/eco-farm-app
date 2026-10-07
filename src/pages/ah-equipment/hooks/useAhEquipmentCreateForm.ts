@@ -165,28 +165,75 @@ export function useAhEquipmentCreateForm() {
     setSubmitting(true);
     // Dynamic Classifications matching
     const classifications: any[] = [];
-    const addClass = (classKey: string, name: string) => {
-      if (!name) return;
-      const matched = allGroups.find(
-        (g) =>
-          g.classification === classKey &&
-          (g.name.toLowerCase() === name.toLowerCase() ||
-            g.code.toLowerCase() === name.toLocaleLowerCase()),
-      );
-      if (matched) {
-        classifications.push({
-          classification: classKey,
-          groupId: matched.id,
-          displayOrder: classifications.length,
-        });
-      }
+    const addClasses = (classKey: string, names: any) => {
+      const nameList = Array.isArray(names) ? names : names ? [names] : [];
+      nameList.forEach((rawItem: any, idx: number) => {
+        if (rawItem === undefined || rawItem === null || rawItem === "") return;
+
+        let matched: any = null;
+        let targetId: number | null = null;
+
+        let item = rawItem;
+        if (typeof item === "object" && item !== null) {
+          if (item.id || item.groupId) {
+            targetId = Number(item.id || item.groupId);
+          } else {
+            item = item.name || item.code || item.value || "";
+          }
+        }
+
+        if (targetId && !isNaN(targetId)) {
+          matched = allGroups.find((g) => Number(g.id) === targetId);
+        } else {
+          const strVal = String(item).trim();
+          const numVal = Number(strVal);
+          const isNum = !isNaN(numVal) && numVal > 0;
+
+          matched = allGroups.find(
+            (g) =>
+              (g.classification === classKey || !g.classification) &&
+              ((isNum && Number(g.id) === numVal) ||
+                g.name?.toLowerCase() === strVal.toLowerCase() ||
+                g.code?.toLowerCase() === strVal.toLowerCase()),
+          );
+
+          if (!matched) {
+            matched = allGroups.find(
+              (g) =>
+                (isNum && Number(g.id) === numVal) ||
+                g.name?.toLowerCase() === strVal.toLowerCase() ||
+                g.code?.toLowerCase() === strVal.toLowerCase(),
+            );
+          }
+
+          if (!matched && isNum) {
+            targetId = numVal;
+          }
+        }
+
+        const finalGroupId = matched ? Number(matched.id) : targetId;
+        const finalClassification = matched?.classification || classKey;
+
+        if (finalGroupId && !isNaN(finalGroupId) && finalGroupId > 0) {
+          const exists = classifications.some(
+            (c: any) =>
+              c.classification === finalClassification &&
+              c.groupId === finalGroupId,
+          );
+          if (!exists) {
+            classifications.push({
+              classification: finalClassification,
+              groupId: finalGroupId,
+              displayOrder: idx,
+            });
+          }
+        }
+      });
     };
 
-    addClass("technology_level", formData.technologyLevelGroup);
-    addClass("financial_aspect", formData.assetManagementGroup);
-    formData.valueChainGroup.forEach((chain) => {
-      addClass("value_chain", chain);
-    });
+    addClasses("technology_level", formData.technologyLevelGroup);
+    addClasses("financial_aspect", formData.assetManagementGroup);
+    addClasses("value_chain", formData.valueChainGroup);
 
     try {
       const uploadedImageUrl = await uploadImage(
@@ -377,14 +424,26 @@ function mapResponseToEquipment(item: any): any {
       item.classifications?.find(
         (c: any) => c.classification === "technology_level",
       )?.group?.code || "",
+    technologyLevelGroups:
+      item.classifications
+        ?.filter((c: any) => c.classification === "technology_level")
+        ?.map((c: any) => c.group?.code || c.group?.name || String(c.groupId))
+        ?.filter(Boolean) || [],
     assetManagementGroup:
       item.classifications?.find(
         (c: any) => c.classification === "financial_aspect",
       )?.group?.code || "",
+    assetManagementGroups:
+      item.classifications
+        ?.filter((c: any) => c.classification === "financial_aspect")
+        ?.map((c: any) => c.group?.code || c.group?.name || String(c.groupId))
+        ?.filter(Boolean) || [],
     valueChainGroup:
       item.classifications
         ?.filter((c: any) => c.classification === "value_chain")
-        ?.map((c: any) => c.group?.code) || [],
+        ?.map(
+          (c: any) => c.group?.code || c.group?.name || String(c.groupId),
+        ) || [],
     machineType: profile.typeTags || [],
     powerCapacity: profile.powerRating || "",
     workingCapacity: profile.capacity || "",

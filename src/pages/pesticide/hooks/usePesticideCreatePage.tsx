@@ -86,7 +86,7 @@ export function usePesticideCreatePage() {
             .getById("medicine", Number(params.id), "OWNER", scope)
             .then((item) => {
               const mapped = mapResponseToPesticide(item, certs);
-              setFormData(createPesticideFormDataFromItem(mapped));
+              setFormData(mapped);
             });
         }
       })
@@ -157,57 +157,80 @@ export function usePesticideCreatePage() {
       );
 
       // Dynamic Classifications matching
+      // Dynamic Classifications matching according to api.json (Medicine/CROP: target_group, dosage_form, toxicity, mode_of_action, origin)
       const classifications: any[] = [];
-      const addClasses = (classKey: string, names: string | string[]) => {
+      const addClasses = (classKey: string, names: any) => {
         const nameList = Array.isArray(names) ? names : names ? [names] : [];
-        nameList.forEach((name, idx) => {
-          if (!name) return;
-          const matched = allGroups.find(
-            (g) =>
-              g.classification === classKey &&
-              (g.name?.toLowerCase() === name.toLowerCase() ||
-                g.code?.toLowerCase() === name.toLowerCase()),
-          );
-          if (matched) {
-            classifications.push({
-              classification: classKey,
-              groupId: matched.id,
-              displayOrder: idx,
-            });
+        nameList.forEach((rawItem: any, idx: number) => {
+          if (rawItem === undefined || rawItem === null || rawItem === "")
+            return;
+
+          let matched: any = null;
+          let targetId: number | null = null;
+
+          let item = rawItem;
+          if (typeof item === "object" && item !== null) {
+            if (item.id || item.groupId) {
+              targetId = Number(item.id || item.groupId);
+            } else {
+              item = item.name || item.code || item.value || "";
+            }
+          }
+
+          if (targetId && !isNaN(targetId)) {
+            matched = allGroups.find((g) => Number(g.id) === targetId);
+          } else {
+            const strVal = String(item).trim();
+            const numVal = Number(strVal);
+            const isNum = !isNaN(numVal) && numVal > 0;
+
+            matched = allGroups.find(
+              (g) =>
+                (g.classification === classKey || !g.classification) &&
+                ((isNum && Number(g.id) === numVal) ||
+                  g.name?.toLowerCase() === strVal.toLowerCase() ||
+                  g.code?.toLowerCase() === strVal.toLowerCase()),
+            );
+
+            if (!matched) {
+              matched = allGroups.find(
+                (g) =>
+                  (isNum && Number(g.id) === numVal) ||
+                  g.name?.toLowerCase() === strVal.toLowerCase() ||
+                  g.code?.toLowerCase() === strVal.toLowerCase(),
+              );
+            }
+
+            if (!matched && isNum) {
+              targetId = numVal;
+            }
+          }
+
+          const finalGroupId = matched ? Number(matched.id) : targetId;
+          const finalClassification = matched?.classification || classKey;
+
+          if (finalGroupId && !isNaN(finalGroupId) && finalGroupId > 0) {
+            const exists = classifications.some(
+              (c: any) =>
+                c.classification === finalClassification &&
+                c.groupId === finalGroupId,
+            );
+            if (!exists) {
+              classifications.push({
+                classification: finalClassification,
+                groupId: finalGroupId,
+                displayOrder: idx,
+              });
+            }
           }
         });
       };
 
-      addClasses(
-        "target_group",
-        formData.groups && formData.groups.length > 0
-          ? formData.groups
-          : formData.group,
-      );
-      addClasses(
-        "dosage_form",
-        formData.forms && formData.forms.length > 0
-          ? formData.forms
-          : formData.form,
-      );
-      addClasses(
-        "toxicity",
-        formData.toxicityLevels && formData.toxicityLevels.length > 0
-          ? formData.toxicityLevels
-          : formData.toxicityLevel,
-      );
-      addClasses(
-        "mode_of_action",
-        formData.actionTypes && formData.actionTypes.length > 0
-          ? formData.actionTypes
-          : formData.actionType,
-      );
-      addClasses(
-        "origin",
-        formData.origins && formData.origins.length > 0
-          ? formData.origins
-          : formData.manufacturerOrigin?.name || formData.origin,
-      );
+      addClasses("target_group", formData.groups || []);
+      addClasses("dosage_form", formData.forms || []);
+      addClasses("toxicity", formData.toxicityLevels || []);
+      addClasses("mode_of_action", formData.actionTypes || []);
+      addClasses("origin", formData.origins || []);
 
       // Dynamic Subjects mapping
       const targetSubjectIds = formData.targetEntities
@@ -443,58 +466,38 @@ export function usePesticideCreatePage() {
 function mapResponseToPesticide(item: any, certs: any[]): any {
   const profile = item.profile || {};
   return {
+    ...createEmptyPesticideFormData(),
     id: item.id,
     code: item.sku || item.code,
     name: item.name,
     registrationNumber: item.registrationNumber,
     activeIngredient: profile.activeIngredient || "",
     concentration: profile.concentration || "",
-    group:
-      item.classifications?.find(
-        (c: any) => c.classification === "target_group",
-      )?.group?.name || "",
-    form:
-      item.classifications?.find((c: any) => c.classification === "dosage_form")
-        ?.group?.name || "",
-    toxicityLevel:
-      item.classifications?.find((c: any) => c.classification === "toxicity")
-        ?.group?.name ||
-      (item.metadataJson && item.metadataJson?.toxicityLevel) ||
-      "",
     moaGroup: profile.moaGroupCode || "",
-    actionType:
-      item.classifications?.find(
-        (c: any) => c.classification === "mode_of_action",
-      )?.group?.name || "",
-    origin:
-      item.classifications?.find((c: any) => c.classification === "origin")
-        ?.group?.name ||
-      (item.metadataJson && item.metadataJson?.origin) ||
-      "",
     forms:
       item.classifications
         ?.filter((c: any) => c.classification === "dosage_form")
-        ?.map((c: any) => c.group?.name)
+        ?.map((c: any) => c.group?.name || c.group?.code || String(c.groupId))
         ?.filter(Boolean) || [],
     origins:
       item.classifications
         ?.filter((c: any) => c.classification === "origin")
-        ?.map((c: any) => c.group?.name)
+        ?.map((c: any) => c.group?.name || c.group?.code || String(c.groupId))
         ?.filter(Boolean) || [],
     actionTypes:
       item.classifications
         ?.filter((c: any) => c.classification === "mode_of_action")
-        ?.map((c: any) => c.group?.name)
+        ?.map((c: any) => c.group?.name || c.group?.code || String(c.groupId))
         ?.filter(Boolean) || [],
     toxicityLevels:
       item.classifications
         ?.filter((c: any) => c.classification === "toxicity")
-        ?.map((c: any) => c.group?.name)
+        ?.map((c: any) => c.group?.name || c.group?.code || String(c.groupId))
         ?.filter(Boolean) || [],
     groups:
       item.classifications
         ?.filter((c: any) => c.classification === "target_group")
-        ?.map((c: any) => c.group?.name)
+        ?.map((c: any) => c.group?.name || c.group?.code || String(c.groupId))
         ?.filter(Boolean) || [],
     imageUrl:
       (item.metadataJson && item.metadataJson?.imageUrl) || item.imageUrl || "",

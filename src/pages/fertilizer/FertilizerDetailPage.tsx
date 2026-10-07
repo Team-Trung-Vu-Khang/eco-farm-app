@@ -302,6 +302,28 @@ const FertilizerDetailPage = () => {
                       )}
                   </div>
                 </div>
+                <div>
+                  <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">
+                    Giai đoạn tác động
+                  </h4>
+                  <div className="flex flex-wrap gap-1.5">
+                    {(item.applicationStageGroups || []).map(
+                      (group: string) => (
+                        <Badge
+                          key={group}
+                          variant="outline"
+                          className="text-xs bg-slate-50"
+                        >
+                          {group}
+                        </Badge>
+                      ),
+                    )}
+                    {(!item.applicationStageGroups ||
+                      item.applicationStageGroups.length === 0) && (
+                      <span className="text-sm text-slate-400">N/A</span>
+                    )}
+                  </div>
+                </div>
                 <InfoRow
                   label="Thành phần dinh dưỡng chính"
                   value={item.nutritionalComponents}
@@ -367,11 +389,7 @@ const FertilizerDetailPage = () => {
                 </div>
               )}
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 border-t pt-4">
-                <InfoRow
-                  label="Giai đoạn tác động"
-                  value={item.applicationStage}
-                />
+              <div className="border-t pt-4">
                 <InfoRow label="Hạn sử dụng" value={item.shelfLife} />
               </div>
 

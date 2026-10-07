@@ -82,8 +82,11 @@ export interface FertilizerFormData {
   fertilizerOriginGroups?: string[];
   fertilizerOrigins?: string[];
   fertilizerTypes?: string[];
+  fertilizerTypeGroups?: string[];
   fertilizerStates?: string[];
+  physicalFormGroups?: string[];
   fertilizerEffectStages?: string[];
+  applicationStageGroups?: string[];
   nutritionalComponents: string;
   fertilizerType: string;
   physicalForm: string;

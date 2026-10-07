@@ -287,16 +287,13 @@ export default function SimpleFertilizerForm({
 
       {/* ── Phân loại phân bón ── */}
       <div className="space-y-4">
-
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-2">
-            <Label className="flex items-center gap-1.5">
-              Nguồn gốc
-            </Label>
+            <Label className="flex items-center gap-1.5">Nguồn gốc</Label>
             <RemoteMultiSelect
               options={originOptions}
-              value={formData?.fertilizerOrigins || []}
-              onChange={(vals) => updateField("fertilizerOrigins", vals)}
+              value={formData?.fertilizerOriginGroups || []}
+              onChange={(vals) => updateField("fertilizerOriginGroups", vals)}
               onSearch={setOriginSearch}
               placeholder="Chọn nguồn gốc..."
               searchPlaceholder="Tìm nguồn gốc..."
@@ -306,11 +303,13 @@ export default function SimpleFertilizerForm({
           </div>
 
           <div className="space-y-2">
-            <Label className="flex items-center gap-1.5">Thành phần dinh dưỡng</Label>
+            <Label className="flex items-center gap-1.5">
+              Thành phần dinh dưỡng
+            </Label>
             <RemoteMultiSelect
               options={typeOptions}
-              value={formData.fertilizerTypes || []}
-              onChange={(vals) => updateField("fertilizerTypes", vals)}
+              value={formData.fertilizerTypeGroups || []}
+              onChange={(vals) => updateField("fertilizerTypeGroups", vals)}
               onSearch={setTypeSearch}
               placeholder="Chọn thành phần dinh dưỡng..."
               searchPlaceholder="Tìm thành phần dinh dưỡng..."
@@ -325,8 +324,8 @@ export default function SimpleFertilizerForm({
             </Label>
             <RemoteMultiSelect
               options={effectStageOptions}
-              value={formData.fertilizerEffectStages || []}
-              onChange={(vals) => updateField("fertilizerEffectStages", vals)}
+              value={formData.applicationStageGroups || []}
+              onChange={(vals) => updateField("applicationStageGroups", vals)}
               onSearch={setEffectStageSearch}
               placeholder="Chọn giai đoạn tác động..."
               searchPlaceholder="Tìm giai đoạn tác động..."
@@ -341,8 +340,8 @@ export default function SimpleFertilizerForm({
             </Label>
             <RemoteMultiSelect
               options={stateOptions}
-              value={formData.fertilizerStates || []}
-              onChange={(vals) => updateField("fertilizerStates", vals)}
+              value={formData.physicalFormGroups || []}
+              onChange={(vals) => updateField("physicalFormGroups", vals)}
               onSearch={setStateSearch}
               placeholder="Chọn hình thái vật lý..."
               searchPlaceholder="Tìm hình thái vật lý..."

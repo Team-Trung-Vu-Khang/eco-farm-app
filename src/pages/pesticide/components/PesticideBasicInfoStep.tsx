@@ -229,17 +229,8 @@ export default function PesticideBasicInfoStep({
             <Label>{isCultivation ? "Công dụng thuốc" : "Công dụng"}</Label>
             <RemoteMultiSelect
               options={groupOptions}
-              value={
-                formData.groups && formData.groups.length > 0
-                  ? formData.groups
-                  : formData.group
-                    ? [formData.group]
-                    : []
-              }
-              onChange={(values) => {
-                onFormFieldChange("groups", values);
-                onFormFieldChange("group", values[0] || "");
-              }}
+              value={formData.groups || []}
+              onChange={(values) => onFormFieldChange("groups", values)}
               onSearch={setGroupSearch}
               placeholder="Chọn công dụng thuốc (cho phép chọn nhiều)..."
               searchPlaceholder="Tìm công dụng thuốc..."
@@ -282,17 +273,8 @@ export default function PesticideBasicInfoStep({
                       label: item.name,
                       value: item.name,
                     }))}
-                    value={
-                      formData.forms && formData.forms.length > 0
-                        ? formData.forms
-                        : formData.form
-                          ? [formData.form]
-                          : []
-                    }
-                    onChange={(vals) => {
-                      onFormFieldChange("forms", vals);
-                      onFormFieldChange("form", vals[0] || "");
-                    }}
+                    value={formData.forms || []}
+                    onChange={(vals) => onFormFieldChange("forms", vals)}
                     placeholder="Chọn dạng bào chế (chọn nhiều)..."
                   />
                 </div>
@@ -305,17 +287,8 @@ export default function PesticideBasicInfoStep({
                       label: item.name,
                       value: item.name,
                     }))}
-                    value={
-                      formData.origins && formData.origins.length > 0
-                        ? formData.origins
-                        : formData.origin
-                          ? [formData.origin]
-                          : []
-                    }
-                    onChange={(vals) => {
-                      onFormFieldChange("origins", vals);
-                      onFormFieldChange("origin", vals[0] || "");
-                    }}
+                    value={formData.origins || []}
+                    onChange={(vals) => onFormFieldChange("origins", vals)}
                     placeholder="Chọn nguồn gốc (chọn nhiều)..."
                   />
                 </div>
@@ -330,17 +303,8 @@ export default function PesticideBasicInfoStep({
                       label: item.name,
                       value: item.name,
                     }))}
-                    value={
-                      formData.actionTypes && formData.actionTypes.length > 0
-                        ? formData.actionTypes
-                        : formData.actionType
-                          ? [formData.actionType]
-                          : []
-                    }
-                    onChange={(vals) => {
-                      onFormFieldChange("actionTypes", vals);
-                      onFormFieldChange("actionType", vals[0] || "");
-                    }}
+                    value={formData.actionTypes || []}
+                    onChange={(vals) => onFormFieldChange("actionTypes", vals)}
                     placeholder="Chọn cơ chế tác động (chọn nhiều)..."
                   />
                 </div>
@@ -356,18 +320,10 @@ export default function PesticideBasicInfoStep({
                       const val = item.name.split(" - ")[0];
                       return { label: item.name, value: val };
                     })}
-                    value={
-                      formData.toxicityLevels &&
-                      formData.toxicityLevels.length > 0
-                        ? formData.toxicityLevels
-                        : formData.toxicityLevel
-                          ? [formData.toxicityLevel]
-                          : []
+                    value={formData.toxicityLevels || []}
+                    onChange={(vals) =>
+                      onFormFieldChange("toxicityLevels", vals)
                     }
-                    onChange={(vals) => {
-                      onFormFieldChange("toxicityLevels", vals);
-                      onFormFieldChange("toxicityLevel", vals[0] || "");
-                    }}
                     placeholder="Chọn nhóm độc WHO (chọn nhiều)..."
                   />
                 </div>

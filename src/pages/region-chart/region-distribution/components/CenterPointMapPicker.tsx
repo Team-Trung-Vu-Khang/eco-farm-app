@@ -165,42 +165,18 @@ const PickerContent = ({
 
       {/* Coordinates Inputs */}
       <div className={`grid grid-cols-2 ${compact ? "gap-2" : "gap-4"}`}>
-        <div className="space-y-1.5">
-          <Label className="text-sm font-medium">
-            {compact ? "Vĩ độ" : "Vĩ độ (Latitude)"}{" "}
-            <span className="text-red-500">*</span>
-          </Label>
-          <Input
-            type="number"
-            step="any"
-            placeholder={compact ? "Vĩ độ..." : "VD: 11.540000"}
-            value={lat ?? ""}
-            onChange={(e) => {
-              const val =
-                e.target.value === "" ? undefined : parseFloat(e.target.value);
-              onLatChange(val);
-            }}
-            className="bg-white"
-          />
-        </div>
-        <div className="space-y-1.5">
-          <Label className="text-sm font-medium">
-            {compact ? "Kinh độ" : "Kinh độ (Longitude)"}{" "}
-            <span className="text-red-500">*</span>
-          </Label>
-          <Input
-            type="number"
-            step="any"
-            placeholder={compact ? "Kinh độ..." : "VD: 106.895000"}
-            value={lng ?? ""}
-            onChange={(e) => {
-              const val =
-                e.target.value === "" ? undefined : parseFloat(e.target.value);
-              onLngChange(val);
-            }}
-            className="bg-white"
-          />
-        </div>
+        <MapCoordinateField
+          label={compact ? "Vĩ độ" : "Vĩ độ (Latitude)"}
+          placeholder={compact ? "Vĩ độ..." : "VD: 11.540000"}
+          value={lat}
+          onChange={onLatChange}
+        />
+        <MapCoordinateField
+          label={compact ? "Kinh độ" : "Kinh độ (Longitude)"}
+          placeholder={compact ? "Kinh độ..." : "VD: 106.895000"}
+          value={lng}
+          onChange={onLngChange}
+        />
       </div>
 
       {/* Leaflet Map Picker */}
@@ -506,3 +482,68 @@ export const CenterPointMapPicker = () => {
     </div>
   );
 };
+
+function MapCoordinateField({
+  label,
+  placeholder,
+  value,
+  onChange,
+}: {
+  label: string;
+  placeholder: string;
+  value: number | string | undefined;
+  onChange: (val?: number) => void;
+}) {
+  const numVal =
+    value !== undefined && value !== null && value !== ""
+      ? typeof value === "number"
+        ? value
+        : parseFloat(String(value))
+      : undefined;
+
+  const [textVal, setTextVal] = useState<string>(
+    numVal !== undefined && !isNaN(numVal) ? String(numVal) : "",
+  );
+
+  useEffect(() => {
+    if (numVal !== undefined && !isNaN(numVal)) {
+      const parsedText = parseFloat(textVal);
+      if (isNaN(parsedText) || parsedText !== numVal) {
+        setTextVal(String(numVal));
+      }
+    } else if (textVal !== "") {
+      setTextVal("");
+    }
+  }, [numVal]);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const raw = e.target.value.replace(/,/g, ".");
+    if (raw === "" || /^-?\d*\.?\d*$/.test(raw)) {
+      setTextVal(raw);
+      if (raw === "" || raw === "-") {
+        onChange(undefined);
+      } else {
+        const num = parseFloat(raw);
+        if (!isNaN(num)) {
+          onChange(num);
+        }
+      }
+    }
+  };
+
+  return (
+    <div className="space-y-1.5">
+      <Label className="text-sm font-medium">
+        {label} <span className="text-red-500">*</span>
+      </Label>
+      <Input
+        type="text"
+        inputMode="decimal"
+        placeholder={placeholder}
+        value={textVal}
+        onChange={handleChange}
+        className="bg-white"
+      />
+    </div>
+  );
+}

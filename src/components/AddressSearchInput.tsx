@@ -168,64 +168,101 @@ export default function AddressSearchInput({
 
       {showCoordinateInputs && (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-          <div className="space-y-1">
-            <label className="text-xs font-semibold text-slate-700 flex items-center gap-1">
-              <span>Vĩ độ (Latitude)</span>
-              <span className="text-red-500">*</span>
-            </label>
-            <Input
-              type="number"
-              step="any"
-              placeholder="VD: 11.540000"
-              value={latitude ?? ""}
-              onChange={(e) => {
-                const val =
-                  e.target.value === ""
-                    ? undefined
-                    : parseFloat(e.target.value);
-                if (onLatitudeChange) {
-                  onLatitudeChange(val);
-                } else if (onSelectLocation) {
-                  onSelectLocation({
-                    address: value,
-                    latitude: val ?? 0,
-                    longitude: longitude ?? 0,
-                  });
-                }
-              }}
-              className="bg-white text-xs h-9"
-            />
-          </div>
-          <div className="space-y-1">
-            <label className="text-xs font-semibold text-slate-700 flex items-center gap-1">
-              <span>Kinh độ (Longitude)</span>
-              <span className="text-red-500">*</span>
-            </label>
-            <Input
-              type="number"
-              step="any"
-              placeholder="VD: 106.895000"
-              value={longitude ?? ""}
-              onChange={(e) => {
-                const val =
-                  e.target.value === ""
-                    ? undefined
-                    : parseFloat(e.target.value);
-                if (onLongitudeChange) {
-                  onLongitudeChange(val);
-                } else if (onSelectLocation) {
-                  onSelectLocation({
-                    address: value,
-                    latitude: latitude ?? 0,
-                    longitude: val ?? 0,
-                  });
-                }
-              }}
-              className="bg-white text-xs h-9"
-            />
-          </div>
+          <CoordinateDecimalInput
+            label="Vĩ độ (Latitude)"
+            placeholder="VD: 11.540000"
+            value={latitude}
+            onChange={(val) => {
+              if (onLatitudeChange) {
+                onLatitudeChange(val);
+              } else if (onSelectLocation) {
+                onSelectLocation({
+                  address: value,
+                  latitude: val ?? 0,
+                  longitude: longitude ?? 0,
+                });
+              }
+            }}
+          />
+          <CoordinateDecimalInput
+            label="Kinh độ (Longitude)"
+            placeholder="VD: 106.895000"
+            value={longitude}
+            onChange={(val) => {
+              if (onLongitudeChange) {
+                onLongitudeChange(val);
+              } else if (onSelectLocation) {
+                onSelectLocation({
+                  address: value,
+                  latitude: latitude ?? 0,
+                  longitude: val ?? 0,
+                });
+              }
+            }}
+          />
         </div>
       )}
+    </div>
+  );
+}
+
+function CoordinateDecimalInput({
+  label,
+  placeholder,
+  value,
+  onChange,
+  required = true,
+}: {
+  label: string;
+  placeholder: string;
+  value?: number;
+  onChange: (val?: number) => void;
+  required?: boolean;
+}) {
+  const [textVal, setTextVal] = useState<string>(
+    value !== undefined && value !== null ? String(value) : "",
+  );
+
+  useEffect(() => {
+    if (value !== undefined && value !== null) {
+      const parsedText = parseFloat(textVal);
+      if (isNaN(parsedText) || parsedText !== value) {
+        setTextVal(String(value));
+      }
+    } else if (textVal !== "") {
+      setTextVal("");
+    }
+  }, [value]);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const raw = e.target.value.replace(/,/g, ".");
+    if (raw === "" || /^-?\d*\.?\d*$/.test(raw)) {
+      setTextVal(raw);
+      if (raw === "" || raw === "-") {
+        onChange(undefined);
+      } else {
+        const num = parseFloat(raw);
+        if (!isNaN(num)) {
+          onChange(num);
+        }
+      }
+    }
+  };
+
+  return (
+    <div className="space-y-1">
+      <label className="text-xs font-semibold text-slate-700 flex items-center gap-1">
+        <span>{label}</span>
+        {required && <span className="text-red-500">*</span>}
+      </label>
+      <Input
+        type="text"
+        inputMode="decimal"
+        placeholder={placeholder}
+        value={textVal}
+        onChange={handleChange}
+        className="bg-white text-xs h-9"
+      />
     </div>
   );
 }

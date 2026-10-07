@@ -175,8 +175,8 @@ export const FertilizerBasicInfoStep = ({
                   label: g.name,
                   value: g.name,
                 }))}
-                value={formData.fertilizerOrigins || []}
-                onChange={(vals) => updateField("fertilizerOrigins", vals)}
+                value={formData.fertilizerOriginGroups || []}
+                onChange={(vals) => updateField("fertilizerOriginGroups", vals)}
                 onSearch={setOriginSearch}
                 placeholder="Chọn nguồn gốc..."
                 searchPlaceholder="Tìm nguồn gốc..."
@@ -192,8 +192,8 @@ export const FertilizerBasicInfoStep = ({
                   label: g.name,
                   value: g.name,
                 }))}
-                value={formData.fertilizerTypes || []}
-                onChange={(vals) => updateField("fertilizerTypes", vals)}
+                value={formData.fertilizerTypeGroups || []}
+                onChange={(vals) => updateField("fertilizerTypeGroups", vals)}
                 onSearch={setTypeSearch}
                 placeholder="Chọn thành phần dinh dưỡng..."
                 searchPlaceholder="Tìm thành phần dinh dưỡng..."
@@ -209,8 +209,8 @@ export const FertilizerBasicInfoStep = ({
                   label: g.name,
                   value: g.name,
                 }))}
-                value={formData.fertilizerEffectStages || []}
-                onChange={(vals) => updateField("fertilizerEffectStages", vals)}
+                value={formData.applicationStageGroups || []}
+                onChange={(vals) => updateField("applicationStageGroups", vals)}
                 onSearch={setEffectStageSearch}
                 placeholder="Chọn giai đoạn tác động..."
                 searchPlaceholder="Tìm giai đoạn tác động..."
@@ -226,8 +226,8 @@ export const FertilizerBasicInfoStep = ({
                   label: g.name,
                   value: g.name,
                 }))}
-                value={formData.fertilizerStates || []}
-                onChange={(vals) => updateField("fertilizerStates", vals)}
+                value={formData.physicalFormGroups || []}
+                onChange={(vals) => updateField("physicalFormGroups", vals)}
                 onSearch={setStateSearch}
                 placeholder="Chọn hình thái vật lý..."
                 searchPlaceholder="Tìm hình thái vật lý..."

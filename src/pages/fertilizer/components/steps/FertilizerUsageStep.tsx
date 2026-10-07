@@ -96,23 +96,13 @@ export const FertilizerUsageStep = ({
           />
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Label>Giai đoạn tác động</Label>
-            <Input
-              value={formData.applicationStage}
-              onChange={(e) => updateField("applicationStage", e.target.value)}
-              placeholder="VD: Bón lót, bón thúc đẻ nhánh, bón nuôi trái..."
-            />
-          </div>
-          <div className="space-y-2">
-            <Label>Hạn sử dụng</Label>
-            <Input
-              value={formData.shelfLife}
-              onChange={(e) => updateField("shelfLife", e.target.value)}
-              placeholder="VD: 2 năm, 24 tháng..."
-            />
-          </div>
+        <div className="space-y-2">
+          <Label>Hạn sử dụng</Label>
+          <Input
+            value={formData.shelfLife}
+            onChange={(e) => updateField("shelfLife", e.target.value)}
+            placeholder="VD: 2 năm, 24 tháng..."
+          />
         </div>
 
         <div className="space-y-2">
@@ -206,7 +196,10 @@ export const FertilizerUsageStep = ({
                   </div>
                   <div className="min-w-0">
                     <div className="font-medium text-sm truncate">
-                      {doc.fileName || doc.name || doc.fileUrl?.split("/").pop() || `Tài liệu ${idx + 1}`}
+                      {doc.fileName ||
+                        doc.name ||
+                        doc.fileUrl?.split("/").pop() ||
+                        `Tài liệu ${idx + 1}`}
                     </div>
                     <div className="text-xs text-muted-foreground">
                       {doc.size

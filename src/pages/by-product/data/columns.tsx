@@ -152,12 +152,13 @@ export const getByProductColumns = (
             (c: any) => c.certificate?.name || c.certificate?.code,
           ) || [];
         return certs.length > 0 ? (
-          <div className="flex flex-wrap gap-1 w-[180px]">
+          <div className="flex flex-wrap gap-1 max-w-[180px]">
             {certs.map((c: any) => (
               <Badge
                 key={c}
                 variant="secondary"
-                className="text-[9px] py-0 px-1 bg-green-50 text-green-700 border border-green-200"
+                className="text-[9px] py-0 px-1 bg-green-50 text-green-700 border border-green-200 max-w-[170px] truncate inline-block align-bottom"
+                title={c}
               >
                 {c}
               </Badge>

@@ -257,6 +257,7 @@ export function useRegionBasicCreateForm(
         status: data.status,
         metadataJson: {
           address: data.metadataJson?.address,
+          addressLocation: data.addressLocation,
           formType: "basic",
         },
         centerPoint:

@@ -189,47 +189,79 @@ export function useBiologicalProductCreateForm() {
         SUPPLY_TYPE,
       );
 
-      // Dynamic Classifications matching
+      // Dynamic Classifications matching according to api.json (Biological product: enzyme, carrier, bio_extract, supplement)
       const classifications: any[] = [];
-      const addClasses = (classKey: string, names: string | string[]) => {
+      const addClasses = (classKey: string, names: any) => {
         const nameList = Array.isArray(names) ? names : names ? [names] : [];
-        nameList.forEach((name, idx) => {
-          if (!name) return;
-          const matched = allGroups.find(
-            (g) =>
-              g.classification === classKey &&
-              (g.name?.toLowerCase() === name.toLowerCase() ||
-                g.code?.toLowerCase() === name.toLowerCase()),
-          );
-          if (matched) {
-            classifications.push({
-              classification: classKey,
-              groupId: matched.id,
-              displayOrder: idx,
-            });
+        nameList.forEach((rawItem: any, idx: number) => {
+          if (rawItem === undefined || rawItem === null || rawItem === "")
+            return;
+
+          let matched: any = null;
+          let targetId: number | null = null;
+
+          let item = rawItem;
+          if (typeof item === "object" && item !== null) {
+            if (item.id || item.groupId) {
+              targetId = Number(item.id || item.groupId);
+            } else {
+              item = item.name || item.code || item.value || "";
+            }
+          }
+
+          if (targetId && !isNaN(targetId)) {
+            matched = allGroups.find((g) => Number(g.id) === targetId);
+          } else {
+            const strVal = String(item).trim();
+            const numVal = Number(strVal);
+            const isNum = !isNaN(numVal) && numVal > 0;
+
+            matched = allGroups.find(
+              (g) =>
+                (g.classification === classKey || !g.classification) &&
+                ((isNum && Number(g.id) === numVal) ||
+                  g.name?.toLowerCase() === strVal.toLowerCase() ||
+                  g.code?.toLowerCase() === strVal.toLowerCase()),
+            );
+
+            if (!matched) {
+              matched = allGroups.find(
+                (g) =>
+                  (isNum && Number(g.id) === numVal) ||
+                  g.name?.toLowerCase() === strVal.toLowerCase() ||
+                  g.code?.toLowerCase() === strVal.toLowerCase(),
+              );
+            }
+
+            if (!matched && isNum) {
+              targetId = numVal;
+            }
+          }
+
+          const finalGroupId = matched ? Number(matched.id) : targetId;
+          const finalClassification = matched?.classification || classKey;
+
+          if (finalGroupId && !isNaN(finalGroupId) && finalGroupId > 0) {
+            const exists = classifications.some(
+              (c: any) =>
+                c.classification === finalClassification &&
+                c.groupId === finalGroupId,
+            );
+            if (!exists) {
+              classifications.push({
+                classification: finalClassification,
+                groupId: finalGroupId,
+                displayOrder: idx,
+              });
+            }
           }
         });
       };
 
-      addClasses(
-        "nutrient_composition",
-        formData.biologicalProductType || formData.nutritionalContentId,
-      );
-      addClasses(
-        "origin",
-        formData.biologicalProductOriginGroups &&
-          formData.biologicalProductOriginGroups.length > 0
-          ? formData.biologicalProductOriginGroups
-          : formData.biologicalProductOriginGroup || formData.originId,
-      );
-      addClasses(
-        "effect_stage",
-        formData.applicationStage || formData.applicationStageId,
-      );
-      addClasses(
-        "physical_form",
-        formData.physicalForm || formData.physicalFormId,
-      );
+      addClasses("enzyme", formData.enzymes || []);
+      addClasses("carrier", formData.carriers || []);
+      addClasses("bio_extract", formData.bioExtracts || []);
+      addClasses("supplement", formData.supplements || []);
 
       // Dynamic Subjects mapping
       const targetSubjectIds = formData.targetCrops
@@ -452,6 +484,26 @@ function mapResponseToBiologicalProduct(item: any, certs: any[]): any {
 
     registrationNumber: item.registrationNumber || "",
     scientificTechnicalName: profile.scientificName || "",
+    enzymes:
+      item.classifications
+        ?.filter((c: any) => c.classification === "enzyme")
+        ?.map((c: any) => c.group?.name || c.group?.code || String(c.groupId))
+        ?.filter(Boolean) || [],
+    carriers:
+      item.classifications
+        ?.filter((c: any) => c.classification === "carrier")
+        ?.map((c: any) => c.group?.name || c.group?.code || String(c.groupId))
+        ?.filter(Boolean) || [],
+    bioExtracts:
+      item.classifications
+        ?.filter((c: any) => c.classification === "bio_extract")
+        ?.map((c: any) => c.group?.name || c.group?.code || String(c.groupId))
+        ?.filter(Boolean) || [],
+    supplements:
+      item.classifications
+        ?.filter((c: any) => c.classification === "supplement")
+        ?.map((c: any) => c.group?.name || c.group?.code || String(c.groupId))
+        ?.filter(Boolean) || [],
     biologicalProductOriginGroup:
       item.classifications?.find((c: any) => c.classification === "origin")
         ?.group?.name ||

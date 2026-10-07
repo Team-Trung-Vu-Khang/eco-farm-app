@@ -328,17 +328,8 @@ export default function SimplePesticideForm({
           </Label>
           <RemoteMultiSelect
             options={groupOptions}
-            value={
-              Array.isArray(formData.group)
-                ? formData.group
-                : formData.group
-                  ? [formData.group]
-                  : []
-            }
-            onChange={(vals) => {
-              onFormFieldChange("group", vals);
-              onFormFieldChange("pesticideGroups", vals);
-            }}
+            value={formData.groups || []}
+            onChange={(vals) => onFormFieldChange("groups", vals)}
             onSearch={setGroupSearch}
             placeholder="Chọn công dụng thuốc (chọn nhiều)..."
             searchPlaceholder="Tìm công dụng thuốc..."
@@ -356,8 +347,8 @@ export default function SimplePesticideForm({
             </Label>
             <RemoteMultiSelect
               options={originOptions}
-              value={formData.pesticideOrigins || []}
-              onChange={(vals) => onFormFieldChange("pesticideOrigins", vals)}
+              value={formData.origins || []}
+              onChange={(vals) => onFormFieldChange("origins", vals)}
               onSearch={setOriginSearch}
               placeholder="Chọn nguồn gốc..."
               searchPlaceholder="Tìm nguồn gốc..."
@@ -373,10 +364,8 @@ export default function SimplePesticideForm({
             </Label>
             <RemoteMultiSelect
               options={toxicityOptions}
-              value={formData.pesticideToxicityClasses || []}
-              onChange={(vals) =>
-                onFormFieldChange("pesticideToxicityClasses", vals)
-              }
+              value={formData.toxicityLevels || []}
+              onChange={(vals) => onFormFieldChange("toxicityLevels", vals)}
               onSearch={setToxicitySearch}
               placeholder="Chọn độc tính..."
               searchPlaceholder="Tìm độc tính..."
@@ -392,10 +381,8 @@ export default function SimplePesticideForm({
             </Label>
             <RemoteMultiSelect
               options={modeOfActionOptions}
-              value={formData.pesticideModesOfAction || []}
-              onChange={(vals) =>
-                onFormFieldChange("pesticideModesOfAction", vals)
-              }
+              value={formData.actionTypes || []}
+              onChange={(vals) => onFormFieldChange("actionTypes", vals)}
               onSearch={setModeOfActionSearch}
               placeholder="Chọn cơ chế tác động..."
               searchPlaceholder="Tìm cơ chế tác động..."
@@ -411,10 +398,8 @@ export default function SimplePesticideForm({
             </Label>
             <RemoteMultiSelect
               options={formulationOptions}
-              value={formData.pesticideFormulations || []}
-              onChange={(vals) =>
-                onFormFieldChange("pesticideFormulations", vals)
-              }
+              value={formData.forms || []}
+              onChange={(vals) => onFormFieldChange("forms", vals)}
               onSearch={setFormulationSearch}
               placeholder="Chọn dạng bào chế..."
               searchPlaceholder="Tìm dạng bào chế..."

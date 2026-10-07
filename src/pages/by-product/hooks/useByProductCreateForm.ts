@@ -182,22 +182,68 @@ export function useByProductCreateForm() {
 
       // Dynamic Classifications matching for 3 tabs
       const classifications: any[] = [];
-      const addClasses = (classKey: string, names: string | string[]) => {
+      const addClasses = (classKey: string, names: any) => {
         const nameList = Array.isArray(names) ? names : names ? [names] : [];
-        nameList.forEach((name, idx) => {
-          if (!name) return;
-          const matched = allGroups.find(
-            (g) =>
-              g.classification === classKey &&
-              (g.name?.toLowerCase() === name.toLowerCase() ||
-                g.code?.toLowerCase() === name.toLowerCase()),
-          );
-          if (matched) {
-            classifications.push({
-              classification: classKey,
-              groupId: matched.id,
-              displayOrder: idx,
-            });
+        nameList.forEach((rawItem: any, idx: number) => {
+          if (rawItem === undefined || rawItem === null || rawItem === "") return;
+
+          let matched: any = null;
+          let targetId: number | null = null;
+
+          let item = rawItem;
+          if (typeof item === "object" && item !== null) {
+            if (item.id || item.groupId) {
+              targetId = Number(item.id || item.groupId);
+            } else {
+              item = item.name || item.code || item.value || "";
+            }
+          }
+
+          if (targetId && !isNaN(targetId)) {
+            matched = allGroups.find((g) => Number(g.id) === targetId);
+          } else {
+            const strVal = String(item).trim();
+            const numVal = Number(strVal);
+            const isNum = !isNaN(numVal) && numVal > 0;
+
+            matched = allGroups.find(
+              (g) =>
+                (g.classification === classKey || !g.classification) &&
+                ((isNum && Number(g.id) === numVal) ||
+                  g.name?.toLowerCase() === strVal.toLowerCase() ||
+                  g.code?.toLowerCase() === strVal.toLowerCase()),
+            );
+
+            if (!matched) {
+              matched = allGroups.find(
+                (g) =>
+                  (isNum && Number(g.id) === numVal) ||
+                  g.name?.toLowerCase() === strVal.toLowerCase() ||
+                  g.code?.toLowerCase() === strVal.toLowerCase(),
+              );
+            }
+
+            if (!matched && isNum) {
+              targetId = numVal;
+            }
+          }
+
+          const finalGroupId = matched ? Number(matched.id) : targetId;
+          const finalClassification = matched?.classification || classKey;
+
+          if (finalGroupId && !isNaN(finalGroupId) && finalGroupId > 0) {
+            const exists = classifications.some(
+              (c: any) =>
+                c.classification === finalClassification &&
+                c.groupId === finalGroupId,
+            );
+            if (!exists) {
+              classifications.push({
+                classification: finalClassification,
+                groupId: finalGroupId,
+                displayOrder: idx,
+              });
+            }
           }
         });
       };

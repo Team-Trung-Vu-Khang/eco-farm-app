@@ -12,6 +12,12 @@ export const regionBasicFormSchema = z.object({
   landType: z.string().optional(),
   terrain: z.string().optional(),
   note: z.string().optional(),
+  addressLocation: z
+    .object({
+      lat: z.number().optional(),
+      lng: z.number().optional(),
+    })
+    .optional(),
   centerPoint: z
     .object({
       lat: z.number().optional(),

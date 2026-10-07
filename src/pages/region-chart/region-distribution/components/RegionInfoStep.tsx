@@ -37,6 +37,7 @@ export const RegionInfoStep = ({
   const { control, setValue, watch } = useFormContext<RegionFormValues>();
   const provinceId = watch("provinceId");
   const centerPoint = watch("centerPoint");
+  const addressLocation = watch("addressLocation");
   // Vẫn cần danh sách đầy đủ để dò theo tên khi tự điền địa chỉ từ doanh nghiệp
   const { provinces, wards } = useAddressOptions(provinceId);
 
@@ -237,36 +238,41 @@ export const RegionInfoStep = ({
                 onSelectLocation={({ address, latitude, longitude }) => {
                   setValue("address", address, { shouldDirty: true });
                   setValue(
-                    "centerPoint",
+                    "addressLocation",
                     { lat: latitude, lng: longitude },
-                    { shouldDirty: true, shouldValidate: true },
+                    { shouldDirty: true },
                   );
+                  if (!centerPoint?.lat || !centerPoint?.lng) {
+                    setValue(
+                      "centerPoint",
+                      { lat: latitude, lng: longitude },
+                      { shouldDirty: true, shouldValidate: true },
+                    );
+                  }
                 }}
-                latitude={centerPoint?.lat}
-                longitude={centerPoint?.lng}
+                latitude={addressLocation?.lat}
+                longitude={addressLocation?.lng}
                 onLatitudeChange={(lat) => {
                   setValue(
-                    "centerPoint",
+                    "addressLocation",
                     {
                       lat,
-                      lng: centerPoint?.lng ?? 0,
+                      lng: addressLocation?.lng ?? 0,
                     },
                     {
                       shouldDirty: true,
-                      shouldValidate: true,
                     },
                   );
                 }}
                 onLongitudeChange={(lng) => {
                   setValue(
-                    "centerPoint",
+                    "addressLocation",
                     {
-                      lat: centerPoint?.lat ?? 0,
+                      lat: addressLocation?.lat ?? 0,
                       lng,
                     },
                     {
                       shouldDirty: true,
-                      shouldValidate: true,
                     },
                   );
                 }}
