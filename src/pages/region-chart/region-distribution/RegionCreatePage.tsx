@@ -35,18 +35,25 @@ const RegionCreatePage = () => {
   const { isEditMode, handleComplete, handleCancel, isSubmitting } =
     useRegionCreateForm(reset);
 
-  const coordinates =
-    useWatch({
-      control,
-      name: "coordinates",
-    }) || [];
+  const [name, provinceId, wardId, coordinates = []] = useWatch({
+    control,
+    name: ["name", "provinceId", "wardId", "coordinates"],
+  });
+
+  const isStep1Valid =
+    Boolean(name?.trim()) &&
+    Boolean(provinceId?.trim()) &&
+    Boolean(wardId?.trim()) &&
+    !formState.errors.name &&
+    !formState.errors.provinceId &&
+    !formState.errors.wardId;
 
   const steps: Step[] = [
     {
       id: "info",
       title: "Thông tin chung",
       description: "Tên, địa chỉ vùng",
-      isValid: !formState.errors.name,
+      isValid: isStep1Valid,
       content: <RegionInfoStep showCenterPoint={false} />,
     },
     {

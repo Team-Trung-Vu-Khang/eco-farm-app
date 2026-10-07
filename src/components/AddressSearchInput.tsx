@@ -36,6 +36,7 @@ interface AddressSearchInputProps {
   onLongitudeChange?: (longitude?: number) => void;
   placeholder?: string;
   showCoordinateInputs?: boolean;
+  requiredCoordinates?: boolean;
 }
 
 const buildGoongUrl = (path: string, params: Record<string, string>) => {
@@ -58,6 +59,7 @@ export default function AddressSearchInput({
   onLongitudeChange,
   placeholder = "Tìm kiếm địa chỉ...",
   showCoordinateInputs = true,
+  requiredCoordinates = false,
 }: AddressSearchInputProps) {
   const [results, setResults] = useState<SearchResult[]>([]);
   const [isSearching, setIsSearching] = useState(false);
@@ -172,6 +174,7 @@ export default function AddressSearchInput({
             label="Vĩ độ (Latitude)"
             placeholder="VD: 11.540000"
             value={latitude}
+            required={requiredCoordinates}
             onChange={(val) => {
               if (onLatitudeChange) {
                 onLatitudeChange(val);
@@ -188,6 +191,7 @@ export default function AddressSearchInput({
             label="Kinh độ (Longitude)"
             placeholder="VD: 106.895000"
             value={longitude}
+            required={requiredCoordinates}
             onChange={(val) => {
               if (onLongitudeChange) {
                 onLongitudeChange(val);
@@ -211,7 +215,7 @@ function CoordinateDecimalInput({
   placeholder,
   value,
   onChange,
-  required = true,
+  required = false,
 }: {
   label: string;
   placeholder: string;
