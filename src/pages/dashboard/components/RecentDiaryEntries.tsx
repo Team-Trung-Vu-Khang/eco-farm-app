@@ -110,7 +110,6 @@ export function RecentDiaryEntries() {
       day: "2-digit",
       month: "2-digit",
       year: "numeric",
-      timeZone: "UTC",
     });
   }, [dailyStatsData?.latestUpdatedAt]);
 
@@ -159,7 +158,7 @@ export function RecentDiaryEntries() {
           <div className="rounded-2xl border border-slate-100 bg-white shadow-sm p-5">
             <div className="flex items-start justify-between gap-3">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-wide text-slate-400 mb-1">
+                <p className="text-xs font-medium text-slate-500 mb-1">
                   Tổng lần cập nhật
                 </p>
                 <p className="text-3xl font-extrabold text-slate-800 leading-none">
@@ -191,7 +190,7 @@ export function RecentDiaryEntries() {
           <div className="rounded-2xl border border-slate-100 bg-white shadow-sm p-5">
             <div className="flex items-start justify-between gap-3">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-wide text-slate-400 mb-1">
+                <p className="text-xs font-medium text-slate-500 mb-1">
                   Số nhật ký có ảnh
                 </p>
                 <p className="text-3xl font-extrabold text-slate-800 leading-none">
@@ -215,7 +214,7 @@ export function RecentDiaryEntries() {
           <div className="rounded-2xl border border-slate-100 bg-white shadow-sm p-5">
             <div className="flex items-start justify-between gap-3">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-wide text-slate-400 mb-1">
+                <p className="text-xs font-medium text-slate-500 mb-1">
                   Cập nhật mới nhất
                 </p>
                 <p className="text-2xl font-extrabold text-slate-800 leading-none">
@@ -227,7 +226,7 @@ export function RecentDiaryEntries() {
               </div>
             </div>
             <p className="mt-4 text-xs text-slate-400">
-              Thời gian ghi nhận mới nhất (UTC)
+              Thời gian ghi nhận mới nhất
             </p>
           </div>
         </div>
@@ -237,7 +236,7 @@ export function RecentDiaryEntries() {
           <div className="flex items-center justify-between pb-2 border-b border-slate-100">
             <div className="flex items-center gap-2">
               <Layers className="w-4 h-4 text-emerald-600" />
-              <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider">
+              <h4 className="text-xs font-bold text-slate-800">
                 Danh sách nhật ký thường nhật (Tối đa 10 công việc)
               </h4>
             </div>

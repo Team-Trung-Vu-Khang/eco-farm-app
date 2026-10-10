@@ -372,7 +372,7 @@ export default function HealthDiaryHistoryPage() {
                 className={cn(
                   "flex-1 md:w-48 justify-center h-11 px-4 rounded-xl font-bold border-slate-200 transition-all cursor-pointer text-xs",
                   isAdvancedSearchOpen
-                    ? "bg-green-600 hover:bg-green-700 text-white shadow-md shadow-green-600/20"
+                    ? "bg-primary hover:bg-primary/90 text-white shadow-md shadow-green-600/20"
                     : activeFilterCount > 0
                       ? "border-green-400 bg-green-50 text-green-700"
                       : "bg-white hover:bg-slate-50 text-slate-700",

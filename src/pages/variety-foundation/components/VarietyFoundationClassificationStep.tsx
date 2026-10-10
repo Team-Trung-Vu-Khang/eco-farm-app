@@ -186,7 +186,7 @@ export function VarietyFoundationClassificationStep({
                       type="button"
                       variant="default"
                       size="sm"
-                      className="bg-green-600 hover:bg-green-700 text-white shadow-xs"
+                      className="bg-primary hover:bg-primary/90 text-white shadow-xs"
                     >
                       Chọn cây trồng
                     </Button>

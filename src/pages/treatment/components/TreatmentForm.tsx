@@ -310,7 +310,7 @@ export function TreatmentForm({
             >
               Hủy bỏ
             </Button>
-            <Button type="submit" className="bg-green-600 hover:bg-green-700">
+            <Button type="submit" className="bg-primary hover:bg-primary/90">
               {initialData ? "Lưu thay đổi" : "Tạo phác đồ"}
             </Button>
           </DialogFooter>

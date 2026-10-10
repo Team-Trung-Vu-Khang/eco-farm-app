@@ -81,7 +81,7 @@ const VarietyPage = () => {
       actions={
         <div className="flex gap-2">
           <Link href="/variety/create">
-            <Button className="shadow-sm hover:shadow-md transition-all active:scale-95 bg-green-600 hover:bg-green-700">
+            <Button className="shadow-sm hover:shadow-md transition-all active:scale-95 bg-primary hover:bg-primary/90">
               Thêm mới
             </Button>
           </Link>

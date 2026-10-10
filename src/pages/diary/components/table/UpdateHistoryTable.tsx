@@ -140,6 +140,7 @@ export function UpdateHistoryTable({
       {
         key: "code",
         label: "Mã nhật ký & Thời gian",
+        mobilePriority: "primary",
         render: (_val, row) => (
           <div className="space-y-1 py-1">
             <div className="flex items-center gap-2">
@@ -393,6 +394,7 @@ export function UpdateHistoryTable({
       {
         key: "code",
         label: "Mã nhật ký & Thời gian",
+        mobilePriority: "primary",
         render: (_val, row) => (
           <div className="space-y-1 py-1">
             <div className="flex items-center gap-2">
@@ -510,6 +512,7 @@ export function UpdateHistoryTable({
       {
         key: "editable",
         label: "Trạng thái sửa",
+        mobilePriority: "badge",
         render: (_val, row) => (
           <div>
             {row.editable ? (
@@ -598,6 +601,7 @@ export function UpdateHistoryTable({
       onPageSize={onPageSize}
       onIndexChange={onIndexChange}
       loading={loading}
+      enableMobileCard={true}
     />
   );
 }

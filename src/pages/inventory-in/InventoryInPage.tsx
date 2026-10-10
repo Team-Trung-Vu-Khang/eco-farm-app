@@ -281,7 +281,7 @@ export default function InventoryInPage() {
 
               <Button 
                 type="button" 
-                className="w-full h-10 mt-2 bg-emerald-600 hover:bg-emerald-700" 
+                className="w-full h-10 mt-2 bg-primary hover:bg-primary/90" 
                 onClick={handleInSubmit}
               >
                 <CheckCircle className="w-4 h-4 mr-2" /> Xác nhận nhập kho
@@ -401,7 +401,7 @@ export default function InventoryInPage() {
               <Button variant="outline" size="sm" onClick={() => setPrintTransaction(null)}>Hủy</Button>
               <Button 
                 size="sm" 
-                className="bg-emerald-600 hover:bg-emerald-700"
+                className="bg-primary hover:bg-primary/90"
                 onClick={() => {
                   window.print();
                 }}

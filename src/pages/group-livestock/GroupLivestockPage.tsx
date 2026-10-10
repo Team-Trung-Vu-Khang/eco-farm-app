@@ -44,7 +44,7 @@ export default function GroupLivestockPage() {
       description="Danh mục các nhóm vật nuôi có trên thị trường"
       actions={
         <Button
-          className="shadow-sm hover:shadow-md transition-all active:scale-95 bg-green-600 hover:bg-green-700"
+          className="shadow-sm hover:shadow-md transition-all active:scale-95 bg-primary hover:bg-primary/90"
           onClick={handleAdd}
         >
           <Plus className="w-4 h-4 mr-2" />

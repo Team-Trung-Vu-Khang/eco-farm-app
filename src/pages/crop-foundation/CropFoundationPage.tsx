@@ -38,7 +38,7 @@ export default function CropFoundationPage() {
       actions={
         <div className="flex items-center gap-2">
           <Link href="/crop-foundation/create">
-            <Button className="bg-green-600 hover:bg-green-700">
+            <Button className="bg-primary hover:bg-primary/90">
               <Plus className="w-4 h-4 mr-2" />
               Thêm mới
             </Button>

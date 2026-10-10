@@ -1592,7 +1592,7 @@ export const IndividualPlantHealthBlock: React.FC<
                 type="button"
                 size="sm"
                 onClick={() => handleProcessUploadedCodes(manualCodeInput)}
-                className="text-xs h-9 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold"
+                className="text-xs h-9 px-4 rounded-xl bg-primary hover:bg-primary/90 text-white font-bold"
               >
                 Thêm vào danh sách chọn
               </Button>

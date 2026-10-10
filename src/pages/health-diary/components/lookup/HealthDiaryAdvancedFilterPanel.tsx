@@ -391,7 +391,7 @@ export function HealthDiaryAdvancedFilterPanel({
         </p>
         <Button
           disabled={!dateValidation.isValid}
-          className="h-10 px-8 rounded-xl font-bold bg-green-600 hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed text-white shadow-md shadow-green-600/20 cursor-pointer shrink-0"
+          className="h-10 px-8 rounded-xl font-bold bg-primary hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed text-white shadow-md shadow-green-600/20 cursor-pointer shrink-0"
           onClick={handleApply}
         >
           Áp dụng

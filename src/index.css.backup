@@ -2,16 +2,6 @@
 @import "@Team-Trung-Vu-Khang/eco-shared-ui/index.css";
 @import "reactflow/dist/style.css";
 
-@theme {
-  --color-primary: #139B62;
-  --color-foreground: #20392E;
-  --color-background: #F7F9F7;
-  --color-muted-foreground: #5D6C65;
-
-  --font-sans: "Be Vietnam Pro", -apple-system, BlinkMacSystemFont, sans-serif;
-  --font-display: "Be Vietnam Pro", -apple-system, BlinkMacSystemFont, sans-serif;
-}
-
 @layer base {
   .rich-text-content ul {
     @apply list-disc list-inside;

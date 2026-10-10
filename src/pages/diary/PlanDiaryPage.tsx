@@ -280,7 +280,7 @@ export default function PlanDiaryPage() {
             className={`h-8 px-3 rounded-lg text-xs font-bold gap-1 ${
               isOverdue(row) || activeTab === "overdue"
                 ? "bg-orange-500 hover:bg-orange-600 text-white"
-                : "bg-green-600 hover:bg-green-700 text-white"
+                : "bg-primary hover:bg-primary/90 text-white"
             }`}
           >
             Ghi nhật ký

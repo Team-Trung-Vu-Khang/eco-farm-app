@@ -53,7 +53,7 @@ export default function CropDetailPage() {
       description={`Quản lý và theo dõi thông tin chi tiết về ${crop.name}`}
       actions={
         <Link href={`/crop/${crop.id}/edit`}>
-          <Button className="bg-green-600 hover:bg-green-700 shadow-lg shadow-green-900/10 active:scale-95 transition-all">
+          <Button className="bg-primary hover:bg-primary/90 shadow-lg shadow-green-900/10 active:scale-95 transition-all">
             <Edit className="w-4 h-4 mr-2" />
             Chỉnh sửa thông tin
           </Button>

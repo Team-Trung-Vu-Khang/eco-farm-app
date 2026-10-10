@@ -1083,7 +1083,7 @@ export const MaterialConsumptionReport: React.FC<
                   </Button>
                   <Button
                     onClick={handleApplyFilters}
-                    className="text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white h-9 px-4 cursor-pointer"
+                    className="text-xs font-bold bg-primary hover:bg-primary/90 text-white h-9 px-4 cursor-pointer"
                   >
                     Áp dụng lọc
                   </Button>

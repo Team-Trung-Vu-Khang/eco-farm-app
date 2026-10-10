@@ -299,7 +299,7 @@ export const CropSelectorDialog = ({
               type="button"
               disabled={!tempSelectedId}
               onClick={handleConfirm}
-              className="bg-green-600 hover:bg-green-700 text-white rounded-xl font-bold px-6 shadow-md shadow-green-900/10"
+              className="bg-primary hover:bg-primary/90 text-white rounded-xl font-bold px-6 shadow-md shadow-green-900/10"
             >
               Xác nhận
             </Button>

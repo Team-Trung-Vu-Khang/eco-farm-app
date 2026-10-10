@@ -696,7 +696,7 @@ export default function UpdateHistoryDetailPage() {
           </Button>
           {dailyDiaryDetail?.editable && (
             <Button
-              className={`${isMobile ? "h-8 px-3" : "h-10 px-4"} text-sm font-bold text-white bg-emerald-600 hover:bg-emerald-700 gap-2 cursor-pointer`}
+              className={`${isMobile ? "h-8 px-3" : "h-10 px-4"} text-sm font-bold text-white bg-primary hover:bg-primary/90 gap-2 cursor-pointer`}
               onClick={() =>
                 setLocation(`/diary/incident?editId=${dailyDiaryDetail.id}`)
               }

@@ -50,7 +50,7 @@ export function SeedInfoTab({ cropFoundation }: SeedInfoTabProps) {
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="h-8 text-xs font-bold text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                    className="h-8 text-xs font-bold text-primary hover:text-primary/90 hover:bg-primary/10"
                     asChild
                   >
                     <a

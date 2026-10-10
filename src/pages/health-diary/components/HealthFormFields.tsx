@@ -287,7 +287,7 @@ export const HealthFormFields: React.FC<HealthFormFieldsProps> = ({
                   type="button"
                   onClick={handleAddImage}
                   size="sm"
-                  className="bg-emerald-600 hover:bg-emerald-700 text-white shrink-0 text-xs font-bold"
+                  className="bg-primary hover:bg-primary/90 text-white shrink-0 text-xs font-bold"
                 >
                   Thêm URL
                 </Button>

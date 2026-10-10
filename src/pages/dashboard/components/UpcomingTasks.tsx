@@ -146,7 +146,7 @@ export function UpcomingTasks() {
           variant="outline"
           size="sm"
           onClick={handleOpenTaskPage}
-          className="text-xs font-semibold text-blue-700 hover:text-blue-800 bg-blue-50/60 hover:bg-blue-100 border-blue-200 rounded-xl h-8 px-3"
+          className="text-xs font-semibold text-primary hover:text-primary/90 bg-primary/10 hover:bg-primary/20 border-primary/20 rounded-xl h-8 px-3"
         >
           <span>{isMobile ? "Tất cả" : "Xem tất cả công việc"}</span>
           <ChevronRight className="w-3.5 h-3.5 ml-1" />

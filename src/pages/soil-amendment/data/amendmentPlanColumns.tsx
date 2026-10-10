@@ -53,7 +53,9 @@ export function createAmendmentPlanColumns({
     {
       key: "technician",
       label: "Phụ trách",
-      render: (value) => <span className="text-sm text-slate-700">{value}</span>,
+      render: (value) => (
+        <span className="text-sm text-slate-700">{value}</span>
+      ),
     },
     {
       key: "status",
@@ -97,7 +99,7 @@ export function createAmendmentPlanColumns({
             <Eye className="h-4 w-4" />
           </Button>
           <Button
-            className="h-8 w-8 p-0 text-blue-600 hover:text-blue-800"
+            className="h-8 w-8 p-0 text-primary hover:text-primary/80"
             onClick={() => onEdit(item)}
             size="sm"
             variant="ghost"

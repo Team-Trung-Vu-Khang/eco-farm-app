@@ -379,7 +379,7 @@ export function FarmingHistoryTab({ farmingFilter, mode = "simple" }: FarmingHis
                   setDialogSearch("");
                   setDialogCategory("all");
                 }}
-                className="px-3.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs cursor-pointer transition-colors"
+                className="px-3.5 py-1.5 rounded-lg bg-primary hover:bg-primary/90 text-white font-semibold text-xs cursor-pointer transition-colors"
               >
                 Xác nhận
               </button>

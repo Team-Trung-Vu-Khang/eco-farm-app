@@ -38,6 +38,11 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
   Switch,
   Textarea,
   useIsMobile,
@@ -46,9 +51,11 @@ import {
 import {
   AlertTriangle,
   Apple,
+  Camera,
   CheckCircle2,
   ChevronLeft,
   ClipboardList,
+  ImagePlus,
   Plus,
   Trash2,
   Upload,
@@ -75,6 +82,7 @@ import type {
 import {
   createHarvestDetail,
   extractCropSubjectVariants,
+  getTodayDateString,
   mapWorkTypeToPurpose,
   mapWorkflowScopeToHarvestOption,
   resolveWorkType,
@@ -87,6 +95,7 @@ import { HarvestTreeSelectorDialog } from "../dialogs/HarvestTreeSelectorDialog"
 import { PlannedTaskDetailCard } from "./PlannedTaskDetailCard";
 import { WorkAllocationCard, type WorkTaskDetail } from "./WorkAllocationCard";
 import { WorkflowScopeMapModal } from "../dialogs/WorkflowScopeMapModal";
+import { DiarySuccessDialog } from "../dialogs/DiarySuccessDialog";
 import { useLocation } from "wouter";
 import { getApiErrorMessage } from "@/shared/lib/api-error";
 
@@ -124,8 +133,8 @@ export function HistoryFormContent({
     harvestTargets: [],
     harvestDetails: [],
     harvestFiles: [],
-    startDate: new Date().toISOString().split("T")[0],
-    endDate: new Date().toISOString().split("T")[0],
+    startDate: getTodayDateString(),
+    endDate: getTodayDateString(),
     completionPercentage: 60,
     description: "",
     images: [],
@@ -323,7 +332,38 @@ export function HistoryFormContent({
   }, [supplyMap]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const cameraInputRef = useRef<HTMLInputElement | null>(null);
   const uploadCacheRef = useRef<Map<string, PhotoRequest>>(new Map());
+  const [showSuccessDialog, setShowSuccessDialog] = useState(false);
+  const [isPhotoSheetOpen, setIsPhotoSheetOpen] = useState(false);
+  const isMobile = useIsMobile();
+  const [isMobileOrTablet, setIsMobileOrTablet] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    const isTouch =
+      "ontouchstart" in window ||
+      (navigator.maxTouchPoints && navigator.maxTouchPoints > 0);
+    const isSmallOrTablet = window.innerWidth <= 1024;
+    return Boolean(isTouch || isSmallOrTablet);
+  });
+
+  useEffect(() => {
+    const handleResize = () => {
+      const isTouch =
+        "ontouchstart" in window ||
+        (navigator.maxTouchPoints && navigator.maxTouchPoints > 0);
+      const isSmallOrTablet = window.innerWidth <= 1024;
+      const isMobileUA =
+        /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+          navigator.userAgent,
+        );
+      setIsMobileOrTablet(
+        Boolean(isMobile || isSmallOrTablet || isTouch || isMobileUA),
+      );
+    };
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, [isMobile]);
 
   const [isPlannedMode, setIsPlannedMode] =
     useState<boolean>(isPlannedModeDefault);
@@ -346,10 +386,8 @@ export function HistoryFormContent({
     updates: Partial<WorkTaskDetail>,
   ) => {
     setWorkTaskDetails((prev) => {
-      const defaultStart =
-        formData.startDate || new Date().toISOString().split("T")[0];
-      const defaultEnd =
-        formData.endDate || new Date().toISOString().split("T")[0];
+      const defaultStart = formData.startDate || getTodayDateString();
+      const defaultEnd = formData.endDate || getTodayDateString();
       const existing = prev[stageName] || {
         id: stageName,
         stageName,
@@ -580,7 +618,7 @@ export function HistoryFormContent({
       ...prev,
       workType: resolvedWorkType,
       startDate: taskItem.startDate,
-      endDate: taskItem.endDate || new Date().toISOString().split("T")[0],
+      endDate: taskItem.endDate || getTodayDateString(),
       completionPercentage: initialProgress,
       selectedStages: [taskItem.name],
       materialAllocations: plannedAllocations,
@@ -734,10 +772,8 @@ export function HistoryFormContent({
       });
       return;
     }
-    const defaultStart =
-      formData.startDate || new Date().toISOString().split("T")[0];
-    const defaultEnd =
-      formData.endDate || new Date().toISOString().split("T")[0];
+    const defaultStart = formData.startDate || getTodayDateString();
+    const defaultEnd = formData.endDate || getTodayDateString();
 
     setFormData((prev) => ({
       ...prev,
@@ -839,6 +875,51 @@ export function HistoryFormContent({
 
   const removeExistingPhoto = (index: number) => {
     setExistingPhotos((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const handleContinueLogging = () => {
+    setShowSuccessDialog(false);
+    setSelectedTaskId("");
+    if (!isPlannedMode) {
+      setSelectedPlanId("");
+    }
+    setPlannedStages([]);
+    setWorkTaskDetails({});
+    setInitialTaskDetails({});
+    initialTaskDetailsRef.current = {};
+    initialAllocationsRef.current = [];
+    setExistingPhotos([]);
+    uploadCacheRef.current.clear();
+    setErrors({});
+    setFormData((prev) => ({
+      ...prev,
+      workType: isPlannedMode ? prev.workType : "",
+      warning: false,
+      harvestScope: "region",
+      harvestTargets: [],
+      harvestDetails: [],
+      harvestFiles: [],
+      completionPercentage: 100,
+      description: "",
+      images: [],
+      selectedStages: [],
+      materialAllocations: [],
+    }));
+    window.scrollTo({ top: 0, behavior: "smooth" });
+    toast({
+      title: "Sẵn sàng ghi tiếp",
+      description:
+        "Đã giữ lại thông tin mùa vụ. Bạn có thể chọn công việc tiếp theo.",
+    });
+  };
+
+  const handleViewList = () => {
+    setShowSuccessDialog(false);
+    if (isPlannedMode) {
+      setLocation(backUrl);
+    } else {
+      setLocation("/diary/daily-history");
+    }
   };
 
   const handleSubmitForm = async () => {
@@ -992,10 +1073,7 @@ export function HistoryFormContent({
             matchedTask?.name ||
             stName ||
             "Cập nhật tiến độ kế hoạch",
-          endDate:
-            detail?.endDate ||
-            formData.endDate ||
-            new Date().toISOString().split("T")[0],
+          endDate: detail?.endDate || formData.endDate || getTodayDateString(),
           progressPercent: hasExecutors ? undefined : (detail?.progress ?? 100),
           executorProgress: hasExecutors
             ? taskExecutors.map((exec) => ({
@@ -1085,11 +1163,7 @@ export function HistoryFormContent({
         };
 
         await createPlanTaskDiaryMutation.mutateAsync(finalPayload);
-        toast({
-          title: "Thành công",
-          description: "Đã lưu nhật ký theo kế hoạch!",
-        });
-        setLocation(backUrl);
+        setShowSuccessDialog(true);
       } catch (err: unknown) {
         console.error("Lỗi khi tạo nhật ký kế hoạch:", err);
         const errObj = err as { response?: { data?: { message?: string } } };
@@ -1259,14 +1333,11 @@ export function HistoryFormContent({
           title: "Thành công",
           description: "Đã cập nhật nhật ký thường nhật!",
         });
+        setLocation("/diary/daily-history");
       } else {
         await createDailyDiaryMutation.mutateAsync(finalPayload);
-        toast({
-          title: "Thành công",
-          description: "Đã lưu nhật ký thường nhật!",
-        });
+        setShowSuccessDialog(true);
       }
-      setLocation("/diary/daily-history");
     } catch (err: unknown) {
       console.error("Lỗi khi tạo nhật ký thường nhật:", err);
     } finally {
@@ -1274,7 +1345,6 @@ export function HistoryFormContent({
     }
   };
 
-  const isMobile = useIsMobile();
   const mobileUiMode = useMobileUiMode();
   // Giao diện mobile có bottom nav cố định → thanh hành động không fixed nữa
   const isMobileApp = isMobile && mobileUiMode === "app";
@@ -1303,7 +1373,7 @@ export function HistoryFormContent({
                     setErrors((prev) => ({ ...prev, planId: "", taskId: "" }));
                     setFormData((prev) => ({
                       ...prev,
-                      endDate: new Date().toISOString().split("T")[0],
+                      endDate: getTodayDateString(),
                     }));
                   }
                 }}
@@ -1459,8 +1529,7 @@ export function HistoryFormContent({
                                   "MEDIUM",
                                 startDate: taskItem.startDate,
                                 endDate:
-                                  taskItem.endDate ||
-                                  new Date().toISOString().split("T")[0],
+                                  taskItem.endDate || getTodayDateString(),
                                 description: taskItem.note || "",
                                 isDirty: false,
                               };
@@ -1505,10 +1574,8 @@ export function HistoryFormContent({
                                 stageName: wiName,
                                 progress: 100,
                                 priority: "MEDIUM",
-                                startDate: new Date()
-                                  .toISOString()
-                                  .split("T")[0],
-                                endDate: new Date().toISOString().split("T")[0],
+                                startDate: getTodayDateString(),
+                                endDate: getTodayDateString(),
                                 description: wi.description || "",
                                 isDirty: false,
                               };
@@ -1521,8 +1588,8 @@ export function HistoryFormContent({
                               stageName: stageName,
                               progress: 100,
                               priority: "MEDIUM",
-                              startDate: new Date().toISOString().split("T")[0],
-                              endDate: new Date().toISOString().split("T")[0],
+                              startDate: getTodayDateString(),
+                              endDate: getTodayDateString(),
                               description: targetStage.description || "",
                               isDirty: false,
                             };
@@ -1783,45 +1850,160 @@ export function HistoryFormContent({
               {/* Upload hình ảnh đợt cập nhật */}
               <div className="space-y-2 pt-1">
                 <Label>Hình ảnh (nếu có)</Label>
-                <div
-                  onDragOver={(e) => {
-                    e.preventDefault();
-                    setIsDragging(true);
-                  }}
-                  onDragLeave={() => setIsDragging(false)}
-                  onDrop={handleDrop}
-                  onClick={() => fileInputRef.current?.click()}
-                  className={`rounded-2xl border-2 border-dashed p-4 text-center transition-all cursor-pointer ${
-                    isDragging
-                      ? "border-emerald-500 bg-emerald-50/50"
-                      : "border-slate-200 bg-slate-50/50 hover:border-emerald-300 hover:bg-white"
-                  }`}
-                >
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept="image/*"
-                    multiple
-                    className="hidden"
-                    onChange={handleFileInputChange}
-                  />
-                  <div className="flex flex-col items-center gap-2">
-                    <div className="w-9 h-9 rounded-full bg-white shadow-2xs border border-slate-200 flex items-center justify-center text-emerald-600">
-                      <Upload className="w-4 h-4" />
+                {/* Upload & Chụp hình ảnh đợt cập nhật */}
+                <input
+                  ref={cameraInputRef}
+                  type="file"
+                  accept="image/*"
+                  capture="environment"
+                  className="hidden"
+                  onChange={handleFileInputChange}
+                />
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  className="hidden"
+                  onChange={handleFileInputChange}
+                />
+
+                {isMobileOrTablet ? (
+                  <>
+                    <div
+                      onClick={() => setIsPhotoSheetOpen(true)}
+                      className="rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50/60 hover:border-emerald-300 hover:bg-white p-4 text-center cursor-pointer transition-all active:scale-[0.99]"
+                    >
+                      <div className="flex flex-col items-center gap-2">
+                        <div className="w-10 h-10 rounded-full bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600 shadow-2xs">
+                          <Camera className="w-5 h-5" />
+                        </div>
+                        <div>
+                          <p className="text-xs font-bold text-slate-800">
+                            Chụp ảnh hoặc chọn từ thiết bị
+                          </p>
+                          <p className="text-[10px] text-slate-400 mt-0.5">
+                            Chạm để mở tùy chọn chụp hoặc tải ảnh
+                          </p>
+                        </div>
+                      </div>
                     </div>
-                    <div>
-                      <p className="text-xs font-bold text-slate-800">
-                        Kéo thả hình ảnh hoặc{" "}
-                        <span className="text-emerald-600 underline">
-                          tải lên từ thiết bị
-                        </span>
-                      </p>
-                      <p className="text-[10px] text-slate-400 mt-0.5">
-                        Hỗ trợ định dạng PNG, JPG, JPEG (Tối đa 10MB)
-                      </p>
+
+                    {/* Bottom Sheet cho thiết bị di động & máy tính bảng */}
+                    <Sheet
+                      open={isPhotoSheetOpen}
+                      onOpenChange={setIsPhotoSheetOpen}
+                    >
+                      <SheetContent
+                        side="bottom"
+                        className="rounded-t-3xl px-4 pt-4 pb-[calc(1.5rem+env(safe-area-inset-bottom))] bg-white border-t border-slate-100 shadow-2xl"
+                      >
+                        <SheetHeader className="text-center pb-3 border-b border-slate-100">
+                          <SheetTitle className="text-base font-bold text-slate-800 text-center">
+                            Chọn nguồn ảnh
+                          </SheetTitle>
+                          <SheetDescription className="text-xs text-slate-500 text-center">
+                            Chụp ảnh cây trồng trực tiếp tại vườn hoặc tải từ
+                            album máy
+                          </SheetDescription>
+                        </SheetHeader>
+
+                        <div className="flex flex-col gap-2.5 pt-4">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            className="h-14 py-3 rounded-2xl border-emerald-200 bg-emerald-50/80 text-emerald-900 hover:bg-emerald-100 flex items-center justify-start px-4 gap-3.5 shadow-xs transition-all text-left"
+                            onClick={() => {
+                              setIsPhotoSheetOpen(false);
+                              setTimeout(
+                                () => cameraInputRef.current?.click(),
+                                150,
+                              );
+                            }}
+                          >
+                            <div className="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center shrink-0 shadow-xs">
+                              <Camera className="w-5 h-5" />
+                            </div>
+                            <div>
+                              <p className="text-sm font-bold text-slate-800">
+                                Chụp ảnh
+                              </p>
+                              <p className="text-xs text-slate-500">
+                                Mở camera chụp trực tiếp tại vườn
+                              </p>
+                            </div>
+                          </Button>
+
+                          <Button
+                            type="button"
+                            variant="outline"
+                            className="h-14 py-3 rounded-2xl border-slate-200 bg-white text-slate-800 hover:bg-slate-50 flex items-center justify-start px-4 gap-3.5 shadow-xs transition-all text-left"
+                            onClick={() => {
+                              setIsPhotoSheetOpen(false);
+                              setTimeout(
+                                () => fileInputRef.current?.click(),
+                                150,
+                              );
+                            }}
+                          >
+                            <div className="w-10 h-10 rounded-xl bg-slate-100 text-slate-700 flex items-center justify-center shrink-0 shadow-xs">
+                              <ImagePlus className="w-5 h-5" />
+                            </div>
+                            <div>
+                              <p className="text-sm font-bold text-slate-800">
+                                Chọn ảnh
+                              </p>
+                              <p className="text-xs text-slate-500">
+                                Tải lên từ album ảnh trên thiết bị
+                              </p>
+                            </div>
+                          </Button>
+
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            className="h-11 rounded-xl text-slate-500 hover:text-slate-800 font-medium mt-1"
+                            onClick={() => setIsPhotoSheetOpen(false)}
+                          >
+                            Hủy bỏ
+                          </Button>
+                        </div>
+                      </SheetContent>
+                    </Sheet>
+                  </>
+                ) : (
+                  <div
+                    onDragOver={(e) => {
+                      e.preventDefault();
+                      setIsDragging(true);
+                    }}
+                    onDragLeave={() => setIsDragging(false)}
+                    onDrop={handleDrop}
+                    onClick={() => fileInputRef.current?.click()}
+                    className={`rounded-2xl border-2 border-dashed p-4 text-center transition-all cursor-pointer ${
+                      isDragging
+                        ? "border-emerald-500 bg-emerald-50/50"
+                        : "border-slate-200 bg-slate-50/50 hover:border-emerald-300 hover:bg-white"
+                    }`}
+                  >
+                    <div className="flex flex-col items-center gap-2">
+                      <div className="w-9 h-9 rounded-full bg-white shadow-2xs border border-slate-200 flex items-center justify-center text-emerald-600">
+                        <Upload className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <p className="text-xs font-bold text-slate-800">
+                          Kéo thả hình ảnh hoặc{" "}
+                          <span className="text-emerald-600 underline">
+                            tải lên từ thiết bị
+                          </span>
+                        </p>
+                        <p className="text-[10px] text-slate-400 mt-0.5">
+                          Hỗ trợ định dạng PNG, JPG, JPEG (Tối đa 10MB)
+                        </p>
+                      </div>
                     </div>
                   </div>
-                </div>
+                )}
 
                 {/* Danh sách ảnh (ảnh đã có từ trước & ảnh mới chọn) */}
                 {(existingPhotos.length > 0 || formData.images.length > 0) && (
@@ -2215,8 +2397,8 @@ export function HistoryFormContent({
           type="button"
           className={
             isMobileApp
-              ? "h-11 flex-1 rounded-xl text-sm font-semibold"
-              : "h-11 px-6 rounded-xl text-sm font-semibold"
+              ? "h-12 flex-1 rounded-xl text-base font-semibold"
+              : "h-12 px-6 rounded-xl text-sm font-semibold"
           }
           onClick={() =>
             isMobileApp && onReset ? onReset() : setLocation(backUrl)
@@ -2227,7 +2409,7 @@ export function HistoryFormContent({
         <Button
           type="button"
           disabled={isSubmitting || createDailyDiaryMutation.isPending}
-          className={`${isMobileApp ? "h-11 flex-[2]" : "h-11 px-8"} rounded-xl text-sm bg-emerald-600 hover:bg-emerald-700 text-white font-bold shadow-md shadow-emerald-600/20 disabled:opacity-50`}
+          className={`${isMobileApp ? "h-12 flex-[2] text-base" : "h-12 px-8 text-sm"} rounded-xl bg-primary hover:bg-primary/90 text-white font-bold shadow-md shadow-primary/20 disabled:opacity-50`}
           onClick={handleSubmitForm}
         >
           {isSubmitting || createDailyDiaryMutation.isPending
@@ -2235,6 +2417,12 @@ export function HistoryFormContent({
             : "Lưu nhật ký"}
         </Button>
       </div>
+
+      <DiarySuccessDialog
+        open={showSuccessDialog}
+        onViewList={handleViewList}
+        onContinue={handleContinueLogging}
+      />
     </PageWrapper>
   );
 }

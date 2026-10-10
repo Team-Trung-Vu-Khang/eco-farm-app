@@ -174,7 +174,7 @@ export const EnterpriseSelectorDialog = ({
               onSelect(tempSelectedId);
               onOpenChange(false);
             }}
-            className="bg-green-600 hover:bg-green-700 text-white"
+            className="bg-primary hover:bg-primary/90 text-white"
             disabled={!tempSelectedId}
           >
             Xác nhận

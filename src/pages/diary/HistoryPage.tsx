@@ -372,7 +372,7 @@ export function HistoryPage() {
       description="Danh sách toàn bộ nhật ký vụ mùa đã được ghi nhận"
       actions={
         <Button
-          className="h-10 rounded-lg px-4 text-sm font-bold bg-green-600 hover:bg-green-700 text-white gap-2"
+          className="h-10 rounded-lg px-4 text-sm font-bold bg-primary hover:bg-primary/90 text-white gap-2"
           onClick={() => setLocation("/diary/incident")}
         >
           <Plus className="h-4 w-4" />

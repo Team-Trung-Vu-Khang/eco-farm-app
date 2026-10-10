@@ -180,7 +180,7 @@ export const ReportLayout: React.FC<ReportLayoutProps> = ({
           <div className="relative">
             <Button
               onClick={() => setExportOpen(!exportOpen)}
-              className="bg-emerald-600 hover:bg-emerald-700 text-white h-9 px-4 rounded-lg text-xs font-bold shadow-xs cursor-pointer flex items-center gap-2"
+              className="bg-primary hover:bg-primary/90 text-white h-9 px-4 rounded-lg text-xs font-bold shadow-xs cursor-pointer flex items-center gap-2"
             >
               <Download className="w-4 h-4" />
               <span>Xuất báo cáo</span>

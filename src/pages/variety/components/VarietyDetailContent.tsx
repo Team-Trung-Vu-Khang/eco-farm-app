@@ -53,7 +53,7 @@ export function VarietyDetailContent({
           </div>
         </div>
         <Link href={`/variety/${variety.id}/edit`}>
-          <Button className="bg-green-600 hover:bg-green-700 shadow-md hover:shadow-lg transition-all">
+          <Button className="bg-primary hover:bg-primary/90 shadow-md hover:shadow-lg transition-all">
             <Edit className="w-4 h-4 mr-2" />
             Chỉnh sửa thông tin
           </Button>
@@ -255,7 +255,7 @@ export function VarietyDetailContent({
                       </div>
                       <Button
                         variant="ghost"
-                        className="text-purple-600 hover:text-purple-700 hover:bg-purple-50"
+                        className="text-primary hover:text-primary/90 hover:bg-primary/10"
                         asChild
                       >
                         <a href={doc.url} target="_blank" rel="noreferrer">

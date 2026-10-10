@@ -545,7 +545,7 @@ export function AdminFarmerDashboard() {
             <div className="p-4 border-t border-slate-100 bg-slate-50 flex justify-end">
               <Button
                 onClick={() => setActiveHistoryFarmer(null)}
-                className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs px-4 h-9 cursor-pointer"
+                className="bg-primary hover:bg-primary/90 text-white font-semibold text-xs px-4 h-9 cursor-pointer"
               >
                 Đồng ý
               </Button>

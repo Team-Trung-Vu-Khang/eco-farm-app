@@ -222,7 +222,7 @@ export const SeedSelectorDialog = ({
               onConfirm(tempSelectedIds, idNameMap);
               onOpenChange(false);
             }}
-            className="bg-green-600 hover:bg-green-700 text-white font-semibold"
+            className="bg-primary hover:bg-primary/90 text-white font-semibold"
           >
             Xong
           </Button>

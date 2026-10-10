@@ -219,7 +219,7 @@ export default function HealthDiaryUpdatePage() {
         <Button
           type="submit"
           disabled={isSubmitting}
-          className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-6 py-2.5 rounded-xl shadow-md flex items-center gap-2 transition-all cursor-pointer text-xs"
+          className="bg-primary hover:bg-primary/90 text-white font-bold px-6 py-2.5 rounded-xl shadow-md flex items-center gap-2 transition-all cursor-pointer text-xs"
         >
           <Send className="w-4 h-4" />
           <span>Lưu nhật ký sức khỏe</span>

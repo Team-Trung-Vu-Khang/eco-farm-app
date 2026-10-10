@@ -91,7 +91,7 @@ export function EnterpriseBranchesStep() {
                   <Button
                     variant="outline"
                     size="sm"
-                    className="bg-white border-blue-200 hover:bg-blue-50"
+                    className="bg-white border-border hover:bg-muted text-foreground shadow-sm"
                     onClick={() =>
                       window.open(
                         "https://static.affina.com.vn/affina/3b0bd357-e259-4ff0-9016-0c23334c5279.xlsx",
@@ -257,61 +257,61 @@ export function EnterpriseBranchesStep() {
           <div className="rounded-xl border bg-card shadow-sm overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-sm min-w-[600px]">
-              <thead>
-                <tr className="border-b bg-muted/40">
-                  <th className="text-left py-3 px-4 font-medium text-muted-foreground">
-                    Tên chi nhánh
-                  </th>
-                  <th className="text-left py-3 px-4 font-medium text-muted-foreground">
-                    Mã số thuế
-                  </th>
-                  <th className="text-left py-3 px-4 font-medium text-muted-foreground">
-                    Liên hệ
-                  </th>
-                  <th className="text-left py-3 px-4 font-medium text-muted-foreground">
-                    Địa chỉ
-                  </th>
-                  <th className="text-right py-3 px-4 font-medium text-muted-foreground">
-                    Thao tác
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {formData.branches.map((branch: Branch, index: number) => (
-                  <tr
-                    key={index}
-                    className="border-b last:border-0 hover:bg-muted/10 transition-colors"
-                  >
-                    <td className="py-3 px-4 font-medium">{branch.name}</td>
-                    <td className="py-3 px-4">{branch.taxCode || "-"}</td>
-                    <td className="py-3 px-4">
-                      <div className="flex flex-col gap-1">
-                        <span className="text-xs">{branch.phone}</span>
-                        <span className="text-xs text-muted-foreground">
-                          {branch.email}
-                        </span>
-                      </div>
-                    </td>
-                    <td
-                      className="py-3 px-4 max-w-[200px] truncate"
-                      title={branch.address}
-                    >
-                      {branch.address || "-"}
-                    </td>
-                    <td className="py-3 px-4 text-right">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 text-destructive hover:bg-destructive/10"
-                        onClick={() => removeBranch(index)}
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </td>
+                <thead>
+                  <tr className="border-b bg-muted/40">
+                    <th className="text-left py-3 px-4 font-medium text-muted-foreground">
+                      Tên chi nhánh
+                    </th>
+                    <th className="text-left py-3 px-4 font-medium text-muted-foreground">
+                      Mã số thuế
+                    </th>
+                    <th className="text-left py-3 px-4 font-medium text-muted-foreground">
+                      Liên hệ
+                    </th>
+                    <th className="text-left py-3 px-4 font-medium text-muted-foreground">
+                      Địa chỉ
+                    </th>
+                    <th className="text-right py-3 px-4 font-medium text-muted-foreground">
+                      Thao tác
+                    </th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {formData.branches.map((branch: Branch, index: number) => (
+                    <tr
+                      key={index}
+                      className="border-b last:border-0 hover:bg-muted/10 transition-colors"
+                    >
+                      <td className="py-3 px-4 font-medium">{branch.name}</td>
+                      <td className="py-3 px-4">{branch.taxCode || "-"}</td>
+                      <td className="py-3 px-4">
+                        <div className="flex flex-col gap-1">
+                          <span className="text-xs">{branch.phone}</span>
+                          <span className="text-xs text-muted-foreground">
+                            {branch.email}
+                          </span>
+                        </div>
+                      </td>
+                      <td
+                        className="py-3 px-4 max-w-[200px] truncate"
+                        title={branch.address}
+                      >
+                        {branch.address || "-"}
+                      </td>
+                      <td className="py-3 px-4 text-right">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-destructive hover:bg-destructive/10"
+                          onClick={() => removeBranch(index)}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           </div>
         )}

@@ -293,8 +293,8 @@ export function WorkAllocationCard({
             aria-label="Thêm công việc"
             className={
               isMobile
-                ? "h-10 w-10 p-0 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white shrink-0 shadow-2xs cursor-pointer"
-                : "h-11 rounded-xl px-5 text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white shrink-0 shadow-2xs cursor-pointer"
+                ? "h-10 w-10 p-0 rounded-xl bg-primary hover:bg-primary/90 text-white shrink-0 shadow-2xs cursor-pointer"
+                : "h-11 rounded-xl px-5 text-xs font-bold bg-primary hover:bg-primary/90 text-white shrink-0 shadow-2xs cursor-pointer"
             }
           >
             <Plus className={isMobile ? "w-5 h-5" : "w-4 h-4 mr-1"} />

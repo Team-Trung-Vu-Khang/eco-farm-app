@@ -128,7 +128,7 @@ export default function SeedDetailPage() {
             </Button>
           </Link>
           <Link href={`/seed/${seed.id}/edit`}>
-            <Button className="bg-green-600 hover:bg-green-700 shadow-xl shadow-green-600/20 hover:shadow-green-600/30 active:scale-95 transition-all rounded-md px-6">
+            <Button className="bg-primary hover:bg-primary/90 shadow-xl shadow-green-600/20 hover:shadow-green-600/30 active:scale-95 transition-all rounded-md px-6">
               <Edit className="w-4 h-4 mr-2" />
               Chỉnh sửa
             </Button>

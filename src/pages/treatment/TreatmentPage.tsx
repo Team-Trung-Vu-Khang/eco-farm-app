@@ -39,7 +39,7 @@ export default function TreatmentPage() {
       actions={
         <Button
           onClick={() => setLocation("/treatment/create")}
-          className="bg-green-600 hover:bg-green-700 shadow-sm"
+          className="bg-primary hover:bg-primary/90 shadow-sm"
         >
           <Plus className="w-4 h-4 mr-2" />
           Thêm phác đồ mới

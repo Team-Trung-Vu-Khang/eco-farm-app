@@ -357,7 +357,7 @@ export function ImportPlantDialog({
               <Button
                 variant="outline"
                 onClick={handleDownloadSample}
-                className="bg-white hover:bg-green-50 text-gray-700 border-gray-200 shadow-sm rounded-lg"
+                className="bg-white hover:bg-muted text-foreground border-border shadow-sm rounded-lg"
               >
                 <Download className="w-4 h-4 mr-2 text-gray-500" />
                 Tải mẫu

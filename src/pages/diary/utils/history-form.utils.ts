@@ -370,6 +370,20 @@ export function getCurrentTimeString(): string {
 }
 
 /**
+ * Lấy chuỗi ngày YYYY-MM-DD theo giờ địa phương (tránh lệch ngày do UTC)
+ */
+export function formatLocalISODate(date: Date = new Date()): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+export function getTodayDateString(): string {
+  return formatLocalISODate(new Date());
+}
+
+/**
  * Chuyển đổi chuỗi ISO UTC / YYYY-MM-DD từ API thành định dạng `YYYY-MM-DDTHH:mm` cho <input type="datetime-local" />
  */
 export function formatToDatetimeLocal(

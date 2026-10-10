@@ -63,9 +63,17 @@ export default function UpdateHistoryPage({
 }: UpdateHistoryPageProps = {}) {
   const [, setLocation] = useLocation();
 
-  // Pagination States for Daily Diary
+  const isMobile = useIsMobile();
+
+  // Pagination States for Daily Diary: 6 bản ghi cho mobile, 20 cho PC
   const [page, setPage] = useState(0);
-  const [size, setSize] = useState(20);
+  const [size, setSize] = useState(() => (isMobile ? 6 : 20));
+
+  // Đồng bộ lại size khi thay đổi giữa mobile và PC
+  useEffect(() => {
+    setSize(isMobile ? 6 : 20);
+    setPage(0);
+  }, [isMobile]);
 
   // Search & Advanced Filter States
   const [searchQuery, setSearchQuery] = useState("");
@@ -290,11 +298,9 @@ export default function UpdateHistoryPage({
       day: "2-digit",
       month: "2-digit",
       year: "numeric",
-      timeZone: "UTC",
     });
-  }, [activeStatsData?.latestUpdatedAt]);
+  }, [activeStatsData]);
 
-  const isMobile = useIsMobile();
   // Điện thoại: bộ lọc nâng cao mở dạng bottom sheet thay vì panel inline
   const [isFilterSheetOpen, setIsFilterSheetOpen] = useState(false);
   // Điện thoại: ô "Mới nhất" hẹp → chỉ hiện ngày/tháng
@@ -356,7 +362,7 @@ export default function UpdateHistoryPage({
             <div className="rounded-2xl border border-slate-100 bg-white shadow-sm p-5">
               <div className="flex items-start justify-between gap-3">
                 <div>
-                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-400 mb-1">
+                  <p className="text-xs font-medium text-slate-500 mb-1">
                     Tổng lần cập nhật
                   </p>
                   <p className="text-3xl font-extrabold text-slate-800 leading-none">
@@ -382,7 +388,7 @@ export default function UpdateHistoryPage({
             <div className="rounded-2xl border border-slate-100 bg-white shadow-sm p-5">
               <div className="flex items-start justify-between gap-3">
                 <div>
-                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-400 mb-1">
+                  <p className="text-xs font-medium text-slate-500 mb-1">
                     Số nhật ký có ảnh
                   </p>
                   <p className="text-3xl font-extrabold text-slate-800 leading-none">
@@ -406,7 +412,7 @@ export default function UpdateHistoryPage({
             <div className="rounded-2xl border border-slate-100 bg-white shadow-sm p-5">
               <div className="flex items-start justify-between gap-3">
                 <div>
-                  <p className="text-xs font-semibold uppercase tracking-wide text-amber-700 mb-1">
+                  <p className="text-xs font-medium text-amber-700 mb-1">
                     Nhật ký cảnh báo
                   </p>
                   <p className="text-3xl font-extrabold text-amber-900 leading-none">
@@ -426,7 +432,7 @@ export default function UpdateHistoryPage({
             <div className="rounded-2xl border border-slate-100 bg-white shadow-sm p-5">
               <div className="flex items-start justify-between gap-3">
                 <div>
-                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-400 mb-1">
+                  <p className="text-xs font-medium text-slate-500 mb-1">
                     Cập nhật mới nhất
                   </p>
                   <p className="text-2xl font-extrabold text-slate-800 leading-none">
@@ -438,7 +444,7 @@ export default function UpdateHistoryPage({
                 </div>
               </div>
               <p className="mt-4 text-xs text-slate-400">
-                Thời gian ghi nhận mới nhất (UTC)
+                Thời gian ghi nhận mới nhất
               </p>
             </div>
           </div>
@@ -494,7 +500,7 @@ export default function UpdateHistoryPage({
                     ? "relative h-10 w-10 p-0 rounded-xl border-slate-200 cursor-pointer"
                     : "flex-1 md:w-48 justify-center h-11 px-4 rounded-xl font-bold border-slate-200 transition-all cursor-pointer",
                   !isMobile && isAdvancedSearchOpen
-                    ? "bg-green-600 hover:bg-green-700 text-white shadow-md shadow-green-600/20"
+                    ? "bg-primary hover:bg-primary/90 text-white shadow-md shadow-green-600/20"
                     : activeFilterCount > 0
                       ? "border-green-400 bg-green-50 text-green-700"
                       : "bg-white hover:bg-slate-50 text-slate-700",
@@ -625,7 +631,7 @@ export default function UpdateHistoryPage({
                       <Layers className="w-4.5 h-4.5" />
                     </div>
                     <div>
-                      <h3 className="text-xs font-extrabold text-green-900 uppercase tracking-wider">
+                      <h3 className="text-xs font-bold text-green-900">
                         Tổng quan kết quả lọc
                       </h3>
                       <p className="text-xs text-green-700/80 font-medium mt-0.5">

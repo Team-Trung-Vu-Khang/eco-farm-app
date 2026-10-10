@@ -293,7 +293,7 @@ export default function CropMaterialInventoryPage() {
                 </Button>
                 <Button 
                   type="button" 
-                  className="flex-1 h-10 bg-emerald-600 hover:bg-emerald-700" 
+                  className="flex-1 h-10 bg-primary hover:bg-primary/90" 
                   onClick={handleAddStock}
                 >
                   <CheckCircle className="w-4 h-4 mr-2" /> Xác nhận

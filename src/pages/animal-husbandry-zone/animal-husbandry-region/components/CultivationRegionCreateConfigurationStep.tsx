@@ -187,7 +187,7 @@ export const CultivationRegionCreateConfigurationStep = ({
                         Hủy bỏ
                       </Button>
                       <Button
-                        className="bg-green-600 hover:bg-green-700 text-white"
+                        className="bg-primary hover:bg-primary/90 text-white"
                         onClick={onApplyToAll}
                       >
                         Đồng ý áp dụng

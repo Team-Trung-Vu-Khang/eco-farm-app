@@ -288,7 +288,7 @@ export function CropSelectorDialog({
               onOpenChange(false);
             }}
             disabled={!tempSelectedId}
-            className="bg-green-600 hover:bg-green-700 text-white"
+            className="bg-primary hover:bg-primary/90 text-white"
           >
             Xác nhận
           </Button>

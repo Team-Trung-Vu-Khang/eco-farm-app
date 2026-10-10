@@ -230,7 +230,7 @@ export const PlantCard = ({
               onExitEdit && (
                 <button
                   type="button"
-                  className="px-2.5 py-1 text-xs font-semibold text-blue-700 bg-white border border-blue-200 rounded-lg hover:bg-blue-50 transition-colors"
+                  className="px-2.5 py-1 text-xs font-semibold text-primary bg-white border border-primary/20 rounded-lg hover:bg-primary/10 transition-colors"
                   onClick={(e) => {
                     e.stopPropagation();
                     onExitEdit();
@@ -476,15 +476,15 @@ export const PlantCard = ({
               <Select
                 value={plant.subjectVariantId ?? ""}
                 onValueChange={(val) => {
-                  const seed = seedOptions.find(
-                    (s) => String(s.id) === val,
-                  );
+                  const seed = seedOptions.find((s) => String(s.id) === val);
                   onUpdate({
                     subjectVariantId: val,
                     subjectVariantName: seed?.name || "",
                   });
                 }}
-                disabled={!selectedProductionVariantId || seedOptions.length === 0}
+                disabled={
+                  !selectedProductionVariantId || seedOptions.length === 0
+                }
               >
                 <SelectTrigger>
                   <SelectValue

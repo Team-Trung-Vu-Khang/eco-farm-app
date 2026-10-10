@@ -327,7 +327,7 @@ export function HarvestTreeSelectorDialog({
             </Button>
             <Button
               onClick={handleSave}
-              className="rounded-lg h-10 px-6 text-xs font-bold bg-green-600 hover:bg-green-700 text-white"
+              className="rounded-lg h-10 px-6 text-xs font-bold bg-primary hover:bg-primary/90 text-white"
             >
               Xác nhận ({tempSelectedIds.length} mục)
             </Button>
