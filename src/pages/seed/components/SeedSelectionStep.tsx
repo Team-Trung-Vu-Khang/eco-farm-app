@@ -18,8 +18,7 @@ import { CropSelectorDialog } from "./CropSelectorDialog";
 import { CropGroupRemoteCombobox } from "./CropGroupRemoteCombobox";
 
 export function SeedSelectionStep() {
-  const { watch, setValue, control } =
-    useFormContext<CreateSeedFormValues>();
+  const { watch, setValue, control } = useFormContext<CreateSeedFormValues>();
   const selectedCrop = watch("cropId");
   const selectedCropGroup = watch("cropGroupId");
   const watchedCropName = watch("cropName");
@@ -148,7 +147,7 @@ export function SeedSelectionStep() {
           </Label>
         </div>
 
-        <div className="pl-8">
+        <div className="pl-8 max-h-[383px] overflow-y-scroll">
           <FormField
             control={control}
             name="cropVarietyId"

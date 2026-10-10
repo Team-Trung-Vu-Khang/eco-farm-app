@@ -129,7 +129,8 @@ export interface TechnicalSpecs {
 export interface CreateCropFoundationForm {
   code: string;
   name: string;
-  cropGroupId: string;
+  cropGroupId?: string;
+  cropGroupIds: string[];
   cropFoundationType: string;
   variety: string;
   illustration: File | string | null;
@@ -143,4 +144,3 @@ export interface CreateCropFoundationForm {
     qualityStandard: DocumentSection;
   };
 }
-

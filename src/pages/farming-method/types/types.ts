@@ -3,6 +3,8 @@ export type MethodStatus = "active" | "inactive";
 export type RelatedCrop = {
   cropGroupId: number | null;
   cropGroup: string;
+  cropGroupIds?: number[];
+  cropGroups?: string[];
   cropId: number;
   crop: string;
   varietyIds: number[];

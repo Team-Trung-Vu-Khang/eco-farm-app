@@ -12,13 +12,14 @@ import { ChevronLeft } from "lucide-react";
 import React, { useEffect, useRef } from "react";
 import { FormProvider, useForm, useFormContext } from "react-hook-form";
 import { useLocation } from "wouter";
-import { useCrops } from "../../features/foundation";
+import { useCrops, useCropById } from "../../features/foundation";
 import { initialEditorValue } from "../docs/mocks";
 import { VarietyFoundationCharacteristicsStep } from "./components/VarietyFoundationCharacteristicsStep";
 import { VarietyFoundationClassificationStep } from "./components/VarietyFoundationClassificationStep";
 import { VarietyFoundationConfirmationStep } from "./components/VarietyFoundationConfirmationStep";
 import { VarietyFoundationDocumentsStep } from "./components/VarietyFoundationDocumentsStep";
 import { useVarietyFoundationEditForm } from "./hooks/useVarietyFoundationEditForm";
+import { useVarietyIllustrationSync } from "./hooks/useVarietyIllustrationSync";
 import {
   classificationSchema,
   varietyFoundationSchema,
@@ -31,6 +32,7 @@ function VarietyFoundationEditFormContent({
   illustrationPreview,
   setIllustrationPreview,
   onPickIllustration,
+  onRemoveIllustration,
   handleComplete,
   handleCancel,
   isSubmitting,
@@ -40,6 +42,7 @@ function VarietyFoundationEditFormContent({
   illustrationPreview: string;
   setIllustrationPreview: (val: string) => void;
   onPickIllustration: (file?: File | null) => void;
+  onRemoveIllustration: () => void;
   handleComplete: (data: VarietyFoundationFormValues) => Promise<void>;
   handleCancel: () => void;
   isSubmitting: boolean;
@@ -51,16 +54,26 @@ function VarietyFoundationEditFormContent({
   const { items: crops } = useCrops({
     params: { domainCode: "CROP", status: "active", page: 0, size: 100 },
   });
+  const { data: cropData } = useCropById(Number(watchedValues.crop), {
+    enabled: Boolean(watchedValues.crop && !isNaN(Number(watchedValues.crop))),
+  });
+
   const selectedCrop = React.useMemo(() => {
     if (!watchedValues.crop) return undefined;
-    const crop = crops.find((c) => String(c.id) === String(watchedValues.crop));
+    const crop =
+      crops.find((c) => String(c.id) === String(watchedValues.crop)) ||
+      cropData;
     if (!crop) return undefined;
     return {
       name: crop.name,
       image: crop.imageUrl || "",
-      group: crop.subjectGroup?.name || "N/A",
+      group:
+        (crop.subjectGroups || [])
+          .map((g) => g.name)
+          .filter(Boolean)
+          .join(", ") || "",
     };
-  }, [watchedValues.crop, crops]);
+  }, [watchedValues.crop, crops, cropData]);
 
   const steps: Step[] = [
     {
@@ -80,6 +93,7 @@ function VarietyFoundationEditFormContent({
           setIllustrationPreview={setIllustrationPreview}
           fileInputRef={fileInputRef}
           onPickIllustration={onPickIllustration}
+          onRemoveIllustration={onRemoveIllustration}
         />
       ),
       isValid: true,
@@ -131,7 +145,6 @@ export default function VarietyFoundationEditPage() {
   const [, setLocation] = useLocation();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const pdfInputRef = useRef<HTMLInputElement>(null);
-  const [illustrationPreview, setIllustrationPreview] = React.useState("");
 
   const methods = useForm<VarietyFoundationFormValues>({
     resolver: zodResolver(varietyFoundationSchema),
@@ -152,6 +165,17 @@ export default function VarietyFoundationEditPage() {
     },
   });
 
+  const {
+    illustrationPreview,
+    setIllustrationPreview,
+    onPickIllustration,
+    onRemoveIllustration,
+    initIllustration,
+  } = useVarietyIllustrationSync({
+    methods,
+    fileInputRef,
+  });
+
   useEffect(() => {
     /* eslint-disable react-hooks/set-state-in-effect */
     if (initialValues) {
@@ -159,22 +183,19 @@ export default function VarietyFoundationEditPage() {
         ...methods.getValues(),
         ...initialValues,
       });
+      let preview = "";
+      let isCustom = false;
       if (typeof initialValues.illustration === "string") {
-        setIllustrationPreview(initialValues.illustration);
+        preview = initialValues.illustration;
+        isCustom = true;
       } else if (initialValues.illustration instanceof File) {
-        setIllustrationPreview(URL.createObjectURL(initialValues.illustration));
-      } else {
-        setIllustrationPreview("");
+        preview = URL.createObjectURL(initialValues.illustration);
+        isCustom = true;
       }
+      initIllustration(preview, isCustom, initialValues.crop || "");
     }
     /* eslint-enable react-hooks/set-state-in-effect */
-  }, [initialValues, methods]);
-
-  const onPickIllustration = (file?: File | null) => {
-    if (!file) return;
-    methods.setValue("illustration", file, { shouldValidate: true });
-    setIllustrationPreview(URL.createObjectURL(file));
-  };
+  }, [initialValues, methods, initIllustration]);
 
   if (isLoadingVariety || isInitializing) {
     return (
@@ -229,6 +250,7 @@ export default function VarietyFoundationEditPage() {
             illustrationPreview={illustrationPreview}
             setIllustrationPreview={setIllustrationPreview}
             onPickIllustration={onPickIllustration}
+            onRemoveIllustration={onRemoveIllustration}
             handleComplete={handleComplete}
             handleCancel={handleCancel}
             isSubmitting={isSubmitting}

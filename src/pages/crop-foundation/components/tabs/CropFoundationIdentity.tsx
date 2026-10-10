@@ -37,14 +37,27 @@ export function CropFoundationIdentity({
                   {cropFoundation.name}
                 </h2>
                 <div className="flex flex-wrap items-center gap-2 mb-4">
-                  <Badge className="bg-blue-50 text-blue-700 hover:bg-blue-100 border-none px-3 py-1 text-xs font-bold transition-colors">
-                    {cropFoundation.subjectGroup?.name || cropFoundation.subjectGroupName || cropFoundation.cropGroupName || "Chưa phân nhóm"}
-                  </Badge>
+                  {(cropFoundation.subjectGroups || []).length > 0 ? (
+                    cropFoundation.subjectGroups!.map((group) => (
+                      <Badge
+                        key={group.id}
+                        className="bg-blue-50 text-blue-700 hover:bg-blue-100 border-none px-3 py-1 text-xs font-bold transition-colors"
+                      >
+                        {group.name}
+                      </Badge>
+                    ))
+                  ) : (
+                    <Badge className="bg-slate-100 text-slate-500 hover:bg-slate-200 border-none px-3 py-1 text-xs font-bold transition-colors">
+                      Chưa phân nhóm
+                    </Badge>
+                  )}
                   {cropFoundation.harvestMethod && (
                     <Badge className="bg-amber-50 text-amber-700 hover:bg-amber-100 border-none px-3 py-1 text-xs font-bold transition-colors">
-                      {cropFoundation.harvestMethod === "manual" ? "Thu hoạch thủ công" : 
-                       cropFoundation.harvestMethod === "machine" ? "Thu hoạch bằng máy" : 
-                       cropFoundation.harvestMethod}
+                      {cropFoundation.harvestMethod === "manual"
+                        ? "Thu hoạch thủ công"
+                        : cropFoundation.harvestMethod === "machine"
+                          ? "Thu hoạch bằng máy"
+                          : cropFoundation.harvestMethod}
                     </Badge>
                   )}
                 </div>
@@ -69,7 +82,6 @@ export function CropFoundationIdentity({
                     </span>
                   </div>
                 </div>
-
               </div>
             </div>
           </div>
@@ -78,4 +90,3 @@ export function CropFoundationIdentity({
     </Card>
   );
 }
-

@@ -1,4 +1,5 @@
 import {
+  Badge,
   Card,
   CardContent,
   CardHeader,
@@ -79,10 +80,12 @@ function formatFileSize(bytes: number): string {
 export function ConfirmationStep() {
   const { getValues } = useFormContext<CropFoundationFormValues>();
   const formData = getValues();
+
   const { items: groupCrops } = useCatalog("crop-groups");
-  const groupName = groupCrops.find(
-    (g) => String(g.id) === formData.cropGroupId,
-  )?.name;
+
+  const groups = (formData.cropGroupIds || [])
+    .map((id) => groupCrops.find((g) => String(g.id) === id)?.name)
+    .filter(Boolean) as string[];
 
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-500">
@@ -110,22 +113,46 @@ export function ConfirmationStep() {
             </CardTitle>
           </CardHeader>
           <CardContent className="p-6 space-y-4 text-sm">
-            {[
-              ...(formData.code ? [{ label: "Mã cây", value: formData.code }] : []),
-              { label: "Tên cây", value: formData.name },
-              { label: "Nhóm", value: groupName },
-              { label: "Thu hoạch", value: formData.harvestMethod },
-            ].map((item) => (
-              <div
-                key={item.label}
-                className="flex justify-between items-center py-1.5 border-b border-dashed last:border-0 border-zinc-100"
-              >
-                <span className="text-muted-foreground">{item.label}</span>
+            {formData.code && (
+              <div className="flex justify-between items-center py-1.5 border-b border-dashed border-zinc-100">
+                <span className="text-muted-foreground">Mã cây</span>
                 <span className="font-bold text-foreground uppercase tracking-wide">
-                  {item.value || "---"}
+                  {formData.code}
                 </span>
               </div>
-            ))}
+            )}
+            <div className="flex justify-between items-center py-1.5 border-b border-dashed border-zinc-100">
+              <span className="text-muted-foreground">Tên cây</span>
+              <span className="font-bold text-foreground uppercase tracking-wide">
+                {formData.name || "---"}
+              </span>
+            </div>
+            <div className="flex justify-between items-center py-1.5 border-b border-dashed border-zinc-100 gap-4">
+              <span className="text-muted-foreground shrink-0">Nhóm</span>
+              <div className="flex flex-wrap justify-end gap-1.5 max-w-[280px]">
+                {groups.length > 0 ? (
+                  groups.map((groupName) => (
+                    <Badge
+                      key={groupName}
+                      variant="outline"
+                      className="border-emerald-200 bg-emerald-50 text-emerald-700 text-xs font-semibold px-2 py-0.5"
+                    >
+                      {groupName}
+                    </Badge>
+                  ))
+                ) : (
+                  <span className="font-bold text-foreground tracking-wide">
+                    ---
+                  </span>
+                )}
+              </div>
+            </div>
+            <div className="flex justify-between items-center py-1.5 border-b border-dashed last:border-0 border-zinc-100">
+              <span className="text-muted-foreground">Thu hoạch</span>
+              <span className="font-bold text-foreground uppercase tracking-wide">
+                {formData.harvestMethod || "---"}
+              </span>
+            </div>
           </CardContent>
         </Card>
 

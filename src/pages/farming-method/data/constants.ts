@@ -36,23 +36,20 @@ export const toRelatedCropForm = (related: RelatedCrop): RelatedCropForm => ({
 export const apiToRow = (
   item: FarmingMethodCropResponse,
 ): FarmingMethodCropRow => {
-  const relatedCrops =
-    item.subjects?.map((subject) => ({
-      cropGroupId: subject.subjectGroupId || null,
-      cropGroup: subject.subjectGroupName || "",
-      cropId: subject.subjectId,
-      crop: subject.subjectName || subject.subjectCode || "",
-      varietyIds: subject.variants?.map((variant) => variant.id) || [],
-      varieties: subject.variants?.map((variant) => variant.name || "") || [],
-    })) ??
-    (item.crops || []).map((crop) => ({
-      cropGroupId: crop.cropGroupId || null,
-      cropGroup: crop.cropGroupName || "",
-      cropId: crop.cropId,
-      crop: crop.cropName || "",
-      varietyIds: crop.varieties?.map((variety) => variety.id) || [],
-      varieties: crop.varieties?.map((variety) => variety.name || "") || [],
-    }));
+  const mapSubject = (sub: any) => {
+    const groups = sub.subjectGroups || [];
+    const groupNames = groups.map((g: any) => g.name).filter(Boolean);
+    return {
+      cropGroupId: groups[0]?.id || null,
+      cropGroup: groupNames.join(", "),
+      cropGroupIds: groups.map((g: any) => g.id),
+      cropGroups: groupNames,
+      cropId: sub.subjectId,
+      crop: sub.subjectName || sub.subjectCode || "",
+      varietyIds: sub.variants?.map((v: any) => v.id) || [],
+      varieties: sub.variants?.map((v: any) => v.name || "") || [],
+    };
+  };
 
   return {
     id: item.id,
@@ -68,17 +65,12 @@ export const apiToRow = (
     updatedAt: item.updatedAt ? item.updatedAt.split("T")[0] : "",
     relatedCrops:
       item.subjects && item.subjects.length > 0
-        ? item.subjects.map((sub) => ({
-            cropGroupId: sub.subjectGroupId || null,
-            cropGroup: sub.subjectGroupName || "",
-            cropId: sub.subjectId,
-            crop: sub.subjectName || "",
-            varietyIds: sub.variants?.map((v) => v.id) || [],
-            varieties: sub.variants?.map((v) => v.name || "") || [],
-          }))
+        ? item.subjects.map(mapSubject)
         : (item.crops || []).map((crop) => ({
             cropGroupId: crop.cropGroupId || null,
             cropGroup: crop.cropGroupName || "",
+            cropGroupIds: crop.cropGroupId ? [crop.cropGroupId] : [],
+            cropGroups: crop.cropGroupName ? [crop.cropGroupName] : [],
             cropId: crop.cropId,
             crop: crop.cropName || "",
             varietyIds: crop.varieties?.map((v) => v.id) || [],

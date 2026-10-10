@@ -10,6 +10,7 @@ import {
   FormLabel,
   FormMessage,
   Label,
+  MultiSelect,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { Image as ImageIcon, Leaf } from "lucide-react";
 import { useEffect, useState, type RefObject } from "react";
@@ -90,7 +91,9 @@ export function BasicInfoStep({ fileInputRef, isEdit }: BasicInfoStepProps) {
                       {...field}
                       disabled={isEdit}
                       clearable={!isEdit}
-                      placeholder={isEdit ? field.value : "Tự động sinh nếu để trống"}
+                      placeholder={
+                        isEdit ? field.value : "Tự động sinh nếu để trống"
+                      }
                     />
                   </FormControl>
                   <FormMessage />
@@ -117,17 +120,17 @@ export function BasicInfoStep({ fileInputRef, isEdit }: BasicInfoStepProps) {
           <div className="grid grid-cols-1 gap-4">
             <FormField
               control={control}
-              name="cropGroupId"
+              name="cropGroupIds"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel className="text-sm font-semibold">
                     Nhóm cây trồng <span className="text-red-500">*</span>
                   </FormLabel>
                   <FormControl>
-                    <Combobox
+                    <MultiSelect
                       options={groupCropOptions}
-                      placeholder="Chọn nhóm..."
-                      value={field.value ?? ""}
+                      placeholder="Chọn các nhóm cây trồng..."
+                      value={field.value ?? []}
                       onChange={(v) => field.onChange(v)}
                     />
                   </FormControl>

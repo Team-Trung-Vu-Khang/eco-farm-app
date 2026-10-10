@@ -91,12 +91,21 @@ export interface FoundationDocument {
   fileName?: string;
 }
 
+export interface FoundationSubjectGroupSummary {
+  id: number;
+  code?: string;
+  name?: string;
+}
+
 /** Body gửi lên API POST/PUT /production/subjects — flat theo schema Subject */
 export interface FoundationCropRequest {
   code?: string;
   name?: string;
   domainCode: "CROP" | "LIVESTOCK" | "AQUACULTURE"; // required
-  subjectGroupId: number; // required
+  /** Danh sách ID nhóm đối tượng sản xuất (tối thiểu 1 nhóm, thay toàn bộ nhóm hiện có) */
+  subjectGroupIds?: number[];
+  /** @deprecated Sắp bỏ (mục 2.1). FE nên chuyển sang dùng subjectGroupIds */
+  subjectGroupId?: number;
   description?: string;
   harvestMethod?: string;
   imageUrl?: string;
@@ -122,12 +131,10 @@ export interface FoundationCropResponse {
   domainCode?: string;
   code: string;
   name: string;
-  /** Nhóm subject — API trả về nested object */
-  subjectGroup?: {
-    id: number;
-    code?: string;
-    name?: string;
-  };
+  /** Danh sách các nhóm của đối tượng sản xuất (sắp theo displayOrder, name, id) */
+  subjectGroups?: FoundationSubjectGroupSummary[];
+  /** @deprecated Sắp bỏ — luôn là phần tử đầu tiên của subjectGroups */
+  subjectGroup?: FoundationSubjectGroupSummary;
   // Backward compat (API cũ có thể vẫn trả flat)
   subjectGroupId?: number;
   subjectGroupCode?: string;
@@ -161,6 +168,7 @@ export interface FoundationCropResponse {
 
 export interface CropQueryParams extends BaseQueryParams {
   cropGroupId?: number;
+  subjectGroupId?: number;
   domainCode?: DomainCode;
 }
 
@@ -411,6 +419,7 @@ export interface LifecycleTemplateQueryParams extends BaseQueryParams {
 // ─── Production Subjects & Subject Variants ───────────────────────────────────
 export interface ProductionSubjectQueryParams extends BaseQueryParams {
   domainCode: "CROP" | "LIVESTOCK" | "AQUACULTURE";
+  subjectGroupId?: number;
 }
 
 export type ProductionSubjectRequest = FoundationCropRequest;
@@ -447,12 +456,12 @@ export interface ProductionSubjectResponse {
   domainCode: "CROP" | "LIVESTOCK" | "AQUACULTURE";
   code: string;
   name: string;
+  /** Danh sách các nhóm của đối tượng sản xuất */
+  subjectGroups?: FoundationSubjectGroupSummary[];
+  /** @deprecated Sắp bỏ */
   subjectGroupId?: number;
-  subjectGroup?: {
-    id: number;
-    code?: string;
-    name?: string;
-  };
+  /** @deprecated Sắp bỏ */
+  subjectGroup?: FoundationSubjectGroupSummary;
   harvestMethod?: string;
   scientificName?: string;
   family?: string;
@@ -525,8 +534,13 @@ export interface MethodApplicationSubject {
   subjectId: number;
   subjectCode?: string;
   subjectName?: string;
+  /** Danh sách các nhóm của đối tượng sản xuất */
+  subjectGroups?: FoundationSubjectGroupSummary[];
+  /** @deprecated Sắp bỏ — lấy từ nhóm đầu tiên */
   subjectGroupId?: number;
+  /** @deprecated Sắp bỏ */
   subjectGroupCode?: string;
+  /** @deprecated Sắp bỏ */
   subjectGroupName?: string;
   variants?: {
     id: number;

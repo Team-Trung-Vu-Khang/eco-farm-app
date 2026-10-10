@@ -1,4 +1,4 @@
-import { type Column } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import { Badge, type Column } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { Image as ImageIcon } from "lucide-react";
 import { Link } from "wouter";
 
@@ -59,11 +59,26 @@ export const COLUMNS: Column<FoundationCropResponse>[] = [
   {
     key: "cropGroupName",
     label: "Nhóm cây trồng",
-    render: (_: any, item: FoundationCropResponse) => (
-      <span className="text-sm text-muted-foreground">
-        {item.subjectGroup?.name || item.subjectGroupName || item.cropGroupName || "---"}
-      </span>
-    ),
+    render: (_: any, item: FoundationCropResponse) => {
+      const groups = item.subjectGroups || [];
+      if (groups.length === 0) {
+        return <span className="text-sm text-muted-foreground">---</span>;
+      }
+
+      return (
+        <div className="flex flex-wrap gap-1 max-w-[280px]">
+          {groups.map((group) => (
+            <Badge
+              key={group.id}
+              variant="outline"
+              className="border-emerald-200 bg-emerald-50 text-emerald-700 text-xs font-semibold px-2 py-0.5"
+            >
+              {group.name}
+            </Badge>
+          ))}
+        </div>
+      );
+    },
   },
   {
     key: "origin",
@@ -75,4 +90,3 @@ export const COLUMNS: Column<FoundationCropResponse>[] = [
     ),
   },
 ];
-

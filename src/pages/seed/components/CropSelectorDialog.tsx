@@ -69,8 +69,8 @@ export function CropSelectorDialog({
 
     if (cropsQuery.data) {
       const rawItems = cropsQuery.data.content ?? [];
-      const newItems = rawItems.filter(
-        (item) => (item.cropGroupId ?? item.subjectGroup?.id) === cropGroupId,
+      const newItems = rawItems.filter((item) =>
+        (item.subjectGroups || []).some((g) => g.id === cropGroupId),
       );
 
       const totalPages = cropsQuery.data.totalPages ?? 0;

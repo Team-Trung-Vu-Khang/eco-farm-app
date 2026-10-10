@@ -92,6 +92,7 @@ export default function CropFoundationCreatePage() {
     defaultValues: {
       name: "",
       cropGroupId: "",
+      cropGroupIds: [],
       cropFoundationType: "",
       variety: "",
       illustration: null,

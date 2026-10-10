@@ -76,8 +76,12 @@ export function CropVarietySelectorDialog({
     return allCrops.map((crop) => ({
       cropId: crop.id,
       crop: crop.name,
-      cropGroupId: crop?.subjectGroup?.id || null,
-      cropGroup: crop?.subjectGroup?.name || "Chưa phân loại",
+      cropGroupId: crop.subjectGroups?.[0]?.id || null,
+      cropGroup:
+        (crop.subjectGroups || [])
+          .map((g: any) => g.name)
+          .filter(Boolean)
+          .join(", ") || "Chưa phân loại",
       varieties: [],
     }));
   }, [allCrops]);

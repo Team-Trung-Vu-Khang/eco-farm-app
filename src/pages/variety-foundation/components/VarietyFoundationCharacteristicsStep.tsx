@@ -12,7 +12,7 @@ import {
   FormLabel,
   FormMessage,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { useCrops } from "../../../features/foundation";
+import { useCrops, useCropById } from "../../../features/foundation";
 import { useFormContext } from "react-hook-form";
 import type { VarietyFoundationFormValues } from "../schemas/varietyFoundationSchema";
 
@@ -21,13 +21,14 @@ interface VarietyFoundationCharacteristicsStepProps {
   setIllustrationPreview: (value: string) => void;
   fileInputRef: React.RefObject<HTMLInputElement | null>;
   onPickIllustration: (file?: File | null) => void;
+  onRemoveIllustration: () => void;
 }
 
 export function VarietyFoundationCharacteristicsStep({
   illustrationPreview,
-  setIllustrationPreview,
   fileInputRef,
   onPickIllustration,
+  onRemoveIllustration,
 }: VarietyFoundationCharacteristicsStepProps) {
   const { control, watch, setValue } =
     useFormContext<VarietyFoundationFormValues>();
@@ -39,13 +40,17 @@ export function VarietyFoundationCharacteristicsStep({
   const { items: crops } = useCrops({
     params: { domainCode: "CROP", status: "active", page: 0, size: 100 },
   });
+  const { data: cropData } = useCropById(Number(watchedCrop), {
+    enabled: Boolean(watchedCrop && !isNaN(Number(watchedCrop))),
+  });
 
   useEffect(() => {
     if (watchedCrop && watchedCrop !== processedCropRef.current) {
       const isFirstLoad = processedCropRef.current === "";
       processedCropRef.current = watchedCrop;
 
-      const selectedCrop = crops.find((c) => String(c.id) === watchedCrop);
+      const selectedCrop =
+        crops.find((c) => String(c.id) === watchedCrop) || cropData;
       if (selectedCrop) {
         if (selectedCrop.technicalSpecs) {
           const specs = selectedCrop.technicalSpecs;
@@ -75,20 +80,15 @@ export function VarietyFoundationCharacteristicsStep({
             setValue("description", desc, { shouldValidate: true });
           }
         }
-
-        if (!illustrationPreview && selectedCrop.imageUrl) {
-          setIllustrationPreview(selectedCrop.imageUrl);
-        }
       }
     }
   }, [
     watchedCrop,
     crops,
+    cropData,
     watchedDescription,
     watchedAverageYield,
     watchedGrowthDuration,
-    illustrationPreview,
-    setIllustrationPreview,
     setValue,
   ]);
 
@@ -178,8 +178,7 @@ export function VarietyFoundationCharacteristicsStep({
                     className="rounded-full shadow-lg"
                     onClick={(event) => {
                       event.stopPropagation();
-                      setValue("illustration", null, { shouldValidate: true });
-                      setIllustrationPreview("");
+                      onRemoveIllustration();
                     }}
                   >
                     <Trash className="w-4 h-4 mr-2" /> Xóa ảnh

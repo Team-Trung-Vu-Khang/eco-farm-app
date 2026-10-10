@@ -195,7 +195,13 @@ export function GrowthCycleBasicInfoStep({
       crops.map((c) => ({
         id: String(c.id),
         name: c.name,
-        group: c.scientificName || "Nhóm " + (c.subjectGroupId || ""),
+        group:
+          (c.subjectGroups || [])
+            .map((g) => g.name)
+            .filter(Boolean)
+            .join(", ") ||
+          c.scientificName ||
+          "Cây trồng",
         image: c.imageUrl ?? "",
         description: c.scientificName || "",
       })),

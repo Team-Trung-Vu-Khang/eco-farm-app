@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { Archive, CheckCircle2, FileText } from "lucide-react";
 import {
   Card,
@@ -23,6 +24,19 @@ export function VarietyFoundationConfirmationStep({
 }: VarietyFoundationConfirmationStepProps) {
   const { watch } = useFormContext<VarietyFoundationFormValues>();
   const formData = watch();
+
+  const illustrationPreviewUrl = useMemo(() => {
+    if (!formData.illustration) return null;
+    if (typeof formData.illustration === "string") return formData.illustration;
+    if (formData.illustration instanceof File) {
+      try {
+        return URL.createObjectURL(formData.illustration);
+      } catch {
+        return null;
+      }
+    }
+    return null;
+  }, [formData.illustration]);
 
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-500">
@@ -52,9 +66,9 @@ export function VarietyFoundationConfirmationStep({
           </CardHeader>
           <CardContent className="p-6 space-y-6">
             <div className="flex items-center gap-4 p-4 bg-slate-50 rounded-xl border border-slate-100">
-              {selectedCrop?.image ? (
+              {illustrationPreviewUrl ? (
                 <img
-                  src={selectedCrop.image}
+                  src={illustrationPreviewUrl}
                   alt=""
                   className="w-16 h-16 rounded-lg object-cover shadow-sm bg-white ring-2 ring-white"
                 />

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
   Barcode,
   FlaskConical,
@@ -20,6 +20,7 @@ import {
   FormMessage,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { useFormContext } from "react-hook-form";
+import { useCropById } from "../../../features/foundation";
 import type { VarietyFoundationFormValues } from "../schemas/varietyFoundationSchema";
 import {
   CropSelectorDialog,
@@ -37,9 +38,36 @@ export function VarietyFoundationClassificationStep({
     useFormContext<VarietyFoundationFormValues>();
   const watchedCrop = watch("crop");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [selectedCrop, setSelectedCrop] = useState<SelectedCropItem | null>(
-    null,
-  );
+  const [selectedCropItem, setSelectedCropItem] =
+    useState<SelectedCropItem | null>(null);
+
+  const { data: cropData } = useCropById(Number(watchedCrop), {
+    enabled: Boolean(watchedCrop && !isNaN(Number(watchedCrop))),
+  });
+
+  const selectedCrop = useMemo<SelectedCropItem | null>(() => {
+    if (!watchedCrop) return null;
+    if (
+      selectedCropItem &&
+      String(selectedCropItem.id) === String(watchedCrop)
+    ) {
+      return selectedCropItem;
+    }
+    if (cropData) {
+      return {
+        id: String(cropData.id),
+        name: cropData.name,
+        code: cropData.code,
+        image: cropData.imageUrl || "",
+        group:
+          (cropData.subjectGroups || [])
+            .map((g) => g.name)
+            .filter(Boolean)
+            .join(", ") || "",
+      };
+    }
+    return null;
+  }, [watchedCrop, selectedCropItem, cropData]);
 
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-500">
@@ -177,7 +205,7 @@ export function VarietyFoundationClassificationStep({
           selectedId={watchedCrop ? String(watchedCrop) : undefined}
           onConfirm={(crop) => {
             setValue("crop", crop.id, { shouldValidate: true });
-            setSelectedCrop(crop);
+            setSelectedCropItem(crop);
           }}
         />
 

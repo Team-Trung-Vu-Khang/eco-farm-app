@@ -444,7 +444,10 @@ export const CropDetailDialog = ({
           name: variant?.name || base.name,
           illustration:
             variant?.imageUrl || subject?.imageUrl || base.illustration,
-          cropGroup: subject?.subjectGroup?.name ?? "",
+          cropGroup: (subject?.subjectGroups || [])
+            .map((g) => g.name)
+            .filter(Boolean)
+            .join(", "),
           cropType: subject?.name ?? "",
           harvestMethod: subject?.harvestMethod ?? "",
           seedInfo: mapSeedToSeedInfo(seed),

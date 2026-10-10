@@ -61,7 +61,7 @@ export const CropSelectorDialog = ({
       cropApi.list({
         domainCode: "CROP",
         keyword: debouncedSearch.trim() || undefined,
-        cropGroupId:
+        subjectGroupId:
           selectedGroup !== "all" ? Number(selectedGroup) : undefined,
         page: pageParam,
         size: 20,
@@ -84,7 +84,11 @@ export const CropSelectorDialog = ({
       name: c.name,
       code: c.code || "",
       image: c.imageUrl || "",
-      group: c.cropGroupName || "Khác",
+      group:
+        (c.subjectGroups || [])
+          .map((g) => g.name)
+          .filter(Boolean)
+          .join(", ") || "Khác",
     }));
   }, [rawCrops]);
 

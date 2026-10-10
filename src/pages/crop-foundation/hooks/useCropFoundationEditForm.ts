@@ -95,15 +95,15 @@ export function useCropFoundationEditForm() {
         // ── Xây dựng form values ──────────────────────────────────────────────
         const meta = existingData.metadataJson || {};
 
+        const groupIds: string[] = (existingData.subjectGroups || []).map((g) =>
+          String(g.id),
+        );
+
         setInitialValues({
           code: existingData.code || undefined,
           name: existingData.name || "",
-          cropGroupId: String(
-            existingData.subjectGroup?.id ??
-              existingData.subjectGroupId ??
-              existingData.cropGroupId ??
-              "",
-          ),
+          cropGroupId: groupIds[0] || "",
+          cropGroupIds: groupIds,
           cropFoundationType: "",
           variety: "",
           illustration: existingData.imageUrl || null,
@@ -234,11 +234,13 @@ export function useCropFoundationEditForm() {
         });
       }
 
+      const subjectGroupIds = (formData.cropGroupIds || []).map(Number);
+
       const payload = {
         domainCode: "CROP",
         code: formData.code || undefined,
         name: formData.name || undefined,
-        subjectGroupId: Number(formData.cropGroupId),
+        subjectGroupIds,
         description: formData.description || undefined,
         harvestMethod: formData.harvestMethod || undefined,
         imageUrl: illustrationUrl || undefined,

@@ -11,13 +11,14 @@ import {
 import { ChevronLeft } from "lucide-react";
 import React, { useRef } from "react";
 import { FormProvider, useForm, useFormContext } from "react-hook-form";
-import { useCrops } from "../../features/foundation";
+import { useCrops, useCropById } from "../../features/foundation";
 import { initialEditorValue } from "../docs/mocks";
 import { VarietyFoundationCharacteristicsStep } from "./components/VarietyFoundationCharacteristicsStep";
 import { VarietyFoundationClassificationStep } from "./components/VarietyFoundationClassificationStep";
 import { VarietyFoundationConfirmationStep } from "./components/VarietyFoundationConfirmationStep";
 import { VarietyFoundationDocumentsStep } from "./components/VarietyFoundationDocumentsStep";
 import { useVarietyFoundationForm } from "./hooks/useVarietyFoundationForm";
+import { useVarietyIllustrationSync } from "./hooks/useVarietyIllustrationSync";
 import {
   classificationSchema,
   varietyFoundationSchema,
@@ -30,6 +31,7 @@ function VarietyFoundationCreateFormContent({
   illustrationPreview,
   setIllustrationPreview,
   onPickIllustration,
+  onRemoveIllustration,
   handleComplete,
   handleCancel,
   isSubmitting,
@@ -39,6 +41,7 @@ function VarietyFoundationCreateFormContent({
   illustrationPreview: string;
   setIllustrationPreview: (val: string) => void;
   onPickIllustration: (file?: File | null) => void;
+  onRemoveIllustration: () => void;
   handleComplete: (data: VarietyFoundationFormValues) => Promise<void>;
   handleCancel: () => void;
   isSubmitting: boolean;
@@ -49,16 +52,26 @@ function VarietyFoundationCreateFormContent({
   const { items: crops } = useCrops({
     params: { domainCode: "CROP", status: "active", page: 0, size: 100 },
   });
+  const { data: cropData } = useCropById(Number(watchedValues.crop), {
+    enabled: Boolean(watchedValues.crop && !isNaN(Number(watchedValues.crop))),
+  });
+
   const selectedCrop = React.useMemo(() => {
     if (!watchedValues.crop) return undefined;
-    const crop = crops.find((c) => String(c.id) === String(watchedValues.crop));
+    const crop =
+      crops.find((c) => String(c.id) === String(watchedValues.crop)) ||
+      cropData;
     if (!crop) return undefined;
     return {
       name: crop.name,
       image: crop.imageUrl || "",
-      group: crop.subjectGroup?.name || "N/A",
+      group:
+        (crop.subjectGroups || [])
+          .map((g) => g.name)
+          .filter(Boolean)
+          .join(", ") || "N/A",
     };
-  }, [watchedValues.crop, crops]);
+  }, [watchedValues.crop, crops, cropData]);
 
   const steps: Step[] = [
     {
@@ -78,6 +91,7 @@ function VarietyFoundationCreateFormContent({
           setIllustrationPreview={setIllustrationPreview}
           fileInputRef={fileInputRef}
           onPickIllustration={onPickIllustration}
+          onRemoveIllustration={onRemoveIllustration}
         />
       ),
       isValid: true,
@@ -122,7 +136,6 @@ export default function CreateVarietyFoundationPage() {
     useVarietyFoundationForm();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const pdfInputRef = useRef<HTMLInputElement>(null);
-  const [illustrationPreview, setIllustrationPreview] = React.useState("");
   const methods = useForm<VarietyFoundationFormValues>({
     resolver: zodResolver(varietyFoundationSchema),
     mode: "onChange",
@@ -142,11 +155,15 @@ export default function CreateVarietyFoundationPage() {
     },
   });
 
-  const onPickIllustration = (file?: File | null) => {
-    if (!file) return;
-    methods.setValue("illustration", file, { shouldValidate: true });
-    setIllustrationPreview(URL.createObjectURL(file));
-  };
+  const {
+    illustrationPreview,
+    setIllustrationPreview,
+    onPickIllustration,
+    onRemoveIllustration,
+  } = useVarietyIllustrationSync({
+    methods,
+    fileInputRef,
+  });
 
   return (
     <PageWrapper
@@ -164,9 +181,10 @@ export default function CreateVarietyFoundationPage() {
           <VarietyFoundationCreateFormContent
             fileInputRef={fileInputRef}
             pdfInputRef={pdfInputRef}
-            illustrationPreview={illustrationPreview as any}
-            setIllustrationPreview={setIllustrationPreview as any}
+            illustrationPreview={illustrationPreview}
+            setIllustrationPreview={setIllustrationPreview}
             onPickIllustration={onPickIllustration}
+            onRemoveIllustration={onRemoveIllustration}
             handleComplete={handleComplete}
             handleCancel={handleCancel}
             isSubmitting={isSubmitting}

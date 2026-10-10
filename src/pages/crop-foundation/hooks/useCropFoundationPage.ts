@@ -3,7 +3,11 @@ import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
 
 import type { FoundationCropResponse } from "../../../features/foundation";
-import { useCropMutations, useCrops } from "../../../features/foundation";
+import {
+  useCatalog,
+  useCropMutations,
+  useCrops,
+} from "../../../features/foundation";
 import { useDebounce } from "@/shared/hooks/useDebounce";
 
 export function useCropFoundationPage() {
@@ -13,6 +17,8 @@ export function useCropFoundationPage() {
   const [pageSize, setPageSize] = useState(10);
   const [currentIndex, setCurrentIndex] = useState(1);
   const [status, setStatus] = useState<string>("all");
+  const [subjectGroupId, setSubjectGroupId] = useState<string>("all");
+  const { items: cropGroups } = useCatalog("crop-groups");
 
   const handleSearch = (value: string) => {
     setSearch(value);
@@ -22,6 +28,9 @@ export function useCropFoundationPage() {
   const handleFilterChange = (key: string, value: string) => {
     if (key === "status") {
       setStatus(value);
+      setCurrentIndex(1);
+    } else if (key === "subjectGroupId") {
+      setSubjectGroupId(value);
       setCurrentIndex(1);
     }
   };
@@ -36,6 +45,14 @@ export function useCropFoundationPage() {
         { label: "Đã lưu trữ", value: "archived" },
       ],
     },
+    {
+      key: "subjectGroupId",
+      label: "Nhóm cây",
+      options: cropGroups.map((g) => ({
+        label: g.name,
+        value: String(g.id),
+      })),
+    },
   ];
 
   const [, setLocation] = useLocation();
@@ -49,6 +66,8 @@ export function useCropFoundationPage() {
     params: {
       keyword: debouncedSearch.trim() || undefined,
       status: status === "all" ? undefined : status,
+      subjectGroupId:
+        subjectGroupId === "all" ? undefined : Number(subjectGroupId),
       page: Math.max(currentIndex - 1, 0),
       size: pageSize,
       domainCode: "CROP",

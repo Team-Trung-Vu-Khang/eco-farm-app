@@ -128,16 +128,19 @@ export const cropApi = {
 
   create: (data: FoundationCropRequest) =>
     apiClient
-      .post<FoundationCropResponse>(FOUNDATION_ENDPOINTS.crops, data)
+      .post<FoundationCropResponse>(FOUNDATION_ENDPOINTS.adminCrops, data)
       .then((r) => r.data),
 
   update: (id: number, data: FoundationCropRequest) =>
     apiClient
-      .put<FoundationCropResponse>(`${FOUNDATION_ENDPOINTS.crops}/${id}`, data)
+      .put<FoundationCropResponse>(
+        `${FOUNDATION_ENDPOINTS.adminCrops}/${id}`,
+        data,
+      )
       .then((r) => r.data),
 
   delete: (id: number) =>
-    apiClient.delete(`${FOUNDATION_ENDPOINTS.crops}/${id}`),
+    apiClient.delete(`${FOUNDATION_ENDPOINTS.adminCrops}/${id}`),
 };
 
 // ─── Crop Variety API ─────────────────────────────────────────────────────────

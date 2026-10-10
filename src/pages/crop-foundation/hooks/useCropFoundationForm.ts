@@ -108,11 +108,13 @@ export function useCropFoundationForm() {
         });
       }
 
+      const subjectGroupIds = (formData.cropGroupIds || []).map(Number);
+
       const payload: any = {
         domainCode: "CROP",
         code: formData.code || undefined,
         name: formData.name || undefined,
-        subjectGroupId: Number(formData.cropGroupId),
+        subjectGroupIds,
         description: formData.description || undefined,
         harvestMethod: formData.harvestMethod || undefined,
         imageUrl: illustrationUrl,

@@ -48,7 +48,8 @@ export function VarietyFoundationDetailContent({
               Chi tiết giống cây (nền tảng)
             </h2>
             <p className="text-slate-500 text-sm">
-              Xem và quản lý thông tin chi tiết của giống {varietyFoundation.varietyFoundationName}
+              Xem và quản lý thông tin chi tiết của giống{" "}
+              {varietyFoundation.varietyFoundationName}
             </p>
           </div>
         </div>
@@ -103,22 +104,29 @@ export function VarietyFoundationDetailContent({
             </div>
 
             <CardContent className="p-6 space-y-4">
-              <div className="flex items-center justify-between p-3 rounded-lg bg-slate-50 border border-slate-100">
-                <div className="space-y-1">
+              <div className="flex items-center justify-between p-3 rounded-lg bg-slate-50 border border-slate-100 gap-3">
+                <div className="space-y-1 min-w-0 flex-1">
                   <p className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">
                     Mã giống
                   </p>
-                  <p className="font-mono text-sm font-bold text-slate-700 flex items-center gap-1.5">
-                    <Hash className="w-3.5 h-3.5" />
-                    {varietyFoundation.varietyFoundationCode}
+                  <p
+                    className="font-mono text-sm font-bold text-slate-700 flex items-center gap-1.5 min-w-0"
+                    title={varietyFoundation.varietyFoundationCode}
+                  >
+                    <Hash className="w-3.5 h-3.5 shrink-0 text-slate-400" />
+                    <span className="truncate">
+                      {varietyFoundation.varietyFoundationCode}
+                    </span>
                   </p>
                 </div>
-                <div className="text-right space-y-1">
+                <div className="text-right space-y-1 shrink-0">
                   <p className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">
                     Cập nhật
                   </p>
                   <p className="text-sm font-medium text-slate-700">
-                    {new Date(varietyFoundation.updatedAt).toLocaleDateString("vi-VN")}
+                    {new Date(varietyFoundation.updatedAt).toLocaleDateString(
+                      "vi-VN",
+                    )}
                   </p>
                 </div>
               </div>
@@ -218,11 +226,14 @@ export function VarietyFoundationDetailContent({
               </CardTitle>
             </CardHeader>
             <CardContent className="p-6">
-              {varietyFoundation.contentType === "editor" && varietyFoundation.editorContent ? (
+              {varietyFoundation.contentType === "editor" &&
+              varietyFoundation.editorContent ? (
                 <div className="prose prose-slate max-w-none animate-in fade-in duration-700">
                   <div
                     className="bg-white p-8 rounded-2xl border border-slate-100 shadow-sm font-serif text-lg leading-loose text-slate-700 editor-content-preview"
-                    dangerouslySetInnerHTML={{ __html: varietyFoundation.editorContent }}
+                    dangerouslySetInnerHTML={{
+                      __html: varietyFoundation.editorContent,
+                    }}
                   />
                   <style>{`
                     .editor-content-preview h1 { font-size: 2rem; font-weight: 800; margin-bottom: 1.5rem; color: #0f172a; }
@@ -233,7 +244,8 @@ export function VarietyFoundationDetailContent({
                     .editor-content-preview strong { color: #0f172a; font-weight: 700; }
                   `}</style>
                 </div>
-              ) : varietyFoundation.documents && varietyFoundation.documents.length > 0 ? (
+              ) : varietyFoundation.documents &&
+                varietyFoundation.documents.length > 0 ? (
                 <div className="grid grid-cols-1 gap-3">
                   {varietyFoundation.documents.map((doc, idx) => (
                     <div
