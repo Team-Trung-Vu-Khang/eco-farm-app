@@ -901,6 +901,11 @@ export function HistoryFormContent({
         (m) => m.stageId !== stage,
       ),
     }));
+    setWorkTaskDetails((prev) => {
+      const next = { ...prev };
+      delete next[stage];
+      return next;
+    });
   };
 
   const handleAddMaterial = (item: Omit<MaterialAllocation, "id">) => {
@@ -1138,11 +1143,35 @@ export function HistoryFormContent({
       const planId = Number(selectedPlanId) || 1;
       const stageId = Number(selectedStageId) || 1;
 
+      // Convert harvestDetails into HarvestItemRequest[]
+      const harvestItems: HarvestItemRequest[] = formData.harvestDetails
+        .map((detail) => {
+          const isSubject =
+            detail.id.includes("subject") ||
+            detail.id.includes("variant") ||
+            formData.harvestScope === "crop";
+          const rawId = String(detail.targetId).replace(/^[^\d]+/, "");
+          const parsedId = parseInt(rawId, 10);
+          const targetId = !isNaN(parsedId) && parsedId > 0 ? parsedId : 0;
+
+          return {
+            targetType: isSubject
+              ? ("ZONE_SUBJECT_VARIANT" as const)
+              : ("ZONE" as const),
+            targetId,
+            quantity: Number(detail.quantity) || 0,
+            unitBaseId: 1,
+          };
+        })
+        .filter((h) => h.quantity > 0 && h.targetId > 0);
+
+      const hasHarvestItems = harvestItems.length > 0;
+
       // Build lines for tasks/items that have been modified or added by user
       const candidateStages =
         formData.selectedStages.length > 0
           ? formData.selectedStages
-          : ["Công việc"];
+          : [selectedTask?.name || "Công việc"];
 
       const activeStages = candidateStages.filter((stName) => {
         const detail = workTaskDetails[stName];
@@ -1154,7 +1183,11 @@ export function HistoryFormContent({
         return Boolean(detail?.isDirty || isNewStage || hasMaterialChange);
       });
 
-      if (candidateStages.length > 1 && activeStages.length === 0) {
+      if (
+        !hasHarvestItems &&
+        candidateStages.length > 1 &&
+        activeStages.length === 0
+      ) {
         toast({
           title: "Chưa có thay đổi",
           description:
@@ -1214,28 +1247,6 @@ export function HistoryFormContent({
           supplies: taskSupplies.length > 0 ? taskSupplies : undefined,
         };
       });
-
-      // Convert harvestDetails into HarvestItemRequest[]
-      const harvestItems: HarvestItemRequest[] = formData.harvestDetails
-        .map((detail) => {
-          const isSubject =
-            detail.id.includes("subject") ||
-            detail.id.includes("variant") ||
-            formData.harvestScope === "crop";
-          const rawId = String(detail.targetId).replace(/^[^\d]+/, "");
-          const parsedId = parseInt(rawId, 10);
-          const targetId = !isNaN(parsedId) && parsedId > 0 ? parsedId : 0;
-
-          return {
-            targetType: isSubject
-              ? ("ZONE_SUBJECT_VARIANT" as const)
-              : ("ZONE" as const),
-            targetId,
-            quantity: Number(detail.quantity) || 0,
-            unitBaseId: 1,
-          };
-        })
-        .filter((h) => h.quantity > 0 && h.targetId > 0);
 
       // Resolve submittedByPersonnelId per api.json specs:
       // "Chỉ được bỏ trống khi tất cả công việc chưa có EXECUTOR; nếu truyền thì nhân sự phải thuộc workspace hiện tại"
@@ -1329,9 +1340,35 @@ export function HistoryFormContent({
         ? Number(selectedWorkflow.seasons[0].id)
         : workflowId;
 
-    // Convert workTaskDetails into DailyDiaryLineRequest[]
-    const lines: DailyDiaryLineRequest[] = Object.values(workTaskDetails).map(
-      (task) => {
+    // Convert harvestDetails into HarvestItemRequest[]
+    const harvestItems: HarvestItemRequest[] = formData.harvestDetails
+      .map((detail) => {
+        const isSubject =
+          detail.id.includes("subject") ||
+          detail.id.includes("variant") ||
+          formData.harvestScope === "crop";
+        const rawId = String(detail.targetId).replace(/^[^\d]+/, "");
+        const parsedId = parseInt(rawId, 10);
+        const targetId = !isNaN(parsedId) && parsedId > 0 ? parsedId : 0;
+
+        return {
+          targetType: isSubject
+            ? ("ZONE_SUBJECT_VARIANT" as const)
+            : ("ZONE" as const),
+          targetId,
+          quantity: Number(detail.quantity) || 0,
+          unitBaseId: 1,
+        };
+      })
+      .filter((h) => h.quantity > 0 && h.targetId > 0);
+
+    const hasHarvestItems = harvestItems.length > 0;
+
+    // Convert workTaskDetails into DailyDiaryLineRequest[] based on selectedStages
+    const lines: DailyDiaryLineRequest[] = formData.selectedStages
+      .map((stName) => workTaskDetails[stName])
+      .filter(Boolean)
+      .map((task) => {
         const supplies: SupplyUsageRequest[] = formData.materialAllocations
           .filter(
             (alloc) =>
@@ -1360,12 +1397,12 @@ export function HistoryFormContent({
           description: task.description || null,
           supplies: supplies.length > 0 ? supplies : undefined,
         };
-      },
-    );
+      });
 
-    // If no workTaskDetails were added, create a default line if workType (except harvest) or dates are present
+    // If no workTaskDetails were added, create a default line if workType (except harvest) or dates are present and no harvest items
     if (
       lines.length === 0 &&
+      !hasHarvestItems &&
       formData.workType !== "harvest" &&
       (formData.workType || formData.startDate)
     ) {
@@ -1393,28 +1430,6 @@ export function HistoryFormContent({
         supplies: supplies.length > 0 ? supplies : undefined,
       });
     }
-
-    // Convert harvestDetails into HarvestItemRequest[]
-    const harvestItems: HarvestItemRequest[] = formData.harvestDetails
-      .map((detail) => {
-        const isSubject =
-          detail.id.includes("subject") ||
-          detail.id.includes("variant") ||
-          formData.harvestScope === "crop";
-        const rawId = String(detail.targetId).replace(/^[^\d]+/, "");
-        const parsedId = parseInt(rawId, 10);
-        const targetId = !isNaN(parsedId) && parsedId > 0 ? parsedId : 0;
-
-        return {
-          targetType: isSubject
-            ? ("ZONE_SUBJECT_VARIANT" as const)
-            : ("ZONE" as const),
-          targetId,
-          quantity: Number(detail.quantity) || 0,
-          unitBaseId: 1,
-        };
-      })
-      .filter((h) => h.quantity > 0 && h.targetId > 0);
 
     const validationPayload = {
       workflowId,
@@ -1511,14 +1526,19 @@ export function HistoryFormContent({
   ]);
 
   const isStep2Valid = useMemo(() => {
-    if (formData.workType === "harvest") {
-      if (formData.harvestDetails.length === 0) return false;
-      const allHaveQuantity = formData.harvestDetails.every(
+    const hasValidHarvest =
+      formData.harvestDetails.length > 0 &&
+      formData.harvestDetails.every(
         (d) => d.quantity && Number(d.quantity) > 0,
       );
-      if (!allHaveQuantity) return false;
+    const hasTasks = formData.selectedStages.length > 0;
+
+    if (formData.workType === "harvest") {
+      // Khi chọn loại việc Thu hoạch: Bắt buộc có thu hoạch, danh sách công việc là TÙY CHỌN
+      if (!hasValidHarvest) return false;
     } else {
-      if (formData.selectedStages.length === 0) return false;
+      // Khi là loại việc khác: Có thể có thu hoạch hoặc có ít nhất 1 công việc
+      if (!hasTasks && !hasValidHarvest) return false;
     }
 
     if (formData.materialAllocations.length > 0) {

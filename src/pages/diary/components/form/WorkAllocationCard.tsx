@@ -789,8 +789,9 @@ export function WorkAllocationCard({
           </div>
         ) : (
           <div className="rounded-xl border border-dashed border-slate-200 p-6 text-center text-xs text-slate-400">
-            Chưa có hạng mục / công việc nào. Hãy chọn từ Hạng mục dự kiến hoặc
-            nhập để thêm mới.
+            {workType === "harvest"
+              ? "Không có công việc phát sinh hay đóng gói kèm theo (chỉ ghi nhận thu hoạch)."
+              : "Chưa có hạng mục / công việc nào. Hãy chọn từ Hạng mục dự kiến hoặc nhập để thêm mới."}
           </div>
         )}
       </CardContent>
