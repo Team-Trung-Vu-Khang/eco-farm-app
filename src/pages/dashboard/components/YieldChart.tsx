@@ -52,7 +52,7 @@ function formatBucketLabel(bucketStart: string): string {
 
 export function YieldChart() {
   const isMobile = useIsMobile();
-  const [groupBy, setGroupBy] = useState<"ZONE" | "SUBJECT">("ZONE");
+  const [groupBy, setGroupBy] = useState<"VARIANT" | "SUBJECT">("VARIANT");
 
   const fromDate = useMemo(
     () => dayjs().subtract(11, "month").startOf("month").format("YYYY-MM-DD"),
@@ -161,12 +161,12 @@ export function YieldChart() {
           <div className="flex flex-wrap items-center gap-2">
             <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl">
               <Button
-                variant={groupBy === "ZONE" ? "default" : "ghost"}
+                variant={groupBy === "VARIANT" ? "default" : "ghost"}
                 size="sm"
                 className="h-7 text-xs font-bold rounded-lg cursor-pointer"
-                onClick={() => setGroupBy("ZONE")}
+                onClick={() => setGroupBy("VARIANT")}
               >
-                Theo Vùng
+                Theo Giống
               </Button>
               <Button
                 variant={groupBy === "SUBJECT" ? "default" : "ghost"}

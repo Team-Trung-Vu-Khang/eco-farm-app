@@ -61,6 +61,6 @@ export interface HarvestProductionQueryParams {
   periodType?: "MONTHLY" | "YEARLY";
   fromDate?: string;
   toDate?: string;
-  groupBy?: "ZONE" | "SUBJECT";
+  groupBy?: "VARIANT" | "SUBJECT";
   productionSubjectCode?: string;
 }
