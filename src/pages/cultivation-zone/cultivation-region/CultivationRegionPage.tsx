@@ -42,6 +42,7 @@ const CultivationRegionPage = () => {
       }
     >
       <DataTable
+        enableMobileCard
         columns={columns}
         data={areas}
         loading={isLoading}

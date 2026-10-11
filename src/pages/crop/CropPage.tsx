@@ -34,6 +34,7 @@ export default function CropPage() {
       }
     >
       <DataTable
+        enableMobileCard
         columns={COLUMNS}
         data={crops}
         onDelete={handleDelete}

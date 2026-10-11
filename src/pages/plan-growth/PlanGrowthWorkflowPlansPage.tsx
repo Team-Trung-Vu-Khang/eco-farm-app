@@ -124,6 +124,7 @@ export default function PlanGrowthWorkflowPlansPage({
     >
       <div className="space-y-6">
         <DataTable
+          enableMobileCard
           columns={columns}
           data={plans}
           loading={plansQuery.loading}

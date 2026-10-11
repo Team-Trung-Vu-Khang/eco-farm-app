@@ -89,6 +89,7 @@ const VarietyPage = () => {
       }
     >
       <DataTable
+        enableMobileCard
         columns={varietyColumns}
         data={varieties}
         selectable={false}

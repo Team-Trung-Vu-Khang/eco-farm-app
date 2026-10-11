@@ -68,6 +68,7 @@ export default function EquipmentPage() {
       }
     >
       <DataTable
+        enableMobileCard
         columns={equipmentColumns({ onNameClick: navigateToDetail, scope: scope as "farm" | "admin" })}
         data={equipments}
         searchable

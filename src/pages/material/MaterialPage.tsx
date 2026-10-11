@@ -63,6 +63,7 @@ export default function MaterialPage() {
       }
     >
       <DataTable
+        enableMobileCard
         columns={materialColumns(navigateToDetail, scope as "farm" | "admin")}
         data={materials}
         searchable

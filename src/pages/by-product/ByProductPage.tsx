@@ -62,6 +62,7 @@ export default function ByProductPage() {
       }
     >
       <DataTable
+        enableMobileCard
         columns={byProductColumns(navigateToDetail, scope as "farm" | "admin")}
         data={byProducts}
         pageSize={pageSize}

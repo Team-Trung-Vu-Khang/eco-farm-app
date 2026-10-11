@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useAuth } from "@/features/auth";
 import { useSelectedWorkspaceId, useWorkspaceById } from "@/features/workspace";
 import {
@@ -9,10 +9,19 @@ import {
   Sprout,
   UserRound,
 } from "lucide-react";
+import {
+  useAccountSidebarMenu,
+  excludeSidebarPaths,
+  getBottomNavExcludedPaths,
+  useMobileNavItems,
+  useMobileNavExtraExcludedPaths,
+  type MobileNavItem,
+} from "@Team-Trung-Vu-Khang/eco-shared-ui";
 
 import { getUserLogoText } from "@/pages/mobile-home/utils/user-logo.util";
 import { formatAppWorkspaceFeatureName } from "@/shared/constants/workspace.constants";
 import { ProfileMenuItem } from "./components/ProfileMenuItem";
+import { ProfileSidebarFeatures } from "./components/ProfileSidebarFeatures";
 import { PersonalInfoBottomSheet } from "./components/PersonalInfoBottomSheet";
 import { FarmInfoBottomSheet } from "./components/FarmInfoBottomSheet";
 import { SettingsBottomSheet } from "./components/SettingsBottomSheet";
@@ -20,11 +29,43 @@ import { UserGuideBottomSheet } from "./components/UserGuideBottomSheet";
 import { SupportContactBottomSheet } from "./components/SupportContactBottomSheet";
 import { LogoutConfirmDialog } from "./components/LogoutConfirmDialog";
 
+export interface ProfilePageProps {
+  navItems?: MobileNavItem[];
+  extraExcludedPaths?: string[];
+}
+
 /** Trang tài khoản (tab Profile của giao diện mobile) */
-export default function ProfilePage() {
+export default function ProfilePage({
+  navItems: propNavItems,
+  extraExcludedPaths: propExtraPaths,
+}: ProfilePageProps = {}) {
   const { currentUser, logout } = useAuth();
   const selectedWorkspaceId = useSelectedWorkspaceId();
   const { data: workspaceData } = useWorkspaceById(selectedWorkspaceId ?? "");
+
+  // Lấy danh sách navItems và extraExcludedPaths thực tế của mobile layout
+  const contextNavItems = useMobileNavItems();
+  const contextExtraPaths = useMobileNavExtraExcludedPaths();
+  const effectiveNavItems = propNavItems ?? contextNavItems;
+  const effectiveExtraPaths =
+    propExtraPaths ??
+    (contextExtraPaths.length > 0 ? contextExtraPaths : ["/diary", "/history"]);
+
+  // Lấy danh sách menu sidebar của tài khoản hiện tại
+  const rawSidebarMenu = useAccountSidebarMenu({
+    isDev: true,
+    isMevi: true,
+    user: currentUser,
+  });
+
+  // Lọc bỏ các tính năng đã có ở bottom nav (theo đúng danh sách navItems và extraExcludedPaths)
+  const filteredSidebarMenu = useMemo(() => {
+    const bottomNavExcluded = getBottomNavExcludedPaths(
+      effectiveNavItems,
+      effectiveExtraPaths,
+    );
+    return excludeSidebarPaths(rawSidebarMenu, bottomNavExcluded);
+  }, [rawSidebarMenu, effectiveNavItems, effectiveExtraPaths]);
 
   // BottomSheet modal states
   const [openPersonal, setOpenPersonal] = useState(false);
@@ -72,7 +113,7 @@ export default function ProfilePage() {
         </div>
       </section>
 
-      {/* 2. Menu gợi ý (Grouped Card Style) */}
+      {/* 2. Menu thông tin cá nhân & nông trại */}
       <section className="rounded-2xl border border-slate-200/90 bg-white overflow-hidden divide-y divide-slate-100 shadow-xs">
         {/* – Thông tin cá nhân */}
         <ProfileMenuItem
@@ -93,38 +134,13 @@ export default function ProfilePage() {
           subtitle={farmDisplayName}
           onClick={() => setOpenFarm(true)}
         />
+      </section>
 
-        {/* – Cài đặt */}
-        {/* <ProfileMenuItem
-          icon={<Settings className="h-5 w-5" />}
-          iconBgColor="bg-purple-50"
-          iconColor="text-purple-600"
-          title="Cài đặt"
-          subtitle="Thông báo & hệ thống"
-          onClick={() => setOpenSettings(true)}
-        /> */}
+      {/* 3. Các chức năng hệ thống từ Sidebar (đã lọc bỏ mục trong Bottom Nav) */}
+      <ProfileSidebarFeatures sections={filteredSidebarMenu} />
 
-        {/* – Hướng dẫn sử dụng */}
-        {/* <ProfileMenuItem
-          icon={<BookOpen className="h-5 w-5" />}
-          iconBgColor="bg-amber-50"
-          iconColor="text-amber-600"
-          title="Hướng dẫn sử dụng"
-          subtitle="Cẩm nang ghi nhật ký & mẹo canh tác"
-          onClick={() => setOpenGuide(true)}
-        /> */}
-
-        {/* – Liên hệ hỗ trợ */}
-        {/* <ProfileMenuItem
-          icon={<Headphones className="h-5 w-5" />}
-          iconBgColor="bg-cyan-50"
-          iconColor="text-cyan-600"
-          title="Liên hệ hỗ trợ"
-          subtitle="Hotline, Zalo & Email hỗ trợ MEVI"
-          onClick={() => setOpenSupport(true)}
-        /> */}
-
-        {/* – Đăng xuất */}
+      {/* 4. Đăng xuất */}
+      <section className="rounded-2xl border border-slate-200/90 bg-white overflow-hidden shadow-xs">
         <ProfileMenuItem
           icon={<LogOut className="h-5 w-5" />}
           iconBgColor="bg-red-50"

@@ -8,6 +8,7 @@ export const seedColumns: Column<FarmSeedResponse>[] = [
   {
     key: "imageUrl",
     label: "Hình ảnh",
+    mobilePriority: "hidden",
     render: (value: unknown) => (
       <div className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-xl border bg-muted shadow-sm">
         {value ? (
@@ -24,6 +25,7 @@ export const seedColumns: Column<FarmSeedResponse>[] = [
   {
     key: "code",
     label: "Mã hạt giống",
+    mobilePriority: "secondary",
     render: (_, item) => (
       <Link href={`/seed/${item.id}`}>
         <span className="cursor-pointer hover:opacity-80">
@@ -35,6 +37,7 @@ export const seedColumns: Column<FarmSeedResponse>[] = [
   {
     key: "name",
     label: "Tên hạt giống",
+    mobilePriority: "primary",
     render: (_, item) => (
       <span className="text-sm font-bold text-foreground">
         {item.name || item.cropVariety?.name || ""}
@@ -44,6 +47,7 @@ export const seedColumns: Column<FarmSeedResponse>[] = [
   {
     key: "cropVariety",
     label: "Giống cây trồng",
+    mobilePriority: "secondary",
     render: (_, item) => (
       <div className="flex flex-col">
         <span className="text-xs font-semibold text-slate-700">
@@ -58,6 +62,7 @@ export const seedColumns: Column<FarmSeedResponse>[] = [
   {
     key: "supplier",
     label: "Nhà cung cấp",
+    mobilePriority: "secondary",
     render: (_, item) => (
       <span className="text-xs font-medium text-muted-foreground">
         {item.supplier?.name || ""}
@@ -67,6 +72,7 @@ export const seedColumns: Column<FarmSeedResponse>[] = [
   {
     key: "origin",
     label: "Xuất xứ",
+    mobilePriority: "secondary",
     render: (value: unknown) => (
       <span className="text-xs font-medium text-muted-foreground">
         {value as string}
@@ -76,6 +82,7 @@ export const seedColumns: Column<FarmSeedResponse>[] = [
   {
     key: "germinationRate",
     label: "Tỷ lệ nảy mầm",
+    mobilePriority: "badge",
     render: (value: unknown) => (
       <span className="font-semibold text-green-700">{value as number}%</span>
     ),
@@ -83,6 +90,7 @@ export const seedColumns: Column<FarmSeedResponse>[] = [
   {
     key: "purityRate",
     label: "Độ sạch",
+    mobilePriority: "secondary",
     render: (value: unknown) => (
       <span className="font-semibold text-green-700">{value as number}%</span>
     ),

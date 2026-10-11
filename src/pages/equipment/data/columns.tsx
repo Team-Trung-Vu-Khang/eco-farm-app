@@ -27,16 +27,19 @@ export const getEquipmentColumns = (
     {
       key: "code",
       label: "Mã",
+      mobilePriority: "secondary",
       render: (value) => <CodeBadge value={value} />,
     },
     {
       key: "sku",
       label: "Mã SKU",
+      mobilePriority: "hidden",
       render: (_, row: any) => <CodeBadge value={row.sku || row.code} />,
     },
     {
       key: "machineName",
       label: "Tên máy móc / thiết bị",
+      mobilePriority: "primary",
       render: (_, row: any) => {
         const modelName = row.profile?.model || row.model;
         return (
@@ -62,6 +65,7 @@ export const getEquipmentColumns = (
     cols.push({
       key: "source",
       label: "Nguồn",
+      mobilePriority: "secondary",
       render: (value) => (
         <Badge variant={value === "MASTER" ? "secondary" : "default"}>
           {value === "MASTER" ? "Hệ thống" : "Nội bộ"}
@@ -75,6 +79,7 @@ export const getEquipmentColumns = (
     {
       key: "machineType",
       label: "Loại máy / Nhóm thiết bị",
+      mobilePriority: "secondary",
       render: (_: any, row: any) => {
         const rawTypes = row.profile?.typeTags || row.machineType;
         const typesList = Array.isArray(rawTypes)
@@ -103,6 +108,7 @@ export const getEquipmentColumns = (
     {
       key: "technologyLevelId",
       label: "Phân loại chính",
+      mobilePriority: "secondary",
       render: (_: any, row: any) => {
         const techVal =
           row.classifications?.find(
@@ -144,6 +150,7 @@ export const getEquipmentColumns = (
     {
       key: "maintenanceSchedule",
       label: "Chu kỳ B.Dưỡng",
+      mobilePriority: "secondary",
       render: (_, row: any) => {
         const schedule =
           row.profile?.maintenanceSchedule ||
@@ -159,6 +166,7 @@ export const getEquipmentColumns = (
     {
       key: "status",
       label: "Trạng thái",
+      mobilePriority: "badge",
       render: (value: any) => (
         <Badge
           variant={

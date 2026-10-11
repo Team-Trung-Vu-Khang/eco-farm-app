@@ -63,6 +63,7 @@ export default function AhPesticidePage() {
       }
     >
       <DataTable
+        enableMobileCard
         columns={pesticideColumns(navigateToDetail)}
         data={pesticides}
         searchable

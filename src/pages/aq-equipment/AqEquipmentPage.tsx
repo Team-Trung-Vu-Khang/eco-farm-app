@@ -67,6 +67,7 @@ export default function AqEquipmentPage() {
       }
     >
       <DataTable
+        enableMobileCard
         columns={equipmentColumns({ onNameClick: navigateToDetail })}
         data={equipments}
         searchable

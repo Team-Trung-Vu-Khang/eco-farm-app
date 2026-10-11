@@ -1,6 +1,9 @@
 import { useEffect, type ReactNode } from "react";
 import { useLocation } from "wouter";
-import { MOBILE_HOME_PATH } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import {
+  MOBILE_HOME_PATH,
+  useMobileNavItems,
+} from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { isAcceptedMobileRoute } from "./mobileRouteUtils";
 
 export interface MobileRouteGuardProps {
@@ -15,7 +18,8 @@ export interface MobileRouteGuardProps {
  */
 export function MobileRouteGuard({ children }: MobileRouteGuardProps) {
   const [location, setLocation] = useLocation();
-  const isAccepted = isAcceptedMobileRoute(location);
+  const navItems = useMobileNavItems();
+  const isAccepted = isAcceptedMobileRoute(location, navItems);
 
   useEffect(() => {
     if (!isAccepted) {

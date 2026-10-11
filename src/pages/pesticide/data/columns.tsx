@@ -23,16 +23,19 @@ export const pesticideColumns = (
     {
       key: "code",
       label: "Mã",
+      mobilePriority: "secondary",
       render: (value) => <CodeBadge value={value} />,
     },
     {
       key: "sku",
       label: "Mã SKU",
+      mobilePriority: "hidden",
       render: (value) => <CodeBadge value={value} />,
     },
     {
       key: "name",
       label: "Tên thương mại",
+      mobilePriority: "primary",
       render: (value, row) => (
         <span
           className="font-medium text-primary cursor-pointer hover:underline"
@@ -48,6 +51,7 @@ export const pesticideColumns = (
     cols.push({
       key: "source",
       label: "Nguồn",
+      mobilePriority: "secondary",
       render: (value) => (
         <Badge variant={value === "MASTER" ? "secondary" : "default"}>
           {value === "MASTER" ? "Hệ thống" : "Nội bộ"}
@@ -61,6 +65,7 @@ export const pesticideColumns = (
     {
       key: "registrationNumber",
       label: "Số đăng ký",
+      mobilePriority: "secondary",
       render: (value) =>
         value ? (
           <span className="font-mono text-xs text-slate-600">{value}</span>
@@ -71,6 +76,7 @@ export const pesticideColumns = (
     {
       key: "group",
       label: "Nhóm phân loại",
+      mobilePriority: "secondary",
       render: (_, row) => {
         const type =
           row.domainCode === "LIVESTOCK"
@@ -118,6 +124,7 @@ export const pesticideColumns = (
     {
       key: "form",
       label: "Dạng bào chế",
+      mobilePriority: "secondary",
       render: (_, row) => {
         let val =
           row.metadataJson && typeof row.metadataJson === "object"
@@ -144,6 +151,7 @@ export const pesticideColumns = (
     {
       key: "toxicityLevel",
       label: "Nhóm độc (WHO)",
+      mobilePriority: "secondary",
       render: (_, row) => {
         let val = row.classifications?.find(
           (c: any) => c.classification === "toxicity",
@@ -178,6 +186,7 @@ export const pesticideColumns = (
     {
       key: "status",
       label: "Trạng thái",
+      mobilePriority: "badge",
       render: (value) => (
         <Badge variant={value === "active" ? "default" : "secondary"}>
           {value === "active" ? "Hoạt động" : "Không hoạt động"}

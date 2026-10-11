@@ -10,12 +10,18 @@ import { CodeBadge } from "@/components/CodeBadge";
 import { getPlanStatusBadge } from "../utils/status";
 
 export const planColumns: Column<Plan>[] = [
-  { key: "code", label: "Mã", render: (value) => <CodeBadge value={value} /> },
-  { key: "name", label: "Tên kế hoạch" },
-  { key: "seasonName", label: "Mùa vụ" },
+  {
+    key: "code",
+    label: "Mã",
+    mobilePriority: "secondary",
+    render: (value) => <CodeBadge value={value} />,
+  },
+  { key: "name", label: "Tên kế hoạch", mobilePriority: "primary" },
+  { key: "seasonName", label: "Mùa vụ", mobilePriority: "secondary" },
   {
     key: "crop",
     label: "Cây trồng",
+    mobilePriority: "secondary",
     render: (_, row) => (
       <span>
         {row.crop} {row.variety ? `- ${row.variety}` : ""}
@@ -25,10 +31,11 @@ export const planColumns: Column<Plan>[] = [
   {
     key: "status",
     label: "Trạng thái",
+    mobilePriority: "badge",
     render: (_, row) => getPlanStatusBadge(row.status),
   },
-  { key: "startDate", label: "Bắt đầu" },
-  { key: "endDate", label: "Kết thúc" },
+  { key: "startDate", label: "Bắt đầu", mobilePriority: "secondary" },
+  { key: "endDate", label: "Kết thúc", mobilePriority: "secondary" },
 ];
 
 export const planFilters = [

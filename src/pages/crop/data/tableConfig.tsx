@@ -22,6 +22,7 @@ export const COLUMNS: Column<Crop>[] = [
   {
     key: "code",
     label: "Mã cây",
+    mobilePriority: "badge",
     render: (value: string, item: Crop) => (
       <Link href={`/crop/${item.id}`}>
         <span className="text-green-600 hover:text-green-700 hover:underline cursor-pointer transition-colors">
@@ -33,6 +34,7 @@ export const COLUMNS: Column<Crop>[] = [
   {
     key: "illustration",
     label: "Hình ảnh",
+    mobilePriority: "hidden",
     render: (value: string | null) => (
       <div className="w-12 h-12 rounded-lg border bg-muted overflow-hidden flex items-center justify-center shrink-0">
         {value ? (
@@ -50,6 +52,7 @@ export const COLUMNS: Column<Crop>[] = [
   {
     key: "name",
     label: "Tên cây",
+    mobilePriority: "primary",
     render: (value: string) => (
       <div className="flex flex-col">
         <span className="font-bold text-foreground">{value}</span>
@@ -59,6 +62,7 @@ export const COLUMNS: Column<Crop>[] = [
   {
     key: "cropGroup",
     label: "Nhóm cây trồng",
+    mobilePriority: "secondary",
     render: (value: string) => (
       <span className="text-sm text-muted-foreground">{value}</span>
     ),
@@ -66,6 +70,7 @@ export const COLUMNS: Column<Crop>[] = [
   {
     key: "origin",
     label: "Nguồn gốc",
+    mobilePriority: "secondary",
     render: (_: any, item: Crop) => (
       <span className="text-sm text-foreground">
         {item.technicalSpecs?.origin || "---"}

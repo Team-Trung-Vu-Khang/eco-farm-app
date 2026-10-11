@@ -140,6 +140,7 @@ export default function PlanGrowthPage({
         />
 
         <DataTable
+          enableMobileCard
           columns={columns}
           data={workflowRows}
           loading={loading}

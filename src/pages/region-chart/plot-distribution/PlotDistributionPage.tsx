@@ -42,6 +42,7 @@ const PlotDistributionPage = () => {
       }
     >
       <DataTable
+        enableMobileCard
         columns={columns}
         data={plots}
         loading={isLoading}

@@ -101,6 +101,7 @@ function App() {
             <MobileAppLayout
               // headerActions={<NotificationBell />}
               ignoredHeaderRoutes={["/", "/home"]}
+              extraExcludedPaths={["/diary", "/history"]}
             >
               {content}
             </MobileAppLayout>

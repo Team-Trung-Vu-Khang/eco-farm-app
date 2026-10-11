@@ -43,6 +43,7 @@ export default function PlanPage() {
         />
 
         <DataTable
+          enableMobileCard
           columns={planColumns}
           data={plans}
           onView={(item) => goToView(item.id)}

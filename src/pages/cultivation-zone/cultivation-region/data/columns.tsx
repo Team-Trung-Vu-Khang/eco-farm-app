@@ -28,6 +28,7 @@ export const getCultivationRegionColumns = (
     {
       key: "code",
       label: "Mã",
+      mobilePriority: "secondary",
       render: (_, row) => (
         <Link href={`/cultivation-region/${row.id}`}>
           <CodeBadge value={row.code || `#${row.id}`} />
@@ -37,11 +38,13 @@ export const getCultivationRegionColumns = (
     {
       key: "name",
       label: "Tên vùng canh tác",
+      mobilePriority: "primary",
       render: (value) => <span className="font-medium">{value as string}</span>,
     },
     {
       key: "scopes",
       label: "Phạm vi",
+      mobilePriority: "secondary",
       render: (value) => {
         const scopes = value as FarmCultivationZoneScopeResponse[] | undefined;
         if (!scopes || scopes.length === 0)
@@ -76,30 +79,10 @@ export const getCultivationRegionColumns = (
         );
       },
     },
-    // {
-    //   key: "certificates",
-    //   label: "Chứng nhận",
-    //   render: (value) => {
-    //     const certs = value as CatalogRef[] | undefined;
-    //     if (!certs || certs.length === 0) return null;
-    //     return (
-    //       <div className="flex flex-wrap gap-1">
-    //         {certs.map((cert) => (
-    //           <Badge
-    //             key={cert.id}
-    //             variant="secondary"
-    //             className="bg-blue-50 text-blue-700 hover:bg-blue-100"
-    //           >
-    //             {cert.name}
-    //           </Badge>
-    //         ))}
-    //       </div>
-    //     );
-    //   },
-    // },
     {
       key: "status",
       label: "Trạng thái",
+      mobilePriority: "badge",
       render: (value, row) => {
         const status = value as string;
         const isActive = status === "active";

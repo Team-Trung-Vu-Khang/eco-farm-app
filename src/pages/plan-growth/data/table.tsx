@@ -69,6 +69,7 @@ export function createPlanGrowthColumns({
     {
       key: "code",
       label: "Mã",
+      mobilePriority: "secondary",
       render: (value) => (
         <span className="font-mono text-xs font-semibold text-slate-500">
           {value as string}
@@ -78,6 +79,7 @@ export function createPlanGrowthColumns({
     {
       key: "name",
       label: "Kế hoạch",
+      mobilePriority: "primary",
       render: (value, item) => (
         <div className="space-y-1">
           <div className="font-semibold text-slate-900">{value as string}</div>
@@ -90,6 +92,7 @@ export function createPlanGrowthColumns({
     {
       key: "createdAt",
       label: "Thời gian khởi tạo",
+      mobilePriority: "secondary",
       render: (value) => (
         <div className="flex items-center gap-2 text-xs text-slate-600">
           <Clock className="h-3.5 w-3.5 text-slate-400" />
@@ -100,6 +103,7 @@ export function createPlanGrowthColumns({
     {
       key: "endDate",
       label: "Thời gian triển khai dự kiến",
+      mobilePriority: "secondary",
       render: (_, item) => (
         <Badge
           variant="outline"
@@ -112,6 +116,7 @@ export function createPlanGrowthColumns({
     {
       key: "zone",
       label: "Vùng trồng",
+      mobilePriority: "secondary",
       render: (_, item) => (
         <div className="flex items-center gap-2">
           <Layers className="h-3.5 w-3.5 text-emerald-500" />
@@ -124,6 +129,7 @@ export function createPlanGrowthColumns({
     {
       key: "status",
       label: "Trạng thái",
+      mobilePriority: "badge",
       render: (_, row) => getPlanStatusBadge(row.status),
     },
     {
@@ -144,7 +150,7 @@ export function createPlanGrowthColumns({
           <DropdownMenuContent align="end" className="min-w-44">
             <DropdownMenuItem onClick={() => onView(item)}>
               <Eye className="mr-2 h-4 w-4" />
-              Xem chi tiết
+              Chi tiết
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => onEdit(item)}>
               <PencilLine className="mr-2 h-4 w-4" />
@@ -192,6 +198,7 @@ export function createWorkflowColumns({
     {
       key: "name",
       label: "Sơ đồ quy trình",
+      mobilePriority: "primary",
       render: (value, item) => (
         <div className="space-y-1">
           <div className="font-semibold text-slate-900">{value as string}</div>
@@ -204,6 +211,7 @@ export function createWorkflowColumns({
     {
       key: "totalCount",
       label: "Số lượng kế hoạch",
+      mobilePriority: "badge",
       render: (value) => (
         <div className="flex items-center gap-2">
           <Layers className="h-3.5 w-3.5 text-slate-500" />
@@ -216,6 +224,7 @@ export function createWorkflowColumns({
     {
       key: "activeCount",
       label: "Đang triển khai",
+      mobilePriority: "secondary",
       render: (value) => (
         <div className="flex items-center gap-2">
           <Calendar className="h-3.5 w-3.5 text-blue-500" />
@@ -228,6 +237,7 @@ export function createWorkflowColumns({
     {
       key: "draftCount",
       label: "Theo trạng thái",
+      mobilePriority: "secondary",
       render: (_, item) => (
         <div className="flex flex-wrap gap-1.5">
           {item.draftCount > 0 && (

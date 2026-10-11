@@ -7,11 +7,13 @@ export const varietyColumns: Column<Variety>[] = [
   {
     key: "varietyCode",
     label: "Mã giống",
+    mobilePriority: "badge",
     render: (value: string) => <CodeBadge value={value} />,
   },
   {
     key: "illustration",
     label: "Hình ảnh",
+    mobilePriority: "hidden",
     render: (value: string | File | null) => (
       <div className="w-20 h-20 rounded-xl bg-muted flex items-center justify-center overflow-hidden border shadow-sm">
         {value ? (
@@ -29,6 +31,7 @@ export const varietyColumns: Column<Variety>[] = [
   {
     key: "varietyName",
     label: "Tên giống cây",
+    mobilePriority: "primary",
     render: (value: string) => (
       <span className="font-semibold text-foreground">{value}</span>
     ),
@@ -36,6 +39,7 @@ export const varietyColumns: Column<Variety>[] = [
   {
     key: "crop",
     label: "Cây trồng",
+    mobilePriority: "secondary",
     render: (value: string) => (
       <div className="flex items-center gap-2">
         <Leaf className="w-4 h-4 text-green-600" />
@@ -46,6 +50,7 @@ export const varietyColumns: Column<Variety>[] = [
   {
     key: "description",
     label: "Mô tả",
+    mobilePriority: "secondary",
     render: (value: string) => (
       <p className="text-xs text-muted-foreground line-clamp-3 max-w-[300px]">
         {value}

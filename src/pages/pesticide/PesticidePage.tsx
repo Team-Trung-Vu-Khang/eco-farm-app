@@ -62,6 +62,7 @@ export default function PesticidePage() {
       }
     >
       <DataTable
+        enableMobileCard
         columns={pesticideColumns(navigateToDetail, scope as "farm" | "admin")}
         data={pesticides}
         searchable

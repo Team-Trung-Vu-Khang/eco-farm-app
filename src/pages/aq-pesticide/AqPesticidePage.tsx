@@ -63,6 +63,7 @@ export default function AqPesticidePage() {
       }
     >
       <DataTable
+        enableMobileCard
         columns={pesticideColumns(navigateToDetail)}
         data={pesticides}
         searchable

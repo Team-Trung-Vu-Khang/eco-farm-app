@@ -44,6 +44,7 @@ export default function SeedPage() {
       }
     >
       <DataTable
+        enableMobileCard
         columns={seedColumns}
         data={seeds}
         selectable={false}

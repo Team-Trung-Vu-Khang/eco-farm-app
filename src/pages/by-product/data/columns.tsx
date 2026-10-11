@@ -15,16 +15,19 @@ export const getByProductColumns = (
     {
       key: "code",
       label: "Mã",
+      mobilePriority: "secondary",
       render: (value) => <CodeBadge value={value} />,
     },
     {
       key: "sku",
       label: "Mã SKU",
+      mobilePriority: "hidden",
       render: (value) => <CodeBadge value={value} />,
     },
     {
       key: "name",
       label: "Tên phụ phẩm",
+      mobilePriority: "primary",
       render: (value, row) => (
         <div>
           <span
@@ -47,6 +50,7 @@ export const getByProductColumns = (
     cols.push({
       key: "source",
       label: "Nguồn",
+      mobilePriority: "secondary",
       render: (value) => {
         const source = value ?? "OWNER";
         return (
@@ -63,6 +67,7 @@ export const getByProductColumns = (
     {
       key: "registrationNumber",
       label: "Số đăng ký",
+      mobilePriority: "secondary",
       render: (val) => (
         <span className="font-mono text-xs">{(val as string) || "—"}</span>
       ),
@@ -70,9 +75,11 @@ export const getByProductColumns = (
     {
       key: "classifications",
       label: "Phân loại",
+      mobilePriority: "secondary",
       render: (_, row) => {
         const groups =
-          row.classifications?.map((c: any) => c.group?.name).filter(Boolean) || [];
+          row.classifications?.map((c: any) => c.group?.name).filter(Boolean) ||
+          [];
 
         return (
           <div className="flex flex-wrap gap-1 max-w-[200px]">
@@ -96,14 +103,18 @@ export const getByProductColumns = (
     {
       key: "detailedComposition",
       label: "Thành phần",
+      mobilePriority: "secondary",
       render: (val, row) => {
         const comp = val || row.profile?.detailedComposition || "—";
-        return <span className="text-xs max-w-[200px] truncate block">{comp}</span>;
+        return (
+          <span className="text-xs max-w-[200px] truncate block">{comp}</span>
+        );
       },
     },
     {
       key: "targetSubjects",
       label: "Đối tượng áp dụng",
+      mobilePriority: "secondary",
       render: (_, row) => {
         const subjects = row.targetSubjects?.map((s: any) => s.name) || [];
         return subjects.length > 0 ? (
@@ -126,6 +137,7 @@ export const getByProductColumns = (
     {
       key: "packagingVariants",
       label: "Đóng gói / Đơn vị",
+      mobilePriority: "secondary",
       render: (_, row) => {
         const specs =
           row.packagingVariants
@@ -146,6 +158,7 @@ export const getByProductColumns = (
     {
       key: "certificates",
       label: "Chứng nhận",
+      mobilePriority: "secondary",
       render: (_, row) => {
         const certs =
           row.certificates?.map(
@@ -172,6 +185,7 @@ export const getByProductColumns = (
     {
       key: "referencePrice",
       label: "Giá tham khảo",
+      mobilePriority: "secondary",
       render: (val) => {
         if (!val)
           return <span className="text-muted-foreground text-xs">—</span>;
@@ -187,6 +201,7 @@ export const getByProductColumns = (
     {
       key: "status",
       label: "Trạng thái",
+      mobilePriority: "badge",
       render: (value) => (
         <Badge
           variant={value === "active" ? "default" : "secondary"}

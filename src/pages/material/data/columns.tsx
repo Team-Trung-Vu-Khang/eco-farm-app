@@ -15,16 +15,19 @@ export const materialColumns = (
     {
       key: "code",
       label: "Mã",
+      mobilePriority: "secondary",
       render: (value) => <CodeBadge value={value} />,
     },
     {
       key: "sku",
       label: "Mã SKU",
+      mobilePriority: "hidden",
       render: (value) => <CodeBadge value={value} />,
     },
     {
       key: "name",
       label: "Tên vật tư",
+      mobilePriority: "primary",
       render: (value, row) => (
         <span
           className="cursor-pointer font-medium text-primary hover:underline"
@@ -40,6 +43,7 @@ export const materialColumns = (
     cols.push({
       key: "source",
       label: "Nguồn",
+      mobilePriority: "secondary",
       render: (value) => (
         <Badge variant={value === "MASTER" ? "secondary" : "default"}>
           {value === "MASTER" ? "Hệ thống" : "Nội bộ"}
@@ -53,6 +57,7 @@ export const materialColumns = (
     {
       key: "technologyLevelId",
       label: "Phân loại kỹ thuật",
+      mobilePriority: "secondary",
       render: (_, row) => {
         const apiTechs =
           row.classifications
@@ -123,6 +128,7 @@ export const materialColumns = (
     {
       key: "description",
       label: "Mô tả",
+      mobilePriority: "secondary",
       render: (value) => (
         <span className="inline-block max-w-[200px] truncate">
           {value as string}
@@ -132,6 +138,7 @@ export const materialColumns = (
     {
       key: "status",
       label: "Trạng thái",
+      mobilePriority: "badge",
       render: (value) => (
         <Badge variant={value === "active" ? "default" : "secondary"}>
           {value === "active" ? "Hoạt động" : "Không hoạt động"}

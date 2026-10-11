@@ -38,6 +38,7 @@ const AreaDistributionPage = () => {
       }
     >
       <DataTable
+        enableMobileCard
         data={areas}
         columns={columns}
         loading={isLoading}

@@ -63,6 +63,7 @@ export default function AhMaterialPage() {
       }
     >
       <DataTable
+        enableMobileCard
         columns={materialColumns(navigateToDetail)}
         data={materials}
         searchable

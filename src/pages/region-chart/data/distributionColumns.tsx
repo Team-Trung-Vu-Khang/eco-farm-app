@@ -12,18 +12,20 @@ export function createRegionDistributionColumns(
     {
       key: "code",
       label: "Mã vùng",
+      mobilePriority: "secondary",
       render: (value, row) => (
         <button type="button" onClick={() => onOpenDetail(row.id)}>
           <CodeBadge value={value} />
         </button>
       ),
     },
-    { key: "name", label: "Tên vùng" },
-    { key: "area", label: "Diện tích (ha)" },
+    { key: "name", label: "Tên vùng", mobilePriority: "primary" },
+    { key: "area", label: "Diện tích (ha)", mobilePriority: "secondary" },
     {
       key: "address",
       label: "Địa chỉ",
       width: "360px",
+      mobilePriority: "secondary",
       render: (value) => {
         const address = (value as string) || "-";
         return (
@@ -36,6 +38,7 @@ export function createRegionDistributionColumns(
     {
       key: "status",
       label: "Trạng thái",
+      mobilePriority: "badge",
       render: (value) => {
         return (
           <RegionChartStatusBadge status={value as "active" | "inactive"} />
@@ -52,22 +55,25 @@ export function createAreaDistributionColumns(
     {
       key: "code",
       label: "Mã khu vực",
+      mobilePriority: "secondary",
       render: (value, row) => (
         <button type="button" onClick={() => onOpenDetail(row.id)}>
           <CodeBadge value={value} />
         </button>
       ),
     },
-    { key: "name", label: "Tên khu vực" },
+    { key: "name", label: "Tên khu vực", mobilePriority: "primary" },
     {
       key: "region",
       label: "Thuộc vùng",
+      mobilePriority: "secondary",
       render: (_, row) => row.region?.name || "-",
     },
-    { key: "acreage", label: "Diện tích (ha)" },
+    { key: "acreage", label: "Diện tích (ha)", mobilePriority: "secondary" },
     {
       key: "status",
       label: "Trạng thái",
+      mobilePriority: "badge",
       render: (value) => {
         return (
           <RegionChartStatusBadge status={value as "active" | "inactive"} />
@@ -84,16 +90,17 @@ export function createPlotDistributionColumns(
     {
       key: "code",
       label: "Mã lô",
+      mobilePriority: "secondary",
       render: (value, row) => (
         <button type="button" onClick={() => onOpenDetail(row.id)}>
           <CodeBadge value={value} />
         </button>
       ),
     },
-    { key: "name", label: "Tên lô" },
-    { key: "area", label: "Diện tích (ha)" },
-    { key: "contour", label: "Đường bình độ" },
-    { key: "altitude", label: "Độ cao (m)" },
+    { key: "name", label: "Tên lô", mobilePriority: "primary" },
+    { key: "area", label: "Diện tích (ha)", mobilePriority: "secondary" },
+    { key: "contour", label: "Đường bình độ", mobilePriority: "secondary" },
+    { key: "altitude", label: "Độ cao (m)", mobilePriority: "secondary" },
   ];
 }
 
@@ -109,6 +116,7 @@ export function createPlotDistributionRichColumns(
     {
       key: "code",
       label: "Mã lô",
+      mobilePriority: "secondary",
       render: (value, row) => (
         <button type="button" onClick={() => onOpenDetail(row.id)}>
           <CodeBadge value={value} />
@@ -118,6 +126,7 @@ export function createPlotDistributionRichColumns(
     {
       key: "name",
       label: "Tên lô",
+      mobilePriority: "primary",
       render: (value) => (
         <div className="flex items-center gap-2">
           <Trees className="h-4 w-4 text-green-600" />
@@ -128,6 +137,7 @@ export function createPlotDistributionRichColumns(
     {
       key: "regionName",
       label: "Vùng trồng",
+      mobilePriority: "secondary",
       render: (value) => (
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <MapPinned className="h-4 w-4 text-primary" />
@@ -138,6 +148,7 @@ export function createPlotDistributionRichColumns(
     {
       key: "areaName",
       label: "Khu vực",
+      mobilePriority: "badge",
       render: (value) => (
         <span className="rounded-full bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-700">
           {value as string}
@@ -147,6 +158,7 @@ export function createPlotDistributionRichColumns(
     {
       key: "area",
       label: "Diện tích (ha)",
+      mobilePriority: "secondary",
       render: (value) => (
         <div className="flex items-center gap-1.5 text-sm font-medium">
           <Ruler className="h-4 w-4 text-emerald-600" />
@@ -157,6 +169,7 @@ export function createPlotDistributionRichColumns(
     {
       key: "altitude",
       label: "Độ cao",
+      mobilePriority: "secondary",
       render: (value) => (
         <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
           <Mountain className="h-4 w-4 text-slate-500" />
@@ -167,6 +180,7 @@ export function createPlotDistributionRichColumns(
     {
       key: "contour",
       label: "Đường bình độ",
+      mobilePriority: "secondary",
       render: (value) => (
         <span className="text-sm text-muted-foreground">
           {(value as string) || "-"}

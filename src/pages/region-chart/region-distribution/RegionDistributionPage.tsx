@@ -38,6 +38,7 @@ const RegionDistributionPage = () => {
       }
     >
       <DataTable
+        enableMobileCard
         columns={columns}
         data={regions}
         loading={isLoading}

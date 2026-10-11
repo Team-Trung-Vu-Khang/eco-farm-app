@@ -66,6 +66,7 @@ export default function AhEquipmentPage() {
       }
     >
       <DataTable
+        enableMobileCard
         columns={equipmentColumns({ onNameClick: navigateToDetail })}
         data={equipments}
         searchable
