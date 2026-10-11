@@ -14,6 +14,7 @@ import {
 
 import { getUserLogoText } from "../utils/user-logo.util";
 import { NotificationBell } from "@/layouts/mobile/NotificationBell";
+import { formatAppWorkspaceFeatureName } from "@/shared/constants/workspace.constants";
 
 interface HeroWorkspaceSectionProps {
   onOpenWorkspacePicker?: () => void;
@@ -66,10 +67,14 @@ export function HeroWorkspaceSection({
   const rawName = workspaceData?.name?.trim();
   const isPhoneName = rawName && /^(\+?84|0)\d+$/.test(rawName);
 
-  const farmTitle =
+  const rawFarmName =
     rawMetaName ||
     rawBrandName ||
-    (!isPhoneName && rawName ? rawName : "MEVI Farm");
+    (!isPhoneName && rawName ? rawName : undefined);
+
+  const farmTitle = rawFarmName
+    ? formatAppWorkspaceFeatureName(rawFarmName, "farm")
+    : formatAppWorkspaceFeatureName("MEVI", "farm");
 
   const totalAcreage =
     typeof workspaceData?.totalAcreage === "number" &&

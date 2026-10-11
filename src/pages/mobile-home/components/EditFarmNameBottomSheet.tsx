@@ -16,6 +16,10 @@ import {
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Loader2, Sprout } from "lucide-react";
+import {
+  APP_WORKSPACE_FEATURE_PREFIXES,
+  stripAppWorkspaceFeaturePrefix,
+} from "@/shared/constants/workspace.constants";
 
 interface EditFarmNameBottomSheetProps {
   open: boolean;
@@ -40,13 +44,13 @@ export function EditFarmNameBottomSheet({
       const currentName =
         ((workspaceData.metadataJson as Record<string, unknown>)
           ?.farmDisplayName as string) || "";
-      setName(currentName.trim());
+      setName(stripAppWorkspaceFeaturePrefix(currentName, "farm"));
     }
   }, [open, workspaceData]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const trimmed = name.trim();
+    const trimmed = stripAppWorkspaceFeaturePrefix(name.trim(), "farm");
     if (!trimmed) {
       toast.error("Vui lòng nhập tên nông trại / nông hộ");
       return;
@@ -138,15 +142,20 @@ export function EditFarmNameBottomSheet({
             >
               Tên nông trại hiển thị
             </label>
-            <input
-              id="farm-name-input"
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Ví dụ: MEVI Farm Tây Ninh, Vườn Bác Ba..."
-              className="w-full h-12 px-4 rounded-xl border border-slate-200 bg-slate-50 text-base text-slate-900 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all font-medium"
-              autoFocus
-            />
+            <div className="flex rounded-xl border border-slate-200 bg-slate-50 focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20 focus-within:bg-white overflow-hidden transition-all">
+              <div className="flex items-center px-3.5 bg-slate-100/90 border-r border-slate-200 text-sm font-bold text-slate-700 select-none shrink-0">
+                {APP_WORKSPACE_FEATURE_PREFIXES.farm}
+              </div>
+              <input
+                id="farm-name-input"
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Ví dụ: Của Khang, Ba Tri..."
+                className="w-full h-12 px-3.5 bg-transparent text-base text-slate-900 placeholder:text-slate-400 focus:outline-none font-medium"
+                autoFocus
+              />
+            </div>
           </div>
 
           <div className="flex gap-2 pt-2">

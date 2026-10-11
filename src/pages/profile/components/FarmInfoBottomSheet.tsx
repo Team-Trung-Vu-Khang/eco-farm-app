@@ -21,6 +21,10 @@ import {
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Building2, Check, Loader2, Sprout } from "lucide-react";
+import {
+  APP_WORKSPACE_FEATURE_PREFIXES,
+  stripAppWorkspaceFeaturePrefix,
+} from "@/shared/constants/workspace.constants";
 
 interface FarmInfoBottomSheetProps {
   open: boolean;
@@ -44,10 +48,15 @@ export function FarmInfoBottomSheet({
         ?.farmDisplayName as string
     )?.trim() ||
     workspaceData?.name ||
-    "MEVI Farm";
+    "";
+
+  const cleanCurrentFarmName = stripAppWorkspaceFeaturePrefix(
+    currentFarmName,
+    "farm",
+  );
 
   const [customName, setCustomName] = useState<string | null>(null);
-  const name = customName ?? currentFarmName;
+  const name = customName ?? cleanCurrentFarmName;
   const [isSaving, setIsSaving] = useState(false);
 
   const handleClose = () => {
@@ -57,7 +66,11 @@ export function FarmInfoBottomSheet({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const trimmed = name.trim() || "MEVI Farm";
+    const trimmed = stripAppWorkspaceFeaturePrefix(name.trim(), "farm");
+    if (!trimmed) {
+      toast.error("Vui lòng nhập tên nông trại / nông hộ");
+      return;
+    }
 
     if (!selectedWorkspaceId) {
       toast.error("Không tìm thấy thông tin đơn vị làm việc");
@@ -160,16 +173,21 @@ export function FarmInfoBottomSheet({
               htmlFor="farm-display-name-input"
               className="text-xs font-semibold text-slate-700"
             >
-              Tên Farm hiển thị
+              Tên Nông trại hiển thị
             </Label>
-            <input
-              id="farm-display-name-input"
-              type="text"
-              value={name}
-              onChange={(e) => setCustomName(e.target.value)}
-              placeholder="MEVI Farm"
-              className="w-full h-12 px-4 rounded-xl border border-slate-200 bg-slate-50 text-base text-slate-900 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 transition-all font-medium"
-            />
+            <div className="flex rounded-xl border border-slate-200 bg-slate-50 focus-within:border-emerald-600 focus-within:ring-2 focus-within:ring-emerald-500/20 focus-within:bg-white overflow-hidden transition-all">
+              <div className="flex items-center px-3.5 bg-slate-100/90 border-r border-slate-200 text-sm font-bold text-slate-700 select-none shrink-0">
+                {APP_WORKSPACE_FEATURE_PREFIXES.farm}
+              </div>
+              <input
+                id="farm-display-name-input"
+                type="text"
+                value={name}
+                onChange={(e) => setCustomName(e.target.value)}
+                placeholder="Ví dụ: Của Khang, Ba Tri..."
+                className="w-full h-12 px-3.5 bg-transparent text-base text-slate-900 placeholder:text-slate-400 focus:outline-none font-medium"
+              />
+            </div>
             <p className="text-[11px] text-slate-500">
               Mặc định là{" "}
               <span className="font-semibold text-emerald-700">MEVI Farm</span>.

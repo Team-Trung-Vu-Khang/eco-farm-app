@@ -13,6 +13,7 @@ import {
 } from "@/features/workspace";
 import { useDebounce } from "@/shared/hooks/useDebounce";
 import { Building2, Check, Loader2, MapPin, Search } from "lucide-react";
+import { formatAppWorkspaceFeatureName } from "@/shared/constants/workspace.constants";
 
 interface WorkspacePickerBottomSheetProps {
   open: boolean;
@@ -21,7 +22,7 @@ interface WorkspacePickerBottomSheetProps {
 
 /**
  * Lấy tên hiển thị của Workspace:
- * - Ưu tiên 1: Tên farm (từ metadataJson.farmDisplayName hoặc brandName)
+ * - Ưu tiên 1: Tên farm (từ metadataJson.farmDisplayName hoặc brandName) có prefix
  * - Nếu không có tên farm: Tên chủ farm (SĐT), ví dụ: Khang (84975862265)
  */
 function getWorkspaceDisplayName(item: WorkspaceRecord): string {
@@ -30,7 +31,7 @@ function getWorkspaceDisplayName(item: WorkspaceRecord): string {
     (meta?.farmDisplayName as string)?.trim() || item.brandName?.trim();
 
   if (farmName) {
-    return farmName;
+    return formatAppWorkspaceFeatureName(farmName, "farm");
   }
 
   // Không có tên farm -> Lấy tên chủ farm và số điện thoại
@@ -50,7 +51,7 @@ function getWorkspaceDisplayName(item: WorkspaceRecord): string {
     return phone;
   }
 
-  return item.name?.trim() || "Nông trại";
+  return item.name?.trim() || formatAppWorkspaceFeatureName(undefined, "farm");
 }
 
 export function WorkspacePickerBottomSheet({

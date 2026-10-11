@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 
 import { getUserLogoText } from "@/pages/mobile-home/utils/user-logo.util";
+import { formatAppWorkspaceFeatureName } from "@/shared/constants/workspace.constants";
 import { ProfileMenuItem } from "./components/ProfileMenuItem";
 import { PersonalInfoBottomSheet } from "./components/PersonalInfoBottomSheet";
 import { FarmInfoBottomSheet } from "./components/FarmInfoBottomSheet";
@@ -37,14 +38,15 @@ export default function ProfilePage() {
   const displayName = currentUser?.fullName || "Người dùng";
   const logoText = getUserLogoText(displayName);
 
-  // Tên farm mặc định "MEVI Farm"
-  const farmDisplayName =
+  const rawFarmName =
     (
       (workspaceData?.metadataJson as Record<string, unknown>)
         ?.farmDisplayName as string
-    )?.trim() ||
-    workspaceData?.name ||
-    "MEVI Farm";
+    )?.trim() || workspaceData?.name;
+
+  const farmDisplayName = rawFarmName
+    ? formatAppWorkspaceFeatureName(rawFarmName, "farm")
+    : formatAppWorkspaceFeatureName("MEVI", "farm");
 
   return (
     <div className="space-y-4 pb-12">

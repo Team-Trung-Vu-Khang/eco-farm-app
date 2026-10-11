@@ -1,6 +1,7 @@
 import { useRegions } from "@/features/farm/hooks/useRegions";
 import { useSelectedWorkspaceId, useWorkspaceById } from "@/features/workspace";
 import { LayoutGrid, MapPin, Maximize2, Pencil, Sprout } from "lucide-react";
+import { formatAppWorkspaceFeatureName } from "@/shared/constants/workspace.constants";
 
 interface FarmSummaryCardProps {
   onOpenEditName?: () => void;
@@ -18,14 +19,17 @@ export function FarmSummaryCard({ onOpenEditName }: FarmSummaryCardProps) {
   });
   const totalGardens = regionsResponse?.totalElements ?? 0;
 
-  const farmTitle =
+  const rawFarmName =
     (
       (workspaceData?.metadataJson as Record<string, unknown>)
         ?.farmDisplayName as string
     )?.trim() ||
     workspaceData?.brandName?.trim() ||
-    workspaceData?.name?.trim() ||
-    "MEVI Farm";
+    workspaceData?.name?.trim();
+
+  const farmTitle = rawFarmName
+    ? formatAppWorkspaceFeatureName(rawFarmName, "farm")
+    : formatAppWorkspaceFeatureName("MEVI", "farm");
 
   const totalAcreage =
     typeof workspaceData?.totalAcreage === "number" &&

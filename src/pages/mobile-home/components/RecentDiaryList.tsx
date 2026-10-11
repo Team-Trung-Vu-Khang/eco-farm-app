@@ -1,14 +1,7 @@
 import { useFarmDailyDiaryEntries } from "@/features/farm-daily-diary";
-import { getPurposeVisual } from "@/pages/diary/constants/history-form.constants";
-import { FARM_PLAN_PURPOSE_LABELS } from "@/shared/constants/farm.constants";
+import { MobileDiaryCard } from "@/shared/components";
 import dayjs from "dayjs";
-import {
-  AlertTriangle,
-  Camera,
-  ChevronRight,
-  Loader2,
-  NotebookPen,
-} from "lucide-react";
+import { ChevronRight, Loader2, NotebookPen } from "lucide-react";
 import { Link } from "wouter";
 
 const RECENT_DIARY_LIMIT = 5;
@@ -53,78 +46,15 @@ export function RecentDiaryList() {
           </Link>
         </div>
       ) : (
-        <ul className="space-y-2.5">
-          {entries.map((entry) => {
-            const visual = getPurposeVisual(entry.purpose);
-            const VisualIcon = visual.Icon;
-            const purposeLabel =
-              FARM_PLAN_PURPOSE_LABELS[entry.purpose] || entry.purpose;
-            const taskSpecificName = entry.lines?.[0]?.name;
-            const title = purposeLabel;
-            const timeFormatted = dayjs(entry.createdAt).format(
-              "HH:mm · DD/MM/YYYY",
-            );
-            const isWarning = Boolean(entry.warning);
-
-            return (
-              <li key={entry.id}>
-                <Link
-                  href={`/diary/update/${entry.id}`}
-                  className="flex items-center gap-3.5 rounded-2xl border border-slate-200/80 bg-white p-3.5 shadow-2xs hover:border-primary/40 active:bg-slate-50 transition-all group"
-                >
-                  {/* 1. Icon thể hiện loại công việc ở đầu */}
-                  <div
-                    className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl ${visual.bg} ${visual.text} border ${visual.border}`}
-                  >
-                    <VisualIcon className="h-5 w-5" />
-                  </div>
-
-                  {/* 2. Tiếp theo là tên loại công việc, bên dưới là thời gian */}
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2">
-                      <p className="truncate text-sm font-bold text-slate-900 group-hover:text-primary transition-colors">
-                        {title}
-                      </p>
-                      {/* Nếu nhật ký đó warning === true thì thêm badge thể hiện để user biết */}
-                      {isWarning && (
-                        <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-rose-50 px-2 py-0.5 text-[10px] font-bold text-rose-600 border border-rose-200/80">
-                          <AlertTriangle className="h-3 w-3" />
-                          Cảnh báo
-                        </span>
-                      )}
-                    </div>
-
-                    <div className="flex items-center gap-2 mt-0.5 text-xs text-slate-500">
-                      <span className="font-medium text-slate-500 truncate">
-                        {timeFormatted}
-                      </span>
-                      {/* {taskSpecificName && taskSpecificName !== title && (
-                        <>
-                          <span className="text-slate-300">·</span>
-                          <span className="truncate text-slate-600">
-                            {taskSpecificName}
-                          </span>
-                        </>
-                      )} */}
-                      {entry.photos && entry.photos.length > 0 && (
-                        <>
-                          <span className="text-slate-300">·</span>
-                          <span className="inline-flex shrink-0 items-center gap-0.5 text-[11px] text-slate-400">
-                            <Camera className="h-3 w-3" />
-                            {entry.photos.length}
-                          </span>
-                        </>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* 3. Mũi tên điều hướng */}
-                  <ChevronRight className="h-4 w-4 shrink-0 text-slate-400 group-hover:translate-x-0.5 group-hover:text-primary transition-all" />
-                </Link>
-              </li>
-            );
-          })}
-        </ul>
+        <div className="space-y-2.5">
+          {entries.map((entry) => (
+            <MobileDiaryCard
+              key={entry.id}
+              entry={entry}
+              actionType="chevron"
+            />
+          ))}
+        </div>
       )}
     </section>
   );

@@ -5,3 +5,4 @@ export type {
   RegionOption,
 } from "./GeographicalSelector/types";
 export type { GeographicalSelectorProps } from "./GeographicalSelector/index";
+export { MobileDiaryCard, type MobileDiaryCardProps } from "./MobileDiaryCard";

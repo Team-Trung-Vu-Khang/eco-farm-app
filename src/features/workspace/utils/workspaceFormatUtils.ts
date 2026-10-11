@@ -1,3 +1,9 @@
+import {
+  formatAppWorkspaceFeatureName,
+  type WorkspaceFeatureType,
+  type FormatWorkspaceFeatureNameOptions,
+} from "@/shared/constants/workspace.constants";
+
 export function formatWorkspaceDisplayName({
   facilityName,
   ownerName,
@@ -34,15 +40,24 @@ export function formatWorkspaceLabel(
     metadataJson?: Record<string, unknown> | null;
   } | null,
   fallback = "Đơn vị",
+  feature: WorkspaceFeatureType = "farm",
+  options?: FormatWorkspaceFeatureNameOptions,
 ): string {
   if (!workspace) return fallback;
 
   const meta = workspace.metadataJson;
-  const facilityName =
+  const rawFacilityName =
+    (feature === "factory"
+      ? (meta?.factoryDisplayName as string)?.trim()
+      : (meta?.farmDisplayName as string)?.trim()) ||
     (meta?.farmDisplayName as string)?.trim() ||
     (meta?.factoryDisplayName as string)?.trim() ||
     workspace.brandName?.trim() ||
     workspace.name?.trim();
+
+  const facilityName = rawFacilityName
+    ? formatAppWorkspaceFeatureName(rawFacilityName, feature, options)
+    : undefined;
 
   const ownerName =
     workspace.owner?.fullName ||
