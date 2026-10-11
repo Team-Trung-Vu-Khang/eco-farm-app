@@ -61,6 +61,7 @@ export function FertilizerGroupTabContent({
       </div>
 
       <DataTable
+        enableMobileCard
         columns={fertilizerGroupColumns}
         data={data}
         searchable

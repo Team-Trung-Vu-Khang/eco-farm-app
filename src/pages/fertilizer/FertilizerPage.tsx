@@ -64,6 +64,7 @@ export default function FertilizerPage() {
       }
     >
       <DataTable
+        enableMobileCard
         columns={fertilizerColumns(navigateToDetail, scope as "farm" | "admin")}
         data={fertilizers}
         pageSize={pageSize}
@@ -98,7 +99,6 @@ export default function FertilizerPage() {
             ],
           },
         ]}
-        manualFiltering
         onView={handleView}
         onEdit={handleEdit}
         onDelete={handleDelete}

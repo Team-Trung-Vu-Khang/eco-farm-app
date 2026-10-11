@@ -16,16 +16,19 @@ export const getFertilizerColumns = (
     {
       key: "code",
       label: "Mã",
+      mobilePriority: "secondary",
       render: (value) => <CodeBadge value={value} />,
     },
     {
       key: "sku",
       label: "Mã SKU",
+      mobilePriority: "hidden",
       render: (value) => <CodeBadge value={value} />,
     },
     {
       key: "name",
       label: "Tên phân bón",
+      mobilePriority: "primary",
       render: (value, row) => (
         <div>
           <span
@@ -48,6 +51,7 @@ export const getFertilizerColumns = (
     cols.push({
       key: "source",
       label: "Nguồn",
+      mobilePriority: "secondary",
       render: (value) => (
         <Badge variant={value === "MASTER" ? "secondary" : "default"}>
           {value === "MASTER" ? "Hệ thống" : "Nội bộ"}
@@ -61,6 +65,7 @@ export const getFertilizerColumns = (
     {
       key: "registrationNumber",
       label: "Số đăng ký",
+      mobilePriority: "secondary",
       render: (val) => (
         <span className="font-mono text-xs">{(val as string) || "—"}</span>
       ),
@@ -68,6 +73,7 @@ export const getFertilizerColumns = (
     {
       key: "originId",
       label: "Phân loại",
+      mobilePriority: "secondary",
       render: (_, row) => {
         const apiOrigins =
           row.classifications
@@ -127,6 +133,7 @@ export const getFertilizerColumns = (
     {
       key: "npkRatio",
       label: "Tỷ lệ NPK / Hàm lượng",
+      mobilePriority: "secondary",
       render: (val, row) => {
         const npk = val || row.profile?.npkRatio;
         const comp = row.profile?.detailedComposition || row.nutrientContent;
@@ -137,6 +144,7 @@ export const getFertilizerColumns = (
     {
       key: "targetSubjects",
       label: "Cây trồng áp dụng",
+      mobilePriority: "secondary",
       render: (_, row) => {
         const subjects = row.targetSubjects?.map((s: any) => s.name) || [];
         return subjects.length > 0 ? (
@@ -159,6 +167,7 @@ export const getFertilizerColumns = (
     {
       key: "packagingVariants",
       label: "Đóng gói / Đơn vị",
+      mobilePriority: "secondary",
       render: (_, row) => {
         const specs =
           row.packagingVariants
@@ -179,6 +188,7 @@ export const getFertilizerColumns = (
     {
       key: "certificates",
       label: "Chứng nhận",
+      mobilePriority: "secondary",
       render: (_, row) => {
         const certs =
           row.certificates?.map(
@@ -205,6 +215,7 @@ export const getFertilizerColumns = (
     {
       key: "referencePrice",
       label: "Giá tham khảo",
+      mobilePriority: "secondary",
       render: (val) => {
         if (!val)
           return <span className="text-muted-foreground text-xs">—</span>;
@@ -220,6 +231,7 @@ export const getFertilizerColumns = (
     {
       key: "status",
       label: "Trạng thái",
+      mobilePriority: "badge",
       render: (value) => (
         <Badge
           variant={value === "active" ? "default" : "secondary"}

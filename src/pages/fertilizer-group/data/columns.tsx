@@ -6,8 +6,9 @@ export const fertilizerGroupColumns: Column<FertilizerGroupRecord>[] = [
   {
     key: "code",
     label: "Mã nhóm",
+    mobilePriority: "secondary",
     render: (value) => <CodeBadge value={value} />,
   },
-  { key: "name", label: "Tên nhóm" },
-  { key: "description", label: "Mô tả" },
+  { key: "name", label: "Tên nhóm", mobilePriority: "primary" },
+  { key: "description", label: "Mô tả", mobilePriority: "secondary" },
 ];
