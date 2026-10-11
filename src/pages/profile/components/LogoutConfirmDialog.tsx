@@ -31,7 +31,8 @@ export function LogoutConfirmDialog({
             Đăng xuất tài khoản?
           </DialogTitle>
           <DialogDescription className="text-sm text-slate-500 text-center leading-relaxed">
-            Bạn có chắc chắn muốn đăng xuất khỏi tài khoản trên thiết bị này? Bạn sẽ cần đăng nhập lại để tiếp tục sử dụng.
+            Bạn có chắc chắn muốn đăng xuất khỏi tài khoản trên thiết bị này?
+            Bạn sẽ cần đăng nhập lại để tiếp tục sử dụng.
           </DialogDescription>
         </DialogHeader>
 
