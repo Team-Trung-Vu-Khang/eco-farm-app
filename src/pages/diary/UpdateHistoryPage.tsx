@@ -37,6 +37,8 @@ import { useLocation } from "wouter";
 import { DiaryAdvancedFilterPanel } from "./components/lookup/DiaryAdvancedFilterPanel";
 import { UpdateHistoryTable } from "./components/table/UpdateHistoryTable";
 import type { DiaryAdvancedFilters } from "./hooks/useDiaryLookupPage";
+import { useMobileUiMode } from "@/shared/hooks/useMobileUiMode";
+import { MobileDiaryHistoryView } from "./components/mobile-history/MobileDiaryHistoryView";
 
 import { WORK_TYPE_OPTIONS } from "./constants/history-form.constants";
 
@@ -58,7 +60,19 @@ export interface UpdateHistoryPageProps {
   scope?: "PLANNED" | "AD_HOC";
 }
 
-export default function UpdateHistoryPage({
+export default function UpdateHistoryPage(props: UpdateHistoryPageProps = {}) {
+  const isMobile = useIsMobile();
+  const mobileUiMode = useMobileUiMode();
+  const isMobileApp = isMobile && mobileUiMode === "app";
+
+  if (isMobileApp) {
+    return <MobileDiaryHistoryView />;
+  }
+
+  return <DesktopUpdateHistoryPage {...props} />;
+}
+
+function DesktopUpdateHistoryPage({
   scope = "PLANNED",
 }: UpdateHistoryPageProps = {}) {
   const [, setLocation] = useLocation();

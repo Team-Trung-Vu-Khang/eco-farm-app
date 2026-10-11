@@ -1,152 +1,164 @@
+import { useState } from "react";
 import { useAuth } from "@/features/auth";
+import { useSelectedWorkspaceId, useWorkspaceById } from "@/features/workspace";
 import {
-  formatWorkspaceLabel,
-  setSelectedWorkspaceId,
-  useSelectedWorkspaceId,
-  useWorkspaces,
-} from "@/features/workspace";
-import {
-  setMobileUiMode,
-  useMobileUiMode,
-} from "@/shared/hooks/useMobileUiMode";
-import {
-  Button,
-  Combobox,
-  Label,
-  Switch,
-} from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import {
-  Building2,
+  BookOpen,
+  Headphones,
   LogOut,
-  Phone,
-  Smartphone,
-  UserCheck,
+  Settings,
+  Sprout,
   UserRound,
 } from "lucide-react";
-import type { ReactNode } from "react";
 
-const InfoRow = ({
-  icon,
-  label,
-  value,
-}: {
-  icon: ReactNode;
-  label: string;
-  value?: string | null;
-}) => (
-  <div className="flex items-center gap-3 py-2.5">
-    <span className="text-slate-400">{icon}</span>
-    <div className="min-w-0">
-      <p className="text-[11px] text-slate-500">{label}</p>
-      <p className="truncate text-sm font-medium text-slate-900">
-        {value || "Chưa cập nhật"}
-      </p>
-    </div>
-  </div>
-);
+import { getUserLogoText } from "@/pages/mobile-home/utils/user-logo.util";
+import { ProfileMenuItem } from "./components/ProfileMenuItem";
+import { PersonalInfoBottomSheet } from "./components/PersonalInfoBottomSheet";
+import { FarmInfoBottomSheet } from "./components/FarmInfoBottomSheet";
+import { SettingsBottomSheet } from "./components/SettingsBottomSheet";
+import { UserGuideBottomSheet } from "./components/UserGuideBottomSheet";
+import { SupportContactBottomSheet } from "./components/SupportContactBottomSheet";
+import { LogoutConfirmDialog } from "./components/LogoutConfirmDialog";
 
 /** Trang tài khoản (tab Profile của giao diện mobile) */
 export default function ProfilePage() {
   const { currentUser, logout } = useAuth();
-  const mobileUiMode = useMobileUiMode();
   const selectedWorkspaceId = useSelectedWorkspaceId();
-  const { items: workspaces } = useWorkspaces({ page: 0, size: 100 });
+  const { data: workspaceData } = useWorkspaceById(selectedWorkspaceId ?? "");
 
-  const displayName = currentUser?.fullName || currentUser?.username || "";
+  // BottomSheet modal states
+  const [openPersonal, setOpenPersonal] = useState(false);
+  const [openFarm, setOpenFarm] = useState(false);
+  const [openSettings, setOpenSettings] = useState(false);
+  const [openGuide, setOpenGuide] = useState(false);
+  const [openSupport, setOpenSupport] = useState(false);
+  const [openLogout, setOpenLogout] = useState(false);
+
+  // Chỉ giữ tên người dùng và ảnh đại diện ở phần trên; bỏ username số điện thoại dạng @849…
+  const displayName = currentUser?.fullName || "Người dùng";
+  const logoText = getUserLogoText(displayName);
+
+  // Tên farm mặc định "MEVI Farm"
+  const farmDisplayName =
+    (
+      (workspaceData?.metadataJson as Record<string, unknown>)
+        ?.farmDisplayName as string
+    )?.trim() ||
+    workspaceData?.name ||
+    "MEVI Farm";
 
   return (
-    <div className="space-y-4">
-      <section className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white p-4">
-        <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xl font-bold text-primary">
+    <div className="space-y-4 pb-12">
+      {/* 1. Header: Chỉ giữ tên người dùng và ảnh đại diện */}
+      <section className="flex items-center gap-4 rounded-2xl border border-slate-200/90 bg-white p-4 shadow-xs">
+        <div className="flex h-15 w-15 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#16B371] to-[#139B62] text-xl font-bold text-white shadow-sm ring-4 ring-emerald-50 select-none">
           {displayName ? (
-            displayName.trim().charAt(0).toUpperCase()
+            logoText
           ) : (
-            <UserRound className="h-6 w-6" />
+            <UserRound className="h-7 w-7 text-white" />
           )}
         </div>
-        <div className="min-w-0">
-          <p className="truncate text-lg font-bold text-slate-900">
-            {displayName || "Người dùng"}
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-lg font-extrabold text-slate-900 leading-snug">
+            {displayName}
           </p>
-          <p className="truncate text-xs text-slate-500">
-            @{currentUser?.username}
-          </p>
-        </div>
-      </section>
-
-      <section className="rounded-2xl border border-slate-200 bg-white px-4 py-1 divide-y divide-slate-100">
-        <InfoRow
-          icon={<Phone className="h-4 w-4" />}
-          label="Số điện thoại"
-          value={currentUser?.phoneNumber}
-        />
-        <InfoRow
-          icon={<UserCheck className="h-4 w-4" />}
-          label="Người giới thiệu"
-          value={
-            currentUser?.referrer
-              ? [
-                  currentUser.referrer.fullName,
-                  currentUser.referrer.phoneNumber,
-                ]
-                  .filter(Boolean)
-                  .join(" · ")
-              : null
-          }
-        />
-      </section>
-
-      {workspaces.length > 0 && (
-        <section className="space-y-2 rounded-2xl border border-slate-200 bg-white p-4">
-          <Label className="flex items-center gap-2 text-sm font-semibold">
-            <Building2 className="h-4 w-4 text-slate-400" /> Đơn vị đang làm
-            việc
-          </Label>
-          <Combobox
-            options={workspaces.map((w) => ({
-              value: String(w.id),
-              label: formatWorkspaceLabel(w),
-            }))}
-            value={
-              selectedWorkspaceId !== null ? String(selectedWorkspaceId) : ""
-            }
-            placeholder="Chọn đơn vị..."
-            searchPlaceholder="Tìm đơn vị..."
-            disabled={workspaces.length === 1}
-            onChange={(value) => setSelectedWorkspaceId(value)}
-          />
-        </section>
-      )}
-
-      <section className="flex items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white p-4">
-        <div className="flex items-start gap-3">
-          <Smartphone className="mt-0.5 h-4 w-4 shrink-0 text-slate-400" />
-          <div>
-            <Label htmlFor="mobile-ui-mode" className="text-sm font-semibold">
-              Giao diện mobile mới
-            </Label>
-            <p className="text-xs text-slate-500">
-              Tắt để dùng giao diện đầy đủ (menu bên trái)
-            </p>
+          <div className="flex items-center gap-2 mt-1">
+            <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-0.5 text-[11px] font-semibold text-emerald-700 border border-emerald-200">
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              {farmDisplayName}
+            </span>
           </div>
         </div>
-        <Switch
-          id="mobile-ui-mode"
-          checked={mobileUiMode === "app"}
-          onCheckedChange={(checked) =>
-            setMobileUiMode(checked ? "app" : "classic")
-          }
+      </section>
+
+      {/* 2. Menu gợi ý (Grouped Card Style) */}
+      <section className="rounded-2xl border border-slate-200/90 bg-white overflow-hidden divide-y divide-slate-100 shadow-xs">
+        {/* – Thông tin cá nhân */}
+        <ProfileMenuItem
+          icon={<UserRound className="h-5 w-5" />}
+          iconBgColor="bg-blue-50"
+          iconColor="text-blue-600"
+          title="Thông tin cá nhân"
+          subtitle={currentUser?.phoneNumber || "Xem thông tin & số điện thoại"}
+          onClick={() => setOpenPersonal(true)}
+        />
+
+        {/* – Thông tin Farm */}
+        <ProfileMenuItem
+          icon={<Sprout className="h-5 w-5" />}
+          iconBgColor="bg-emerald-50"
+          iconColor="text-emerald-600"
+          title="Thông tin Farm"
+          subtitle={farmDisplayName}
+          onClick={() => setOpenFarm(true)}
+        />
+
+        {/* – Cài đặt */}
+        {/* <ProfileMenuItem
+          icon={<Settings className="h-5 w-5" />}
+          iconBgColor="bg-purple-50"
+          iconColor="text-purple-600"
+          title="Cài đặt"
+          subtitle="Thông báo & hệ thống"
+          onClick={() => setOpenSettings(true)}
+        /> */}
+
+        {/* – Hướng dẫn sử dụng */}
+        {/* <ProfileMenuItem
+          icon={<BookOpen className="h-5 w-5" />}
+          iconBgColor="bg-amber-50"
+          iconColor="text-amber-600"
+          title="Hướng dẫn sử dụng"
+          subtitle="Cẩm nang ghi nhật ký & mẹo canh tác"
+          onClick={() => setOpenGuide(true)}
+        /> */}
+
+        {/* – Liên hệ hỗ trợ */}
+        {/* <ProfileMenuItem
+          icon={<Headphones className="h-5 w-5" />}
+          iconBgColor="bg-cyan-50"
+          iconColor="text-cyan-600"
+          title="Liên hệ hỗ trợ"
+          subtitle="Hotline, Zalo & Email hỗ trợ MEVI"
+          onClick={() => setOpenSupport(true)}
+        /> */}
+
+        {/* – Đăng xuất */}
+        <ProfileMenuItem
+          icon={<LogOut className="h-5 w-5" />}
+          iconBgColor="bg-red-50"
+          iconColor="text-red-600"
+          title="Đăng xuất"
+          subtitle="Thoát tài khoản khỏi thiết bị"
+          isDestructive={true}
+          onClick={() => setOpenLogout(true)}
         />
       </section>
 
-      <Button
-        type="button"
-        variant="outline"
-        className="w-full gap-2 border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700"
-        onClick={() => void logout()}
-      >
-        <LogOut className="h-4 w-4" /> Đăng xuất
-      </Button>
+      {/* 3. Sub-sheets / Dialogs */}
+      <PersonalInfoBottomSheet
+        open={openPersonal}
+        onOpenChange={setOpenPersonal}
+      />
+
+      <FarmInfoBottomSheet open={openFarm} onOpenChange={setOpenFarm} />
+
+      {/* <SettingsBottomSheet open={openSettings} onOpenChange={setOpenSettings} /> */}
+
+      <UserGuideBottomSheet open={openGuide} onOpenChange={setOpenGuide} />
+
+      {/* <SupportContactBottomSheet
+        open={openSupport}
+        onOpenChange={setOpenSupport}
+      /> */}
+
+      <LogoutConfirmDialog
+        open={openLogout}
+        onOpenChange={setOpenLogout}
+        onConfirm={() => {
+          setOpenLogout(false);
+          void logout();
+        }}
+      />
     </div>
   );
 }

@@ -40,6 +40,7 @@ import {
   formatToDatetimeLocal,
   formatDatetimeLocalToIsoWithTimezone,
   getCurrentTimeString,
+  formatDisplayDateTime,
 } from "../../utils/history-form.utils";
 
 /** Bỏ dấu tiếng Việt để tìm kiếm gợi ý không phụ thuộc dấu. */
@@ -59,6 +60,7 @@ const MATERIAL_TYPE_STAT_COLORS: Record<SupplyType, string> = {
   fertilizer: "bg-emerald-50 text-emerald-700 border-emerald-200",
   material: "bg-slate-100 text-slate-600 border-slate-200",
   equipment: "bg-blue-50 text-blue-700 border-blue-200",
+  by_product: "bg-amber-50 text-amber-700 border-amber-200",
 };
 
 export type WorkTaskPriority = "LOW" | "MEDIUM" | "HIGH" | "URGENT";
@@ -72,6 +74,8 @@ export interface WorkTaskDetail {
   endDate: string;
   description?: string;
   isDirty?: boolean;
+  taskId?: number | string;
+  taskCategoryId?: number;
 }
 
 export interface WorkAllocationCardProps {
@@ -84,7 +88,7 @@ export interface WorkAllocationCardProps {
   domainCode: DomainCode;
   workType?: string;
   errors?: Record<string, string>;
-  onAddStage: (stageName: string) => void;
+  onAddStage: (stageName: string, categoryId?: number) => void;
   onRemoveStage: (stageName: string) => void;
   onUpdateWorkTaskDetail: (
     stageName: string,
@@ -167,13 +171,16 @@ export function WorkAllocationCard({
     const keyword = normalize(newStageInput.trim());
     return (
       taskCategoryItems
-        .filter(
-          (item) =>
-            !workTypeTagTypes ||
-            parseTaskCategoryTags(item.tags).some((tag) =>
-              workTypeTagTypes.has(getTaskCategoryTagType(tag)),
-            ),
-        )
+        .filter((item) => {
+          if (!workTypeTagTypes) return true;
+          // Nếu tag bằng null / undefined / rỗng thì cũng cho phép hiển thị
+          if (item.tags == null) return true;
+          const parsedTags = parseTaskCategoryTags(item.tags);
+          if (parsedTags.length === 0) return true;
+          return parsedTags.some((tag) =>
+            workTypeTagTypes.has(getTaskCategoryTagType(tag)),
+          );
+        })
         // Ẩn những hạng mục đã được thêm vào danh sách
         .filter((item) => !selectedStages.includes(item.name))
         .filter((item) => !keyword || normalize(item.name).includes(keyword))
@@ -181,12 +188,12 @@ export function WorkAllocationCard({
     );
   }, [newStageInput, selectedStages, taskCategoryItems, workTypeTagTypes]);
 
-  const handleSelectSuggestion = (name: string) => {
+  const handleSelectSuggestion = (item: TaskCategoryRecord) => {
     if (blurTimeout.current) clearTimeout(blurTimeout.current);
     setSuggestionsOpen(false);
     setNewStageInput("");
-    onAddStage(name);
-    setExpandedStage(name);
+    onAddStage(item.name, item.id);
+    setExpandedStage(item.name);
   };
 
   const toggleStage = (stage: string) => {
@@ -196,7 +203,10 @@ export function WorkAllocationCard({
   const handleAddStage = () => {
     const name = newStageInput.trim();
     if (!name) return;
-    onAddStage(name);
+    const matchingCat = taskCategoryItems.find(
+      (c) => normalize(c.name) === normalize(name),
+    );
+    onAddStage(name, matchingCat?.id);
     setNewStageInput("");
     setSuggestionsOpen(false);
     // Auto-open the freshly added item so the user can fill it in right away.
@@ -213,7 +223,7 @@ export function WorkAllocationCard({
             : "pb-3 border-b border-slate-100 bg-white"
         }
       >
-        <CardTitle className="text-base font-bold flex items-center justify-between">
+        <CardTitle className="text-base font-bold flex items-center justify-between gap-1">
           <span className="flex items-center gap-2 text-slate-900">
             <FileText className="w-4 h-4 text-emerald-600" />
             {title}
@@ -277,7 +287,7 @@ export function WorkAllocationCard({
                     type="button"
                     // onMouseDown chạy trước onBlur của input nên không bị mất click.
                     onMouseDown={(e) => e.preventDefault()}
-                    onClick={() => handleSelectSuggestion(item.name)}
+                    onClick={() => handleSelectSuggestion(item)}
                     className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs font-medium text-slate-700 hover:bg-emerald-50 hover:text-emerald-700 cursor-pointer"
                   >
                     <Plus className="w-3 h-3 shrink-0 text-slate-400" />
@@ -544,7 +554,10 @@ export function WorkAllocationCard({
                                 </span>
                                 {isPlannedStage ? (
                                   <div className="h-9 px-3 flex items-center text-xs bg-slate-100/70 border border-slate-200 rounded-lg text-slate-600 font-medium">
-                                    {detail.startDate || "Theo kế hoạch"}
+                                    {formatDisplayDateTime(
+                                      detail.startDate,
+                                      "Theo kế hoạch",
+                                    )}
                                   </div>
                                 ) : (
                                   <>

@@ -1,4 +1,3 @@
-import React from "react";
 import {
   Badge,
   Card,
@@ -6,12 +5,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import {
-  CheckCircle2,
-  History,
-  ShieldCheck,
-  UserCheck,
-} from "lucide-react";
+import { CheckCircle2, History, ShieldCheck, UserCheck } from "lucide-react";
 import type { FarmTaskResponse } from "@/features/farm-task";
 import type { MockTaskItem } from "../../types/diary.types";
 
@@ -21,48 +15,64 @@ interface PersonnelItem {
   name?: string;
 }
 
+export type PlannedTaskDetailInput = (FarmTaskResponse | MockTaskItem) & {
+  stage?: { name?: string };
+  progressPercent?: number;
+  lastCompletionPercentage?: number;
+  updatedCount?: number;
+  manager?: { name?: string; fullName?: string; role?: string };
+  inspector?: { name?: string; fullName?: string; role?: string };
+  personnel?: PersonnelItem[];
+  [key: string]: unknown;
+};
+
 interface PlannedTaskDetailCardProps {
-  task: (FarmTaskResponse | MockTaskItem) & {
-    manager?: { name?: string; fullName?: string };
-    inspector?: { name?: string; fullName?: string };
-    personnel?: PersonnelItem[];
-  };
+  task: PlannedTaskDetailInput | FarmTaskResponse;
   planObjective?: string;
 }
 
-export function PlannedTaskDetailCard({
-  task,
-}: PlannedTaskDetailCardProps) {
+export function PlannedTaskDetailCard({ task }: PlannedTaskDetailCardProps) {
   if (!task) return null;
+  const t = task as PlannedTaskDetailInput;
 
   const stageOrCategoryName =
-    task.stage?.name ||
-    task.taskCategory?.name ||
-    (typeof task.taskCategory === "string" ? task.taskCategory : undefined);
+    t.stage?.name ||
+    (typeof t.taskCategory === "object" &&
+    t.taskCategory !== null &&
+    "name" in t.taskCategory
+      ? (t.taskCategory as { name?: string }).name
+      : typeof t.taskCategory === "string"
+        ? t.taskCategory
+        : undefined);
 
   const completion =
-    typeof task.progressPercent === "number"
-      ? task.progressPercent
-      : typeof task.lastCompletionPercentage === "number"
-        ? task.lastCompletionPercentage
+    typeof t.progressPercent === "number"
+      ? t.progressPercent
+      : typeof t.lastCompletionPercentage === "number"
+        ? t.lastCompletionPercentage
         : undefined;
 
   const updatedCount =
-    typeof task.updatedCount === "number" && task.updatedCount > 0
-      ? task.updatedCount
+    typeof t.updatedCount === "number" && t.updatedCount > 0
+      ? t.updatedCount
       : undefined;
 
-  const personnelList: PersonnelItem[] = Array.isArray(task.personnel) ? task.personnel : [];
+  const personnelList: PersonnelItem[] = Array.isArray(t.personnel)
+    ? t.personnel
+    : [];
+  const executor =
+    personnelList.find((p) => p.role === "EXECUTOR") ||
+    personnelList.find((p) => !p.role || p.role === "ASSIGNEE");
   const manager =
     personnelList.find((p) => p.role === "MANAGER") ||
-    (task.manager?.name ? task.manager : undefined);
+    (t.manager?.name ? t.manager : undefined);
   const inspector =
     personnelList.find((p) => p.role === "QUALITY_INSPECTOR") ||
-    (task.inspector?.name ? task.inspector : undefined);
+    (t.inspector?.name ? t.inspector : undefined);
 
-  const hasManager = Boolean(manager?.fullName || manager?.name);
-  const hasInspector = Boolean(inspector?.fullName || inspector?.name);
-  const hasPersonnelGrid = hasManager || hasInspector;
+  const executorName = executor?.fullName || executor?.name;
+  const managerName = manager?.fullName || manager?.name;
+  const inspectorName = inspector?.fullName || inspector?.name;
 
   return (
     <Card className="border border-green-200/80 bg-gradient-to-br from-green-50/40 via-white to-slate-50/50 shadow-xs rounded-2xl overflow-hidden animate-in fade-in duration-300">
@@ -112,8 +122,33 @@ export function PlannedTaskDetailCard({
           </div>
         )}
 
-        {/* Thông tin Quản lý & Kiểm định */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        {/* Thông tin Nhân sự: Người thực hiện, Quản lý & Kiểm định */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+          <div className="rounded-xl border border-slate-150 bg-white p-3 flex items-center gap-2.5">
+            <div className="h-8 w-8 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold text-xs shrink-0">
+              <UserCheck className="w-4 h-4" />
+            </div>
+            <div className="min-w-0">
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+                Người thực hiện
+              </span>
+              {executorName ? (
+                <>
+                  <p className="font-bold text-slate-800 truncate text-xs">
+                    {executorName}
+                  </p>
+                  <p className="text-[10px] text-emerald-600 font-semibold truncate">
+                    Thực hiện
+                  </p>
+                </>
+              ) : (
+                <p className="text-xs text-slate-400 font-medium italic">
+                  Chưa phân bổ
+                </p>
+              )}
+            </div>
+          </div>
+
           <div className="rounded-xl border border-slate-150 bg-white p-3 flex items-center gap-2.5">
             <div className="h-8 w-8 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-xs shrink-0">
               <UserCheck className="w-4 h-4" />
@@ -122,12 +157,12 @@ export function PlannedTaskDetailCard({
               <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
                 Thông tin quản lý
               </span>
-              {hasManager ? (
+              {managerName ? (
                 <>
                   <p className="font-bold text-slate-800 truncate text-xs">
-                    {manager.fullName || manager.name}
+                    {managerName}
                   </p>
-                  {manager.role && manager.role !== "MANAGER" && (
+                  {manager?.role && manager.role !== "MANAGER" && (
                     <p className="text-[10px] text-slate-500 truncate">
                       {manager.role}
                     </p>
@@ -149,16 +184,17 @@ export function PlannedTaskDetailCard({
               <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
                 Kiểm định chất lượng
               </span>
-              {hasInspector ? (
+              {inspectorName ? (
                 <>
                   <p className="font-bold text-slate-800 truncate text-xs">
-                    {inspector.fullName || inspector.name}
+                    {inspectorName}
                   </p>
-                  {inspector.role && inspector.role !== "QUALITY_INSPECTOR" && (
-                    <p className="text-[10px] text-slate-500 truncate">
-                      {inspector.role}
-                    </p>
-                  )}
+                  {inspector?.role &&
+                    inspector.role !== "QUALITY_INSPECTOR" && (
+                      <p className="text-[10px] text-slate-500 truncate">
+                        {inspector.role}
+                      </p>
+                    )}
                 </>
               ) : (
                 <p className="text-xs text-slate-400 font-medium italic">

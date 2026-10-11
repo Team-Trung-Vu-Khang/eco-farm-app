@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useMemo, useState } from "react";
 import {
   Badge,
   Button,
@@ -9,6 +9,12 @@ import {
   DialogTitle,
   Input,
   ScrollArea,
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  useIsMobile,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import {
   CheckCircle2,
@@ -40,6 +46,7 @@ export interface CultivationZoneSelectorProps {
   customTrigger?: React.ReactNode;
   regionOnly?: boolean;
   disabled?: boolean;
+  isMobile?: boolean;
 }
 
 export function CultivationZoneSelector({
@@ -49,20 +56,16 @@ export function CultivationZoneSelector({
   customTrigger,
   regionOnly = false,
   disabled = false,
+  isMobile,
 }: CultivationZoneSelectorProps) {
+  const deviceIsMobile = useIsMobile();
+  const mobileMode = isMobile !== undefined ? isMobile : deviceIsMobile;
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [expandedRegions, setExpandedRegions] = useState<string[]>([]);
   const [expandedAreas, setExpandedAreas] = useState<string[]>([]);
-  const [tempSelections, setTempSelections] = useState<GeographicalSelection[]>(
-    [],
-  );
-
-  useEffect(() => {
-    if (isOpen) {
-      setTempSelections(existingSelections);
-    }
-  }, [isOpen, existingSelections]);
+  const [tempSelections, setTempSelections] =
+    useState<GeographicalSelection[]>(existingSelections);
 
   const filteredRegions = useMemo(() => {
     const query = searchTerm.trim().toLowerCase();
@@ -240,6 +243,290 @@ export function CultivationZoneSelector({
     setIsOpen(false);
   };
 
+  const searchInputNode = (
+    <div
+      className={cn(
+        "shrink-0 bg-white",
+        mobileMode ? "px-4 py-3 border-b" : "px-6 pb-5 border-b",
+      )}
+    >
+      <div className="relative">
+        <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground z-10" />
+        <Input
+          placeholder="Tìm kiếm vùng, khu vực, lô..."
+          className="pl-10 bg-slate-50 border-slate-200 focus:bg-white transition-all rounded-xl text-sm"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+        />
+      </div>
+    </div>
+  );
+
+  const listScrollNode = (
+    <ScrollArea className="flex-1 overflow-y-auto">
+      <div className={cn("space-y-4", mobileMode ? "p-4" : "p-6")}>
+        {filteredRegions.map((region) => {
+          const regIdStr = String(region.id);
+          const isRegExpanded = expandedRegions.includes(regIdStr);
+          const isRegSelected = isSelected("region", regIdStr);
+          const hasSubAreas =
+            Boolean(region.subAreas) && (region.subAreas?.length ?? 0) > 0;
+
+          return (
+            <div key={regIdStr} className="space-y-2">
+              {/* Region Level */}
+              <div className="flex items-center gap-2 group">
+                {!regionOnly && hasSubAreas ? (
+                  <button
+                    type="button"
+                    onClick={() => toggleRegion(regIdStr)}
+                    className="p-1 hover:bg-slate-100 rounded transition-colors cursor-pointer"
+                  >
+                    {isRegExpanded ? (
+                      <ChevronDown className="w-4 h-4 text-slate-400" />
+                    ) : (
+                      <ChevronRight className="w-4 h-4 text-slate-400" />
+                    )}
+                  </button>
+                ) : (
+                  <div className="w-6" />
+                )}
+
+                <div
+                  onClick={() =>
+                    handleSelect(
+                      "region",
+                      regIdStr,
+                      undefined,
+                      undefined,
+                      region.name,
+                    )
+                  }
+                  className={cn(
+                    "flex-1 flex items-center justify-between p-3 rounded-xl border-2 transition-all cursor-pointer",
+                    isRegSelected
+                      ? "bg-primary/10 border-primary/40 opacity-60 cursor-not-allowed"
+                      : "bg-white border-slate-100 hover:border-primary/20 hover:bg-slate-50",
+                  )}
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
+                      <MapPin className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <div className="font-bold text-slate-800 text-sm">
+                        {region.name}
+                      </div>
+                      <div className="text-[10px] text-muted-foreground uppercase tracking-wider">
+                        Vùng trồng {region.code ? `• ${region.code}` : ""}
+                      </div>
+                    </div>
+                  </div>
+                  {isRegSelected ? (
+                    <div className="flex items-center gap-2">
+                      <CheckCircle2 className="w-5 h-5 text-primary" />
+                      <Badge
+                        variant="secondary"
+                        className="text-[10px] bg-primary/10 text-primary border-none"
+                      >
+                        Đã chọn
+                      </Badge>
+                    </div>
+                  ) : (
+                    <div className="w-5 h-5 rounded border-2 border-slate-200 group-hover:border-primary transition-colors flex items-center justify-center">
+                      <Plus className="w-3.5 h-3.5 text-slate-300 group-hover:text-primary" />
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* SubAreas Level */}
+              {!regionOnly && isRegExpanded && hasSubAreas && (
+                <div className="ml-6 pl-4 border-l-2 border-slate-100 space-y-2 py-1">
+                  {(region.subAreas || []).map((area) => {
+                    const areaIdStr = String(area.id);
+                    const isAreaExpanded = expandedAreas.includes(areaIdStr);
+                    const isAreaSel = isSelected("area", regIdStr, areaIdStr);
+                    const hasPlots =
+                      Boolean(area.plots) && (area.plots?.length ?? 0) > 0;
+
+                    return (
+                      <div key={areaIdStr} className="space-y-2">
+                        <div className="flex items-center gap-2 group">
+                          {hasPlots ? (
+                            <button
+                              type="button"
+                              onClick={() => toggleArea(areaIdStr)}
+                              className="p-1 hover:bg-slate-100 rounded transition-colors cursor-pointer"
+                            >
+                              {isAreaExpanded ? (
+                                <ChevronDown className="w-4 h-4 text-slate-400" />
+                              ) : (
+                                <ChevronRight className="w-4 h-4 text-slate-400" />
+                              )}
+                            </button>
+                          ) : (
+                            <div className="w-6" />
+                          )}
+
+                          <div
+                            onClick={() =>
+                              handleSelect(
+                                "area",
+                                regIdStr,
+                                areaIdStr,
+                                undefined,
+                                area.name,
+                                region.name,
+                              )
+                            }
+                            className={cn(
+                              "flex-1 flex items-center justify-between p-2.5 rounded-xl border-2 transition-all cursor-pointer",
+                              isAreaSel
+                                ? "bg-primary/10 border-primary/40 opacity-60 cursor-not-allowed"
+                                : "bg-white border-slate-100 hover:border-primary/20 hover:bg-slate-50",
+                            )}
+                          >
+                            <div className="flex items-center gap-3">
+                              <div className="w-7 h-7 rounded-lg bg-slate-100 text-slate-500 flex items-center justify-center">
+                                <Layers className="w-4 h-4" />
+                              </div>
+                              <span className="font-bold text-slate-700 text-xs">
+                                {area.name}
+                              </span>
+                            </div>
+                            {isAreaSel ? (
+                              <div className="flex items-center gap-2">
+                                <CheckCircle2 className="w-4 h-4 text-primary" />
+                                <Badge
+                                  variant="secondary"
+                                  className="text-[9px] bg-primary/10 text-primary border-none h-4 py-0"
+                                >
+                                  Đã chọn
+                                </Badge>
+                              </div>
+                            ) : (
+                              <div className="w-4 h-4 rounded border border-slate-200 group-hover:border-primary transition-colors flex items-center justify-center">
+                                <Plus className="w-3 h-3 text-slate-300 group-hover:text-primary" />
+                              </div>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Plots Level */}
+                        {isAreaExpanded && hasPlots && (
+                          <div className="ml-5 pl-4 border-l-2 border-slate-50 space-y-1 py-1">
+                            {(area.plots || []).map((plot) => {
+                              const plotIdStr = String(plot.id);
+                              const isPlotSel = isSelected(
+                                "plot",
+                                regIdStr,
+                                areaIdStr,
+                                plotIdStr,
+                              );
+
+                              return (
+                                <div
+                                  key={plotIdStr}
+                                  onClick={() =>
+                                    handleSelect(
+                                      "plot",
+                                      regIdStr,
+                                      areaIdStr,
+                                      plotIdStr,
+                                      plot.name,
+                                      region.name,
+                                      area.name,
+                                    )
+                                  }
+                                  className={cn(
+                                    "flex items-center justify-between p-2 rounded-lg border-2 transition-all cursor-pointer group",
+                                    isPlotSel
+                                      ? "bg-primary/10 border-primary/40 opacity-60 cursor-not-allowed"
+                                      : "bg-white border-slate-50 hover:border-primary/20 hover:bg-slate-50",
+                                  )}
+                                >
+                                  <div className="flex items-center gap-2.5">
+                                    <div className="w-2 h-2 rounded-full bg-slate-200 group-hover:bg-primary transition-colors" />
+                                    <span className="font-medium text-slate-600 text-xs text-primary/80">
+                                      {plot.name}
+                                    </span>
+                                  </div>
+                                  {isPlotSel ? (
+                                    <div className="flex items-center gap-1.5">
+                                      <CheckCircle2 className="w-3.5 h-3.5 text-primary" />
+                                      <Badge
+                                        variant="secondary"
+                                        className="text-[9px] bg-primary/10 text-primary border-none h-4 py-0 font-bold"
+                                      >
+                                        Đã chọn
+                                      </Badge>
+                                    </div>
+                                  ) : (
+                                    <div className="w-3.5 h-3.5 rounded-sm border border-slate-200 group-hover:border-primary transition-colors flex items-center justify-center">
+                                      <Plus className="w-2.5 h-2.5 text-slate-300 group-hover:text-primary" />
+                                    </div>
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          );
+        })}
+
+        {filteredRegions.length === 0 && (
+          <div className="text-center py-12">
+            <div className="bg-slate-50 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 border border-slate-100">
+              <Search className="w-6 h-6 text-slate-300" />
+            </div>
+            <div className="text-slate-500 font-medium text-sm">
+              Không tìm thấy dữ liệu phù hợp
+            </div>
+          </div>
+        )}
+      </div>
+    </ScrollArea>
+  );
+
+  const footerActionNode = (
+    <div
+      className={cn(
+        "bg-slate-50 border-t flex justify-end gap-3 shrink-0",
+        mobileMode
+          ? "p-4 pb-[calc(1rem+env(safe-area-inset-bottom,0px))]"
+          : "p-4",
+      )}
+    >
+      <Button
+        type="button"
+        variant="outline"
+        className={cn(mobileMode && "h-11 rounded-xl px-4 text-sm font-medium")}
+        onClick={() => setIsOpen(false)}
+      >
+        Hủy
+      </Button>
+      <Button
+        type="button"
+        className={cn(
+          mobileMode &&
+            "h-11 rounded-xl px-5 text-sm font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs",
+        )}
+        onClick={handleConfirm}
+      >
+        {tempSelections.length > existingSelections.length
+          ? `Xác nhận (+${tempSelections.length - existingSelections.length})`
+          : "Xác nhận"}
+      </Button>
+    </div>
+  );
+
   return (
     <>
       {customTrigger ? (
@@ -264,294 +551,64 @@ export function CultivationZoneSelector({
         </Button>
       )}
 
-      <Dialog
-        open={isOpen}
-        onOpenChange={(open) => {
-          setIsOpen(open);
-          if (!open) {
-            setSearchTerm("");
-          }
-        }}
-      >
-        <DialogContent className="max-w-xl p-0 overflow-hidden rounded-2xl border-none shadow-2xl flex flex-col max-h-[90vh]">
-          <DialogHeader className="p-6 bg-slate-50 border-b shrink-0">
-            <DialogTitle className="flex items-center gap-2">
-              <MapPin className="w-5 h-5 text-primary" />
-              Chọn phạm vi canh tác
-            </DialogTitle>
-            <p className="text-xs text-muted-foreground mt-1">
-              {regionOnly
-                ? "Chỉ chọn Vùng trồng"
-                : "Chọn 1 Vùng trồng, Khu vực hoặc Lô đất cụ thể"}
-            </p>
-          </DialogHeader>
-
-          <div className="px-6 pb-5 border-b shrink-0 bg-white">
-            <div className="relative">
-              <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground z-10" />
-              <Input
-                placeholder="Tìm kiếm vùng, khu vực, lô..."
-                className="pl-10 bg-slate-50 border-slate-200 focus:bg-white transition-all rounded-xl"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-            </div>
-          </div>
-
-          <ScrollArea className="flex-1 overflow-y-auto">
-            <div className="p-6 space-y-4">
-              {filteredRegions.map((region) => {
-                const regIdStr = String(region.id);
-                const isRegExpanded = expandedRegions.includes(regIdStr);
-                const isRegSelected = isSelected("region", regIdStr);
-                const hasSubAreas =
-                  Boolean(region.subAreas) &&
-                  (region.subAreas?.length ?? 0) > 0;
-
-                return (
-                  <div key={regIdStr} className="space-y-2">
-                    {/* Region Level */}
-                    <div className="flex items-center gap-2 group">
-                      {!regionOnly && hasSubAreas ? (
-                        <button
-                          type="button"
-                          onClick={() => toggleRegion(regIdStr)}
-                          className="p-1 hover:bg-slate-100 rounded transition-colors cursor-pointer"
-                        >
-                          {isRegExpanded ? (
-                            <ChevronDown className="w-4 h-4 text-slate-400" />
-                          ) : (
-                            <ChevronRight className="w-4 h-4 text-slate-400" />
-                          )}
-                        </button>
-                      ) : (
-                        <div className="w-6" />
-                      )}
-
-                      <div
-                        onClick={() =>
-                          handleSelect(
-                            "region",
-                            regIdStr,
-                            undefined,
-                            undefined,
-                            region.name,
-                          )
-                        }
-                        className={cn(
-                          "flex-1 flex items-center justify-between p-3 rounded-xl border-2 transition-all cursor-pointer",
-                          isRegSelected
-                            ? "bg-primary/10 border-primary/40 opacity-60 cursor-not-allowed"
-                            : "bg-white border-slate-100 hover:border-primary/20 hover:bg-slate-50",
-                        )}
-                      >
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
-                            <MapPin className="w-4 h-4" />
-                          </div>
-                          <div>
-                            <div className="font-bold text-slate-800 text-sm">
-                              {region.name}
-                            </div>
-                            <div className="text-[10px] text-muted-foreground uppercase tracking-wider">
-                              Vùng trồng {region.code ? `• ${region.code}` : ""}
-                            </div>
-                          </div>
-                        </div>
-                        {isRegSelected ? (
-                          <div className="flex items-center gap-2">
-                            <CheckCircle2 className="w-5 h-5 text-primary" />
-                            <Badge
-                              variant="secondary"
-                              className="text-[10px] bg-primary/10 text-primary border-none"
-                            >
-                              Đã chọn
-                            </Badge>
-                          </div>
-                        ) : (
-                          <div className="w-5 h-5 rounded border-2 border-slate-200 group-hover:border-primary transition-colors flex items-center justify-center">
-                            <Plus className="w-3.5 h-3.5 text-slate-300 group-hover:text-primary" />
-                          </div>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* SubAreas Level */}
-                    {!regionOnly && isRegExpanded && hasSubAreas && (
-                      <div className="ml-6 pl-4 border-l-2 border-slate-100 space-y-2 py-1">
-                        {(region.subAreas || []).map((area) => {
-                          const areaIdStr = String(area.id);
-                          const isAreaExpanded =
-                            expandedAreas.includes(areaIdStr);
-                          const isAreaSel = isSelected(
-                            "area",
-                            regIdStr,
-                            areaIdStr,
-                          );
-                          const hasPlots =
-                            Boolean(area.plots) &&
-                            (area.plots?.length ?? 0) > 0;
-
-                          return (
-                            <div key={areaIdStr} className="space-y-2">
-                              <div className="flex items-center gap-2 group">
-                                {hasPlots ? (
-                                  <button
-                                    type="button"
-                                    onClick={() => toggleArea(areaIdStr)}
-                                    className="p-1 hover:bg-slate-100 rounded transition-colors cursor-pointer"
-                                  >
-                                    {isAreaExpanded ? (
-                                      <ChevronDown className="w-4 h-4 text-slate-400" />
-                                    ) : (
-                                      <ChevronRight className="w-4 h-4 text-slate-400" />
-                                    )}
-                                  </button>
-                                ) : (
-                                  <div className="w-6" />
-                                )}
-
-                                <div
-                                  onClick={() =>
-                                    handleSelect(
-                                      "area",
-                                      regIdStr,
-                                      areaIdStr,
-                                      undefined,
-                                      area.name,
-                                      region.name,
-                                    )
-                                  }
-                                  className={cn(
-                                    "flex-1 flex items-center justify-between p-2.5 rounded-xl border-2 transition-all cursor-pointer",
-                                    isAreaSel
-                                      ? "bg-primary/10 border-primary/40 opacity-60 cursor-not-allowed"
-                                      : "bg-white border-slate-100 hover:border-primary/20 hover:bg-slate-50",
-                                  )}
-                                >
-                                  <div className="flex items-center gap-3">
-                                    <div className="w-7 h-7 rounded-lg bg-slate-100 text-slate-500 flex items-center justify-center">
-                                      <Layers className="w-4 h-4" />
-                                    </div>
-                                    <span className="font-bold text-slate-700 text-xs">
-                                      {area.name}
-                                    </span>
-                                  </div>
-                                  {isAreaSel ? (
-                                    <div className="flex items-center gap-2">
-                                      <CheckCircle2 className="w-4 h-4 text-primary" />
-                                      <Badge
-                                        variant="secondary"
-                                        className="text-[9px] bg-primary/10 text-primary border-none h-4 py-0"
-                                      >
-                                        Đã chọn
-                                      </Badge>
-                                    </div>
-                                  ) : (
-                                    <div className="w-4 h-4 rounded border border-slate-200 group-hover:border-primary transition-colors flex items-center justify-center">
-                                      <Plus className="w-3 h-3 text-slate-300 group-hover:text-primary" />
-                                    </div>
-                                  )}
-                                </div>
-                              </div>
-
-                              {/* Plots Level */}
-                              {isAreaExpanded && hasPlots && (
-                                <div className="ml-5 pl-4 border-l-2 border-slate-50 space-y-1 py-1">
-                                  {(area.plots || []).map((plot) => {
-                                    const plotIdStr = String(plot.id);
-                                    const isPlotSel = isSelected(
-                                      "plot",
-                                      regIdStr,
-                                      areaIdStr,
-                                      plotIdStr,
-                                    );
-
-                                    return (
-                                      <div
-                                        key={plotIdStr}
-                                        onClick={() =>
-                                          handleSelect(
-                                            "plot",
-                                            regIdStr,
-                                            areaIdStr,
-                                            plotIdStr,
-                                            plot.name,
-                                            region.name,
-                                            area.name,
-                                          )
-                                        }
-                                        className={cn(
-                                          "flex items-center justify-between p-2 rounded-lg border-2 transition-all cursor-pointer group",
-                                          isPlotSel
-                                            ? "bg-primary/10 border-primary/40 opacity-60 cursor-not-allowed"
-                                            : "bg-white border-slate-50 hover:border-primary/20 hover:bg-slate-50",
-                                        )}
-                                      >
-                                        <div className="flex items-center gap-2.5">
-                                          <div className="w-2 h-2 rounded-full bg-slate-200 group-hover:bg-primary transition-colors" />
-                                          <span className="font-medium text-slate-600 text-xs text-primary/80">
-                                            {plot.name}
-                                          </span>
-                                        </div>
-                                        {isPlotSel ? (
-                                          <div className="flex items-center gap-1.5">
-                                            <CheckCircle2 className="w-3.5 h-3.5 text-primary" />
-                                            <Badge
-                                              variant="secondary"
-                                              className="text-[9px] bg-primary/10 text-primary border-none h-4 py-0 font-bold"
-                                            >
-                                              Đã chọn
-                                            </Badge>
-                                          </div>
-                                        ) : (
-                                          <div className="w-3.5 h-3.5 rounded-sm border border-slate-200 group-hover:border-primary transition-colors flex items-center justify-center">
-                                            <Plus className="w-2.5 h-2.5 text-slate-300 group-hover:text-primary" />
-                                          </div>
-                                        )}
-                                      </div>
-                                    );
-                                  })}
-                                </div>
-                              )}
-                            </div>
-                          );
-                        })}
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-
-              {filteredRegions.length === 0 && (
-                <div className="text-center py-12">
-                  <div className="bg-slate-50 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 border border-slate-100">
-                    <Search className="w-6 h-6 text-slate-300" />
-                  </div>
-                  <div className="text-slate-500 font-medium text-sm">
-                    Không tìm thấy dữ liệu phù hợp
-                  </div>
-                </div>
-              )}
-            </div>
-          </ScrollArea>
-
-          <div className="p-4 bg-slate-50 border-t flex justify-end gap-3 shrink-0">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setIsOpen(false)}
-            >
-              Hủy
-            </Button>
-            <Button type="button" onClick={handleConfirm}>
-              {tempSelections.length > existingSelections.length
-                ? `Xác nhận (+${tempSelections.length - existingSelections.length})`
-                : "Xác nhận"}
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+      {mobileMode ? (
+        <Sheet
+          open={isOpen}
+          onOpenChange={(open) => {
+            setIsOpen(open);
+            if (!open) {
+              setSearchTerm("");
+            }
+          }}
+        >
+          <SheetContent
+            side="bottom"
+            className="rounded-t-3xl p-0 overflow-hidden border-none shadow-2xl flex flex-col max-h-[85vh] bg-white"
+          >
+            <SheetHeader className="p-4 bg-slate-50 border-b shrink-0 text-left">
+              <SheetTitle className="flex items-center gap-2 text-base font-bold text-slate-800">
+                <MapPin className="w-5 h-5 text-emerald-600" />
+                Chọn vùng canh tác (vườn)
+              </SheetTitle>
+              <SheetDescription className="text-xs text-slate-500">
+                {regionOnly
+                  ? "Chạm để chọn vùng trồng thu hoạch"
+                  : "Chạm để chọn vùng trồng hoặc vườn canh tác"}
+              </SheetDescription>
+            </SheetHeader>
+            {searchInputNode}
+            {listScrollNode}
+            {footerActionNode}
+          </SheetContent>
+        </Sheet>
+      ) : (
+        <Dialog
+          open={isOpen}
+          onOpenChange={(open) => {
+            setIsOpen(open);
+            if (!open) {
+              setSearchTerm("");
+            }
+          }}
+        >
+          <DialogContent className="max-w-xl p-0 overflow-hidden rounded-2xl border-none shadow-2xl flex flex-col max-h-[90vh]">
+            <DialogHeader className="p-6 bg-slate-50 border-b shrink-0">
+              <DialogTitle className="flex items-center gap-2">
+                <MapPin className="w-5 h-5 text-primary" />
+                Chọn phạm vi canh tác
+              </DialogTitle>
+              <p className="text-xs text-muted-foreground mt-1">
+                {regionOnly
+                  ? "Chỉ chọn Vùng trồng"
+                  : "Chọn 1 Vùng trồng, Khu vực hoặc Lô đất cụ thể"}
+              </p>
+            </DialogHeader>
+            {searchInputNode}
+            {listScrollNode}
+            {footerActionNode}
+          </DialogContent>
+        </Dialog>
+      )}
     </>
   );
 }

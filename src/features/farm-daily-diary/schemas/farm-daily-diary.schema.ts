@@ -32,6 +32,7 @@ export const supplyUsageRequestSchema = supplyUsageSchema;
 export const dailyDiaryLineSchema = z
   .object({
     dailyTaskId: z.number().nullable().optional(),
+    taskId: z.number().nullable().optional(),
     name: z.string().min(1, "Tên công việc không được để trống"),
     taskCategoryId: z.number().nullable().optional(),
     priority: z
@@ -48,6 +49,15 @@ export const dailyDiaryLineSchema = z
   .refine(
     (data) => {
       if (data.startDate && data.endDate) {
+        const start = data.startDate.includes("T")
+          ? new Date(data.startDate).getTime()
+          : new Date(`${data.startDate}T00:00:00+07:00`).getTime();
+        const end = data.endDate.includes("T")
+          ? new Date(data.endDate).getTime()
+          : new Date(`${data.endDate}T23:59:59+07:00`).getTime();
+        if (!isNaN(start) && !isNaN(end)) {
+          return end >= start;
+        }
         return data.endDate >= data.startDate;
       }
       return true;

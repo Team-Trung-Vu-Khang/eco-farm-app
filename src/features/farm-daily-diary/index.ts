@@ -5,5 +5,4 @@ export * from "./hooks/useFarmDailyDiaryEntries";
 export * from "./hooks/useFarmDailyDiaryMutations";
 export * from "./hooks/useFarmDailyDiaryStats";
 export * from "./hooks/useFarmDiaryEntries";
-
-
+export * from "./hooks/useInfiniteFarmDailyDiaryEntries";

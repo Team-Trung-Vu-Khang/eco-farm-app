@@ -34,8 +34,12 @@ const ALERT_ICONS: Record<string, LucideIcon> = {
   contract: FileWarning,
 };
 
+export interface NotificationBellProps {
+  className?: string;
+}
+
 /** Chuông thông báo trên header mobile — thay cho khối "Cảnh báo" ở dashboard */
-export function NotificationBell() {
+export function NotificationBell({ className }: NotificationBellProps = {}) {
   const [open, setOpen] = useState(false);
   const [, setLocation] = useLocation();
   const { items, attentionCount, isLoading } = useDashboardAlertItems();
@@ -46,11 +50,12 @@ export function NotificationBell() {
         type="button"
         onClick={() => setOpen(true)}
         aria-label={
-          attentionCount > 0
-            ? `Thông báo (${attentionCount} mới)`
-            : "Thông báo"
+          attentionCount > 0 ? `Thông báo (${attentionCount} mới)` : "Thông báo"
         }
-        className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-slate-600 active:bg-slate-100"
+        className={cn(
+          "relative flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-slate-600 active:bg-slate-100",
+          className,
+        )}
       >
         <Bell className="h-5 w-5" />
         {attentionCount > 0 && (

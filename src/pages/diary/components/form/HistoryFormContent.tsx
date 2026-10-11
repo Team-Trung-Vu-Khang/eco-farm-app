@@ -20,82 +20,48 @@ import { useFarmTaskById, useFarmTasks } from "@/features/farm-task/hooks";
 import { useFarmPlans, useFarmWorkflows } from "@/features/farm-workflow/hooks";
 import type { FarmWorkflowScopeResponse } from "@/features/farm-workflow/types/farm-workflow.type";
 import { useCultivationZones } from "@/features/farm/hooks/useCultivationZones";
+import { useFarmPersonnel } from "@/features/master-data";
 import { useSelectedWorkspaceId } from "@/features/workspace";
 import type { GeographicalSelection } from "@/pages/cultivation-zone/cultivation-region/components/types";
 import { useDebounce } from "@/shared/hooks/useDebounce";
 import {
-  Badge,
   Button,
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  Input,
-  Label,
-  RemoteAutoCompleteSelect,
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-  Switch,
-  Textarea,
+  StepperForm,
+  type Step,
   useIsMobile,
   useToast,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import {
-  AlertTriangle,
-  Apple,
-  Camera,
-  CheckCircle2,
-  ChevronLeft,
-  ClipboardList,
-  ImagePlus,
-  Plus,
-  Trash2,
-  Upload,
-  X,
-} from "lucide-react";
+import { ChevronLeft } from "lucide-react";
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { GeographicalSelectionCard } from "./GeographicalSelectionCard";
-import { CultivationZoneSelector } from "./CultivationZoneSelector";
+import { useQueryClient } from "@tanstack/react-query";
 
-import {
-  WORK_TYPE_OPTIONS,
-  getHarvestLabel,
-  getHarvestUnitOptions,
-  getWorkflowLabel,
-  getWorkflowSubtitle,
-} from "../../constants/history-form.constants";
-import { historyFormSchema } from "../../schemas/historyFormSchema";
+import { WORK_TYPE_OPTIONS } from "@/pages/diary/constants/history-form.constants";
+import { historyFormSchema } from "@/pages/diary/schemas/historyFormSchema";
 import type {
   HarvestDetail,
   HistoryFormContentProps,
   HistoryFormData,
   MaterialAllocation,
-} from "../../types/history-form.types";
+} from "@/pages/diary/types/history-form.types";
 import {
   createHarvestDetail,
   extractCropSubjectVariants,
+  formatDateTimeForApi,
   getTodayDateString,
+  isEndDateBeforeStartDate,
   mapWorkTypeToPurpose,
   mapWorkflowScopeToHarvestOption,
   resolveWorkType,
   toCultivationZoneOptions,
   uploadPhotosInParallel,
-} from "../../utils/history-form.utils";
+} from "@/pages/diary/utils/history-form.utils";
 import { useCropSupplyCatalog } from "@/pages/plan-growth/hooks/useCropSupplyCatalog";
 import { getSupplyTypeOptions } from "@/shared/hooks/useRemoteSupplySearch";
-import { HarvestTreeSelectorDialog } from "../dialogs/HarvestTreeSelectorDialog";
-import { PlannedTaskDetailCard } from "./PlannedTaskDetailCard";
-import { WorkAllocationCard, type WorkTaskDetail } from "./WorkAllocationCard";
-import { WorkflowScopeMapModal } from "../dialogs/WorkflowScopeMapModal";
-import { DiarySuccessDialog } from "../dialogs/DiarySuccessDialog";
+import type { WorkTaskDetail } from "@/pages/diary/components/form/WorkAllocationCard";
+import { DiarySuccessDialog } from "@/pages/diary/components/dialogs/DiarySuccessDialog";
+import { Step1ContextAndWorkType } from "@/pages/diary/components/form/steps/Step1ContextAndWorkType";
+import { Step2ExecutionAndMaterials } from "@/pages/diary/components/form/steps/Step2ExecutionAndMaterials";
+import { Step3OverviewAndConfirm } from "@/pages/diary/components/form/steps/Step3OverviewAndConfirm";
 import { useLocation } from "wouter";
 import { getApiErrorMessage } from "@/shared/lib/api-error";
 
@@ -115,6 +81,8 @@ export function HistoryFormContent({
   const createDailyDiaryMutation = useCreateFarmDailyDiaryEntry();
   const updateDailyDiaryMutation = useUpdateFarmDailyDiaryEntry();
   const createPlanTaskDiaryMutation = useCreateFarmPlanTaskDiaryEntry();
+  const queryClient = useQueryClient();
+  const [stepperKey, setStepperKey] = useState(0);
 
   const searchParams = new URLSearchParams(window.location.search);
   const editId = searchParams.get("editId") || "";
@@ -140,8 +108,24 @@ export function HistoryFormContent({
     images: [],
     selectedStages: [],
     materialAllocations: [],
+    submittedByPersonnelId: null,
   });
   const [existingPhotos, setExistingPhotos] = useState<PhotoRequest[]>([]);
+
+  const isPlannedMode = isPlannedModeDefault;
+  const [selectedPlanId, setSelectedPlanId] = useState<string>(initialPlanId);
+  const [selectedStageId, setSelectedStageId] = useState<string>("");
+  const [selectedTaskId, setSelectedTaskId] = useState<string>(initialTaskId);
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
+  const [workTaskDetails, setWorkTaskDetails] = useState<
+    Record<string, WorkTaskDetail>
+  >({});
+  const [initialTaskDetails, setInitialTaskDetails] = useState<
+    Record<string, WorkTaskDetail>
+  >({});
+  const initialTaskDetailsRef = useRef<Record<string, WorkTaskDetail>>({});
+  const initialAllocationsRef = useRef<MaterialAllocation[]>([]);
 
   const [workflowSearchQuery, setWorkflowSearchQuery] = useState("");
   const debouncedWorkflowSearch = useDebounce(workflowSearchQuery, 300);
@@ -155,6 +139,12 @@ export function HistoryFormContent({
     },
   });
   const workflows = workflowsQuery.items || [];
+
+  const workspacePersonnelQuery = useFarmPersonnel({
+    params: { size: 100 },
+    workspaceId: typeof workspaceId === "number" ? workspaceId : undefined,
+  });
+  const workspacePersonnel = workspacePersonnelQuery.items || [];
 
   const selectedWorkflow = useMemo(
     () =>
@@ -365,22 +355,6 @@ export function HistoryFormContent({
     return () => window.removeEventListener("resize", handleResize);
   }, [isMobile]);
 
-  const [isPlannedMode, setIsPlannedMode] =
-    useState<boolean>(isPlannedModeDefault);
-  const [selectedPlanId, setSelectedPlanId] = useState<string>(initialPlanId);
-  const [selectedStageId, setSelectedStageId] = useState<string>("");
-  const [selectedTaskId, setSelectedTaskId] = useState<string>(initialTaskId);
-  const [errors, setErrors] = useState<Record<string, string>>({});
-
-  const [workTaskDetails, setWorkTaskDetails] = useState<
-    Record<string, WorkTaskDetail>
-  >({});
-  const [initialTaskDetails, setInitialTaskDetails] = useState<
-    Record<string, WorkTaskDetail>
-  >({});
-  const initialTaskDetailsRef = useRef<Record<string, WorkTaskDetail>>({});
-  const initialAllocationsRef = useRef<MaterialAllocation[]>([]);
-
   const handleUpdateWorkTaskDetail = (
     stageName: string,
     updates: Partial<WorkTaskDetail>,
@@ -511,7 +485,6 @@ export function HistoryFormContent({
   };
 
   const [, setPlanSearchQuery] = useState("");
-  const [, setTaskSearchQuery] = useState("");
   const [plannedStages, setPlannedStages] = useState<string[]>([]);
 
   // Load plans for selected workflow
@@ -602,6 +575,7 @@ export function HistoryFormContent({
         endDate: taskItem.endDate,
         description: taskItem.note || "",
         isDirty: false,
+        taskId: taskItem.id,
       },
     };
     setWorkTaskDetails(defaultTaskDetails);
@@ -613,6 +587,11 @@ export function HistoryFormContent({
       JSON.stringify(plannedAllocations),
     );
 
+    const taskExecutors =
+      taskItem.personnel?.filter((p) => p.role === "EXECUTOR") || [];
+    const initialPersonnelId =
+      taskExecutors[0]?.id || taskItem.personnel?.[0]?.id;
+
     setPlannedStages([taskItem.name]);
     setFormData((prev) => ({
       ...prev,
@@ -622,6 +601,8 @@ export function HistoryFormContent({
       completionPercentage: initialProgress,
       selectedStages: [taskItem.name],
       materialAllocations: plannedAllocations,
+      submittedByPersonnelId:
+        prev.submittedByPersonnelId ?? initialPersonnelId ?? null,
     }));
   }, [initialTaskData]);
 
@@ -660,27 +641,141 @@ export function HistoryFormContent({
     [selectedPlan],
   );
 
-  const filteredTasks = useMemo(() => {
-    if (!selectedStageId) return availableTasks;
-    return availableTasks.filter(
-      (t) => t.stage && String(t.stage.id) === String(selectedStageId),
-    );
-  }, [availableTasks, selectedStageId]);
-
-  const taskOptions = useMemo(
-    () =>
-      filteredTasks.map((t) => ({
-        label: t.code ? `${t.code} - ${t.name}` : t.name,
-        value: String(t.id),
-        keywords: [t.code, t.name].filter(Boolean) as string[],
-      })),
-    [filteredTasks],
-  );
-
   const selectedTask = useMemo(
     () => availableTasks.find((t) => String(t.id) === String(selectedTaskId)),
     [availableTasks, selectedTaskId],
   );
+
+  const availablePersonnelOptions = useMemo(() => {
+    const map = new Map<
+      number,
+      { id: number; fullName: string; role?: string }
+    >();
+
+    // 1. Current selected/initial task personnel
+    const currentTask = selectedTask || initialTaskData;
+    if (currentTask?.personnel) {
+      currentTask.personnel.forEach((p) => {
+        if (p.id) {
+          map.set(p.id, {
+            id: p.id,
+            fullName: p.fullName || `Nhân sự #${p.id}`,
+            role: p.role,
+          });
+        }
+      });
+    }
+
+    // 2. All available tasks in current plan
+    availableTasks.forEach((t) => {
+      (t.personnel || []).forEach((p) => {
+        if (p.id && !map.has(p.id)) {
+          map.set(p.id, {
+            id: p.id,
+            fullName: p.fullName || `Nhân sự #${p.id}`,
+            role: p.role,
+          });
+        }
+      });
+    });
+
+    // 3. Plan personnel
+    if (selectedPlan?.personnel) {
+      selectedPlan.personnel.forEach((p) => {
+        if (p.id && !map.has(p.id)) {
+          map.set(p.id, {
+            id: p.id,
+            fullName: p.fullName || `Nhân sự #${p.id}`,
+            role: p.role,
+          });
+        }
+      });
+    }
+
+    // 4. Workspace personnel
+    workspacePersonnel.forEach((p) => {
+      if (p.id && !map.has(p.id)) {
+        map.set(p.id, {
+          id: p.id,
+          fullName: p.fullName || `Nhân sự #${p.id}`,
+        });
+      }
+    });
+
+    return Array.from(map.values()).map((p) => {
+      const roleLabel =
+        p.role === "EXECUTOR"
+          ? "Người thực hiện"
+          : p.role === "MANAGER"
+            ? "Quản lý"
+            : p.role === "QUALITY_INSPECTOR"
+              ? "Kiểm định"
+              : undefined;
+      return {
+        value: String(p.id),
+        label: roleLabel ? `${p.fullName} (${roleLabel})` : p.fullName,
+      };
+    });
+  }, [
+    selectedTask,
+    initialTaskData,
+    availableTasks,
+    selectedPlan,
+    workspacePersonnel,
+  ]);
+
+  // Default personnel resolution: priority EXECUTOR -> any task personnel -> plan personnel -> workspace personnel
+  const defaultPersonnelId = useMemo(() => {
+    const currentTask = selectedTask || initialTaskData;
+    // 1. Task EXECUTOR
+    const taskExecutor = currentTask?.personnel?.find(
+      (p) => p.role === "EXECUTOR",
+    );
+    if (taskExecutor?.id) return taskExecutor.id;
+
+    // 2. Any task executor in availableTasks
+    const anyExecutor = availableTasks
+      .flatMap((t) => t.personnel || [])
+      .find((p) => p.role === "EXECUTOR");
+    if (anyExecutor?.id) return anyExecutor.id;
+
+    // 3. Any task personnel
+    if (currentTask?.personnel?.[0]?.id) return currentTask.personnel[0].id;
+
+    // 4. Any task personnel in availableTasks
+    const anyTaskPersonnel = availableTasks.flatMap(
+      (t) => t.personnel || [],
+    )[0];
+    if (anyTaskPersonnel?.id) return anyTaskPersonnel.id;
+
+    // 5. Plan personnel
+    if (selectedPlan?.personnel?.[0]?.id) return selectedPlan.personnel[0].id;
+
+    // 6. Workspace personnel
+    if (workspacePersonnel[0]?.id) return workspacePersonnel[0].id;
+
+    return undefined;
+  }, [
+    selectedTask,
+    initialTaskData,
+    availableTasks,
+    selectedPlan,
+    workspacePersonnel,
+  ]);
+
+  const submittedByPersonnelName = useMemo(() => {
+    const currentPersonnelId =
+      formData.submittedByPersonnelId || defaultPersonnelId;
+    if (!currentPersonnelId) return undefined;
+    const opt = availablePersonnelOptions.find(
+      (o) => o.value === String(currentPersonnelId),
+    );
+    return opt?.label;
+  }, [
+    formData.submittedByPersonnelId,
+    defaultPersonnelId,
+    availablePersonnelOptions,
+  ]);
 
   const previousPercentage = useMemo(() => {
     const stages = formData.selectedStages;
@@ -761,7 +856,7 @@ export function HistoryFormContent({
     });
   };
 
-  const addStage = (stageName?: string) => {
+  const addStage = (stageName?: string, categoryId?: number) => {
     const nameToAdd = (stageName || "").trim();
     if (!nameToAdd) return;
     if (formData.selectedStages.includes(nameToAdd)) {
@@ -792,6 +887,8 @@ export function HistoryFormContent({
         description: "",
         isNewStage: true,
         isDirty: true,
+        taskId: categoryId,
+        taskCategoryId: categoryId,
       },
     }));
   };
@@ -879,10 +976,13 @@ export function HistoryFormContent({
 
   const handleContinueLogging = () => {
     setShowSuccessDialog(false);
-    setSelectedTaskId("");
+    setSelectedTaskId(initialTaskId || "");
     if (!isPlannedMode) {
       setSelectedPlanId("");
+    } else {
+      setSelectedPlanId(initialPlanId || "");
     }
+    setSelectedStageId("");
     setPlannedStages([]);
     setWorkTaskDetails({});
     setInitialTaskDetails({});
@@ -891,25 +991,46 @@ export function HistoryFormContent({
     setExistingPhotos([]);
     uploadCacheRef.current.clear();
     setErrors({});
-    setFormData((prev) => ({
-      ...prev,
-      workType: isPlannedMode ? prev.workType : "",
+    setFormData({
+      regimenId: initialWorkflowId || urlWorkflowId || "",
+      workType: "",
       warning: false,
       harvestScope: "region",
       harvestTargets: [],
       harvestDetails: [],
       harvestFiles: [],
-      completionPercentage: 100,
+      startDate: getTodayDateString(),
+      endDate: getTodayDateString(),
+      completionPercentage: 60,
       description: "",
       images: [],
       selectedStages: [],
       materialAllocations: [],
-    }));
+      submittedByPersonnelId: null,
+    });
+
+    // Invalidate và refetch các API để cập nhật dữ liệu mới nhất
+    void queryClient.invalidateQueries({ queryKey: ["farm-tasks"] });
+    void queryClient.invalidateQueries({ queryKey: ["farm-plans"] });
+    void queryClient.invalidateQueries({ queryKey: ["farm-workflows"] });
+    void queryClient.invalidateQueries({ queryKey: ["cultivation-zones"] });
+    void queryClient.invalidateQueries({ queryKey: ["farm-personnel"] });
+    void queryClient.invalidateQueries({ queryKey: ["farm-plan-task-diary"] });
+    void queryClient.invalidateQueries({ queryKey: ["farm-daily-diary"] });
+
+    void workflowsQuery.refetch?.();
+    void plansQuery.refetch?.();
+    void tasksQuery.refetch?.();
+    void workspacePersonnelQuery.refetch?.();
+
+    // Chuyển stepper về step đầu tiên
+    setStepperKey((prev) => prev + 1);
+
     window.scrollTo({ top: 0, behavior: "smooth" });
     toast({
       title: "Sẵn sàng ghi tiếp",
       description:
-        "Đã giữ lại thông tin mùa vụ. Bạn có thể chọn công việc tiếp theo.",
+        "Đã làm mới dữ liệu và đưa biểu mẫu về bước đầu tiên để tiếp tục ghi nhật ký.",
     });
   };
 
@@ -966,7 +1087,11 @@ export function HistoryFormContent({
         formattedErrors[`stage_${stage}_endDate`] =
           "Vui lòng chọn thời gian kết thúc.";
       }
-      if (startDateVal && endDateVal && endDateVal < startDateVal) {
+      if (
+        startDateVal &&
+        endDateVal &&
+        isEndDateBeforeStartDate(startDateVal, endDateVal)
+      ) {
         formattedErrors[`stage_${stage}_endDate`] =
           "Thời gian kết thúc không thể trước ngày bắt đầu.";
       }
@@ -1047,10 +1172,15 @@ export function HistoryFormContent({
         const matchedTask = availableTasks.find(
           (t) => t.name === stName || String(t.id) === detail?.id,
         );
-        const isNewStageTask = !plannedStages.includes(stName) || !matchedTask;
-        const taskId = isNewStageTask
-          ? undefined
-          : (matchedTask?.id ?? (Number(detail?.id) || undefined));
+        const rawTaskId =
+          matchedTask?.id ??
+          (detail?.taskId ? Number(detail.taskId) : undefined) ??
+          (Number(detail?.id) || undefined) ??
+          (detail?.taskCategoryId
+            ? Number(detail.taskCategoryId)
+            : undefined) ??
+          (selectedTaskId ? Number(selectedTaskId) : undefined);
+        const taskId = rawTaskId ? Number(rawTaskId) : undefined;
 
         const taskExecutors =
           matchedTask?.personnel?.filter((p) => p.role === "EXECUTOR") || [];
@@ -1107,10 +1237,16 @@ export function HistoryFormContent({
         })
         .filter((h) => h.quantity > 0 && h.targetId > 0);
 
+      // Resolve submittedByPersonnelId per api.json specs:
+      // "Chỉ được bỏ trống khi tất cả công việc chưa có EXECUTOR; nếu truyền thì nhân sự phải thuộc workspace hiện tại"
+      const resolvedSubmittedByPersonnelId = formData.submittedByPersonnelId
+        ? Number(formData.submittedByPersonnelId)
+        : (defaultPersonnelId ?? undefined);
+
       const validationPayload = {
         planId,
         stageId,
-        submittedByPersonnelId: undefined,
+        submittedByPersonnelId: resolvedSubmittedByPersonnelId,
         warning: formData.warning,
         description: formData.description,
         photos: [],
@@ -1154,7 +1290,7 @@ export function HistoryFormContent({
         const finalPayload = {
           planId,
           stageId,
-          submittedByPersonnelId: undefined,
+          submittedByPersonnelId: resolvedSubmittedByPersonnelId,
           warning: formData.warning,
           description: formData.description || null,
           photos: combinedPhotos.length > 0 ? combinedPhotos : undefined,
@@ -1207,11 +1343,20 @@ export function HistoryFormContent({
             quantityActual: Number(alloc.actualQuantity || alloc.quantity || 0),
           }));
 
+        // Gắn taskId: Khi là công việc phát sinh chưa có taskId, gắn id của loại công việc
+        const rawTaskId =
+          task.taskId ??
+          task.taskCategoryId ??
+          (selectedTaskId ? Number(selectedTaskId) : undefined);
+        const resolvedTaskId = rawTaskId ? Number(rawTaskId) : null;
+
         return {
+          taskId: resolvedTaskId,
+          taskCategoryId: task.taskCategoryId ?? resolvedTaskId,
           name: task.stageName || "Công việc phát sinh",
           priority: task.priority || "MEDIUM",
-          startDate: task.startDate || formData.startDate,
-          endDate: task.endDate || formData.endDate,
+          startDate: formatDateTimeForApi(task.startDate || formData.startDate),
+          endDate: formatDateTimeForApi(task.endDate || formData.endDate),
           description: task.description || null,
           supplies: supplies.length > 0 ? supplies : undefined,
         };
@@ -1236,11 +1381,14 @@ export function HistoryFormContent({
           quantityActual: Number(alloc.actualQuantity || alloc.quantity || 0),
         }));
 
+      const fallbackTaskId = selectedTaskId ? Number(selectedTaskId) : null;
+
       lines.push({
+        taskId: fallbackTaskId,
         name: `Công việc ${label}`,
         priority: "MEDIUM",
-        startDate: formData.startDate,
-        endDate: formData.endDate,
+        startDate: formatDateTimeForApi(formData.startDate),
+        endDate: formatDateTimeForApi(formData.endDate),
         description: formData.description || null,
         supplies: supplies.length > 0 ? supplies : undefined,
       });
@@ -1346,1076 +1494,250 @@ export function HistoryFormContent({
   };
 
   const mobileUiMode = useMobileUiMode();
-  // Giao diện mobile có bottom nav cố định → thanh hành động không fixed nữa
   const isMobileApp = isMobile && mobileUiMode === "app";
+
+  // Điều kiện kiểm tra tính hợp lệ của từng bước (isValid của Step)
+  const isStep1Valid = useMemo(() => {
+    if (!formData.regimenId) return false;
+    if (isPlannedMode && (!selectedPlanId || !selectedStageId)) return false;
+    if (!formData.workType) return false;
+    return true;
+  }, [
+    formData.regimenId,
+    formData.workType,
+    isPlannedMode,
+    selectedPlanId,
+    selectedStageId,
+  ]);
+
+  const isStep2Valid = useMemo(() => {
+    if (formData.workType === "harvest") {
+      if (formData.harvestDetails.length === 0) return false;
+      const allHaveQuantity = formData.harvestDetails.every(
+        (d) => d.quantity && Number(d.quantity) > 0,
+      );
+      if (!allHaveQuantity) return false;
+    } else {
+      if (formData.selectedStages.length === 0) return false;
+    }
+
+    if (formData.materialAllocations.length > 0) {
+      const allValidMaterials = formData.materialAllocations.every((m) => {
+        const qty = Number(m.actualQuantity || m.quantity);
+        return !isNaN(qty) && qty > 0;
+      });
+      if (!allValidMaterials) return false;
+    }
+
+    return true;
+  }, [
+    formData.workType,
+    formData.harvestDetails,
+    formData.selectedStages,
+    formData.materialAllocations,
+  ]);
+
+  const steps: Step[] = useMemo(
+    () => [
+      {
+        id: "context",
+        title: "Vụ mùa & Loại việc",
+        description: "Chọn vụ mùa, kế hoạch và loại công việc",
+        content: (
+          <Step1ContextAndWorkType
+            formData={formData}
+            setFormData={setFormData}
+            workflowDomainCode={workflowDomainCode}
+            workflowOptions={workflowOptions}
+            workflowSearchQuery={workflowSearchQuery}
+            setWorkflowSearchQuery={setWorkflowSearchQuery}
+            workflowsLoading={workflowsQuery.loading}
+            selectedWorkflow={selectedWorkflow}
+            isPlannedMode={isPlannedMode}
+            allowModeToggle={allowModeToggle}
+            planOptions={planOptions}
+            setPlanSearchQuery={setPlanSearchQuery}
+            selectedPlanId={selectedPlanId}
+            setSelectedPlanId={setSelectedPlanId}
+            selectedPlan={selectedPlan}
+            stageOptions={stageOptions}
+            selectedStageId={selectedStageId}
+            setSelectedStageId={setSelectedStageId}
+            availableTasks={availableTasks}
+            selectedTask={selectedTask}
+            errors={errors}
+            setErrors={setErrors}
+            setPlannedStages={setPlannedStages}
+            setWorkTaskDetails={setWorkTaskDetails}
+            setInitialTaskDetails={setInitialTaskDetails}
+            personnelOptions={availablePersonnelOptions}
+            defaultPersonnelId={defaultPersonnelId}
+          />
+        ),
+        isValid: isStep1Valid,
+      },
+      {
+        id: "execution",
+        title: "Thực hiện & Vật tư",
+        description: "Chi tiết công việc, vật tư, ảnh và cảnh báo",
+        content: (
+          <Step2ExecutionAndMaterials
+            formData={formData}
+            setFormData={setFormData}
+            workflowDomainCode={workflowDomainCode}
+            isPlannedMode={isPlannedMode}
+            plannedStages={plannedStages}
+            workTaskDetails={workTaskDetails}
+            currentPercentage={currentPercentage}
+            previousPercentage={previousPercentage}
+            sliderTrackBackground={sliderTrackBackground}
+            selectedStageId={selectedStageId}
+            selectedTask={selectedTask}
+            errors={errors}
+            addStage={addStage}
+            removeStage={removeStage}
+            handleUpdateWorkTaskDetail={handleUpdateWorkTaskDetail}
+            handleAddMaterial={handleAddMaterial}
+            handleRemoveMaterial={handleRemoveMaterial}
+            handleUpdateActualQuantity={handleUpdateActualQuantity}
+            regionOptions={regionOptions}
+            cropSubjectVariants={cropSubjectVariants}
+            existingGeoSelections={existingGeoSelections}
+            handleConfirmGeoSelections={handleConfirmGeoSelections}
+            syncHarvestDetails={syncHarvestDetails}
+            existingPhotos={existingPhotos}
+            removeExistingPhoto={removeExistingPhoto}
+            removeImage={removeImage}
+            handleFileInputChange={handleFileInputChange}
+            handleDrop={handleDrop}
+            isDragging={isDragging}
+            setIsDragging={setIsDragging}
+            cameraInputRef={cameraInputRef}
+            fileInputRef={fileInputRef}
+            isMobileOrTablet={isMobileOrTablet}
+            isPhotoSheetOpen={isPhotoSheetOpen}
+            setIsPhotoSheetOpen={setIsPhotoSheetOpen}
+          />
+        ),
+        isValid: isStep2Valid,
+      },
+      {
+        id: "overview",
+        title: "Tổng quan & Xác nhận",
+        description: "Kiểm tra lại toàn bộ dữ liệu trước khi lưu",
+        content: (
+          <Step3OverviewAndConfirm
+            formData={formData}
+            selectedWorkflow={selectedWorkflow}
+            selectedPlan={selectedPlan}
+            selectedStageId={selectedStageId}
+            selectedTask={selectedTask}
+            isPlannedMode={isPlannedMode}
+            workTaskDetails={workTaskDetails}
+            existingPhotos={existingPhotos}
+            workflowDomainCode={workflowDomainCode}
+            submittedByPersonnelName={submittedByPersonnelName}
+          />
+        ),
+        isValid: true,
+      },
+    ],
+    [
+      formData,
+      workflowDomainCode,
+      workflowOptions,
+      workflowSearchQuery,
+      workflowsQuery.loading,
+      selectedWorkflow,
+      isPlannedMode,
+      allowModeToggle,
+      planOptions,
+      selectedPlanId,
+      selectedPlan,
+      stageOptions,
+      selectedStageId,
+      availableTasks,
+      selectedTask,
+      availablePersonnelOptions,
+      submittedByPersonnelName,
+      currentPercentage,
+      previousPercentage,
+      sliderTrackBackground,
+      errors,
+      isStep1Valid,
+      isStep2Valid,
+      plannedStages,
+      workTaskDetails,
+      regionOptions,
+      cropSubjectVariants,
+      existingGeoSelections,
+      existingPhotos,
+      isDragging,
+      isMobileOrTablet,
+      isPhotoSheetOpen,
+      addStage,
+      removeStage,
+      handleUpdateWorkTaskDetail,
+      handleAddMaterial,
+      handleRemoveMaterial,
+      handleUpdateActualQuantity,
+      handleConfirmGeoSelections,
+      syncHarvestDetails,
+      removeExistingPhoto,
+      removeImage,
+      handleFileInputChange,
+      handleDrop,
+      setFormData,
+      setWorkflowSearchQuery,
+      setPlanSearchQuery,
+      setSelectedPlanId,
+      setSelectedStageId,
+      setErrors,
+      setPlannedStages,
+      setWorkTaskDetails,
+      setInitialTaskDetails,
+      setIsDragging,
+      setIsPhotoSheetOpen,
+    ],
+  );
 
   return (
     <PageWrapper
       title={pageTitle}
       description="Ghi nhận hoạt động sản xuất, cập nhật tiến độ công việc và cấp phát vật tư"
-      // Điện thoại: không hiện nút Quay lại (đã có thanh điều hướng dưới)
       actions={
         isMobile ? undefined : (
           <div className="flex items-center gap-3">
-            {/* {allowModeToggle && (
-            <div className="flex items-center gap-2 bg-slate-100 px-1.5 py-1 rounded-lg border border-slate-200/80 shrink-0">
-              <span className="text-xs font-extrabold px-2 py-1 rounded-md transition-all">
-                Kế hoạch vụ mùa
-              </span>
-              <Switch
-                checked={isPlannedMode}
-                onCheckedChange={(checked) => {
-                  setIsPlannedMode(checked);
-                  if (!checked) {
-                    setSelectedPlanId("");
-                    setSelectedTaskId("");
-                    setPlannedStages([]);
-                    setErrors((prev) => ({ ...prev, planId: "", taskId: "" }));
-                    setFormData((prev) => ({
-                      ...prev,
-                      endDate: getTodayDateString(),
-                    }));
-                  }
-                }}
-              />
-            </div>
-          )} */}
             <Button
               variant="outline"
               className="h-10 rounded-lg px-4 text-sm gap-2"
               onClick={() => setLocation(backUrl)}
             >
               <ChevronLeft className="h-4 w-4" />
-              Quay lại
+              Quay lại danh sách
             </Button>
           </div>
         )
       }
     >
       <div
-        className={`mx-auto w-full max-w-5xl space-y-6 ${isMobileApp ? "" : "pb-24"}`}
+        className={`mx-auto w-full max-w-5xl ${isMobileApp ? "pb-8" : "pb-12"}`}
       >
-        {/* Block 1: Thông tin chung & Nhật ký */}
-        <div className="space-y-6">
-          <Card className="border-none bg-white shadow-sm">
-            <CardHeader className="border-b border-slate-100 pb-3">
-              <CardTitle className="flex items-center gap-2 text-base font-bold">
-                <ClipboardList className="h-4 w-4 text-emerald-600" />
-                Thông tin cập nhật
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4 pt-6">
-              {/* Chọn Vụ mùa / Quy trình */}
-              <div className="space-y-2">
-                <Label required>{getWorkflowLabel(workflowDomainCode)}</Label>
-                <RemoteAutoCompleteSelect
-                  options={workflowOptions}
-                  value={formData.regimenId}
-                  onChange={(val) => {
-                    setFormData((prev) => ({ ...prev, regimenId: val }));
-                    setSelectedPlanId("");
-                    setSelectedTaskId("");
-                    if (errors.regimenId) {
-                      setErrors((prev) => ({ ...prev, regimenId: "" }));
-                    }
-                  }}
-                  onSearch={(query) => {
-                    setWorkflowSearchQuery(query);
-                  }}
-                  placeholder={`Chọn ${getWorkflowLabel(workflowDomainCode).toLowerCase()}...`}
-                  searchPlaceholder={`Tìm ${getWorkflowLabel(workflowDomainCode).toLowerCase()}...`}
-                  emptyText="Không tìm thấy mục phù hợp."
-                  loading={workflowsQuery.loading}
-                  disabled={!allowModeToggle}
-                />
-                {errors.regimenId && (
-                  <p className="text-xs font-medium text-red-500 mt-1">
-                    {errors.regimenId}
-                  </p>
-                )}
-                <p className="text-xs text-slate-500">
-                  {getWorkflowSubtitle(workflowDomainCode)} đang được áp dụng
-                  cho nhật ký này.
-                </p>
-
-                {/* Bản đồ phạm vi Mùa vụ */}
-                {selectedWorkflow && (
-                  <WorkflowScopeMapModal workflow={selectedWorkflow} />
-                )}
-              </div>
-
-              {/* Chế độ Theo kế hoạch -> Combobox chọn Kế hoạch & Hạng mục dự kiến (Stage) */}
-              {isPlannedMode && (
-                <div className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {/* Combobox 1: Kế hoạch */}
-                    <div className="space-y-2">
-                      <Label required>Kế hoạch</Label>
-                      <RemoteAutoCompleteSelect
-                        options={planOptions}
-                        value={selectedPlanId}
-                        onChange={(val) => {
-                          setSelectedPlanId(val);
-                          setSelectedStageId("");
-                          setSelectedTaskId("");
-                          setPlannedStages([]);
-                          setWorkTaskDetails({});
-                          setFormData((prev) => ({
-                            ...prev,
-                            selectedStages: [],
-                            materialAllocations: [],
-                          }));
-                          if (errors.planId) {
-                            setErrors((prev) => ({ ...prev, planId: "" }));
-                          }
-                        }}
-                        onSearch={(query) => {
-                          setPlanSearchQuery(query);
-                        }}
-                        placeholder="Chọn kế hoạch..."
-                        searchPlaceholder="Tìm kế hoạch..."
-                        emptyText="Không tìm thấy kế hoạch."
-                        disabled={!allowModeToggle || !formData.regimenId}
-                      />
-                      {errors.planId && (
-                        <p className="text-xs font-medium text-red-500 mt-1">
-                          {errors.planId}
-                        </p>
-                      )}
-                    </div>
-
-                    {/* Combobox 2: Hạng mục dự kiến (Giai đoạn/Stage thuộc Kế hoạch) */}
-                    <div className="space-y-2">
-                      <Label required>Hạng mục dự kiến</Label>
-                      <RemoteAutoCompleteSelect
-                        onSearch={() => {}}
-                        options={stageOptions}
-                        value={selectedStageId}
-                        onChange={(val) => {
-                          setSelectedStageId(val);
-                          if (errors.stageId) {
-                            setErrors((prev) => ({ ...prev, stageId: "" }));
-                          }
-
-                          const targetStage = selectedPlan?.stages?.find(
-                            (s) => String(s.id) === String(val),
-                          );
-                          const stageTasks = availableTasks.filter(
-                            (t) =>
-                              t.stage && String(t.stage.id) === String(val),
-                          );
-
-                          const newTaskNames: string[] = [];
-                          const newTaskDetails: Record<string, WorkTaskDetail> =
-                            {};
-                          const newAllocations: MaterialAllocation[] = [];
-
-                          if (stageTasks.length > 0) {
-                            stageTasks.forEach((taskItem, tIdx) => {
-                              const taskName = taskItem.name;
-                              newTaskNames.push(taskName);
-                              const taskProgress =
-                                typeof taskItem.progressPercent === "number"
-                                  ? taskItem.progressPercent
-                                  : taskItem.status === "DONE"
-                                    ? 100
-                                    : 0;
-                              newTaskDetails[taskName] = {
-                                id: String(taskItem.id),
-                                stageName: taskName,
-                                progress: taskProgress,
-                                priority:
-                                  (taskItem.priority as WorkTaskDetail["priority"]) ||
-                                  "MEDIUM",
-                                startDate: taskItem.startDate,
-                                endDate:
-                                  taskItem.endDate || getTodayDateString(),
-                                description: taskItem.note || "",
-                                isDirty: false,
-                              };
-
-                              (taskItem.supplyLines || []).forEach(
-                                (s, sIdx) => {
-                                  const qtyVal =
-                                    s.quantityActualTotal ?? s.quantity ?? 0;
-                                  newAllocations.push({
-                                    id: Date.now() + tIdx * 100 + sIdx,
-                                    stageId: taskName,
-                                    materialType: "Kế hoạch",
-                                    materialName:
-                                      s.supplyItemName ||
-                                      s.supplyItem?.name ||
-                                      s.name ||
-                                      `Vật tư #${s.id}`,
-                                    quantity: String(qtyVal),
-                                    actualQuantity: String(qtyVal),
-                                    unit:
-                                      s.unitBase?.name ||
-                                      s.unit ||
-                                      s.unitName ||
-                                      "",
-                                    supplyItemId:
-                                      s.supplyItem?.id || s.supplyItemId,
-                                    unitBaseId: s.unitBase?.id || s.unitBaseId,
-                                    isPlanned: true,
-                                  });
-                                },
-                              );
-                            });
-                          } else if (
-                            targetStage?.workItems &&
-                            targetStage.workItems.length > 0
-                          ) {
-                            targetStage.workItems.forEach((wi) => {
-                              const wiName = wi.name;
-                              newTaskNames.push(wiName);
-                              newTaskDetails[wiName] = {
-                                id: String(wi.id),
-                                stageName: wiName,
-                                progress: 100,
-                                priority: "MEDIUM",
-                                startDate: getTodayDateString(),
-                                endDate: getTodayDateString(),
-                                description: wi.description || "",
-                                isDirty: false,
-                              };
-                            });
-                          } else if (targetStage) {
-                            const stageName = targetStage.name;
-                            newTaskNames.push(stageName);
-                            newTaskDetails[stageName] = {
-                              id: String(targetStage.id),
-                              stageName: stageName,
-                              progress: 100,
-                              priority: "MEDIUM",
-                              startDate: getTodayDateString(),
-                              endDate: getTodayDateString(),
-                              description: targetStage.description || "",
-                              isDirty: false,
-                            };
-                          }
-
-                          setWorkTaskDetails(newTaskDetails);
-                          setInitialTaskDetails(newTaskDetails);
-                          setPlannedStages(newTaskNames);
-                          setFormData((prev) => ({
-                            ...prev,
-                            workType: resolveWorkType(
-                              selectedPlan?.purpose,
-                              targetStage?.name ?? newTaskNames[0] ?? "",
-                            ),
-                            selectedStages: newTaskNames,
-                            materialAllocations: newAllocations,
-                          }));
-                        }}
-                        placeholder="Chọn hạng mục dự kiến..."
-                        searchPlaceholder="Tìm hạng mục dự kiến..."
-                        emptyText="Không tìm thấy hạng mục dự kiến."
-                        disabled={
-                          !allowModeToggle ||
-                          !formData.regimenId ||
-                          !selectedPlanId ||
-                          stageOptions.length === 0
-                        }
-                      />
-                      {errors.stageId && (
-                        <p className="text-xs font-medium text-red-500 mt-1">
-                          {errors.stageId}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Card chi tiết thông tin công việc dự kiến đã chọn */}
-                  {selectedTask && (
-                    <PlannedTaskDetailCard task={selectedTask} />
-                  )}
-                </div>
-              )}
-
-              {/* Chọn Loại công việc */}
-              <div className="space-y-3">
-                <Label required>Loại công việc</Label>
-                <div className="grid gap-2.5 max-sm:grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
-                  {WORK_TYPE_OPTIONS.map((option) => {
-                    const isActive = formData.workType === option.value;
-                    return (
-                      <button
-                        key={option.value}
-                        type="button"
-                        disabled={isPlannedMode}
-                        onClick={() => {
-                          if (isPlannedMode) return;
-                          setFormData((prev) => ({
-                            ...prev,
-                            workType: option.value,
-                          }));
-                          if (errors.workType) {
-                            setErrors((prev) => ({ ...prev, workType: "" }));
-                          }
-                        }}
-                        className={`rounded-xl border-2 px-2 py-3 transition-all flex flex-col items-center text-center gap-1.5 group ${
-                          isPlannedMode
-                            ? "cursor-not-allowed"
-                            : "cursor-pointer"
-                        } ${
-                          isActive
-                            ? option.activeClass
-                            : isPlannedMode
-                              ? "border-slate-100 bg-slate-50/50 opacity-50 text-slate-400"
-                              : "border-slate-100 bg-white hover:border-slate-200 text-slate-600"
-                        }`}
-                      >
-                        <div
-                          className={`w-10 h-10 rounded-xl flex items-center justify-center transition-transform group-hover:scale-105 ${
-                            isActive
-                              ? option.iconClass
-                              : "bg-slate-100 text-slate-600"
-                          }`}
-                        >
-                          <option.icon className="w-5 h-5" />
-                        </div>
-                        <span className="text-[11px] font-black uppercase tracking-tight">
-                          {option.label}
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>
-                {errors.workType && (
-                  <p className="text-xs font-medium text-red-500 mt-1">
-                    {errors.workType}
-                  </p>
-                )}
-              </div>
-
-              {/* Mức độ hoàn thành công việc (Slide bar 2 màu hợp nhất) */}
-              {isPlannedMode && (
-                <div
-                  className={`space-y-3.5 rounded-2xl border border-slate-200/90 bg-white p-4.5 shadow-2xs transition-all ${
-                    !selectedTaskId ? "opacity-50 pointer-events-none" : ""
-                  }`}
-                >
-                  {/* Header */}
-                  <div className="flex items-center justify-between gap-2.5">
-                    <div className="flex items-center gap-2">
-                      <div
-                        className={`h-8 w-8 rounded-xl flex items-center justify-center font-bold shrink-0 ${
-                          currentPercentage < previousPercentage
-                            ? "bg-red-100 text-red-700"
-                            : "bg-emerald-100 text-emerald-700"
-                        }`}
-                      >
-                        <CheckCircle2 className="w-4 h-4" />
-                      </div>
-                      <div>
-                        <h4 className="text-xs font-extrabold text-slate-900 uppercase tracking-wider">
-                          Mức độ hoàn thành công việc
-                        </h4>
-                        <p className="text-[11px] text-slate-500">
-                          Tự động tính toán theo tiến độ các công việc thuộc
-                          hạng mục
-                        </p>
-                      </div>
-                    </div>
-
-                    {/* Hiển thị badge cảnh báo khi kéo giảm */}
-                    {currentPercentage < previousPercentage && (
-                      <span className="text-[11px] font-extrabold text-red-700 bg-red-50 border border-red-200 px-2.5 py-1 rounded-lg">
-                        Giảm -{previousPercentage - currentPercentage}% so với
-                        trước đó
-                      </span>
-                    )}
-                  </div>
-
-                  {/* Dual-Color Range Input (Read-only / Calculated from tasks) */}
-                  <div className="space-y-1 pt-1">
-                    <div className="relative flex items-center">
-                      <input
-                        type="range"
-                        min={0}
-                        max={100}
-                        step={1}
-                        disabled={true}
-                        value={currentPercentage}
-                        readOnly
-                        style={{
-                          background: sliderTrackBackground,
-                        }}
-                        className="w-full h-3 rounded-lg appearance-none accent-emerald-600 focus:outline-none cursor-not-allowed pointer-events-none"
-                      />
-                    </div>
-
-                    {/* Tỉ lệ mốc % */}
-                    <div className="flex justify-between text-[10px] text-slate-400 font-bold px-1">
-                      <span>0%</span>
-                      <span>25%</span>
-                      <span>50%</span>
-                      <span>75%</span>
-                      <span>100%</span>
-                    </div>
-                  </div>
-
-                  {/* Legend chú thích màu sắc */}
-                  <div className="flex flex-wrap items-center gap-4 pt-1 text-[11px] text-slate-600 border-t border-slate-100">
-                    {currentPercentage < previousPercentage ? (
-                      <>
-                        <div className="flex items-center gap-1.5 font-bold text-blue-700">
-                          <span className="w-2.5 h-2.5 rounded-full bg-blue-500"></span>
-                          <span>Mức cập nhật mới ({currentPercentage}%)</span>
-                        </div>
-                        <div className="flex items-center gap-1.5 font-extrabold text-red-600">
-                          <span className="w-2.5 h-2.5 rounded-full bg-red-500"></span>
-                          <span>
-                            Khoảng giảm (-
-                            {previousPercentage - currentPercentage}%)
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-1.5 font-medium text-slate-500">
-                          <span className="w-2.5 h-2.5 rounded-full bg-slate-300"></span>
-                          <span>
-                            Chưa hoàn thành (
-                            {Math.max(0, 100 - currentPercentage)}%)
-                          </span>
-                        </div>
-                      </>
-                    ) : (
-                      <>
-                        <div className="flex items-center gap-1.5 font-medium">
-                          <span className="w-2.5 h-2.5 rounded-full bg-blue-500"></span>
-                          <span>Tiến độ trước đó ({previousPercentage}%)</span>
-                        </div>
-                        <div className="flex items-center gap-1.5 font-medium">
-                          <span className="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
-                          <span>
-                            Cập nhật thêm đợt này (
-                            {currentPercentage - previousPercentage}%)
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-1.5 font-medium">
-                          <span className="w-2.5 h-2.5 rounded-full bg-slate-300"></span>
-                          <span>
-                            Chưa hoàn thành (
-                            {Math.max(0, 100 - currentPercentage)}%)
-                          </span>
-                        </div>
-                      </>
-                    )}
-                  </div>
-                </div>
-              )}
-
-              {/* Cảnh báo (Warning) */}
-              <div className="flex items-center justify-between rounded-xl border border-amber-200 bg-amber-50/50 p-3.5">
-                <div className="flex items-center gap-3">
-                  <AlertTriangle className="h-5 w-5 text-amber-600 shrink-0" />
-                  <div>
-                    <Label
-                      htmlFor="diary-warning-switch"
-                      className="text-sm font-semibold text-amber-900 cursor-pointer"
-                    >
-                      Đánh dấu cảnh báo cho nhật ký này
-                    </Label>
-                    <p className="text-xs text-amber-700">
-                      Bật để gắn cờ cảnh báo đối với nhật ký thực hiện
-                    </p>
-                  </div>
-                </div>
-                <Switch
-                  id="diary-warning-switch"
-                  checked={formData.warning}
-                  onCheckedChange={(checked) =>
-                    setFormData((prev) => ({ ...prev, warning: checked }))
-                  }
-                />
-              </div>
-
-              {/* Mô tả */}
-              <div className="space-y-2">
-                <Label>Mô tả chi tiết</Label>
-                <Textarea
-                  placeholder="Nhập mô tả hoặc ghi chú lần cập nhật..."
-                  rows={4}
-                  className="bg-white border-slate-200 focus:ring-emerald-500/20"
-                  value={formData.description}
-                  onChange={(e) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      description: e.target.value,
-                    }))
-                  }
-                />
-              </div>
-
-              {/* Upload hình ảnh đợt cập nhật */}
-              <div className="space-y-2 pt-1">
-                <Label>Hình ảnh (nếu có)</Label>
-                {/* Upload & Chụp hình ảnh đợt cập nhật */}
-                <input
-                  ref={cameraInputRef}
-                  type="file"
-                  accept="image/*"
-                  capture="environment"
-                  className="hidden"
-                  onChange={handleFileInputChange}
-                />
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/*"
-                  multiple
-                  className="hidden"
-                  onChange={handleFileInputChange}
-                />
-
-                {isMobileOrTablet ? (
-                  <>
-                    <div
-                      onClick={() => setIsPhotoSheetOpen(true)}
-                      className="rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50/60 hover:border-emerald-300 hover:bg-white p-4 text-center cursor-pointer transition-all active:scale-[0.99]"
-                    >
-                      <div className="flex flex-col items-center gap-2">
-                        <div className="w-10 h-10 rounded-full bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600 shadow-2xs">
-                          <Camera className="w-5 h-5" />
-                        </div>
-                        <div>
-                          <p className="text-xs font-bold text-slate-800">
-                            Chụp ảnh hoặc chọn từ thiết bị
-                          </p>
-                          <p className="text-[10px] text-slate-400 mt-0.5">
-                            Chạm để mở tùy chọn chụp hoặc tải ảnh
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Bottom Sheet cho thiết bị di động & máy tính bảng */}
-                    <Sheet
-                      open={isPhotoSheetOpen}
-                      onOpenChange={setIsPhotoSheetOpen}
-                    >
-                      <SheetContent
-                        side="bottom"
-                        className="rounded-t-3xl px-4 pt-4 pb-[calc(1.5rem+env(safe-area-inset-bottom))] bg-white border-t border-slate-100 shadow-2xl"
-                      >
-                        <SheetHeader className="text-center pb-3 border-b border-slate-100">
-                          <SheetTitle className="text-base font-bold text-slate-800 text-center">
-                            Chọn nguồn ảnh
-                          </SheetTitle>
-                          <SheetDescription className="text-xs text-slate-500 text-center">
-                            Chụp ảnh cây trồng trực tiếp tại vườn hoặc tải từ
-                            album máy
-                          </SheetDescription>
-                        </SheetHeader>
-
-                        <div className="flex flex-col gap-2.5 pt-4">
-                          <Button
-                            type="button"
-                            variant="outline"
-                            className="h-14 py-3 rounded-2xl border-emerald-200 bg-emerald-50/80 text-emerald-900 hover:bg-emerald-100 flex items-center justify-start px-4 gap-3.5 shadow-xs transition-all text-left"
-                            onClick={() => {
-                              setIsPhotoSheetOpen(false);
-                              setTimeout(
-                                () => cameraInputRef.current?.click(),
-                                150,
-                              );
-                            }}
-                          >
-                            <div className="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center shrink-0 shadow-xs">
-                              <Camera className="w-5 h-5" />
-                            </div>
-                            <div>
-                              <p className="text-sm font-bold text-slate-800">
-                                Chụp ảnh
-                              </p>
-                              <p className="text-xs text-slate-500">
-                                Mở camera chụp trực tiếp tại vườn
-                              </p>
-                            </div>
-                          </Button>
-
-                          <Button
-                            type="button"
-                            variant="outline"
-                            className="h-14 py-3 rounded-2xl border-slate-200 bg-white text-slate-800 hover:bg-slate-50 flex items-center justify-start px-4 gap-3.5 shadow-xs transition-all text-left"
-                            onClick={() => {
-                              setIsPhotoSheetOpen(false);
-                              setTimeout(
-                                () => fileInputRef.current?.click(),
-                                150,
-                              );
-                            }}
-                          >
-                            <div className="w-10 h-10 rounded-xl bg-slate-100 text-slate-700 flex items-center justify-center shrink-0 shadow-xs">
-                              <ImagePlus className="w-5 h-5" />
-                            </div>
-                            <div>
-                              <p className="text-sm font-bold text-slate-800">
-                                Chọn ảnh
-                              </p>
-                              <p className="text-xs text-slate-500">
-                                Tải lên từ album ảnh trên thiết bị
-                              </p>
-                            </div>
-                          </Button>
-
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            className="h-11 rounded-xl text-slate-500 hover:text-slate-800 font-medium mt-1"
-                            onClick={() => setIsPhotoSheetOpen(false)}
-                          >
-                            Hủy bỏ
-                          </Button>
-                        </div>
-                      </SheetContent>
-                    </Sheet>
-                  </>
-                ) : (
-                  <div
-                    onDragOver={(e) => {
-                      e.preventDefault();
-                      setIsDragging(true);
-                    }}
-                    onDragLeave={() => setIsDragging(false)}
-                    onDrop={handleDrop}
-                    onClick={() => fileInputRef.current?.click()}
-                    className={`rounded-2xl border-2 border-dashed p-4 text-center transition-all cursor-pointer ${
-                      isDragging
-                        ? "border-emerald-500 bg-emerald-50/50"
-                        : "border-slate-200 bg-slate-50/50 hover:border-emerald-300 hover:bg-white"
-                    }`}
-                  >
-                    <div className="flex flex-col items-center gap-2">
-                      <div className="w-9 h-9 rounded-full bg-white shadow-2xs border border-slate-200 flex items-center justify-center text-emerald-600">
-                        <Upload className="w-4 h-4" />
-                      </div>
-                      <div>
-                        <p className="text-xs font-bold text-slate-800">
-                          Kéo thả hình ảnh hoặc{" "}
-                          <span className="text-emerald-600 underline">
-                            tải lên từ thiết bị
-                          </span>
-                        </p>
-                        <p className="text-[10px] text-slate-400 mt-0.5">
-                          Hỗ trợ định dạng PNG, JPG, JPEG (Tối đa 10MB)
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* Danh sách ảnh (ảnh đã có từ trước & ảnh mới chọn) */}
-                {(existingPhotos.length > 0 || formData.images.length > 0) && (
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 pt-2">
-                    {/* Ảnh đã có từ trước */}
-                    {existingPhotos.map((photo, idx) => {
-                      const imgUrl = photo.fileUrl || photo.thumbnail?.fileUrl;
-                      const fileName = photo.fileName || `Ảnh #${idx + 1}`;
-                      return (
-                        <div
-                          key={`existing-photo-${photo.objectKey || idx}`}
-                          className="group relative h-24 rounded-xl overflow-hidden border border-emerald-300 bg-white shadow-2xs"
-                        >
-                          <img
-                            src={imgUrl}
-                            alt={fileName}
-                            className="h-full w-full object-cover"
-                          />
-                          <div className="absolute top-1.5 left-1.5 bg-emerald-600/90 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-md shadow-xs z-10">
-                            Ảnh đã có
-                          </div>
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              removeExistingPhoto(idx);
-                            }}
-                            className="absolute top-1 right-1 h-5 w-5 rounded-full bg-slate-900/80 text-white flex items-center justify-center hover:bg-red-600 transition-colors z-10"
-                            title="Xóa ảnh này"
-                          >
-                            <X className="h-3 w-3" />
-                          </button>
-                        </div>
-                      );
-                    })}
-
-                    {/* Ảnh mới tải lên */}
-                    {formData.images.map((file, idx) => (
-                      <div
-                        key={`new-image-${file.name}-${idx}`}
-                        className="group relative h-24 rounded-xl overflow-hidden border border-slate-200 bg-white shadow-2xs"
-                      >
-                        <img
-                          src={URL.createObjectURL(file)}
-                          alt={file.name}
-                          className="h-full w-full object-cover"
-                        />
-                        <div className="absolute top-1.5 left-1.5 bg-blue-600/90 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-md shadow-xs z-10">
-                          Ảnh mới
-                        </div>
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            removeImage(idx);
-                          }}
-                          className="absolute top-1 right-1 h-5 w-5 rounded-full bg-slate-900/80 text-white flex items-center justify-center hover:bg-red-600 transition-colors z-10"
-                          title="Xóa ảnh này"
-                        >
-                          <X className="h-3 w-3" />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Block Thu hoạch (Nếu chọn loại công việc Thu hoạch) */}
-          {formData.workType === "harvest" && (
-            <Card className="border-none bg-white shadow-sm">
-              <CardHeader className="border-b border-slate-100 pb-3">
-                <CardTitle className="flex items-center gap-2 text-base font-bold">
-                  <Apple className="h-4 w-4 text-emerald-600" />
-                  Thu hoạch
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="pt-6">
-                <div className="space-y-8">
-                  <div className="space-y-4">
-                    <div className="space-y-1">
-                      <p className="text-sm font-semibold text-slate-900">
-                        Đối tượng thu hoạch
-                      </p>
-                      <p className="text-xs text-slate-500">
-                        Chọn theo vùng canh tác hoặc cây canh tác, rồi nhập chi
-                        tiết cho từng mục.
-                      </p>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-2">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setFormData((prev) => ({
-                            ...prev,
-                            harvestScope: "region",
-                            harvestTargets: [],
-                            harvestDetails: [],
-                          }));
-                        }}
-                        className={`h-11 rounded-xl border px-3 text-xs font-extrabold transition-all cursor-pointer ${
-                          formData.harvestScope === "region"
-                            ? "border-emerald-600 bg-emerald-50/60 text-emerald-700 shadow-2xs"
-                            : "border-slate-200 bg-white text-slate-600 hover:border-slate-300"
-                        }`}
-                      >
-                        Vùng canh tác
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setFormData((prev) => ({
-                            ...prev,
-                            harvestScope: "crop",
-                            harvestTargets: [],
-                            harvestDetails: [],
-                          }));
-                        }}
-                        className={`h-11 rounded-xl border px-3 text-xs font-extrabold transition-all cursor-pointer ${
-                          formData.harvestScope === "crop"
-                            ? "border-emerald-600 bg-emerald-50/60 text-emerald-700 shadow-2xs"
-                            : "border-slate-200 bg-white text-slate-600 hover:border-slate-300"
-                        }`}
-                      >
-                        Cây canh tác
-                      </button>
-                    </div>
-                  </div>
-
-                  <div className="space-y-4">
-                    {formData.harvestScope === "region" ? (
-                      <CultivationZoneSelector
-                        regions={regionOptions}
-                        existingSelections={existingGeoSelections}
-                        onConfirm={handleConfirmGeoSelections}
-                        regionOnly={true}
-                        customTrigger={
-                          <Button
-                            type="button"
-                            variant="outline"
-                            className="w-full cursor-pointer border-2 border-dashed border-primary/20 bg-primary/5 hover:bg-primary/10 hover:border-primary/40 text-primary font-bold gap-2 transition-all rounded-lg shadow-sm hover:shadow-md"
-                          >
-                            <Plus className="w-5 h-5" />
-                            <span>
-                              {formData.harvestDetails.length > 0
-                                ? `Đã chọn ${formData.harvestDetails.length} vùng canh tác (Bấm để chọn lại)`
-                                : "Chọn vùng canh tác..."}
-                            </span>
-                          </Button>
-                        }
-                      />
-                    ) : (
-                      <HarvestTreeSelectorDialog
-                        variants={cropSubjectVariants}
-                        selectedItems={formData.harvestDetails
-                          .filter((d) => d.codeName)
-                          .map((d) => ({
-                            id: d.targetId.toString(),
-                            codeName: d.codeName,
-                            label: d.targetLabel,
-                            treeCode: d.codeName,
-                            regionName: d.codeName,
-                          }))}
-                        onConfirmSelections={(trees) => {
-                          const currentMap = new Map(
-                            formData.harvestDetails.map((d) => [
-                              String(d.targetId),
-                              d,
-                            ]),
-                          );
-                          const nextTargets = trees.map((t) =>
-                            String(t.linkId ?? t.id),
-                          );
-                          const nextDetails = trees.map((t) => {
-                            const targetIdStr = String(t.linkId ?? t.id);
-                            const existing = currentMap.get(targetIdStr);
-                            const label = t.name || `Giống #${t.id}`;
-                            const codeName = t.code || label;
-
-                            if (existing) {
-                              return {
-                                ...existing,
-                                targetId: targetIdStr,
-                                codeName,
-                                targetLabel: label,
-                              };
-                            }
-                            return {
-                              id: `h-variant-${targetIdStr}`,
-                              targetId: targetIdStr,
-                              targetLabel: label,
-                              codeName,
-                              quantity: "",
-                              unitBase: "kg",
-                            };
-                          });
-                          setFormData((prev) => ({
-                            ...prev,
-                            harvestTargets: nextTargets,
-                            harvestDetails: nextDetails,
-                          }));
-                        }}
-                      />
-                    )}
-
-                    {/* Chi tiết từng mục thu hoạch */}
-                    {formData.harvestDetails.length > 0 ? (
-                      <div className="space-y-4">
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <p className="text-sm font-bold text-slate-900">
-                              Chi tiết thu hoạch
-                            </p>
-                            <p className="text-xs text-slate-500">
-                              Nhập mã, sản lượng và đơn vị cơ bản cho từng mục
-                              đã chọn.
-                            </p>
-                          </div>
-                          <Badge
-                            variant="outline"
-                            className="bg-emerald-50 text-emerald-700 border-emerald-200 font-bold"
-                          >
-                            {formData.harvestDetails.length} mục
-                          </Badge>
-                        </div>
-
-                        {formData.harvestDetails.map((detail, index) => (
-                          <div
-                            key={detail.id}
-                            className="rounded-2xl border border-emerald-100 bg-white p-4 shadow-sm space-y-3"
-                          >
-                            <div className="flex items-center justify-between gap-2">
-                              <div>
-                                <p className="text-sm font-semibold text-slate-900">
-                                  {detail.targetLabel}
-                                </p>
-                                <p className="text-[11px] text-slate-500">
-                                  {getHarvestLabel(formData.harvestScope)} #
-                                  {index + 1}
-                                </p>
-                              </div>
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  syncHarvestDetails(
-                                    formData.harvestTargets.filter(
-                                      (id) => id !== detail.targetId,
-                                    ),
-                                  )
-                                }
-                                className="p-1 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
-                                title="Xóa mục này"
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </button>
-                            </div>
-
-                            {formData.harvestScope === "region" ? (
-                              <CultivationZoneSelector
-                                regions={regionOptions}
-                                existingSelections={existingGeoSelections}
-                                onConfirm={handleConfirmGeoSelections}
-                                regionOnly={true}
-                                customTrigger={
-                                  <GeographicalSelectionCard
-                                    codeName={detail.codeName}
-                                    onChangeLocation={() => {}}
-                                    onRemove={() =>
-                                      syncHarvestDetails(
-                                        formData.harvestTargets.filter(
-                                          (id) => id !== detail.targetId,
-                                        ),
-                                      )
-                                    }
-                                  />
-                                }
-                              />
-                            ) : null}
-
-                            <div className="grid grid-cols-12 gap-3">
-                              <div className="space-y-1.5 md:col-span-8">
-                                <Label className="text-xs font-semibold text-slate-500">
-                                  Sản lượng
-                                </Label>
-                                <Input
-                                  type="number"
-                                  placeholder="Nhập sản lượng..."
-                                  className="h-10 bg-white border-slate-200 text-sm"
-                                  value={detail.quantity}
-                                  onChange={(e) => {
-                                    const next = e.target.value;
-                                    setFormData((prev) => ({
-                                      ...prev,
-                                      harvestDetails: prev.harvestDetails.map(
-                                        (item) =>
-                                          item.id === detail.id
-                                            ? { ...item, quantity: next }
-                                            : item,
-                                      ),
-                                    }));
-                                  }}
-                                />
-                              </div>
-                              <div className="space-y-1.5 md:col-span-4">
-                                <Label className="text-xs font-semibold text-slate-500">
-                                  Đơn vị cơ bản
-                                </Label>
-                                <Select
-                                  value={detail.unitBase}
-                                  onValueChange={(value) => {
-                                    setFormData((prev) => ({
-                                      ...prev,
-                                      harvestDetails: prev.harvestDetails.map(
-                                        (item) =>
-                                          item.id === detail.id
-                                            ? { ...item, unitBase: value }
-                                            : item,
-                                      ),
-                                    }));
-                                  }}
-                                >
-                                  <SelectTrigger className="h-10 bg-white border-slate-200 text-sm">
-                                    <SelectValue placeholder="Chọn đơn vị" />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    {getHarvestUnitOptions().map((unit) => (
-                                      <SelectItem
-                                        key={unit.value}
-                                        value={unit.value}
-                                      >
-                                        {unit.label}
-                                      </SelectItem>
-                                    ))}
-                                  </SelectContent>
-                                </Select>
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="rounded-2xl border border-dashed border-emerald-200 bg-emerald-50/30 p-6 text-sm text-slate-500 font-medium">
-                        Chưa chọn đối tượng thu hoạch.
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-        </div>
-
-        {/* Block 2: Phân bổ công việc & Cấp phát vật tư (Stacked Full Width) */}
-        <div>
-          <WorkAllocationCard
-            title={!isPlannedModeDefault ? "Công việc thực hiện" : undefined}
-            selectedStages={formData.selectedStages}
-            plannedStages={plannedStages}
-            isPlannedMode={isPlannedMode}
-            workTaskDetails={workTaskDetails}
-            materialAllocations={formData.materialAllocations}
-            domainCode={workflowDomainCode as DomainCode}
-            workType={formData.workType}
-            errors={errors}
-            onAddStage={addStage}
-            onRemoveStage={removeStage}
-            onUpdateWorkTaskDetail={handleUpdateWorkTaskDetail}
-            onAddMaterial={handleAddMaterial}
-            onRemoveMaterial={handleRemoveMaterial}
-            onUpdateActualQuantity={handleUpdateActualQuantity}
-          />
-        </div>
-      </div>
-
-      {/* Chừa khoảng trống để thanh hành động fixed bên dưới không đè lên nội dung
-          (và để dropdown gợi ý hạng mục có chỗ hiển thị). */}
-      {!isMobileApp && <div className="h-25" />}
-
-      {/* Nút hành động (Sticky Footer) — giao diện mobile: nằm cuối form */}
-      <div
-        className={
-          isMobileApp
-            ? "mt-4 flex items-center gap-2"
-            : "fixed left-0 right-0 bottom-0 z-30 bg-white/95 backdrop-blur-md border-t border-slate-200 shadow-lg px-6 py-4 flex items-center justify-end gap-3 rounded-b-2xl"
-        }
-      >
-        <Button
-          variant="outline"
-          type="button"
-          className={
-            isMobileApp
-              ? "h-12 flex-1 rounded-xl text-base font-semibold"
-              : "h-12 px-6 rounded-xl text-sm font-semibold"
-          }
-          onClick={() =>
+        <StepperForm
+          key={stepperKey}
+          steps={steps}
+          onComplete={handleSubmitForm}
+          onCancel={() =>
             isMobileApp && onReset ? onReset() : setLocation(backUrl)
           }
-        >
-          {isMobileApp && onReset ? "Làm mới" : "Hủy bỏ"}
-        </Button>
-        <Button
-          type="button"
-          disabled={isSubmitting || createDailyDiaryMutation.isPending}
-          className={`${isMobileApp ? "h-12 flex-[2] text-base" : "h-12 px-8 text-sm"} rounded-xl bg-primary hover:bg-primary/90 text-white font-bold shadow-md shadow-primary/20 disabled:opacity-50`}
-          onClick={handleSubmitForm}
-        >
-          {isSubmitting || createDailyDiaryMutation.isPending
-            ? "Đang lưu nhật ký..."
-            : "Lưu nhật ký"}
-        </Button>
+          loading={
+            isSubmitting ||
+            createDailyDiaryMutation.isPending ||
+            updateDailyDiaryMutation.isPending ||
+            createPlanTaskDiaryMutation.isPending
+          }
+          completeLabel="Lưu nhật ký"
+        />
       </div>
 
       <DiarySuccessDialog

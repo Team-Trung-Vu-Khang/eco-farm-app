@@ -1,4 +1,8 @@
-export type WorkspaceStatus = "active" | "inactive" | "archived" | (string & {});
+export type WorkspaceStatus =
+  | "active"
+  | "inactive"
+  | "archived"
+  | (string & {});
 
 export interface WorkspaceOrganizationType {
   id: number | string;
@@ -23,6 +27,14 @@ export interface WorkspaceMetadata {
   [key: string]: unknown;
 }
 
+export interface WorkspaceOwner {
+  id?: number | string;
+  code?: string;
+  fullName?: string;
+  email?: string | null;
+  phoneNumber?: string | null;
+}
+
 export interface WorkspaceRecord {
   id: number | string;
   organizationType: WorkspaceOrganizationType;
@@ -38,6 +50,7 @@ export interface WorkspaceRecord {
   mainCrop: WorkspaceCrop | null;
   displayOrder: number;
   representative: string;
+  owner?: WorkspaceOwner | null;
   foundedDate: string;
   website: string;
   province: string;

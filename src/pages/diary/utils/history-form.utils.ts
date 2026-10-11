@@ -339,10 +339,15 @@ export function extractCropSubjectVariants(
       if (seenKey.has(key)) return;
       seenKey.add(key);
 
+      const variantObj = v as Record<string, unknown>;
       const variantCode =
-        v.subjectVariantCode || (v as any).code || `SEED-${v.id}`;
+        v.subjectVariantCode ||
+        (typeof variantObj.code === "string" ? variantObj.code : "") ||
+        `SEED-${v.id}`;
       const variantName =
-        v.subjectVariantName || (v as any).name || `Hạt giống #${v.id}`;
+        v.subjectVariantName ||
+        (typeof variantObj.name === "string" ? variantObj.name : "") ||
+        `Hạt giống #${v.id}`;
       const prodSubjectName = v.productionSubjectName || undefined;
 
       items.push({
@@ -451,4 +456,107 @@ export function formatDatetimeLocalToIsoWithTimezone(
   const offsetMins = pad(absOffsetMinutes % 60);
 
   return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}${offsetSign}${offsetHours}:${offsetMins}`;
+}
+
+/**
+ * Định dạng ngày/giờ hiển thị cho người dùng dễ đọc:
+ * - Chuỗi chỉ có ngày (YYYY-MM-DD): "DD/MM/YYYY"
+ * - Chuỗi có cả giờ (ISO-8601): "HH:mm - DD/MM/YYYY"
+ */
+export function formatDisplayDateTime(
+  dateOrDateTimeStr?: string | null,
+  fallback = "—",
+): string {
+  if (!dateOrDateTimeStr) return fallback;
+  const trimmed = dateOrDateTimeStr.trim();
+  if (!trimmed) return fallback;
+
+  // 1. Chỉ có ngày YYYY-MM-DD
+  if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) {
+    const [year, month, day] = trimmed.split("-");
+    return `${day}/${month}/${year}`;
+  }
+
+  // 2. Chuỗi có ngày và giờ
+  const d = new Date(trimmed);
+  if (isNaN(d.getTime())) return trimmed;
+
+  const pad = (n: number) => String(n).padStart(2, "0");
+  const year = d.getFullYear();
+  const month = pad(d.getMonth() + 1);
+  const day = pad(d.getDate());
+  const hours = pad(d.getHours());
+  const minutes = pad(d.getMinutes());
+
+  return `${hours}:${minutes} - ${day}/${month}/${year}`;
+}
+
+/**
+ * Chuẩn hóa ngày/giờ gửi lên API theo đúng specs (api.json):
+ * "Ngày giờ ISO-8601 có múi giờ, hoặc chỉ ngày yyyy-MM-dd (giờ Việt Nam: startDate = 00:00:00, endDate = 23:59:59)"
+ * - Nếu là YYYY-MM-DD: giữ nguyên theo spec.
+ * - Nếu là YYYY-MM-DDTHH:mm (chưa có múi giờ): bổ sung :00+07:00.
+ * - Nếu đã là ISO-8601 có múi giờ: giữ nguyên.
+ */
+export function formatDateTimeForApi(
+  dateOrDateTimeStr?: string | null,
+): string {
+  if (!dateOrDateTimeStr) return "";
+  const trimmed = dateOrDateTimeStr.trim();
+  if (!trimmed) return "";
+
+  // Chỉ có ngày YYYY-MM-DD: hợp lệ theo spec
+  if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) {
+    return trimmed;
+  }
+
+  // Đã là ISO-8601 có timezone (+07:00, Z, etc.)
+  if (
+    /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:[+-]\d{2}:\d{2}|Z)$/.test(
+      trimmed,
+    )
+  ) {
+    return trimmed;
+  }
+
+  // YYYY-MM-DDTHH:mm hoặc ISO chưa có timezone -> chuyển sang ISO kèm múi giờ local
+  return formatDatetimeLocalToIsoWithTimezone(trimmed);
+}
+
+/**
+ * Kiểm tra xem thời gian kết thúc có trước thời gian bắt đầu không.
+ * Xử lý cả chuỗi ngày YYYY-MM-DD (quy ước startDate 00:00:00, endDate 23:59:59 theo API spec)
+ * và chuỗi ISO datetime có giờ.
+ */
+export function isEndDateBeforeStartDate(
+  startDateStr?: string | null,
+  endDateStr?: string | null,
+): boolean {
+  if (!startDateStr || !endDateStr) return false;
+  const startTrim = startDateStr.trim();
+  const endTrim = endDateStr.trim();
+  if (!startTrim || !endTrim) return false;
+
+  // Nếu cả 2 đều chỉ là ngày YYYY-MM-DD
+  if (
+    /^\d{4}-\d{2}-\d{2}$/.test(startTrim) &&
+    /^\d{4}-\d{2}-\d{2}$/.test(endTrim)
+  ) {
+    return endTrim < startTrim;
+  }
+
+  const toTimestamp = (str: string, isEnd: boolean) => {
+    if (/^\d{4}-\d{2}-\d{2}$/.test(str)) {
+      return new Date(
+        `${str}T${isEnd ? "23:59:59" : "00:00:00"}+07:00`,
+      ).getTime();
+    }
+    return new Date(str).getTime();
+  };
+
+  const startMs = toTimestamp(startTrim, false);
+  const endMs = toTimestamp(endTrim, true);
+
+  if (isNaN(startMs) || isNaN(endMs)) return false;
+  return endMs < startMs;
 }

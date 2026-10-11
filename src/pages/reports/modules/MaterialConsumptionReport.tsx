@@ -835,13 +835,13 @@ export const MaterialConsumptionReport: React.FC<
 
   // Resolve detail cards labels depending on domain
   const getPesticideLabel = () => {
-    if (domainType === "crops") return "Thuốc BVTV canh tác";
+    if (domainType === "crops") return "Thuốc BVTV";
     if (domainType === "livestock") return "Vắc-xin & Thuốc thú y";
     return "Chế phẩm diệt khuẩn ao";
   };
 
   const getFertilizerLabel = () => {
-    if (domainType === "crops") return "Phân bón chất lượng cao";
+    if (domainType === "crops") return "Phân bón";
     return "Thức ăn dinh dưỡng hỗn hợp";
   };
 

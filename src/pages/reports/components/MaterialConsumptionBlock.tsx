@@ -783,13 +783,13 @@ export function MaterialConsumptionBlock() {
 
           <div className="space-y-6">
             {renderDetailCard(
-              "Thuốc BVTV canh tác",
+              "Thuốc BVTV",
               <ShieldAlert className="w-5 h-5 text-rose-500" />,
               cons.pesticide,
               "kg",
             )}
             {renderDetailCard(
-              "Phân bón chất lượng cao",
+              "Phân bón",
               <Leaf className="w-5 h-5 text-emerald-500" />,
               cons.fertilizer,
               "kg",

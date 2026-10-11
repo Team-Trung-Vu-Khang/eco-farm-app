@@ -107,6 +107,7 @@ export interface DailyDiaryLineResponse {
 
 export interface DailyDiaryLineRequest {
   dailyTaskId?: number | null;
+  taskId?: number | null;
   name: string;
   taskCategoryId?: number | null;
   priority?: "LOW" | "MEDIUM" | "HIGH" | "URGENT" | string;

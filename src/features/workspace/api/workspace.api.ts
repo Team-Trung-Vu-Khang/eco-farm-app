@@ -13,25 +13,27 @@ export const workspaceApi = {
   async list(
     params: WorkspaceQueryParams = {},
   ): Promise<WorkspacePageResponse<WorkspaceRecord>> {
-    const response = await apiClient.get<WorkspacePageResponse<WorkspaceRecord>>(
-      WORKSPACE_PATH,
-      { params },
-    );
+    const response = await apiClient.get<
+      WorkspacePageResponse<WorkspaceRecord>
+    >(WORKSPACE_PATH, { params });
 
     return response.data;
   },
 
   async getById(id: number | string): Promise<WorkspaceRecord> {
     const response = await apiClient.get<WorkspaceRecord>(
-      `${WORKSPACE_PATH}/${id}`,
+      `${WORKSPACE_PATH}/current`,
+      {
+        headers: {
+          "X-Workspace-Id": String(id),
+        },
+      },
     );
 
     return response.data;
   },
 
-  async create(
-    payload: WorkspaceCreateRequest,
-  ): Promise<WorkspaceRecord> {
+  async create(payload: WorkspaceCreateRequest): Promise<WorkspaceRecord> {
     const response = await apiClient.post<WorkspaceRecord>(
       WORKSPACE_PATH,
       payload,
@@ -45,8 +47,13 @@ export const workspaceApi = {
     payload: WorkspaceUpdateRequest,
   ): Promise<WorkspaceRecord> {
     const response = await apiClient.put<WorkspaceRecord>(
-      `${WORKSPACE_PATH}/${id}`,
+      `${WORKSPACE_PATH}/current`,
       payload,
+      {
+        headers: {
+          "X-Workspace-Id": String(id),
+        },
+      },
     );
 
     return response.data;

@@ -48,6 +48,7 @@ export interface HistoryFormData {
   images: File[];
   selectedStages: string[];
   materialAllocations: MaterialAllocation[];
+  submittedByPersonnelId?: number | null;
 }
 
 export interface HistoryFormContentProps {

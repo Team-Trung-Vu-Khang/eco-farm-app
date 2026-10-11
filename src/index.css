@@ -3,13 +3,14 @@
 @import "reactflow/dist/style.css";
 
 @theme {
-  --color-primary: #139B62;
-  --color-foreground: #20392E;
-  --color-background: #F7F9F7;
-  --color-muted-foreground: #5D6C65;
+  --color-primary: #139b62;
+  --color-foreground: #20392e;
+  --color-background: #f7f9f7;
+  --color-muted-foreground: #5d6c65;
 
   --font-sans: "Be Vietnam Pro", -apple-system, BlinkMacSystemFont, sans-serif;
-  --font-display: "Be Vietnam Pro", -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-display:
+    "Be Vietnam Pro", -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
 @layer base {
@@ -22,10 +23,12 @@
   .rich-text-content a {
     @apply text-blue-600 hover:underline;
   }
-  .rich-text-content b, .rich-text-content strong {
+  .rich-text-content b,
+  .rich-text-content strong {
     @apply font-bold;
   }
-  .rich-text-content i, .rich-text-content em {
+  .rich-text-content i,
+  .rich-text-content em {
     @apply italic;
   }
   .rich-text-content p {
@@ -41,4 +44,31 @@
 }
 [data-radix-popper-content-wrapper] > * {
   max-width: var(--radix-popper-available-width, 100vw);
+}
+
+/* Hiệu ứng FadeIn / FadeOut thuần túy điều chỉnh opacity, không scale/co giãn kích thước */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes fadeOut {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.2s ease-in-out forwards;
+}
+
+.animate-fade-out {
+  animation: fadeOut 0.2s ease-in-out forwards;
 }

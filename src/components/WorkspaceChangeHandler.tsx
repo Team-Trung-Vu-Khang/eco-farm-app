@@ -56,7 +56,17 @@ export function WorkspaceChangeHandler() {
       setLocation(getListRoute(pathname));
     }
 
-    void queryClient.invalidateQueries({ refetchType: "active" });
+    void queryClient.invalidateQueries({
+      predicate: (query) => {
+        const [scope, subScope] = query.queryKey;
+        // Không invalidate danh sách chọn workspace (list/infinite) khi chỉ chuyển đổi workspace hiện tại
+        if (scope === "workspaces" && subScope !== "detail") {
+          return false;
+        }
+        return true;
+      },
+      refetchType: "active",
+    });
   }, [queryClient, setLocation, workspaceId]);
 
   return null;

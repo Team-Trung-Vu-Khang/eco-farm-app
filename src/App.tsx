@@ -16,6 +16,7 @@ import { WorkspaceChangeHandler } from "./components/WorkspaceChangeHandler";
 import { useCurrentUser } from "./features/auth/hooks/useCurrentUser";
 import { NotificationBell } from "./layouts/mobile/NotificationBell";
 import { SwitchToMobileAppButton } from "./layouts/mobile/SwitchToMobileAppButton";
+import { MobileRouteGuard } from "./layouts/mobile/MobileRouteGuard";
 import { useMobileUiMode } from "./shared/hooks/useMobileUiMode";
 
 interface OnboardCheckerProps {
@@ -94,9 +95,14 @@ function App() {
     <TooltipProvider>
       <AuthWrapper>
         {useMobileApp ? (
-          <MobileAppLayout headerActions={<NotificationBell />}>
-            {content}
-          </MobileAppLayout>
+          <MobileRouteGuard>
+            <MobileAppLayout
+              // headerActions={<NotificationBell />}
+              ignoredHeaderRoutes={["/", "/home"]}
+            >
+              {content}
+            </MobileAppLayout>
+          </MobileRouteGuard>
         ) : (
           <AdminLayout isDev isMevi>
             {content}

@@ -31,8 +31,8 @@ const formatNumber = (val: number | null | undefined) => {
 };
 
 const SUPPLY_LABEL: Record<SupplyType, string> = {
-  MEDICINE: "Thuốc BVTV canh tác",
-  FERTILIZER: "Phân bón chất lượng cao",
+  MEDICINE: "Thuốc BVTV",
+  FERTILIZER: "Phân bón",
   BIOLOGICAL_PRODUCT: "Chế phẩm sinh học",
   BY_PRODUCT: "Phụ phẩm nông nghiệp",
   EQUIPMENT: "Máy móc & thiết bị",

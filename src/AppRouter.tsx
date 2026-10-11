@@ -3,7 +3,10 @@ import { Route, Switch, useLocation, useParams } from "wouter";
 
 import { useFarmPlanById } from "@/features/farm-workflow/hooks";
 import { useMobileUiMode } from "./shared/hooks/useMobileUiMode";
-import { MOBILE_HOME_PATH, useIsMobile } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import {
+  MOBILE_HOME_PATH,
+  useIsMobile,
+} from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { ReportProvider } from "./pages/reports/context/ReportContext";
 import { ReportPageContainer } from "./pages/reports/ReportPageContainer";
 import { AdminReportPage } from "./pages/reports/AdminReportPage";
