@@ -14,7 +14,7 @@ export function HistoryCreatePage() {
       }}
       allowModeToggle={true}
       isPlannedModeDefault={false}
-      pageTitle="Ghi nhận nhật ký nông hộ"
+      pageTitle="Ghi nhật ký"
       backUrl="/diary/daily-history"
     />
   );
