@@ -13,6 +13,7 @@ import { useRegions } from "./features/farm/hooks/useRegions";
 import { OnboardRegionDialog } from "./pages/region-chart/region-basic-distribution/components/OnboardRegionDialog";
 
 import { WorkspaceChangeHandler } from "./components/WorkspaceChangeHandler";
+import { ScrollToTop } from "./components/ScrollToTop";
 import { useCurrentUser } from "./features/auth/hooks/useCurrentUser";
 import { NotificationBell } from "./layouts/mobile/NotificationBell";
 import { SwitchToMobileAppButton } from "./layouts/mobile/SwitchToMobileAppButton";
@@ -84,6 +85,7 @@ function App() {
 
   const content = (
     <Suspense fallback={<AppLoadingState />}>
+      <ScrollToTop />
       <WorkspaceChangeHandler />
       <OnboardChecker>
         <AppRouter />
