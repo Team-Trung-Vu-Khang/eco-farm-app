@@ -418,7 +418,7 @@ export const OverviewTab = ({
           <CardTitle className="text-sm font-bold flex items-center gap-2">
             <MapPin className="w-4 h-4 text-primary" />
             <span className="text-lg">
-              Phạm vi vùng canh tác ({details.selectedEntities.length} mục)
+              Phạm vi vùng chăn nuôi ({details.selectedEntities.length} mục)
             </span>
           </CardTitle>
         </CardHeader>
@@ -612,7 +612,7 @@ export const OverviewTab = ({
             <div>
               <div className="text-[10px] text-muted-foreground flex items-center gap-1.5 mb-1.5 uppercase tracking-wider font-bold">
                 <Sprout className="w-3.5 h-3.5 text-green-600/70" />
-                Diện tích canh tác
+                Diện tích chăn nuôi
               </div>
               <div className="font-bold text-lg text-green-600 flex items-baseline gap-1">
                 {(details.totalArea * 0.9).toFixed(1)}
@@ -666,7 +666,7 @@ export const OverviewTab = ({
       <Dialog open={isScopeMapExpanded} onOpenChange={setIsScopeMapExpanded}>
         <DialogContent className="max-w-[96vw] w-[96vw] h-[92vh] p-0 overflow-hidden border-none shadow-2xl rounded-3xl z-10000">
           <DialogHeader className="sr-only">
-            <DialogTitle>Bản đồ phạm vi vùng canh tác</DialogTitle>
+            <DialogTitle>Bản đồ phạm vi vùng chăn nuôi</DialogTitle>
           </DialogHeader>
           <div className="flex h-full">
             <div className="flex-1 relative bg-slate-100">

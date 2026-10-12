@@ -11,15 +11,10 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import {
-  AlertTriangle,
-  MapPin,
-  Maximize2,
-  Plus,
-  Sprout,
-} from "lucide-react";
+import { AlertTriangle, MapPin, Maximize2, Plus, Sprout } from "lucide-react";
 import { useState } from "react";
 import { MapContainer } from "react-leaflet";
+import { TERMS } from "@/config/terminology";
 import { PlantCard } from "./PlantCard";
 import { AllPlantsMapContent } from "./AllPlantsMapContent";
 import { BulkUploadPlantPanel } from "./BulkUploadPlantPanel";
@@ -104,7 +99,8 @@ export const Step2PlantEntry: React.FC<Step2PlantEntryProps> = ({
   ).length;
 
   // Cây đang được sửa (context của toàn bộ view hiện tại)
-  const currentEditing = plants.find((p) => p.entryId === editingEntryId) ?? null;
+  const currentEditing =
+    plants.find((p) => p.entryId === editingEntryId) ?? null;
   const gridPlant =
     currentEditing ?? (viewMode === "card" ? (plants[0] ?? null) : null);
 
@@ -193,13 +189,14 @@ export const Step2PlantEntry: React.FC<Step2PlantEntryProps> = ({
             </div>
             <div>
               <div className="text-sm font-bold text-blue-950 flex items-center gap-2">
-                Bán kính vùng canh tác
+                {`Bán kính ${TERMS.zoneLower}`}
                 <span className="text-[11px] font-semibold px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full">
                   CenterPoint Only
                 </span>
               </div>
               <div className="text-xs text-blue-700/80">
-                Vùng chưa có ranh giới polygon. Tự động dựng ranh giới hình tròn quanh tọa độ tâm để kiểm tra vị trí cây.
+                Vùng chưa có ranh giới polygon. Tự động dựng ranh giới hình tròn
+                quanh tọa độ tâm để kiểm tra vị trí cây.
               </div>
             </div>
           </div>
@@ -210,7 +207,9 @@ export const Step2PlantEntry: React.FC<Step2PlantEntryProps> = ({
                 min={10}
                 max={5000}
                 value={radius || 100}
-                onChange={(e) => setRadius?.(Math.max(1, Number(e.target.value)))}
+                onChange={(e) =>
+                  setRadius?.(Math.max(1, Number(e.target.value)))
+                }
                 className="w-full px-3 py-1.5 text-sm font-semibold rounded-lg border border-blue-200 bg-white pr-8 focus:outline-none focus:ring-2 focus:ring-blue-500/20 shadow-xs text-blue-950"
               />
               <span className="absolute right-2.5 top-2 text-xs font-bold text-slate-400 pointer-events-none">
@@ -273,7 +272,8 @@ export const Step2PlantEntry: React.FC<Step2PlantEntryProps> = ({
                         ? "1 cây đang nằm ngoài ranh giới hợp lệ."
                         : `${invalid.length} cây đang nằm ngoài ranh giới hợp lệ.`}
                     </span>{" "}
-                    Bấm Sửa để áp dụng gợi ý hoặc di chuyển marker vào trong vùng hợp lệ.
+                    Bấm Sửa để áp dụng gợi ý hoặc di chuyển marker vào trong
+                    vùng hợp lệ.
                   </div>
                 )}
                 {noVariety.length > 0 && (
@@ -443,8 +443,8 @@ export const Step2PlantEntry: React.FC<Step2PlantEntryProps> = ({
                       <AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-0.5 text-red-500" />
                       <span>
                         <span className="font-bold">Ngoài phạm vi hợp lệ!</span>{" "}
-                        Vị trí bạn chọn nằm ngoài phạm vi hợp lệ. Di chuyển marker
-                        vào trong vùng hợp lệ hoặc áp dụng gợi ý.{" "}
+                        Vị trí bạn chọn nằm ngoài phạm vi hợp lệ. Di chuyển
+                        marker vào trong vùng hợp lệ hoặc áp dụng gợi ý.{" "}
                         <span className="text-red-500">
                           Vĩ độ: {suggestedCorrection.lat} - Kinh độ:{" "}
                           {suggestedCorrection.lng}
@@ -558,7 +558,9 @@ export const Step2PlantEntry: React.FC<Step2PlantEntryProps> = ({
                         </span>
                         {`Cây ${idx + 1}`}
                         {!hasPlot && (
-                          <span className="ml-1 text-[10px] text-red-400">*</span>
+                          <span className="ml-1 text-[10px] text-red-400">
+                            *
+                          </span>
                         )}
                       </button>
                     );
@@ -572,8 +574,8 @@ export const Step2PlantEntry: React.FC<Step2PlantEntryProps> = ({
                       <AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-0.5 text-red-500" />
                       <span>
                         <span className="font-bold">Ngoài phạm vi hợp lệ!</span>{" "}
-                        Vị trí bạn chọn nằm ngoài phạm vi hợp lệ. Di chuyển marker
-                        vào trong vùng hợp lệ hoặc áp dụng gợi ý.
+                        Vị trí bạn chọn nằm ngoài phạm vi hợp lệ. Di chuyển
+                        marker vào trong vùng hợp lệ hoặc áp dụng gợi ý.
                         <span className="text-red-500">
                           Vĩ độ: {suggestedCorrection.lat} - Kinh độ:{" "}
                           {suggestedCorrection.lng}

@@ -35,6 +35,7 @@ import {
   type HealthDiaryFilters,
   type Option,
 } from "./components/lookup/HealthDiaryAdvancedFilterPanel";
+import { TERMS } from "@/config/terminology";
 
 export default function HealthDiaryHistoryPage() {
   const [, setLocation] = useLocation();
@@ -479,7 +480,7 @@ export default function HealthDiaryHistoryPage() {
                 <div className="grid grid-cols-2 gap-4 text-xs">
                   <div>
                     <span className="text-slate-400 font-semibold block">
-                      Vùng canh tác:
+                      ${TERMS.zone}:
                     </span>
                     <span className="font-bold text-slate-800">
                       {selectedRecord.zoneName}

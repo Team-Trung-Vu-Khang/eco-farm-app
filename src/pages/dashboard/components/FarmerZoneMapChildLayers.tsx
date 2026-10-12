@@ -2,6 +2,7 @@ import React, { useEffect } from "react";
 import { Polygon, Marker, Tooltip, useMap } from "react-leaflet";
 import { divIcon } from "leaflet";
 import type { DashboardZoneNode } from "../hooks/useDashboardData";
+import { TERMS } from "@/config/terminology";
 
 export const RedMarker = () =>
   divIcon({
@@ -84,7 +85,7 @@ export function MapChildLayers({
                   {scope.name}
                 </div>
                 <div style={{ fontSize: 10, color: "#64748b" }}>
-                  Vùng địa lý • {scope.totalAreaHa} ha
+                  {TERMS.region} • {scope.totalAreaHa} ha
                 </div>
               </Tooltip>
             </Polygon>
@@ -106,7 +107,7 @@ export function MapChildLayers({
                   {scope.name}
                 </div>
                 <div style={{ fontSize: 10, color: "#64748b" }}>
-                  Tọa độ Vùng địa lý
+                  Tọa độ {TERMS.region}
                 </div>
               </Tooltip>
             </Marker>

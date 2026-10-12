@@ -36,6 +36,7 @@ import {
 } from "react";
 import useCropStore from "../../../stores/useCropStore";
 import useGroupCropStore from "../../../stores/useGroupCropStore";
+import { TERMS } from "@/config/terminology";
 import {
   applicableObjectOptions,
   budgetRangeOptions,
@@ -451,11 +452,11 @@ export function SoilTreatmentPlanFormDialog({
 
           <div className="grid gap-4 md:grid-cols-2">
             <div className="space-y-2">
-              <Label>Khu vực áp dụng</Label>
+              <Label>{`${TERMS.area} áp dụng`}</Label>
               <Input
                 value={formData.zone || ""}
                 onChange={(event) => updateForm("zone", event.target.value)}
-                placeholder="VD: Đồng Nai - vùng canh tác 3"
+                placeholder={`VD: Đồng Nai - ${TERMS.zoneLower} 3`}
               />
             </div>
             <div className="space-y-2">
@@ -1444,7 +1445,7 @@ export function SoilTreatmentPlanFormDialog({
                   value={formData.name || "Chưa cập nhật"}
                 />
                 <SummaryField
-                  label="Khu vực áp dụng"
+                  label={`${TERMS.area} áp dụng`}
                   value={formData.zone || "Chưa cập nhật"}
                 />
                 <SummaryField

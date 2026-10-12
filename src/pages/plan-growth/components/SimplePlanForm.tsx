@@ -51,6 +51,7 @@ import {
 } from "./PersonnelMultiSelectCard";
 import { RegimenSelector } from "./RegimenSelector";
 import { StageAllocation } from "./StageAllocation";
+import { TERMS } from "@/config/terminology";
 
 export const OLD_PURPOSE_OPTIONS = [
   { id: "cultivation", label: "Canh tác", icon: Layers, color: "blue" },
@@ -66,7 +67,12 @@ export const OLD_PURPOSE_OPTIONS = [
 ] as const;
 
 export const NEW_PURPOSE_OPTIONS = [
-  { id: "nutrition", label: "Dinh dưỡng", icon: FlaskConical, color: "emerald" },
+  {
+    id: "nutrition",
+    label: "Dinh dưỡng",
+    icon: FlaskConical,
+    color: "emerald",
+  },
   { id: "plant-care", label: "Chăm sóc cây", icon: Sprout, color: "teal" },
   { id: "pest-disease", label: "Sâu bệnh hại", icon: Bug, color: "amber" },
   { id: "weed-control", label: "Cỏ dại", icon: Scissors, color: "lime" },
@@ -227,7 +233,9 @@ export default function SimplePlanForm({
       workflowInfo?.seasonIds?.length
         ? workflowInfo.seasonIds.map(String)
         : workflowInfo?.growthCycleSelections?.length
-          ? Array.from(new Set(workflowInfo.growthCycleSelections.map((s) => s.cycleId)))
+          ? Array.from(
+              new Set(workflowInfo.growthCycleSelections.map((s) => s.cycleId)),
+            )
           : [],
     [workflowInfo],
   );
@@ -509,9 +517,7 @@ export default function SimplePlanForm({
                 }
                 className={cn(
                   "p-3 rounded-xl border-2 transition-all flex flex-col items-center text-center gap-1",
-                  isEdit
-                    ? "cursor-not-allowed opacity-60"
-                    : "cursor-pointer",
+                  isEdit ? "cursor-not-allowed opacity-60" : "cursor-pointer",
                   isActive
                     ? `${colors.border} ${colors.bg} ${colors.text} shadow-sm`
                     : cn(
@@ -541,7 +547,7 @@ export default function SimplePlanForm({
 
       <div className="space-y-2">
         <div className="flex items-center justify-between">
-          <Label required={!isWorkflowContext}>Vùng canh tác</Label>
+          <Label required={!isWorkflowContext}>{TERMS.zone}</Label>
           <span className="text-[10px] text-emerald-700 bg-emerald-100 px-2 py-1 rounded-full font-semibold">
             {isWorkflowContext
               ? `Kế thừa từ quy trình${workflowInfo?.name ? ` "${workflowInfo.name}"` : ""}`
@@ -563,8 +569,7 @@ export default function SimplePlanForm({
           workflowInfo.productionZones.length > 0 ? (
             <div className="p-4 rounded-xl bg-white/50 border border-emerald-100/50 space-y-3">
               <div className="text-[10px] font-bold text-emerald-800/60 uppercase tracking-widest flex items-center gap-2">
-                <Layers className="w-3 h-3" />
-                Vùng canh tác đã chọn
+                <Layers className="w-3 h-3" />${TERMS.zone} đã chọn
               </div>
               <div className="flex flex-wrap gap-1.5">
                 {workflowInfo.productionZones.map((zone) => (
@@ -630,10 +635,10 @@ export default function SimplePlanForm({
           {isWorkflowContext &&
             !workflowInfo?.productionZones?.length &&
             selectionSummary.length === 0 && (
-            <p className="text-xs text-emerald-800/60 italic text-center py-2">
-              Quy trình chưa có vùng canh tác được thiết lập
-            </p>
-          )}
+              <p className="text-xs text-emerald-800/60 italic text-center py-2">
+                Quy trình chưa có ${TERMS.zoneLower} được thiết lập
+              </p>
+            )}
         </div>
       </div>
 
@@ -657,11 +662,17 @@ export default function SimplePlanForm({
               onConfirm={(nextSelections) =>
                 setFormData((prev) => {
                   const currentKey = prev.growthCycleSelections
-                    .map((item) => `${item.type}:${item.cycleId}:${item.stageId || ""}`)
+                    .map(
+                      (item) =>
+                        `${item.type}:${item.cycleId}:${item.stageId || ""}`,
+                    )
                     .sort()
                     .join("|");
                   const nextKey = nextSelections
-                    .map((item) => `${item.type}:${item.cycleId}:${item.stageId || ""}`)
+                    .map(
+                      (item) =>
+                        `${item.type}:${item.cycleId}:${item.stageId || ""}`,
+                    )
                     .sort()
                     .join("|");
                   if (currentKey === nextKey) return prev;
@@ -855,22 +866,24 @@ export default function SimplePlanForm({
           )}
 
           <div className="space-y-3 pt-4">
-            {!isCultivation && !isHarvest && !isFacilityUpgrade && <div className="flex items-center justify-between">
-              <Label
-                required={
-                  !isTreatmentOrAmendment &&
-                  !(isCultivation && growthCycleDerivedStages.length > 0)
-                }
-              >
-                Thêm hạng mục mới
-              </Label>
-              <Badge
-                variant="outline"
-                className="text-[10px] bg-amber-50 text-amber-700 border-amber-200 font-bold"
-              >
-                {manualStages.length} mục
-              </Badge>
-            </div>}
+            {!isCultivation && !isHarvest && !isFacilityUpgrade && (
+              <div className="flex items-center justify-between">
+                <Label
+                  required={
+                    !isTreatmentOrAmendment &&
+                    !(isCultivation && growthCycleDerivedStages.length > 0)
+                  }
+                >
+                  Thêm hạng mục mới
+                </Label>
+                <Badge
+                  variant="outline"
+                  className="text-[10px] bg-amber-50 text-amber-700 border-amber-200 font-bold"
+                >
+                  {manualStages.length} mục
+                </Badge>
+              </div>
+            )}
             <div className="flex gap-2">
               <Input
                 placeholder="Thêm hạng mục mới..."

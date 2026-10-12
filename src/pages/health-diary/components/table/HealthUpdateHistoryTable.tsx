@@ -19,6 +19,7 @@ import type {
   HealthDiaryRecord,
   HealthStatusType,
 } from "@/features/health-diary/types/health-diary.types";
+import { TERMS } from "@/config/terminology";
 
 export interface HealthUpdateHistoryTableProps {
   records?: HealthDiaryRecord[];
@@ -118,7 +119,7 @@ export function HealthUpdateHistoryTable({
       },
       {
         key: "zoneName",
-        label: "Vùng canh tác",
+        label: TERMS.zone,
         render: (_val, row) => (
           <div className="space-y-1 py-1 max-w-[200px]">
             <p

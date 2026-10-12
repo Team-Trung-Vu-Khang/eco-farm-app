@@ -38,6 +38,7 @@ import type { PhotoRequest } from "@/features/farm-daily-diary";
 import type { FarmTaskResponse } from "@/features/farm-task/types/farm-task.type";
 import type { FarmCultivationZoneResponse } from "@/features/farm/types/farm.type";
 import type { GeographicalSelection } from "@/pages/cultivation-zone/cultivation-region/components/types";
+import { TERMS } from "@/config/terminology";
 import {
   getHarvestLabel,
   getHarvestUnitOptions,
@@ -154,7 +155,7 @@ export function Step2ExecutionAndMaterials({
 
     if (!hasCurrentZone || formData.harvestDetails.length === 0) {
       const zoneName =
-        selectedCultivationZone?.name || `Vùng canh tác #${zoneIdStr}`;
+        selectedCultivationZone?.name || `${TERMS.zone} #${zoneIdStr}`;
       const zoneCode = selectedCultivationZone?.code || zoneName;
       setFormData((prev) => ({
         ...prev,
@@ -481,8 +482,7 @@ export function Step2ExecutionAndMaterials({
                     Đối tượng thu hoạch
                   </p>
                   <p className="text-xs text-slate-500">
-                    Chọn theo vùng canh tác hoặc cây canh tác, sau đó nhập chi
-                    tiết sản lượng cho từng mục.
+                    {`Chọn theo ${TERMS.zoneLower} hoặc ${TERMS.cropLower}, sau đó nhập chi tiết sản lượng cho từng mục.`}
                   </p>
                 </div>
 
@@ -495,7 +495,7 @@ export function Step2ExecutionAndMaterials({
                       );
                       const zoneName =
                         selectedCultivationZone?.name ||
-                        `Vùng canh tác #${zoneIdStr}`;
+                        `${TERMS.zone} #${zoneIdStr}`;
                       const zoneCode =
                         selectedCultivationZone?.code || zoneName;
                       setFormData((prev) => ({
@@ -524,7 +524,7 @@ export function Step2ExecutionAndMaterials({
                         : "border-slate-200 bg-white text-slate-600 hover:border-slate-300"
                     }`}
                   >
-                    Vùng canh tác
+                    {TERMS.zone}
                   </button>
                   <button
                     type="button"
@@ -542,7 +542,7 @@ export function Step2ExecutionAndMaterials({
                         : "border-slate-200 bg-white text-slate-600 hover:border-slate-300"
                     }`}
                   >
-                    Cây canh tác
+                    {TERMS.crop}
                   </button>
                 </div>
               </div>
@@ -553,7 +553,7 @@ export function Step2ExecutionAndMaterials({
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-bold uppercase tracking-wider text-emerald-800 flex items-center gap-1.5">
                         <MapPin className="w-3.5 h-3.5 text-emerald-600" />
-                        Vùng canh tác thu hoạch (Đã chọn ở Bước 1)
+                        {`${TERMS.zone} thu hoạch (Đã chọn ở Bước 1)`}
                       </span>
                       {/* <Badge
                         variant="outline"
@@ -564,7 +564,7 @@ export function Step2ExecutionAndMaterials({
                     </div>
                     <p className="text-sm font-bold text-slate-900">
                       {selectedCultivationZone?.name ||
-                        `Vùng canh tác #${formData.cultivationZoneId}`}
+                        `${TERMS.zone} #${formData.cultivationZoneId}`}
                       {selectedCultivationZone?.code && (
                         <span className="text-xs font-normal text-slate-500 ml-1.5">
                           ({selectedCultivationZone.code})
@@ -572,7 +572,7 @@ export function Step2ExecutionAndMaterials({
                       )}
                     </p>
                     <p className="text-xs text-slate-500">
-                      Sản lượng thu hoạch sẽ được ghi nhận trực tiếp cho vùng
+                      {`Sản lượng thu hoạch sẽ được ghi nhận trực tiếp cho ${TERMS.zoneLower}`}
                       canh tác này.
                     </p>
                   </div>

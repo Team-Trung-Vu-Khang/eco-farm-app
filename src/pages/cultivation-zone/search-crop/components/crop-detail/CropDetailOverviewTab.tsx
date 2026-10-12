@@ -13,6 +13,7 @@ import {
   TabsContent,
   cn,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import { TERMS } from "@/config/terminology";
 import {
   Calendar,
   Contact,
@@ -111,8 +112,12 @@ const ScopeAreaTree = ({
   focusScopeMapToCoordinates: (coordinates?: Coordinate[]) => void;
   compact: boolean;
 }) => {
-  const plotEntities = areaGroup.entities.filter((item) => item.typeCode === "plot");
-  const areaSelected = areaGroup.entities.some((item) => item.typeCode === "area");
+  const plotEntities = areaGroup.entities.filter(
+    (item) => item.typeCode === "plot",
+  );
+  const areaSelected = areaGroup.entities.some(
+    (item) => item.typeCode === "area",
+  );
 
   return (
     <div className="relative">
@@ -123,7 +128,9 @@ const ScopeAreaTree = ({
           <button
             type="button"
             className="relative z-10 -m-2 mb-4 flex w-full items-center gap-3 rounded-lg p-2 text-left transition-colors hover:bg-slate-50"
-            onClick={() => focusScopeMapToCoordinates(areaGroup.area?.coordinates)}
+            onClick={() =>
+              focusScopeMapToCoordinates(areaGroup.area?.coordinates)
+            }
           >
             <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-500 text-white shadow-sm">
               <Layers className="h-4.5 w-4.5" />
@@ -205,7 +212,9 @@ const ScopeAreaTree = ({
                 <div
                   className={cn(
                     "mb-1 text-[10px] font-bold uppercase leading-none tracking-wider",
-                    entity.typeCode === "region" ? "text-primary" : "text-green-600",
+                    entity.typeCode === "region"
+                      ? "text-primary"
+                      : "text-green-600",
                   )}
                 >
                   {entity.type}
@@ -234,14 +243,18 @@ const ScopeMapPolygons = ({
   regionIndex,
 }: Pick<
   CropDetailOverviewProps,
-  "scopeMapData" | "formatFullAddress" | "focusScopeMapToCoordinates" | "regionIndex"
+  | "scopeMapData"
+  | "formatFullAddress"
+  | "focusScopeMapToCoordinates"
+  | "regionIndex"
 >) => {
   if (!scopeMapData) return null;
 
-  const handleClick = (coordinates?: Coordinate[]) => (event: L.LeafletEvent) => {
-    L.DomEvent.stopPropagation(event);
-    focusScopeMapToCoordinates(coordinates);
-  };
+  const handleClick =
+    (coordinates?: Coordinate[]) => (event: L.LeafletEvent) => {
+      L.DomEvent.stopPropagation(event);
+      focusScopeMapToCoordinates(coordinates);
+    };
 
   return (
     <>
@@ -296,7 +309,9 @@ const ScopeMapPolygons = ({
                 titleClassName="border-emerald-100 text-emerald-600"
                 name={`${area.code}: ${area.name}`}
                 area={area.area}
-                address={formatFullAddress(regionIndex.areaById.get(String(area.id))?.region)}
+                address={formatFullAddress(
+                  regionIndex.areaById.get(String(area.id))?.region,
+                )}
               />
             </LeafletTooltip>
           </Polygon>
@@ -325,7 +340,9 @@ const ScopeMapPolygons = ({
                 titleClassName="border-amber-100 text-amber-600"
                 name={`${plot.code}: ${plot.name}`}
                 area={plot.area}
-                address={formatFullAddress(regionIndex.plotById.get(String(plot.id))?.region)}
+                address={formatFullAddress(
+                  regionIndex.plotById.get(String(plot.id))?.region,
+                )}
               />
             </LeafletTooltip>
           </Polygon>
@@ -497,7 +514,9 @@ export const CropDetailOverviewTab = ({
                 <div className="space-y-3 text-sm">
                   <div className="flex items-center gap-3">
                     <CreditCard className="h-4 w-4 text-muted-foreground" />
-                    <span className="font-medium">{details.enterprise.code}</span>
+                    <span className="font-medium">
+                      {details.enterprise.code}
+                    </span>
                   </div>
                   <div className="flex items-center gap-3">
                     <User className="h-4 w-4 text-muted-foreground" />
@@ -513,9 +532,9 @@ export const CropDetailOverviewTab = ({
                     <span>
                       Thành lập:{" "}
                       {details.enterprise.foundedDate
-                        ? new Date(details.enterprise.foundedDate).toLocaleDateString(
-                            "vi-VN",
-                          )
+                        ? new Date(
+                            details.enterprise.foundedDate,
+                          ).toLocaleDateString("vi-VN")
                         : "---"}
                     </span>
                   </div>
@@ -526,7 +545,9 @@ export const CropDetailOverviewTab = ({
                     <MapPin className="mt-0.5 h-4 w-4 text-muted-foreground" />
                     <span>
                       {details.enterprise.address}
-                      {details.enterprise.ward ? `, ${details.enterprise.ward}` : ""}
+                      {details.enterprise.ward
+                        ? `, ${details.enterprise.ward}`
+                        : ""}
                       {details.enterprise.district
                         ? `, ${details.enterprise.district}`
                         : ""}
@@ -590,7 +611,7 @@ export const CropDetailOverviewTab = ({
             <CardTitle className="flex items-center gap-2 text-sm font-bold">
               <MapPin className="h-4 w-4 text-primary" />
               <span className="text-lg">
-                Phạm vi vùng canh tác ({scopedSelectionCount} mục)
+                {`Phạm vi ${TERMS.zoneLower} (${scopedSelectionCount} mục)`}
               </span>
             </CardTitle>
           </CardHeader>
@@ -616,27 +637,56 @@ export const CropDetailOverviewTab = ({
           </CardHeader>
           <CardContent className="p-6">
             <div className="grid grid-cols-2 gap-8 lg:grid-cols-4">
-              <InfoItem icon={<Tag className="h-3.5 w-3.5 text-primary/70" />} label="Cây trồng">
+              <InfoItem
+                icon={<Tag className="h-3.5 w-3.5 text-primary/70" />}
+                label="Cây trồng"
+              >
                 {activeCrop.name}
               </InfoItem>
-              <InfoItem icon={<Hash className="h-3.5 w-3.5 text-blue-500/70" />} label="Mã số cây">
+              <InfoItem
+                icon={<Hash className="h-3.5 w-3.5 text-blue-500/70" />}
+                label="Mã số cây"
+              >
                 <div className="inline-flex items-center rounded-lg border border-blue-100 bg-blue-50 px-2.5 py-1 text-blue-700 shadow-sm transition-all hover:bg-blue-100/50">
-                  <span className="font-mono text-xs font-bold">{activeCrop.code}</span>
+                  <span className="font-mono text-xs font-bold">
+                    {activeCrop.code}
+                  </span>
                 </div>
               </InfoItem>
-              <InfoItem icon={<MapPin className="h-3.5 w-3.5 text-red-500/70" />} label="Vùng trồng">
+              <InfoItem
+                icon={<MapPin className="h-3.5 w-3.5 text-red-500/70" />}
+                label="Vùng trồng"
+              >
                 {cropGeoRefs.region?.name || activeCrop.regionName || "---"}
               </InfoItem>
-              <InfoItem icon={<Layers className="h-3.5 w-3.5 text-blue-500/70" />} label="Khu vực">
-                {cropGeoRefs.area?.name || activeCrop.areaName || "Chưa xác định"}
+              <InfoItem
+                icon={<Layers className="h-3.5 w-3.5 text-blue-500/70" />}
+                label="Khu vực"
+              >
+                {cropGeoRefs.area?.name ||
+                  activeCrop.areaName ||
+                  "Chưa xác định"}
               </InfoItem>
-              <InfoItem icon={<Target className="h-3.5 w-3.5 text-green-600/70" />} label="Lô đất">
-                {cropGeoRefs.plot?.name || activeCrop.plotName || "Chưa xác định"}
+              <InfoItem
+                icon={<Target className="h-3.5 w-3.5 text-green-600/70" />}
+                label="Lô đất"
+              >
+                {cropGeoRefs.plot?.name ||
+                  activeCrop.plotName ||
+                  "Chưa xác định"}
               </InfoItem>
-              <InfoItem icon={<Sprout className="h-3.5 w-3.5 text-emerald-600/70" />} label="Hàng trồng">
-                {activeCrop.rowNumber ? `Hàng ${activeCrop.rowNumber}` : "Chưa cập nhật"}
+              <InfoItem
+                icon={<Sprout className="h-3.5 w-3.5 text-emerald-600/70" />}
+                label="Hàng trồng"
+              >
+                {activeCrop.rowNumber
+                  ? `Hàng ${activeCrop.rowNumber}`
+                  : "Chưa cập nhật"}
               </InfoItem>
-              <InfoItem icon={<Globe className="h-3.5 w-3.5 text-slate-500/70" />} label="Tọa độ">
+              <InfoItem
+                icon={<Globe className="h-3.5 w-3.5 text-slate-500/70" />}
+                label="Tọa độ"
+              >
                 <div className="font-mono text-xs font-bold text-slate-900">
                   {activeCrop.coordinate
                     ? `${activeCrop.coordinate.lat.toFixed(5)}, ${activeCrop.coordinate.lng.toFixed(5)}`
@@ -644,7 +694,10 @@ export const CropDetailOverviewTab = ({
                 </div>
               </InfoItem>
               <div className="lg:col-span-2">
-                <InfoItem icon={<MapPin className="h-3.5 w-3.5 text-orange-500/70" />} label="Địa chỉ vùng">
+                <InfoItem
+                  icon={<MapPin className="h-3.5 w-3.5 text-orange-500/70" />}
+                  label="Địa chỉ vùng"
+                >
                   <div className="text-sm font-semibold leading-tight text-slate-900">
                     {cropGeoRefs.region
                       ? formatFullAddress(cropGeoRefs.region)
@@ -659,7 +712,9 @@ export const CropDetailOverviewTab = ({
                 <div className="mb-1 text-sm text-muted-foreground">
                   Ghi chú cây trồng
                 </div>
-                <p className="mt-1 text-sm text-slate-700">{activeCrop.notes}</p>
+                <p className="mt-1 text-sm text-slate-700">
+                  {activeCrop.notes}
+                </p>
               </div>
             )}
           </CardContent>
@@ -686,7 +741,10 @@ export const CropDetailOverviewTab = ({
               focusScopeMapToCoordinates={focusScopeMapToCoordinates}
               regionIndex={regionIndex}
             />
-            <CropMarker activeCrop={activeCrop} cropMarkerIcon={cropMarkerIcon} />
+            <CropMarker
+              activeCrop={activeCrop}
+              cropMarkerIcon={cropMarkerIcon}
+            />
           </MapContainer>
 
           <button
@@ -702,7 +760,7 @@ export const CropDetailOverviewTab = ({
         <Dialog open={isScopeMapExpanded} onOpenChange={setIsScopeMapExpanded}>
           <DialogContent className="z-10000 h-[92vh] w-[96vw] max-w-[96vw] overflow-hidden rounded-3xl border-none p-0 shadow-2xl">
             <DialogHeader className="sr-only">
-              <DialogTitle>Bản đồ phạm vi vùng canh tác</DialogTitle>
+              <DialogTitle>{`Bản đồ phạm vi ${TERMS.zoneLower}`}</DialogTitle>
             </DialogHeader>
             <div className="flex h-full">
               <div className="relative flex-1 bg-slate-100">
@@ -721,7 +779,10 @@ export const CropDetailOverviewTab = ({
                     focusScopeMapToCoordinates={focusScopeMapToCoordinates}
                     regionIndex={regionIndex}
                   />
-                  <CropMarker activeCrop={activeCrop} cropMarkerIcon={cropMarkerIcon} />
+                  <CropMarker
+                    activeCrop={activeCrop}
+                    cropMarkerIcon={cropMarkerIcon}
+                  />
                 </MapContainer>
 
                 <button

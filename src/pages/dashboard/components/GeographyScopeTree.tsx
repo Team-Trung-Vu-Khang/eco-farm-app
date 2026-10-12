@@ -1,5 +1,6 @@
 import { MapPin, Layers, Target, ExternalLink } from "lucide-react";
 import { cn, Checkbox } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import { TERMS } from "@/config/terminology";
 
 interface GeographyScopeTreeProps {
   zone: any;
@@ -104,7 +105,7 @@ export const GeographyScopeTree = ({
             </div>
             <div className="min-w-0 flex-1">
               <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400 leading-none mb-1">
-                Lô
+                {TERMS.plot}
               </div>
               <div className="text-xs font-bold text-slate-800 truncate">
                 {plot.name}
@@ -183,7 +184,7 @@ export const GeographyScopeTree = ({
             </div>
             <div className="min-w-0 flex-1">
               <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400 leading-none mb-1">
-                Khu vực
+                {TERMS.area}
               </div>
               <div className="text-xs font-bold text-slate-800 truncate">
                 {area.name}
@@ -281,7 +282,7 @@ export const GeographyScopeTree = ({
                   </div>
                   <div className="min-w-0 flex-1">
                     <div className="text-[10px] font-bold uppercase tracking-wider text-emerald-600 leading-none mb-1">
-                      Vùng địa lý
+                      {TERMS.region}
                     </div>
                     <div className="text-xs font-bold text-slate-800 truncate">
                       {scopeNode.name}

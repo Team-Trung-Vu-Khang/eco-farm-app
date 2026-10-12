@@ -1,6 +1,7 @@
 import { ENABLE_NEW_PURPOSE_ENUMS } from "@/shared/constants/farm.constants";
 import type { DomainCode } from "@/features/farm-supply/types";
 import type { FarmPlanPurpose } from "@/features/farm-workflow/types/farm-workflow.type";
+import { TERMS } from "@/config/terminology";
 import {
   Apple,
   Bug,
@@ -246,11 +247,11 @@ export function getWorkflowLabel(domainCode?: DomainCode | string) {
 export function getWorkflowSubtitle(domainCode?: DomainCode | string) {
   if (domainCode === "LIVESTOCK" || domainCode === "AQUACULTURE")
     return "Chăn nuôi và nuôi trồng thủy sản";
-  return "Vùng trồng";
+  return TERMS.region;
 }
 
 export function getHarvestLabel(scope: "region" | "crop") {
-  return scope === "region" ? "Vùng canh tác" : "Cây canh tác";
+  return scope === "region" ? TERMS.zone : TERMS.crop;
 }
 
 export function getHarvestUnitOptions() {

@@ -6,6 +6,7 @@ import { regionApi, areaApi } from "@/features/farm/api/farm.api";
 import { areaKeys } from "@/features/farm/hooks/useAreas";
 import { useFarmProductionHealth } from "@/features/farm/hooks/useFarmDashboard";
 import { useFarmTaskStats } from "@/features/farm-task/hooks/useFarmTasks";
+import { TERMS } from "@/config/terminology";
 
 export interface DashboardPlotNode {
   id: string;
@@ -403,7 +404,7 @@ export function useFarmerDashboardData({
 
         return {
           id: String(z.id || `zone-${zIdx}`),
-          name: z.name || `Vùng canh tác ${zIdx + 1}`,
+          name: z.name || `${TERMS.zone} ${zIdx + 1}`,
           description: z.description || "",
           totalAreaHa: Number(z.acreage || z.area || 15),
           isCountable: true,

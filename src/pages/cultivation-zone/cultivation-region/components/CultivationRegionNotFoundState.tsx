@@ -1,6 +1,7 @@
 import PageWrapper from "@/components/PageWrapper";
 import { Button } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { Target } from "lucide-react";
+import { TERMS, formatTerm } from "@/config/terminology";
 
 type Props = {
   onBack: () => void;
@@ -10,12 +11,12 @@ export const CultivationRegionNotFoundState = ({ onBack }: Props) => {
   return (
     <PageWrapper
       title="Không tìm thấy"
-      description="Vùng canh tác không tồn tại"
+      description={formatTerm.notFound(TERMS.zone)}
     >
       <div className="flex flex-col items-center justify-center py-20">
         <Target className="w-16 h-16 text-slate-300 mb-4" />
         <h2 className="text-xl font-bold text-slate-900">
-          Không tìm thấy vùng canh tác
+          {formatTerm.notFound(TERMS.zone)}
         </h2>
         <Button variant="ghost" className="mt-4" onClick={onBack}>
           Quay lại danh sách

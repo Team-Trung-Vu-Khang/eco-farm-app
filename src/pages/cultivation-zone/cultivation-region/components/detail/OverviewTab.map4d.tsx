@@ -34,6 +34,7 @@ import { MFMap, MFPolygon } from "react-map4d-map";
 import { DISTRICTS, PROVINCES } from "../../../../region-chart/constants";
 import styles from "../../styles.module.css";
 import type { CultivationRegionDetails } from "../../useCultivationRegionDetail";
+import { TERMS } from "@/config/terminology";
 
 interface OverviewTabProps {
   area: any;
@@ -418,7 +419,7 @@ export const OverviewTab = ({
           <CardTitle className="text-sm font-bold flex items-center gap-2">
             <MapPin className="w-4 h-4 text-primary" />
             <span className="text-lg">
-              Phạm vi vùng canh tác ({details.selectedEntities.length} mục)
+              {`Phạm vi ${TERMS.zoneLower} (${details.selectedEntities.length} mục)`}
             </span>
           </CardTitle>
         </CardHeader>
@@ -666,7 +667,7 @@ export const OverviewTab = ({
       <Dialog open={isScopeMapExpanded} onOpenChange={setIsScopeMapExpanded}>
         <DialogContent className="max-w-[96vw] w-[96vw] h-[92vh] p-0 overflow-hidden border-none shadow-2xl rounded-3xl z-10000">
           <DialogHeader className="sr-only">
-            <DialogTitle>Bản đồ phạm vi vùng canh tác</DialogTitle>
+            <DialogTitle>{`Bản đồ phạm vi ${TERMS.zoneLower}`}</DialogTitle>
           </DialogHeader>
           <div className="flex h-full">
             <div className="flex-1 relative bg-slate-100">

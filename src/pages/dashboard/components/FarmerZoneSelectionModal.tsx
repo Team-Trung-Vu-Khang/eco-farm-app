@@ -7,6 +7,7 @@ import {
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { Layers, Search, Building2, Check } from "lucide-react";
 import type { DashboardZoneNode } from "../hooks/useDashboardData";
+import { TERMS } from "@/config/terminology";
 
 interface FarmerZoneSelectionModalProps {
   isOpen: boolean;
@@ -37,10 +38,11 @@ function DesktopZoneSelectionModal({
             </div>
             <div>
               <DialogTitle className="text-lg font-bold text-slate-800">
-                Chọn Vùng Canh Tác Nông Hộ
+                Chọn {TERMS.zone} Nông Hộ
               </DialogTitle>
               <p className="text-xs text-slate-500 mt-0.5">
-                Danh sách tất cả các vùng canh tác thuộc quyền sở hữu của Nông hộ
+                Danh sách tất cả các {TERMS.zoneLower} thuộc quyền sở hữu của
+                Nông hộ
               </p>
             </div>
           </div>
@@ -63,7 +65,9 @@ function DesktopZoneSelectionModal({
           <div className="max-h-[360px] overflow-y-auto space-y-2.5 pr-1 divide-y divide-slate-100">
             {filteredZones.length > 0 ? (
               filteredZones.map((zone) => {
-                const isSelected = selectedZone ? zone.id === selectedZone.id : false;
+                const isSelected = selectedZone
+                  ? zone.id === selectedZone.id
+                  : false;
                 return (
                   <button
                     key={zone.id}
@@ -96,7 +100,7 @@ function DesktopZoneSelectionModal({
                             {zone.totalAreaHa} ha
                           </span>
                           <span className="text-emerald-700 font-medium">
-                            {zone.areas.length} khu vực
+                            {zone.areas.length} {TERMS.areaLower}
                           </span>
                         </div>
                       </div>
@@ -111,7 +115,7 @@ function DesktopZoneSelectionModal({
               })
             ) : (
               <div className="py-8 text-center text-xs text-slate-400 italic">
-                Không tìm thấy vùng canh tác phù hợp
+                Không tìm thấy {TERMS.zoneLower} phù hợp
               </div>
             )}
           </div>
@@ -140,7 +144,7 @@ function MobileZoneSelectionModal({
               <Layers className="w-4 h-4" />
             </div>
             <DialogTitle className="text-base font-bold text-slate-800">
-              Chọn vùng canh tác
+              Chọn {TERMS.zoneLower}
             </DialogTitle>
           </div>
         </DialogHeader>
@@ -160,7 +164,9 @@ function MobileZoneSelectionModal({
         <div className="max-h-[50dvh] sm:max-h-[360px] overflow-y-auto space-y-2 -mx-1 px-1">
           {filteredZones.length > 0 ? (
             filteredZones.map((zone) => {
-              const isSelected = selectedZone ? zone.id === selectedZone.id : false;
+              const isSelected = selectedZone
+                ? zone.id === selectedZone.id
+                : false;
               return (
                 <button
                   key={zone.id}
@@ -188,7 +194,8 @@ function MobileZoneSelectionModal({
                       {zone.name}
                     </p>
                     <p className="truncate text-[11px] text-slate-500">
-                      {zone.totalAreaHa} ha · {zone.areas.length} khu vực
+                      {zone.totalAreaHa} ha · {zone.areas.length}{" "}
+                      {TERMS.areaLower}
                       {zone.description ? ` · ${zone.description}` : ""}
                     </p>
                   </div>
@@ -200,7 +207,7 @@ function MobileZoneSelectionModal({
             })
           ) : (
             <div className="py-8 text-center text-xs text-slate-400">
-              Không tìm thấy vùng canh tác phù hợp
+              Không tìm thấy {TERMS.zoneLower} phù hợp
             </div>
           )}
         </div>

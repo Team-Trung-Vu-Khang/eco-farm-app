@@ -1,4 +1,8 @@
-import { Tabs, TabsList, TabsTrigger } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import {
+  Tabs,
+  TabsList,
+  TabsTrigger,
+} from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import "leaflet/dist/leaflet.css";
 import type { CropDetail } from "../../constants";
 import { useCropDetailDialogContent } from "../hooks/useCropDetailDialogContent";
@@ -10,6 +14,7 @@ import { CropDetailOverviewTab } from "./crop-detail/CropDetailOverviewTab";
 import { CropDetailPlansTab } from "./crop-detail/CropDetailPlansTab";
 import { CropDetailStaffTab } from "./crop-detail/CropDetailStaffTab";
 import { CropDetailStatisticsTab } from "./crop-detail/CropDetailStatisticsTab";
+import { TERMS } from "@/config/terminology";
 
 type CropDetailDialogContentProps = {
   id?: string;
@@ -71,7 +76,7 @@ export const CropDetailDialogContent = ({
     return (
       <CropDetailNotFoundState
         icon="scope"
-        title="Không tìm thấy dữ liệu vùng canh tác cho cây"
+        title={`Không tìm thấy dữ liệu ${TERMS.zoneLower} cho cây`}
         onBack={handleBack}
       />
     );

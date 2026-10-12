@@ -2,6 +2,7 @@ import { Badge } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { CheckCircle2, FileText, Sparkles } from "lucide-react";
 import type { ReactNode } from "react";
 import { useFormContext } from "react-hook-form";
+import { TERMS } from "@/config/terminology";
 import type {
   Area,
   Standard,
@@ -10,7 +11,7 @@ import { type EnterpriseCertificateFormValues } from "../data/enterprise-certifi
 
 const ENTITY_TYPE_LABELS = {
   workspace: "Cấp phép theo đơn vị - tổ chức",
-  region: "Cấp phép theo vùng canh tác cụ thể",
+  region: `Cấp phép theo ${TERMS.zoneLower} cụ thể`,
 } as const;
 
 interface CertificateReviewStepProps {
@@ -118,7 +119,7 @@ export function CertificateReviewStep({
               >
                 {values.entityType === "workspace"
                   ? values.entityId || "Chưa chọn"
-                  : `${values.targetIds.length} vùng`}
+                  : `${values.targetIds.length} ${TERMS.zoneLower}`}
               </Badge>
             </div>
             <div className="grid gap-3 md:grid-cols-2">
@@ -128,14 +129,14 @@ export function CertificateReviewStep({
                 value={
                   values.entityType === "workspace"
                     ? "Áp dụng theo phạm vi đơn vị - tổ chức"
-                    : "Áp dụng theo vùng canh tác đã chọn"
+                    : `Áp dụng theo ${TERMS.zoneLower} đã chọn`
                 }
               />
             </div>
             {values.entityType === "region" ? (
               <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50 p-3 text-sm text-slate-600">
                 <div className="font-medium text-slate-900">
-                  Vùng canh tác đã chọn:
+                  {`${TERMS.zone} đã chọn:`}
                 </div>
                 <div className="mt-2 flex flex-wrap gap-1.5">
                   {selectedAreas.length > 0 ? (

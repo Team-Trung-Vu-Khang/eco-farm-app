@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { TERMS } from "@/config/terminology";
 import {
   Badge,
   Button,
@@ -221,7 +222,7 @@ export const StatisticsTab = ({ details, zoneId }: StatisticsTabProps) => {
                 <span className="text-sm font-bold text-slate-400">kg</span>
               </div>
               <div className="mt-4 flex items-center gap-1.5 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
-                Toàn vùng canh tác
+                Toàn {TERMS.zoneLower}
               </div>
             </div>
           </CardContent>

@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { useLocation, useParams } from "wouter";
 import { useToast } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import { TERMS } from "@/config/terminology";
 import type {
   CultivationRegion,
   CultivationRegionConfig,
@@ -191,7 +192,9 @@ export const useCultivationRegionEditPage = () => {
   const [cropSearchTerm, setCropSearchTerm] = useState("");
 
   const selectedRegions = useMemo(() => {
-    const regionIds = [...new Set(selections.map((selection) => selection.regionId))];
+    const regionIds = [
+      ...new Set(selections.map((selection) => selection.regionId)),
+    ];
     return regions.filter((region) => regionIds.includes(region.id.toString()));
   }, [regions, selections]);
 
@@ -279,7 +282,10 @@ export const useCultivationRegionEditPage = () => {
   );
 
   const selectedCerts = useMemo(
-    () => standards.filter((certificate) => selectedCertIds.includes(certificate.code)),
+    () =>
+      standards.filter((certificate) =>
+        selectedCertIds.includes(certificate.code),
+      ),
     [selectedCertIds, standards],
   );
 
@@ -368,7 +374,9 @@ export const useCultivationRegionEditPage = () => {
       (selection) => selection.plotId || selection.areaId || selection.regionId,
     );
 
-    const effectiveScope = selections.some((selection) => selection.type === "plot")
+    const effectiveScope = selections.some(
+      (selection) => selection.type === "plot",
+    )
       ? "plot"
       : selections.some((selection) => selection.type === "area")
         ? "area"
@@ -401,7 +409,7 @@ export const useCultivationRegionEditPage = () => {
 
     toast({
       title: "Thành công",
-      description: "Đã cập nhật vùng canh tác",
+      description: `Đã cập nhật ${TERMS.zoneLower}`,
     });
     setLocation(`/cultivation-region/${id}`);
   };

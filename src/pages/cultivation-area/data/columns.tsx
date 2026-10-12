@@ -1,6 +1,7 @@
 import { Badge } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { Link } from "wouter";
 import type { CultivationArea, Standard } from "../types/types";
+import { TERMS, formatTerm } from "@/config/terminology";
 
 interface EnterpriseOption {
   id: string | number;
@@ -24,20 +25,24 @@ export const getCultivationAreaColumns = (
   },
   {
     key: "name",
-    label: "Tên khu vực canh tác",
+    label: formatTerm.name(TERMS.area),
     render: (value: string) => <span className="font-medium">{value}</span>,
   },
   {
     key: "regionName",
-    label: "Vùng trồng",
+    label: TERMS.region,
     render: (value: string) => <span className="text-slate-600">{value}</span>,
   },
   {
     key: "enterpriseId",
     label: "Đơn vị sở hữu",
     render: (value: string) => {
-      const enterprise = enterprises.find((item) => item.id.toString() === value);
-      return <span className="text-slate-600">{enterprise?.name || value}</span>;
+      const enterprise = enterprises.find(
+        (item) => item.id.toString() === value,
+      );
+      return (
+        <span className="text-slate-600">{enterprise?.name || value}</span>
+      );
     },
   },
   {
@@ -49,7 +54,9 @@ export const getCultivationAreaColumns = (
       return (
         <div className="flex flex-wrap gap-1">
           {value.slice(0, 2).map((certificateId) => {
-            const certificate = standards.find((item) => item.code === certificateId);
+            const certificate = standards.find(
+              (item) => item.code === certificateId,
+            );
             return (
               <Badge
                 key={certificateId}

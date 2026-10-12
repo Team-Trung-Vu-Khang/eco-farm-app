@@ -6,6 +6,7 @@ import {
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { Plus } from "lucide-react";
 import { useLocation } from "wouter";
+import { TERMS } from "@/config/terminology";
 import { getCertificateColumns, getFilterConfig } from "./data/constants";
 import { useEnterpriseCertificateForm } from "./hooks/useEnterpriseCertificateForm";
 
@@ -34,7 +35,7 @@ const EnterpriseCertificatePage = () => {
   return (
     <PageWrapper
       title="Chứng nhận - Chứng chỉ"
-      description="Quản lý chứng nhận cho đơn vị - tổ chức và vùng canh tác"
+      description={`Quản lý chứng nhận cho đơn vị - tổ chức và ${TERMS.zoneLower}`}
       actions={
         <Button
           onClick={() => setLocation("/enterprise-certificate/create")}

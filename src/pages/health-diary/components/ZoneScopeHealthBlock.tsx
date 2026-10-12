@@ -26,6 +26,7 @@ import {
   MapChildLayers,
 } from "@/pages/dashboard/components/FarmerZoneMapChildLayers";
 import { FarmerZoneSelectionModal } from "@/pages/dashboard/components/FarmerZoneSelectionModal";
+import { TERMS } from "@/config/terminology";
 import {
   FarmerZoneMapUnitDetailPanel,
   type SelectedUnitState,
@@ -201,10 +202,10 @@ export const ZoneScopeHealthBlock: React.FC<ZoneScopeHealthBlockProps> = ({
 
         <div className="max-w-md mx-auto space-y-2">
           <h3 className="text-base font-extrabold text-slate-900 flex items-center justify-center gap-2">
-            <span>Chưa chọn Vùng canh tác</span>
+            <span>Chưa chọn {TERMS.zone}</span>
           </h3>
           <p className="text-xs text-slate-600 leading-relaxed">
-            Vui lòng chọn một <strong className="text-emerald-700 font-bold">Vùng canh tác</strong> ở góc trên trang trước. Sau đó hệ thống mới hiển thị bản đồ địa lý và biểu mẫu cập nhật sức khỏe phạm vi vùng.
+            Vui lòng chọn một <strong className="text-emerald-700 font-bold">{TERMS.zone}</strong> ở góc trên trang trước. Sau đó hệ thống mới hiển thị bản đồ địa lý và biểu mẫu cập nhật sức khỏe phạm vi vùng.
           </p>
         </div>
 
@@ -220,7 +221,7 @@ export const ZoneScopeHealthBlock: React.FC<ZoneScopeHealthBlockProps> = ({
                 1
               </span>
               <div>
-                <p className="font-extrabold text-slate-900">Chọn Vùng canh tác ở góc trên</p>
+                <p className="font-extrabold text-slate-900">Chọn {TERMS.zone} ở góc trên</p>
                 <p className="text-[11px] text-amber-800">Cần chọn vùng để đồng bộ bản đồ địa lý</p>
               </div>
             </div>
@@ -343,7 +344,7 @@ export const ZoneScopeHealthBlock: React.FC<ZoneScopeHealthBlockProps> = ({
         <Dialog open={isMapExpanded} onOpenChange={setIsMapExpanded}>
           <DialogContent className="max-w-[96vw] w-[96vw] h-[92vh] p-0 overflow-hidden border-none shadow-2xl rounded-2xl z-[10000]">
             <DialogHeader className="sr-only">
-              <DialogTitle>Bản đồ chi tiết vùng canh tác</DialogTitle>
+              <DialogTitle>Bản đồ chi tiết {TERMS.zoneLower}</DialogTitle>
             </DialogHeader>
 
             <div className="flex h-full">

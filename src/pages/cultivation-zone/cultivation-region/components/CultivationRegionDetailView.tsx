@@ -22,6 +22,7 @@ import { useCultivationRegionDetail } from "../useCultivationRegionDetail";
 import { useRegions } from "@/features/farm/hooks/useRegions";
 import { areaApi, plotApi } from "@/features/farm/api/farm.api";
 import { useSelectedWorkspaceId } from "@/features/workspace";
+import { TERMS } from "@/config/terminology";
 
 // Subcomponents
 import { OverviewTab } from "./detail/OverviewTab";
@@ -170,7 +171,7 @@ export const CultivationRegionDetailView = ({
       <div className="flex flex-col items-center justify-center py-32 gap-4">
         <Loader2 className="w-10 h-10 animate-spin text-primary" />
         <span className="text-sm text-slate-500 font-bold uppercase tracking-wider">
-          Đang tải chi tiết vùng canh tác...
+          {`Đang tải chi tiết ${TERMS.zoneLower}...`}
         </span>
       </div>
     );
@@ -181,7 +182,7 @@ export const CultivationRegionDetailView = ({
       <div className="flex flex-col items-center justify-center py-20">
         <Target className="w-16 h-16 text-slate-300 mb-4" />
         <h2 className="text-xl font-bold text-slate-900">
-          Không tìm thấy vùng canh tác
+          {`Không tìm thấy ${TERMS.zoneLower}`}
         </h2>
         <Button
           variant="ghost"

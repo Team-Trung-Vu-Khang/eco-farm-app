@@ -17,6 +17,7 @@ import {
   type CultivationZoneFormValues,
 } from "./data/cultivation-zone-form.schema";
 import { useCultivationZoneCreateForm } from "./hooks/useCultivationZoneCreateForm";
+import { TERMS } from "@/config/terminology";
 
 const CultivationRegionCreatePage = () => {
   const form = useForm<CultivationZoneFormValues>({
@@ -94,7 +95,7 @@ const CultivationRegionCreatePage = () => {
     {
       id: "general",
       title: "Thông tin chung",
-      description: "Nhập thông tin cơ bản của vùng canh tác",
+      description: `Nhập thông tin cơ bản của ${TERMS.zoneLower}`,
       content: <ZoneGeneralInfoStep />,
       isValid: step1Valid,
     },
@@ -120,8 +121,12 @@ const CultivationRegionCreatePage = () => {
 
   return (
     <PageWrapper
-      title={isEditMode ? "Cập nhật vùng canh tác" : "Khởi tạo vùng canh tác"}
-      description="Thiết lập vùng canh tác ứng dụng công nghệ cao"
+      title={
+        isEditMode
+          ? `Cập nhật ${TERMS.zoneLower}`
+          : `Khởi tạo ${TERMS.zoneLower}`
+      }
+      description={`Thiết lập ${TERMS.zoneLower} ứng dụng công nghệ cao`}
       actions={
         <Button
           variant="outline"
@@ -144,7 +149,7 @@ const CultivationRegionCreatePage = () => {
                   onCancel={handleCancel}
                   onComplete={handleSubmit(onFormSubmit)}
                   completeLabel={
-                    isEditMode ? "Lưu thay đổi" : "Khởi tạo vùng canh tác"
+                    isEditMode ? "Lưu thay đổi" : `Khởi tạo ${TERMS.zoneLower}`
                   }
                 />
               </FormProvider>

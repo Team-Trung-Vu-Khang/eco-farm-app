@@ -1,14 +1,12 @@
 import { z } from "zod";
+import { TERMS } from "@/config/terminology";
 
 export const ENTERPRISE_CERTIFICATE_ENTITY_TYPES = [
   "workspace",
   "region",
 ] as const;
 
-export const ENTERPRISE_CERTIFICATE_CONTENT_TYPES = [
-  "editor",
-  "file",
-] as const;
+export const ENTERPRISE_CERTIFICATE_CONTENT_TYPES = ["editor", "file"] as const;
 
 const enterpriseCertificateBasicInfoSchema = z.object({
   code: z.string().trim().min(1, "Vui lòng nhập mã chứng nhận."),
@@ -59,7 +57,7 @@ const enterpriseCertificateEntitySchema = z
     if (value.targetIds.length === 0) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        message: "Vui lòng chọn ít nhất một vùng canh tác.",
+        message: `Vui lòng chọn ít nhất một ${TERMS.zoneLower}.`,
         path: ["targetIds"],
       });
     }
@@ -121,7 +119,7 @@ export const enterpriseCertificateFormSchema = z
     if (value.entityType === "region" && value.targetIds.length === 0) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        message: "Vui lòng chọn ít nhất một vùng canh tác.",
+        message: `Vui lòng chọn ít nhất một ${TERMS.zoneLower}.`,
         path: ["targetIds"],
       });
     }

@@ -10,6 +10,7 @@ import {
   Badge,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { Layers, Loader2, MapPin, Plus, Search } from "lucide-react";
+import { TERMS, formatTerm } from "@/config/terminology";
 
 interface CultivationRegionSelectorProps {
   areas: any[];
@@ -118,7 +119,9 @@ export const CultivationRegionSelector = ({
         ) : (
           <div className="flex flex-col items-center justify-center py-4 text-center gap-2 text-muted-foreground group-hover:text-primary transition-colors">
             <Plus className="w-6 h-6" />
-            <div className="text-base font-medium">Chọn vùng canh tác</div>
+            <div className="text-base font-medium">
+              {formatTerm.select(TERMS.zone)}
+            </div>
           </div>
         )}
       </div>
@@ -128,7 +131,7 @@ export const CultivationRegionSelector = ({
           <DialogHeader className="border-b p-6 pb-6 w-full shrink-0">
             <DialogTitle className="flex items-start gap-2">
               <Layers className="w-5 h-5 text-primary" />
-              Chọn vùng canh tác
+              {formatTerm.select(TERMS.zone)}
             </DialogTitle>
           </DialogHeader>
 
@@ -140,7 +143,7 @@ export const CultivationRegionSelector = ({
                   value={searchTerm}
                   className="w-full max-w-xl pl-10 h-10 bg-white"
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  placeholder="Tìm tên vùng, phạm vi, mã..."
+                  placeholder={`Tìm tên ${TERMS.zoneLower}, phạm vi, mã...`}
                   disabled={loading}
                 />
               </div>
@@ -149,80 +152,80 @@ export const CultivationRegionSelector = ({
                   <div className="flex flex-col items-center justify-center gap-3 py-16 text-muted-foreground">
                     <Loader2 className="h-6 w-6 animate-spin text-primary" />
                     <span className="text-sm">
-                      Đang tải danh sách vùng canh tác...
+                      {formatTerm.loadingList(TERMS.zone)}
                     </span>
                   </div>
                 ) : (
-                <div className="space-y-2 w-full overflow-hidden">
-                  {filteredAreas.map((a) => {
-                    const isSelected = String(a.id) === String(selectedId);
-                    const badges = getScopeBadges(a.scopes);
-                    return (
-                      <div
-                        key={a.id}
-                        className={cn(
-                          "flex items-start w-full min-w-0 overflow-hidden justify-between p-3 rounded-xl border cursor-pointer transition-all",
-                          isSelected
-                            ? "bg-primary/5 border-primary shadow-sm"
-                            : "hover:bg-slate-50 bg-white border-slate-100",
-                        )}
-                        onClick={() => {
-                          onSelect(String(a.id));
-                          setIsOpen(false);
-                          setSearchTerm("");
-                        }}
-                      >
-                        <div className="flex items-start gap-3 min-w-0 w-full">
-                          <div
-                            className={cn(
-                              "w-10 h-10 rounded-xl flex items-center justify-center shrink-0 mt-0.5",
-                              isSelected
-                                ? "bg-primary text-white"
-                                : "bg-slate-100 text-slate-400",
-                            )}
-                          >
-                            <Layers className="w-5 h-5" />
-                          </div>
-                          <div className="min-w-0 flex-1">
-                            <div className="flex items-center gap-2 flex-wrap mb-1">
-                              <span className="text-base font-bold text-slate-800 truncate">
-                                {a.name}
-                              </span>
-                              {a.code && (
-                                <span className="text-xs font-mono text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded shrink-0">
-                                  {a.code}
+                  <div className="space-y-2 w-full overflow-hidden">
+                    {filteredAreas.map((a) => {
+                      const isSelected = String(a.id) === String(selectedId);
+                      const badges = getScopeBadges(a.scopes);
+                      return (
+                        <div
+                          key={a.id}
+                          className={cn(
+                            "flex items-start w-full min-w-0 overflow-hidden justify-between p-3 rounded-xl border cursor-pointer transition-all",
+                            isSelected
+                              ? "bg-primary/5 border-primary shadow-sm"
+                              : "hover:bg-slate-50 bg-white border-slate-100",
+                          )}
+                          onClick={() => {
+                            onSelect(String(a.id));
+                            setIsOpen(false);
+                            setSearchTerm("");
+                          }}
+                        >
+                          <div className="flex items-start gap-3 min-w-0 w-full">
+                            <div
+                              className={cn(
+                                "w-10 h-10 rounded-xl flex items-center justify-center shrink-0 mt-0.5",
+                                isSelected
+                                  ? "bg-primary text-white"
+                                  : "bg-slate-100 text-slate-400",
+                              )}
+                            >
+                              <Layers className="w-5 h-5" />
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-center gap-2 flex-wrap mb-1">
+                                <span className="text-base font-bold text-slate-800 truncate">
+                                  {a.name}
                                 </span>
+                                {a.code && (
+                                  <span className="text-xs font-mono text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded shrink-0">
+                                    {a.code}
+                                  </span>
+                                )}
+                              </div>
+                              {badges.length > 0 ? (
+                                <div className="flex flex-wrap gap-1.5">
+                                  {badges.map((b, i) => (
+                                    <Badge
+                                      key={i}
+                                      variant="outline"
+                                      className="text-xs px-2 py-0.5 h-5 border-slate-200 text-slate-500 bg-slate-50 font-normal"
+                                    >
+                                      <MapPin className="w-3 h-3 mr-1 shrink-0" />
+                                      {b.type}: {b.label}
+                                    </Badge>
+                                  ))}
+                                </div>
+                              ) : (
+                                <div className="text-xs text-slate-400 italic">
+                                  Chưa thiết lập phạm vi
+                                </div>
                               )}
                             </div>
-                            {badges.length > 0 ? (
-                              <div className="flex flex-wrap gap-1.5">
-                                {badges.map((b, i) => (
-                                  <Badge
-                                    key={i}
-                                    variant="outline"
-                                    className="text-xs px-2 py-0.5 h-5 border-slate-200 text-slate-500 bg-slate-50 font-normal"
-                                  >
-                                    <MapPin className="w-3 h-3 mr-1 shrink-0" />
-                                    {b.type}: {b.label}
-                                  </Badge>
-                                ))}
-                              </div>
-                            ) : (
-                              <div className="text-xs text-slate-400 italic">
-                                Chưa thiết lập phạm vi
-                              </div>
-                            )}
                           </div>
                         </div>
+                      );
+                    })}
+                    {filteredAreas.length === 0 && (
+                      <div className="py-10 text-center text-sm text-slate-400 italic">
+                        {`Không tìm thấy ${TERMS.zoneLower} nào`}
                       </div>
-                    );
-                  })}
-                  {filteredAreas.length === 0 && (
-                    <div className="py-10 text-center text-sm text-slate-400 italic">
-                      Không tìm thấy vùng canh tác nào
-                    </div>
-                  )}
-                </div>
+                    )}
+                  </div>
                 )}
               </div>
             </div>

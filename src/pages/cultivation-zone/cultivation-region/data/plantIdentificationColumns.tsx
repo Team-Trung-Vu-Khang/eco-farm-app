@@ -3,6 +3,7 @@ import { Badge, cn } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { Link } from "wouter";
 import { MapPin } from "lucide-react";
 import type { Plant } from "@/pages/region-chart/constants";
+import { TERMS } from "@/config/terminology";
 import {
   PLANT_HEALTH_STATUS_LABELS,
   PLANT_HEALTH_STATUS_STYLES,
@@ -80,7 +81,7 @@ export const plantIdentificationColumns = [
   },
   {
     key: "productionZone",
-    label: "Vùng canh tác",
+    label: TERMS.zone,
     render: (_: unknown, row: any) => (
       <span className="font-semibold text-slate-800">
         {row.productionZone?.name || row.cultivationZoneName || "—"}

@@ -27,6 +27,7 @@ import {
   HeartPulse,
 } from "lucide-react";
 import { HealthFormFields } from "./HealthFormFields";
+import { TERMS } from "@/config/terminology";
 import type { HealthStatusType } from "@/features/health-diary/types/health-diary.types";
 
 interface IndividualPlantHealthBlockProps {
@@ -967,12 +968,12 @@ export const IndividualPlantHealthBlock: React.FC<
 
         <div className="max-w-md mx-auto space-y-2">
           <h3 className="text-base font-extrabold text-slate-900 flex items-center justify-center gap-2">
-            <span>Chưa chọn Vùng canh tác</span>
+            <span>Chưa chọn {TERMS.zone}</span>
           </h3>
           <p className="text-xs text-slate-600 leading-relaxed">
             Vui lòng chọn một{" "}
             <strong className="text-emerald-700 font-bold">
-              Vùng canh tác
+              {TERMS.zone}
             </strong>{" "}
             ở góc trên trang trước. Sau đó hệ thống sẽ hiển thị bộ lọc vị trí và
             danh sách cây trồng tương ứng.
@@ -992,7 +993,7 @@ export const IndividualPlantHealthBlock: React.FC<
               </span>
               <div>
                 <p className="font-extrabold text-slate-900">
-                  Chọn Vùng canh tác ở góc trên
+                  Chọn {TERMS.zone} ở góc trên
                 </p>
                 <p className="text-[11px] text-amber-800">
                   Cần thực hiện bước này đầu tiên
@@ -1252,12 +1253,12 @@ export const IndividualPlantHealthBlock: React.FC<
                 onChange={handleRegionChange}
                 disabled={!isZoneSelected}
                 placeholder="Chọn 1 hoặc nhiều vùng trồng..."
-                disabledHint="Vui lòng chọn Vùng canh tác bên trên..."
+                disabledHint={`Vui lòng chọn ${TERMS.zone} bên trên...`}
               />
 
               {/* 2. Khu vực (MultiSelect) */}
               <MultiSelectDropdown
-                label="2. Khu vực"
+                label={`2. ${TERMS.area}`}
                 icon={<Layers className="w-3 h-3 text-emerald-600" />}
                 options={areaOptions}
                 selectedValues={selectedAreas}

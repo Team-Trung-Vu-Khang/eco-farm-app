@@ -40,6 +40,7 @@ import {
 import { useGeoProvinces, useGeoWards } from "@/features/master-data";
 import { useAdminWorkspaces } from "@/features/workspace/hooks/useAdminWorkspaces";
 import { useDebounce } from "@/shared/hooks/useDebounce";
+import { TERMS, formatTerm } from "@/config/terminology";
 
 interface AdvancedFiltersState {
   // Province/ward are selected by code (remote search) but the API
@@ -252,7 +253,7 @@ const SearchZonePage = () => {
   const handleSearch = () => {
     toast({
       title: "Tìm kiếm hoàn tất",
-      description: `Đã tìm thấy ${totalZones} vùng canh tác phù hợp trên hệ thống.`,
+      description: `Đã tìm thấy ${totalZones} ${TERMS.zoneLower} phù hợp trên hệ thống.`,
     });
   };
 
@@ -283,7 +284,7 @@ const SearchZonePage = () => {
   const columns: Column<FarmAdminProductionZoneItem>[] = [
     {
       key: "code",
-      label: "Mã vùng",
+      label: `Mã ${TERMS.zoneLower}`,
       render: (value) => (
         <span className="font-semibold text-slate-600 text-xs">
           {String(value || "--")}
@@ -292,7 +293,7 @@ const SearchZonePage = () => {
     },
     {
       key: "name",
-      label: "Tên vùng canh tác",
+      label: formatTerm.name(TERMS.zone),
       render: (value) => (
         <span className="font-bold text-slate-800 text-sm leading-tight">
           {String(value)}
@@ -354,7 +355,7 @@ const SearchZonePage = () => {
   }, [advancedFilters]);
 
   return (
-    <PageWrapper title="Tìm kiếm vùng canh tác">
+    <PageWrapper title={formatTerm.search(TERMS.zone)}>
       <div className="min-h-[calc(100vh-64px)] flex flex-col bg-slate-50">
         {/* TOP HEADER: Search form + result summary */}
         <div className="bg-white border-b px-4 py-4">
@@ -365,7 +366,7 @@ const SearchZonePage = () => {
                 <div className="relative flex-1">
                   <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
                   <Input
-                    placeholder="Tìm theo tên, mã vùng, giống áp dụng..."
+                    placeholder={`Tìm theo tên, mã ${TERMS.zoneLower}, giống áp dụng...`}
                     className="h-10 border-slate-200 bg-white pl-9"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
@@ -395,7 +396,7 @@ const SearchZonePage = () => {
                     <span className="font-bold text-slate-900">
                       {totalZones}
                     </span>{" "}
-                    vùng ·{" "}
+                    {TERMS.zoneLower} ·{" "}
                     <span className="font-bold text-slate-900">
                       {workspaceGroups.length}
                     </span>{" "}
@@ -410,13 +411,13 @@ const SearchZonePage = () => {
                 <div className="space-y-3">
                   <h4 className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-slate-400">
                     <Sprout size={13} />
-                    Thông tin vùng trồng
+                    {formatTerm.info(TERMS.region)}
                   </h4>
                   <div className="grid grid-cols-1 gap-x-4 gap-y-3 md:grid-cols-3">
                     {/* Crop: remote search from Production Subjects */}
                     <div className="space-y-1.5">
                       <Label className="text-xs font-medium text-slate-600">
-                        Cây trồng
+                        {TERMS.crop}
                       </Label>
                       <RemoteAutoCompleteSelect
                         options={cropOptions}
@@ -712,7 +713,7 @@ const SearchZonePage = () => {
                             {group.workspaceName}
                           </h4>
                           <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">
-                            {group.zoneCount} vùng canh tác
+                            {group.zoneCount} {TERMS.zoneLower}
                           </p>
                         </div>
                       )}
@@ -743,7 +744,7 @@ const SearchZonePage = () => {
                 <div className="font-black text-xs uppercase tracking-widest text-slate-600 flex items-center gap-2">
                   <Sprout size={16} className="text-primary" />
                   <span>
-                    Danh sách vùng canh tác{" "}
+                    Danh sách {TERMS.zoneLower}{" "}
                     {selectedWorkspace
                       ? `— ${selectedWorkspace.workspaceName}`
                       : ""}
@@ -751,7 +752,7 @@ const SearchZonePage = () => {
                 </div>
                 {selectedWorkspaceId !== null && (
                   <Badge variant="outline" className="font-bold">
-                    {workspaceZones.length} vùng
+                    {workspaceZones.length} {TERMS.zoneLower}
                   </Badge>
                 )}
               </div>
@@ -765,16 +766,16 @@ const SearchZonePage = () => {
                     </h4>
                     <p className="text-xs text-slate-400 mt-1 max-w-sm">
                       Chọn một Đơn vị sở hữu ở danh sách bên trái để xem chi
-                      tiết danh sách các vùng canh tác thuộc đơn vị đó.
+                      tiết danh sách các {TERMS.zoneLower} thuộc đơn vị đó.
                     </p>
                   </div>
                 ) : isZonesLoading ? (
                   <div className="py-12 text-center text-slate-400 text-xs italic">
-                    Đang tải danh sách vùng canh tác...
+                    Đang tải danh sách {TERMS.zoneLower}...
                   </div>
                 ) : workspaceZones.length === 0 ? (
                   <div className="py-12 text-center text-slate-400 text-xs italic">
-                    Không có vùng canh tác nào phù hợp trong Đơn vị này
+                    Không có {TERMS.zoneLower} nào phù hợp trong Đơn vị này
                   </div>
                 ) : (
                   <DataTable

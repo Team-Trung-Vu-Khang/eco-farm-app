@@ -23,6 +23,7 @@ import {
   Target,
   User,
 } from "lucide-react";
+import { TERMS } from "@/config/terminology";
 import { type PlantEntry } from "./types";
 
 interface Step3ConfirmationProps {
@@ -118,7 +119,7 @@ export const Step3Confirmation: React.FC<Step3ConfirmationProps> = ({
           <div className="bg-slate-50 border-b p-4 flex items-center gap-2">
             <Beaker className="w-4 h-4 text-slate-500" />
             <h4 className="font-semibold text-slate-800">
-              Thông tin vùng canh tác
+              {`Thông tin ${TERMS.zoneLower}`}
             </h4>
           </div>
           <div className="p-6 space-y-5 bg-white">

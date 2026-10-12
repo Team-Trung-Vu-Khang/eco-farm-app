@@ -1,6 +1,11 @@
-import { Badge, DialogHeader, DialogTitle } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import {
+  Badge,
+  DialogHeader,
+  DialogTitle,
+} from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { Filter, MapPin, X } from "lucide-react";
 import type { Region } from "../../../../region-chart/constants";
+import { formatTerm, TERMS } from "@/config/terminology";
 
 type CultivationZoneDialogHeaderProps = {
   selections: Region[];
@@ -21,7 +26,7 @@ export function CultivationZoneDialogHeader({
         <div className="rounded-xl bg-primary p-2 shadow-lg shadow-primary/20">
           <MapPin className="h-6 w-6 text-white" />
         </div>
-        Chọn vùng canh tác
+        {formatTerm.select(TERMS.zone)}
       </DialogTitle>
 
       <p className="mt-2 font-medium text-slate-500">
@@ -47,7 +52,7 @@ export function CultivationZoneDialogHeader({
         {selections.length === 0 && (
           <div className="flex items-center gap-2 py-1 text-sm italic text-slate-400">
             <Filter size={14} />
-            Chưa có vùng nào được chọn
+            Chưa có {TERMS.zoneLower} nào được chọn
           </div>
         )}
       </div>

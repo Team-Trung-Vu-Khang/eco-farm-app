@@ -11,6 +11,7 @@ import type { RegionBasicFormValues } from "../data/region-basic-form.schema";
 import { useMethodApplications } from "@/features/foundation";
 import type { FarmSeedResponse } from "@/features/farm/types/farm.type";
 import { useSeeds } from "@/features/farm";
+import { TERMS } from "@/config/terminology";
 
 interface RegionConfirmationStepProps {
   domainCode: "CROP" | "LIVESTOCK" | "AQUACULTURE";
@@ -285,7 +286,7 @@ export const RegionConfirmationStep = ({
           <div className="bg-slate-50 border-b px-4 py-3 flex items-center gap-2">
             <ScrollText className="w-4 h-4 text-slate-500" />
             <h4 className="font-semibold text-slate-800 text-sm">
-              Thông tin vùng địa lý
+              Thông tin {TERMS.regionLower}
             </h4>
           </div>
           <div className="p-0">
@@ -293,7 +294,7 @@ export const RegionConfirmationStep = ({
               <tbody>
                 <tr className="border-b border-slate-100">
                   <td className="py-2.5 px-4 text-muted-foreground w-1/3">
-                    Tên vùng
+                    Tên {TERMS.regionLower}
                   </td>
                   <td className="py-2.5 px-4 font-semibold text-slate-900">
                     {formValues.name}
@@ -302,7 +303,7 @@ export const RegionConfirmationStep = ({
                 {formValues.code && (
                   <tr className="border-b border-slate-100">
                     <td className="py-2.5 px-4 text-muted-foreground">
-                      Mã vùng
+                      Mã {TERMS.regionLower}
                     </td>
                     <td className="py-2.5 px-4 font-semibold text-slate-900">
                       {formValues.code}

@@ -11,6 +11,7 @@ import { CultivationRegionCreateConfirmationStep } from "./components/Cultivatio
 import { CultivationRegionCreateGeneralInfoStep } from "./components/CultivationRegionCreateGeneralInfoStep";
 import { CultivationRegionNotFoundState } from "./components/CultivationRegionNotFoundState";
 import { useCultivationRegionEditPage } from "./hooks/useCultivationRegionEditPage";
+import { TERMS } from "@/config/terminology";
 
 const CultivationRegionEditPage = () => {
   const {
@@ -122,7 +123,7 @@ const CultivationRegionEditPage = () => {
           irrigationSystems={irrigationSystems}
           varieties={varieties}
           seeds={seeds}
-          description="Vui lòng kiểm tra kỹ các thông tin dưới đây. Sau khi xác nhận, hệ thống sẽ cập nhật vùng canh tác."
+          description={`Vui lòng kiểm tra kỹ các thông tin dưới đây. Sau khi xác nhận, hệ thống sẽ cập nhật ${TERMS.zoneLower}.`}
         />
       ),
     },
@@ -130,8 +131,8 @@ const CultivationRegionEditPage = () => {
 
   return (
     <PageWrapper
-      title="Thiết lập vùng canh tác"
-      description="Quy trình khởi tạo và cấu hình tiêu chuẩn cho đơn vị canh tác"
+      title={`Thiết lập ${TERMS.zoneLower}`}
+      description={`Quy trình khởi tạo và cấu hình tiêu chuẩn cho ${TERMS.zoneLower}`}
     >
       <div className="mb-6">
         <Button

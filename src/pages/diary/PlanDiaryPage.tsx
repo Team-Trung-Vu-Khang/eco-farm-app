@@ -26,6 +26,7 @@ import type {
 } from "@/features/farm-task";
 import { useFarmTasks, useFarmTaskStats } from "@/features/farm-task";
 import { useDebounce } from "@/shared/hooks/useDebounce";
+import { TERMS } from "@/config/terminology";
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
@@ -166,7 +167,7 @@ export default function PlanDiaryPage() {
       },
       {
         key: "scope",
-        label: "Vùng canh tác",
+        label: TERMS.zone,
         render: (_value, row) => (
           <div className="flex items-center gap-1.5 text-xs text-slate-600">
             <MapPin className="h-3.5 w-3.5 text-slate-400 shrink-0" />

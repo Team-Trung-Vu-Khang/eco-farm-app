@@ -11,6 +11,7 @@ import {
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { CheckCircle2, MapPin, Search, Sprout } from "lucide-react";
 import type { CropSubjectVariantItem } from "../../types/history-form.types";
+import { TERMS } from "@/config/terminology";
 
 export interface SelectedTreeItem {
   id: string | number;
@@ -85,7 +86,12 @@ export function HarvestTreeSelectorDialog({
         const matchProd = (item.productionSubjectName || "")
           .toLowerCase()
           .includes(query);
-        if (!matchCode && !matchName && !matchProd && !regName.includes(query)) {
+        if (
+          !matchCode &&
+          !matchName &&
+          !matchProd &&
+          !regName.includes(query)
+        ) {
           return false;
         }
       }
@@ -160,7 +166,7 @@ export function HarvestTreeSelectorDialog({
                 Chọn danh sách giống cây trồng
               </DialogTitle>
               <p className="text-xs text-slate-500 mt-0.5">
-                Tìm kiếm theo Vùng canh tác hoặc Mã / Tên giống cây trồng
+                {`Tìm kiếm theo ${TERMS.zone} hoặc Mã / Tên giống ${TERMS.cropLower}`}
               </p>
             </div>
             <Badge className="bg-green-100 text-green-800 border-none font-bold text-xs">
@@ -174,12 +180,12 @@ export function HarvestTreeSelectorDialog({
               {/* Filter 1: Tim kiem Vung trong */}
               <div className="space-y-1">
                 <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
-                  Lọc theo Vùng canh tác
+                  {`Lọc theo ${TERMS.zone}`}
                 </span>
                 <div className="relative">
                   <MapPin className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
                   <Input
-                    placeholder="Nhập tên Vùng canh tác..."
+                    placeholder={`Nhập tên ${TERMS.zoneLower}...`}
                     value={regionQuery}
                     onChange={(e) => setRegionQuery(e.target.value)}
                     className="pl-9 h-9 text-xs bg-slate-50 border-slate-200 rounded-lg"
@@ -234,7 +240,10 @@ export function HarvestTreeSelectorDialog({
                   const idStr = String(item.id);
                   const isChecked = tempSelectedIds.includes(idStr);
                   const locationLabel =
-                    item.zoneName || item.regionName || (item as any).plotName || "Vùng canh tác";
+                    item.zoneName ||
+                    item.regionName ||
+                    (item as any).plotName ||
+                    TERMS.zone;
 
                   return (
                     <div
@@ -283,7 +292,9 @@ export function HarvestTreeSelectorDialog({
                                     : "bg-purple-50 text-purple-700 border-purple-200"
                                 }`}
                               >
-                                {item.sourceType === "FOUNDATION" ? "Foundation" : "Workspace"}
+                                {item.sourceType === "FOUNDATION"
+                                  ? "Foundation"
+                                  : "Workspace"}
                               </Badge>
                             )}
                           </div>
@@ -295,7 +306,9 @@ export function HarvestTreeSelectorDialog({
                             {(item as any).plantedDate && (
                               <>
                                 <span>•</span>
-                                <span>Trồng ngày: {(item as any).plantedDate}</span>
+                                <span>
+                                  Trồng ngày: {(item as any).plantedDate}
+                                </span>
                               </>
                             )}
                           </p>
@@ -305,7 +318,6 @@ export function HarvestTreeSelectorDialog({
                   );
                 })}
               </div>
-
             ) : (
               <div className="text-center py-12">
                 <Sprout className="w-8 h-8 text-slate-300 mx-auto mb-2" />

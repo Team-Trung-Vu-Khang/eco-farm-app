@@ -27,6 +27,7 @@ import { MapContainer, Polygon, TileLayer, useMap } from "react-leaflet";
 import { Link } from "wouter";
 
 import { useCultivationAreaDetailPage } from "./hooks/useCultivationAreaDetailPage";
+import { TERMS, formatTerm } from "@/config/terminology";
 
 // Map component to fly to the area
 const MapController = ({ center }: { center: L.LatLngExpression }) => {
@@ -52,9 +53,9 @@ const CultivationAreaDetailPage = () => {
 
   if (!data) {
     return (
-      <PageWrapper title="Chi tiết Khu vực canh tác" description="Đang tải...">
+      <PageWrapper title={`Chi tiết ${TERMS.area}`} description="Đang tải...">
         <div className="p-12 text-center text-slate-500">
-          Không tìm thấy thông tin khu vực canh tác
+          {formatTerm.notFound(TERMS.area)}
         </div>
       </PageWrapper>
     );
@@ -62,7 +63,7 @@ const CultivationAreaDetailPage = () => {
   return (
     <PageWrapper
       title={data.name}
-      description={`Cấu hình canh tác cho Khu vực #${data.id}`}
+      description={`Cấu hình cho ${TERMS.area} #${data.id}`}
       actions={
         <div className="flex gap-2">
           <Button variant="outline" onClick={goBack}>
@@ -107,7 +108,7 @@ const CultivationAreaDetailPage = () => {
 
               <div className="absolute top-4 right-4 z-400 bg-white/90 backdrop-blur-md p-3 rounded-xl shadow-lg border border-slate-200">
                 <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">
-                  Tổng diện tích khu vực
+                  Tổng diện tích {TERMS.areaLower}
                 </div>
                 <div className="text-xl font-black text-primary flex items-baseline gap-1">
                   {geometry?.area?.toFixed(2) || "---"}
@@ -122,7 +123,7 @@ const CultivationAreaDetailPage = () => {
                 </div>
                 <div>
                   <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                    Vùng trồng cha
+                    {TERMS.region} cha
                   </div>
                   <div className="font-bold text-slate-700">
                     {data.regionName}
@@ -136,7 +137,7 @@ const CultivationAreaDetailPage = () => {
                 </div>
                 <div>
                   <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                    Mã khu vực
+                    Mã {TERMS.areaLower}
                   </div>
                   <div className="font-bold text-slate-700">{data.id}</div>
                 </div>
@@ -148,7 +149,7 @@ const CultivationAreaDetailPage = () => {
                 </div>
                 <div>
                   <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                    Quản lý khu vực
+                    Quản lý {TERMS.areaLower}
                   </div>
                   <div className="font-bold text-slate-700">
                     {manager?.fullName || "Chưa gán"}
@@ -163,7 +164,7 @@ const CultivationAreaDetailPage = () => {
             <CardHeader className="bg-slate-50/50 border-b flex flex-row items-center justify-between">
               <CardTitle className="flex items-center gap-2 text-base">
                 <Sprout className="w-5 h-5 text-primary" />
-                Danh mục cây trồng trong khu vực
+                Danh mục cây trồng trong {TERMS.areaLower}
               </CardTitle>
               <Badge
                 variant="outline"
@@ -285,7 +286,7 @@ const CultivationAreaDetailPage = () => {
                 <div className="bg-white/5 rounded-xl p-3 border border-white/10 backdrop-blur-sm">
                   <div className="flex justify-between items-center mb-1">
                     <span className="text-[10px] text-white/50 font-bold uppercase">
-                      Chứng nhận khu vực
+                      Chứng nhận {TERMS.areaLower}
                     </span>
                   </div>
                   <div className="flex flex-wrap gap-1.5">
@@ -351,7 +352,7 @@ const CultivationAreaDetailPage = () => {
                     </div>
                     <div>
                       <p className="text-[10px] font-bold text-slate-400 uppercase leading-none mb-1.5">
-                        Ngày khởi tạo vùng
+                        Ngày khởi tạo {TERMS.areaLower}
                       </p>
                       <p className="text-sm font-bold text-slate-700">
                         {data.createdAt}
@@ -383,10 +384,11 @@ const CultivationAreaDetailPage = () => {
               <div className="p-5 bg-amber-50/20">
                 <div className="text-[10px] font-black text-amber-600/70 uppercase tracking-widest mb-3 flex items-center gap-2">
                   <ClipboardList className="w-3.5 h-3.5" />
-                  Ghi chú khu vực
+                  Ghi chú {TERMS.areaLower}
                 </div>
                 <p className="text-xs text-slate-600 leading-relaxed italic border-l-2 border-amber-200 pl-3">
-                  {data.note || "Không có ghi chú đặc biệt cho khu vực này."}
+                  {data.note ||
+                    `Không có ghi chú đặc biệt cho ${TERMS.areaLower} này.`}
                 </p>
               </div>
             </CardContent>

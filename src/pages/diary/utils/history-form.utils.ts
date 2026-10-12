@@ -13,6 +13,7 @@ import type {
   RawSupplyLineItem,
 } from "../types/history-form.types";
 import { PURPOSE_TO_WORK_TYPE_MAP } from "../constants/history-form.constants";
+import { TERMS } from "@/config/terminology";
 
 export function toWorkflowScopeRegionOptions(
   scopes?: FarmWorkflowScopeResponse[],
@@ -44,7 +45,7 @@ export function toWorkflowScopeRegionOptions(
       regionObj = {
         id: region.id,
         code: region.code,
-        name: region.name ?? `Vùng canh tác #${region.id}`,
+        name: region.name ?? `${TERMS.zone} #${region.id}`,
         enterpriseId: "",
         subAreas: [],
       };
@@ -110,7 +111,7 @@ export function toCultivationZoneOptions(
     return {
       id: z.id,
       code: z.code,
-      name: z.name ?? `Vùng canh tác #${z.id}`,
+      name: z.name ?? `${TERMS.zone} #${z.id}`,
       enterpriseId: (z.metadataJson?.enterpriseId as string) ?? "",
       subAreas,
     };
@@ -305,7 +306,7 @@ export function extractCropSubjectVariants(
   const seenKey = new Set<string>();
 
   zones.forEach((zone) => {
-    const zoneName = zone.name ?? `Vùng canh tác #${zone.id}`;
+    const zoneName = zone.name ?? `${TERMS.zone} #${zone.id}`;
     const firstScope = zone.scopes?.[0];
     const regionName =
       firstScope?.region?.name ?? firstScope?.area?.region?.name ?? zoneName;
@@ -339,7 +340,7 @@ export function extractCropSubjectVariants(
       if (seenKey.has(key)) return;
       seenKey.add(key);
 
-      const variantObj = v as Record<string, unknown>;
+      const variantObj = v as unknown as Record<string, unknown>;
       const variantCode =
         v.subjectVariantCode ||
         (typeof variantObj.code === "string" ? variantObj.code : "") ||

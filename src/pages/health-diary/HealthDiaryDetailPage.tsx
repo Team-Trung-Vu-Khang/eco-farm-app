@@ -28,6 +28,7 @@ import {
 import { useLocation, useParams } from "wouter";
 import { useHealthDiaryStore } from "@/features/health-diary/stores/useHealthDiaryStore";
 import type { HealthStatusType } from "@/features/health-diary/types/health-diary.types";
+import { TERMS } from "@/config/terminology";
 
 const renderStatusBadge = (status: HealthStatusType) => {
   if (status === "DISEASE_DETECTED") {
@@ -165,13 +166,13 @@ export default function HealthDiaryDetailPage() {
                 <div className="rounded-xl border border-slate-100 bg-slate-50/60 p-3.5 space-y-1">
                   <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
                     <MapPin className="w-3.5 h-3.5 text-emerald-600" />
-                    Vùng canh tác
+                    {TERMS.zone}
                   </span>
                   <p className="text-sm font-extrabold text-slate-800">
                     {record.zoneName}
                   </p>
                   <p className="text-xs text-slate-500">
-                    Mã vùng:{" "}
+                    Mã {TERMS.zoneLower}:{" "}
                     <span className="font-mono font-bold text-slate-700">
                       ZONE-{record.zoneId || "59"}
                     </span>
@@ -220,7 +221,7 @@ export default function HealthDiaryDetailPage() {
                   <div className="flex flex-wrap gap-2 pt-2">
                     {(
                       record.targetScopeNames || [
-                        record.regionName || "Khu vực A",
+                        record.regionName || `${TERMS.area} A`,
                       ]
                     ).map((scope, idx) => (
                       <Badge

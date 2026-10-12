@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { TERMS, formatTerm } from "@/config/terminology";
 
 const coordinateSchema = z.object({
   lat: z.number(),
@@ -8,7 +9,7 @@ const coordinateSchema = z.object({
 export const subAreaSchema = z.object({
   id: z.string().optional(),
   code: z.string().optional(),
-  name: z.string().min(1, "Vui lòng nhập tên khu vực"),
+  name: z.string().min(1, formatTerm.requiredInput(TERMS.area)),
   area: z.number().min(0).optional(),
   landType: z.string().optional(),
   terrain: z.string().optional(),
@@ -21,7 +22,7 @@ export const subAreaSchema = z.object({
 
 export const regionInfoSchema = z.object({
   code: z.string().optional(),
-  name: z.string().min(1, "Vui lòng nhập tên vùng"),
+  name: z.string().min(1, formatTerm.requiredInput(TERMS.region)),
   enterpriseId: z.string().optional(),
   cropIds: z.array(z.string()),
   area: z.number().min(0).optional(),
@@ -64,7 +65,7 @@ export const regionFormSchema = regionInfoSchema
       if (!data.coordinates || data.coordinates.length < 3) {
         ctx.addIssue({
           code: "custom",
-          message: "Vùng trồng cần ít nhất 3 điểm",
+          message: `${TERMS.region} cần ít nhất 3 điểm`,
           path: ["coordinates"],
         });
       }
@@ -73,7 +74,7 @@ export const regionFormSchema = regionInfoSchema
           if (!sub.coordinates || sub.coordinates.length < 3) {
             ctx.addIssue({
               code: "custom",
-              message: "Khu vực cần ít nhất 3 điểm",
+              message: `${TERMS.area} cần ít nhất 3 điểm`,
               path: ["subAreas", idx, "coordinates"],
             });
           }

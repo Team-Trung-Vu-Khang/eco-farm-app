@@ -1,4 +1,5 @@
 import axios from "axios";
+import { TERMS } from "@/config/terminology";
 
 export type ApiFieldErrors = Record<string, string>;
 
@@ -19,7 +20,8 @@ const messageByKey: Record<string, string> = {
   "api.message.common.badRequest": "Yêu cầu không hợp lệ.",
   "api.message.common.validationFailed":
     "Dữ liệu nhập chưa hợp lệ. Vui lòng kiểm tra lại.",
-  "api.message.common.unauthorized": "Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.",
+  "api.message.common.unauthorized":
+    "Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.",
   "api.message.common.forbidden": "Bạn không có quyền thực hiện thao tác này.",
   "api.message.common.notFound": "Không tìm thấy dữ liệu yêu cầu.",
   "api.message.common.conflict": "Dữ liệu bị trùng hoặc đang xung đột.",
@@ -59,7 +61,8 @@ function normalizeFieldErrors(value: unknown): ApiFieldErrors {
 
   return Object.fromEntries(
     Object.entries(value).filter(
-      ([field, reason]) => field.trim().length > 0 && typeof reason === "string",
+      ([field, reason]) =>
+        field.trim().length > 0 && typeof reason === "string",
     ),
   ) as ApiFieldErrors;
 }
@@ -203,10 +206,10 @@ const fieldLabelByPath: Record<string, string> = {
   validityMonths: "Thời hạn hiệu lực (tháng)",
 
   // ─── Vùng canh tác & lô ──────────────────────────────────────────────────
-  regionId: "Vùng trồng",
-  areas: "Khu vực",
-  plots: "Lô đất",
-  plotAddress: "Địa chỉ lô",
+  regionId: TERMS.region,
+  areas: TERMS.area,
+  plots: TERMS.plot,
+  plotAddress: `Địa chỉ ${TERMS.plotLower}`,
   acreage: "Diện tích",
   totalAcreage: "Tổng diện tích",
   elevation: "Độ cao",
@@ -220,7 +223,7 @@ const fieldLabelByPath: Record<string, string> = {
   targetId: "Đối tượng áp dụng",
   targetIds: "Đối tượng áp dụng",
   targetType: "Loại đối tượng",
-  cultivationZoneId: "Vùng canh tác",
+  cultivationZoneId: TERMS.zone,
   productionZoneId: "Vùng sản xuất",
 
   // ─── Cây trồng, giống & mùa vụ ───────────────────────────────────────────
@@ -407,14 +410,17 @@ export function getApiFieldErrorLines(error: unknown): string[] {
 export function getApiErrorMessage(error: unknown): string {
   const lines = getApiFieldErrorLines(error);
 
-  return lines.length > 0 ? lines.join(" • ") : getApiErrorDetails(error).message;
+  return lines.length > 0
+    ? lines.join(" • ")
+    : getApiErrorDetails(error).message;
 }
 
 export function getApiErrorDetails(error: unknown): ApiErrorDetails {
   const responseData = axios.isAxiosError<ApiErrorResponse>(error)
     ? error.response?.data
     : undefined;
-  const status = responseData?.status ??
+  const status =
+    responseData?.status ??
     (axios.isAxiosError(error) ? error.response?.status : undefined);
   const messageKey = responseData?.messageKey;
   const fieldErrors = normalizeFieldErrors(responseData?.fieldErrors);

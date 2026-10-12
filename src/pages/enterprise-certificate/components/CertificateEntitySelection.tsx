@@ -21,12 +21,13 @@ import {
 import { Check, MapPin, Search } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Controller, useFormContext, useWatch } from "react-hook-form";
+import { TERMS, formatTerm } from "@/config/terminology";
 import type { EnterpriseCertificateFormValues } from "../data/enterprise-certificate-form.schema";
 import { CertificateRegionScopeMap } from "./CertificateRegionScopeMap";
 
 const ENTITY_TYPE_LABELS = {
   workspace: "Cấp phép theo đơn vị - tổ chức",
-  region: "Cấp phép theo vùng canh tác cụ thể",
+  region: `Cấp phép theo ${TERMS.zoneLower} cụ thể`,
 } as const;
 
 interface EntitySelectionProps {
@@ -170,7 +171,7 @@ function SearchSelector({
                     variant="outline"
                     className="h-5 rounded-full px-2.5 py-0 text-[10px]"
                   >
-                    Vùng canh tác
+                    {TERMS.zone}
                   </Badge>
                   {selectedItems.length > 1 ? (
                     <Badge
@@ -196,7 +197,7 @@ function SearchSelector({
                 <div className="rounded-xl border border-slate-100 bg-slate-50/70 p-3">
                   <div className="mb-2 flex items-center justify-between gap-2 flex-nowrap">
                     <div className="min-w-0 truncate text-[11px] font-semibold text-slate-500">
-                      Vùng đã chọn
+                      {`${TERMS.zone} đã chọn`}
                     </div>
                   </div>
                   <div className="max-h-24 overflow-y-auto pr-1">
@@ -310,7 +311,7 @@ function SearchSelector({
                           variant="outline"
                           className="h-4 rounded-full px-1.5 py-0 text-[10px]"
                         >
-                          Vùng canh tác
+                          {TERMS.zone}
                         </Badge>
                       </div>
                       <div className="space-y-0.5 text-xs text-muted-foreground">
@@ -517,14 +518,14 @@ export function CertificateEntitySelection({
 
       {entityType !== "workspace" ? (
         <SearchSelector
-          label="Chọn vùng canh tác"
+          label={formatTerm.select(TERMS.zone)}
           required
-          placeholder="Chọn vùng canh tác"
-          dialogTitle="Chọn vùng canh tác"
-          searchPlaceholder="Tìm theo tên hoặc mã vùng canh tác..."
+          placeholder={formatTerm.select(TERMS.zone)}
+          dialogTitle={formatTerm.select(TERMS.zone)}
+          searchPlaceholder={formatTerm.searchPlaceholder(TERMS.zone)}
           selectedIds={targetIds}
           items={regionItems}
-          emptyStateText="Không tìm thấy vùng canh tác phù hợp"
+          emptyStateText={formatTerm.notFound(TERMS.zone)}
           onSearchChange={onRegionSearchChange}
           onLoadMore={onLoadMoreRegions}
           hasMore={hasMoreRegions}

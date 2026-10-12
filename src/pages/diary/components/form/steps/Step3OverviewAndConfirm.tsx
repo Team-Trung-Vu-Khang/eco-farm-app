@@ -21,6 +21,7 @@ import {
   WORK_TYPE_OPTIONS,
   getWorkflowLabel,
 } from "@/pages/diary/constants/history-form.constants";
+import { TERMS } from "@/config/terminology";
 import { formatDisplayDateTime } from "@/pages/diary/utils/history-form.utils";
 import type { HistoryFormData } from "@/pages/diary/types/history-form.types";
 import type { PhotoRequest } from "@/features/farm-daily-diary";
@@ -96,19 +97,20 @@ export function Step3OverviewAndConfirm({
         <CardHeader className="border-b border-slate-100 pb-3">
           <CardTitle className="flex items-center gap-2 text-base font-bold text-slate-900">
             <ClipboardList className="h-4 w-4 text-emerald-600" />
-            1. Vùng canh tác, Vụ mùa & Loại công việc
+            {`1. ${TERMS.zone}, ${getWorkflowLabel(workflowDomainCode)} & Loại công việc`}
           </CardTitle>
         </CardHeader>
         <CardContent className="pt-5 space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             <div className="rounded-xl bg-slate-50 p-3.5 border border-slate-100">
               <span className="text-xs text-slate-400 font-semibold block">
-                Vùng canh tác:
+                {TERMS.zone}:
               </span>
               <p className="font-bold text-sm text-slate-900 mt-1 flex items-center gap-1.5">
                 <MapPin className="w-4 h-4 text-emerald-600 shrink-0" />
                 <span>
-                  {selectedCultivationZoneName || "Chưa chọn vùng canh tác"}
+                  {selectedCultivationZoneName ||
+                    `Chưa chọn ${TERMS.zoneLower}`}
                 </span>
               </p>
             </div>
@@ -119,7 +121,10 @@ export function Step3OverviewAndConfirm({
               </span>
               <p className="font-bold text-sm text-slate-900 mt-1 flex items-center gap-1.5">
                 <Sprout className="w-4 h-4 text-emerald-600 shrink-0" />
-                <span>{selectedWorkflow?.name || "Chưa chọn vụ mùa"}</span>
+                <span>
+                  {selectedWorkflow?.name ||
+                    `Chưa chọn ${getWorkflowLabel(workflowDomainCode).toLowerCase()}`}
+                </span>
               </p>
               {selectedWorkflow?.code && (
                 <span className="text-[11px] text-slate-500 block mt-0.5">

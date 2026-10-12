@@ -28,6 +28,7 @@ import {
   YAxis,
 } from "recharts";
 import type { CropDetailStatisticsProps } from "./types";
+import { TERMS } from "@/config/terminology";
 
 export const CropDetailStatisticsTab = ({
   details,
@@ -49,12 +50,12 @@ export const CropDetailStatisticsTab = ({
               </div>
               <div className="flex items-baseline gap-2">
                 <div className="text-3xl font-black tracking-tight text-slate-900">
-                  {details.harvestStats.totalVolume.toLocaleString()}
+                  {details?.harvestStats?.totalVolume?.toLocaleString()}
                 </div>
                 <span className="text-sm font-bold text-slate-400">kg</span>
               </div>
               <div className="mt-4 flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-slate-400">
-                Toàn vùng canh tác
+                Toàn {TERMS.zoneLower}
               </div>
             </div>
           </CardContent>
@@ -68,7 +69,7 @@ export const CropDetailStatisticsTab = ({
                 <ArrowUpRight className="h-6 w-6" />
               </div>
               <Badge className="flex items-center gap-1 rounded-lg border-none bg-green-100 px-2 py-0.5 text-green-700 hover:bg-green-100">
-                {details.harvestStats.lastChange >= 0 ? (
+                {(details?.harvestStats?.lastChange ?? 0) >= 0 ? (
                   <TrendingUp className="h-3 w-3" />
                 ) : (
                   <TrendingDown className="h-3 w-3" />
@@ -81,14 +82,16 @@ export const CropDetailStatisticsTab = ({
               </div>
               <div className="flex items-baseline gap-2">
                 <div className="text-3xl font-black tracking-tight text-slate-900">
-                  {details.harvestStats.lastVolume.toLocaleString()}
+                  {details?.harvestStats?.lastVolume?.toLocaleString()}
                 </div>
                 <span className="text-sm font-bold text-slate-400">kg</span>
               </div>
               <div className="mt-4 flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-emerald-600">
                 <CheckCircle2 className="h-3 w-3" />
-                {details.harvestStats.lastChange >= 0 ? "Tăng" : "Giảm"}{" "}
-                {details.harvestStats.lastChange}% so với đợt trước
+                {(details?.harvestStats?.lastChange ?? 0) >= 0
+                  ? "Tăng"
+                  : "Giảm"}{" "}
+                {details?.harvestStats?.lastChange}% so với đợt trước
               </div>
             </div>
           </CardContent>
@@ -102,7 +105,7 @@ export const CropDetailStatisticsTab = ({
                 <Calendar className="h-6 w-6" />
               </div>
               <Badge className="flex items-center gap-1 rounded-lg border-none bg-orange-100 px-2 py-0.5 text-orange-700 hover:bg-orange-100">
-                {details.harvestStats.avgChange >= 0 ? (
+                {(details?.harvestStats?.avgChange ?? 0) >= 0 ? (
                   <TrendingUp className="h-3 w-3" />
                 ) : (
                   <TrendingDown className="h-3 w-3" />
@@ -115,14 +118,17 @@ export const CropDetailStatisticsTab = ({
               </div>
               <div className="flex items-baseline gap-2">
                 <div className="text-3xl font-black tracking-tight text-slate-900">
-                  {details.harvestStats.avgVolume.toLocaleString()}
+                  {details?.harvestStats?.avgVolume?.toLocaleString()}
                 </div>
                 <span className="text-sm font-bold text-slate-400">kg</span>
               </div>
               <div className="mt-4 flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-orange-600">
                 <TrendingUp className="h-3 w-3" />
-                {details.harvestStats.avgChange >= 0 ? "Tăng" : "Giảm"}{" "}
-                {Math.abs(details.harvestStats.avgChange)}% so với trung bình
+                {(details?.harvestStats?.avgChange ?? 0) >= 0
+                  ? "Tăng"
+                  : "Giảm"}{" "}
+                {Math.abs(details?.harvestStats?.avgChange ?? 0)}% so với trung
+                bình
               </div>
             </div>
           </CardContent>
@@ -152,7 +158,7 @@ export const CropDetailStatisticsTab = ({
             <div className="h-80 w-full">
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart
-                  data={details.harvestBatches
+                  data={(details?.harvestBatches ?? [])
                     .slice()
                     .reverse()
                     .map((batch) => ({
@@ -300,7 +306,7 @@ export const CropDetailStatisticsTab = ({
                   ),
                 },
               ]}
-              data={details.harvestBatches}
+              data={details?.harvestBatches ?? []}
             />
           </CardContent>
         </Card>

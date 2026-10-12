@@ -9,6 +9,7 @@ import {
   Sprout,
 } from "lucide-react";
 import { Badge, Card } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import { TERMS } from "@/config/terminology";
 import type { CultivationRegionTargetEntity } from "../hooks/useCultivationRegionCreatePage";
 
 type VarietySummary = {
@@ -72,7 +73,7 @@ export const CultivationRegionCreateConfirmationStep = ({
   irrigationSystems,
   cropSummary,
   title = "Xác nhận thông tin",
-  description = "Vui lòng kiểm tra kỹ các thông tin dưới đây. Sau khi xác nhận, hệ thống sẽ tiến hành khởi tạo vùng canh tác mới.",
+  description = `Vui lòng kiểm tra kỹ các thông tin dưới đây. Sau khi xác nhận, hệ thống sẽ tiến hành khởi tạo ${TERMS.zoneLower} mới.`,
 }: Props) => {
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-500 max-w-4xl mx-auto">

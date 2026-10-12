@@ -5,6 +5,7 @@ import {
   CardTitle,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { Activity, BarChart3, FlaskConical } from "lucide-react";
+import { TERMS } from "@/config/terminology";
 import type { CultivationRegionDetailBodyCommonProps } from "./types";
 
 const formatNumber = (value?: number | null) =>
@@ -38,7 +39,7 @@ export const CultivationRegionStatisticsTab = ({
         <CardContent className="pt-6">
           {!hasHealthData ? (
             <div className="text-sm text-muted-foreground italic">
-              Chưa có dữ liệu thống kê cho vùng canh tác này.
+              {`Chưa có dữ liệu thống kê cho ${TERMS.zoneLower} này.`}
             </div>
           ) : (
             <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
@@ -152,7 +153,7 @@ export const CultivationRegionStatisticsTab = ({
         </CardHeader>
         <CardContent className="pt-6">
           <div className="text-sm text-muted-foreground italic">
-            Đang cập nhật — chưa có API sản lượng theo vùng canh tác.
+            {`Đang cập nhật — chưa có API sản lượng theo ${TERMS.zoneLower}.`}
           </div>
         </CardContent>
       </Card>

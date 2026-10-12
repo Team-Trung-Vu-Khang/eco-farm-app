@@ -14,9 +14,10 @@ import {
   SelectValue,
   cn,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { Check, Layers, MapPin, Search } from "lucide-react";
 import useRegionStore from "../../../stores/useRegionStore";
 import type { Region, SubArea } from "../types/types";
+import { TERMS, formatTerm } from "@/config/terminology";
+import { Check, Layers, MapPin, Search } from "lucide-react";
 
 const FilterStep = ({
   step,
@@ -118,23 +119,23 @@ export const SubAreaSelectorDialog = ({
             <div className="p-2 bg-primary rounded-xl shadow-lg shadow-primary/20">
               <Layers className="text-white h-5 w-5" />
             </div>
-            Chọn khu vực canh tác
+            {formatTerm.select(TERMS.area)}
           </DialogTitle>
           <p className="text-slate-500 mt-1 font-medium text-sm">
-            Chọn vùng trồng, sau đó chọn khu vực cụ thể
+            {`Chọn ${TERMS.regionLower}, sau đó chọn ${TERMS.areaLower} cụ thể`}
           </p>
 
           <div className="flex items-center gap-4 mt-3">
             <FilterStep
               step={1}
-              label="Chọn vùng trồng"
+              label={formatTerm.select(TERMS.region)}
               done={Boolean(internalRegionId)}
               active={!internalRegionId}
             />
             <div className="flex-1 h-px bg-slate-200" />
             <FilterStep
               step={2}
-              label="Chọn khu vực"
+              label={formatTerm.select(TERMS.area)}
               done={false}
               active={Boolean(internalRegionId)}
             />
@@ -144,7 +145,7 @@ export const SubAreaSelectorDialog = ({
         <div className="flex flex-col overflow-hidden flex-1">
           <div className="px-6 py-4 bg-white border-b">
             <label className="text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-2 block">
-              Vùng trồng
+              {TERMS.region}
             </label>
             <Select
               value={internalRegionId}
@@ -155,7 +156,7 @@ export const SubAreaSelectorDialog = ({
               }}
             >
               <SelectTrigger className="h-11 rounded-xl bg-slate-50 border-slate-100">
-                <SelectValue placeholder="Chọn vùng trồng..." />
+                <SelectValue placeholder={formatTerm.select(TERMS.region)} />
               </SelectTrigger>
               <SelectContent className="rounded-xl border-slate-100 shadow-xl">
                 {filteredRegions.length === 0 ? (
@@ -187,7 +188,7 @@ export const SubAreaSelectorDialog = ({
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
                   <Input
-                    placeholder="Tìm tên khu vực..."
+                    placeholder={`Tìm tên ${TERMS.areaLower}...`}
                     className="pl-10 h-10 rounded-xl bg-slate-50 border-slate-100 focus:bg-white transition-all"
                     value={searchTerm}
                     onChange={(event) => setSearchTerm(event.target.value)}
@@ -255,13 +256,15 @@ export const SubAreaSelectorDialog = ({
                                 : "border-slate-200 bg-white",
                             )}
                           >
-                            {isSelected && <Check size={13} className="stroke-3" />}
+                            {isSelected && (
+                              <Check size={13} className="stroke-3" />
+                            )}
                           </div>
                         </div>
 
                         <div className="mt-3 pt-3 border-t border-slate-50 flex items-center justify-between">
                           <span className="text-[10px] text-slate-400">
-                            {(area.plots || []).length} lô đất
+                            {(area.plots || []).length} {TERMS.plotLower}
                           </span>
                           <Badge
                             variant="outline"
@@ -296,10 +299,10 @@ export const SubAreaSelectorDialog = ({
                         <Layers size={28} className="text-slate-300" />
                       </div>
                       <h3 className="text-lg font-bold text-slate-600">
-                        Không có khu vực nào
+                        {`Không có ${TERMS.areaLower} nào`}
                       </h3>
                       <p className="text-sm mt-1 text-center max-w-48">
-                        Vùng này chưa có khu vực nào được thiết lập
+                        {`Vùng này chưa có ${TERMS.areaLower} nào được thiết lập`}
                       </p>
                     </div>
                   )}
@@ -312,7 +315,7 @@ export const SubAreaSelectorDialog = ({
                 <MapPin size={28} className="text-slate-300" />
               </div>
               <p className="text-sm font-medium">
-                Chọn vùng trồng để xem danh sách khu vực
+                {`Chọn ${TERMS.regionLower} để xem danh sách ${TERMS.areaLower}`}
               </p>
             </div>
           )}

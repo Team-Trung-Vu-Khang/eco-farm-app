@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { GeographicalSelection, RegionOption } from "./types";
+import { formatTerm, TERMS } from "@/config/terminology";
 
 // ---------------------------------------------------------------------------
 // Props
@@ -107,14 +108,16 @@ const AreaPlotsList = ({
     return (
       <div className="flex items-center gap-2 py-2 pl-2 text-[10px] text-slate-400">
         <Loader2 className="h-3 w-3 animate-spin" />
-        Đang tải lô...
+        Đang tải {TERMS.plotLower}...
       </div>
     );
   }
 
   if (!plots || plots.length === 0) {
     return (
-      <p className="py-2 pl-2 text-[10px] italic text-slate-400">Chưa có lô</p>
+      <p className="py-2 pl-2 text-[10px] italic text-slate-400">
+        Chưa có {TERMS.plotLower}
+      </p>
     );
   }
 
@@ -156,7 +159,7 @@ const AreaPlotsList = ({
               <div className="flex items-center gap-1.5">
                 <CheckCircle2 className="w-3.5 h-3.5 text-primary" />
                 <span className="text-[9px] text-primary font-bold">
-                  LÔ #{plotIdStr}
+                  {TERMS.plot.toUpperCase()} #{plotIdStr}
                 </span>
               </div>
             ) : (
@@ -209,14 +212,16 @@ const RegionAreasList = ({
     return (
       <div className="flex items-center gap-2 py-3 pl-2 text-xs text-slate-400">
         <Loader2 className="h-3 w-3 animate-spin" />
-        Đang tải khu vực...
+        Đang tải {TERMS.areaLower}...
       </div>
     );
   }
 
   if (!areas || areas.length === 0) {
     return (
-      <p className="py-2 pl-2 text-xs italic text-slate-400">Chưa có khu vực</p>
+      <p className="py-2 pl-2 text-xs italic text-slate-400">
+        Chưa có {TERMS.areaLower}
+      </p>
     );
   }
 
@@ -317,8 +322,8 @@ const GeographicalSelector = ({
   showEnterprise = false,
   disabled = false,
   customTrigger,
-  triggerLabel = "Chọn vùng canh tác",
-  dialogTitle = "Chọn phạm vi canh tác",
+  triggerLabel = formatTerm.select(TERMS.zone),
+  dialogTitle = `Chọn phạm vi ${TERMS.zoneLower}`,
   dialogSubtitle,
   onRegionSearchChange,
   isRegionSearching = false,
@@ -329,7 +334,9 @@ const GeographicalSelector = ({
   const [searchTerm, setSearchTerm] = useState("");
   const [expandedRegions, setExpandedRegions] = useState<string[]>([]);
   const [expandedAreas, setExpandedAreas] = useState<string[]>([]);
-  const [tempSelections, setTempSelections] = useState<GeographicalSelection[]>([]);
+  const [tempSelections, setTempSelections] = useState<GeographicalSelection[]>(
+    [],
+  );
 
   // Infinite scroll observer for region list
   const observerRef = useRef<HTMLDivElement>(null);
@@ -411,9 +418,7 @@ const GeographicalSelector = ({
       if (
         tempSelections.some(
           (s) =>
-            s.type === "area" &&
-            s.regionId === regionId &&
-            s.areaId === areaId,
+            s.type === "area" && s.regionId === regionId && s.areaId === areaId,
         )
       )
         return true;
@@ -471,9 +476,7 @@ const GeographicalSelector = ({
       const parentCovered = tempSelections.some(
         (s) =>
           (s.type === "region" && s.regionId === regionId) ||
-          (s.type === "area" &&
-            s.regionId === regionId &&
-            s.areaId === areaId),
+          (s.type === "area" && s.regionId === regionId && s.areaId === areaId),
       );
       if (parentCovered) return;
     }
@@ -532,8 +535,8 @@ const GeographicalSelector = ({
   };
 
   const defaultSubtitle = regionOnly
-    ? "Chỉ chọn Vùng trồng"
-    : "Bạn có thể chọn Vùng trồng, Khu vực hoặc từng Lô đất cụ thể";
+    ? `Chỉ chọn ${TERMS.region}`
+    : `Bạn có thể chọn ${TERMS.region}, ${TERMS.area} hoặc từng ${TERMS.plot} cụ thể`;
 
   const isDisabled = disabled || (showEnterprise && !enterpriseId);
 
@@ -588,7 +591,7 @@ const GeographicalSelector = ({
             <div className="relative">
               <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground z-10" />
               <Input
-                placeholder="Tìm kiếm vùng trồng..."
+                placeholder={formatTerm.search(TERMS.region)}
                 className="pl-10 bg-slate-50 border-slate-200 focus:bg-white transition-all rounded-xl"
                 value={searchTerm}
                 onChange={(e) => {
@@ -651,7 +654,7 @@ const GeographicalSelector = ({
                                 {region.name}
                               </div>
                               <div className="text-[10px] text-muted-foreground uppercase tracking-wider">
-                                Vùng trồng
+                                {TERMS.region}
                               </div>
                             </div>
                           </div>
@@ -701,7 +704,9 @@ const GeographicalSelector = ({
                   )}
 
                   {/* Infinite scroll anchor */}
-                  {hasMoreRegions && <div ref={observerRef} className="h-2 w-full" />}
+                  {hasMoreRegions && (
+                    <div ref={observerRef} className="h-2 w-full" />
+                  )}
                 </>
               )}
             </div>

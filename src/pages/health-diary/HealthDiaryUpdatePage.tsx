@@ -15,6 +15,7 @@ import type {
   HealthStatusType,
   HealthUpdateMethodType,
 } from "@/features/health-diary/types/health-diary.types";
+import { formatTerm, TERMS } from "@/config/terminology";
 
 export default function HealthDiaryUpdatePage() {
   const { addRecord } = useHealthDiaryStore();
@@ -30,7 +31,7 @@ export default function HealthDiaryUpdatePage() {
     if (!zoneTreeData || zoneTreeData.length === 0) return [];
     return zoneTreeData.map((z: any) => ({
       value: String(z.id),
-      label: z.name || `Vùng canh tác ${z.id}`,
+      label: z.name || `${TERMS.zone} ${z.id}`,
     }));
   }, [zoneTreeData]);
 
@@ -53,11 +54,9 @@ export default function HealthDiaryUpdatePage() {
     setTimeout(() => {
       const newRecord = addRecord({
         zoneId: selectedZoneId,
-        zoneName:
-          selectedZone?.name ||
-          "Vùng lúa ST25 - Vùng canh tác nông nghiệp công nghệ cao",
+        zoneName: selectedZone?.name || `${TERMS.zone} lúa ST25`,
         methodType,
-        regionName: payload.targetScopeNames?.[0] || "Khu vực A",
+        regionName: payload.targetScopeNames?.[0] || `${TERMS.area} A`,
         targetScopeNames: payload.targetScopeNames,
         plantCodes: payload.plantCodes,
         plantCount: payload.plantCodes?.length,
@@ -136,7 +135,7 @@ export default function HealthDiaryUpdatePage() {
               </div>
               <div>
                 <h3 className="font-extrabold text-sm text-slate-800 flex items-center gap-2">
-                  <span>Lựa chọn Vùng canh tác</span>
+                  <span>Lựa chọn {TERMS.zone}</span>
                   {selectedZone && (
                     <Badge
                       variant="outline"
@@ -147,8 +146,8 @@ export default function HealthDiaryUpdatePage() {
                   )}
                 </h3>
                 <p className="text-xs text-slate-500">
-                  Chọn vùng canh tác để đồng bộ phạm vi địa lý và bộ lọc cá thể
-                  cây trồng
+                  Chọn {TERMS.zoneLower} để đồng bộ phạm vi {TERMS.regionLower}{" "}
+                  và bộ lọc cá thể cây trồng
                 </p>
               </div>
             </div>
@@ -158,8 +157,8 @@ export default function HealthDiaryUpdatePage() {
                 options={zoneOptions}
                 value={selectedZoneId}
                 onChange={(val) => setSelectedZoneId(val || "")}
-                placeholder="Chọn vùng canh tác..."
-                searchPlaceholder="Tìm kiếm vùng canh tác..."
+                placeholder={formatTerm.select(TERMS.zone)}
+                searchPlaceholder={formatTerm.search(TERMS.zone)}
               />
             </div>
           </div>

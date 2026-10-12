@@ -49,6 +49,7 @@ import { RegimenSelector } from "./components/RegimenSelector";
 import { StageAllocation } from "./components/StageAllocation";
 import { StageItem } from "./components/StageItem";
 import { usePlanForm } from "./hooks/usePlanForm";
+import { formatTerm, TERMS } from "@/config/terminology";
 
 export default function PlanCreatePage() {
   const {
@@ -204,7 +205,7 @@ export default function PlanCreatePage() {
                   <span className="flex items-center justify-center w-6 h-6 rounded-full bg-emerald-100 text-emerald-600 text-xs font-bold">
                     1
                   </span>
-                  Chọn vùng canh tác
+                  ${formatTerm.select(TERMS.zone)}
                 </h3>
                 <Label className="text-sm font-medium">
                   Đơn vị sở hữu <span className="text-red-500">*</span>
@@ -220,7 +221,7 @@ export default function PlanCreatePage() {
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
                       <label className="text-xs text-muted-foreground font-black uppercase tracking-widest">
-                        Vùng canh tác <span className="text-red-500">*</span>
+                        {TERMS.zone} <span className="text-red-500">*</span>
                       </label>
                       {!selectedEnterpriseId && (
                         <Badge

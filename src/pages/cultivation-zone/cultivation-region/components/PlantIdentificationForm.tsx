@@ -10,6 +10,7 @@ import { Step3Confirmation } from "./Step3Confirmation";
 import { useBulkUploadJob } from "../hooks/useBulkUploadJob";
 import { usePlantIdentificationForm } from "../hooks/usePlantIdentificationForm";
 import { EMPTY_BULK_UPLOAD_STATE, type BulkUploadState } from "./types";
+import { TERMS } from "@/config/terminology";
 
 interface PlantIdentificationFormProps {
   initialData?: Partial<Plant>;
@@ -92,8 +93,8 @@ const PlantIdentificationForm = ({
   const steps: Step[] = [
     {
       id: "selection",
-      title: "Chọn vùng canh tác",
-      description: "Chọn vùng canh tác và phạm vi định danh",
+      title: `Chọn ${TERMS.zoneLower}`,
+      description: `Chọn ${TERMS.zoneLower} và phạm vi định danh`,
       isValid: !!(cultivationRegionId && selectedScopeIds.length > 0),
       content: (
         <Step1GeographicalSelection
@@ -126,11 +127,11 @@ const PlantIdentificationForm = ({
       isValid: isBulkMode
         ? bulkUploadJob.isSucceeded
         : plants.every(
-        (p) =>
-          p.plotId &&
-          !p.isInvalidBoundary &&
-          (p.productionVariantId || p.subjectVariantId),
-      ),
+            (p) =>
+              p.plotId &&
+              !p.isInvalidBoundary &&
+              (p.productionVariantId || p.subjectVariantId),
+          ),
       content: (
         <Step2PlantEntry
           plants={plants as any}

@@ -16,6 +16,7 @@ import {
   X,
 } from "lucide-react";
 import { z } from "zod";
+import { TERMS } from "@/config/terminology";
 
 const dateFilterSchema = z
   .object({
@@ -319,14 +320,14 @@ export function HealthDiaryAdvancedFilterPanel({
           <div className="flex items-center gap-1.5 text-slate-500 ml-1">
             <MapPin size={14} className="text-emerald-600" />
             <span className="text-[10px] font-black uppercase tracking-widest">
-              Vùng canh tác
+              {TERMS.zone}
             </span>
           </div>
           <MultiSelectField
             options={zoneOptions}
             selectedValues={filters.zoneIds}
             onToggle={(v) => onToggleFilter("zoneIds", v)}
-            placeholder="Tất cả vùng canh tác..."
+            placeholder={`Tất cả ${TERMS.zoneLower}...`}
           />
         </div>
 

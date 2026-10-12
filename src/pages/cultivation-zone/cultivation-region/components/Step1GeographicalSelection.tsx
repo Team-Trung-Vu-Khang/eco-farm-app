@@ -7,6 +7,7 @@ import {
   CardTitle,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { Layers } from "lucide-react";
+import { TERMS } from "@/config/terminology";
 import { CultivationRegionSelector } from "./CultivationRegionSelector";
 import { CultivationRegionInfoCard } from "./CultivationRegionInfoCard";
 import { GeographicalScopeCard } from "./GeographicalScopeCard";
@@ -81,11 +82,10 @@ export const Step1GeographicalSelection: React.FC<
           </div>
           <div>
             <h3 className="text-base font-bold text-green-900">
-              Định vị vùng canh tác
+              {`Định vị ${TERMS.zoneLower}`}
             </h3>
             <p className="text-sm text-green-700/80">
-              Chọn vùng canh tác trước. Vị trí cụ thể của từng cây sẽ được chọn
-              ở bước tiếp theo.
+              {`Chọn ${TERMS.zoneLower} trước. Vị trí cụ thể của từng cây sẽ được chọn ở bước tiếp theo.`}
             </p>
           </div>
         </div>
@@ -101,7 +101,7 @@ export const Step1GeographicalSelection: React.FC<
             <CardHeader className="border-b py-4">
               <CardTitle className="text-sm font-semibold flex items-center gap-2">
                 <Layers className="w-4 h-4 text-primary" />
-                Vùng canh tác <span className="text-red-500">*</span>
+                {TERMS.zone} <span className="text-red-500">*</span>
               </CardTitle>
             </CardHeader>
             <CardContent className="p-6">

@@ -16,6 +16,7 @@ import {
   Sprout,
 } from "lucide-react";
 import type { CropDetailCropsProps } from "./types";
+import { TERMS } from "@/config/terminology";
 
 export const CropDetailCropsTab = ({
   details,
@@ -34,7 +35,8 @@ export const CropDetailCropsTab = ({
               Cấu hình kỹ thuật & Cây trồng
             </CardTitle>
             <div className="text-xs text-muted-foreground">
-              Quy chuẩn kỹ thuật áp dụng thống nhất cho toàn bộ vùng canh tác
+              Quy chuẩn kỹ thuật áp dụng thống nhất cho toàn bộ{" "}
+              {TERMS.zoneLower}
             </div>
           </div>
         </CardHeader>

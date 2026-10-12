@@ -27,6 +27,7 @@ import { MapContainer, Polygon, TileLayer, useMap } from "react-leaflet";
 import { Link } from "wouter";
 
 import { useCultivationPlotDetailPage } from "./hooks/useCultivationPlotDetailPage";
+import { TERMS, formatTerm } from "@/config/terminology";
 
 // Map component to fly to the plot
 const MapController = ({ center }: { center: L.LatLngExpression }) => {
@@ -52,9 +53,9 @@ const CultivationPlotDetailPage = () => {
 
   if (!data) {
     return (
-      <PageWrapper title="Chi tiết Lô canh tác" description="Đang tải...">
+      <PageWrapper title={`Chi tiết ${TERMS.plot}`} description="Đang tải...">
         <div className="p-12 text-center text-slate-500">
-          Không tìm thấy thông tin lô canh tác
+          {formatTerm.notFound(TERMS.plot)}
         </div>
       </PageWrapper>
     );
@@ -62,7 +63,7 @@ const CultivationPlotDetailPage = () => {
   return (
     <PageWrapper
       title={data.name}
-      description={`Cấu hình canh tác cho Lô #${data.id}`}
+      description={`Cấu hình cho ${TERMS.plot} #${data.id}`}
       actions={
         <div className="flex gap-2">
           <Button variant="outline" onClick={goBack}>
@@ -355,7 +356,7 @@ const CultivationPlotDetailPage = () => {
                     <Info className="w-4 h-4 text-slate-400" />
                     <div>
                       <p className="text-[10px] font-bold text-slate-400 uppercase leading-none mb-1">
-                        Trạng thái lô
+                        Trạng thái {TERMS.plotLower}
                       </p>
                       <Badge
                         variant={

@@ -8,6 +8,7 @@ import {
   Label,
   Textarea,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import { TERMS } from "@/config/terminology";
 import type { CultivationZoneFormValues } from "../data/cultivation-zone-form.schema";
 import {
   CertificateSelector,
@@ -99,7 +100,8 @@ export const ZoneGeneralInfoStep = ({
               render={({ field }) => (
                 <div className="space-y-1.5">
                   <Label htmlFor="zone-name" className="text-sm font-medium">
-                    Tên vùng canh tác <span className="text-red-500">*</span>
+                    {`Tên ${TERMS.zoneLower}`}{" "}
+                    <span className="text-red-500">*</span>
                   </Label>
                   <Input
                     id="zone-name"

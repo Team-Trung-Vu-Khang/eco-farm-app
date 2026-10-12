@@ -3,6 +3,7 @@ import {
   describeWeatherCode,
   useWeatherForecast,
 } from "@/features/weather/weather";
+import { TERMS } from "@/config/terminology";
 import {
   Sheet,
   SheetContent,
@@ -76,7 +77,7 @@ function useWeatherLocation() {
           latitude: regionWithCenter.centerPoint.latitude,
           longitude: regionWithCenter.centerPoint.longitude,
         },
-        label: regionWithCenter.name || "Vùng canh tác",
+        label: regionWithCenter.name || TERMS.zone,
         isResolving: false,
       };
     }

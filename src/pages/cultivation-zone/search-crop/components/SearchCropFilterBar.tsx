@@ -20,6 +20,7 @@ import {
   parseMonths,
   type SearchCropFilters,
 } from "../utils/plant-identification.utils";
+import { TERMS } from "@/config/terminology";
 
 const OPTION_PAGE = { page: 0, size: 20 } as const;
 
@@ -266,11 +267,11 @@ export function SearchCropFilterBar({
 
         <FilterGroup
           icon={<MapPin size={13} />}
-          title="Vùng canh tác & chứng nhận"
+          title={`${TERMS.zone} & chứng nhận`}
           className="mt-5 border-t border-slate-100 pt-5"
         >
           <div className="grid grid-cols-1 gap-x-4 gap-y-3 md:grid-cols-2">
-            <FilterField label="Vùng canh tác">
+            <FilterField label={TERMS.zone}>
               <RemoteMultiSelect
                 options={zoneOptions.options}
                 value={(filters.productionZoneIds ?? []).map(String)}
@@ -280,9 +281,9 @@ export function SearchCropFilterBar({
                 }}
                 onSearch={zoneSearch.setSearch}
                 loading={zones.isFetching}
-                placeholder="Tất cả vùng canh tác"
-                searchPlaceholder="Tìm kiếm vùng canh tác..."
-                emptyText="Không tìm thấy vùng canh tác nào"
+                placeholder={`Tất cả ${TERMS.zoneLower}`}
+                searchPlaceholder={`Tìm kiếm ${TERMS.zoneLower}...`}
+                emptyText={`Không tìm thấy ${TERMS.zoneLower} nào`}
               />
             </FilterField>
 

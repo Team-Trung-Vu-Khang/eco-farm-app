@@ -197,7 +197,7 @@ const CultivationRegionCreatePage = () => {
       title={
         isEditMode
           ? isDetailMode
-            ? "Cập nhật vùng canh tác"
+            ? "Cập nhật vùng chăn nuôi"
             : "Cập nhật vùng chăn nuôi"
           : isDetailMode
             ? "Khởi tạo vùng chăn nuôi"

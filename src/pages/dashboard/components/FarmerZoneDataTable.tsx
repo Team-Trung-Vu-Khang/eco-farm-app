@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { Badge, Button } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { Search, MapPin, Eye, Layers } from "lucide-react";
-import { FarmerZone } from "../constants";
+import type { FarmerZone } from "../constants";
+import { TERMS } from "@/config/terminology";
 
 interface FarmerZoneDataTableProps {
   zones: FarmerZone[];
@@ -16,9 +17,10 @@ export function FarmerZoneDataTable({
 }: FarmerZoneDataTableProps) {
   const [searchTerm, setSearchTerm] = useState("");
 
-  const filteredZones = zones.filter((zone) =>
-    zone.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    zone.description.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredZones = zones.filter(
+    (zone) =>
+      zone.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      zone.description.toLowerCase().includes(searchTerm.toLowerCase()),
   );
 
   return (
@@ -27,10 +29,13 @@ export function FarmerZoneDataTable({
         <div className="flex items-center gap-2">
           <Layers className="w-4 h-4 text-emerald-600" />
           <span className="font-bold text-xs uppercase tracking-widest text-slate-700">
-            Danh sách vùng canh tác của Nông hộ
+            Danh sách {TERMS.zoneLower} của Nông hộ
           </span>
-          <Badge variant="outline" className="font-bold bg-white text-emerald-700 border-emerald-200">
-            {filteredZones.length} vùng canh tác
+          <Badge
+            variant="outline"
+            className="font-bold bg-white text-emerald-700 border-emerald-200"
+          >
+            {filteredZones.length} {TERMS.zoneLower}
           </Badge>
         </div>
 
@@ -39,7 +44,7 @@ export function FarmerZoneDataTable({
           <Search className="absolute left-3 top-2.5 h-3.5 w-3.5 text-slate-400" />
           <input
             type="text"
-            placeholder="Tìm kiếm vùng canh tác..."
+            placeholder={`Tìm kiếm ${TERMS.zoneLower}...`}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="w-full text-xs bg-white pl-9 pr-3 py-1.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-emerald-500"
@@ -52,10 +57,10 @@ export function FarmerZoneDataTable({
         <table className="w-full text-xs text-left">
           <thead className="bg-slate-50 border-b text-[11px] font-semibold uppercase tracking-wider text-slate-500">
             <tr>
-              <th className="py-3 px-4">Tên Vùng Canh Tác</th>
+              <th className="py-3 px-4">Tên {TERMS.zone}</th>
               <th className="py-3 px-4">Phạm vi Địa lý</th>
               <th className="py-3 px-4">Tổng Diện Tích</th>
-              <th className="py-3 px-4">Số Khu Vực</th>
+              <th className="py-3 px-4">Số {TERMS.area}</th>
               <th className="py-3 px-4">Trạng Thái</th>
               <th className="py-3 px-4 text-right">Thao Tác</th>
             </tr>
@@ -76,12 +81,14 @@ export function FarmerZoneDataTable({
                       <span>{zone.name}</span>
                     </div>
                   </td>
-                  <td className="py-3 px-4 text-slate-600">{zone.description}</td>
+                  <td className="py-3 px-4 text-slate-600">
+                    {zone.description}
+                  </td>
                   <td className="py-3 px-4 text-slate-800 font-bold">
                     {zone.totalAreaHa} ha
                   </td>
                   <td className="py-3 px-4 text-slate-700">
-                    {zone.areas.length} khu vực
+                    {zone.areas.length} {TERMS.areaLower}
                   </td>
                   <td className="py-3 px-4">
                     <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-emerald-100 text-emerald-800">

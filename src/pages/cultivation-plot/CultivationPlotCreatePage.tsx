@@ -1,5 +1,6 @@
 import PageWrapper from "@/components/PageWrapper";
 import { getMarkerIcon } from "@/pages/cultivation-zone/cultivation-region/components/mapUtils";
+import { TERMS, formatTerm } from "@/config/terminology";
 import {
   Badge,
   Button,
@@ -158,7 +159,7 @@ const CultivationPlotCreatePage = () => {
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <Label className="text-sm font-semibold text-slate-700">
-                  Lô đất canh tác <span className="text-red-500">*</span>
+                  {TERMS.plot} <span className="text-red-500">*</span>
                 </Label>
                 {selectedPlot && (
                   <Badge
@@ -184,19 +185,19 @@ const CultivationPlotCreatePage = () => {
                 <span
                   className={selectedRegion ? "text-slate-700 font-medium" : ""}
                 >
-                  {selectedRegion?.name || "Vùng"}
+                  {selectedRegion?.name || TERMS.region}
                 </span>
                 <span className="text-slate-300">›</span>
                 <Layers size={10} className="text-slate-400" />
                 <span
                   className={selectedArea ? "text-slate-700 font-medium" : ""}
                 >
-                  {selectedArea?.name || "Khu vực"}
+                  {selectedArea?.name || TERMS.area}
                 </span>
                 <span className="text-slate-300">›</span>
                 <Layers size={10} className="text-slate-400" />
                 <span className={selectedPlot ? "text-primary font-bold" : ""}>
-                  {selectedPlot?.name || "Lô đất"}
+                  {selectedPlot?.name || TERMS.plot}
                 </span>
               </div>
 
@@ -229,7 +230,7 @@ const CultivationPlotCreatePage = () => {
                 ) : (
                   <div className="py-3 text-center text-sm text-slate-400 group-hover:text-primary transition-colors">
                     {selectedEnterpriseId
-                      ? "Nhấn để chọn lô canh tác"
+                      ? `Nhấn để chọn ${TERMS.plotLower}`
                       : "Chọn đơn vị sở hữu trước"}
                   </div>
                 )}
@@ -854,8 +855,10 @@ const CultivationPlotCreatePage = () => {
 
   return (
     <PageWrapper
-      title={isEdit ? "Chỉnh sửa lô" : "Thiết lập lô"}
-      description="Quy trình khởi tạo và cấu hình canh tác theo Khu vực (Lô)"
+      title={
+        isEdit ? formatTerm.edit(TERMS.plot) : `Thiết lập ${TERMS.plotLower}`
+      }
+      description={`Quy trình khởi tạo và cấu hình theo ${TERMS.area}`}
     >
       <div className="mb-6">
         <Button
@@ -873,7 +876,11 @@ const CultivationPlotCreatePage = () => {
           <div className="p-6 md:p-8">
             <StepperForm
               steps={steps}
-              completeLabel={isEdit ? "Lưu thay đổi lô" : "Lưu thông tin Lô"}
+              completeLabel={
+                isEdit
+                  ? `Lưu thay đổi ${TERMS.plotLower}`
+                  : `Lưu thông tin ${TERMS.plot}`
+              }
               onComplete={handleComplete}
               onCancel={goBack}
             />

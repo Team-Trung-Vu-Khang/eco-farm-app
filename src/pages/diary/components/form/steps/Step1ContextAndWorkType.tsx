@@ -29,6 +29,7 @@ import type {
   FarmPlanResponse,
 } from "@/features/farm-workflow/types/farm-workflow.type";
 import type { FarmTaskResponse } from "@/features/farm-task/types/farm-task.type";
+import { formatTerm, TERMS } from "@/config/terminology";
 
 export interface Step1ContextAndWorkTypeProps {
   formData: HistoryFormData;
@@ -108,13 +109,13 @@ export function Step1ContextAndWorkType({
         <CardHeader className="border-b border-slate-100 pb-3">
           <CardTitle className="flex items-center gap-2 text-base font-bold text-slate-900">
             <ClipboardList className="h-4 w-4 text-emerald-600" />
-            Thông tin vùng canh tác, vụ mùa & loại công việc
+            {`Thông tin ${TERMS.zoneLower}, ${TERMS.workflowLower} & loại công việc`}
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-5 pt-6">
           {/* 1. Chọn Vùng canh tác */}
           <div className="space-y-2">
-            <Label required>Vùng canh tác</Label>
+            <Label required>{TERMS.zone}</Label>
             <RemoteAutoCompleteSelect
               options={cultivationZoneOptions}
               value={formData.cultivationZoneId || ""}
@@ -135,9 +136,9 @@ export function Step1ContextAndWorkType({
               onSearch={(query) => {
                 setCultivationZoneSearchQuery(query);
               }}
-              placeholder="Chọn vùng canh tác..."
-              searchPlaceholder="Tìm vùng canh tác..."
-              emptyText="Không tìm thấy vùng canh tác phù hợp."
+              placeholder={formatTerm.select(TERMS.zone)}
+              searchPlaceholder={formatTerm.search(TERMS.zone)}
+              emptyText={formatTerm.notFound(TERMS.zone)}
               loading={cultivationZonesLoading}
               disabled={!allowModeToggle}
             />
@@ -167,7 +168,7 @@ export function Step1ContextAndWorkType({
               }}
               placeholder={
                 !formData.cultivationZoneId
-                  ? "Vui lòng chọn vùng canh tác trước..."
+                  ? `Vui lòng chọn ${TERMS.zoneLower} trước...`
                   : `Chọn ${getWorkflowLabel(workflowDomainCode).toLowerCase()}...`
               }
               searchPlaceholder={`Tìm ${getWorkflowLabel(workflowDomainCode).toLowerCase()}...`}

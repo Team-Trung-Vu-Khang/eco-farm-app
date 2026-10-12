@@ -1,5 +1,12 @@
 import { Badge } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { Apple, FileText, Image as ImageIcon, Link2, ListChecks } from "lucide-react";
+import {
+  Apple,
+  FileText,
+  Image as ImageIcon,
+  Link2,
+  ListChecks,
+} from "lucide-react";
+import { TERMS } from "@/config/terminology";
 import { WORK_TYPE_CONFIG } from "../../../constants/lookup.constants";
 import type { DiaryEntry } from "../../../types/lookup.types";
 
@@ -10,12 +17,17 @@ export function WorkTab({ entry }: { entry: DiaryEntry }) {
     <div className="space-y-4">
       <div className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
         <div className="flex items-start gap-3">
-          <div className={`h-11 w-11 rounded-xl flex items-center justify-center shrink-0 ${workType.iconCls}`}>
+          <div
+            className={`h-11 w-11 rounded-xl flex items-center justify-center shrink-0 ${workType.iconCls}`}
+          >
             <workType.icon className="h-5 w-5" />
           </div>
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2 flex-wrap">
-              <Badge variant="outline" className={`text-[10px] font-bold ${workType.badgeCls}`}>
+              <Badge
+                variant="outline"
+                className={`text-[10px] font-bold ${workType.badgeCls}`}
+              >
                 {workType.label}
               </Badge>
               <span className="inline-block rounded-md bg-green-50 px-1.5 py-0.5 text-[10px] font-bold text-green-700 border border-green-200">
@@ -41,7 +53,10 @@ export function WorkTab({ entry }: { entry: DiaryEntry }) {
           <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400 flex items-center gap-1.5">
             <ListChecks className="h-3.5 w-3.5" /> Hạng mục công việc
           </p>
-          <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 text-[10px]">
+          <Badge
+            variant="outline"
+            className="bg-green-50 text-green-700 border-green-200 text-[10px]"
+          >
             {entry.stages.length} mục
           </Badge>
         </div>
@@ -76,7 +91,9 @@ export function WorkTab({ entry }: { entry: DiaryEntry }) {
                 className="flex items-center justify-between bg-slate-50 rounded-lg border border-slate-100 px-3 py-2 text-xs"
               >
                 <div>
-                  <span className="font-semibold text-slate-700">{m.materialName}</span>
+                  <span className="font-semibold text-slate-700">
+                    {m.materialName}
+                  </span>
                   <span className="text-slate-400"> ({m.materialType})</span>
                   <p className="text-[10px] text-slate-400 mt-0.5">
                     Hạng mục: {m.stageId}
@@ -97,7 +114,7 @@ export function WorkTab({ entry }: { entry: DiaryEntry }) {
         <div className="rounded-2xl border border-orange-100 bg-orange-50/30 p-4 space-y-3">
           <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-orange-600 flex items-center gap-1.5">
             <Apple className="h-3.5 w-3.5" /> Chi tiết thu hoạch (
-            {entry.harvest.scope === "region" ? "Vùng canh tác" : "Cây canh tác"})
+            {entry.harvest.scope === "region" ? TERMS.zone : TERMS.crop})
           </p>
           <div className="space-y-1.5">
             {entry.harvest.details.map((d) => (
@@ -105,7 +122,9 @@ export function WorkTab({ entry }: { entry: DiaryEntry }) {
                 key={d.targetLabel}
                 className="flex items-center justify-between bg-white rounded-lg border border-orange-100 px-3 py-2 text-xs"
               >
-                <span className="font-semibold text-slate-700">{d.targetLabel}</span>
+                <span className="font-semibold text-slate-700">
+                  {d.targetLabel}
+                </span>
                 <span className="text-[11px] font-bold text-orange-700 bg-orange-50 px-2 py-0.5 rounded border border-orange-200">
                   {d.quantity} {d.unitBase}
                 </span>
@@ -131,7 +150,9 @@ export function WorkTab({ entry }: { entry: DiaryEntry }) {
             ))}
           </div>
         ) : (
-          <p className="text-xs text-slate-400 italic">Chưa có hình ảnh đính kèm.</p>
+          <p className="text-xs text-slate-400 italic">
+            Chưa có hình ảnh đính kèm.
+          </p>
         )}
       </div>
     </div>

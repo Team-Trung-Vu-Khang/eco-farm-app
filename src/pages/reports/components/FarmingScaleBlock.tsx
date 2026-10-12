@@ -20,6 +20,7 @@ import {
   XCircle,
 } from "lucide-react";
 import { mockGeneralStats, mockCrops } from "../constants/mockReportData";
+import { TERMS } from "@/config/terminology";
 
 export function FarmingScaleBlock() {
   // State for search and filtering
@@ -97,7 +98,7 @@ export function FarmingScaleBlock() {
                 {mockGeneralStats.regionsCount}
               </p>
               <p className="text-xs text-slate-550 font-medium">
-                Vùng canh tác trọng điểm
+                ${TERMS.zone} trọng điểm
               </p>
             </div>
             <div className="p-3 bg-emerald-50 rounded-2xl text-emerald-600">

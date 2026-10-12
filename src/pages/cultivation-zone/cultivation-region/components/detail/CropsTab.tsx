@@ -20,6 +20,7 @@ import {
   ChevronRight,
 } from "lucide-react";
 import type { CultivationRegionDetails } from "../../useCultivationRegionDetail";
+import { TERMS } from "@/config/terminology";
 
 interface CropsTabProps {
   details: CultivationRegionDetails;
@@ -52,7 +53,7 @@ export const CropsTab = ({ details }: CropsTabProps) => {
             Cấu hình kỹ thuật & Cây trồng
           </CardTitle>
           <div className="text-xs text-muted-foreground">
-            Quy chuẩn kỹ thuật áp dụng thống nhất cho toàn bộ vùng canh tác
+            {`Quy chuẩn kỹ thuật áp dụng thống nhất cho toàn bộ ${TERMS.zoneLower}`}
           </div>
         </div>
       </CardHeader>

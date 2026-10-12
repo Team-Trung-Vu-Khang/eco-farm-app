@@ -13,6 +13,7 @@ import type {
 import { useCultivationZoneMutations } from "@/features/farm/hooks/useCultivationZoneMutations";
 import { getCultivationRegionColumns } from "../data/columns";
 import { getApiErrorMessage } from "@/shared/lib/api-error";
+import { TERMS, formatTerm } from "@/config/terminology";
 
 export const useCultivationRegionPage = () => {
   const [, setLocation] = useLocation();
@@ -196,8 +197,8 @@ export const useCultivationRegionPage = () => {
         title: "Thành công",
         description:
           nextStatus === "active"
-            ? "Đã chuyển vùng canh tác sang Đang hoạt động"
-            : "Đã tạm dừng hoạt động vùng canh tác",
+            ? `Đã chuyển ${TERMS.zoneLower} sang Đang hoạt động`
+            : `Đã tạm dừng hoạt động ${TERMS.zoneLower}`,
       });
     } catch (error) {
       toast({
@@ -221,11 +222,15 @@ export const useCultivationRegionPage = () => {
     if (!deletingId) return;
     try {
       await deleteCultivationZone.mutateAsync(deletingId);
-      toast({ title: "Thành công", description: "Đã xóa vùng canh tác" });
+      toast({
+        title: "Thành công",
+        description: formatTerm.deleteSuccess(TERMS.zone),
+      });
     } catch (error) {
       toast({
         title: "Lỗi",
-        description: getApiErrorMessage(error) || "Không thể xóa vùng canh tác",
+        description:
+          getApiErrorMessage(error) || formatTerm.deleteError(TERMS.zone),
         variant: "destructive",
       });
     } finally {

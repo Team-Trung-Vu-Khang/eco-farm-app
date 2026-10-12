@@ -51,6 +51,7 @@ import type {
   WorkflowSummaryItem,
 } from "./components/workflow/WorkflowCardNode";
 import { WorkflowCardNode } from "./components/workflow/WorkflowCardNode";
+import { TERMS } from "@/config/terminology";
 
 const nodeTypes = {
   workflowCard: WorkflowCardNode,
@@ -223,7 +224,7 @@ function getPlanRegionLabels(plan: Plan, regions: any[]) {
 
   if (!summaries.length) {
     const fallbackLabel =
-      plan.zone || plan.cultivationRegion || plan.plot || "Vùng canh tác";
+      plan.zone || plan.cultivationRegion || plan.plot || TERMS.zone;
     return [fallbackLabel];
   }
 
@@ -516,7 +517,7 @@ export default function GrowthCycleWorkflowPage() {
   });
   const stages = cycle?.stages ?? [];
   const fallbackRegionLabel =
-    cycle?.cropVarietyName || cycle?.cropName || "Vùng canh tác";
+    cycle?.cropVarietyName || cycle?.cropName || TERMS.zone;
 
   const openNodeDialog = (mode: NodeDialogMode, context: NodeDialogContext) => {
     setNodeDialogContext(context);

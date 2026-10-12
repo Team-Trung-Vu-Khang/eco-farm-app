@@ -37,9 +37,11 @@ import {
 } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import { divIcon } from "leaflet";
-import { DISTRICTS, PROVINCES } from "../../../../region-chart/constants";
 import styles from "../../styles.module.css";
 import type { CultivationRegionDetails } from "../../useCultivationRegionDetail";
+import { TERMS } from "@/config/terminology";
+import { PROVINCES } from "@/constants/province";
+import { DISTRICTS } from "@/pages/region-chart/constants";
 
 interface OverviewTabProps {
   area: any;
@@ -199,7 +201,8 @@ export const OverviewTab = ({
 
   const formatFullAddress = (reg: any) => {
     if (!reg) return "";
-    const p = PROVINCES.find((prov) => prov.id === reg.provinceId)?.name || "";
+    const p =
+      PROVINCES.find((prov) => prov.code === reg.provinceId)?.name || "";
     const d = DISTRICTS.find((dist) => dist.id === reg.districtId)?.name || "";
     const w = reg.ward || "";
     const a = reg.address || "";
@@ -692,7 +695,7 @@ export const OverviewTab = ({
           <CardTitle className="text-sm font-bold flex items-center gap-2">
             <MapPin className="w-4 h-4 text-primary" />
             <span className="text-lg">
-              Phạm vi vùng canh tác ({details.selectedEntities.length} mục)
+              Phạm vi {TERMS.zoneLower} ({details.selectedEntities.length} mục)
             </span>
           </CardTitle>
         </CardHeader>
@@ -1010,7 +1013,7 @@ export const OverviewTab = ({
       <Dialog open={isScopeMapExpanded} onOpenChange={setIsScopeMapExpanded}>
         <DialogContent className="max-w-[96vw] w-[96vw] h-[92vh] p-0 overflow-hidden border-none shadow-2xl rounded-3xl z-10000">
           <DialogHeader className="sr-only">
-            <DialogTitle>Bản đồ phạm vi vùng canh tác</DialogTitle>
+            <DialogTitle>Bản đồ phạm vi {TERMS.zoneLower}</DialogTitle>
           </DialogHeader>
           <div className="flex flex-col md:flex-row h-full">
             <div className="flex-1 h-[50vh] md:h-auto relative bg-slate-100">

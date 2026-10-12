@@ -3,6 +3,7 @@ import {
   describeWeatherCode,
   useWeatherForecast,
 } from "@/features/weather/weather";
+import { TERMS } from "@/config/terminology";
 import { cn } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import dayjs from "dayjs";
 import {
@@ -56,7 +57,11 @@ function useWeatherLocation() {
 
   return useMemo(() => {
     if (gpsCoords) {
-      return { coords: gpsCoords, label: "Vị trí hiện tại", isResolving: false };
+      return {
+        coords: gpsCoords,
+        label: "Vị trí hiện tại",
+        isResolving: false,
+      };
     }
     if (gpsFailed && regionWithCenter?.centerPoint) {
       return {
@@ -64,7 +69,7 @@ function useWeatherLocation() {
           latitude: regionWithCenter.centerPoint.latitude,
           longitude: regionWithCenter.centerPoint.longitude,
         },
-        label: regionWithCenter.name || "Vùng canh tác",
+        label: regionWithCenter.name || TERMS.zone,
         isResolving: false,
       };
     }
@@ -98,15 +103,15 @@ const StatTile = ({
 
 export function WeatherCard() {
   const { coords, label, isResolving } = useWeatherLocation();
-  const { data, isLoading, isError, dataUpdatedAt } = useWeatherForecast(coords);
+  const { data, isLoading, isError, dataUpdatedAt } =
+    useWeatherForecast(coords);
 
   if (!coords && !isResolving) {
     return (
       <section className={cn(CARD_CLASS, "flex items-start gap-3 p-4")}>
         <MapPinOff className="mt-0.5 h-5 w-5 shrink-0 text-slate-400" />
         <p className="text-sm text-slate-500">
-          Chưa xác định được vị trí. Hãy cho phép truy cập vị trí hoặc thêm tọa
-          độ cho vùng canh tác.
+          {`Chưa xác định được vị trí. Hãy cho phép truy cập vị trí hoặc thêm tọa độ cho ${TERMS.zoneLower}.`}
         </p>
       </section>
     );
@@ -128,7 +133,9 @@ export function WeatherCard() {
 
   if (isError || !data) {
     return (
-      <section className={cn(CARD_CLASS, "p-4 text-center text-sm text-slate-500")}>
+      <section
+        className={cn(CARD_CLASS, "p-4 text-center text-sm text-slate-500")}
+      >
         Không tải được dữ liệu thời tiết
       </section>
     );
@@ -210,8 +217,11 @@ export function WeatherCard() {
           </p>
           <div className="grid grid-cols-5 divide-x divide-slate-100 rounded-xl border border-slate-100">
             {data.daily.map((day, index) => {
-              const { icon: DayIcon, label: dayLabel, tone } =
-                describeWeatherCode(day.weatherCode);
+              const {
+                icon: DayIcon,
+                label: dayLabel,
+                tone,
+              } = describeWeatherCode(day.weatherCode);
               const rainChance = day.precipitationProbability ?? 0;
               return (
                 <div
@@ -230,7 +240,9 @@ export function WeatherCard() {
                   >
                     {index === 0
                       ? "Hôm nay"
-                      : WEEKDAY_LABELS[new Date(`${day.date}T00:00:00`).getDay()]}
+                      : WEEKDAY_LABELS[
+                          new Date(`${day.date}T00:00:00`).getDay()
+                        ]}
                   </span>
                   <DayIcon className={cn("h-5 w-5", tone.icon)} />
                   <span className="text-xs font-semibold text-slate-900">

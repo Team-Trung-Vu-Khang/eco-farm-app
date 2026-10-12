@@ -7,6 +7,7 @@ import {
   CardTitle,
   cn,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import { TERMS } from "@/config/terminology";
 import {
   Layers,
   MapPin,
@@ -660,7 +661,7 @@ export const CultivationRegionOverviewTab = ({
               <div key={group.region.id} className="space-y-2 py-3">
                 {/* Level 1: geographic region */}
                 <ScopeNodeCard
-                  label="Vùng địa lý"
+                  label={TERMS.region}
                   name={group.region.name}
                   icon={<MapPin className="h-4.5 w-4.5" />}
                   accent="primary"
@@ -679,7 +680,7 @@ export const CultivationRegionOverviewTab = ({
                           <>
                             {/* Level 2: area */}
                             <ScopeNodeCard
-                              label="Khu vực"
+                              label={TERMS.area}
                               name={areaGroup.area.name}
                               icon={<Layers className="h-4 w-4" />}
                               accent="slate"
@@ -696,7 +697,7 @@ export const CultivationRegionOverviewTab = ({
                                     <div key={plot.id} className="relative">
                                       <div className="absolute -left-5.5 top-6 h-px w-5 bg-slate-200" />
                                       <ScopeNodeCard
-                                        label="Lô đất"
+                                        label={TERMS.plot}
                                         name={plot.name}
                                         icon={
                                           <Target className="h-3.5 w-3.5" />

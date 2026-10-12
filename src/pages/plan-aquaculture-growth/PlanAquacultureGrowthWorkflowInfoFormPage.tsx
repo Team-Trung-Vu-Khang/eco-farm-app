@@ -33,6 +33,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useLocation, useParams } from "wouter";
 import * as z from "zod";
+import { TERMS } from "@/config/terminology";
 import GeographicalSelector from "./components/GeographicalSelector";
 import AquacultureGrowthCycleSelector from "./components/AquacultureGrowthCycleSelector";
 import {
@@ -395,8 +396,7 @@ export default function PlanAquacultureGrowthWorkflowInfoFormPage() {
       setRegionsTouched(true);
       toast({
         title: "Chưa chọn vùng nuôi hợp lệ",
-        description:
-          "Vui lòng chọn Vùng nuôi trồng thủy sản có chứa thông tin vùng địa lý.",
+        description: `Vui lòng chọn Vùng nuôi trồng thủy sản có chứa thông tin ${TERMS.regionLower}.`,
         variant: "destructive",
       });
       return;

@@ -59,6 +59,7 @@ import { StageItem } from "./components/StageItem";
 import { TASK_OPTIONS } from "./data/mocks";
 import { useCropSupplyCatalog } from "./hooks/useCropSupplyCatalog";
 import { usePlanForm } from "./hooks/usePlanForm";
+import { TERMS } from "@/config/terminology";
 
 interface PlanGrowthCreatePageProps {
   basePath?: string;
@@ -442,10 +443,10 @@ export default function PlanGrowthCreatePage({
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
                       <label className="text-xs text-muted-foreground font-black uppercase tracking-widest">
-                        Vùng canh tác <span className="text-red-500">*</span>
+                        {TERMS.zone} <span className="text-red-500">*</span>
                       </label>
                       <span className="text-[10px] text-emerald-700 bg-emerald-100 px-2 py-1 rounded-full font-semibold">
-                        Chọn 1 khu vực/lô từ sơ đồ ban đầu
+                        {`Chọn 1 ${TERMS.areaLower}/${TERMS.plotLower} từ sơ đồ ban đầu`}
                       </span>
                     </div>
                     <GeographicalSelector
@@ -484,10 +485,10 @@ export default function PlanGrowthCreatePage({
                                   >
                                     <span className="opacity-70 mr-1 uppercase text-[8px] font-black">
                                       {item.type === "region"
-                                        ? "Vùng"
+                                        ? TERMS.region
                                         : item.type === "area"
-                                          ? "Khu"
-                                          : "Lô"}
+                                          ? TERMS.area
+                                          : TERMS.plot}
                                     </span>
                                     {item.name}
                                     {item.parentName && (
@@ -580,12 +581,12 @@ export default function PlanGrowthCreatePage({
                     </div>
                     <div className="flex-1 space-y-2">
                       <p className="text-emerald-100 text-[10px] font-bold uppercase tracking-[0.2em] mb-1">
-                        Khu vực canh tác
+                        {`${TERMS.area} canh tác`}
                       </p>
                       <h4 className="text-2xl font-black leading-tight tracking-tight">
                         {selectionSummary
                           .map((group) => group.regionName)
-                          .join(", ") || "Chưa chọn vùng"}
+                          .join(", ") || `Chưa chọn ${TERMS.zoneLower}`}
                       </h4>
                       <div className="flex flex-wrap gap-1.5 pt-1">
                         {selectionSummary.flatMap((group) =>
@@ -613,7 +614,7 @@ export default function PlanGrowthCreatePage({
                   <div className="grid grid-cols-2 gap-4 relative z-10">
                     <div className="bg-white/10 p-3 rounded-2xl border border-white/10 backdrop-blur-sm">
                       <p className="text-emerald-200 text-[10px] font-bold uppercase tracking-wider mb-1">
-                        Cây trồng
+                        {TERMS.crop}
                       </p>
                       <p className="font-bold text-sm truncate">
                         {formData.crop || "---"}
@@ -925,10 +926,10 @@ export default function PlanGrowthCreatePage({
                     return (
                       <div className="p-10 text-center border-2 border-dashed border-slate-200 rounded-3xl bg-slate-50">
                         <p className="text-slate-400 font-medium italic">
-                          Vùng trồng/Mùa vụ này chưa được gán quy trình mẫu.
+                          {`${TERMS.region}/${TERMS.workflow} này chưa được gán quy trình mẫu.`}
                         </p>
                         <p className="text-[10px] text-slate-400 mt-2">
-                          Vui lòng kiểm tra lại cấu hình mùa vụ.
+                          {`Vui lòng kiểm tra lại cấu hình ${TERMS.workflowLower}.`}
                         </p>
                       </div>
                     );
@@ -1611,10 +1612,10 @@ export default function PlanGrowthCreatePage({
                             >
                               <span className="opacity-70 mr-1 uppercase text-[8px] font-black">
                                 {item.type === "region"
-                                  ? "Vùng"
+                                  ? TERMS.region
                                   : item.type === "area"
-                                    ? "Khu"
-                                    : "Lô"}
+                                    ? TERMS.area
+                                    : TERMS.plot}
                               </span>
                               {item.name}
                               {item.parentName && (

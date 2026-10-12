@@ -5,6 +5,7 @@ import {
   DialogTitle,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { CheckCircle, Layers } from "lucide-react";
+import { TERMS } from "@/config/terminology";
 import { CultivationRegionDetailView } from "../../cultivation-region/components/CultivationRegionDetailView";
 
 type ZoneDetailDialogProps = {
@@ -48,7 +49,7 @@ export const ZoneDetailDialog = ({
               </div>
               <div>
                 <DialogTitle className="text-xl font-bold text-slate-800">
-                  Hồ sơ vùng trồng: {name}
+                  Hồ sơ {TERMS.zoneLower}: {name}
                 </DialogTitle>
                 <p className="mt-0.5 text-xs font-medium text-slate-500">
                   {code && (

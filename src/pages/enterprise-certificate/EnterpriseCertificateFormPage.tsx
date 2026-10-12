@@ -18,6 +18,7 @@ import {
 import { ArrowLeft } from "lucide-react";
 import { FormProvider, useFormContext } from "react-hook-form";
 import { useLocation } from "wouter";
+import { TERMS } from "@/config/terminology";
 import type {
   Area,
   Standard,
@@ -85,7 +86,7 @@ function EnterpriseCertificateStepperContent({
     {
       id: "entity",
       title: "Phạm vi chứng nhận",
-      description: "Đơn vị - tổ chức hoặc vùng canh tác cụ thể",
+      description: `Đơn vị - tổ chức hoặc ${TERMS.zoneLower} cụ thể`,
       content: (
         <CertificateEntitySelection
           regions={regions}
@@ -156,7 +157,7 @@ export default function EnterpriseCertificateFormPage() {
   return (
     <PageWrapper
       title={isEdit ? "Chỉnh sửa chứng nhận" : "Tạo mới chứng nhận"}
-      description="Điền thông tin theo từng bước để tạo hồ sơ phạm vi chứng nhận: đơn vị - tổ chức hoặc vùng canh tác cụ thể"
+      description={`Điền thông tin theo từng bước để tạo hồ sơ phạm vi chứng nhận: đơn vị - tổ chức hoặc ${TERMS.zoneLower} cụ thể`}
       actions={
         <Button
           variant="outline"

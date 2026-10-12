@@ -23,6 +23,7 @@ import {
   PawPrint,
   Rows,
   Trash2,
+  Sprout,
 } from "lucide-react";
 import {
   MOCK_SEEDS,

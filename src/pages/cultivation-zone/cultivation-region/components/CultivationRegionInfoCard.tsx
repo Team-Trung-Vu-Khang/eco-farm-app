@@ -7,6 +7,7 @@ import {
   CardTitle,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { Beaker, Layers, Sprout, User } from "lucide-react";
+import { TERMS } from "@/config/terminology";
 
 interface CultivationRegionInfoCardProps {
   selectedCultivationRegion: any;
@@ -29,7 +30,7 @@ export const CultivationRegionInfoCard = ({
         <div className="flex items-center justify-between">
           <CardTitle className="text-base font-bold flex items-center gap-2">
             <Layers className="w-5 h-5 text-primary" />
-            Thông tin vùng canh tác
+            {`Thông tin ${TERMS.zoneLower}`}
           </CardTitle>
         </div>
       </CardHeader>
@@ -39,10 +40,10 @@ export const CultivationRegionInfoCard = ({
             <Layers className="w-10 h-10 text-slate-200" />
             <div>
               <div className="text-sm font-semibold text-slate-500 mb-1">
-                Chưa chọn vùng canh tác
+                {`Chưa chọn ${TERMS.zoneLower}`}
               </div>
               <div className="text-xs text-slate-400">
-                Chọn vùng canh tác bên trái để xem thông tin
+                {`Chọn ${TERMS.zoneLower} bên trái để xem thông tin`}
               </div>
             </div>
           </div>

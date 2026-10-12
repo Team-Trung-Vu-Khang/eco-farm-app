@@ -38,6 +38,7 @@ import {
 } from "reactflow";
 import { useLocation, useParams } from "wouter";
 import useRegionStore from "../../../stores/useRegionStore";
+import { TERMS } from "@/config/terminology";
 import type {
   WorkflowActionItem,
   WorkflowCardNodeData,
@@ -235,12 +236,12 @@ function getAddDialogState(node: TreeModel): TreeDialogState | null {
 
   if (node.kind === "root") {
     return {
-      title: "Chọn vùng để thêm",
-      subtitle: `Chọn các vùng canh tác để thêm vào ${node.title}`,
+      title: `Chọn ${TERMS.zoneLower} để thêm`,
+      subtitle: `Chọn các ${TERMS.zoneLower} để thêm vào ${node.title}`,
       parentNodeId: node.id,
       parentKind: node.kind,
       items: [],
-      emptyLabel: "Chưa có vùng nào để thêm.",
+      emptyLabel: `Chưa có ${TERMS.zoneLower} nào để thêm.`,
       icon: MapPin,
     };
   }
@@ -372,10 +373,10 @@ function buildTreeModel(
     id: `cultivation-zone-${cultivationRegionId}`,
     kind: "root",
     title: rootName,
-    subtitle: "Vùng canh tác",
+    subtitle: TERMS.zone,
     description:
       selectedRegion.note ||
-      `Tổng hợp ${totals.regions} vùng, ${totals.areas} khu vực và ${totals.plots} lô trong workflow.`,
+      `Tổng hợp ${totals.regions} ${TERMS.regionLower}, ${totals.areas} ${TERMS.areaLower} và ${totals.plots} ${TERMS.plotLower} trong workflow.`,
     icon: MapPin,
     summaries: [
       { label: "Diện tích", value: formatArea(selectedRegion.area) },
@@ -598,12 +599,12 @@ function buildWorkflowNodeData(
     kind,
     eyebrow:
       model.kind === "root"
-        ? "Vùng canh tác"
+        ? TERMS.zone
         : model.kind === "region"
-          ? "Vùng"
+          ? TERMS.region
           : model.kind === "area"
-            ? "Khu vực"
-            : "Lô",
+            ? TERMS.area
+            : TERMS.plot,
     title: model.title,
     subtitle: model.subtitle,
     description: model.description,
@@ -775,7 +776,7 @@ export default function CultivationRegionWorkflowPage() {
     }
 
     const root = buildTreeModel(
-      selectedRegion.name || "Vùng canh tác",
+      selectedRegion.name || TERMS.zone,
       treeData.selectedHierarchy,
       setLocation,
       params.id,
@@ -898,8 +899,8 @@ export default function CultivationRegionWorkflowPage() {
 
   return (
     <PageWrapper
-      title="Workflow vùng canh tác"
-      description={`Trực quan hóa ${selectedRegion.name} theo cây Vùng -> Khu vực -> Lô`}
+      title={`Sơ đồ ${TERMS.zoneLower}`}
+      description={`Trực quan hóa ${selectedRegion.name} theo cây ${TERMS.region} -> ${TERMS.area} -> ${TERMS.plot}`}
       actions={
         <div className="flex flex-wrap gap-2">
           <Button

@@ -12,6 +12,7 @@ import {
   CardTitle,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { MapPin } from "lucide-react";
+import { TERMS } from "@/config/terminology";
 import { GeographicalHierarchyDisplay } from "./GeographicalHierarchyDisplay";
 import { GeographicalScopeModal } from "./GeographicalScopeModal";
 import { buildGeographicalTree } from "./GeographicalTree";
@@ -440,10 +441,10 @@ export const GeographicalScopeCard = ({
             <MapPin className="w-9 h-9 text-slate-200" />
             <div>
               <div className="text-sm font-semibold text-slate-500 mb-1">
-                Chưa chọn vùng canh tác
+                {`Chưa chọn ${TERMS.zoneLower}`}
               </div>
               <div className="text-xs text-slate-400">
-                Chọn vùng canh tác để thiết lập vị trí địa lý
+                {`Chọn ${TERMS.zoneLower} để thiết lập vị trí địa lý`}
               </div>
             </div>
           </div>
@@ -464,7 +465,7 @@ export const GeographicalScopeCard = ({
             )}
             {geographicalUnits.length === 0 && (
               <div className="py-4 text-sm text-slate-400 text-center bg-slate-50/50 border border-dashed border-slate-200 rounded-xl">
-                Vùng canh tác này chưa có dữ liệu vị trí địa lý
+                {`${TERMS.zone} này chưa có dữ liệu vị trí địa lý`}
               </div>
             )}
           </>

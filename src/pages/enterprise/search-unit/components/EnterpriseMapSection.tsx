@@ -15,6 +15,7 @@ import {
 import defaultMarkerIcon2xUrl from "leaflet/dist/images/marker-icon-2x.png";
 import defaultMarkerIconUrl from "leaflet/dist/images/marker-icon.png";
 import defaultMarkerShadowUrl from "leaflet/dist/images/marker-shadow.png";
+import { TERMS } from "@/config/terminology";
 
 interface EnterpriseMapSectionProps {
   mapRef: React.MutableRefObject<any>;
@@ -300,7 +301,7 @@ export const EnterpriseMapSection: React.FC<EnterpriseMapSectionProps> = ({
                 <Layers className="text-primary animate-pulse" size={24} />
                 <div>
                   <h3 className="font-bold text-slate-800 tracking-tight text-sm">
-                    Vùng canh tác các đơn vị
+                    ${TERMS.zone} các đơn vị
                   </h3>
                   <p className="text-[10px] text-slate-500 font-medium tracking-tight">
                     Vui lòng chọn một đơn vị để định vị vị trí trên bản đồ

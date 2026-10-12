@@ -26,6 +26,7 @@ import type {
   FarmWorkflowScopeResponse,
 } from "@/features/farm-workflow/types/farm-workflow.type";
 import type { MockWorkflowItem } from "../../types/diary.types";
+import { TERMS } from "@/config/terminology";
 
 type LatLngTuple = [number, number];
 
@@ -214,12 +215,12 @@ export function WorkflowScopeMapModal({
       (wfObj.name as string | undefined);
 
     if (resolvedScopeType === "REGION")
-      return regionName || fallbackName || "Vùng trồng";
+      return regionName || fallbackName || TERMS.region;
     if (resolvedScopeType === "AREA")
-      return areaName || fallbackName || "Khu vực";
+      return areaName || fallbackName || TERMS.area;
     if (resolvedScopeType === "PLOT")
-      return plotName || fallbackName || "Lô đất";
-    return fallbackName || "Phạm vi canh tác";
+      return plotName || fallbackName || TERMS.plot;
+    return fallbackName || `Phạm vi ${TERMS.zoneLower}`;
   }, [scopeItem, workflow, resolvedScopeType]);
 
   // 2. Query geo-entity by scopeType and targetId
@@ -362,10 +363,10 @@ export function WorkflowScopeMapModal({
               </div>
               <div className="text-[10px] text-emerald-700 font-semibold">
                 {resolvedScopeType === "REGION"
-                  ? "Vùng canh tác"
+                  ? TERMS.region
                   : resolvedScopeType === "AREA"
-                    ? "Khu vực canh tác"
-                    : "Lô đất canh tác"}
+                    ? TERMS.area
+                    : TERMS.plot}
               </div>
             </Tooltip>
           </Polygon>
@@ -407,10 +408,10 @@ export function WorkflowScopeMapModal({
           className="text-[10px] uppercase font-bold bg-emerald-50 text-emerald-700 border-emerald-200 shrink-0 px-2 py-0.5"
         >
           {resolvedScopeType === "REGION"
-            ? "Vùng trồng"
+            ? TERMS.region
             : resolvedScopeType === "AREA"
-              ? "Khu vực"
-              : "Lô đất"}
+              ? TERMS.area
+              : TERMS.plot}
         </Badge>
       </div>
     </div>
@@ -423,7 +424,9 @@ export function WorkflowScopeMapModal({
         <div className="flex items-center justify-between text-xs text-slate-500 font-medium px-1">
           <span className="flex items-center gap-1.5 font-bold text-slate-700">
             <Layers className="h-3.5 w-3.5 text-emerald-600" />
-            {isMobile ? "Phạm vi vụ mùa" : "Bản đồ phạm vi áp dụng vụ mùa"}
+            {isMobile
+              ? `Phạm vi ${TERMS.workflowLower}`
+              : `Bản đồ phạm vi áp dụng ${TERMS.workflowLower}`}
           </span>
           {!isMobile && (
             <span className="text-[11px] font-semibold text-slate-500">

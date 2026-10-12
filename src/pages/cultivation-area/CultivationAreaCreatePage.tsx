@@ -1,5 +1,6 @@
 import PageWrapper from "@/components/PageWrapper";
 import { getMarkerIcon } from "@/pages/cultivation-zone/cultivation-region/components/mapUtils";
+import { TERMS, formatTerm } from "@/config/terminology";
 import {
   Badge,
   Button,
@@ -125,11 +126,11 @@ const CultivationAreaCreatePage = () => {
           <div className="space-y-4">
             <div>
               <Label htmlFor="name" className="text-sm font-medium">
-                Tên khu vực canh tác <span className="text-red-500">*</span>
+                Tên {TERMS.areaLower} <span className="text-red-500">*</span>
               </Label>
               <Input
                 id="name"
-                placeholder="VD: Khu vực canh tác Sầu riêng Bình Phước"
+                placeholder={`VD: ${TERMS.area} Sầu riêng Bình Phước`}
                 value={name}
                 onChange={(event) => setName(event.target.value)}
                 className="mt-1.5 h-10 border-slate-300 focus:border-primary focus:ring-primary/20"
@@ -154,7 +155,7 @@ const CultivationAreaCreatePage = () => {
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <Label className="text-sm font-semibold text-slate-700">
-                  Khu vực canh tác <span className="text-red-500">*</span>
+                  {TERMS.area} <span className="text-red-500">*</span>
                 </Label>
                 {selectedArea && (
                   <Badge
@@ -220,7 +221,7 @@ const CultivationAreaCreatePage = () => {
                 ) : (
                   <div className="py-3 text-center text-sm text-slate-400 group-hover:text-primary transition-colors">
                     {selectedEnterpriseId
-                      ? "Nhấn để chọn khu vực canh tác"
+                      ? `Nhấn để chọn ${TERMS.areaLower}`
                       : "Chọn đơn vị sở hữu trước"}
                   </div>
                 )}
@@ -303,7 +304,7 @@ const CultivationAreaCreatePage = () => {
         <div className="flex flex-col items-center justify-center py-20 bg-slate-50/50 rounded-2xl border border-dashed border-slate-300">
           <MapPin className="w-12 h-12 text-slate-300 mb-4" />
           <p className="text-slate-500 font-medium">
-            Vui lòng chọn khu vực canh tác ở bước 1
+            {`Vui lòng chọn ${TERMS.areaLower} ở bước 1`}
           </p>
         </div>
       );
@@ -808,13 +809,13 @@ const CultivationAreaCreatePage = () => {
           <div className="grid grid-cols-2 gap-4 text-sm">
             <div>
               <p className="text-xs text-slate-400 font-medium uppercase tracking-wider mb-1">
-                Tên khu vực canh tác
+                Tên {TERMS.areaLower}
               </p>
               <p className="font-bold text-slate-800">{name || "—"}</p>
             </div>
             <div>
               <p className="text-xs text-slate-400 font-medium uppercase tracking-wider mb-1">
-                Vùng trồng
+                {TERMS.region}
               </p>
               <p className="font-bold text-slate-800">
                 {selectedRegion?.name || "—"}
@@ -953,9 +954,9 @@ const CultivationAreaCreatePage = () => {
   return (
     <PageWrapper
       title={
-        isEdit ? "Chỉnh sửa khu vực canh tác" : "Thiết lập khu vực canh tác"
+        isEdit ? formatTerm.edit(TERMS.area) : `Thiết lập ${TERMS.areaLower}`
       }
-      description="Quy trình khởi tạo và cấu hình canh tác cho khu vực cụ thể"
+      description={`Quy trình khởi tạo và cấu hình cho ${TERMS.areaLower} cụ thể`}
     >
       <div className="mb-6">
         <Button
@@ -976,8 +977,8 @@ const CultivationAreaCreatePage = () => {
               steps={steps}
               completeLabel={
                 isEdit
-                  ? "Lưu thay đổi khu vực canh tác"
-                  : "Khởi tạo Khu vực canh tác"
+                  ? `Lưu thay đổi ${TERMS.areaLower}`
+                  : `Khởi tạo ${TERMS.area}`
               }
               onComplete={handleComplete}
               onCancel={goBack}

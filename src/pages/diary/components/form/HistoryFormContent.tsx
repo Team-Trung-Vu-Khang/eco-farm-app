@@ -28,6 +28,7 @@ import { useFarmPersonnel } from "@/features/master-data";
 import { useSelectedWorkspaceId } from "@/features/workspace";
 import type { GeographicalSelection } from "@/pages/cultivation-zone/cultivation-region/components/types";
 import { useDebounce } from "@/shared/hooks/useDebounce";
+import { TERMS } from "@/config/terminology";
 import {
   Button,
   StepperForm,
@@ -153,7 +154,7 @@ export function HistoryFormContent({
       (apiCultivationZones || []).map((z) => ({
         label: z.code
           ? `${z.code} - ${z.name}`
-          : z.name || `Vùng canh tác #${z.id}`,
+          : z.name || `${TERMS.zone} #${z.id}`,
         value: String(z.id),
         keywords: [z.code, z.name].filter(Boolean) as string[],
       })),

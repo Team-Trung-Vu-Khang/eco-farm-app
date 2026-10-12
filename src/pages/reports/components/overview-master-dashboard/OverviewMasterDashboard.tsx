@@ -8,6 +8,7 @@ import { MaterialSection } from "./MaterialSection";
 import { OperationsSection } from "./OperationsSection";
 import { useGeoSummary } from "@/features/farm/hooks/useFarmReport";
 import { useSelectedWorkspaceId } from "@/features/workspace";
+import { TERMS } from "@/config/terminology";
 
 interface OverviewMasterDashboardProps {
   domainType: "crops" | "livestock" | "aqua";
@@ -85,7 +86,7 @@ export const OverviewMasterDashboard: React.FC<
                 {geoLoading ? <StatSkeleton /> : (regionCount ?? "—")}
               </p>
               <p className="text-xs text-slate-400 font-medium">
-                Vùng canh tác trọng điểm
+                ${TERMS.zone} trọng điểm
               </p>
             </div>
             <div className="p-3 bg-emerald-50 rounded-2xl text-emerald-600">

@@ -113,7 +113,7 @@ export const PlantIdentificationMapSection = ({
       <CardHeader className="flex flex-row items-center justify-between border-b px-6 py-4">
         <CardTitle className="flex items-center gap-2 text-sm font-semibold">
           <MapPin className="h-4 w-4 text-primary" />
-          Vị trí địa lý & Phạm vi canh tác
+          Vị trí địa lý & Phạm vi chăn nuôi
         </CardTitle>
         <Button variant="ghost" size="icon" className="h-8 w-8">
           <Maximize2 className="h-4 w-4" />

@@ -1,10 +1,16 @@
-import { Button, Dialog, DialogContent, ScrollArea } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import {
+  Button,
+  Dialog,
+  DialogContent,
+  ScrollArea,
+} from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import type { Region } from "../../../region-chart/constants";
 import { useCultivationZoneDialog } from "../hooks/useCultivationZoneDialog";
 import { CultivationZoneDialogEmptyState } from "./cultivation-zone-dialog/CultivationZoneDialogEmptyState";
 import { CultivationZoneDialogFilterPanel } from "./cultivation-zone-dialog/CultivationZoneDialogFilterPanel";
 import { CultivationZoneDialogHeader } from "./cultivation-zone-dialog/CultivationZoneDialogHeader";
 import { CultivationZoneRegionCard } from "./cultivation-zone-dialog/CultivationZoneRegionCard";
+import { TERMS } from "@/config/terminology";
 
 type CultivationZoneDialogProps = {
   open: boolean;
@@ -78,7 +84,8 @@ export const CultivationZoneDialog = ({
                   region={region}
                   enterprise={enterprises.find(
                     (enterprise) =>
-                      enterprise.id.toString() === region.enterpriseId.toString(),
+                      enterprise.id.toString() ===
+                      region.enterpriseId.toString(),
                   )}
                   selected={isSelected(region.id)}
                   onToggle={() => toggleSelection(region)}
@@ -94,7 +101,10 @@ export const CultivationZoneDialog = ({
             <span className="text-lg font-black text-primary">
               {tempSelections.length}
             </span>
-            <span className="font-medium text-slate-400"> vùng canh tác</span>
+            <span className="font-medium text-slate-400">
+              {" "}
+              {TERMS.zoneLower}
+            </span>
           </div>
 
           <div className="flex gap-3">

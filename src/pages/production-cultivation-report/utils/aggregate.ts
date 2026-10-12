@@ -5,6 +5,7 @@ import type { Region } from "@/pages/region-chart/constants";
 import type { Season } from "@/pages/season/types/types";
 import type { Treatment } from "@/pages/treatment/types/treatment.types";
 import { getReportTemplateName } from "../data/reportTemplates";
+import { TERMS } from "@/config/terminology";
 import type {
   ReportBreakdownRow,
   ReportChartPoint,
@@ -50,11 +51,20 @@ const taskStatusLabels: Record<Task["status"], string> = {
 function parseNumber(value: string | number | undefined) {
   if (typeof value === "number") return value;
   if (!value) return 0;
-  const parsed = Number(String(value).replace(",", ".").replace(/[^\d.]/g, ""));
+  const parsed = Number(
+    String(value)
+      .replace(",", ".")
+      .replace(/[^\d.]/g, ""),
+  );
   return Number.isFinite(parsed) ? parsed : 0;
 }
 
-function overlapsPeriod(startDate: string, endDate: string, periodStart: string, periodEnd: string) {
+function overlapsPeriod(
+  startDate: string,
+  endDate: string,
+  periodStart: string,
+  periodEnd: string,
+) {
   const start = new Date(startDate).getTime();
   const end = new Date(endDate).getTime();
   const filterStart = new Date(periodStart).getTime();
@@ -102,7 +112,8 @@ function formatYield(value: number) {
 function getProgress(tasks: Task[]) {
   if (tasks.length === 0) return 0;
   return Math.round(
-    (tasks.filter((task) => task.status === "completed").length / tasks.length) *
+    (tasks.filter((task) => task.status === "completed").length /
+      tasks.length) *
       100,
   );
 }
@@ -158,7 +169,11 @@ function buildTableRows(plans: Plan[], tasks: Task[]) {
       progress: `${progress}%`,
       yield: formatYield(parseNumber(plan.expectedYield)),
       material: `${plan.materialAllocations.length} nhóm`,
-      risk: hasOverdue ? "Có việc trễ" : hasTreatment ? "Đang xử lý" : "Ổn định",
+      risk: hasOverdue
+        ? "Có việc trễ"
+        : hasTreatment
+          ? "Đang xử lý"
+          : "Ổn định",
     };
   });
 }
@@ -168,12 +183,17 @@ function buildInsights(plans: Plan[], tasks: Task[], treatments: Treatment[]) {
   const activeTreatments = treatments.filter(
     (treatment) => treatment.status === "active",
   ).length;
-  const harvestPlans = plans.filter((plan) => plan.purpose === "harvest").length;
+  const harvestPlans = plans.filter(
+    (plan) => plan.purpose === "harvest",
+  ).length;
 
   const insights: ReportInsight[] = [
     {
       id: "progress",
-      title: overdueTasks > 0 ? "Cần xử lý công việc trễ" : "Tiến độ vận hành ổn định",
+      title:
+        overdueTasks > 0
+          ? "Cần xử lý công việc trễ"
+          : "Tiến độ vận hành ổn định",
       description:
         overdueTasks > 0
           ? `${overdueTasks} công việc đang trễ hạn trong phạm vi báo cáo, nên ưu tiên rà soát nguồn lực.`
@@ -321,8 +341,8 @@ function buildSourceRows(
     },
     {
       id: "regions",
-      source: "Vùng/Khu/Lô",
-      records: `${regions.length} vùng · ${cultivationRegions.length} vùng canh tác`,
+      source: `${TERMS.region}/${TERMS.area}/${TERMS.plot}`,
+      records: `${regions.length} ${TERMS.regionLower} · ${cultivationRegions.length} ${TERMS.zoneLower}`,
       coverage: regions.length > 0 ? "Có dữ liệu" : "Thiếu dữ liệu",
       note: "Dùng để đọc phạm vi địa lý và độ phủ canh tác.",
       tone: regions.length > 0 ? "positive" : "warning",
@@ -349,7 +369,9 @@ function buildExecutiveSummary(
     (sum, plan) => sum + parseNumber(plan.expectedYield),
     0,
   );
-  const completedTasks = tasks.filter((task) => task.status === "completed").length;
+  const completedTasks = tasks.filter(
+    (task) => task.status === "completed",
+  ).length;
   const overdueTasks = tasks.filter((task) => task.status === "overdue").length;
   const activeTreatments = treatments.filter(
     (treatment) => treatment.status === "active",
@@ -383,7 +405,7 @@ function buildMetrics(
       id: "area",
       label: "Diện tích trong phạm vi",
       value: formatArea(totalArea),
-      change: `${cultivationRegions.length} vùng canh tác liên quan`,
+      change: `${cultivationRegions.length} ${TERMS.zoneLower} liên quan`,
       tone: "neutral",
     },
     {
@@ -400,7 +422,8 @@ function buildMetrics(
       label: "Tiến độ công việc",
       value: `${progress}%`,
       change: `${tasks.length} công việc được tổng hợp`,
-      tone: progress >= 80 ? "positive" : progress >= 50 ? "warning" : "negative",
+      tone:
+        progress >= 80 ? "positive" : progress >= 50 ? "warning" : "negative",
     },
     {
       id: "risk",
@@ -456,7 +479,9 @@ export function aggregateProductionCultivationReport({
   const filteredTreatments = filterTreatments(treatments, periodPlans);
   const filteredCultivationRegions = cultivationRegions.filter((region) => {
     if (request.scope.type === "all") return true;
-    return region.targetIds.some((id) => request.scope.ids.includes(String(id)));
+    return region.targetIds.some((id) =>
+      request.scope.ids.includes(String(id)),
+    );
   });
   const tableRows = buildTableRows(periodPlans, periodTasks);
   const chartData = buildTrendRows(periodPlans, periodTasks);

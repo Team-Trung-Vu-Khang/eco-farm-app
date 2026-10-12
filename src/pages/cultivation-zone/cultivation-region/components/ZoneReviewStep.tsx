@@ -10,6 +10,7 @@ import {
   useMethodApplications,
   useProductionSubjects,
 } from "@/features/foundation";
+import { TERMS } from "@/config/terminology";
 
 export const ZoneReviewStep = () => {
   const { watch } = useFormContext<CultivationZoneFormValues>();
@@ -230,8 +231,8 @@ export const ZoneReviewStep = () => {
   const isEdit = !!formValues.id;
   const title = isEdit ? "Xác nhận cập nhật thông tin" : "Xác nhận thông tin";
   const description = isEdit
-    ? "Vui lòng kiểm tra kỹ các thông tin dưới đây trước khi lưu cập nhật vùng canh tác."
-    : "Vui lòng kiểm tra kỹ các thông tin dưới đây. Sau khi xác nhận, hệ thống sẽ tiến hành khởi tạo vùng canh tác mới.";
+    ? `Vui lòng kiểm tra kỹ các thông tin dưới đây trước khi lưu cập nhật ${TERMS.zoneLower}.`
+    : `Vui lòng kiểm tra kỹ các thông tin dưới đây. Sau khi xác nhận, hệ thống sẽ tiến hành khởi tạo ${TERMS.zoneLower} mới.`;
 
   return (
     <CultivationRegionCreateConfirmationStep

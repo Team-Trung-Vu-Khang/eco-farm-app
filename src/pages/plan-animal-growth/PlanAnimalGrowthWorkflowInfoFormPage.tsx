@@ -28,6 +28,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useLocation, useParams } from "wouter";
 import * as z from "zod";
+import { TERMS } from "@/config/terminology";
 import {
   useFarmWorkflowById,
   useFarmWorkflowMutations,
@@ -373,8 +374,7 @@ export default function PlanAnimalGrowthWorkflowInfoFormPage() {
       setRegionsTouched(true);
       toast({
         title: "Chưa chọn vùng chăn nuôi hợp lệ",
-        description:
-          "Vui lòng chọn Vùng chăn nuôi có chứa thông tin vùng địa lý.",
+        description: `Vui lòng chọn Vùng chăn nuôi có chứa thông tin ${TERMS.regionLower}.`,
         variant: "destructive",
       });
       return;

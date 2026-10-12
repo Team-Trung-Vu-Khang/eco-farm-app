@@ -13,9 +13,10 @@ import {
   SelectValue,
   cn,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { Check, Layers, MapPin, Search } from "lucide-react";
 import useRegionStore from "../../../stores/useRegionStore";
 import type { Plot, Region, SubArea } from "../types/types";
+import { TERMS, formatTerm } from "@/config/terminology";
+import { Check, Layers, MapPin, Search } from "lucide-react";
 
 const FilterStep = ({
   step,
@@ -125,30 +126,30 @@ export const PlotSelectorDialog = ({
             <div className="p-2 bg-primary rounded-xl shadow-lg shadow-primary/20">
               <Layers className="text-white h-5 w-5" />
             </div>
-            Chọn lô canh tác
+            {formatTerm.select(TERMS.plot)}
           </DialogTitle>
           <p className="text-slate-500 mt-1 font-medium text-sm">
-            Chọn vùng trồng, khu vực, sau đó chọn lô đất cụ thể
+            {`Chọn ${TERMS.regionLower}, ${TERMS.areaLower}, sau đó chọn ${TERMS.plotLower} cụ thể`}
           </p>
 
           <div className="flex items-center gap-4 mt-3">
             <FilterStep
               step={1}
-              label="Vùng"
+              label={TERMS.region}
               done={Boolean(internalRegionId)}
               active={!internalRegionId}
             />
             <div className="flex-1 h-px bg-slate-200" />
             <FilterStep
               step={2}
-              label="Khu vực"
+              label={TERMS.area}
               done={Boolean(internalAreaId)}
               active={Boolean(internalRegionId) && !internalAreaId}
             />
             <div className="flex-1 h-px bg-slate-200" />
             <FilterStep
               step={3}
-              label="Lô đất"
+              label={TERMS.plot}
               done={false}
               active={Boolean(internalAreaId)}
             />
@@ -159,7 +160,7 @@ export const PlotSelectorDialog = ({
           <div className="px-6 py-4 bg-white border-b grid grid-cols-2 gap-4">
             <div>
               <label className="text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1.5 block">
-                Vùng trồng
+                {TERMS.region}
               </label>
               <Select
                 value={internalRegionId}
@@ -170,7 +171,7 @@ export const PlotSelectorDialog = ({
                 }}
               >
                 <SelectTrigger className="h-10 rounded-xl bg-slate-50 border-slate-100">
-                  <SelectValue placeholder="Chọn vùng..." />
+                  <SelectValue placeholder={formatTerm.select(TERMS.region)} />
                 </SelectTrigger>
                 <SelectContent className="rounded-xl border-slate-100 shadow-xl">
                   {filteredRegions.map((region) => (
@@ -184,7 +185,7 @@ export const PlotSelectorDialog = ({
 
             <div>
               <label className="text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1.5 block">
-                Khu vực
+                {TERMS.area}
               </label>
               <Select
                 value={internalAreaId}
@@ -195,7 +196,7 @@ export const PlotSelectorDialog = ({
                 }}
               >
                 <SelectTrigger className="h-10 rounded-xl bg-slate-50 border-slate-100">
-                  <SelectValue placeholder="Chọn khu vực..." />
+                  <SelectValue placeholder={formatTerm.select(TERMS.area)} />
                 </SelectTrigger>
                 <SelectContent className="rounded-xl border-slate-100 shadow-xl">
                   {filteredAreas.map((area) => (
@@ -214,7 +215,7 @@ export const PlotSelectorDialog = ({
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
                   <Input
-                    placeholder="Tìm tên lô..."
+                    placeholder={`Tìm tên ${TERMS.plotLower}...`}
                     className="pl-10 h-10 rounded-xl bg-slate-50 border-slate-100 focus:bg-white transition-all"
                     value={searchTerm}
                     onChange={(event) => setSearchTerm(event.target.value)}
@@ -265,7 +266,7 @@ export const PlotSelectorDialog = ({
                                 </span>
                                 <span>·</span>
                                 <span>
-                                  {selectedRegion.name} › {selectedArea.name}
+                                  {selectedRegion?.name} › {selectedArea?.name}
                                 </span>
                               </div>
                             </div>
@@ -279,7 +280,9 @@ export const PlotSelectorDialog = ({
                                 : "border-slate-200 bg-white",
                             )}
                           >
-                            {isSelected && <Check size={13} className="stroke-3" />}
+                            {isSelected && (
+                              <Check size={13} className="stroke-3" />
+                            )}
                           </div>
                         </div>
                       </div>
@@ -294,8 +297,10 @@ export const PlotSelectorDialog = ({
                 <MapPin size={28} className="text-slate-300" />
               </div>
               <p className="text-sm font-medium">
-                {!internalRegionId ? "Chọn vùng trồng" : "Chọn khu vực"} để tiếp
-                tục
+                {!internalRegionId
+                  ? formatTerm.select(TERMS.region)
+                  : formatTerm.select(TERMS.area)}{" "}
+                để tiếp tục
               </p>
             </div>
           )}

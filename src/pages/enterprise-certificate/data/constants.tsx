@@ -5,10 +5,11 @@ import type {
   EnterpriseCertificate,
   Standard,
 } from "../../../stores/useEnterpriseCertificateStore";
+import { TERMS } from "@/config/terminology";
 
 const ENTITY_TYPE_LABELS = {
   workspace: "Cấp phép theo đơn vị - tổ chức",
-  region: "Cấp phép theo vùng canh tác cụ thể",
+  region: `Cấp phép theo ${TERMS.zoneLower} cụ thể`,
 } as const;
 
 export const getCertificateColumns = (): Column<EnterpriseCertificate>[] => [

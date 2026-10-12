@@ -90,6 +90,7 @@ import { getRepeatDatesText } from "../plan/utils/task";
 import SimpleTaskForm from "./components/SimpleTaskForm";
 import type { TaskCreateFormData } from "./TaskCreatePage";
 import { farmTaskToLegacyTask } from "./utils/task-mappers";
+import { TERMS } from "@/config/terminology";
 
 type TaskObjectiveType =
   | "phat-sinh"
@@ -1855,7 +1856,7 @@ export default function TaskEditPage() {
                                   className="text-sm font-bold text-slate-700"
                                   required
                                 >
-                                  Vùng canh tác từ kế hoạch
+                                  {TERMS.zone} từ kế hoạch
                                 </Label>
                                 <p className="mt-1 text-[11px] font-medium text-slate-400">
                                   Chỉ chọn được vùng/khu/lô thuộc kế hoạch triển
@@ -1889,7 +1890,7 @@ export default function TaskEditPage() {
                               </div>
                             ) : selections.length === 0 ? (
                               <div className="rounded-xl border border-dashed border-emerald-200 bg-white/70 px-4 py-3 text-xs italic text-slate-400">
-                                Chưa chọn vùng canh tác cụ thể.
+                                Chưa chọn {TERMS.zoneLower} cụ thể.
                               </div>
                             ) : (
                               <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
@@ -2074,11 +2075,12 @@ export default function TaskEditPage() {
                                 className="text-sm font-bold text-slate-700"
                                 required
                               >
-                                Vùng canh tác từ kế hoạch
+                                {TERMS.zone} từ kế hoạch
                               </Label>
                               <p className="mt-1 text-[11px] font-medium text-slate-400">
-                                Chỉ chọn được vùng/khu/lô thuộc kế hoạch triển
-                                khai đã chọn.
+                                Chỉ chọn được {TERMS.zoneLower}/
+                                {TERMS.areaLower}/{TERMS.plotLower} thuộc kế
+                                hoạch triển khai đã chọn.
                               </p>
                             </div>
                             <GeographicalSelector
@@ -2108,7 +2110,7 @@ export default function TaskEditPage() {
                             </div>
                           ) : selections.length === 0 ? (
                             <div className="rounded-xl border border-dashed border-emerald-200 bg-white/70 px-4 py-3 text-xs italic text-slate-400">
-                              Chưa chọn vùng canh tác cụ thể.
+                              Chưa chọn {TERMS.zoneLower} cụ thể.
                             </div>
                           ) : (
                             <div className="grid grid-cols-1 gap-3 md:grid-cols-2">

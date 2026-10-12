@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { TERMS, formatTerm } from "@/config/terminology";
 
 // ─── Scope ────────────────────────────────────────────────────────────────────
 
@@ -11,7 +12,7 @@ export const cultivationZoneScopeSchema = z.object({
 
 export const cultivationZoneFormSchema = z.object({
   /** Tên vùng canh tác — bắt buộc */
-  name: z.string().min(1, "Vui lòng nhập tên vùng canh tác"),
+  name: z.string().min(1, formatTerm.requiredInput(TERMS.zone)),
 
   /** Mã vùng canh tác — tuỳ chọn, tự sinh nếu bỏ trống */
   code: z.string().optional(),

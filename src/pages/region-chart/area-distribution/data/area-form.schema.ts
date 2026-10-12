@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { TERMS, formatTerm } from "@/config/terminology";
 
 const coordinateSchema = z.object({
   lat: z.number(),
@@ -8,7 +9,7 @@ const coordinateSchema = z.object({
 export const plotSchema = z.object({
   id: z.union([z.string(), z.number()]).optional(),
   code: z.string().optional(),
-  name: z.string().min(1, "Vui lòng nhập tên lô"),
+  name: z.string().min(1, formatTerm.requiredInput(TERMS.plot)),
   acreage: z.number().min(0, "Diện tích không hợp lệ").optional(),
   elevation: z.number({ error: "Vui lòng nhập số" }).optional(),
   contourInterval: z.number({ error: "Vui lòng nhập số" }).optional(),
@@ -22,7 +23,7 @@ export const areaInfoSchema = z.object({
     error: "Vui lòng chọn vùng trồng",
   }),
   code: z.string().optional(),
-  name: z.string().min(1, "Vui lòng nhập tên khu vực"),
+  name: z.string().min(1, formatTerm.requiredInput(TERMS.area)),
   acreage: z.number().min(0).optional(),
   soilType: z.string().optional(),
   terrainFeature: z.string().optional(),

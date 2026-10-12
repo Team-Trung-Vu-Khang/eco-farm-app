@@ -34,6 +34,7 @@ import {
 } from "lucide-react";
 import { usePlanDetailPage } from "./hooks/usePlanDetailPage";
 import { getPlanStatusBadge } from "./utils/status";
+import { TERMS } from "@/config/terminology";
 
 interface PlanGrowthDetailPageProps {
   basePath?: string;
@@ -249,7 +250,9 @@ export default function PlanGrowthDetailPage({
                           variant="outline"
                           className="text-xs py-1 px-3 font-semibold border-emerald-200 bg-emerald-50 text-emerald-800 shadow-sm"
                         >
-                          {zone.name || zone.code || `Vùng #${zone.id}`}
+                          {zone.name ||
+                            zone.code ||
+                            `${TERMS.zone} #${zone.id}`}
                         </Badge>
                       ))}
                     </div>
@@ -282,10 +285,10 @@ export default function PlanGrowthDetailPage({
                             >
                               <span className="opacity-70 mr-1 uppercase text-[8px] font-black">
                                 {item.type === "region"
-                                  ? "Vùng"
+                                  ? TERMS.region
                                   : item.type === "area"
-                                    ? "Khu"
-                                    : "Lô"}
+                                    ? TERMS.area
+                                    : TERMS.plot}
                               </span>
                               {item.name}
                               {item.parentName && (

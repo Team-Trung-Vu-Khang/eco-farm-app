@@ -1,9 +1,5 @@
 import type { Dispatch, SetStateAction } from "react";
-import {
-  Badge,
-  Label,
-  Textarea,
-} from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import { Badge, Label, Textarea } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { Info, Layers, MapPin, Package } from "lucide-react";
 import { cn } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { EnterpriseSelector } from "../../cultivation-zone/cultivation-region/components";
@@ -14,6 +10,7 @@ import type {
   SelectionSummaryGroup,
   SoilAmendmentRegion,
 } from "../types";
+import { formatTerm, TERMS } from "@/config/terminology";
 
 interface AmendmentPlanScopeStepProps {
   calculateArea: () => string;
@@ -54,7 +51,7 @@ export function AmendmentPlanScopeStep({
               <span className="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-100 text-xs font-bold text-emerald-600">
                 1
               </span>
-              Chọn vùng canh tác
+              ${formatTerm.select(TERMS.zone)}
             </h3>
             <Label className="text-sm font-medium">
               Đơn vị sở hữu <span className="text-red-500">*</span>
@@ -71,7 +68,7 @@ export function AmendmentPlanScopeStep({
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <label className="text-xs font-black uppercase tracking-widest text-muted-foreground">
-                    Vùng canh tác <span className="text-red-500">*</span>
+                    {TERMS.zone} <span className="text-red-500">*</span>
                   </label>
                   {!selectedEnterpriseId && (
                     <Badge
@@ -195,8 +192,8 @@ export function AmendmentPlanScopeStep({
                   </span>
                 </div>
                 <p className="text-sm font-medium leading-relaxed text-white">
-                  Kế hoạch cải tạo đất này sẽ áp dụng cho tất cả các lô đất
-                  được chọn trong danh sách.
+                  Kế hoạch cải tạo đất này sẽ áp dụng cho tất cả các lô đất được
+                  chọn trong danh sách.
                 </p>
               </div>
             </div>

@@ -6,6 +6,7 @@ import {
   StatsCard,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { MapPin, ShieldAlert, User } from "lucide-react";
+import { TERMS } from "@/config/terminology";
 
 interface AdminOrgStatsBlockProps {
   isLoading?: boolean;
@@ -49,7 +50,7 @@ export function AdminOrgStatsBlock({
   return (
     <div className="space-y-2">
       <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
-        Nông hộ & Vùng canh tác
+        Nông hộ & {TERMS.zone}
       </h2>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <StatsCard
@@ -60,7 +61,7 @@ export function AdminOrgStatsBlock({
           iconColor="bg-sky-100 text-sky-600"
         />
         <StatsCard
-          title="Số lượng vùng canh tác"
+          title={`Số lượng ${TERMS.zoneLower}`}
           value={isLoading ? "..." : zoneCount.toLocaleString("vi-VN")}
           change={`Tổng ${farmHa.toLocaleString("vi-VN")} ha`}
           changeType="neutral"

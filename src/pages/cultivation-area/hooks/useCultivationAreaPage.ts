@@ -6,6 +6,7 @@ import useEnterpriseCertificateStore from "../../../stores/useEnterpriseCertific
 import useEnterpriseStore from "../../../stores/useEnterpriseStore";
 import { getCultivationAreaColumns } from "../data/columns";
 import type { CultivationArea } from "../types/types";
+import { TERMS, formatTerm } from "@/config/terminology";
 
 export const useCultivationAreaPage = () => {
   const [, setLocation] = useLocation();
@@ -15,7 +16,9 @@ export const useCultivationAreaPage = () => {
   const { enterprises } = useEnterpriseStore();
 
   const [deleteOpen, setDeleteOpen] = useState(false);
-  const [deletingItem, setDeletingItem] = useState<CultivationArea | null>(null);
+  const [deletingItem, setDeletingItem] = useState<CultivationArea | null>(
+    null,
+  );
 
   const columns = useMemo(
     () => getCultivationAreaColumns(enterprises, standards),
@@ -36,7 +39,10 @@ export const useCultivationAreaPage = () => {
     if (!deletingItem) return;
 
     deleteCultivationArea(deletingItem.id);
-    toast({ title: "Thành công", description: "Đã xóa khu vực canh tác" });
+    toast({
+      title: "Thành công",
+      description: formatTerm.deleteSuccess(TERMS.area),
+    });
     setDeleteOpen(false);
     setDeletingItem(null);
   };

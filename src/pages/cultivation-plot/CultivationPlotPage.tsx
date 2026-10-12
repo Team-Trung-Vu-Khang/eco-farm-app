@@ -6,6 +6,7 @@ import {
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { Plus } from "lucide-react";
 import { useCultivationPlotPage } from "./hooks/useCultivationPlotPage";
+import { TERMS, formatTerm } from "@/config/terminology";
 
 const CultivationPlotPage = () => {
   const {
@@ -21,8 +22,8 @@ const CultivationPlotPage = () => {
 
   return (
     <PageWrapper
-      title="Lô canh tác"
-      description="Quản lý các thiết lập canh tác theo Khu vực (Lô)"
+      title={TERMS.plot}
+      description={`Quản lý các thiết lập theo ${TERMS.area}`}
       actions={
         <Button onClick={handleAdd}>
           <Plus className="w-4 h-4 mr-2" />
@@ -41,7 +42,7 @@ const CultivationPlotPage = () => {
         open={deleteOpen}
         onOpenChange={setDeleteOpen}
         onConfirm={handleConfirmDelete}
-        description="Bạn có chắc chắn muốn xóa lô này? Hành động này không thể hoàn tác."
+        description={formatTerm.deleteConfirm(TERMS.plot)}
       />
     </PageWrapper>
   );

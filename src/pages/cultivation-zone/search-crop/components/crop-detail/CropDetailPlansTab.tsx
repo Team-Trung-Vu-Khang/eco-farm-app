@@ -14,6 +14,7 @@ import {
   TabsList,
   TabsTrigger,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import { TERMS } from "@/config/terminology";
 import {
   AlertTriangle,
   Bug,
@@ -33,10 +34,7 @@ import {
 } from "lucide-react";
 import type { Plan } from "../../../../../stores/usePlanStore";
 import type { Task } from "../../../../../stores/useTaskStore";
-import type {
-  CropDetailPlanSelection,
-  RegionOption,
-} from "./types";
+import type { CropDetailPlanSelection, RegionOption } from "./types";
 
 type CropDetailPlansTabProps = {
   baseRelevantPlans: Plan[];
@@ -117,7 +115,9 @@ const planStatusBadge = (status: Plan["status"]) => {
     cancelled: { label: "Đã hủy", className: "bg-red-500 text-white" },
   };
   const item = config[status] || config.draft;
-  return <Badge className={cn("border-none", item.className)}>{item.label}</Badge>;
+  return (
+    <Badge className={cn("border-none", item.className)}>{item.label}</Badge>
+  );
 };
 
 const getSelectionSummary = (
@@ -200,7 +200,9 @@ const renderSelectionBadges = (
 ) => {
   const geoSummary = getSelectionSummary(selections, regions);
   if (geoSummary.length === 0) {
-    return <span className="text-[10px] italic text-slate-400">{emptyLabel}</span>;
+    return (
+      <span className="text-[10px] italic text-slate-400">{emptyLabel}</span>
+    );
   }
 
   return (
@@ -269,8 +271,7 @@ const IncurredTasksOverview = ({
               Chưa có dữ liệu công việc
             </h4>
             <p className="mx-auto max-w-[300px] text-sm font-medium text-slate-400">
-              Không tìm thấy nhiệm vụ nào được ghi nhận cho các kế hoạch phát sinh
-              trong vùng canh tác này.
+              {`Không tìm thấy nhiệm vụ nào được ghi nhận cho các kế hoạch phát sinh trong ${TERMS.zoneLower} này.`}
             </p>
           </div>
         ) : (
@@ -342,7 +343,14 @@ const IncurredTasksOverview = ({
                   render: (_value: unknown, row: Task) => {
                     const statusConfig: Record<
                       string,
-                      { label: string; variant: "secondary" | "default" | "destructive" | "outline" }
+                      {
+                        label: string;
+                        variant:
+                          | "secondary"
+                          | "default"
+                          | "destructive"
+                          | "outline";
+                      }
                     > = {
                       completed: { label: "HOÀN THÀNH", variant: "secondary" },
                       "in-progress": { label: "ĐANG CHẠY", variant: "default" },
@@ -388,7 +396,9 @@ const StageDetails = ({
       ? plan.selectedStages
       : Array.from(
           new Set([
-            ...(plan.taskAllocations || []).map((task: any) => task.stageId || "Khác"),
+            ...(plan.taskAllocations || []).map(
+              (task: any) => task.stageId || "Khác",
+            ),
             ...(plan.materialAllocations || []).map(
               (material: any) => material.stageId || "Khác",
             ),
@@ -408,7 +418,9 @@ const StageDetails = ({
           (material: any) => material.stageId === stageKey,
         );
         const stageTasks =
-          plan.taskAllocations?.filter((task: any) => task.stageId === stageKey) || [];
+          plan.taskAllocations?.filter(
+            (task: any) => task.stageId === stageKey,
+          ) || [];
         const isAmendment = plan.purpose === "amendment";
 
         return (
@@ -435,16 +447,19 @@ const StageDetails = ({
                       </Badge>
                     )}
                   </div>
-                  {plan.purpose !== "cultivation" && plan.purpose !== "harvest" && (
-                    <p
-                      className={cn(
-                        "text-[10px] font-bold uppercase tracking-wider",
-                        isAmendment ? "text-emerald-600" : "text-red-600",
-                      )}
-                    >
-                      {isAmendment ? "Hoạt động cải tạo đất" : "Hoạt động điều trị bệnh"}
-                    </p>
-                  )}
+                  {plan.purpose !== "cultivation" &&
+                    plan.purpose !== "harvest" && (
+                      <p
+                        className={cn(
+                          "text-[10px] font-bold uppercase tracking-wider",
+                          isAmendment ? "text-emerald-600" : "text-red-600",
+                        )}
+                      >
+                        {isAmendment
+                          ? "Hoạt động cải tạo đất"
+                          : "Hoạt động điều trị bệnh"}
+                      </p>
+                    )}
                 </div>
               </div>
               <div className="flex shrink-0 gap-2">
@@ -489,7 +504,10 @@ const StageDetails = ({
                     </TabsTrigger>
                   </TabsList>
 
-                  <TabsContent value="tasks" className="m-0 bg-white anim-fade-in">
+                  <TabsContent
+                    value="tasks"
+                    className="m-0 bg-white anim-fade-in"
+                  >
                     {stageTasks.length === 0 ? (
                       <div className="rounded-2xl border border-dashed bg-slate-50/50 py-10 text-center">
                         <Wrench className="mx-auto mb-2 h-8 w-8 text-slate-300" />
@@ -532,7 +550,8 @@ const StageDetails = ({
                                         {task.name}
                                       </p>
                                       <p className="max-w-[200px] truncate text-[10px] italic text-slate-400">
-                                        {task.description || "Máy móc & Thiết bị..."}
+                                        {task.description ||
+                                          "Máy móc & Thiết bị..."}
                                       </p>
                                     </div>
                                   </div>
@@ -568,7 +587,10 @@ const StageDetails = ({
                     )}
                   </TabsContent>
 
-                  <TabsContent value="materials" className="m-0 bg-white anim-fade-in">
+                  <TabsContent
+                    value="materials"
+                    className="m-0 bg-white anim-fade-in"
+                  >
                     {stageMaterials.length === 0 ? (
                       <div className="rounded-2xl border border-dashed bg-slate-50/50 py-10 text-center">
                         <Package className="mx-auto mb-2 h-8 w-8 text-slate-300" />
@@ -640,7 +662,9 @@ const IncurredPlanDetails = ({
       <TabsContent value="tasks" className="m-0 bg-white anim-fade-in">
         {!plan.taskAllocations?.length ? (
           <div className="rounded-3xl border-2 border-dashed border-slate-100 bg-slate-50/30 py-12 text-center">
-            <p className="text-xs italic text-slate-400">Chưa có nhiệm vụ cụ thể</p>
+            <p className="text-xs italic text-slate-400">
+              Chưa có nhiệm vụ cụ thể
+            </p>
           </div>
         ) : (
           <div className="overflow-hidden rounded-xl border border-slate-100 bg-white shadow-sm">
@@ -724,7 +748,9 @@ const IncurredPlanDetails = ({
       <TabsContent value="materials" className="m-0 bg-white anim-fade-in">
         {!plan.materialAllocations?.length ? (
           <div className="rounded-3xl border-2 border-dashed border-slate-100 bg-slate-50/30 py-12 text-center">
-            <p className="text-xs italic text-slate-400">Không sử dụng vật tư</p>
+            <p className="text-xs italic text-slate-400">
+              Không sử dụng vật tư
+            </p>
           </div>
         ) : (
           <div className="grid grid-cols-1 gap-3 pb-2 sm:grid-cols-2">
@@ -837,11 +863,16 @@ const PlanCard = ({
                 <div
                   className={cn(
                     "flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-white shadow-md",
-                    plan.purpose === "cultivation" && "bg-blue-600 shadow-blue-500/20",
-                    plan.purpose === "treatment" && "bg-red-600 shadow-red-500/20",
-                    plan.purpose === "amendment" && "bg-emerald-600 shadow-emerald-500/20",
-                    plan.purpose === "harvest" && "bg-indigo-600 shadow-indigo-500/20",
-                    plan.purpose === "incurred" && "bg-amber-600 shadow-amber-500/20",
+                    plan.purpose === "cultivation" &&
+                      "bg-blue-600 shadow-blue-500/20",
+                    plan.purpose === "treatment" &&
+                      "bg-red-600 shadow-red-500/20",
+                    plan.purpose === "amendment" &&
+                      "bg-emerald-600 shadow-emerald-500/20",
+                    plan.purpose === "harvest" &&
+                      "bg-indigo-600 shadow-indigo-500/20",
+                    plan.purpose === "incurred" &&
+                      "bg-amber-600 shadow-amber-500/20",
                   )}
                 >
                   <PurposeIcon className="h-5 w-5" />
@@ -955,15 +986,20 @@ export const CropDetailPlansTab = ({
   onOpenTask,
 }: CropDetailPlansTabProps) => {
   const planCounts = {
-    cultivation: baseRelevantPlans.filter((plan) => plan.purpose === "cultivation")
-      .length,
+    cultivation: baseRelevantPlans.filter(
+      (plan) => plan.purpose === "cultivation",
+    ).length,
     "facility-upgrade": baseRelevantPlans.filter(
       (plan) => plan.purpose === "facility-upgrade",
     ).length,
-    treatment: baseRelevantPlans.filter((plan) => plan.purpose === "treatment").length,
-    amendment: baseRelevantPlans.filter((plan) => plan.purpose === "amendment").length,
-    harvest: baseRelevantPlans.filter((plan) => plan.purpose === "harvest").length,
-    incurred: baseRelevantPlans.filter((plan) => plan.purpose === "incurred").length,
+    treatment: baseRelevantPlans.filter((plan) => plan.purpose === "treatment")
+      .length,
+    amendment: baseRelevantPlans.filter((plan) => plan.purpose === "amendment")
+      .length,
+    harvest: baseRelevantPlans.filter((plan) => plan.purpose === "harvest")
+      .length,
+    incurred: baseRelevantPlans.filter((plan) => plan.purpose === "incurred")
+      .length,
   };
 
   return (
@@ -993,23 +1029,25 @@ export const CropDetailPlansTab = ({
               className="w-full"
             >
               <TabsList className="flex h-auto min-w-full w-max gap-1 rounded-2xl bg-slate-100/50 p-1">
-                {(Object.keys(PLAN_PURPOSE_CONFIG) as Plan["purpose"][]).map((purpose) => {
-                  const config = PLAN_PURPOSE_CONFIG[purpose];
-                  const Icon = config.icon;
-                  return (
-                    <TabsTrigger
-                      key={purpose}
-                      value={purpose}
-                      className={cn(
-                        "flex items-center gap-2 whitespace-nowrap rounded-xl px-4 py-2 text-[11px] font-bold uppercase tracking-wider transition-all data-[state=active]:text-white data-[state=active]:shadow-sm",
-                        config.activeClassName,
-                      )}
-                    >
-                      <Icon className="h-3.5 w-3.5" />
-                      {config.label} ({planCounts[purpose]})
-                    </TabsTrigger>
-                  );
-                })}
+                {(Object.keys(PLAN_PURPOSE_CONFIG) as Plan["purpose"][]).map(
+                  (purpose) => {
+                    const config = PLAN_PURPOSE_CONFIG[purpose];
+                    const Icon = config.icon;
+                    return (
+                      <TabsTrigger
+                        key={purpose}
+                        value={purpose}
+                        className={cn(
+                          "flex items-center gap-2 whitespace-nowrap rounded-xl px-4 py-2 text-[11px] font-bold uppercase tracking-wider transition-all data-[state=active]:text-white data-[state=active]:shadow-sm",
+                          config.activeClassName,
+                        )}
+                      >
+                        <Icon className="h-3.5 w-3.5" />
+                        {config.label} ({planCounts[purpose]})
+                      </TabsTrigger>
+                    );
+                  },
+                )}
               </TabsList>
             </Tabs>
           </div>
@@ -1025,7 +1063,7 @@ export const CropDetailPlansTab = ({
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 {relevantPlans.length === 0 ? (
                   <div className="py-8 text-center text-sm italic text-muted-foreground">
-                    Chưa có kế hoạch nào phù hợp với phạm vi vùng canh tác này.
+                    {`Chưa có kế hoạch nào phù hợp với phạm vi ${TERMS.zoneLower} này.`}
                   </div>
                 ) : (
                   relevantPlans.map((plan) => (

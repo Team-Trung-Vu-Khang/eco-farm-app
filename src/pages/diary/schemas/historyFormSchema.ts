@@ -1,8 +1,9 @@
 import { z } from "zod";
+import { TERMS, formatTerm } from "@/config/terminology";
 
 export const historyFormSchema = z
   .object({
-    cultivationZoneId: z.string().min(1, "Vui lòng chọn vùng canh tác"),
+    cultivationZoneId: z.string().min(1, formatTerm.required(TERMS.zone)),
     regimenId: z.string().min(1, "Vui lòng chọn vụ mùa / vụ nuôi"),
     workType: z.string().min(1, "Vui lòng chọn loại công việc"),
     startDate: z.string().min(1, "Vui lòng chọn ngày bắt đầu"),

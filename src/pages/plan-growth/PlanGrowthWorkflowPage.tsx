@@ -40,6 +40,7 @@ import {
   type Node,
 } from "reactflow";
 import { useLocation, useParams } from "wouter";
+import { TERMS } from "@/config/terminology";
 import { usePlanWorkflowDraftStore } from "./hooks/usePlanWorkflowDraftStore";
 import { useFarmPlanMutations } from "@/features/farm-workflow/hooks";
 import { mapPurpose, usePlanPage } from "./hooks/usePlanPage";
@@ -831,7 +832,7 @@ export default function PlanGrowthWorkflowPage({
 
             <div className="space-y-3">
               <div className="flex items-center justify-between gap-3">
-                <Label>Vùng canh tác / vùng nuôi trồng</Label>
+                <Label>{TERMS.zone} / vùng nuôi trồng</Label>
                 <span className="text-xs text-muted-foreground">
                   Chọn nhiều vùng ở cấp vùng
                 </span>

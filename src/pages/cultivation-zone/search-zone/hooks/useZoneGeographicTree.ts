@@ -7,6 +7,7 @@ import type {
   DashboardAreaNode,
   DashboardPlotNode,
 } from "@/pages/dashboard/hooks/useDashboardData";
+import { TERMS } from "@/config/terminology";
 
 export const parseCenterPoint = (item: any): [number, number] | null => {
   if (!item) return null;
@@ -86,8 +87,10 @@ export function useZoneGeographicTree(
     const pSet = new Set<number>();
 
     if (zoneDetailResponse) {
-      if (zoneDetailResponse.regionId) rSet.add(Number(zoneDetailResponse.regionId));
-      if (zoneDetailResponse.region?.id) rSet.add(Number(zoneDetailResponse.region.id));
+      if (zoneDetailResponse.regionId)
+        rSet.add(Number(zoneDetailResponse.regionId));
+      if (zoneDetailResponse.region?.id)
+        rSet.add(Number(zoneDetailResponse.region.id));
 
       if (Array.isArray(zoneDetailResponse.scopes)) {
         zoneDetailResponse.scopes.forEach((s: any) => {
@@ -202,9 +205,12 @@ export function useZoneGeographicTree(
     if (!selectedZoneItem && !zoneDetailResponse) return null;
 
     const id = String(selectedZoneItem?.id || zoneDetailResponse?.id || "");
-    const name = selectedZoneItem?.name || zoneDetailResponse?.name || "Vùng canh tác";
-    const description = selectedZoneItem?.description || zoneDetailResponse?.code || "";
-    const totalAreaHa = selectedZoneItem?.acreageHa || zoneDetailResponse?.acreageHa || 0;
+    const name =
+      selectedZoneItem?.name || zoneDetailResponse?.name || TERMS.zone;
+    const description =
+      selectedZoneItem?.description || zoneDetailResponse?.code || "";
+    const totalAreaHa =
+      selectedZoneItem?.acreageHa || zoneDetailResponse?.acreageHa || 0;
 
     // Build scopes array for DashboardZoneNode
     const builtScopes: DashboardScopeNode[] = regionIds.map((rId) => {
@@ -236,7 +242,8 @@ export function useZoneGeographicTree(
         return {
           id: String(aDetail.id),
           name: aDetail.name || `Khu vực ${aDetail.id}`,
-          totalAreaHa: aDetail.totalAreaHa || aDetail.acreageHa || aDetail.area || 0,
+          totalAreaHa:
+            aDetail.totalAreaHa || aDetail.acreageHa || aDetail.area || 0,
           isCountable: true,
           sickTrees: aDetail.sickTrees || 0,
           treatingTrees: aDetail.treatingTrees || 0,
@@ -262,7 +269,10 @@ export function useZoneGeographicTree(
 
     // Top-level areas for direct area scopes if any
     const standaloneAreas: DashboardAreaNode[] = directAreaIds
-      .filter((aId) => !builtScopes.some((s) => s.areas.some((a) => a.id === String(aId))))
+      .filter(
+        (aId) =>
+          !builtScopes.some((s) => s.areas.some((a) => a.id === String(aId))),
+      )
       .map((aId) => {
         const aDetail = detailedAreaMap.get(aId);
         const rawPlots = aDetail?.plots || aDetail?.productionUnits || [];
@@ -297,10 +307,8 @@ export function useZoneGeographicTree(
         };
       });
 
-    const parsedZoneCenter =
-      parseCenterPoint(zoneDetailResponse) ||
-      parseCenterPoint(selectedZoneItem) ||
-      [11.53, 106.88];
+    const parsedZoneCenter = parseCenterPoint(zoneDetailResponse) ||
+      parseCenterPoint(selectedZoneItem) || [11.53, 106.88];
     const parsedZoneBoundary =
       parseBoundary(zoneDetailResponse) || parseBoundary(selectedZoneItem);
 

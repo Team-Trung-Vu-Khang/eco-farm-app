@@ -3,6 +3,7 @@ import { Badge } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { Layers, MapPin } from "lucide-react";
 import type { DashboardZoneNode } from "../hooks/useDashboardData";
 import { GeographyScopeTree } from "./GeographyScopeTree";
+import { TERMS } from "@/config/terminology";
 
 export interface SelectedUnitState {
   type: "region" | "area" | "plot";
@@ -43,7 +44,7 @@ export function FarmerZoneMapUnitDetailPanel({
           </div>
           <div className="min-w-0 flex-1">
             <span className="text-[9px] font-bold text-emerald-700 uppercase tracking-wider block leading-none mb-0.5">
-              Vùng canh tác
+              {TERMS.zone}
             </span>
             <span className="text-xs font-black text-slate-900 truncate block">
               {selectedZone.name}
@@ -52,7 +53,7 @@ export function FarmerZoneMapUnitDetailPanel({
         </div>
       ) : (
         <div className="p-3 rounded-xl border border-amber-200 bg-amber-50/70 text-amber-800 text-xs font-bold text-center mb-3">
-          Chưa chọn vùng canh tác. Vui lòng chọn vùng canh tác ở trên!
+          Chưa chọn {TERMS.zoneLower}. Vui lòng chọn {TERMS.zoneLower} ở trên!
         </div>
       )}
 

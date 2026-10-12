@@ -17,6 +17,7 @@ import {
 import "leaflet/dist/leaflet.css";
 import { useLocation } from "wouter";
 import type { DashboardZoneNode } from "../hooks/useDashboardData";
+import { formatTerm, TERMS } from "@/config/terminology";
 
 import {
   RedMarker,
@@ -142,7 +143,7 @@ export function FarmerZoneMapBlock({
           </div>
           <div className="min-w-0 flex-1">
             <p className="truncate text-sm font-bold text-slate-800">
-              {selectedZone?.name || "Chọn vùng canh tác"}
+              {selectedZone?.name || formatTerm.select(TERMS.zone)}
             </p>
             <p className="truncate text-[11px] text-slate-500">
               {selectedZone?.description || "Bấm để chọn vùng"}
@@ -161,7 +162,7 @@ export function FarmerZoneMapBlock({
             </div>
             <div>
               <h2 className="font-bold text-base text-slate-800 leading-tight">
-                {selectedZone?.name || "Bản đồ vùng canh tác"}
+                {selectedZone?.name || `Bản đồ ${TERMS.zoneLower}`}
               </h2>
               <p className="text-[11px] text-slate-500 font-medium mt-0.5">
                 {selectedZone?.description ||
@@ -305,7 +306,7 @@ export function FarmerZoneMapBlock({
             }
           >
             <DialogHeader className="sr-only">
-              <DialogTitle>Bản đồ chi tiết vùng canh tác</DialogTitle>
+              <DialogTitle>Bản đồ chi tiết {TERMS.zoneLower}</DialogTitle>
             </DialogHeader>
 
             <div className="flex h-full">

@@ -63,6 +63,7 @@ import SimplePlanForm from "./components/SimplePlanForm";
 import { StageAllocation } from "./components/StageAllocation";
 import { useCropSupplyCatalog } from "./hooks/useCropSupplyCatalog";
 import { usePlanForm } from "./hooks/usePlanForm";
+import { TERMS } from "@/config/terminology";
 import type { GrowthCycleSelection } from "./types";
 
 interface PlanGrowthEditPageProps {
@@ -636,7 +637,7 @@ export default function PlanGrowthEditPage({
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
                       <label className="text-xs text-muted-foreground font-black uppercase tracking-widest">
-                        Vùng canh tác{" "}
+                        {TERMS.zone}{" "}
                         {!isWorkflowContext && (
                           <span className="text-red-500">*</span>
                         )}
@@ -644,7 +645,7 @@ export default function PlanGrowthEditPage({
                       <span className="text-[10px] text-emerald-700 bg-emerald-100 px-2 py-1 rounded-full font-semibold">
                         {isWorkflowContext
                           ? `Kế thừa từ quy trình${workflowInfo?.name ? ` "${workflowInfo.name}"` : ""}`
-                          : "Chọn 1 khu vực/lô từ sơ đồ ban đầu"}
+                          : `Chọn 1 ${TERMS.areaLower}/${TERMS.plotLower} từ sơ đồ ban đầu`}
                       </span>
                     </div>
                     {!isWorkflowContext && (
@@ -685,10 +686,10 @@ export default function PlanGrowthEditPage({
                                   >
                                     <span className="opacity-70 mr-1 uppercase text-[8px] font-black">
                                       {item.type === "region"
-                                        ? "Vùng"
+                                        ? TERMS.region
                                         : item.type === "area"
-                                          ? "Khu"
-                                          : "Lô"}
+                                          ? TERMS.area
+                                          : TERMS.plot}
                                     </span>
                                     {item.name}
                                     {item.parentName && (
@@ -707,7 +708,7 @@ export default function PlanGrowthEditPage({
 
                     {isWorkflowContext && selectionSummary.length === 0 && (
                       <p className="text-xs text-emerald-800/60 italic text-center py-2">
-                        Quy trình chưa có vùng canh tác được thiết lập
+                        Quy trình chưa có ${TERMS.zoneLower} được thiết lập
                       </p>
                     )}
                   </div>
@@ -832,12 +833,12 @@ export default function PlanGrowthEditPage({
                     </div>
                     <div className="flex-1 space-y-2">
                       <p className="text-emerald-100 text-[10px] font-bold uppercase tracking-widest mb-1">
-                        Khu vực canh tác
+                        {`${TERMS.area} canh tác`}
                       </p>
                       <h4 className="text-xl font-black leading-tight">
                         {selectionSummary
                           .map((group) => group.regionName)
-                          .join(", ") || "Chưa chọn vùng"}
+                          .join(", ") || `Chưa chọn ${TERMS.zoneLower}`}
                       </h4>
                       <div className="flex flex-wrap gap-1.5 pt-1">
                         {selectionSummary.flatMap((group) =>
@@ -1653,10 +1654,10 @@ export default function PlanGrowthEditPage({
                             >
                               <span className="opacity-70 mr-1 uppercase text-[8px] font-black">
                                 {item.type === "region"
-                                  ? "Vùng"
+                                  ? TERMS.region
                                   : item.type === "area"
-                                    ? "Khu"
-                                    : "Lô"}
+                                    ? TERMS.area
+                                    : TERMS.plot}
                               </span>
                               {item.name}
                               {item.parentName && (

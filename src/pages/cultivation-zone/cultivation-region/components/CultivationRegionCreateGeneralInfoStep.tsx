@@ -13,6 +13,7 @@ import {
   SelectionCard,
 } from "./index";
 import type { GeographicalSelection } from "./types";
+import { TERMS } from "@/config/terminology";
 
 type Props = {
   name: string;
@@ -86,11 +87,11 @@ export const CultivationRegionCreateGeneralInfoStep = ({
 
           <div className="space-y-4">
             <Label htmlFor="name" className="text-sm font-medium">
-              Tên vùng canh tác <span className="text-red-500">*</span>
+              Tên {TERMS.zoneLower} <span className="text-red-500">*</span>
             </Label>
             <Input
               id="name"
-              placeholder="VD: Vùng trồng Sầu riêng chất lượng cao"
+              placeholder={`VD: ${TERMS.zone} Sầu riêng chất lượng cao`}
               value={name}
               onChange={(event) => setName(event.target.value)}
               className="h-10 border-slate-300 focus:border-primary focus:ring-primary/20"
@@ -145,7 +146,9 @@ export const CultivationRegionCreateGeneralInfoStep = ({
                       regions={regions}
                       onRemove={(ids) => {
                         onConfirmSelections(
-                          selections.filter((selection) => !ids.includes(selection.id)),
+                          selections.filter(
+                            (selection) => !ids.includes(selection.id),
+                          ),
                         );
                       }}
                     />
@@ -185,9 +188,7 @@ export const CultivationRegionCreateGeneralInfoStep = ({
         <div className="space-y-5">
           <div className="flex items-center gap-2 pb-2 border-b">
             <Award className="w-5 h-5 text-primary" />
-            <h3 className="font-semibold text-slate-800">
-              Nhân sự phụ trách
-            </h3>
+            <h3 className="font-semibold text-slate-800">Nhân sự phụ trách</h3>
           </div>
 
           <div className="space-y-6">

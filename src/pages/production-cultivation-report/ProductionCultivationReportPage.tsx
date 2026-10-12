@@ -1,4 +1,5 @@
 import PageWrapper from "@/components/PageWrapper";
+import { TERMS } from "@/config/terminology";
 import useCultivationRegionStore from "@/stores/useCultivationRegionStore";
 import usePlanStore from "@/stores/usePlanStore";
 import useProductionCultivationReportStore from "@/stores/useProductionCultivationReportStore";
@@ -243,7 +244,7 @@ export default function ProductionCultivationReportPage() {
   return (
     <PageWrapper
       title="Báo cáo sản xuất/canh tác"
-      description="Tổng hợp chỉ tiêu điều hành từ kế hoạch, công việc, mùa vụ và vùng canh tác"
+      description={`Tổng hợp chỉ tiêu điều hành từ kế hoạch, công việc, mùa vụ và ${TERMS.zoneLower}`}
       actions={
         <div className="flex items-center gap-2">
           <Button

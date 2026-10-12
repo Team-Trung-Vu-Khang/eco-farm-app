@@ -6,6 +6,7 @@ import {
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { Plus } from "lucide-react";
 import { useCultivationAreaPage } from "./hooks/useCultivationAreaPage";
+import { TERMS, formatTerm } from "@/config/terminology";
 
 const CultivationAreaPage = () => {
   const {
@@ -21,8 +22,8 @@ const CultivationAreaPage = () => {
 
   return (
     <PageWrapper
-      title="Khu vực canh tác"
-      description="Quản lý các thiết lập canh tác theo Vùng trồng"
+      title={TERMS.area}
+      description={`Quản lý các thiết lập theo ${TERMS.region}`}
       actions={
         <Button onClick={handleAdd}>
           <Plus className="w-4 h-4 mr-2" />
@@ -41,7 +42,7 @@ const CultivationAreaPage = () => {
         open={deleteOpen}
         onOpenChange={setDeleteOpen}
         onConfirm={handleConfirmDelete}
-        description="Bạn có chắc chắn muốn xóa khu vực canh tác này? Hành động này không thể hoàn tác."
+        description={formatTerm.deleteConfirm(TERMS.area)}
       />
     </PageWrapper>
   );

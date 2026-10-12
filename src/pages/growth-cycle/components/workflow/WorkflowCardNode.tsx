@@ -9,6 +9,7 @@ import {
   Workflow,
 } from "lucide-react";
 import { Handle, Position, type NodeProps } from "reactflow";
+import { TERMS } from "@/config/terminology";
 
 export type WorkflowNodeKind =
   | "cycle"
@@ -103,21 +104,21 @@ const kindConfig: Record<
     defaultIcon: Activity,
   },
   region: {
-    badge: "Vùng",
+    badge: TERMS.zone,
     wrapperClass:
       "border-slate-200 bg-gradient-to-br from-white via-slate-50 to-slate-100/80 shadow-slate-100/60",
     iconClass: "text-slate-600",
     defaultIcon: MapPin,
   },
   area: {
-    badge: "Khu vực",
+    badge: TERMS.area,
     wrapperClass:
       "border-slate-200 bg-gradient-to-br from-white via-slate-50 to-slate-100/80 shadow-slate-100/60",
     iconClass: "text-slate-600",
     defaultIcon: Layers3,
   },
   plot: {
-    badge: "Lô",
+    badge: TERMS.plot,
     wrapperClass:
       "border-slate-200 bg-gradient-to-br from-white via-slate-50 to-slate-100/80 shadow-slate-100/60",
     iconClass: "text-slate-600",
@@ -163,7 +164,7 @@ const footerActionIconClass = "h-6 w-6";
 
 // Sentinel used by callers (see PlanGrowthCreateWorkflowPage) to signal "no
 // region picked yet" — rendered as plain centered text instead of a chip.
-const EMPTY_REGION_LABEL = "Chưa thiết lập vùng canh tác";
+const EMPTY_REGION_LABEL = `Chưa thiết lập ${TERMS.zoneLower}`;
 
 function WorkflowHandle({
   id,
@@ -337,61 +338,7 @@ export function WorkflowCardNode({ data }: NodeProps<WorkflowCardNodeData>) {
           ].join(" ")}
         >
           <div className="p-4">
-          <div className="flex items-start justify-between gap-3">
-            <Badge
-              variant="outline"
-              className={[
-                "h-8 rounded-xl px-3.5 text-[11px] font-semibold tracking-[0.14em]",
-                posterBadgeClass,
-              ].join(" ")}
-            >
-              {data.eyebrow ?? config.badge}
-            </Badge>
-
-            <div className="flex items-center gap-2">
-              {status && (
-                <Badge
-                  variant="outline"
-                  className={[
-                    "h-8 rounded-xl px-3.5 text-[11px] font-semibold tracking-[0.14em]",
-                    posterStatusClass,
-                  ].join(" ")}
-                >
-                  {data.statusLabel ?? status.label}
-                </Badge>
-              )}
-              {cornerAction && (
-                <Button
-                  type="button"
-                  size="sm"
-                  aria-label={cornerAction.label}
-                  className="nodrag h-8 gap-1.5 rounded-xl border border-emerald-200 bg-emerald-50 px-3 text-[11px] font-semibold text-emerald-700 shadow-none hover:bg-emerald-100"
-                  disabled={cornerAction.disabled}
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    cornerAction.onClick();
-                  }}
-                  onMouseDown={(event) => event.stopPropagation()}
-                >
-                  <cornerAction.icon className="h-4 w-4" />
-                  {cornerAction.label}
-                </Button>
-              )}
-            </div>
-          </div>
-
-          <h3
-            className={[
-              "mt-4 text-[20px] font-extrabold leading-[1.12] tracking-[-0.03em] sm:text-[22px]",
-              isDarkPoster ? "text-white" : "text-slate-900",
-              data.kind === "plan" ? "text-center" : "",
-            ].join(" ")}
-          >
-            {data.title}
-          </h3>
-
-          {data.badgeBelowTitle ? (
-            <div className="mt-3">
+            <div className="flex items-start justify-between gap-3">
               <Badge
                 variant="outline"
                 className={[
@@ -399,141 +346,195 @@ export function WorkflowCardNode({ data }: NodeProps<WorkflowCardNodeData>) {
                   posterBadgeClass,
                 ].join(" ")}
               >
-                {data.badgeBelowTitle}
+                {data.eyebrow ?? config.badge}
               </Badge>
-            </div>
-          ) : null}
 
-          {data.tags?.length ? (
-            <div className="mt-3 flex flex-wrap gap-2">
-              {data.tags.map((tag) => (
+              <div className="flex items-center gap-2">
+                {status && (
+                  <Badge
+                    variant="outline"
+                    className={[
+                      "h-8 rounded-xl px-3.5 text-[11px] font-semibold tracking-[0.14em]",
+                      posterStatusClass,
+                    ].join(" ")}
+                  >
+                    {data.statusLabel ?? status.label}
+                  </Badge>
+                )}
+                {cornerAction && (
+                  <Button
+                    type="button"
+                    size="sm"
+                    aria-label={cornerAction.label}
+                    className="nodrag h-8 gap-1.5 rounded-xl border border-emerald-200 bg-emerald-50 px-3 text-[11px] font-semibold text-emerald-700 shadow-none hover:bg-emerald-100"
+                    disabled={cornerAction.disabled}
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      cornerAction.onClick();
+                    }}
+                    onMouseDown={(event) => event.stopPropagation()}
+                  >
+                    <cornerAction.icon className="h-4 w-4" />
+                    {cornerAction.label}
+                  </Button>
+                )}
+              </div>
+            </div>
+
+            <h3
+              className={[
+                "mt-4 text-[20px] font-extrabold leading-[1.12] tracking-[-0.03em] sm:text-[22px]",
+                isDarkPoster ? "text-white" : "text-slate-900",
+                data.kind === "plan" ? "text-center" : "",
+              ].join(" ")}
+            >
+              {data.title}
+            </h3>
+
+            {data.badgeBelowTitle ? (
+              <div className="mt-3">
                 <Badge
-                  key={tag}
                   variant="outline"
                   className={[
                     "h-8 rounded-xl px-3.5 text-[11px] font-semibold tracking-[0.14em]",
                     posterBadgeClass,
                   ].join(" ")}
                 >
-                  {tag}
+                  {data.badgeBelowTitle}
                 </Badge>
-              ))}
-            </div>
-          ) : null}
-
-          {data.description && (
-            <p
-              className={[
-                "mt-3 max-w-[720px] text-[13px] leading-6",
-                posterDescriptionClass,
-                data.kind === "plan" ? "pl-2" : "",
-              ].join(" ")}
-            >
-              {data.description}
-            </p>
-          )}
-
-          {data.summaries?.length ? (
-            <div
-              className={[
-                "mt-5 grid grid-cols-5 gap-x-3 gap-y-3",
-                "min-w-0",
-              ].join(" ")}
-            >
-              {data.summaries.map((summary) => (
-                <div
-                  key={`${data.title}-${summary.label}`}
-                  className={[posterSummaryClass, "min-w-0"].join(" ")}
-                >
-                  <p className={posterSummaryLabelClass}>{summary.label}</p>
-                  <p className={posterSummaryValueClass}>{summary.value}</p>
-                </div>
-              ))}
-            </div>
-          ) : null}
-
-          {data.regionLabels?.length ? (
-            <div
-              className={[
-                "mt-5 rounded-[18px] border-2 border-dashed px-4 py-3",
-                posterRegionWrapClass,
-              ].join(" ")}
-            >
-              <div
-                className={[
-                  "mx-auto -mt-6 w-fit rounded-full px-3 text-[11px] font-semibold uppercase tracking-[0.16em]",
-                  posterRegionTitleClass,
-                ].join(" ")}
-              >
-                Vùng canh tác
               </div>
-              {data.regionLabels.length === 1 &&
-              data.regionLabels[0] === EMPTY_REGION_LABEL ? (
-                <p
-                  className={[
-                    "mt-3 text-center text-[13px] font-normal",
-                    isDarkPoster ? "text-slate-300" : "text-slate-500",
-                  ].join(" ")}
-                >
-                  {EMPTY_REGION_LABEL}
-                </p>
-              ) : (
-                <div className="mt-3 grid gap-2 text-center md:grid-cols-2">
-                  {data.regionLabels.map((label) => (
-                    <div
-                      key={label}
-                      className={[
-                        "rounded-xl border px-3 py-2 text-center text-[12px] font-medium leading-5",
-                        posterRegionChipClass,
-                      ].join(" ")}
-                    >
-                      {label}
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          ) : null}
+            ) : null}
 
-          {data.actions?.length && !cornerAction ? (
-            <div
-              className={[
-                "mt-5 grid gap-2.5",
-                data.actions.length >= 3
-                  ? "md:grid-cols-3"
-                  : data.actions.length === 2
-                    ? "grid-cols-2"
-                    : "grid-cols-1",
-              ].join(" ")}
-            >
-              {data.actions.map((action) => {
-                const ActionIcon = action.icon;
-
-                return (
-                  <Button
-                    key={`${data.title}-${action.label}`}
-                    size="sm"
+            {data.tags?.length ? (
+              <div className="mt-3 flex flex-wrap gap-2">
+                {data.tags.map((tag) => (
+                  <Badge
+                    key={tag}
                     variant="outline"
                     className={[
-                      "nodrag h-10 justify-center gap-2 rounded-xl px-4 text-[12px] font-semibold shadow-none",
-                      action.tone === "destructive"
-                        ? posterActionDestructiveClass
-                        : posterActionClass,
+                      "h-8 rounded-xl px-3.5 text-[11px] font-semibold tracking-[0.14em]",
+                      posterBadgeClass,
                     ].join(" ")}
-                    disabled={action.disabled}
-                    onClick={(event) => {
-                      event.stopPropagation();
-                      action.onClick();
-                    }}
-                    onMouseDown={(event) => event.stopPropagation()}
                   >
-                    <ActionIcon className="h-4 w-4" />
-                    {action.label}
-                  </Button>
-                );
-              })}
-            </div>
-          ) : null}
+                    {tag}
+                  </Badge>
+                ))}
+              </div>
+            ) : null}
+
+            {data.description && (
+              <p
+                className={[
+                  "mt-3 max-w-[720px] text-[13px] leading-6",
+                  posterDescriptionClass,
+                  data.kind === "plan" ? "pl-2" : "",
+                ].join(" ")}
+              >
+                {data.description}
+              </p>
+            )}
+
+            {data.summaries?.length ? (
+              <div
+                className={[
+                  "mt-5 grid grid-cols-5 gap-x-3 gap-y-3",
+                  "min-w-0",
+                ].join(" ")}
+              >
+                {data.summaries.map((summary) => (
+                  <div
+                    key={`${data.title}-${summary.label}`}
+                    className={[posterSummaryClass, "min-w-0"].join(" ")}
+                  >
+                    <p className={posterSummaryLabelClass}>{summary.label}</p>
+                    <p className={posterSummaryValueClass}>{summary.value}</p>
+                  </div>
+                ))}
+              </div>
+            ) : null}
+
+            {data.regionLabels?.length ? (
+              <div
+                className={[
+                  "mt-5 rounded-[18px] border-2 border-dashed px-4 py-3",
+                  posterRegionWrapClass,
+                ].join(" ")}
+              >
+                <div
+                  className={[
+                    "mx-auto -mt-6 w-fit rounded-full px-3 text-[11px] font-semibold uppercase tracking-[0.16em]",
+                    posterRegionTitleClass,
+                  ].join(" ")}
+                >
+                  {TERMS.zone}
+                </div>
+                {data.regionLabels.length === 1 &&
+                data.regionLabels[0] === EMPTY_REGION_LABEL ? (
+                  <p
+                    className={[
+                      "mt-3 text-center text-[13px] font-normal",
+                      isDarkPoster ? "text-slate-300" : "text-slate-500",
+                    ].join(" ")}
+                  >
+                    {EMPTY_REGION_LABEL}
+                  </p>
+                ) : (
+                  <div className="mt-3 grid gap-2 text-center md:grid-cols-2">
+                    {data.regionLabels.map((label) => (
+                      <div
+                        key={label}
+                        className={[
+                          "rounded-xl border px-3 py-2 text-center text-[12px] font-medium leading-5",
+                          posterRegionChipClass,
+                        ].join(" ")}
+                      >
+                        {label}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ) : null}
+
+            {data.actions?.length && !cornerAction ? (
+              <div
+                className={[
+                  "mt-5 grid gap-2.5",
+                  data.actions.length >= 3
+                    ? "md:grid-cols-3"
+                    : data.actions.length === 2
+                      ? "grid-cols-2"
+                      : "grid-cols-1",
+                ].join(" ")}
+              >
+                {data.actions.map((action) => {
+                  const ActionIcon = action.icon;
+
+                  return (
+                    <Button
+                      key={`${data.title}-${action.label}`}
+                      size="sm"
+                      variant="outline"
+                      className={[
+                        "nodrag h-10 justify-center gap-2 rounded-xl px-4 text-[12px] font-semibold shadow-none",
+                        action.tone === "destructive"
+                          ? posterActionDestructiveClass
+                          : posterActionClass,
+                      ].join(" ")}
+                      disabled={action.disabled}
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        action.onClick();
+                      }}
+                      onMouseDown={(event) => event.stopPropagation()}
+                    >
+                      <ActionIcon className="h-4 w-4" />
+                      {action.label}
+                    </Button>
+                  );
+                })}
+              </div>
+            ) : null}
           </div>
         </div>
         {isDarkPoster && data.footerAction ? (
@@ -558,7 +559,7 @@ export function WorkflowCardNode({ data }: NodeProps<WorkflowCardNodeData>) {
                 ) : (
                   <Workflow className={footerActionIconClass} />
                 )}
-                </Button>
+              </Button>
             </div>
           </div>
         ) : (

@@ -4,6 +4,7 @@ import { CheckCircle, ChevronLeft, Layers } from "lucide-react";
 import { useLocation } from "wouter";
 import { CultivationRegionDetailView } from "./components/CultivationRegionDetailView";
 import { useCultivationRegionDetailPage } from "./hooks/useCultivationRegionDetailPage";
+import { TERMS } from "@/config/terminology";
 
 const CultivationRegionDetailPage = () => {
   const { title, code, status } = useCultivationRegionDetailPage();
@@ -31,7 +32,7 @@ const CultivationRegionDetailPage = () => {
           </div>
           <div>
             <h2 className="text-xl font-bold text-slate-800">
-              Hồ sơ vùng trồng: {title}
+              Hồ sơ {TERMS.zoneLower}: {title}
             </h2>
             {code && (
               <p className="mt-0.5 text-xs font-medium text-slate-500">

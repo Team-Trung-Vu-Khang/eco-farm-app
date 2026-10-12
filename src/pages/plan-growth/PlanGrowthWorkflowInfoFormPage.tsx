@@ -32,6 +32,7 @@ import { ArrowLeft, Calendar, Layers, Save, Sprout } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useLocation, useParams } from "wouter";
+import { TERMS, formatTerm } from "@/config/terminology";
 import * as z from "zod";
 import GeographicalSelector from "./components/GeographicalSelector";
 import GrowthCycleSelector from "./components/GrowthCycleSelector";
@@ -198,7 +199,7 @@ export default function PlanGrowthWorkflowInfoFormPage() {
       (cultivationZones || []).map((zone) => ({
         id: zone.id,
         code: zone.code || `CZ-${zone.id}`,
-        name: zone.name || `Vùng canh tác #${zone.id}`,
+        name: zone.name || `${TERMS.zone} #${zone.id}`,
       })),
     [cultivationZones],
   );
@@ -271,8 +272,8 @@ export default function PlanGrowthWorkflowInfoFormPage() {
         id: String(z.id),
         type: "region" as const,
         regionId: String(z.id),
-        name: z.name || z.code || `Vùng #${z.id}`,
-        regionName: z.name || z.code || `Vùng #${z.id}`,
+        name: z.name || z.code || `${TERMS.zone} #${z.id}`,
+        regionName: z.name || z.code || `${TERMS.zone} #${z.id}`,
       })),
   );
 
@@ -338,8 +339,8 @@ export default function PlanGrowthWorkflowInfoFormPage() {
           id: String(z.id),
           type: "region" as const,
           regionId: String(z.id),
-          name: z.name || z.code || `Vùng #${z.id}`,
-          regionName: z.name || z.code || `Vùng #${z.id}`,
+          name: z.name || z.code || `${TERMS.zone} #${z.id}`,
+          regionName: z.name || z.code || `${TERMS.zone} #${z.id}`,
         })),
       );
     }
@@ -388,9 +389,8 @@ export default function PlanGrowthWorkflowInfoFormPage() {
     if (scopes.length === 0) {
       setRegionsTouched(true);
       toast({
-        title: "Chưa chọn vùng canh tác hợp lệ",
-        description:
-          "Vui lòng chọn Vùng canh tác có chứa thông tin vùng địa lý.",
+        title: `Chưa chọn ${TERMS.zoneLower} hợp lệ`,
+        description: `Vui lòng chọn ${TERMS.zone} có chứa thông tin ${TERMS.regionLower}.`,
         variant: "destructive",
       });
       return;
@@ -635,7 +635,7 @@ export default function PlanGrowthWorkflowInfoFormPage() {
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <label className="text-xs text-muted-foreground font-black uppercase tracking-widest">
-                    Phạm vi vùng địa lý
+                    Phạm vi ${TERMS.regionLower}
                   </label>
                 </div>
                 <GeographicalSelector
@@ -655,10 +655,10 @@ export default function PlanGrowthWorkflowInfoFormPage() {
                 <div className="flex items-center justify-between">
                   <label className="text-xs text-muted-foreground font-black uppercase tracking-widest flex items-center gap-1.5">
                     <Sprout className="w-3.5 h-3.5 text-emerald-600" />
-                    Vùng canh tác <span className="text-red-500">*</span>
+                    {TERMS.zone} <span className="text-red-500">*</span>
                   </label>
                   <span className="text-[10px] text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full font-medium">
-                    Chọn 1 vùng
+                    {`Chọn 1 ${TERMS.zoneLower}`}
                   </span>
                 </div>
                 <GeographicalSelector
@@ -667,8 +667,8 @@ export default function PlanGrowthWorkflowInfoFormPage() {
                   existingSelections={zoneSelections}
                   regionOnly={true}
                   multiSelect={false}
-                  triggerLabel="Chọn Vùng canh tác"
-                  dialogTitle="Chọn Vùng canh tác với Quy trình"
+                  triggerLabel={formatTerm.select(TERMS.zone)}
+                  dialogTitle={`Chọn ${TERMS.zone} với Quy trình`}
                   onConfirm={(newSelections) => {
                     setZoneSelections(newSelections);
                     setRegionsTouched(true);
@@ -678,19 +678,19 @@ export default function PlanGrowthWorkflowInfoFormPage() {
                   zoneSelections.length === 0 &&
                   selections.length === 0 && (
                     <p className="text-xs text-destructive">
-                      Vui lòng chọn ít nhất một Vùng canh tác
+                      {`Vui lòng chọn ít nhất một ${TERMS.zoneLower}`}
                     </p>
                   )}
                 {zoneSelections.length > 0 && (
                   <div className="mt-3 p-4 rounded-xl bg-white/50 border border-emerald-100/50 space-y-3">
                     <div className="text-[10px] font-bold text-emerald-800/60 uppercase tracking-widest flex items-center gap-2">
                       <Layers className="w-3 h-3 text-emerald-600" />
-                      Vùng canh tác đã chọn
+                      {`${TERMS.zone} đã chọn`}
                     </div>
                     <div className="space-y-2">
                       <div className="flex items-center gap-1.5 text-[11px] font-bold text-slate-700">
                         <div className="w-1 h-1 rounded-full bg-emerald-500" />
-                        Vùng canh tác
+                        {TERMS.zone}
                       </div>
                       <div className="flex flex-wrap gap-1.5 pl-2.5">
                         {zoneSelections.map((sel) => {
@@ -699,9 +699,9 @@ export default function PlanGrowthWorkflowInfoFormPage() {
                           );
                           const displayName =
                             sel.regionName ||
-                            sel.name ||
+                            sel?.name ||
                             zoneObj?.name ||
-                            `Vùng #${sel.regionId}`;
+                            `${TERMS.zone} #${sel.regionId}`;
                           return (
                             <Badge
                               key={sel.regionId}
@@ -709,7 +709,7 @@ export default function PlanGrowthWorkflowInfoFormPage() {
                               className="text-[10px] py-0 px-2 h-5.5 font-medium bg-emerald-100 text-emerald-800 border-emerald-100 shadow-sm"
                             >
                               <span className="opacity-70 mr-1 uppercase text-[8px] font-black">
-                                VÙNG
+                                {TERMS.zone.toUpperCase()}
                               </span>
                               {displayName}
                               <button

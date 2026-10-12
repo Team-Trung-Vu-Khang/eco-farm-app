@@ -38,6 +38,7 @@ import {
   type NodeChange,
 } from "reactflow";
 import { useLocation, useParams } from "wouter";
+import { TERMS } from "@/config/terminology";
 import {
   useFarmPlanMutations,
   useFarmWorkflowById,
@@ -295,7 +296,7 @@ function getRegionLabelsFromPlan(
   const summary = plan.selectionSummary?.length
     ? plan.selectionSummary
     : summarizePlanSelections(plan, regions);
-  if (!summary.length) return ["Chưa thiết lập vùng canh tác"];
+  if (!summary.length) return [`Chưa thiết lập ${TERMS.zoneLower}`];
 
   return summary.map((group) => {
     const itemLabel = group.items.map((item) => item.name).join(", ");
@@ -308,7 +309,7 @@ function getRegionLabelsFromSelections(
   regions: ReturnType<typeof useRegionStore.getState>["regions"],
 ) {
   const summary = summarizeSelections(selections, regions || []);
-  if (!summary.length) return ["Chưa thiết lập vùng canh tác"];
+  if (!summary.length) return [`Chưa thiết lập ${TERMS.zoneLower}`];
 
   return summary.map((group) => {
     const itemLabel = group.items.map((item) => item.name).join(", ");
@@ -1036,8 +1037,8 @@ export default function PlanGrowthCreateWorkflowPage() {
 
   return (
     <PageWrapper
-      title="Vụ mùa canh tác"
-      description="Quy trình triển khai các kế hoạch được liên kết với nhau trong vụ mùa"
+      title={`${TERMS.workflow} canh tác`}
+      description={`Quy trình triển khai các kế hoạch được liên kết với nhau trong ${TERMS.workflowLower}`}
       actions={
         <div className="flex flex-wrap gap-2">
           <Button
@@ -1064,12 +1065,11 @@ export default function PlanGrowthCreateWorkflowPage() {
           <div className="rounded-3xl border border-dashed border-slate-300 bg-white p-10 text-center shadow-sm">
             <Workflow className="mx-auto h-10 w-10 text-slate-400" />
             <p className="mx-auto mt-4 max-w-md text-sm text-slate-600">
-              Bắt đầu vụ mùa canh tác mới trước khi xây dựng các kế hoạch liên
-              kết với nhau.
+              {`Bắt đầu ${TERMS.workflowLower} canh tác mới trước khi xây dựng các kế hoạch liên kết với nhau.`}
             </p>
             <Button className="mt-6" onClick={handleOpenCreateInfoNode}>
               <Plus className="mr-2 h-4 w-4" />
-              Tạo thông tin vụ mới
+              {`Tạo thông tin ${TERMS.workflowLower} mới`}
             </Button>
           </div>
         ) : (

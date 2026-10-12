@@ -7,11 +7,12 @@ import type {
   FarmCultivationZoneResponse,
   FarmCultivationZoneScopeResponse,
 } from "../../../../features/farm/types/farm.type";
+import { TERMS, formatTerm } from "@/config/terminology";
 
 const SCOPE_TYPE_LABELS: Record<string, string> = {
-  REGION: "Vùng trồng",
-  AREA: "Khu vực",
-  PLOT: "Lô trồng",
+  REGION: TERMS.region,
+  AREA: TERMS.area,
+  PLOT: TERMS.plot,
 };
 
 const STATUS_LABELS: Record<string, string> = {
@@ -25,94 +26,94 @@ export const getCultivationRegionColumns = (
   onToggleStatus?: (row: FarmCultivationZoneResponse) => void,
   togglingId?: number | null,
 ): Column<FarmCultivationZoneResponse>[] => [
-    {
-      key: "code",
-      label: "Mã",
-      mobilePriority: "secondary",
-      render: (_, row) => (
-        <Link href={`/cultivation-region/${row.id}`}>
-          <CodeBadge value={row.code || `#${row.id}`} />
-        </Link>
-      ),
-    },
-    {
-      key: "name",
-      label: "Tên vùng canh tác",
-      mobilePriority: "primary",
-      render: (value) => <span className="font-medium">{value as string}</span>,
-    },
-    {
-      key: "scopes",
-      label: "Phạm vi",
-      mobilePriority: "secondary",
-      render: (value) => {
-        const scopes = value as FarmCultivationZoneScopeResponse[] | undefined;
-        if (!scopes || scopes.length === 0)
-          return <span className="text-muted-foreground text-xs">—</span>;
-        return (
-          <div className="flex flex-wrap gap-1">
-            {scopes.map((scope, idx) => {
-              const typeLabel =
-                SCOPE_TYPE_LABELS[scope.scopeType] ?? scope.scopeType;
-              // Tên của thực thể tương ứng với scopeType (Vùng trồng / Khu vực / Lô trồng)
-              const target =
-                scope.scopeType === "REGION"
-                  ? scope.region
-                  : scope.scopeType === "AREA"
-                    ? scope.area
-                    : scope.plot;
-              const name = target?.name || target?.code;
+  {
+    key: "code",
+    label: "Mã",
+    mobilePriority: "secondary",
+    render: (_, row) => (
+      <Link href={`/cultivation-region/${row.id}`}>
+        <CodeBadge value={row.code || `#${row.id}`} />
+      </Link>
+    ),
+  },
+  {
+    key: "name",
+    label: formatTerm.name(TERMS.zone),
+    mobilePriority: "primary",
+    render: (value) => <span className="font-medium">{value as string}</span>,
+  },
+  {
+    key: "scopes",
+    label: "Phạm vi",
+    mobilePriority: "secondary",
+    render: (value) => {
+      const scopes = value as FarmCultivationZoneScopeResponse[] | undefined;
+      if (!scopes || scopes.length === 0)
+        return <span className="text-muted-foreground text-xs">—</span>;
+      return (
+        <div className="flex flex-wrap gap-1">
+          {scopes.map((scope, idx) => {
+            const typeLabel =
+              SCOPE_TYPE_LABELS[scope.scopeType] ?? scope.scopeType;
+            // Tên của thực thể tương ứng với scopeType (Vùng trồng / Khu vực / Lô trồng)
+            const target =
+              scope.scopeType === "REGION"
+                ? scope.region
+                : scope.scopeType === "AREA"
+                  ? scope.area
+                  : scope.plot;
+            const name = target?.name || target?.code;
 
-              return (
-                <Badge key={idx} variant="outline" className="font-normal">
-                  <span className="text-muted-foreground">{typeLabel}</span>
-                  {name && (
-                    <>
-                      <span className="mx-1 text-muted-foreground">·</span>
-                      <span className="font-medium">{name}</span>
-                    </>
-                  )}
-                </Badge>
-              );
-            })}
-          </div>
-        );
-      },
-    },
-    {
-      key: "status",
-      label: "Trạng thái",
-      mobilePriority: "badge",
-      render: (value, row) => {
-        const status = value as string;
-        const isActive = status === "active";
-        const isToggling = togglingId === row.id;
-        return (
-          <div className="flex items-center gap-2">
-            <Badge variant={isActive ? "default" : "secondary"}>
-              {STATUS_LABELS[status] ?? status}
-            </Badge>
-            {onToggleStatus && status !== "archived" && (
-              <Button
-                variant="outline"
-                size="sm"
-                className="h-7 gap-1.5 px-2.5 text-xs font-medium text-muted-foreground hover:text-foreground"
-                disabled={isToggling}
-                onClick={(event) => {
-                  event.stopPropagation();
-                  onToggleStatus(row);
-                }}
-              >
-                {isToggling ? (
-                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                ) : (
-                  <Power className="h-3.5 w-3.5" />
+            return (
+              <Badge key={idx} variant="outline" className="font-normal">
+                <span className="text-muted-foreground">{typeLabel}</span>
+                {name && (
+                  <>
+                    <span className="mx-1 text-muted-foreground">·</span>
+                    <span className="font-medium">{name}</span>
+                  </>
                 )}
-                {isActive ? "Tạm dừng" : "Kích hoạt"}
-              </Button>
-            )}
-          </div>
-        );
-      },
+              </Badge>
+            );
+          })}
+        </div>
+      );
     },
-  ];
+  },
+  {
+    key: "status",
+    label: "Trạng thái",
+    mobilePriority: "badge",
+    render: (value, row) => {
+      const status = value as string;
+      const isActive = status === "active";
+      const isToggling = togglingId === row.id;
+      return (
+        <div className="flex items-center gap-2">
+          <Badge variant={isActive ? "default" : "secondary"}>
+            {STATUS_LABELS[status] ?? status}
+          </Badge>
+          {onToggleStatus && status !== "archived" && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-7 gap-1.5 px-2.5 text-xs font-medium text-muted-foreground hover:text-foreground"
+              disabled={isToggling}
+              onClick={(event) => {
+                event.stopPropagation();
+                onToggleStatus(row);
+              }}
+            >
+              {isToggling ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <Power className="h-3.5 w-3.5" />
+              )}
+              {isActive ? "Tạm dừng" : "Kích hoạt"}
+            </Button>
+          )}
+        </div>
+      );
+    },
+  },
+];

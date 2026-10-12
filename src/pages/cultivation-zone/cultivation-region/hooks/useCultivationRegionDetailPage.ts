@@ -1,5 +1,6 @@
 import { useParams } from "wouter";
 import { useCultivationZoneById } from "@/features/farm/hooks/useCultivationZones";
+import { TERMS } from "@/config/terminology";
 
 export const useCultivationRegionDetailPage = () => {
   const { id } = useParams<{ id: string }>();
@@ -16,6 +17,6 @@ export const useCultivationRegionDetailPage = () => {
     title: area?.name || "Đang tải...",
     description: area
       ? `Mã: ${area.id} • Tạo: ${area.createdAt ? new Date(area.createdAt).toLocaleDateString("vi-VN") : "---"}`
-      : "Vùng canh tác",
+      : TERMS.zone,
   };
 };

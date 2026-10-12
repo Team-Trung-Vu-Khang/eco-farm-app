@@ -14,11 +14,9 @@ import * as turf from "@turf/turf";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useFieldArray, useForm } from "react-hook-form";
 import { z } from "zod";
+import { TERMS, formatTerm } from "@/config/terminology";
 import { type Plant } from "../../../region-chart/constants";
-import {
-  type PlantEntry,
-  makeEmptyPlant,
-} from "../components/types";
+import { type PlantEntry, makeEmptyPlant } from "../components/types";
 
 /** Convert API boundary (latitude/longitude) → map coords ({lat,lng}) */
 function boundaryToCoords(
@@ -54,16 +52,13 @@ export const plantEntrySchema = z
       .enum(["HEALTHY", "PEST", "HARVESTED", "TREATING", "DEAD"])
       .optional(),
   })
-  .refine(
-    (data) => data.productionVariantId || data.subjectVariantId,
-    {
-      message: "Vui lòng chọn giống cây hoặc hạt giống",
-      path: ["productionVariantId"],
-    },
-  );
+  .refine((data) => data.productionVariantId || data.subjectVariantId, {
+    message: "Vui lòng chọn giống cây hoặc hạt giống",
+    path: ["productionVariantId"],
+  });
 
 export const plantFormSchema = z.object({
-  cultivationRegionId: z.string().min(1, "Vui lòng chọn vùng canh tác"),
+  cultivationRegionId: z.string().min(1, formatTerm.required(TERMS.zone)),
   selectedScopeIds: z
     .array(z.string())
     .min(1, "Vui lòng chọn ít nhất một phạm vi"),
@@ -112,7 +107,8 @@ export const usePlantIdentificationForm = ({
           coordinate: initialData.coordinate || { lat: 11.548, lng: 106.896 },
           isInvalidBoundary: false,
           productionVariantId: (initialData as any).productionVariantId || "",
-          productionVariantName: (initialData as any).productionVariantName || "",
+          productionVariantName:
+            (initialData as any).productionVariantName || "",
           subjectVariantId: (initialData as any).subjectVariantId || "",
           subjectVariantName: (initialData as any).subjectVariantName || "",
           healthStatus: (initialData as any).healthStatus || undefined,
@@ -1015,7 +1011,12 @@ export const usePlantIdentificationForm = ({
     if (updated) {
       setValue("plants", nextPlants);
     }
-  }, [defaultProductionVariantId, productionVarietyOptions, getValues, setValue]);
+  }, [
+    defaultProductionVariantId,
+    productionVarietyOptions,
+    getValues,
+    setValue,
+  ]);
 
   const handleSetActiveEntry = (id: string) => {
     setActiveEntryId(id);
@@ -1342,7 +1343,9 @@ export const usePlantIdentificationForm = ({
           item.productionVariantName ||
           (item.productionVariantId || defaultProductionVariantId
             ? productionVarietyOptions.find(
-                (o) => o.id === (item.productionVariantId || defaultProductionVariantId),
+                (o) =>
+                  o.id ===
+                  (item.productionVariantId || defaultProductionVariantId),
               )?.name
             : "") ||
           "",

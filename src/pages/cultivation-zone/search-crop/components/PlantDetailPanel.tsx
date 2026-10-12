@@ -17,6 +17,7 @@ import {
   type LatLngTuple,
   type PlantItem,
 } from "../utils/plant-identification.utils";
+import { TERMS } from "@/config/terminology";
 // Tạm ẩn badge sức khỏe
 // import { PlantHealthBadge } from "./PlantHealthBadge";
 
@@ -153,7 +154,7 @@ export function PlantDetailPanel({
               label="Hạt giống"
               value={activePlant.subjectVariant?.name}
             />
-            <InfoRow label="Vùng canh tác" value={zoneName} />
+            <InfoRow label={TERMS.zone} value={zoneName} />
             <InfoRow label="Vị trí" value={getLocationText(activePlant)} />
             <InfoRow
               label="Ngày trồng"

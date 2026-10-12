@@ -26,6 +26,7 @@ import {
   Search,
 } from "lucide-react";
 import type { GeographicalSelection } from "@/pages/cultivation-zone/cultivation-region/components/types";
+import { TERMS, formatTerm } from "@/config/terminology";
 
 export interface CultivationZoneOption {
   id: number | string;
@@ -253,7 +254,7 @@ export function CultivationZoneSelector({
       <div className="relative">
         <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground z-10" />
         <Input
-          placeholder="Tìm kiếm vùng, khu vực, lô..."
+          placeholder={`Tìm kiếm ${TERMS.regionLower}, ${TERMS.areaLower}, ${TERMS.plotLower}...`}
           className="pl-10 bg-slate-50 border-slate-200 focus:bg-white transition-all rounded-xl text-sm"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
@@ -546,8 +547,8 @@ export function CultivationZoneSelector({
         >
           <Plus className="w-5 h-5" />
           {existingSelections.length > 0
-            ? `Đã chọn ${existingSelections.length} vùng canh tác`
-            : "Chọn vùng canh tác"}
+            ? `Đã chọn ${existingSelections.length} ${TERMS.zoneLower}`
+            : formatTerm.select(TERMS.zone)}
         </Button>
       )}
 
@@ -568,7 +569,7 @@ export function CultivationZoneSelector({
             <SheetHeader className="p-4 bg-slate-50 border-b shrink-0 text-left">
               <SheetTitle className="flex items-center gap-2 text-base font-bold text-slate-800">
                 <MapPin className="w-5 h-5 text-emerald-600" />
-                Chọn vùng canh tác (vườn)
+                Chọn ${TERMS.zoneLower}
               </SheetTitle>
               <SheetDescription className="text-xs text-slate-500">
                 {regionOnly
@@ -595,12 +596,12 @@ export function CultivationZoneSelector({
             <DialogHeader className="p-6 bg-slate-50 border-b shrink-0">
               <DialogTitle className="flex items-center gap-2">
                 <MapPin className="w-5 h-5 text-primary" />
-                Chọn phạm vi canh tác
+                {`Chọn phạm vi ${TERMS.zoneLower}`}
               </DialogTitle>
               <p className="text-xs text-muted-foreground mt-1">
                 {regionOnly
-                  ? "Chỉ chọn Vùng trồng"
-                  : "Chọn 1 Vùng trồng, Khu vực hoặc Lô đất cụ thể"}
+                  ? `Chỉ chọn ${TERMS.region}`
+                  : `Chọn 1 ${TERMS.region}, ${TERMS.area} hoặc ${TERMS.plot} cụ thể`}
               </p>
             </DialogHeader>
             {searchInputNode}

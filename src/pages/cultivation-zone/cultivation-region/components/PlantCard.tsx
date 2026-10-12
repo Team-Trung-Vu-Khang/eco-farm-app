@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 import * as turf from "@turf/turf";
 import { useSeeds } from "@/features/farm";
+import { TERMS } from "@/config/terminology";
 import {
   PLANT_HEALTH_STATUS_LABELS,
   PLANT_HEALTH_STATUS_OPTIONS,
@@ -443,8 +444,8 @@ export const PlantCard = ({
                   <SelectValue
                     placeholder={
                       productionVarietyOptions.length === 0
-                        ? "Vùng canh tác chưa có giống cây"
-                        : "Chọn giống cây"
+                        ? `${TERMS.zone} chưa có giống ${TERMS.cropLower}`
+                        : `Chọn giống ${TERMS.cropLower}`
                     }
                   />
                 </SelectTrigger>
@@ -460,8 +461,8 @@ export const PlantCard = ({
               {!plant.productionVariantId && !plant.subjectVariantId && (
                 <p className="text-xs text-red-500">
                   {productionVarietyOptions.length === 0
-                    ? "Vùng canh tác chưa cấu hình giống — chọn hạt giống bên dưới nếu có."
-                    : "Vui lòng chọn giống cây."}
+                    ? `${TERMS.zone} chưa cấu hình giống — chọn hạt giống bên dưới nếu có.`
+                    : `Vui lòng chọn giống ${TERMS.cropLower}.`}
                 </p>
               )}
             </div>

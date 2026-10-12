@@ -11,6 +11,7 @@ import type { FarmCultivationZoneRequest } from "@/features/farm/types/farm.type
 import { useSelectedWorkspaceId } from "@/features/workspace";
 import type { CultivationZoneFormValues } from "../data/cultivation-zone-form.schema";
 import { getApiErrorMessage } from "@/shared/lib/api-error";
+import { TERMS, formatTerm } from "@/config/terminology";
 
 export function useCultivationZoneCreateForm(
   reset: (values: Partial<CultivationZoneFormValues>) => void,
@@ -248,13 +249,13 @@ export function useCultivationZoneCreateForm(
         await updateCultivationZone.mutateAsync({ id: zoneId, data: request });
         toast({
           title: "Thành công",
-          description: "Đã cập nhật vùng canh tác thành công",
+          description: formatTerm.updateSuccess(TERMS.zone),
         });
       } else {
         await createCultivationZone.mutateAsync(request);
         toast({
           title: "Thành công",
-          description: "Đã tạo mới vùng canh tác thành công",
+          description: formatTerm.createSuccess(TERMS.zone),
         });
       }
 

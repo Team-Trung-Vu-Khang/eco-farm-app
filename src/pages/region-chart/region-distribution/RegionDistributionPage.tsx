@@ -6,6 +6,7 @@ import {
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { Plus } from "lucide-react";
 import { useRegionDistributionPage } from "../hooks/useRegionDistributionPage";
+import { TERMS, formatTerm } from "@/config/terminology";
 
 const RegionDistributionPage = () => {
   const {
@@ -28,12 +29,12 @@ const RegionDistributionPage = () => {
 
   return (
     <PageWrapper
-      title="Phân bố vùng"
-      description="Quản lý danh sách và bản đồ phân bố vùng trồng"
+      title={`Phân bố ${TERMS.regionLower}`}
+      description={`Quản lý danh sách và bản đồ phân bố ${TERMS.regionLower}`}
       actions={
         <Button onClick={handleAdd}>
           <Plus className="w-4 h-4 mr-2" />
-          Thêm vùng trồng
+          {formatTerm.create(TERMS.region)}
         </Button>
       }
     >
@@ -43,7 +44,7 @@ const RegionDistributionPage = () => {
         data={regions}
         loading={isLoading}
         searchable
-        searchPlaceholder="Tìm kiếm vùng trồng..."
+        searchPlaceholder={formatTerm.search(TERMS.region)}
         onSearch={handleSearch}
         pageSize={pageSize}
         currentIndex={currentIndex}
