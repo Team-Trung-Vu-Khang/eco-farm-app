@@ -151,7 +151,8 @@ export const ZoneGeneralInfoStep = ({
             <div className="space-y-4 pt-2">
               <div className="flex items-center justify-between">
                 <Label className="text-sm font-semibold text-slate-700">
-                  Phạm vi địa lý <span className="text-red-500">*</span>
+                  Phạm vi {TERMS.regionLower}{" "}
+                  <span className="text-red-500">*</span>
                 </Label>
                 {geoSelections.length > 0 && (
                   <Badge
@@ -212,7 +213,7 @@ export const ZoneGeneralInfoStep = ({
                 <p className="text-xs font-medium text-red-500 mt-1">
                   {errors.selections.message ??
                     errors.selections.root?.message ??
-                    "Vui lòng chọn ít nhất 1 phạm vi địa lý"}
+                    `Vui lòng chọn ít nhất 1 ${TERMS.regionLower}`}
                 </p>
               )}
             </div>

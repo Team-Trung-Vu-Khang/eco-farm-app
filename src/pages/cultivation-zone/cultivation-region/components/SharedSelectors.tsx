@@ -5,6 +5,7 @@ import SharedGeographicalSelector, {
 import { useSelectedWorkspaceId } from "@/features/workspace";
 import { useDebounce } from "@/shared/hooks/useDebounce";
 import useSeedStore from "@/stores/useSeedStore";
+import { TERMS } from "@/config/terminology";
 import {
   Badge,
   Button,
@@ -91,11 +92,11 @@ export const SelectionCard = ({
   const getTypeLabel = (type: GeographicalSelection["type"]) => {
     switch (type) {
       case "region":
-        return "Vùng trồng";
+        return TERMS.region;
       case "area":
-        return "Khu vực";
+        return TERMS.area;
       case "plot":
-        return "Lô đất";
+        return TERMS.plot;
     }
   };
 
@@ -285,7 +286,6 @@ export const SelectionCard = ({
     </div>
   );
 };
-
 
 export const GeographicalSelector = (
   props: Omit<SharedGeographicalSelectorProps, "multiSelect">,
