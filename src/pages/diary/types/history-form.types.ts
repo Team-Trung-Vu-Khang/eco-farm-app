@@ -34,6 +34,7 @@ export interface CropSubjectVariantItem {
 }
 
 export interface HistoryFormData {
+  cultivationZoneId?: string;
   regimenId: string;
   workType: string;
   warning: boolean;

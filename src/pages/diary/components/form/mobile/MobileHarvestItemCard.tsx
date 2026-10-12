@@ -18,6 +18,7 @@ interface MobileHarvestItemCardProps {
   harvestScope: "region" | "crop";
   unitOptions: Array<{ label: string; value: string }>;
   onRemove: () => void;
+  canRemove?: boolean;
   changeLocationTrigger?: React.ReactNode;
   onChangeLocation?: () => void;
   onUpdateQuantity: (quantity: string) => void;
@@ -30,6 +31,7 @@ export const MobileHarvestItemCard: React.FC<MobileHarvestItemCardProps> = ({
   harvestScope,
   unitOptions,
   onRemove,
+  canRemove = true,
   changeLocationTrigger,
   onChangeLocation,
   onUpdateQuantity,
@@ -80,14 +82,16 @@ export const MobileHarvestItemCard: React.FC<MobileHarvestItemCardProps> = ({
               Đổi
             </Button>
           ) : null}
-          <button
-            type="button"
-            onClick={onRemove}
-            className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
-            title="Xóa mục này"
-          >
-            <Trash2 className="h-4 w-4" />
-          </button>
+          {canRemove && (
+            <button
+              type="button"
+              onClick={onRemove}
+              className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
+              title="Xóa mục này"
+            >
+              <Trash2 className="h-4 w-4" />
+            </button>
+          )}
         </div>
       </div>
 

@@ -2,6 +2,7 @@ import { z } from "zod";
 
 export const historyFormSchema = z
   .object({
+    cultivationZoneId: z.string().min(1, "Vui lòng chọn vùng canh tác"),
     regimenId: z.string().min(1, "Vui lòng chọn vụ mùa / vụ nuôi"),
     workType: z.string().min(1, "Vui lòng chọn loại công việc"),
     startDate: z.string().min(1, "Vui lòng chọn ngày bắt đầu"),

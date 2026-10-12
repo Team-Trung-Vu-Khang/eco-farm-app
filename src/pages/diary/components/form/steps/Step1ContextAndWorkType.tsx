@@ -33,6 +33,13 @@ import type { FarmTaskResponse } from "@/features/farm-task/types/farm-task.type
 export interface Step1ContextAndWorkTypeProps {
   formData: HistoryFormData;
   setFormData: React.Dispatch<React.SetStateAction<HistoryFormData>>;
+  cultivationZoneOptions: Array<{
+    label: string;
+    value: string;
+    keywords?: string[];
+  }>;
+  cultivationZonesLoading: boolean;
+  setCultivationZoneSearchQuery: (query: string) => void;
   workflowDomainCode: string;
   workflowOptions: Array<{ label: string; value: string }>;
   workflowSearchQuery: string;
@@ -67,6 +74,9 @@ export interface Step1ContextAndWorkTypeProps {
 export function Step1ContextAndWorkType({
   formData,
   setFormData,
+  cultivationZoneOptions,
+  cultivationZonesLoading,
+  setCultivationZoneSearchQuery,
   workflowDomainCode,
   workflowOptions,
   setWorkflowSearchQuery,
@@ -98,11 +108,47 @@ export function Step1ContextAndWorkType({
         <CardHeader className="border-b border-slate-100 pb-3">
           <CardTitle className="flex items-center gap-2 text-base font-bold text-slate-900">
             <ClipboardList className="h-4 w-4 text-emerald-600" />
-            Thông tin vụ mùa & loại công việc
+            Thông tin vùng canh tác, vụ mùa & loại công việc
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-5 pt-6">
-          {/* 1. Chọn Vụ mùa / Quy trình */}
+          {/* 1. Chọn Vùng canh tác */}
+          <div className="space-y-2">
+            <Label required>Vùng canh tác</Label>
+            <RemoteAutoCompleteSelect
+              options={cultivationZoneOptions}
+              value={formData.cultivationZoneId || ""}
+              onChange={(val) => {
+                setFormData((prev) => ({
+                  ...prev,
+                  cultivationZoneId: val,
+                  regimenId: "",
+                }));
+                setSelectedPlanId("");
+                setSelectedStageId("");
+                setPlannedStages([]);
+                setWorkTaskDetails({});
+                if (errors.cultivationZoneId) {
+                  setErrors((prev) => ({ ...prev, cultivationZoneId: "" }));
+                }
+              }}
+              onSearch={(query) => {
+                setCultivationZoneSearchQuery(query);
+              }}
+              placeholder="Chọn vùng canh tác..."
+              searchPlaceholder="Tìm vùng canh tác..."
+              emptyText="Không tìm thấy vùng canh tác phù hợp."
+              loading={cultivationZonesLoading}
+              disabled={!allowModeToggle}
+            />
+            {errors.cultivationZoneId && (
+              <p className="text-xs font-medium text-red-500 mt-1">
+                {errors.cultivationZoneId}
+              </p>
+            )}
+          </div>
+
+          {/* 2. Chọn Vụ mùa / Quy trình */}
           <div className="space-y-2">
             <Label required>{getWorkflowLabel(workflowDomainCode)}</Label>
             <RemoteAutoCompleteSelect
@@ -119,21 +165,25 @@ export function Step1ContextAndWorkType({
               onSearch={(query) => {
                 setWorkflowSearchQuery(query);
               }}
-              placeholder={`Chọn ${getWorkflowLabel(workflowDomainCode).toLowerCase()}...`}
+              placeholder={
+                !formData.cultivationZoneId
+                  ? "Vui lòng chọn vùng canh tác trước..."
+                  : `Chọn ${getWorkflowLabel(workflowDomainCode).toLowerCase()}...`
+              }
               searchPlaceholder={`Tìm ${getWorkflowLabel(workflowDomainCode).toLowerCase()}...`}
               emptyText="Không tìm thấy mục phù hợp."
               loading={workflowsLoading}
-              disabled={!allowModeToggle}
+              disabled={!allowModeToggle || !formData.cultivationZoneId}
             />
             {errors.regimenId && (
               <p className="text-xs font-medium text-red-500 mt-1">
                 {errors.regimenId}
               </p>
             )}
-            <p className="text-xs text-slate-500">
+            {/* <p className="text-xs text-slate-500">
               {getWorkflowSubtitle(workflowDomainCode)} đang được áp dụng cho
               nhật ký này.
-            </p>
+            </p> */}
 
             {/* Bản đồ phạm vi Mùa vụ */}
             {selectedWorkflow && (
@@ -143,7 +193,7 @@ export function Step1ContextAndWorkType({
             )}
           </div>
 
-          {/* 2. Chế độ Theo kế hoạch -> Combobox chọn Kế hoạch & Hạng mục dự kiến (Stage) */}
+          {/* 3. Chế độ Theo kế hoạch -> Combobox chọn Kế hoạch & Hạng mục dự kiến (Stage) */}
           {isPlannedMode && (
             <div className="space-y-4 pt-1 border-t border-slate-100">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
@@ -361,7 +411,7 @@ export function Step1ContextAndWorkType({
             </div>
           )}
 
-          {/* 3. Chọn Loại công việc */}
+          {/* 4. Chọn Loại công việc */}
           <div className="space-y-3 pt-2">
             <Label required>Loại công việc</Label>
             <div className="grid gap-2.5 max-sm:grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">

@@ -27,6 +27,7 @@ import {
   Camera,
   CheckCircle2,
   ImagePlus,
+  MapPin,
   Plus,
   Trash2,
   Upload,
@@ -35,6 +36,7 @@ import {
 import type { DomainCode } from "@/features/farm-supply";
 import type { PhotoRequest } from "@/features/farm-daily-diary";
 import type { FarmTaskResponse } from "@/features/farm-task/types/farm-task.type";
+import type { FarmCultivationZoneResponse } from "@/features/farm/types/farm.type";
 import type { GeographicalSelection } from "@/pages/cultivation-zone/cultivation-region/components/types";
 import {
   getHarvestLabel,
@@ -45,11 +47,7 @@ import type {
   HistoryFormData,
   MaterialAllocation,
 } from "@/pages/diary/types/history-form.types";
-import {
-  CultivationZoneSelector,
-  type CultivationZoneOption,
-} from "@/pages/diary/components/form/CultivationZoneSelector";
-import { GeographicalSelectionCard } from "@/pages/diary/components/form/GeographicalSelectionCard";
+import type { CultivationZoneOption } from "@/pages/diary/components/form/CultivationZoneSelector";
 import { HarvestTreeSelectorDialog } from "@/pages/diary/components/dialogs/HarvestTreeSelectorDialog";
 import { MobileWarningCard } from "@/pages/diary/components/form/mobile/MobileWarningCard";
 import { MobileHarvestItemCard } from "@/pages/diary/components/form/mobile/MobileHarvestItemCard";
@@ -87,6 +85,7 @@ export interface Step2ExecutionAndMaterialsProps {
   existingGeoSelections: GeographicalSelection[];
   handleConfirmGeoSelections: (selectedLeafs: GeographicalSelection[]) => void;
   syncHarvestDetails: (targetIds: string[]) => void;
+  selectedCultivationZone?: FarmCultivationZoneResponse;
 
   // Photo & evidence props
   existingPhotos: PhotoRequest[];
@@ -127,6 +126,7 @@ export function Step2ExecutionAndMaterials({
   existingGeoSelections,
   handleConfirmGeoSelections,
   syncHarvestDetails,
+  selectedCultivationZone,
   existingPhotos,
   removeExistingPhoto,
   removeImage,
@@ -141,6 +141,43 @@ export function Step2ExecutionAndMaterials({
   setIsPhotoSheetOpen,
 }: Step2ExecutionAndMaterialsProps) {
   const isHarvestWorkType = formData.workType === "harvest";
+
+  // Khi loại việc là Thu hoạch và chọn theo Vùng canh tác: Tự động kế thừa Vùng canh tác đã chọn ở Bước 1
+  React.useEffect(() => {
+    if (!isHarvestWorkType || formData.harvestScope !== "region") return;
+    if (!formData.cultivationZoneId) return;
+
+    const zoneIdStr = String(formData.cultivationZoneId);
+    const hasCurrentZone = formData.harvestDetails.some(
+      (d) => String(d.targetId) === zoneIdStr,
+    );
+
+    if (!hasCurrentZone || formData.harvestDetails.length === 0) {
+      const zoneName =
+        selectedCultivationZone?.name || `Vùng canh tác #${zoneIdStr}`;
+      const zoneCode = selectedCultivationZone?.code || zoneName;
+      setFormData((prev) => ({
+        ...prev,
+        harvestTargets: [zoneIdStr],
+        harvestDetails: [
+          {
+            id: `h-zone-${zoneIdStr}`,
+            targetId: zoneIdStr,
+            targetLabel: zoneName,
+            codeName: zoneCode,
+            quantity: prev.harvestDetails[0]?.quantity || "",
+            unitBase: prev.harvestDetails[0]?.unitBase || "kg",
+          },
+        ],
+      }));
+    }
+  }, [
+    isHarvestWorkType,
+    formData.harvestScope,
+    formData.cultivationZoneId,
+    selectedCultivationZone,
+    setFormData,
+  ]);
 
   return (
     <div className="space-y-6">
@@ -453,11 +490,32 @@ export function Step2ExecutionAndMaterials({
                   <button
                     type="button"
                     onClick={() => {
+                      const zoneIdStr = String(
+                        formData.cultivationZoneId || "",
+                      );
+                      const zoneName =
+                        selectedCultivationZone?.name ||
+                        `Vùng canh tác #${zoneIdStr}`;
+                      const zoneCode =
+                        selectedCultivationZone?.code || zoneName;
                       setFormData((prev) => ({
                         ...prev,
                         harvestScope: "region",
-                        harvestTargets: [],
-                        harvestDetails: [],
+                        harvestTargets: zoneIdStr ? [zoneIdStr] : [],
+                        harvestDetails: zoneIdStr
+                          ? [
+                              {
+                                id: `h-zone-${zoneIdStr}`,
+                                targetId: zoneIdStr,
+                                targetLabel: zoneName,
+                                codeName: zoneCode,
+                                quantity:
+                                  prev.harvestDetails[0]?.quantity || "",
+                                unitBase:
+                                  prev.harvestDetails[0]?.unitBase || "kg",
+                              },
+                            ]
+                          : [],
                       }));
                     }}
                     className={`h-11 rounded-xl border px-3 text-xs font-extrabold transition-all cursor-pointer ${
@@ -491,27 +549,33 @@ export function Step2ExecutionAndMaterials({
 
               <div className="space-y-4">
                 {formData.harvestScope === "region" ? (
-                  <CultivationZoneSelector
-                    regions={regionOptions}
-                    existingSelections={existingGeoSelections}
-                    onConfirm={handleConfirmGeoSelections}
-                    regionOnly={true}
-                    isMobile={isMobileOrTablet}
-                    customTrigger={
-                      <Button
-                        type="button"
+                  <div className="rounded-xl border border-emerald-200 bg-emerald-50/60 p-4 space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold uppercase tracking-wider text-emerald-800 flex items-center gap-1.5">
+                        <MapPin className="w-3.5 h-3.5 text-emerald-600" />
+                        Vùng canh tác thu hoạch (Đã chọn ở Bước 1)
+                      </span>
+                      {/* <Badge
                         variant="outline"
-                        className="w-full cursor-pointer border-2 border-dashed border-primary/20 bg-primary/5 hover:bg-primary/10 hover:border-primary/40 text-primary font-bold gap-2 transition-all rounded-lg shadow-sm hover:shadow-md"
+                        className="bg-white text-emerald-700 border-emerald-300 font-bold text-[11px]"
                       >
-                        <Plus className="w-5 h-5" />
-                        <span>
-                          {formData.harvestDetails.length > 0
-                            ? `Đã chọn ${formData.harvestDetails.length} vùng canh tác (Bấm để chọn lại)`
-                            : "Chọn vùng canh tác..."}
+                        Theo Bước 1
+                      </Badge> */}
+                    </div>
+                    <p className="text-sm font-bold text-slate-900">
+                      {selectedCultivationZone?.name ||
+                        `Vùng canh tác #${formData.cultivationZoneId}`}
+                      {selectedCultivationZone?.code && (
+                        <span className="text-xs font-normal text-slate-500 ml-1.5">
+                          ({selectedCultivationZone.code})
                         </span>
-                      </Button>
-                    }
-                  />
+                      )}
+                    </p>
+                    <p className="text-xs text-slate-500">
+                      Sản lượng thu hoạch sẽ được ghi nhận trực tiếp cho vùng
+                      canh tác này.
+                    </p>
+                  </div>
                 ) : (
                   <HarvestTreeSelectorDialog
                     variants={cropSubjectVariants}
@@ -596,6 +660,7 @@ export function Step2ExecutionAndMaterials({
                             index={index}
                             harvestScope={formData.harvestScope}
                             unitOptions={getHarvestUnitOptions()}
+                            canRemove={formData.harvestScope === "crop"}
                             onRemove={() =>
                               syncHarvestDetails(
                                 formData.harvestTargets.filter(
@@ -603,27 +668,7 @@ export function Step2ExecutionAndMaterials({
                                 ),
                               )
                             }
-                            changeLocationTrigger={
-                              formData.harvestScope === "region" ? (
-                                <CultivationZoneSelector
-                                  regions={regionOptions}
-                                  existingSelections={existingGeoSelections}
-                                  onConfirm={handleConfirmGeoSelections}
-                                  regionOnly={true}
-                                  isMobile={true}
-                                  customTrigger={
-                                    <Button
-                                      type="button"
-                                      variant="ghost"
-                                      size="sm"
-                                      className="h-7 px-2 text-xs font-bold text-emerald-600 hover:bg-emerald-50 hover:text-emerald-700 rounded-lg cursor-pointer"
-                                    >
-                                      Đổi
-                                    </Button>
-                                  }
-                                />
-                              ) : undefined
-                            }
+                            changeLocationTrigger={undefined}
                             onUpdateQuantity={(quantity) => {
                               setFormData((prev) => ({
                                 ...prev,
@@ -665,43 +710,23 @@ export function Step2ExecutionAndMaterials({
                                 {index + 1}
                               </p>
                             </div>
-                            <button
-                              type="button"
-                              onClick={() =>
-                                syncHarvestDetails(
-                                  formData.harvestTargets.filter(
-                                    (id) => id !== detail.targetId,
-                                  ),
-                                )
-                              }
-                              className="p-1 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
-                              title="Xóa mục này"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </button>
+                            {formData.harvestScope === "crop" && (
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  syncHarvestDetails(
+                                    formData.harvestTargets.filter(
+                                      (id) => id !== detail.targetId,
+                                    ),
+                                  )
+                                }
+                                className="p-1 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
+                                title="Xóa mục này"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </button>
+                            )}
                           </div>
-
-                          {formData.harvestScope === "region" ? (
-                            <CultivationZoneSelector
-                              regions={regionOptions}
-                              existingSelections={existingGeoSelections}
-                              onConfirm={handleConfirmGeoSelections}
-                              regionOnly={true}
-                              customTrigger={
-                                <GeographicalSelectionCard
-                                  codeName={detail.codeName}
-                                  onChangeLocation={() => {}}
-                                  onRemove={() =>
-                                    syncHarvestDetails(
-                                      formData.harvestTargets.filter(
-                                        (id) => id !== detail.targetId,
-                                      ),
-                                    )
-                                  }
-                                />
-                              }
-                            />
-                          ) : null}
 
                           <div className="grid grid-cols-12 gap-3">
                             <div className="space-y-1.5 col-span-12 md:col-span-8">

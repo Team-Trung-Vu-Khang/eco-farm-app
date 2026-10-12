@@ -17,7 +17,11 @@ import {
 } from "@/features/farm-plan-task-diary";
 import type { DomainCode, SupplyType } from "@/features/farm-supply/types";
 import { useFarmTaskById, useFarmTasks } from "@/features/farm-task/hooks";
-import { useFarmPlans, useFarmWorkflows } from "@/features/farm-workflow/hooks";
+import {
+  useFarmPlans,
+  useFarmWorkflowById,
+  useFarmWorkflows,
+} from "@/features/farm-workflow/hooks";
 import type { FarmWorkflowScopeResponse } from "@/features/farm-workflow/types/farm-workflow.type";
 import { useCultivationZones } from "@/features/farm/hooks/useCultivationZones";
 import { useFarmPersonnel } from "@/features/master-data";
@@ -94,6 +98,7 @@ export function HistoryFormContent({
   );
 
   const [formData, setFormData] = useState<HistoryFormData>({
+    cultivationZoneId: "",
     regimenId: initialWorkflowId || urlWorkflowId,
     workType: "",
     warning: false,
@@ -127,18 +132,94 @@ export function HistoryFormContent({
   const initialTaskDetailsRef = useRef<Record<string, WorkTaskDetail>>({});
   const initialAllocationsRef = useRef<MaterialAllocation[]>([]);
 
+  const [cultivationZoneSearchQuery, setCultivationZoneSearchQuery] =
+    useState("");
+  const debouncedCultivationZoneSearch = useDebounce(
+    cultivationZoneSearchQuery,
+    300,
+  );
+
+  const { items: apiCultivationZones, loading: cultivationZonesLoading } =
+    useCultivationZones({
+      params: {
+        size: 100,
+        includeDetails: true,
+        keyword: debouncedCultivationZoneSearch.trim() || undefined,
+      },
+    });
+
+  const cultivationZoneOptions = useMemo(
+    () =>
+      (apiCultivationZones || []).map((z) => ({
+        label: z.code
+          ? `${z.code} - ${z.name}`
+          : z.name || `Vùng canh tác #${z.id}`,
+        value: String(z.id),
+        keywords: [z.code, z.name].filter(Boolean) as string[],
+      })),
+    [apiCultivationZones],
+  );
+
+  const selectedCultivationZone = useMemo(
+    () =>
+      apiCultivationZones.find(
+        (z) => String(z.id) === String(formData.cultivationZoneId),
+      ),
+    [apiCultivationZones, formData.cultivationZoneId],
+  );
+
   const [workflowSearchQuery, setWorkflowSearchQuery] = useState("");
   const debouncedWorkflowSearch = useDebounce(workflowSearchQuery, 300);
 
-  // Load workflows from API with search keyword
+  // Load workflows from API with search keyword and selected productionZoneId
   const workflowsQuery = useFarmWorkflows({
     params: {
       page: 0,
       size: 100,
       keyword: debouncedWorkflowSearch.trim() || undefined,
+      productionZoneId: formData.cultivationZoneId
+        ? Number(formData.cultivationZoneId)
+        : undefined,
     },
+    enabled: Boolean(formData.cultivationZoneId),
   });
   const workflows = workflowsQuery.items || [];
+
+  // Tự động giải quyết cultivationZoneId nếu mở từ edit/initialTaskId
+  const targetWorkflowId = dailyDiaryDetail?.workflowId
+    ? String(dailyDiaryDetail.workflowId)
+    : formData.regimenId;
+
+  const { data: workflowDetail } = useFarmWorkflowById(targetWorkflowId, {
+    enabled: Boolean(targetWorkflowId) && !formData.cultivationZoneId,
+  });
+
+  useEffect(() => {
+    if (formData.cultivationZoneId) return;
+
+    // 1. Ưu tiên đọc từ metadataJson của bản ghi nhật ký nếu có
+    const metaZoneId = (dailyDiaryDetail as any)?.metadataJson
+      ?.cultivationZoneId;
+    if (metaZoneId) {
+      setFormData((prev) => ({
+        ...prev,
+        cultivationZoneId: String(metaZoneId),
+      }));
+      return;
+    }
+
+    // 2. Nếu không có trong metadataJson, truy ngược từ productionZones của workflow
+    if (
+      workflowDetail?.productionZones &&
+      workflowDetail.productionZones.length > 0
+    ) {
+      const zoneId = workflowDetail.productionZones[0].id;
+      setFormData((prev) => ({
+        ...prev,
+        cultivationZoneId: String(zoneId),
+      }));
+    }
+  }, [dailyDiaryDetail, workflowDetail, formData.cultivationZoneId]);
 
   const workspacePersonnelQuery = useFarmPersonnel({
     params: { size: 100 },
@@ -398,16 +479,21 @@ export function HistoryFormContent({
     });
   };
   const [isDragging, setIsDragging] = useState(false);
-  const { items: apiCultivationZones } = useCultivationZones({
-    params: { size: 100, includeDetails: true },
-  });
+  const scopedCultivationZones = useMemo(() => {
+    if (!formData.cultivationZoneId) return apiCultivationZones;
+    const matched = apiCultivationZones.filter(
+      (z) => String(z.id) === String(formData.cultivationZoneId),
+    );
+    return matched.length > 0 ? matched : apiCultivationZones;
+  }, [apiCultivationZones, formData.cultivationZoneId]);
+
   const regionOptions = useMemo(() => {
-    return toCultivationZoneOptions(apiCultivationZones);
-  }, [apiCultivationZones]);
+    return toCultivationZoneOptions(scopedCultivationZones);
+  }, [scopedCultivationZones]);
 
   const cropSubjectVariants = useMemo(() => {
-    return extractCropSubjectVariants(apiCultivationZones);
-  }, [apiCultivationZones]);
+    return extractCropSubjectVariants(scopedCultivationZones);
+  }, [scopedCultivationZones]);
 
   function getGeographicalTargetId(sel: GeographicalSelection): string {
     if (sel.type === "plot" && sel.plotId) return String(sel.plotId);
@@ -1052,6 +1138,7 @@ export function HistoryFormContent({
     setErrors({});
 
     const formValidationResult = historyFormSchema.safeParse({
+      cultivationZoneId: formData.cultivationZoneId,
       regimenId: formData.regimenId,
       workType: isPlannedMode
         ? formData.workType || "cultivation"
@@ -1307,6 +1394,9 @@ export function HistoryFormContent({
           photos: combinedPhotos.length > 0 ? combinedPhotos : undefined,
           lines,
           harvestItems: harvestItems.length > 0 ? harvestItems : undefined,
+          metadataJson: {
+            cultivationZoneId: formData.cultivationZoneId,
+          },
         };
 
         await createPlanTaskDiaryMutation.mutateAsync(finalPayload);
@@ -1485,6 +1575,9 @@ export function HistoryFormContent({
         photos: combinedPhotos.length > 0 ? combinedPhotos : undefined,
         lines: lines.length > 0 ? lines : undefined,
         harvestItems: harvestItems.length > 0 ? harvestItems : undefined,
+        metadataJson: {
+          cultivationZoneId: formData.cultivationZoneId,
+        },
       };
 
       if (editId) {
@@ -1513,11 +1606,13 @@ export function HistoryFormContent({
 
   // Điều kiện kiểm tra tính hợp lệ của từng bước (isValid của Step)
   const isStep1Valid = useMemo(() => {
+    if (!formData.cultivationZoneId) return false;
     if (!formData.regimenId) return false;
     if (isPlannedMode && (!selectedPlanId || !selectedStageId)) return false;
     if (!formData.workType) return false;
     return true;
   }, [
+    formData.cultivationZoneId,
     formData.regimenId,
     formData.workType,
     isPlannedMode,
@@ -1567,6 +1662,9 @@ export function HistoryFormContent({
           <Step1ContextAndWorkType
             formData={formData}
             setFormData={setFormData}
+            cultivationZoneOptions={cultivationZoneOptions}
+            cultivationZonesLoading={cultivationZonesLoading}
+            setCultivationZoneSearchQuery={setCultivationZoneSearchQuery}
             workflowDomainCode={workflowDomainCode}
             workflowOptions={workflowOptions}
             workflowSearchQuery={workflowSearchQuery}
@@ -1625,6 +1723,7 @@ export function HistoryFormContent({
             existingGeoSelections={existingGeoSelections}
             handleConfirmGeoSelections={handleConfirmGeoSelections}
             syncHarvestDetails={syncHarvestDetails}
+            selectedCultivationZone={selectedCultivationZone}
             existingPhotos={existingPhotos}
             removeExistingPhoto={removeExistingPhoto}
             removeImage={removeImage}
@@ -1657,6 +1756,7 @@ export function HistoryFormContent({
             existingPhotos={existingPhotos}
             workflowDomainCode={workflowDomainCode}
             submittedByPersonnelName={submittedByPersonnelName}
+            selectedCultivationZoneName={selectedCultivationZone?.name}
           />
         ),
         isValid: true,
@@ -1664,6 +1764,10 @@ export function HistoryFormContent({
     ],
     [
       formData,
+      cultivationZoneOptions,
+      cultivationZonesLoading,
+      setCultivationZoneSearchQuery,
+      selectedCultivationZone,
       workflowDomainCode,
       workflowOptions,
       workflowSearchQuery,

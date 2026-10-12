@@ -13,6 +13,7 @@ import {
   ClipboardList,
   Image as ImageIcon,
   Layers,
+  MapPin,
   Package,
   Sprout,
 } from "lucide-react";
@@ -41,6 +42,7 @@ export interface Step3OverviewAndConfirmProps {
   existingPhotos: PhotoRequest[];
   workflowDomainCode: string;
   submittedByPersonnelName?: string;
+  selectedCultivationZoneName?: string;
 }
 
 export function Step3OverviewAndConfirm({
@@ -54,6 +56,7 @@ export function Step3OverviewAndConfirm({
   existingPhotos,
   workflowDomainCode,
   submittedByPersonnelName,
+  selectedCultivationZoneName,
 }: Step3OverviewAndConfirmProps) {
   // Tìm label & icon của loại công việc đã chọn
   const workTypeOption = WORK_TYPE_OPTIONS.find(
@@ -88,16 +91,28 @@ export function Step3OverviewAndConfirm({
         </div>
       </div>
 
-      {/* 1. THẺ TỔNG QUAN: VỤ MÙA & LOẠI CÔNG VIỆC */}
+      {/* 1. THẺ TỔNG QUAN: VÙNG CANH TÁC, VỤ MÙA & LOẠI CÔNG VIỆC */}
       <Card className="border-none bg-white shadow-sm">
         <CardHeader className="border-b border-slate-100 pb-3">
           <CardTitle className="flex items-center gap-2 text-base font-bold text-slate-900">
             <ClipboardList className="h-4 w-4 text-emerald-600" />
-            1. Vụ mùa & Loại công việc
+            1. Vùng canh tác, Vụ mùa & Loại công việc
           </CardTitle>
         </CardHeader>
         <CardContent className="pt-5 space-y-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="rounded-xl bg-slate-50 p-3.5 border border-slate-100">
+              <span className="text-xs text-slate-400 font-semibold block">
+                Vùng canh tác:
+              </span>
+              <p className="font-bold text-sm text-slate-900 mt-1 flex items-center gap-1.5">
+                <MapPin className="w-4 h-4 text-emerald-600 shrink-0" />
+                <span>
+                  {selectedCultivationZoneName || "Chưa chọn vùng canh tác"}
+                </span>
+              </p>
+            </div>
+
             <div className="rounded-xl bg-slate-50 p-3.5 border border-slate-100">
               <span className="text-xs text-slate-400 font-semibold block">
                 {getWorkflowLabel(workflowDomainCode)}:
@@ -113,7 +128,7 @@ export function Step3OverviewAndConfirm({
               )}
             </div>
 
-            <div className="rounded-xl bg-slate-50 p-3.5 border border-slate-100">
+            <div className="rounded-xl bg-slate-50 p-3.5 border border-slate-100 sm:col-span-2 lg:col-span-1">
               <span className="text-xs text-slate-400 font-semibold block">
                 Loại công việc:
               </span>
