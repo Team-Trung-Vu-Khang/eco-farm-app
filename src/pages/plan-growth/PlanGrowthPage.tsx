@@ -22,6 +22,11 @@ import {
 } from "./data/table";
 import { usePlanPage } from "./hooks/usePlanPage";
 import { usePlanWorkflowDraftStore } from "./hooks/usePlanWorkflowDraftStore";
+import {
+  calculateProductionZonesAcreage,
+  extractCropSubjectLabels,
+  extractZoneDisplayNames,
+} from "./utils/workflow-zone-details.util";
 
 interface PlanGrowthPageProps {
   basePath?: string;
@@ -74,9 +79,7 @@ export default function PlanGrowthPage({
   };
 
   const createLabel =
-    domainCode === "CROP"
-      ? "Khởi tạo vụ mùa"
-      : "Khởi tạo vụ nuôi";
+    domainCode === "CROP" ? "Khởi tạo vụ mùa" : "Khởi tạo vụ nuôi";
 
   const workflowRows = useMemo<WorkflowRow[]>(
     () =>
@@ -89,6 +92,9 @@ export default function PlanGrowthPage({
         draftCount: workflow.statusBreakdown?.draft ?? 0,
         completedCount: workflow.statusBreakdown?.completed ?? 0,
         cancelledCount: workflow.statusBreakdown?.cancelled ?? 0,
+        zoneNames: extractZoneDisplayNames(workflow.productionZones),
+        cropNames: extractCropSubjectLabels(workflow.productionZones),
+        totalAcreage: calculateProductionZonesAcreage(workflow.productionZones),
       })),
     [workflows],
   );
@@ -161,7 +167,9 @@ export default function PlanGrowthPage({
           }}
           onFilterChange={(key, value) => {
             if (key === "status") {
-              setStatus(value === "all" ? "" : (value as FarmWorkflowRequestStatus));
+              setStatus(
+                value === "all" ? "" : (value as FarmWorkflowRequestStatus),
+              );
               setCurrentIndex(1);
             }
           }}

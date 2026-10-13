@@ -42,14 +42,18 @@ function getPlanDurationDays(startDate?: string, endDate?: string) {
   return Math.max(1, Math.round((end.getTime() - start.getTime()) / 86400000));
 }
 
-export function mapStatus(planStatus: Plan["status"]): FarmPlanRequest["status"] {
+export function mapStatus(
+  planStatus: Plan["status"],
+): FarmPlanRequest["status"] {
   if (planStatus === "active") return "IN_PROGRESS";
   if (planStatus === "completed") return "COMPLETED";
   if (planStatus === "cancelled") return "CANCELLED";
   return "DRAFT";
 }
 
-export function mapPurpose(planPurpose: Plan["purpose"]): FarmPlanRequest["purpose"] {
+export function mapPurpose(
+  planPurpose: Plan["purpose"],
+): FarmPlanRequest["purpose"] {
   switch (planPurpose) {
     case "facility-upgrade":
       return "FACILITY_UPGRADE";
@@ -106,7 +110,9 @@ function toFarmWorkflowRequest(workflow: Workflow): FarmWorkflowRequest {
           : selection.type === "area"
             ? "AREA"
             : "REGION",
-      scopeId: Number(selection.plotId || selection.areaId || selection.regionId),
+      scopeId: Number(
+        selection.plotId || selection.areaId || selection.regionId,
+      ),
     })),
     seasonIds: workflow.seasonIds,
     status: workflow.isActive ? "ACTIVE" : "INACTIVE",
@@ -123,7 +129,10 @@ interface UsePlanPageOptions {
 
 export function useAquacultureGrowthPage(
   basePath = "/plan-aquaculture-growth",
-  { includePlans = true, domainCode = WORKFLOW_DOMAIN_CODE }: UsePlanPageOptions = {},
+  {
+    includePlans = true,
+    domainCode = WORKFLOW_DOMAIN_CODE,
+  }: UsePlanPageOptions = {},
 ) {
   const { toast } = useToast();
   const [, setLocation] = useLocation();
@@ -141,6 +150,7 @@ export function useAquacultureGrowthPage(
       status: status || undefined,
       page: currentIndex - 1,
       size: pageSize,
+      includeProductionZoneDetails: true,
     },
   });
   const statsQuery = useFarmWorkflowStats({
@@ -235,7 +245,8 @@ export function useAquacultureGrowthPage(
       toast({
         variant: "destructive",
         title: "Lỗi",
-        description: getApiErrorMessage(error) || "Không thể xóa sơ đồ quy trình",
+        description:
+          getApiErrorMessage(error) || "Không thể xóa sơ đồ quy trình",
       });
     }
   };
@@ -251,7 +262,8 @@ export function useAquacultureGrowthPage(
       toast({
         variant: "destructive",
         title: "Lỗi",
-        description: getApiErrorMessage(error) || "Không thể nhân bản sơ đồ quy trình",
+        description:
+          getApiErrorMessage(error) || "Không thể nhân bản sơ đồ quy trình",
       });
     }
   };

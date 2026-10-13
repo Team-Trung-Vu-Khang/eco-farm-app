@@ -94,6 +94,7 @@ export function mapWorkflowResponseToWorkflow(
     isActive: workflow.status === "active",
     createdAt: workflow.createdAt || new Date().toISOString(),
     planCount: workflow.planCount ?? 0,
+    productionZones: workflow.productionZones,
     statusBreakdown: workflow.statusBreakdown
       ? {
           draft: workflow.statusBreakdown.draft,

@@ -1,4 +1,5 @@
 import type { SupplyType } from "@/features/farm-supply/types";
+import type { FarmWorkflowProductionZoneRef } from "@/features/farm-workflow/types/farm-workflow.type";
 
 export interface MaterialAllocation {
   id: number;
@@ -149,6 +150,7 @@ export interface Workflow {
   nodes?: unknown[];
   edges?: unknown[];
   planCount?: number;
+  productionZones?: FarmWorkflowProductionZoneRef[];
   statusBreakdown?: {
     draft?: number;
     inProgress?: number;

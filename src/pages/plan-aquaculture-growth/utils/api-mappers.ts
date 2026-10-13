@@ -87,6 +87,7 @@ export function mapWorkflowResponseToWorkflow(
     isActive: workflow.status === "active",
     createdAt: workflow.createdAt || new Date().toISOString(),
     planCount: workflow.planCount ?? 0,
+    productionZones: workflow.productionZones,
     statusBreakdown: workflow.statusBreakdown
       ? {
           draft: workflow.statusBreakdown.draft,
@@ -249,6 +250,12 @@ const apiPurposeToPlanPurpose: Record<FarmPlanPurpose, Plan["purpose"]> = {
   TREATMENT: "treatment",
   SOIL_IMPROVEMENT: "amendment",
   HARVEST: "harvest",
+  NUTRITION: "nutrition",
+  PLANT_CARE: "plant-care",
+  PEST_DISEASE: "pest-disease",
+  WEED_CONTROL: "weed-control",
+  IRRIGATION: "irrigation",
+  OTHER: "other",
 };
 
 const durationUnitToLabel: Record<FarmWorkDurationUnit, string> = {

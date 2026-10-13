@@ -84,10 +84,58 @@ export interface FarmWorkflowStatusBreakdown {
   cancelled?: number;
 }
 
+export interface FarmWorkflowProductionZoneScopeNode {
+  id: number;
+  code?: string;
+  name?: string;
+  acreage?: number | null;
+  status?: string;
+}
+
+export interface FarmWorkflowProductionZoneAreaScopeNode extends FarmWorkflowProductionZoneScopeNode {
+  region?: FarmWorkflowProductionZoneScopeNode | null;
+}
+
+export interface FarmWorkflowProductionZonePlotScopeNode extends FarmWorkflowProductionZoneScopeNode {
+  area?: FarmWorkflowProductionZoneAreaScopeNode | null;
+}
+
+export interface FarmWorkflowProductionZoneScope {
+  scopeType: "REGION" | "AREA" | "PLOT";
+  region?: FarmWorkflowProductionZoneScopeNode | null;
+  area?: FarmWorkflowProductionZoneAreaScopeNode | null;
+  plot?: FarmWorkflowProductionZonePlotScopeNode | null;
+}
+
+export interface FarmWorkflowSubjectVariant {
+  linkId?: number | null;
+  id: number;
+  code?: string;
+  name: string;
+  imageUrl?: string | null;
+  seeds?: Array<{
+    linkId?: number | null;
+    id: number;
+    code?: string;
+    name: string;
+  }>;
+}
+
+export interface FarmWorkflowSubject {
+  linkId?: number | null;
+  id: number;
+  code?: string;
+  name: string;
+  imageUrl?: string | null;
+  variants?: FarmWorkflowSubjectVariant[];
+}
+
 export interface FarmWorkflowProductionZoneRef {
   id: number;
   code?: string;
   name?: string;
+  scopes?: FarmWorkflowProductionZoneScope[];
+  subjects?: FarmWorkflowSubject[];
 }
 
 export interface FarmWorkflowRequest {
@@ -137,6 +185,8 @@ export interface FarmWorkflowQueryParams {
   status?: FarmWorkflowRequestStatus | FarmWorkflowResponseStatus;
   domainCode?: DomainCode;
   productionZoneId?: number;
+  /** Trả thêm scopes và subjects cho từng vùng trong productionZones */
+  includeProductionZoneDetails?: boolean;
   page?: number;
   size?: number;
 }

@@ -22,6 +22,11 @@ import {
 } from "./data/table";
 import { useAquacultureGrowthPage } from "./hooks/useAquacultureGrowthPage";
 import { useAquacultureGrowthWorkflowDraftStore } from "./hooks/useAquacultureGrowthWorkflowDraftStore";
+import {
+  calculateProductionZonesAcreage,
+  extractCropSubjectLabels,
+  extractZoneDisplayNames,
+} from "@/pages/plan-growth/utils/workflow-zone-details.util";
 
 interface PlanAquacultureGrowthPageProps {
   basePath?: string;
@@ -84,6 +89,9 @@ export default function PlanAquacultureGrowthPage({
         draftCount: workflow.statusBreakdown?.draft ?? 0,
         completedCount: workflow.statusBreakdown?.completed ?? 0,
         cancelledCount: workflow.statusBreakdown?.cancelled ?? 0,
+        zoneNames: extractZoneDisplayNames(workflow.productionZones),
+        cropNames: extractCropSubjectLabels(workflow.productionZones),
+        totalAcreage: calculateProductionZonesAcreage(workflow.productionZones),
       })),
     [workflows],
   );
@@ -155,7 +163,9 @@ export default function PlanAquacultureGrowthPage({
           }}
           onFilterChange={(key, value) => {
             if (key === "status") {
-              setStatus(value === "all" ? "" : (value as FarmWorkflowRequestStatus));
+              setStatus(
+                value === "all" ? "" : (value as FarmWorkflowRequestStatus),
+              );
               setCurrentIndex(1);
             }
           }}
