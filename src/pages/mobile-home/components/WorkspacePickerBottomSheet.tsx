@@ -4,6 +4,7 @@ import {
   SheetContent,
   SheetHeader,
   SheetTitle,
+  useWorkspace,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import {
   useSelectedWorkspaceId,
@@ -59,6 +60,7 @@ export function WorkspacePickerBottomSheet({
   onOpenChange,
 }: WorkspacePickerBottomSheetProps) {
   const selectedWorkspaceId = useSelectedWorkspaceId();
+  const { setCurrentWorkspaceId: setSharedWorkspaceId } = useWorkspace();
 
   const [search, setSearch] = useState("");
   // Chỉ debounce từ khóa khi sheet đang mở để tránh kích hoạt effect khi đã đóng
@@ -90,6 +92,7 @@ export function WorkspacePickerBottomSheet({
     // Đóng sheet ngay lập tức trước khi đổi workspace
     onOpenChange(false);
     setSelectedWorkspaceId(item.id);
+    setSharedWorkspaceId(String(item.id));
   };
 
   // Bắt sự kiện cuộn đến gần cuối danh sách để tải thêm trang kế tiếp

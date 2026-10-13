@@ -1,7 +1,10 @@
 import { useSyncExternalStore } from "react";
+import {
+  SELECTED_WORKSPACE_STORAGE_KEY,
+  WORKSPACE_CHANGE_EVENT,
+} from "@Team-Trung-Vu-Khang/eco-shared-ui";
 
-export const SELECTED_WORKSPACE_STORAGE_KEY = "admin_selected_workspace";
-const WORKSPACE_CHANGE_EVENT = "eco-farm:workspace-change";
+export { SELECTED_WORKSPACE_STORAGE_KEY, WORKSPACE_CHANGE_EVENT };
 
 let isStorageObserverInstalled = false;
 
@@ -22,7 +25,10 @@ const installStorageObserver = () => {
   Storage.prototype.setItem = function setItem(key: string, value: string) {
     originalSetItem.call(this, key, value);
 
-    if (this === window.sessionStorage && key === SELECTED_WORKSPACE_STORAGE_KEY) {
+    if (
+      this === window.sessionStorage &&
+      key === SELECTED_WORKSPACE_STORAGE_KEY
+    ) {
       notifyWorkspaceChange();
     }
   };

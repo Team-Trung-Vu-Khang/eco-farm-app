@@ -5,6 +5,7 @@ import {
   setSelectedWorkspaceId,
   useSelectedWorkspaceId,
 } from "@/features/workspace";
+import { useWorkspace } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 
 const isFormRoute = (pathname: string) =>
   /\/(?:create|new|edit|update)(?:\/|$)/.test(pathname);
@@ -17,17 +18,42 @@ const getListRoute = (pathname: string) => {
 
   if (formSegmentIndex <= 0) return "/";
   const previousSegment = segments[formSegmentIndex - 1];
-  const endIndex = /^\d+$/.test(previousSegment) ? formSegmentIndex - 1 : formSegmentIndex;
+  const endIndex = /^\d+$/.test(previousSegment)
+    ? formSegmentIndex - 1
+    : formSegmentIndex;
   return `/${segments.slice(0, endIndex).join("/")}`;
 };
 
 /** Keeps current workspace data in sync and prevents accidental cross-workspace edits. */
 export function WorkspaceChangeHandler() {
   const workspaceId = useSelectedWorkspaceId();
+  const { currentWorkspaceId, setCurrentWorkspaceId } = useWorkspace();
   const previousWorkspaceIdRef = useRef(workspaceId);
   const isRevertingRef = useRef(false);
   const [, setLocation] = useLocation();
   const queryClient = useQueryClient();
+
+  // 1. Đồng bộ từ eco-farm-app sang WorkspaceContext của eco-shared-ui (để Header Layout cập nhật)
+  useEffect(() => {
+    if (
+      workspaceId !== null &&
+      workspaceId !== undefined &&
+      String(currentWorkspaceId) !== String(workspaceId)
+    ) {
+      setCurrentWorkspaceId(String(workspaceId));
+    }
+  }, [workspaceId, currentWorkspaceId, setCurrentWorkspaceId]);
+
+  // 2. Đồng bộ ngược từ eco-shared-ui (vd: chọn workspace từ AdminHeader trên desktop) về eco-farm-app
+  useEffect(() => {
+    if (
+      currentWorkspaceId !== null &&
+      currentWorkspaceId !== undefined &&
+      String(workspaceId) !== String(currentWorkspaceId)
+    ) {
+      setSelectedWorkspaceId(currentWorkspaceId);
+    }
+  }, [currentWorkspaceId, workspaceId]);
 
   useEffect(() => {
     const previousWorkspaceId = previousWorkspaceIdRef.current;
