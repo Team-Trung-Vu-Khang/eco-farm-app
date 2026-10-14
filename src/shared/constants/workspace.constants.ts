@@ -2,6 +2,7 @@ import {
   DEFAULT_WORKSPACE_FEATURE_PREFIXES,
   formatWorkspaceFeatureName,
   stripWorkspaceFeaturePrefix,
+  WORKSPACE_CHANGE_EVENT,
   type WorkspaceFeatureType,
   type FormatWorkspaceFeatureNameOptions,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
@@ -46,6 +47,7 @@ export {
   DEFAULT_WORKSPACE_FEATURE_PREFIXES,
   formatWorkspaceFeatureName,
   stripWorkspaceFeaturePrefix,
+  WORKSPACE_CHANGE_EVENT,
   type WorkspaceFeatureType,
   type FormatWorkspaceFeatureNameOptions,
 };

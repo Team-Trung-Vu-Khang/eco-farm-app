@@ -22,7 +22,8 @@ import {
   useMap,
 } from "react-leaflet";
 import readXlsxFile from "read-excel-file";
-import { getBoundsFromPoints } from "../utils";
+import { getBoundsFromPoints, buildSquareAround } from "../utils";
+import { InvalidateMapSize } from "./InvalidateMapSize";
 
 interface RegionMapEditorProps {
   markerIcon: L.Icon;
@@ -33,15 +34,6 @@ const DEFAULT_POINTS = [
   L.latLng(11.55, 106.88),
   L.latLng(11.55, 106.91),
   L.latLng(11.53, 106.91),
-];
-
-const SQUARE_HALF_SPAN = 0.01;
-
-const buildSquareAround = (lat: number, lng: number) => [
-  L.latLng(lat - SQUARE_HALF_SPAN, lng - SQUARE_HALF_SPAN),
-  L.latLng(lat + SQUARE_HALF_SPAN, lng - SQUARE_HALF_SPAN),
-  L.latLng(lat + SQUARE_HALF_SPAN, lng + SQUARE_HALF_SPAN),
-  L.latLng(lat - SQUARE_HALF_SPAN, lng + SQUARE_HALF_SPAN),
 ];
 
 interface MapLayoutProps {
@@ -119,13 +111,15 @@ const MapLayout = ({
 }: MapLayoutProps) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   return (
-    <div className="flex flex-col md:flex-row flex-1 min-h-0 gap-4 p-4 w-full">
-      <div className="relative z-0 w-full flex-1 min-h-[500px] md:min-h-[600px] overflow-hidden rounded-lg border">
+    <div className="flex flex-col md:flex-row flex-1 min-h-0 gap-4 p-4 w-full h-auto md:h-full">
+      <div className="relative z-0 w-full h-[450px] min-h-[450px] md:h-full md:min-h-0 md:flex-1 overflow-hidden rounded-lg border">
         <MapContainer
           center={[center.lat, center.lng]}
           zoom={14}
           className="z-0 h-full w-full"
+          style={{ height: "100%", width: "100%", minHeight: "450px" }}
         >
+          <InvalidateMapSize />
           <FitBoundsOnce points={regionPoints} fitTrigger={mapFitTrigger} />
           <TileLayer
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
@@ -162,7 +156,7 @@ const MapLayout = ({
         </MapContainer>
       </div>
 
-      <div className="flex h-[450px] md:h-full md:w-75 shrink-0 flex-col overflow-hidden rounded-lg border bg-slate-50">
+      <div className="flex h-[450px] md:h-full md:w-[350px] lg:w-[360px] shrink-0 flex-col overflow-hidden rounded-lg border bg-slate-50">
         <div className="flex flex-col border-b bg-white p-3 gap-2.5">
           <div>
             <h4 className="text-sm font-semibold">Danh sách toạ độ</h4>
@@ -359,6 +353,7 @@ export const RegionMapEditor = ({ markerIcon }: RegionMapEditorProps) => {
       square.map((p) => ({ lat: p.lat, lng: p.lng })),
       { shouldValidate: true },
     );
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setMapFitTrigger(Date.now());
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [regionId, centerPoint?.lat, centerPoint?.lng, regionPoints]);
@@ -685,7 +680,7 @@ export const RegionMapEditor = ({ markerIcon }: RegionMapEditorProps) => {
           <Maximize2 className="h-4 w-4" />
         </Button>
       </CardHeader>
-      <CardContent className="flex flex-1 flex-col overflow-hidden p-0">
+      <CardContent className="flex flex-1 flex-col overflow-y-auto md:overflow-hidden p-0">
         {!isFullscreen && (
           <MapLayout
             center={center}

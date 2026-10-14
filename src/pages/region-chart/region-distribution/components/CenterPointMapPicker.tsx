@@ -21,17 +21,11 @@ import {
   useMapEvents,
 } from "react-leaflet";
 import type { RegionFormValues } from "../data/region-form.schema";
+import { InvalidateMapSize } from "./InvalidateMapSize";
 
 const customIcon = getMarkerIcon("blue");
 
 const DEFAULT_CENTER: [number, number] = [11.54, 106.895];
-
-const formatCoordinate = (value: number | string | undefined) => {
-  if (value === undefined || value === null || value === "") return "--";
-  const parsed = typeof value === "number" ? value : Number(value);
-  if (Number.isNaN(parsed)) return "--";
-  return parsed.toFixed(6);
-};
 
 const ChangeView = ({ center }: { center: [number, number] }) => {
   const map = useMap();
@@ -146,15 +140,15 @@ const PickerContent = ({
 
         {/* Search Results Dropdown List */}
         {searchResults.length > 0 && (
-          <div className="absolute left-0 right-0 mt-1 max-h-48 overflow-y-auto border border-slate-200 bg-white rounded-md shadow-lg z-[1000] divide-y divide-slate-100 text-xs">
+          <div className="absolute left-0 right-0 mt-1 max-h-48 overflow-y-auto border border-border bg-popover text-popover-foreground rounded-md shadow-md z-[1000] divide-y divide-border/50 text-xs">
             {searchResults.map((item) => (
               <button
                 key={item.place_id}
                 type="button"
-                className="w-full px-3 py-2.5 text-left hover:bg-slate-50 text-slate-700 transition-colors flex flex-col gap-0.5"
+                className="w-full px-3 py-2.5 text-left hover:bg-muted text-foreground transition-colors flex flex-col gap-0.5"
                 onClick={() => onSelectResult(item)}
               >
-                <span className="font-medium text-slate-800 line-clamp-2">
+                <span className="font-medium text-foreground line-clamp-2">
                   {item.display_name}
                 </span>
               </button>
@@ -197,7 +191,9 @@ const PickerContent = ({
             center={markerPosition}
             zoom={12}
             className="w-full h-full"
+            style={{ height: "100%", width: "100%" }}
           >
+            <InvalidateMapSize />
             <TileLayer
               attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
               url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
@@ -408,17 +404,17 @@ export const CenterPointMapPicker = () => {
       className={
         isMobile
           ? "space-y-3"
-          : "space-y-4 border p-4 rounded-lg bg-slate-50/50"
+          : "space-y-4 border border-border p-4 rounded-lg bg-muted/20"
       }
     >
       <div
         className={
           isMobile
             ? "flex items-center justify-between"
-            : "flex items-center justify-between border-b pb-2 mb-2"
+            : "flex items-center justify-between border-b border-border pb-2 mb-2"
         }
       >
-        <h3 className="font-semibold text-sm text-slate-800">
+        <h3 className="font-semibold text-sm text-foreground">
           Vị trí vùng trồng
         </h3>
         <Button
@@ -426,7 +422,7 @@ export const CenterPointMapPicker = () => {
           variant="ghost"
           size="icon"
           onClick={() => setIsFullscreen(true)}
-          className="h-8 w-8 text-slate-500 hover:text-slate-900"
+          className="h-8 w-8 text-muted-foreground hover:text-foreground"
           title="Mở rộng bản đồ"
         >
           <Maximize2 className="w-4 h-4" />
@@ -453,8 +449,8 @@ export const CenterPointMapPicker = () => {
 
       <Dialog open={isFullscreen} onOpenChange={setIsFullscreen}>
         <DialogContent className="max-w-[90vw] w-[800px] h-[85vh] p-0 flex flex-col overflow-hidden">
-          <div className="flex items-center justify-between border-b p-4">
-            <h2 className="text-lg font-semibold text-slate-800">
+          <div className="flex items-center justify-between border-b border-border p-4">
+            <h2 className="text-lg font-semibold text-foreground">
               Bản đồ vị trí vùng trồng
             </h2>
           </div>
@@ -509,11 +505,13 @@ function MapCoordinateField({
     if (numVal !== undefined && !isNaN(numVal)) {
       const parsedText = parseFloat(textVal);
       if (isNaN(parsedText) || parsedText !== numVal) {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setTextVal(String(numVal));
       }
     } else if (textVal !== "") {
       setTextVal("");
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [numVal]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {

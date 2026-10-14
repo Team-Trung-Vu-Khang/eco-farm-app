@@ -19,6 +19,7 @@ import { NotificationBell } from "./layouts/mobile/NotificationBell";
 import { SwitchToMobileAppButton } from "./layouts/mobile/SwitchToMobileAppButton";
 import { MobileRouteGuard } from "./layouts/mobile/MobileRouteGuard";
 import { useMobileUiMode } from "./shared/hooks/useMobileUiMode";
+import { MobileHeaderSubtitle } from "./layouts/mobile/MobileHeaderSubtitle";
 
 interface OnboardCheckerProps {
   children: React.ReactNode;
@@ -99,6 +100,7 @@ function App() {
         {useMobileApp ? (
           <MobileRouteGuard>
             <MobileAppLayout
+              brandSubtitle={<MobileHeaderSubtitle />}
               // headerActions={<NotificationBell />}
               ignoredHeaderRoutes={["/", "/home"]}
               extraExcludedPaths={["/diary", "/history"]}

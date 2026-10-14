@@ -14,6 +14,7 @@ export const subAreaSchema = z.object({
   landType: z.string().optional(),
   terrain: z.string().optional(),
   coordinates: z.array(coordinateSchema).optional(),
+  centerPoint: coordinateSchema.optional(),
   status: z.enum(["active", "inactive", "archived"]).optional(),
   regionId: z.union([z.string(), z.number()]).optional(),
   plots: z.array(z.any()).optional(),
@@ -93,6 +94,25 @@ export const regionFormSchema = regionInfoSchema
           code: "custom",
           message: "Vui lòng nhập kinh độ",
           path: ["centerPoint", "lng"],
+        });
+      }
+    }
+
+    if (
+      data.area &&
+      data.area > 0 &&
+      data.subAreas &&
+      data.subAreas.length > 0
+    ) {
+      const totalSubArea = data.subAreas.reduce(
+        (sum, s) => sum + (s.area || 0),
+        0,
+      );
+      if (totalSubArea > data.area + 1e-4) {
+        ctx.addIssue({
+          code: "custom",
+          message: `Tổng diện tích các khu vực con (${Number(totalSubArea.toFixed(2))} ha) không được vượt quá diện tích ${TERMS.region.toLowerCase()} (${data.area} ha)`,
+          path: ["subAreas"],
         });
       }
     }

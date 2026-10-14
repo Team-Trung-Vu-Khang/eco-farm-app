@@ -40,6 +40,7 @@ import {
 } from "react-leaflet";
 import readXlsxFile from "read-excel-file";
 import { z } from "zod";
+import { InvalidateMapSize } from "./InvalidateMapSize";
 
 import type { SubArea } from "../../constants";
 import {
@@ -124,22 +125,45 @@ const SubAreaEditForm = ({
   saveSubArea,
   setEditingSubArea,
   regionArea,
+  subAreas = [],
   handleImportExcel,
   handleDownloadSampleExcel,
 }: any) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const otherSubAreasArea = useMemo(() => {
+    return (subAreas || [])
+      .filter((s: SubArea) => s.id !== editingSubArea?.id)
+      .reduce((sum: number, s: SubArea) => sum + (Number(s.area) || 0), 0);
+  }, [subAreas, editingSubArea]);
+
+  const maxAllowedArea = useMemo(() => {
+    if (!regionArea || regionArea <= 0) return undefined;
+    return Math.max(0, regionArea - otherSubAreasArea);
+  }, [regionArea, otherSubAreasArea]);
+
   const formSchema = useMemo(() => {
     return subAreaFormSchema.superRefine((data, ctx) => {
-      if (regionArea > 0 && data.area > regionArea) {
-        ctx.addIssue({
-          code: "custom",
-          path: ["area"],
-          message: `Diện tích không được lớn hơn diện tích vùng trồng (${regionArea} ha)`,
-        });
+      if (regionArea > 0) {
+        if (data.area > regionArea + 1e-4) {
+          ctx.addIssue({
+            code: "custom",
+            path: ["area"],
+            message: `Diện tích không được lớn hơn diện tích vùng trồng (${regionArea} ha)`,
+          });
+        } else if (
+          maxAllowedArea !== undefined &&
+          data.area > maxAllowedArea + 1e-4
+        ) {
+          ctx.addIssue({
+            code: "custom",
+            path: ["area"],
+            message: `Tổng diện tích các khu vực con sẽ vượt quá diện tích vùng trồng (${regionArea} ha). Khả dụng còn lại: ${Number(maxAllowedArea.toFixed(2))} ha`,
+          });
+        }
       }
     });
-  }, [regionArea]);
+  }, [regionArea, maxAllowedArea]);
 
   const form = useForm<SubAreaFormValues>({
     resolver: zodResolver(formSchema as unknown as any),
@@ -235,62 +259,68 @@ const SubAreaEditForm = ({
               )}
             />
 
-            <div className="grid grid-cols-2 gap-3 items-start">
-              <FormField
-                control={form.control}
-                name="area"
-                render={({ field }) => (
-                  <FormItem className="grid gap-2 space-y-0">
+            <FormField
+              control={form.control}
+              name="area"
+              render={({ field }) => (
+                <FormItem className="space-y-1.5">
+                  <div className="flex items-center justify-between">
                     <FormLabel className="text-xs">
                       Diện tích (ha) <span className="text-red-500">*</span>
                     </FormLabel>
-                    <FormControl>
-                      <Input
-                        type="number"
-                        step="0.01"
-                        clearable={false}
-                        className="h-8 text-sm"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage className="text-xs" />
-                  </FormItem>
-                )}
-              />
+                    {regionArea > 0 && maxAllowedArea !== undefined && (
+                      <span className="text-[11px] text-muted-foreground">
+                        Còn lại:{" "}
+                        <strong className="text-primary font-semibold">
+                          {maxAllowedArea.toFixed(2)} ha
+                        </strong>
+                      </span>
+                    )}
+                  </div>
+                  <FormControl>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      clearable={false}
+                      className="h-8 text-sm"
+                      placeholder="Nhập diện tích khu vực..."
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage className="text-xs" />
+                </FormItem>
+              )}
+            />
 
-              <FormField
-                control={form.control}
-                name="landType"
-                render={({ field }) => (
-                  <FormItem className="grid gap-2 space-y-0">
-                    <FormLabel className="text-xs">
-                      Loại đất <span className="text-red-500">*</span>
-                    </FormLabel>
-                    <Select
-                      onValueChange={field.onChange}
-                      value={field.value}
-                    >
-                      <FormControl>
-                        <SelectTrigger className="h-8 text-sm">
-                          <SelectValue placeholder="Chọn loại đất" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {lands.map((land: any) => (
-                          <SelectItem
-                            key={land.id}
-                            value={String(land.id || land.code)}
-                          >
-                            {land.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage className="text-xs" />
-                  </FormItem>
-                )}
-              />
-            </div>
+            <FormField
+              control={form.control}
+              name="landType"
+              render={({ field }) => (
+                <FormItem className="space-y-1.5">
+                  <FormLabel className="text-xs">
+                    Loại đất <span className="text-red-500">*</span>
+                  </FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <FormControl>
+                      <SelectTrigger className="h-8 text-sm">
+                        <SelectValue placeholder="Chọn loại đất" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {lands.map((land: any) => (
+                        <SelectItem
+                          key={land.id}
+                          value={String(land.id || land.code)}
+                        >
+                          {land.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage className="text-xs" />
+                </FormItem>
+              )}
+            />
 
             <div className="pt-2">
               <div className="mb-2 flex items-center justify-between">
@@ -367,7 +397,7 @@ const SubAreaEditForm = ({
                       </div>
                       <div className="grid grid-cols-2 gap-2">
                         <Input
-                          className={`h-6 px-1 text-[10px] ${hasWarning ? "border-red-200 focus-visible:ring-red-200" : ""}`}
+                          className={`h-7 px-1.5 text-xs font-mono ${hasWarning ? "border-red-200 focus-visible:ring-red-200" : ""}`}
                           type="number"
                           value={point.lat}
                           onChange={(e) =>
@@ -378,9 +408,10 @@ const SubAreaEditForm = ({
                             )
                           }
                           step="0.0001"
+                          title="Vĩ độ"
                         />
                         <Input
-                          className={`h-6 px-1 text-[10px] ${hasWarning ? "border-red-200 focus-visible:ring-red-200" : ""}`}
+                          className={`h-7 px-1.5 text-xs font-mono ${hasWarning ? "border-red-200 focus-visible:ring-red-200" : ""}`}
                           type="number"
                           value={point.lng}
                           onChange={(e) =>
@@ -391,6 +422,7 @@ const SubAreaEditForm = ({
                             )
                           }
                           step="0.0001"
+                          title="Kinh độ"
                         />
                       </div>
                     </div>
@@ -481,13 +513,15 @@ const SubAreaLayout = ({
     .join("|");
 
   return (
-    <div className="flex flex-col md:flex-row flex-1 min-h-0 gap-4 p-4 w-full">
-      <div className="relative z-0 w-full flex-1 min-h-[500px] md:min-h-[600px] overflow-hidden rounded-lg border">
+    <div className="flex flex-col md:flex-row flex-1 min-h-0 gap-4 p-4 w-full h-auto md:h-full">
+      <div className="relative z-0 w-full h-[450px] min-h-[450px] md:h-full md:min-h-0 md:flex-1 overflow-hidden rounded-lg border">
         <MapContainer
           center={[center.lat, center.lng]}
           zoom={14}
           className="h-full w-full"
+          style={{ height: "100%", width: "100%", minHeight: "450px" }}
         >
+          <InvalidateMapSize />
           <FitBoundsOnce points={regionPoints} />
           <FitBoundsOnce
             points={subAreaPoints}
@@ -609,19 +643,66 @@ const SubAreaLayout = ({
         </MapContainer>
       </div>
 
-      <div className="flex h-[450px] md:h-full md:w-75 shrink-0 flex-col overflow-hidden rounded-lg border bg-slate-50">
+      <div className="flex h-[450px] md:h-full md:w-[350px] lg:w-[360px] shrink-0 flex-col overflow-hidden rounded-lg border bg-slate-50">
         {!editingSubArea ? (
           <div className="flex h-full flex-col">
-            <div className="flex items-center justify-between border-b bg-white p-4">
-              <div>
-                <h4 className="font-semibold">Danh sách khu vực</h4>
-                <p className="text-xs text-muted-foreground">
-                  {subAreas.length} khu vực đã tạo
-                </p>
+            <div className="flex flex-col border-b bg-white p-3 gap-2">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h4 className="font-semibold text-sm">Danh sách khu vực</h4>
+                  <p className="text-xs text-muted-foreground">
+                    {subAreas.length} khu vực đã tạo
+                  </p>
+                </div>
+                <Button size="sm" onClick={addSubArea}>
+                  <Plus className="mr-1 h-3.5 w-3.5" /> Thêm mới
+                </Button>
               </div>
-              <Button size="sm" onClick={addSubArea}>
-                <Plus className="mr-2 h-4 w-4" /> Thêm mới
-              </Button>
+              {(() => {
+                const totalSub = (subAreas || []).reduce(
+                  (acc: number, curr: SubArea) => acc + (Number(curr.area) || 0),
+                  0,
+                );
+                const isOver = regionArea > 0 && totalSub > regionArea + 1e-4;
+                return (
+                  <div className="rounded border border-border bg-muted/20 p-2 text-xs space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <span className="text-muted-foreground">
+                        Tổng diện tích:{" "}
+                        <strong
+                          className={
+                            isOver
+                              ? "text-destructive font-bold"
+                              : "text-foreground"
+                          }
+                        >
+                          {totalSub.toFixed(2)} ha
+                        </strong>
+                      </span>
+                      {regionArea > 0 && (
+                        <span className="text-[10px] text-muted-foreground">
+                          / {regionArea} ha
+                        </span>
+                      )}
+                    </div>
+                    {regionArea > 0 && (
+                      <div className="h-1 w-full overflow-hidden rounded-full bg-muted">
+                        <div
+                          className={`h-full transition-all duration-300 ${
+                            isOver ? "bg-destructive" : "bg-primary"
+                          }`}
+                          style={{
+                            width: `${Math.min(
+                              100,
+                              (totalSub / regionArea) * 100,
+                            )}%`,
+                          }}
+                        />
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
             </div>
             <div className="flex-1 overflow-y-auto p-4 space-y-3">
               {subAreas.map((subArea) => (
@@ -677,6 +758,7 @@ const SubAreaLayout = ({
         ) : (
           <SubAreaEditForm
             regionArea={regionArea}
+            subAreas={subAreas}
             editingSubArea={editingSubArea}
             subAreaWarningForDisplay={subAreaWarningForDisplay}
             applySuggestedSubAreaPoint={applySuggestedSubAreaPoint}
@@ -1183,7 +1265,10 @@ export const RegionSubAreaStep = ({
     const sizeLng = Math.max(width * 0.15, 0.0005);
 
     const regionPoly = toTurfPolygonFromCoords(
-      regionPoints.map((p) => ({ lat: p.lat, lng: p.lng })),
+      regionPoints.map((p: Record<string, number>) => ({
+        lat: p.lat,
+        lng: p.lng,
+      })),
     );
 
     const currentSubs = watch("subAreas") || [];
@@ -1497,7 +1582,7 @@ export const RegionSubAreaStep = ({
           <Maximize2 className="h-4 w-4" />
         </Button>
       </CardHeader>
-      <CardContent className="flex-1 overflow-hidden p-0">
+      <CardContent className="flex-1 overflow-y-auto md:overflow-hidden p-0">
         {!isFullscreen && (
           <SubAreaLayout
             center={center}

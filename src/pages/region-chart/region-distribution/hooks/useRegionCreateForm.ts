@@ -76,6 +76,25 @@ export function useRegionCreateForm(
               lat: b.latitude || 0,
               lng: b.longitude || 0,
             })),
+            centerPoint: area.centerPoint
+              ? {
+                  lat: area.centerPoint.latitude || 0,
+                  lng: area.centerPoint.longitude || 0,
+                }
+              : area.boundary && area.boundary.length > 0
+                ? {
+                    lat:
+                      area.boundary.reduce(
+                        (sum, b) => sum + (b.latitude || 0),
+                        0,
+                      ) / area.boundary.length,
+                    lng:
+                      area.boundary.reduce(
+                        (sum, b) => sum + (b.longitude || 0),
+                        0,
+                      ) / area.boundary.length,
+                  }
+                : undefined,
             status: area.status ?? "active",
           })),
         });
@@ -118,6 +137,7 @@ export function useRegionCreateForm(
   const handleComplete = async (data: RegionFormValues) => {
     setIsSubmitting(true);
     try {
+      const isDetailedMode = data.isDetailed !== false;
       const regionRequest: FarmRegionRequest = {
         code: data.code,
         name: data.name,
@@ -140,12 +160,13 @@ export function useRegionCreateForm(
               role: "MAIN",
             }))
           : undefined,
-        boundary: data.coordinates?.length
-          ? (data.coordinates || []).map((c) => ({
-              latitude: c.lat,
-              longitude: c.lng,
-            }))
-          : undefined,
+        boundary:
+          isDetailedMode && (data.coordinates?.length || 0) >= 3
+            ? (data.coordinates || []).map((c) => ({
+                latitude: c.lat,
+                longitude: c.lng,
+              }))
+            : undefined,
         centerPoint: data.centerPoint
           ? {
               latitude: data.centerPoint.lat,
@@ -166,10 +187,19 @@ export function useRegionCreateForm(
               metadataJson: {
                 enterpriseId: data.enterpriseId,
               },
-              boundary: (sub.coordinates || []).map((c) => ({
-                latitude: c.lat,
-                longitude: c.lng,
-              })),
+              boundary:
+                isDetailedMode && (sub.coordinates?.length || 0) >= 3
+                  ? (sub.coordinates || []).map((c) => ({
+                      latitude: c.lat,
+                      longitude: c.lng,
+                    }))
+                  : undefined,
+              centerPoint: sub.centerPoint
+                ? {
+                    latitude: sub.centerPoint.lat,
+                    longitude: sub.centerPoint.lng,
+                  }
+                : undefined,
             }))
           : undefined,
       };

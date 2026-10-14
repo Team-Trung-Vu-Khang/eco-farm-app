@@ -4,8 +4,12 @@ import { useLocation } from "wouter";
 import {
   setSelectedWorkspaceId,
   useSelectedWorkspaceId,
+  workspaceKeys,
 } from "@/features/workspace";
-import { useWorkspace } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import {
+  useWorkspace,
+  WORKSPACE_CHANGE_EVENT,
+} from "@Team-Trung-Vu-Khang/eco-shared-ui";
 
 const isFormRoute = (pathname: string) =>
   /\/(?:create|new|edit|update)(?:\/|$)/.test(pathname);
@@ -27,11 +31,33 @@ const getListRoute = (pathname: string) => {
 /** Keeps current workspace data in sync and prevents accidental cross-workspace edits. */
 export function WorkspaceChangeHandler() {
   const workspaceId = useSelectedWorkspaceId();
-  const { currentWorkspaceId, setCurrentWorkspaceId } = useWorkspace();
+  const { currentWorkspaceId, setCurrentWorkspaceId, refetchWorkspaces } =
+    useWorkspace();
   const previousWorkspaceIdRef = useRef(workspaceId);
   const isRevertingRef = useRef(false);
   const [, setLocation] = useLocation();
   const queryClient = useQueryClient();
+
+  // Lắng nghe sự kiện cập nhật tên/dữ liệu workspace để invalidate cache TanStack Query và refetch
+  useEffect(() => {
+    const handleWorkspaceDataChanged = () => {
+      void queryClient.invalidateQueries({
+        queryKey: ["workspace", workspaceId],
+      });
+      void queryClient.invalidateQueries({
+        queryKey: workspaceKeys.all,
+      });
+      void refetchWorkspaces();
+    };
+
+    window.addEventListener(WORKSPACE_CHANGE_EVENT, handleWorkspaceDataChanged);
+    return () => {
+      window.removeEventListener(
+        WORKSPACE_CHANGE_EVENT,
+        handleWorkspaceDataChanged,
+      );
+    };
+  }, [queryClient, workspaceId, refetchWorkspaces]);
 
   // 1. Đồng bộ từ eco-farm-app sang WorkspaceContext của eco-shared-ui (để Header Layout cập nhật)
   useEffect(() => {

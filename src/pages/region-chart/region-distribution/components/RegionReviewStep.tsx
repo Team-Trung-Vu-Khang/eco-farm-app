@@ -3,6 +3,7 @@ import { useAddressOptions } from "@/features/master-data/hooks/useAddressOption
 import { useOrganizationById } from "@/features/organization/hooks/useOrganizationById";
 import { useSelectedWorkspaceId } from "@/features/workspace";
 import {
+  Badge,
   Card,
   CardContent,
   CardHeader,
@@ -12,16 +13,26 @@ import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { useMemo } from "react";
 import { useFormContext } from "react-hook-form";
-import { MapContainer, Polygon, TileLayer, Tooltip } from "react-leaflet";
+import {
+  MapContainer,
+  Marker,
+  Polygon,
+  TileLayer,
+  Tooltip,
+} from "react-leaflet";
 import type { RegionFormValues } from "../data/region-form.schema";
 import { getBoundsFromPoints } from "../utils";
+import { getMarkerIcon } from "@/pages/cultivation-zone/cultivation-region/components/mapUtils";
+import { InvalidateMapSize } from "./InvalidateMapSize";
 
 interface RegionReviewStepProps {
   showEnterprise?: boolean;
+  isDetailed?: boolean;
 }
 
 export const RegionReviewStep = ({
   showEnterprise = false,
+  isDetailed = true,
 }: RegionReviewStepProps = {}) => {
   const { watch } = useFormContext<RegionFormValues>();
   const formData = watch();
@@ -47,6 +58,13 @@ export const RegionReviewStep = ({
   );
 
   const subAreas = formData.subAreas || [];
+  const totalSubAreaAcreage = subAreas.reduce(
+    (acc, curr) => acc + (curr.area || 0),
+    0,
+  );
+  const regionArea = formData.area || 0;
+  const isOverAllocated =
+    regionArea > 0 && totalSubAreaAcreage > regionArea + 1e-4;
   const { provinces, wards } = useAddressOptions(formData.provinceId);
 
   const getLandTypeName = (landTypeId?: string) => {
@@ -57,10 +75,10 @@ export const RegionReviewStep = ({
     return found?.name || landTypeId;
   };
 
+  const rawCoordinates = watch("coordinates");
   const regionPoints = useMemo(() => {
-    const coordinates = formData.coordinates || [];
-    return coordinates.map((c) => L.latLng(c.lat, c.lng));
-  }, [formData.coordinates]);
+    return (rawCoordinates || []).map((c) => L.latLng(c.lat, c.lng));
+  }, [rawCoordinates]);
 
   // const cropIds = formData.cropIds;
   // const selectedCropsText = useMemo(() => {
@@ -249,15 +267,23 @@ export const RegionReviewStep = ({
                 Bản đồ vùng trồng
               </CardTitle>
             </div>
-            {regionPoints.length >= 3 && (
-              <span className="rounded-full border border-emerald-100 bg-emerald-50 px-2 py-0.5 text-[11px] font-bold text-emerald-600">
-                {regionPoints.length} điểm ranh giới
-              </span>
-            )}
+            {isDetailed && regionPoints.length >= 3 ? (
+              <Badge
+                variant="outline"
+                className="bg-primary/10 text-primary border-primary/20 font-medium"
+              >
+                {regionPoints.length} điểm ranh giới (Polygon)
+              </Badge>
+            ) : formData.centerPoint?.lat !== undefined &&
+              formData.centerPoint?.lng !== undefined ? (
+              <Badge variant="secondary" className="font-medium">
+                Chế độ cơ bản (Tọa độ tâm)
+              </Badge>
+            ) : null}
           </div>
         </CardHeader>
         <CardContent className="p-0">
-          {regionPoints.length >= 3 ? (
+          {isDetailed && regionPoints.length >= 3 ? (
             <div className="relative h-[300px] w-full overflow-hidden">
               <MapContainer
                 bounds={getBoundsFromPoints(regionPoints).pad(0.15)}
@@ -270,6 +296,7 @@ export const RegionReviewStep = ({
                 keyboard={false}
                 attributionControl={false}
               >
+                <InvalidateMapSize />
                 <TileLayer url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}" />
 
                 <Polygon
@@ -343,8 +370,83 @@ export const RegionReviewStep = ({
                 )}
               </div>
             </div>
+          ) : formData.centerPoint?.lat !== undefined &&
+            formData.centerPoint?.lng !== undefined ? (
+            <div className="relative h-[300px] w-full overflow-hidden">
+              <MapContainer
+                center={[formData.centerPoint.lat, formData.centerPoint.lng]}
+                zoom={14}
+                style={{ height: "100%", width: "100%" }}
+                zoomControl={false}
+                dragging={false}
+                scrollWheelZoom={false}
+                doubleClickZoom={false}
+                touchZoom={false}
+                keyboard={false}
+                attributionControl={false}
+              >
+                <InvalidateMapSize />
+                <TileLayer url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}" />
+
+                <Marker
+                  position={[
+                    formData.centerPoint.lat,
+                    formData.centerPoint.lng,
+                  ]}
+                  icon={getMarkerIcon("blue")}
+                >
+                  <Tooltip
+                    permanent
+                    direction="top"
+                    className="text-[11px] font-bold"
+                  >
+                    {formData.name || "Vùng trồng"} (Tâm)
+                  </Tooltip>
+                </Marker>
+
+                {subAreas
+                  .filter(
+                    (sub) =>
+                      sub.centerPoint?.lat !== undefined &&
+                      sub.centerPoint?.lng !== undefined,
+                  )
+                  .map((sub, index) => (
+                    <Marker
+                      key={sub.id || index}
+                      position={[sub.centerPoint!.lat, sub.centerPoint!.lng]}
+                      icon={getMarkerIcon("amber")}
+                    >
+                      <Tooltip
+                        permanent
+                        direction="bottom"
+                        className="text-[10px] font-semibold"
+                      >
+                        {sub.name || `Khu ${index + 1}`}
+                      </Tooltip>
+                    </Marker>
+                  ))}
+              </MapContainer>
+
+              <div className="pointer-events-none absolute bottom-3 left-3 z-[500] flex flex-col gap-1.5 rounded-lg border border-border bg-card/90 px-3 py-2 text-[11px] font-semibold text-card-foreground shadow-xs backdrop-blur-sm">
+                <div className="flex items-center gap-1.5">
+                  <span className="h-2.5 w-2.5 rounded-full bg-blue-600" />
+                  <span className="text-muted-foreground font-medium">
+                    Tọa độ tâm vùng trồng
+                  </span>
+                </div>
+                {subAreas.filter((s) => s.centerPoint?.lat !== undefined)
+                  .length > 0 && (
+                  <div className="flex items-center gap-1.5">
+                    <span className="h-2.5 w-2.5 rounded-full bg-amber-500" />
+                    <span className="text-muted-foreground font-medium">
+                      Tọa độ khu vực con
+                    </span>
+                  </div>
+                )}
+              </div>
+            </div>
           ) : (
-            <div className="flex flex-col items-center justify-center bg-slate-50 py-10 text-center">
+            <div className="flex flex-col items-center justify-center bg-muted/20 py-10 text-center">
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 width="40"
@@ -355,17 +457,17 @@ export const RegionReviewStep = ({
                 strokeWidth="1.5"
                 strokeLinecap="round"
                 strokeLinejoin="round"
-                className="mb-2 text-slate-200"
+                className="mb-2 text-muted-foreground/40"
               >
                 <polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21" />
                 <line x1="9" y1="3" x2="9" y2="18" />
                 <line x1="15" y1="6" x2="15" y2="21" />
               </svg>
-              <p className="text-sm font-semibold text-amber-600">
-                Chưa xác định ranh giới
+              <p className="text-sm font-semibold text-primary">
+                Chưa xác định vị trí hoặc ranh giới
               </p>
-              <p className="mt-0.5 text-xs text-slate-400">
-                Quay lại bước 2 để vẽ vùng trồng trên bản đồ
+              <p className="mt-0.5 text-xs text-muted-foreground">
+                Quay lại bước trước để chọn vị trí trên bản đồ
               </p>
             </div>
           )}
@@ -398,12 +500,30 @@ export const RegionReviewStep = ({
                 Phân chia khu vực con
               </CardTitle>
             </div>
-            <span className="rounded-full border border-amber-100 bg-amber-50 px-2 py-0.5 text-[11px] font-bold text-amber-600">
+            <Badge
+              variant="outline"
+              className="bg-amber-50 text-amber-700 border-amber-200/60 font-semibold text-[11px]"
+            >
               {subAreas.length} khu vực
-            </span>
+            </Badge>
           </div>
         </CardHeader>
-        <CardContent className="px-5 py-5">
+        <CardContent className="px-5 py-5 space-y-4">
+          {isOverAllocated && (
+            <div className="rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-xs text-destructive flex flex-wrap items-center justify-between gap-2">
+              <span>
+                <strong>Cảnh báo:</strong> Tổng diện tích các khu vực con (
+                {totalSubAreaAcreage.toFixed(2)} ha) đang vượt quá diện tích
+                vùng trồng ({regionArea} ha).
+              </span>
+              <Badge
+                variant="destructive"
+                className="text-[10px] font-semibold"
+              >
+                Vượt {(totalSubAreaAcreage - regionArea).toFixed(2)} ha
+              </Badge>
+            </div>
+          )}
           {subAreas.length > 0 ? (
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               {subAreas.map((subArea, index) => {

@@ -24,6 +24,7 @@ import { Building2, Check, Loader2, Sprout } from "lucide-react";
 import {
   APP_WORKSPACE_FEATURE_PREFIXES,
   stripAppWorkspaceFeaturePrefix,
+  WORKSPACE_CHANGE_EVENT,
 } from "@/shared/constants/workspace.constants";
 
 interface FarmInfoBottomSheetProps {
@@ -126,7 +127,7 @@ export function FarmInfoBottomSheet({
       queryClient.invalidateQueries({
         queryKey: ["workspace", selectedWorkspaceId],
       });
-      window.dispatchEvent(new Event("eco-farm:workspace-change"));
+      window.dispatchEvent(new Event(WORKSPACE_CHANGE_EVENT));
 
       toast.success("Đã cập nhật tên Farm thành công!");
       onOpenChange(false);

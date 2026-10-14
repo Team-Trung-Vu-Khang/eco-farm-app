@@ -79,3 +79,29 @@ export const getBoundsFromPoints = (
 
   return L.latLngBounds(points);
 };
+
+export const DEFAULT_REGION_CENTER = { lat: 11.54, lng: 106.895 };
+export const DEFAULT_SQUARE_SPAN = 0.01;
+
+export const buildSquareAround = (
+  lat: number,
+  lng: number,
+  halfSpan: number = DEFAULT_SQUARE_SPAN,
+): RegionCoordinate[] => [
+  {
+    lat: Number((lat - halfSpan).toFixed(6)),
+    lng: Number((lng - halfSpan).toFixed(6)),
+  },
+  {
+    lat: Number((lat + halfSpan).toFixed(6)),
+    lng: Number((lng - halfSpan).toFixed(6)),
+  },
+  {
+    lat: Number((lat + halfSpan).toFixed(6)),
+    lng: Number((lng + halfSpan).toFixed(6)),
+  },
+  {
+    lat: Number((lat - halfSpan).toFixed(6)),
+    lng: Number((lng + halfSpan).toFixed(6)),
+  },
+];
