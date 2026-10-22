@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { useSelectedWorkspaceId } from "@/features/workspace";
 import { areaApi } from "../api/farm.api";
 import type { FarmAreaResponse, AreaQueryParams, FarmPlotResponse, PlotQueryParams } from "../types/farm.type";
 import type { PageResponse } from "../../foundation/types/foundation.type";
@@ -18,10 +19,14 @@ interface UseAreasOptions {
 type UseAreasResult = ReturnType<typeof useQuery<PageResponse<FarmAreaResponse>, Error>>;
 
 export function useAreas({ params, enabled = true }: UseAreasOptions = {}) {
+  const workspaceId = useSelectedWorkspaceId();
+  const hasWorkspaceId =
+    workspaceId !== null && workspaceId !== undefined && workspaceId !== "";
+
   const queryResult: UseAreasResult = useQuery<PageResponse<FarmAreaResponse>, Error>({
-    queryKey: areaKeys.list(params),
+    queryKey: [...areaKeys.list(params), workspaceId ?? "no-workspace"],
     queryFn: () => areaApi.list(params),
-    enabled,
+    enabled: enabled && hasWorkspaceId,
   });
 
   return {

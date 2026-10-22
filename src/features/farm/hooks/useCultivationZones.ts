@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { useSelectedWorkspaceId } from "@/features/workspace";
 import { cultivationZoneApi } from "../api/farm.api";
 import type {
   FarmCultivationZoneResponse,
@@ -27,13 +28,17 @@ export function useCultivationZones({
   params,
   enabled = true,
 }: UseCultivationZonesOptions = {}) {
+  const workspaceId = useSelectedWorkspaceId();
+  const hasWorkspaceId =
+    workspaceId !== null && workspaceId !== undefined && workspaceId !== "";
+
   const queryResult: UseCultivationZonesResult = useQuery<
     PageResponse<FarmCultivationZoneResponse>,
     Error
   >({
-    queryKey: cultivationZoneKeys.list(params),
+    queryKey: [...cultivationZoneKeys.list(params), workspaceId ?? "no-workspace"],
     queryFn: () => cultivationZoneApi.list(params),
-    enabled,
+    enabled: enabled && hasWorkspaceId,
     staleTime: 2 * 60 * 1000,
     gcTime: 5 * 60 * 1000,
     refetchOnWindowFocus: false,

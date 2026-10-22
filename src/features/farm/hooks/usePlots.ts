@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { useSelectedWorkspaceId } from "@/features/workspace";
 import { plotApi } from "../api/farm.api";
 import type { FarmPlotResponse, PlotQueryParams } from "../types/farm.type";
 import type { PageResponse } from "../../foundation/types/foundation.type";
@@ -20,13 +21,17 @@ type UsePlotsResult = ReturnType<
 >;
 
 export function usePlots({ params, enabled = true }: UsePlotsOptions = {}) {
+  const workspaceId = useSelectedWorkspaceId();
+  const hasWorkspaceId =
+    workspaceId !== null && workspaceId !== undefined && workspaceId !== "";
+
   const queryResult: UsePlotsResult = useQuery<
     PageResponse<FarmPlotResponse>,
     Error
   >({
-    queryKey: plotKeys.list(params),
+    queryKey: [...plotKeys.list(params), workspaceId ?? "no-workspace"],
     queryFn: () => plotApi.list(params),
-    enabled,
+    enabled: enabled && hasWorkspaceId,
   });
 
   return {

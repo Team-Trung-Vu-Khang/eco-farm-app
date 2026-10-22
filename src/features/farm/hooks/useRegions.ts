@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { useSelectedWorkspaceId } from "@/features/workspace";
 import { regionApi } from "../api/farm.api";
 import type {
   FarmRegionResponse,
@@ -27,13 +28,17 @@ type UseRegionsResult = ReturnType<
 >;
 
 export function useRegions({ params, enabled = true }: UseRegionsOptions = {}) {
+  const workspaceId = useSelectedWorkspaceId();
+  const hasWorkspaceId =
+    workspaceId !== null && workspaceId !== undefined && workspaceId !== "";
+
   const queryResult: UseRegionsResult = useQuery<
     PageResponse<FarmRegionResponse>,
     Error
   >({
-    queryKey: regionKeys.list(params),
+    queryKey: [...regionKeys.list(params), workspaceId ?? "no-workspace"],
     queryFn: () => regionApi.list(params),
-    enabled,
+    enabled: enabled && hasWorkspaceId,
     staleTime: 2 * 60 * 1000,
     gcTime: 5 * 60 * 1000,
     refetchOnWindowFocus: false,

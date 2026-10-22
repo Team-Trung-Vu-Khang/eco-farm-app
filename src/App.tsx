@@ -37,23 +37,32 @@ const OnboardChecker: React.FC<OnboardCheckerProps> = ({ children }) => {
     setShowOnboard(false);
   }, [workspaceId]);
 
-  // Gọi API lấy danh sách vùng trồng tại root để check
+  // Chỉ gọi API lấy danh sách vùng trồng khi ĐÃ CÓ workspaceId
   const { response, isLoading, isError, refetch } = useRegions({
     params: {
       page: 0,
       size: 1, // Chỉ lấy 1 bản ghi để tối ưu tốc độ kiểm tra
       domainCode: "CROP",
     },
+    enabled: Boolean(workspaceId),
   });
 
   const { currentUser, isLoading: isLoadingUser } = useCurrentUser();
 
   useEffect(() => {
     // Chỉ tự động kích hoạt Dialog khi:
-    // 1. Dữ liệu vùng trồng và dữ liệu user đã tải xong (không lỗi, không loading)
-    // 2. User không thuộc các role loại trừ (MEVI_SUPER_ADMIN, MEVI_ADMIN, MEVI_FARM_ADMIN)
-    // 3. Danh sách vùng trồng trống và chưa kiểm tra onboarding
-    if (!isLoading && !isError && response && !isLoadingUser && currentUser) {
+    // 1. Đã có workspaceId
+    // 2. Dữ liệu vùng trồng và dữ liệu user đã tải xong (không lỗi, không loading)
+    // 3. User không thuộc các role loại trừ (MEVI_SUPER_ADMIN, MEVI_ADMIN, MEVI_FARM_ADMIN)
+    // 4. Danh sách vùng trồng trống và chưa kiểm tra onboarding
+    if (
+      workspaceId &&
+      !isLoading &&
+      !isError &&
+      response &&
+      !isLoadingUser &&
+      currentUser
+    ) {
       const userRoles = currentUser.roleCodes ?? [];
       const hasExcludedRole = userRoles.some((role) =>
         ["MEVI_SUPER_ADMIN", "MEVI_ADMIN", "MEVI_FARM_ADMIN"].includes(role),
@@ -67,7 +76,15 @@ const OnboardChecker: React.FC<OnboardCheckerProps> = ({ children }) => {
         setHasChecked(true);
       }
     }
-  }, [isLoading, isError, response, isLoadingUser, currentUser, hasChecked]);
+  }, [
+    workspaceId,
+    isLoading,
+    isError,
+    response,
+    isLoadingUser,
+    currentUser,
+    hasChecked,
+  ]);
 
   const handleOnboardSuccess = () => {
     setShowOnboard(false);
