@@ -1,9 +1,15 @@
 import { apiClient } from "@/shared/lib/axios";
-import type { AuthMeResponse, AuthProvider, WorkspaceRole } from "../types/auth.type";
+import type {
+  AuthMeResponse,
+  AuthProvider,
+  WorkspaceRole,
+} from "../types/auth.type";
 import { AUTH_PATHS } from "../../../shared/constants/auth.constants";
 import { authEnv } from "../../../shared/config/auth.env";
 import { apiEnv } from "../../../shared/config/api.env";
 import { buildApiUrl } from "../../../shared/config/api.config";
+
+import { SELECTED_WORKSPACE_STORAGE_KEY } from "@/features/workspace";
 
 const AUTH_TOKEN_STORAGE_KEY = "accessToken";
 const buildCallbackUrl = () =>
@@ -18,6 +24,7 @@ export const authStorage = {
   },
   clearToken() {
     sessionStorage.removeItem(AUTH_TOKEN_STORAGE_KEY);
+    sessionStorage.removeItem(SELECTED_WORKSPACE_STORAGE_KEY);
   },
 };
 
@@ -43,9 +50,7 @@ export const authApi = {
   },
   startLogin(provider: AuthProvider) {
     const currentPath =
-      window.location.pathname +
-      window.location.search +
-      window.location.hash;
+      window.location.pathname + window.location.search + window.location.hash;
     if (
       currentPath &&
       currentPath !== "/" &&
@@ -58,10 +63,16 @@ export const authApi = {
   getCallbackToken() {
     return new URLSearchParams(window.location.search).get("token");
   },
-  async getMe(token = authStorage.getToken(), workspaceId?: number | string | null) {
+  async getMe(
+    token = authStorage.getToken(),
+    workspaceId?: number | string | null,
+  ) {
     return this.getCurrentUser(token, workspaceId);
   },
-  async getCurrentUser(token = authStorage.getToken(), workspaceId?: number | string | null) {
+  async getCurrentUser(
+    token = authStorage.getToken(),
+    workspaceId?: number | string | null,
+  ) {
     if (!token) {
       throw new Error("Missing auth token");
     }
@@ -69,7 +80,9 @@ export const authApi = {
     const response = await apiClient.get<AuthMeResponse>(AUTH_PATHS.me, {
       headers: {
         Authorization: `Bearer ${token}`,
-        ...(workspaceId !== null && workspaceId !== undefined && workspaceId !== ""
+        ...(workspaceId !== null &&
+        workspaceId !== undefined &&
+        workspaceId !== ""
           ? { "X-Workspace-Id": String(workspaceId) }
           : {}),
       },
@@ -77,12 +90,17 @@ export const authApi = {
 
     return response.data;
   },
-  async getWorkspaceRoles(workspaceId?: number | string | null, token = authStorage.getToken()): Promise<WorkspaceRole[]> {
+  async getWorkspaceRoles(
+    workspaceId?: number | string | null,
+    token = authStorage.getToken(),
+  ): Promise<WorkspaceRole[]> {
     if (!token) throw new Error("Missing auth token");
     const response = await apiClient.get<WorkspaceRole[]>("/api/me/roles", {
       headers: {
         Authorization: `Bearer ${token}`,
-        ...(workspaceId !== null && workspaceId !== undefined && workspaceId !== ""
+        ...(workspaceId !== null &&
+        workspaceId !== undefined &&
+        workspaceId !== ""
           ? { "X-Workspace-Id": String(workspaceId) }
           : {}),
       },

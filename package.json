@@ -11,7 +11,7 @@
     "typecheck:all": "tsc -b"
   },
   "dependencies": {
-    "@Team-Trung-Vu-Khang/eco-shared-ui": "0.0.24",
+    "@Team-Trung-Vu-Khang/eco-shared-ui": "0.0.25",
     "@hookform/resolvers": "^5.4.0",
     "@originjs/vite-plugin-federation": "^1.4.1",
     "@tailwindcss/vite": "^4.1.18",
