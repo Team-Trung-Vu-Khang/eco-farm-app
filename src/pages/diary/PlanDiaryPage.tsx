@@ -1,6 +1,7 @@
 import { useMemo, useState, useEffect } from "react";
 import PageWrapper from "@/components/PageWrapper";
 import {
+  AutoCompleteSelect,
   Badge,
   Button,
   DataTable,
@@ -17,6 +18,7 @@ import {
   MapPin,
   RefreshCw,
   User,
+  UserCheck,
 } from "lucide-react";
 import { useLocation } from "wouter";
 import type {
@@ -25,10 +27,13 @@ import type {
   FarmTaskStatus,
 } from "@/features/farm-task";
 import { useFarmTasks, useFarmTaskStats } from "@/features/farm-task";
+import { useCurrentUser } from "@/features/auth";
+import { useFarmPersonnel } from "@/features/master-data";
+import { useSelectedWorkspaceId } from "@/features/workspace";
 import { useDebounce } from "@/shared/hooks/useDebounce";
 import { TERMS } from "@/config/terminology";
 
-// ─── Helpers ────────────────────────────────────────────────────────────────
+// ─── Helpers ─────────────────────────────────────────────────────────────────
 
 const TODAY = new Date().toISOString().split("T")[0];
 
@@ -66,7 +71,7 @@ const TABS: { key: TabKey; label: string; icon: React.ElementType }[] = [
   { key: "overdue", label: "Đã quá hạn", icon: AlertTriangle },
 ];
 
-// ─── Main Page ────────────────────────────────────────────────────────────────
+// ─── Main Page ───────────────────────────────────────────────────────────────
 
 export default function PlanDiaryPage() {
   const [, setLocation] = useLocation();
@@ -77,14 +82,85 @@ export default function PlanDiaryPage() {
   const [page, setPage] = useState(0);
   const [size, setSize] = useState(20);
 
-  // Reset page on tab or search changes
+  const workspaceId = useSelectedWorkspaceId();
+  const numericWorkspaceId = workspaceId ? Number(workspaceId) : undefined;
+  const { currentUser } = useCurrentUser();
+  const { items: workspacePersonnel } = useFarmPersonnel({
+    workspaceId: Number.isFinite(numericWorkspaceId)
+      ? numericWorkspaceId
+      : undefined,
+    params: { size: 100 },
+  });
+
+  // Tìm hồ sơ nhân sự của currentUser trong workspace
+  const currentPersonnel = useMemo(() => {
+    if (!currentUser || !workspacePersonnel.length) return null;
+    return (
+      workspacePersonnel.find((p) => p.userId === currentUser.id) ||
+      workspacePersonnel.find(
+        (p) =>
+          currentUser.phoneNumber &&
+          p.phone &&
+          p.phone.replace(/\D/g, "") ===
+            currentUser.phoneNumber.replace(/\D/g, ""),
+      ) ||
+      workspacePersonnel.find(
+        (p) =>
+          currentUser.email &&
+          p.email &&
+          p.email.toLowerCase() === currentUser.email.toLowerCase(),
+      ) ||
+      workspacePersonnel.find(
+        (p) =>
+          p.fullName &&
+          currentUser.fullName &&
+          p.fullName.trim().toLowerCase() ===
+            currentUser.fullName.trim().toLowerCase(),
+      ) ||
+      null
+    );
+  }, [currentUser, workspacePersonnel]);
+
+  // Bộ lọc nhân sự thực hiện: "ALL" hoặc ID nhân sự
+  const [selectedPersonnelId, setSelectedPersonnelId] = useState<
+    number | "ALL"
+  >("ALL");
+
+  const isMyTasksActive = useMemo(() => {
+    if (selectedPersonnelId === "ALL") return false;
+    if (currentPersonnel) return selectedPersonnelId === currentPersonnel.id;
+    return false;
+  }, [selectedPersonnelId, currentPersonnel]);
+
+  const personnelOptions = useMemo(() => {
+    return [
+      { value: "ALL", label: "Tất cả nhân sự", keywords: ["tat ca", "all"] },
+      ...workspacePersonnel.map((p) => ({
+        value: String(p.id),
+        label: p.fullName + (currentPersonnel?.id === p.id ? " (Tôi)" : ""),
+        keywords: [p.fullName, p.code || "", p.phone || ""].filter(
+          Boolean,
+        ) as string[],
+      })),
+    ];
+  }, [workspacePersonnel, currentPersonnel]);
+
+  // Reset page on tab, search, or personnel filter changes
   useEffect(() => {
     setPage(0);
-  }, [activeTab, debouncedSearchQuery]);
+  }, [activeTab, debouncedSearchQuery, selectedPersonnelId]);
+
+  const isFilterByPersonnel = selectedPersonnelId !== "ALL";
 
   // Farm task stats
   const { item: statsResponse } = useFarmTaskStats({
-    params: { origin: "PLANNED" },
+    params: {
+      origin: "PLANNED",
+      assignedPersonnelRoles: isFilterByPersonnel ? "EXECUTOR" : undefined,
+      assignedPersonnelId: isFilterByPersonnel
+        ? selectedPersonnelId
+        : undefined,
+    },
   });
 
   // Query params for planned farm tasks list API (GET /api/farm/tasks?origin=PLANNED)
@@ -94,10 +170,21 @@ export default function PlanDiaryPage() {
       keyword: debouncedSearchQuery.trim() || undefined,
       sort: activeTab === "newest" ? "RECENTLY_ASSIGNED" : undefined,
       overdue: activeTab === "overdue" ? true : undefined,
+      assignedPersonnelRoles: isFilterByPersonnel ? "EXECUTOR" : undefined,
+      assignedPersonnelId: isFilterByPersonnel
+        ? selectedPersonnelId
+        : undefined,
       page,
       size,
     }),
-    [activeTab, debouncedSearchQuery, page, size],
+    [
+      activeTab,
+      debouncedSearchQuery,
+      isFilterByPersonnel,
+      page,
+      selectedPersonnelId,
+      size,
+    ],
   );
 
   const { items, response, loading } = useFarmTasks({
@@ -376,35 +463,89 @@ export default function PlanDiaryPage() {
         })}
       </div>
 
-      {/* ── Tabs Filter ── */}
-      <div className="flex gap-2 flex-wrap mb-4">
-        {TABS.map((tab) => {
-          const Icon = tab.icon;
-          const isActive = activeTab === tab.key;
-          const isOrangeTab = tab.key === "overdue";
-          return (
-            <button
-              key={tab.key}
-              type="button"
-              onClick={() => setActiveTab(tab.key)}
-              className={`inline-flex items-center gap-1.5 rounded-full border px-4 py-1.5 text-sm font-semibold transition-all ${
-                isActive
-                  ? isOrangeTab
-                    ? "border-orange-400 bg-orange-50 text-orange-700 shadow-sm"
-                    : "border-green-400 bg-green-50 text-green-700 shadow-sm"
-                  : "border-slate-200 bg-white text-slate-600 hover:border-slate-300"
-              }`}
-            >
-              <Icon className="h-3.5 w-3.5" />
-              {tab.label}
-              {tab.key === "overdue" && overdueCount > 0 && (
-                <span className="ml-0.5 rounded-full bg-orange-500 text-white text-[10px] font-bold px-1.5 py-0.5 leading-none">
-                  {overdueCount}
-                </span>
-              )}
-            </button>
-          );
-        })}
+      {/* ── Filters Toolbar ── */}
+      <div className="flex flex-col md:flex-row sm:items-center justify-between gap-3 mb-4">
+        {/* Nhóm Tabs sắp xếp / Trạng thái & Lọc Việc của tôi */}
+        <div className="flex items-center gap-2 flex-wrap">
+          {TABS.map((tab) => {
+            const Icon = tab.icon;
+            const isActive = activeTab === tab.key;
+            const isOrangeTab = tab.key === "overdue";
+            return (
+              <button
+                key={tab.key}
+                type="button"
+                onClick={() => setActiveTab(tab.key)}
+                className={`inline-flex items-center gap-1.5 rounded-full border px-4 py-1.5 text-sm font-semibold transition-all ${
+                  isActive
+                    ? isOrangeTab
+                      ? "border-orange-400 bg-orange-50 text-orange-700 shadow-sm"
+                      : "border-green-400 bg-green-50 text-green-700 shadow-sm"
+                    : "border-slate-200 bg-white text-slate-600 hover:border-slate-300"
+                }`}
+              >
+                <Icon className="h-3.5 w-3.5" />
+                {tab.label}
+                {tab.key === "overdue" && overdueCount > 0 && (
+                  <span className="ml-0.5 rounded-full bg-orange-500 text-white text-[10px] font-bold px-1.5 py-0.5 leading-none">
+                    {overdueCount}
+                  </span>
+                )}
+              </button>
+            );
+          })}
+
+          <div className="h-5 w-px bg-slate-200 hidden md:block mx-0.5" />
+
+          {/* Nút lọc "Công việc của tôi" - theo đúng design system của các tab */}
+          <button
+            type="button"
+            onClick={() => {
+              if (isMyTasksActive) {
+                setSelectedPersonnelId("ALL");
+              } else {
+                if (currentPersonnel) {
+                  setSelectedPersonnelId(currentPersonnel.id);
+                } else if (workspacePersonnel.length > 0) {
+                  setSelectedPersonnelId(workspacePersonnel[0].id);
+                }
+              }
+            }}
+            className={`inline-flex items-center gap-1.5 rounded-full border px-4 py-1.5 text-sm font-semibold transition-all ${
+              isMyTasksActive
+                ? "border-green-400 bg-green-50 text-green-700 shadow-sm"
+                : "border-slate-200 bg-white text-slate-600 hover:border-slate-300"
+            }`}
+          >
+            <UserCheck className="h-3.5 w-3.5" />
+            Công việc của tôi
+            {currentPersonnel && (
+              <span className="text-xs font-normal opacity-75 ml-0.5">
+                ({currentPersonnel.fullName})
+              </span>
+            )}
+          </button>
+        </div>
+
+        {/* Ô Tìm kiếm & Chọn nhân sự có Search (AutoCompleteSelect) */}
+        <div className="w-full md:w-auto md:min-w-[240px] md:max-w-[260px] shrink-0">
+          <AutoCompleteSelect
+            options={personnelOptions}
+            value={String(selectedPersonnelId)}
+            onChange={(val) => {
+              if (!val || val === "ALL") {
+                setSelectedPersonnelId("ALL");
+              } else {
+                setSelectedPersonnelId(Number(val));
+              }
+            }}
+            placeholder="Lọc theo nhân sự..."
+            searchPlaceholder="Tìm kiếm nhân sự..."
+            emptyText="Không tìm thấy nhân sự"
+            clearable={selectedPersonnelId !== "ALL"}
+            className="bg-white"
+          />
+        </div>
       </div>
 
       {/* ── Table Data ── */}

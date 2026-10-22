@@ -252,26 +252,66 @@ export function UpdateHistoryTable({
         },
       },
       {
-        key: "actions",
-        label: "Hành động",
+        key: "editable",
+        label: "Trạng thái sửa",
+        mobilePriority: "badge",
         render: (_val, row) => (
-          <div className="flex items-center gap-1.5">
-            <Button
-              type="button"
-              size="sm"
-              variant="outline"
-              onClick={(e) => {
-                e.stopPropagation();
-                const targetTaskId = row.lines?.[0]?.taskId || row.id;
-                setLocation(`/diary/update/${targetTaskId}?type=PLANNED`);
-              }}
-              className="h-8 px-2.5 rounded-lg text-xs font-bold gap-1 border-slate-200 text-slate-700 hover:bg-slate-100 transition-all cursor-pointer"
-            >
-              <Eye className="h-3.5 w-3.5 text-green-600" />
-              Xem
-            </Button>
+          <div>
+            {row.editable ? (
+              <Badge className="bg-emerald-50 text-emerald-700 border-emerald-200 text-[10px] font-bold">
+                Có thể sửa (24h)
+              </Badge>
+            ) : (
+              <Badge className="bg-slate-100 text-slate-500 border-slate-200 text-[10px] font-medium">
+                Hết hạn sửa
+              </Badge>
+            )}
           </div>
         ),
+      },
+      {
+        key: "actions",
+        label: "Hành động",
+        render: (_val, row) => {
+          const firstTaskId = row.lines?.[0]?.taskId;
+          return (
+            <div className="flex items-center gap-1.5">
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (firstTaskId) {
+                    setLocation(`/diary/update/${firstTaskId}?type=PLANNED`);
+                  } else {
+                    setLocation("/diary/plan");
+                  }
+                }}
+                className="h-8 px-2.5 rounded-lg text-xs font-bold gap-1 border-slate-200 text-slate-700 hover:bg-slate-100 transition-all cursor-pointer"
+              >
+                <Eye className="h-3.5 w-3.5 text-green-600" />
+                Xem
+              </Button>
+              {row.editable && (
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    const taskIdParam = firstTaskId ? `/${firstTaskId}` : "";
+                    setLocation(`/diary/plan${taskIdParam}?editId=${row.id}`);
+                  }}
+                  className="h-8 px-2.5 rounded-lg text-xs font-bold gap-1 border-emerald-200 text-emerald-700 hover:bg-emerald-50 transition-all cursor-pointer"
+                >
+                  <Edit3 className="h-3.5 w-3.5 text-emerald-600" />
+                  Sửa
+                </Button>
+              )}
+            </div>
+          );
+        },
       },
     ],
     [setLocation],
@@ -574,19 +614,20 @@ export function UpdateHistoryTable({
   const hasPlannedEntries = Boolean(
     plannedEntries && plannedEntries.length > 0,
   );
+  type HistoryTableRow = { id: string | number; [key: string]: unknown };
   const columnsToUse = (isDaily
     ? dailyColumns
     : hasPlannedEntries
       ? plannedEntryColumns
-      : plannedColumns) as unknown as Column<Record<string, unknown>>[];
+      : plannedColumns) as unknown as Column<HistoryTableRow>[];
   const dataToUse = (isDaily
     ? dailyEntries
     : hasPlannedEntries
       ? plannedEntries
-      : data) as unknown as Record<string, unknown>[];
+      : data) as unknown as HistoryTableRow[];
 
   return (
-    <DataTable
+    <DataTable<HistoryTableRow>
       columns={columnsToUse}
       data={dataToUse}
       searchable={searchable}

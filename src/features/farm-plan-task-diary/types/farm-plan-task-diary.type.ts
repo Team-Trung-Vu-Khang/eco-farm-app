@@ -84,20 +84,20 @@ export interface CreatePlanTaskDiaryEntryRequest {
 }
 
 export interface UpdatePlanTaskDiaryEntryRequest {
-  planId?: number;
-  stageId?: number;
+  planId: number;
+  stageId: number;
   workflowId?: number | null;
   seasonId?: number | null;
   submittedByPersonnelId?: number | null;
   warning?: boolean | null;
   description?: string | null;
   photos?: PhotoRequest[] | null;
-  lines?: PlanTaskDiaryLineRequest[] | null;
+  lines: PlanTaskDiaryLineRequest[];
   harvestItems?: HarvestItemRequest[] | null;
 }
 
 export interface PlanTaskDiaryEntryResponse {
-  id: number;
+  id: string;
   code: string;
   workspaceId: number;
   workflowId?: number | null;

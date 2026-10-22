@@ -967,33 +967,60 @@ const TaskBlock = ({
               </p>
             ) : (
               <div className="mt-3 max-h-36 space-y-2 overflow-y-auto pr-1">
-                {materials.map((material: any) => (
-                  <div
-                    key={material.id}
-                    className="flex items-center justify-between gap-3 rounded-xl border border-emerald-100 bg-emerald-50/40 px-3 py-2"
-                  >
-                    <div className="min-w-0">
-                      <p className="truncate text-sm font-bold text-slate-700">
-                        {material.materialName || material.name}
-                      </p>
-                      <p className="text-[10px] font-medium text-slate-400">
-                        {material.materialCategory || material.materialType}
-                      </p>
+                {materials.map((material: any) => {
+                  const hasActualUsage =
+                    Number(material.quantityActualTotal ?? 0) > 0;
+                  return (
+                    <div
+                      key={material.id}
+                      className="flex items-center justify-between gap-3 rounded-xl border border-emerald-100 bg-emerald-50/40 px-3 py-2"
+                    >
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <p className="truncate text-sm font-bold text-slate-700">
+                            {material.materialName || material.name}
+                          </p>
+                          {hasActualUsage && (
+                            <span className="inline-block rounded-md bg-amber-50 px-1.5 py-0.5 text-[10px] font-bold text-amber-700 border border-amber-200">
+                              Đã dùng: {material.quantityActualTotal}{" "}
+                              {material.unit}
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-[10px] font-medium text-slate-400">
+                          {material.materialCategory || material.materialType}
+                        </p>
+                      </div>
+                      <div className="flex shrink-0 items-center gap-2">
+                        <span className="rounded-lg bg-white px-2 py-1 text-xs font-black text-emerald-700 shadow-sm">
+                          {material.quantity || 0} {material.unit}
+                        </span>
+                        <button
+                          type="button"
+                          disabled={hasActualUsage}
+                          title={
+                            hasActualUsage
+                              ? "Vật tư đã có thực tế tiêu hao từ nhật ký kế hoạch, không thể xoá định mức này."
+                              : "Xóa vật tư"
+                          }
+                          className={cn(
+                            "flex h-6 w-6 items-center justify-center rounded-full transition-colors",
+                            hasActualUsage
+                              ? "text-slate-200 opacity-40 cursor-not-allowed"
+                              : "text-slate-300 hover:bg-rose-50 hover:text-rose-500",
+                          )}
+                          onClick={() => {
+                            if (!hasActualUsage) {
+                              onRemoveMaterial(material.id);
+                            }
+                          }}
+                        >
+                          <X className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
                     </div>
-                    <div className="flex shrink-0 items-center gap-2">
-                      <span className="rounded-lg bg-white px-2 py-1 text-xs font-black text-emerald-700 shadow-sm">
-                        {material.quantity || 0} {material.unit}
-                      </span>
-                      <button
-                        type="button"
-                        className="flex h-6 w-6 items-center justify-center rounded-full text-slate-300 transition-colors hover:bg-rose-50 hover:text-rose-500"
-                        onClick={() => onRemoveMaterial(material.id)}
-                      >
-                        <X className="h-3.5 w-3.5" />
-                      </button>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>
@@ -1021,6 +1048,8 @@ const TaskBlock = ({
                             (m: any) => m.materialName === item.name,
                           );
                           const isSelected = !!allocation;
+                          const hasActualUsage =
+                            Number(allocation?.quantityActualTotal ?? 0) > 0;
 
                           return (
                             <div
@@ -1032,33 +1061,50 @@ const TaskBlock = ({
                                   : "bg-transparent border-slate-100 opacity-60 hover:opacity-100",
                               )}
                             >
-                              <Checkbox
-                                checked={isSelected}
-                                onCheckedChange={(checked) => {
-                                  if (checked) {
-                                    onAddMaterial({
-                                      stageId: stageName,
-                                      taskId: task.id,
-                                      materialCategory: category,
-                                      materialType: category,
-                                      materialName: item.name,
-                                      quantity: "0",
-                                      unit: item.unit,
-                                      supplyItemId: item.supplyItemId,
-                                      unitBaseId: item.unitBaseId,
-                                      unitOptions: item.unitOptions,
-                                      availableQuantity: item.availableQuantity,
-                                    });
-                                  } else if (allocation) {
-                                    onRemoveMaterial(allocation.id);
-                                  }
-                                }}
-                              />
+                              <div
+                                title={
+                                  hasActualUsage
+                                    ? "Vật tư đã có thực tế tiêu hao từ nhật ký kế hoạch, không thể bỏ chọn."
+                                    : undefined
+                                }
+                              >
+                                <Checkbox
+                                  checked={isSelected}
+                                  disabled={hasActualUsage}
+                                  onCheckedChange={(checked) => {
+                                    if (checked) {
+                                      onAddMaterial({
+                                        stageId: stageName,
+                                        taskId: task.id,
+                                        materialCategory: category,
+                                        materialType: category,
+                                        materialName: item.name,
+                                        quantity: "0",
+                                        unit: item.unit,
+                                        supplyItemId: item.supplyItemId,
+                                        unitBaseId: item.unitBaseId,
+                                        unitOptions: item.unitOptions,
+                                        availableQuantity:
+                                          item.availableQuantity,
+                                      });
+                                    } else if (allocation && !hasActualUsage) {
+                                      onRemoveMaterial(allocation.id);
+                                    }
+                                  }}
+                                />
+                              </div>
 
                               <div className="flex-1 min-w-0">
                                 <p className="text-sm font-bold text-slate-700 truncate">
                                   {item.name}
                                 </p>
+                                {hasActualUsage && (
+                                  <p className="text-[10px] font-semibold text-amber-600">
+                                    Đã tiêu hao:{" "}
+                                    {allocation.quantityActualTotal} {item.unit}{" "}
+                                    (không thể xóa)
+                                  </p>
+                                )}
                                 {isSelected && (
                                   <p className="text-[10px] text-amber-600">
                                     Còn lại:{" "}

@@ -11,4 +11,4 @@ export * from "./hooks/useSelectedWorkspaceId";
 export * from "./hooks/useInfiniteWorkspaces";
 export * from "./types/workspace.type";
 export * from "./utils/workspaceFormatUtils";
-
+export * from "./utils/workspaceQueryFilter";

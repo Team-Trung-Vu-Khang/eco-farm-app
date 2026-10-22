@@ -19,7 +19,7 @@ import { Loader2, Sprout } from "lucide-react";
 import {
   APP_WORKSPACE_FEATURE_PREFIXES,
   stripAppWorkspaceFeaturePrefix,
-  WORKSPACE_CHANGE_EVENT,
+  WORKSPACE_DATA_UPDATED_EVENT,
 } from "@/shared/constants/workspace.constants";
 
 interface EditFarmNameBottomSheetProps {
@@ -111,7 +111,7 @@ export function EditFarmNameBottomSheet({
       queryClient.invalidateQueries({
         queryKey: ["workspace", selectedWorkspaceId],
       });
-      window.dispatchEvent(new Event(WORKSPACE_CHANGE_EVENT));
+      window.dispatchEvent(new Event(WORKSPACE_DATA_UPDATED_EVENT));
 
       toast.success("Đã cập nhật tên nông hộ thành công!");
       onOpenChange(false);

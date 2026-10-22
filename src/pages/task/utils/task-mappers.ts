@@ -1,7 +1,9 @@
 import type { FarmTaskResponse, FarmTaskRequest } from "@/features/farm-task";
 import type { Task } from "../../../stores/useTaskStore";
 
-const mapPriority = (priority: FarmTaskResponse["priority"]): Task["priority"] => {
+const mapPriority = (
+  priority: FarmTaskResponse["priority"],
+): Task["priority"] => {
   switch (priority) {
     case "HIGH":
       return "high";
@@ -27,13 +29,23 @@ const mapStatus = (status: FarmTaskResponse["status"]): Task["status"] => {
   }
 };
 
-const mapScopeToSelections = (task: FarmTaskResponse): Task["geographicalSelections"] => {
+const mapScopeToSelections = (
+  task: FarmTaskResponse,
+): Task["geographicalSelections"] => {
   if (!task.scopeType) return [];
 
   const base = {
     id: `task-${task.id}-${task.scopeType.toLowerCase()}-${task.region?.id ?? task.area?.id ?? task.plot?.id ?? task.id}`,
-    regionId: String(task.region?.id ?? task.area?.region?.id ?? task.plot?.area?.region?.id ?? ""),
-    regionName: task.region?.name ?? task.area?.region?.name ?? task.plot?.area?.region?.name,
+    regionId: String(
+      task.region?.id ??
+        task.area?.region?.id ??
+        task.plot?.area?.region?.id ??
+        "",
+    ),
+    regionName:
+      task.region?.name ??
+      task.area?.region?.name ??
+      task.plot?.area?.region?.name,
   };
 
   if (task.scopeType === "REGION" && task.region) {
@@ -78,7 +90,9 @@ const mapStageLabel = (task: FarmTaskResponse) => {
 
   switch (task.scopeType) {
     case "REGION":
-      return task.region?.name ? `Vùng trồng: ${task.region.name}` : "Vùng trồng";
+      return task.region?.name
+        ? `Vùng trồng: ${task.region.name}`
+        : "Vùng trồng";
     case "AREA":
       return task.area?.name ? `Khu vực: ${task.area.name}` : "Khu vực";
     case "PLOT":
@@ -91,7 +105,10 @@ const mapStageLabel = (task: FarmTaskResponse) => {
 const mapPersonnelNames = (
   task: FarmTaskResponse,
   role: "MANAGER" | "QUALITY_INSPECTOR" | "EXECUTOR",
-) => task.personnel.filter((item) => item.role === role).map((item) => item.fullName || "");
+) =>
+  task.personnel
+    .filter((item) => item.role === role)
+    .map((item) => item.fullName || "");
 
 export function farmTaskToLegacyTask(task: FarmTaskResponse): Task {
   const executorNames = mapPersonnelNames(task, "EXECUTOR");
@@ -121,7 +138,8 @@ export function farmTaskToLegacyTask(task: FarmTaskResponse): Task {
     createdAt: task.createdAt || task.startDate,
     materials: task.supplyLines.map((line) => ({
       id: line.id,
-      name: line.supplyItem.name || line.supplyItem.code || `Vật tư #${line.id}`,
+      name:
+        line.supplyItem.name || line.supplyItem.code || `Vật tư #${line.id}`,
       quantity: String(line.quantity),
       unit: line.unitBase.name || line.unitBase.code,
       type: "other",
@@ -129,10 +147,12 @@ export function farmTaskToLegacyTask(task: FarmTaskResponse): Task {
       taskId: task.id,
       materialCategory: line.supplyItem.supplyType || "other",
       materialType: line.supplyItem.supplyType || "other",
-      materialName: line.supplyItem.name || line.supplyItem.code || `Vật tư #${line.id}`,
+      materialName:
+        line.supplyItem.name || line.supplyItem.code || `Vật tư #${line.id}`,
       supplyItemId: line.supplyItem.id,
       unitBaseId: line.unitBase.id,
       unitOptions: [{ id: line.unitBase.id, name: line.unitBase.name }],
+      quantityActualTotal: line.quantityActualTotal ?? 0,
     })),
     tasks: [],
     geographicalSelections: mapScopeToSelections(task),
@@ -164,7 +184,9 @@ type LegacyTaskDraft = {
   repeatDates?: string[];
 };
 
-const mapPriorityToRequest = (priority: LegacyTaskDraft["priority"]): FarmTaskRequest["priority"] => {
+const mapPriorityToRequest = (
+  priority: LegacyTaskDraft["priority"],
+): FarmTaskRequest["priority"] => {
   switch (priority) {
     case "high":
       return "HIGH";
@@ -197,10 +219,12 @@ export function buildFarmTaskRequestFromDraft(
       personnelId,
       role: "MANAGER" as const,
     })),
-    ...toPersonnelIds(draft.qualityInspectorPersonnelIds).map((personnelId) => ({
-      personnelId,
-      role: "QUALITY_INSPECTOR" as const,
-    })),
+    ...toPersonnelIds(draft.qualityInspectorPersonnelIds).map(
+      (personnelId) => ({
+        personnelId,
+        role: "QUALITY_INSPECTOR" as const,
+      }),
+    ),
     ...toPersonnelIds(draft.executorPersonnelIds).map((personnelId) => ({
       personnelId,
       role: "EXECUTOR" as const,
@@ -214,13 +238,19 @@ export function buildFarmTaskRequestFromDraft(
 
   return {
     origin: options.origin,
-    workflowId: isPlanned ? options.workflowId ?? null : options.workflowId ?? null,
+    workflowId: isPlanned
+      ? (options.workflowId ?? null)
+      : (options.workflowId ?? null),
     planId: options.planId ?? null,
-    stageId: options.sourceWorkItemId == null ? options.stageId ?? null : undefined,
+    stageId:
+      options.sourceWorkItemId == null ? (options.stageId ?? null) : undefined,
     scopeType: options.scopeType ?? null,
     scopeId: options.scopeId ?? null,
     sourceWorkItemId: options.sourceWorkItemId ?? null,
-    taskCategoryId: options.sourceWorkItemId == null ? options.taskCategoryId ?? null : null,
+    taskCategoryId:
+      options.sourceWorkItemId == null
+        ? (options.taskCategoryId ?? null)
+        : null,
     name: draft.name,
     priority: mapPriorityToRequest(draft.priority),
     note: draft.description || null,
@@ -229,7 +259,8 @@ export function buildFarmTaskRequestFromDraft(
     endDate: draft.endDate,
     recurrence: {
       repeatMode: recurrenceRepeatMode,
-      repeatDates: recurrenceRepeatMode === "SPECIFIC_DATES" ? repeatDates : null,
+      repeatDates:
+        recurrenceRepeatMode === "SPECIFIC_DATES" ? repeatDates : null,
     },
     supplyLines: (draft.materials || [])
       .map((material) =>
@@ -242,8 +273,13 @@ export function buildFarmTaskRequestFromDraft(
           : null,
       )
       .filter(
-        (item): item is { supplyItemId: number; unitBaseId: number; quantity: number } =>
-          item !== null,
+        (
+          item,
+        ): item is {
+          supplyItemId: number;
+          unitBaseId: number;
+          quantity: number;
+        } => item !== null,
       ),
     status: null,
   };

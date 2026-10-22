@@ -3,6 +3,7 @@ import {
   formatWorkspaceFeatureName,
   stripWorkspaceFeaturePrefix,
   WORKSPACE_CHANGE_EVENT,
+  WORKSPACE_DATA_UPDATED_EVENT,
   type WorkspaceFeatureType,
   type FormatWorkspaceFeatureNameOptions,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
@@ -48,6 +49,7 @@ export {
   formatWorkspaceFeatureName,
   stripWorkspaceFeaturePrefix,
   WORKSPACE_CHANGE_EVENT,
+  WORKSPACE_DATA_UPDATED_EVENT,
   type WorkspaceFeatureType,
   type FormatWorkspaceFeatureNameOptions,
 };

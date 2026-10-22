@@ -2,17 +2,25 @@ import { useEffect, useRef } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import {
+  consumeSuppressLeavePrompt,
+  executeWorkspaceCacheTransition,
   setSelectedWorkspaceId,
   useSelectedWorkspaceId,
   workspaceKeys,
 } from "@/features/workspace";
 import {
   useWorkspace,
-  WORKSPACE_CHANGE_EVENT,
+  WORKSPACE_DATA_UPDATED_EVENT,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 
 const isFormRoute = (pathname: string) =>
   /\/(?:create|new|edit|update)(?:\/|$)/.test(pathname);
+
+const isIdSegment = (segment: string) =>
+  /^\d+$/.test(segment) ||
+  /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(
+    segment,
+  );
 
 const getListRoute = (pathname: string) => {
   const segments = pathname.split("/").filter(Boolean);
@@ -22,7 +30,7 @@ const getListRoute = (pathname: string) => {
 
   if (formSegmentIndex <= 0) return "/";
   const previousSegment = segments[formSegmentIndex - 1];
-  const endIndex = /^\d+$/.test(previousSegment)
+  const endIndex = isIdSegment(previousSegment)
     ? formSegmentIndex - 1
     : formSegmentIndex;
   return `/${segments.slice(0, endIndex).join("/")}`;
@@ -31,8 +39,7 @@ const getListRoute = (pathname: string) => {
 /** Keeps current workspace data in sync and prevents accidental cross-workspace edits. */
 export function WorkspaceChangeHandler() {
   const workspaceId = useSelectedWorkspaceId();
-  const { currentWorkspaceId, setCurrentWorkspaceId, refetchWorkspaces } =
-    useWorkspace();
+  const { refetchWorkspaces } = useWorkspace();
   const previousWorkspaceIdRef = useRef(workspaceId);
   const isRevertingRef = useRef(false);
   const [, setLocation] = useLocation();
@@ -50,36 +57,17 @@ export function WorkspaceChangeHandler() {
       void refetchWorkspaces();
     };
 
-    window.addEventListener(WORKSPACE_CHANGE_EVENT, handleWorkspaceDataChanged);
+    window.addEventListener(
+      WORKSPACE_DATA_UPDATED_EVENT,
+      handleWorkspaceDataChanged,
+    );
     return () => {
       window.removeEventListener(
-        WORKSPACE_CHANGE_EVENT,
+        WORKSPACE_DATA_UPDATED_EVENT,
         handleWorkspaceDataChanged,
       );
     };
   }, [queryClient, workspaceId, refetchWorkspaces]);
-
-  // 1. Đồng bộ từ eco-farm-app sang WorkspaceContext của eco-shared-ui (để Header Layout cập nhật)
-  useEffect(() => {
-    if (
-      workspaceId !== null &&
-      workspaceId !== undefined &&
-      String(currentWorkspaceId) !== String(workspaceId)
-    ) {
-      setCurrentWorkspaceId(String(workspaceId));
-    }
-  }, [workspaceId, currentWorkspaceId, setCurrentWorkspaceId]);
-
-  // 2. Đồng bộ ngược từ eco-shared-ui (vd: chọn workspace từ AdminHeader trên desktop) về eco-farm-app
-  useEffect(() => {
-    if (
-      currentWorkspaceId !== null &&
-      currentWorkspaceId !== undefined &&
-      String(workspaceId) !== String(currentWorkspaceId)
-    ) {
-      setSelectedWorkspaceId(currentWorkspaceId);
-    }
-  }, [currentWorkspaceId, workspaceId]);
 
   useEffect(() => {
     const previousWorkspaceId = previousWorkspaceIdRef.current;
@@ -92,8 +80,9 @@ export function WorkspaceChangeHandler() {
       return;
     }
 
+    const suppressPrompt = consumeSuppressLeavePrompt();
     const pathname = window.location.pathname;
-    if (isFormRoute(pathname)) {
+    if (!suppressPrompt && isFormRoute(pathname)) {
       const shouldLeaveForm = window.confirm(
         "Bạn đã đổi workspace. Dữ liệu đang nhập/chỉnh sửa thuộc workspace trước và có thể chưa được lưu. Bạn có muốn rời màn hình này không?",
       );
@@ -108,17 +97,7 @@ export function WorkspaceChangeHandler() {
       setLocation(getListRoute(pathname));
     }
 
-    void queryClient.invalidateQueries({
-      predicate: (query) => {
-        const [scope, subScope] = query.queryKey;
-        // Không invalidate danh sách chọn workspace (list/infinite) khi chỉ chuyển đổi workspace hiện tại
-        if (scope === "workspaces" && subScope !== "detail") {
-          return false;
-        }
-        return true;
-      },
-      refetchType: "active",
-    });
+    void executeWorkspaceCacheTransition(queryClient, workspaceId);
   }, [queryClient, setLocation, workspaceId]);
 
   return null;

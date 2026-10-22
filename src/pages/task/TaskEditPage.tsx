@@ -1263,6 +1263,15 @@ export default function TaskEditPage() {
   };
 
   const handleRemoveMaterial = (id: number) => {
+    const mat = formData.materials.find((m) => m.id === id);
+    if (mat && Number(mat.quantityActualTotal ?? 0) > 0) {
+      toast({
+        title: "Không thể xoá vật tư",
+        description: `Vật tư "${mat.materialName || (mat as any).name || "này"}" đã có thực tế tiêu hao (${mat.quantityActualTotal} ${mat.unit || ""}) từ nhật ký kế hoạch, không thể xoá định mức này.`,
+        variant: "destructive",
+      });
+      return;
+    }
     setFormData((prev) => ({
       ...prev,
       materials: prev.materials.filter((m) => m.id !== id),
@@ -1823,8 +1832,12 @@ export default function TaskEditPage() {
                               planId: val,
                               planName: p?.name || "",
                               objectiveType: p
-                                ? (PURPOSE_TO_OBJECTIVE_TYPE[p.purpose] ??
-                                  "phat-sinh")
+                                ? ((
+                                    PURPOSE_TO_OBJECTIVE_TYPE as Record<
+                                      string,
+                                      TaskObjectiveType
+                                    >
+                                  )[p.purpose] ?? "phat-sinh")
                                 : "theo-ke-hoach",
                               selectedStages: p?.selectedStages || [],
                               mainTaskIds: [],

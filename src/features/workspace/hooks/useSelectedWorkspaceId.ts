@@ -44,8 +44,27 @@ export const getSelectedWorkspaceIdFromStorage = (): number | string | null => {
   return Number.isFinite(numericValue) ? numericValue : rawValue;
 };
 
-export const setSelectedWorkspaceId = (workspaceId: number | string | null) => {
+let shouldSuppressLeavePrompt = false;
+
+export const setSuppressLeavePrompt = (suppress: boolean) => {
+  shouldSuppressLeavePrompt = suppress;
+};
+
+export const consumeSuppressLeavePrompt = () => {
+  const current = shouldSuppressLeavePrompt;
+  shouldSuppressLeavePrompt = false;
+  return current;
+};
+
+export const setSelectedWorkspaceId = (
+  workspaceId: number | string | null,
+  options?: { suppressPrompt?: boolean },
+) => {
   if (typeof window === "undefined") return;
+
+  if (options?.suppressPrompt) {
+    shouldSuppressLeavePrompt = true;
+  }
 
   if (workspaceId === null || workspaceId === "") {
     sessionStorage.removeItem(SELECTED_WORKSPACE_STORAGE_KEY);

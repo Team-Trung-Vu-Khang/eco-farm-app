@@ -6,25 +6,21 @@ import {
   SheetTitle,
   Button,
   Label,
-  Combobox,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import {
   useSelectedWorkspaceId,
   useWorkspaceById,
-  useWorkspaces,
   workspaceKeys,
   workspaceApi,
-  formatWorkspaceLabel,
-  setSelectedWorkspaceId,
   type WorkspaceUpdateRequest,
 } from "@/features/workspace";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Building2, Check, Loader2, Sprout } from "lucide-react";
+import { Check, Loader2, Sprout } from "lucide-react";
 import {
   APP_WORKSPACE_FEATURE_PREFIXES,
   stripAppWorkspaceFeaturePrefix,
-  WORKSPACE_CHANGE_EVENT,
+  WORKSPACE_DATA_UPDATED_EVENT,
 } from "@/shared/constants/workspace.constants";
 
 interface FarmInfoBottomSheetProps {
@@ -127,7 +123,7 @@ export function FarmInfoBottomSheet({
       queryClient.invalidateQueries({
         queryKey: ["workspace", selectedWorkspaceId],
       });
-      window.dispatchEvent(new Event(WORKSPACE_CHANGE_EVENT));
+      window.dispatchEvent(new Event(WORKSPACE_DATA_UPDATED_EVENT));
 
       toast.success("Đã cập nhật tên Farm thành công!");
       onOpenChange(false);

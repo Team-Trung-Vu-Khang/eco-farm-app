@@ -26,6 +26,7 @@ export interface MaterialAllocation extends StoreMaterialAllocation {
   unitBaseId?: number;
   unitOptions?: Array<{ id: number; name: string }>;
   availableQuantity?: number;
+  quantityActualTotal?: number;
 }
 
 export interface TaskAllocation extends StoreTaskAllocation {

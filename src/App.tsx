@@ -10,6 +10,7 @@ import AppRouter from "./AppRouter";
 import { AppLoadingState } from "./components/AppLoadingState";
 import { AuthWrapper } from "./features/auth/components/AuthWrapper";
 import { useRegions } from "./features/farm/hooks/useRegions";
+import { useSelectedWorkspaceId } from "./features/workspace";
 import { OnboardRegionDialog } from "./pages/region-chart/region-basic-distribution/components/OnboardRegionDialog";
 
 import { WorkspaceChangeHandler } from "./components/WorkspaceChangeHandler";
@@ -28,6 +29,13 @@ interface OnboardCheckerProps {
 const OnboardChecker: React.FC<OnboardCheckerProps> = ({ children }) => {
   const [showOnboard, setShowOnboard] = useState(false);
   const [hasChecked, setHasChecked] = useState(false);
+  const workspaceId = useSelectedWorkspaceId();
+
+  // Reset trạng thái kiểm tra và đóng modal cũ khi người dùng đổi workspace
+  useEffect(() => {
+    setHasChecked(false);
+    setShowOnboard(false);
+  }, [workspaceId]);
 
   // Gọi API lấy danh sách vùng trồng tại root để check
   const { response, isLoading, isError, refetch } = useRegions({
@@ -109,9 +117,7 @@ function App() {
             </MobileAppLayout>
           </MobileRouteGuard>
         ) : (
-          <AdminLayout isDev isMevi>
-            {content}
-          </AdminLayout>
+          <AdminLayout isDev>{content}</AdminLayout>
         )}
         {isMobile && mobileUiMode === "classic" && <SwitchToMobileAppButton />}
         <RadixToaster />

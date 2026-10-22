@@ -13,7 +13,10 @@ import {
 import {
   createPlanTaskDiaryEntrySchema,
   useCreateFarmPlanTaskDiaryEntry,
+  useUpdateFarmPlanTaskDiaryEntry,
+  useFarmPlanTaskDiaryEntryDetail,
   type PlanTaskDiaryLineRequest,
+  type ExecutorProgressRequest,
 } from "@/features/farm-plan-task-diary";
 import type { DomainCode, SupplyType } from "@/features/farm-supply/types";
 import { useFarmTaskById, useFarmTasks } from "@/features/farm-task/hooks";
@@ -86,17 +89,23 @@ export function HistoryFormContent({
   const createDailyDiaryMutation = useCreateFarmDailyDiaryEntry();
   const updateDailyDiaryMutation = useUpdateFarmDailyDiaryEntry();
   const createPlanTaskDiaryMutation = useCreateFarmPlanTaskDiaryEntry();
+  const updatePlanTaskDiaryMutation = useUpdateFarmPlanTaskDiaryEntry();
   const queryClient = useQueryClient();
   const [stepperKey, setStepperKey] = useState(0);
 
   const searchParams = new URLSearchParams(window.location.search);
   const editId = searchParams.get("editId") || "";
   const urlWorkflowId = searchParams.get("workflowId") || "";
+  const isPlannedMode = isPlannedModeDefault;
 
   const { data: dailyDiaryDetail } = useFarmDailyDiaryEntryDetail(
     editId,
-    Boolean(editId),
+    Boolean(editId) && !isPlannedMode,
   );
+
+  const { item: plannedDiaryDetail } = useFarmPlanTaskDiaryEntryDetail(editId, {
+    enabled: Boolean(editId) && isPlannedMode,
+  });
 
   const [formData, setFormData] = useState<HistoryFormData>({
     cultivationZoneId: "",
@@ -118,7 +127,6 @@ export function HistoryFormContent({
   });
   const [existingPhotos, setExistingPhotos] = useState<PhotoRequest[]>([]);
 
-  const isPlannedMode = isPlannedModeDefault;
   const [selectedPlanId, setSelectedPlanId] = useState<string>(initialPlanId);
   const [selectedStageId, setSelectedStageId] = useState<string>("");
   const [selectedTaskId, setSelectedTaskId] = useState<string>(initialTaskId);
@@ -187,8 +195,10 @@ export function HistoryFormContent({
   const workflows = workflowsQuery.items || [];
 
   // Tự động giải quyết cultivationZoneId nếu mở từ edit/initialTaskId
-  const targetWorkflowId = dailyDiaryDetail?.workflowId
-    ? String(dailyDiaryDetail.workflowId)
+  const activeDetailWorkflowId =
+    dailyDiaryDetail?.workflowId || plannedDiaryDetail?.workflowId;
+  const targetWorkflowId = activeDetailWorkflowId
+    ? String(activeDetailWorkflowId)
     : formData.regimenId;
 
   const { data: workflowDetail } = useFarmWorkflowById(targetWorkflowId, {
@@ -199,8 +209,9 @@ export function HistoryFormContent({
     if (formData.cultivationZoneId) return;
 
     // 1. Ưu tiên đọc từ metadataJson của bản ghi nhật ký nếu có
-    const metaZoneId = (dailyDiaryDetail as any)?.metadataJson
-      ?.cultivationZoneId;
+    const metaZoneId =
+      (dailyDiaryDetail as any)?.metadataJson?.cultivationZoneId ||
+      (plannedDiaryDetail as any)?.metadataJson?.cultivationZoneId;
     if (metaZoneId) {
       setFormData((prev) => ({
         ...prev,
@@ -220,7 +231,12 @@ export function HistoryFormContent({
         cultivationZoneId: String(zoneId),
       }));
     }
-  }, [dailyDiaryDetail, workflowDetail, formData.cultivationZoneId]);
+  }, [
+    dailyDiaryDetail,
+    plannedDiaryDetail,
+    workflowDetail,
+    formData.cultivationZoneId,
+  ]);
 
   const workspacePersonnelQuery = useFarmPersonnel({
     params: { size: 100 },
@@ -233,11 +249,11 @@ export function HistoryFormContent({
       workflows.find(
         (workflow) =>
           String(workflow.id) ===
-          (dailyDiaryDetail?.workflowId
-            ? String(dailyDiaryDetail.workflowId)
+          (activeDetailWorkflowId
+            ? String(activeDetailWorkflowId)
             : formData.regimenId),
       ),
-    [formData.regimenId, workflows, dailyDiaryDetail?.workflowId],
+    [formData.regimenId, workflows, activeDetailWorkflowId],
   );
 
   const workflowDomainCode = (selectedWorkflow?.domainCode ??
@@ -375,6 +391,135 @@ export function HistoryFormContent({
       harvestDetails: newHarvestDetails,
     }));
   }, [editId, dailyDiaryDetail, supplyMap]);
+
+  useEffect(() => {
+    if (!editId || !plannedDiaryDetail || !isPlannedMode) return;
+    if (initializedEditIdRef.current === editId) return;
+    initializedEditIdRef.current = editId;
+
+    const detail = plannedDiaryDetail;
+
+    if (detail.planId) {
+      setSelectedPlanId(String(detail.planId));
+    }
+    if (detail.stageId) {
+      setSelectedStageId(String(detail.stageId));
+    }
+    if (detail.workflowId) {
+      setFormData((prev) => ({
+        ...prev,
+        regimenId: String(detail.workflowId),
+      }));
+    }
+
+    const newTaskDetails: Record<string, WorkTaskDetail> = {};
+    const newAllocations: MaterialAllocation[] = [];
+    const taskNames: string[] = [];
+
+    (detail.lines || []).forEach((line, idx) => {
+      const taskName =
+        line.taskName || line.task?.name || `Công việc #${line.taskId}`;
+      taskNames.push(taskName);
+
+      let lineProgress = line.progressPercent ?? 100;
+      if (line.executorProgress && line.executorProgress.length > 0) {
+        const myExec = line.executorProgress.find(
+          (ep) => ep.personnelId === detail.submittedByPersonnel?.id,
+        );
+        lineProgress = myExec
+          ? myExec.progressPercent
+          : line.executorProgress[0].progressPercent;
+      }
+
+      newTaskDetails[taskName] = {
+        id: String(line.taskId),
+        taskId: line.taskId,
+        stageName: taskName,
+        progress: lineProgress,
+        priority: "MEDIUM",
+        startDate: getTodayDateString(),
+        endDate: line.endDate || getTodayDateString(),
+        description: line.description || "",
+        isDirty: false,
+      };
+
+      (line.supplies || []).forEach((s, sIdx) => {
+        const catalogItem = supplyMap.get(s.supplyItemId);
+        newAllocations.push({
+          id: Date.now() + idx * 100 + sIdx,
+          stageId: taskName,
+          materialType: catalogItem?.typeLabel || "Vật tư kế hoạch",
+          materialName:
+            s.supplyItemName ||
+            catalogItem?.name ||
+            s.supplyItem?.name ||
+            s.name ||
+            `Vật tư #${s.supplyItemId}`,
+          quantity: String(s.quantityActual ?? 0),
+          actualQuantity: String(s.quantityActual ?? 0),
+          unit: catalogItem?.unit || s.unit || s.unitName || "kg",
+          supplyItemId: s.supplyItemId,
+          unitBaseId: s.unitBaseId,
+          isPlanned: true,
+        });
+      });
+    });
+
+    if (detail.photos && Array.isArray(detail.photos)) {
+      const loadedPhotos: PhotoRequest[] = detail.photos.map((p) => ({
+        objectKey: p.objectKey,
+        fileUrl: p.fileUrl,
+        fileName: p.fileName || "Ảnh đã tải lên",
+        mimeType: p.mimeType,
+        sizeBytes: p.sizeBytes,
+        thumbnail: p.thumbnail,
+      }));
+      setExistingPhotos(loadedPhotos);
+    }
+
+    const hasCropHarvest = (detail.harvestItems || []).some(
+      (h) =>
+        h.targetType === "ZONE_SUBJECT_VARIANT" ||
+        Boolean(h.targetType?.includes("VARIANT")) ||
+        Boolean(h.targetType?.includes("SUBJECT")),
+    );
+    const harvestScope: "region" | "crop" = hasCropHarvest ? "crop" : "region";
+
+    const newHarvestDetails: HarvestDetail[] = (detail.harvestItems || []).map(
+      (h) => {
+        const isCrop =
+          h.targetType === "ZONE_SUBJECT_VARIANT" ||
+          Boolean(h.targetType?.includes("VARIANT")) ||
+          Boolean(h.targetType?.includes("SUBJECT"));
+        return {
+          id: `h-${isCrop ? "variant" : "zone"}-${h.targetId}`,
+          targetId: String(h.targetId),
+          targetLabel:
+            h.targetName || h.productionSubjectName || `Vị trí #${h.targetId}`,
+          codeName:
+            h.targetCode || h.productionSubjectCode || `Vị trí #${h.targetId}`,
+          quantity: String(h.quantity ?? ""),
+          unitBase: "kg",
+        };
+      },
+    );
+
+    setWorkTaskDetails(newTaskDetails);
+    setPlannedStages(taskNames);
+
+    setFormData((prev) => ({
+      ...prev,
+      description: detail.description || "",
+      warning: Boolean(detail.warning),
+      selectedStages: taskNames,
+      materialAllocations: newAllocations,
+      harvestScope,
+      harvestTargets: newHarvestDetails.map((d) => String(d.targetId)),
+      harvestDetails: newHarvestDetails,
+      submittedByPersonnelId:
+        detail.submittedByPersonnel?.id ?? prev.submittedByPersonnelId,
+    }));
+  }, [editId, plannedDiaryDetail, isPlannedMode, supplyMap]);
 
   useEffect(() => {
     if (supplyMap.size === 0) return;
@@ -1285,10 +1430,38 @@ export function HistoryFormContent({
         return;
       }
 
-      const stagesToMap =
+      // Resolve submittedByPersonnelId per api.json specs:
+      // "Chỉ được bỏ trống khi tất cả công việc chưa có EXECUTOR; nếu truyền thì nhân sự phải thuộc workspace hiện tại"
+      const resolvedSubmittedByPersonnelId = formData.submittedByPersonnelId
+        ? Number(formData.submittedByPersonnelId)
+        : (defaultPersonnelId ?? undefined);
+
+      const stagesToFilter =
         activeStages.length > 0 ? activeStages : candidateStages;
 
-      const lines: PlanTaskDiaryLineRequest[] = stagesToMap.map((stName) => {
+      // Notice rule: Task CANCELLED không được đưa vào các dòng request nhật ký
+      const stagesToMap = stagesToFilter.filter((stName) => {
+        const detail = workTaskDetails[stName];
+        const matchedTask = availableTasks.find(
+          (t) => t.name === stName || String(t.id) === detail?.id,
+        );
+        return matchedTask?.status !== "CANCELLED";
+      });
+
+      if (stagesToMap.length === 0) {
+        toast({
+          title: "Không có công việc hợp lệ",
+          description:
+            "Không có công việc nào hợp lệ để ghi nhật ký (Công việc đã bị huỷ hoặc chưa được chọn).",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      let permissionErrorMsg: string | null = null;
+      const lines: PlanTaskDiaryLineRequest[] = [];
+
+      for (const stName of stagesToMap) {
         const detail = workTaskDetails[stName];
         const matchedTask = availableTasks.find(
           (t) => t.name === stName || String(t.id) === detail?.id,
@@ -1307,6 +1480,46 @@ export function HistoryFormContent({
           matchedTask?.personnel?.filter((p) => p.role === "EXECUTOR") || [];
         const hasExecutors = taskExecutors.length > 0;
 
+        if (hasExecutors && !resolvedSubmittedByPersonnelId) {
+          permissionErrorMsg = `Công việc "${matchedTask?.name || stName}" có phân công người thực hiện. Vui lòng chọn Người báo cáo ở Bước 1.`;
+          break;
+        }
+
+        const isManagerOnTask = matchedTask?.personnel?.some(
+          (p) =>
+            p.id === resolvedSubmittedByPersonnelId && p.role === "MANAGER",
+        );
+        const isSelfExecutor = taskExecutors.some(
+          (p) => p.id === resolvedSubmittedByPersonnelId,
+        );
+
+        let lineExecutorProgress: ExecutorProgressRequest[] | undefined =
+          undefined;
+        let lineDirectProgress: number | undefined = undefined;
+
+        if (hasExecutors) {
+          if (isManagerOnTask) {
+            // Manager có quyền báo tiến độ cho tất cả các executor trên task
+            lineExecutorProgress = taskExecutors.map((exec) => ({
+              personnelId: exec.id,
+              progressPercent: detail?.progress ?? 100,
+            }));
+          } else if (isSelfExecutor) {
+            // Executor thông thường CHỈ được báo tiến độ cho chính mình để tránh lỗi 403 Forbidden!
+            lineExecutorProgress = [
+              {
+                personnelId: resolvedSubmittedByPersonnelId!,
+                progressPercent: detail?.progress ?? 100,
+              },
+            ];
+          } else {
+            permissionErrorMsg = `Nhân sự báo cáo không phải là Người thực hiện hay Quản lý của công việc "${matchedTask?.name || stName}".`;
+            break;
+          }
+        } else {
+          lineDirectProgress = detail?.progress ?? 100;
+        }
+
         const taskSupplies: SupplyUsageRequest[] = formData.materialAllocations
           .filter(
             (alloc) => alloc.stageId === stName && Boolean(alloc.supplyItemId),
@@ -1317,7 +1530,7 @@ export function HistoryFormContent({
             quantityActual: Number(alloc.actualQuantity || alloc.quantity || 0),
           }));
 
-        return {
+        lines.push({
           taskId,
           description:
             detail?.description ||
@@ -1325,22 +1538,20 @@ export function HistoryFormContent({
             stName ||
             "Cập nhật tiến độ kế hoạch",
           endDate: detail?.endDate || formData.endDate || getTodayDateString(),
-          progressPercent: hasExecutors ? undefined : (detail?.progress ?? 100),
-          executorProgress: hasExecutors
-            ? taskExecutors.map((exec) => ({
-                personnelId: exec.id,
-                progressPercent: detail?.progress ?? 100,
-              }))
-            : undefined,
+          progressPercent: lineDirectProgress,
+          executorProgress: lineExecutorProgress,
           supplies: taskSupplies.length > 0 ? taskSupplies : undefined,
-        };
-      });
+        });
+      }
 
-      // Resolve submittedByPersonnelId per api.json specs:
-      // "Chỉ được bỏ trống khi tất cả công việc chưa có EXECUTOR; nếu truyền thì nhân sự phải thuộc workspace hiện tại"
-      const resolvedSubmittedByPersonnelId = formData.submittedByPersonnelId
-        ? Number(formData.submittedByPersonnelId)
-        : (defaultPersonnelId ?? undefined);
+      if (permissionErrorMsg) {
+        toast({
+          title: "Không thể ghi tiến độ",
+          description: permissionErrorMsg,
+          variant: "destructive",
+        });
+        return;
+      }
 
       const validationPayload = {
         planId,
@@ -1400,16 +1611,43 @@ export function HistoryFormContent({
           },
         };
 
-        await createPlanTaskDiaryMutation.mutateAsync(finalPayload);
-        setShowSuccessDialog(true);
+        if (editId) {
+          await updatePlanTaskDiaryMutation.mutateAsync({
+            id: editId,
+            payload: finalPayload,
+          });
+          toast({
+            title: "Cập nhật thành công",
+            description: "Nhật ký theo kế hoạch đã được cập nhật.",
+          });
+          setLocation(backUrl || "/diary/plan-history");
+        } else {
+          await createPlanTaskDiaryMutation.mutateAsync(finalPayload);
+          setShowSuccessDialog(true);
+        }
       } catch (err: unknown) {
-        console.error("Lỗi khi tạo nhật ký kế hoạch:", err);
-        const errObj = err as { response?: { data?: { message?: string } } };
+        console.error("Lỗi khi lưu nhật ký kế hoạch:", err);
+        const errObj = err as {
+          response?: {
+            status?: number;
+            data?: { message?: string; messageKey?: string };
+          };
+        };
+        const status = errObj.response?.status;
+        let errorMessage = getApiErrorMessage(errObj);
+        if (status === 409) {
+          errorMessage =
+            "Nhật ký này đã quá thời hạn 24 giờ cho phép chỉnh sửa hoặc dữ liệu bị xung đột.";
+        } else if (status === 403) {
+          errorMessage = "Bạn không có quyền báo tiến độ cho công việc này.";
+        }
         toast({
-          title: "Lỗi tạo nhật ký kế hoạch",
+          title: editId
+            ? "Lỗi cập nhật nhật ký kế hoạch"
+            : "Lỗi tạo nhật ký kế hoạch",
           description:
-            getApiErrorMessage(errObj) ||
-            "Không thể tạo nhật ký theo kế hoạch. Vui lòng thử lại sau.",
+            errorMessage ||
+            "Không thể lưu nhật ký theo kế hoạch. Vui lòng thử lại sau.",
           variant: "destructive",
         });
       } finally {
@@ -1859,9 +2097,10 @@ export function HistoryFormContent({
             isSubmitting ||
             createDailyDiaryMutation.isPending ||
             updateDailyDiaryMutation.isPending ||
-            createPlanTaskDiaryMutation.isPending
+            createPlanTaskDiaryMutation.isPending ||
+            updatePlanTaskDiaryMutation.isPending
           }
-          completeLabel="Lưu nhật ký"
+          completeLabel={editId ? "Cập nhật nhật ký" : "Lưu nhật ký"}
         />
       </div>
 
