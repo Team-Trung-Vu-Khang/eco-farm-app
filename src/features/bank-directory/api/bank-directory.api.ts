@@ -1,5 +1,8 @@
 import { apiClient } from "../../../shared/lib/axios";
-import { MASTER_DATA_PATHS } from "../../../shared/constants/master-data.constants";
+import {
+  ADMIN_MASTER_DATA_PATHS,
+  MASTER_DATA_PATHS,
+} from "../../../shared/constants/master-data.constants";
 import type {
   BankDirectoryCreateRequest,
   BankDirectoryCreateResponse,
@@ -12,6 +15,7 @@ import type {
 } from "../types/bank-directory.type";
 
 const BANK_DIRECTORY_PATH = MASTER_DATA_PATHS.banks;
+const ADMIN_BANK_DIRECTORY_PATH = ADMIN_MASTER_DATA_PATHS.banks;
 
 export const bankDirectoryApi = {
   async getBanks(
@@ -35,7 +39,7 @@ export const bankDirectoryApi = {
     payload: BankDirectoryCreateRequest,
   ): Promise<BankDirectoryCreateResponse> {
     const response = await apiClient.post<BankDirectoryCreateResponse>(
-      BANK_DIRECTORY_PATH,
+      ADMIN_BANK_DIRECTORY_PATH,
       payload,
     );
 
@@ -46,13 +50,13 @@ export const bankDirectoryApi = {
     payload: BankDirectoryUpdateRequest,
   ): Promise<BankDirectoryUpdateResponse> {
     const response = await apiClient.put<BankDirectoryUpdateResponse>(
-      `${BANK_DIRECTORY_PATH}/${id}`,
+      `${ADMIN_BANK_DIRECTORY_PATH}/${id}`,
       payload,
     );
 
     return response.data;
   },
   async deleteBank(id: number | string): Promise<BankDirectoryDeleteResponse> {
-    await apiClient.delete(`${BANK_DIRECTORY_PATH}/${id}`);
+    await apiClient.delete(`${ADMIN_BANK_DIRECTORY_PATH}/${id}`);
   },
 };

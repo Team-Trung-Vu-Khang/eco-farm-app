@@ -1,5 +1,6 @@
 import { apiClient } from "@/shared/lib/axios";
 import {
+  ADMIN_MASTER_DATA_PATHS,
   MASTER_DATA_PATHS,
   type MasterDataCatalog,
 } from "@/shared/constants/master-data.constants";
@@ -88,7 +89,7 @@ export const masterDataApi = {
     apiClient
       .post<
         MasterDataRecord<C>
-      >(`${MASTER_DATA_PATHS.base}/${catalog}`, payload)
+      >(`${ADMIN_MASTER_DATA_PATHS.base}/${catalog}`, payload)
       .then((response) => response.data),
 
   update: <C extends MasterDataCatalog>(
@@ -99,7 +100,7 @@ export const masterDataApi = {
     apiClient
       .put<
         MasterDataRecord<C>
-      >(`${MASTER_DATA_PATHS.base}/${catalog}/${id}`, payload)
+      >(`${ADMIN_MASTER_DATA_PATHS.base}/${catalog}/${id}`, payload)
       .then((response) => response.data),
 
   delete: <C extends MasterDataCatalog>(
@@ -107,7 +108,7 @@ export const masterDataApi = {
     id: number | string,
   ): Promise<MasterDataDeleteResponse> =>
     apiClient
-      .delete(`${MASTER_DATA_PATHS.base}/${catalog}/${id}`)
+      .delete(`${ADMIN_MASTER_DATA_PATHS.base}/${catalog}/${id}`)
       .then(() => undefined),
 
   listPositionResponsibilities: (
@@ -193,7 +194,7 @@ export const masterDataApi = {
   createIrrigationSystem: (payload: IrrigationSystemCreateRequest) =>
     apiClient
       .post<IrrigationSystemRecord>(
-        MASTER_DATA_PATHS.irrigationSystems,
+        ADMIN_MASTER_DATA_PATHS.irrigationSystems,
         payload,
       )
       .then((response) => response.data),
@@ -204,14 +205,14 @@ export const masterDataApi = {
   ) =>
     apiClient
       .put<IrrigationSystemRecord>(
-        `${MASTER_DATA_PATHS.irrigationSystems}/${id}`,
+        `${ADMIN_MASTER_DATA_PATHS.irrigationSystems}/${id}`,
         payload,
       )
       .then((response) => response.data),
 
   deleteIrrigationSystem: (id: number | string): Promise<void> =>
     apiClient
-      .delete(`${MASTER_DATA_PATHS.irrigationSystems}/${id}`)
+      .delete(`${ADMIN_MASTER_DATA_PATHS.irrigationSystems}/${id}`)
       .then(() => undefined),
 
   getEquipmentToolGroupById: (id: number | string) =>
@@ -224,7 +225,7 @@ export const masterDataApi = {
   createEquipmentToolGroup: (payload: EquipmentToolGroupCreateRequest) =>
     apiClient
       .post<EquipmentToolGroupRecord>(
-        MASTER_DATA_PATHS.equipmentToolGroups,
+        ADMIN_MASTER_DATA_PATHS.equipmentToolGroups,
         payload,
       )
       .then((response) => response.data),
@@ -235,14 +236,14 @@ export const masterDataApi = {
   ) =>
     apiClient
       .put<EquipmentToolGroupRecord>(
-        `${MASTER_DATA_PATHS.equipmentToolGroups}/${id}`,
+        `${ADMIN_MASTER_DATA_PATHS.equipmentToolGroups}/${id}`,
         payload,
       )
       .then((response) => response.data),
 
   deleteEquipmentToolGroup: (id: number | string): Promise<void> =>
     apiClient
-      .delete(`${MASTER_DATA_PATHS.equipmentToolGroups}/${id}`)
+      .delete(`${ADMIN_MASTER_DATA_PATHS.equipmentToolGroups}/${id}`)
       .then(() => undefined),
 
   listIoTDeviceGroups: (params?: MasterDataQueryParams) =>
@@ -262,7 +263,7 @@ export const masterDataApi = {
   createIoTDeviceGroup: (payload: IoTDeviceGroupCreateRequest) =>
     apiClient
       .post<IoTDeviceGroupRecord>(
-        `${MASTER_DATA_PATHS.base}/iot-device-groups`,
+        `${ADMIN_MASTER_DATA_PATHS.base}/iot-device-groups`,
         payload,
       )
       .then((response) => response.data),
@@ -273,27 +274,27 @@ export const masterDataApi = {
   ) =>
     apiClient
       .put<IoTDeviceGroupRecord>(
-        `${MASTER_DATA_PATHS.base}/iot-device-groups/${id}`,
+        `${ADMIN_MASTER_DATA_PATHS.base}/iot-device-groups/${id}`,
         payload,
       )
       .then((response) => response.data),
 
   deleteIoTDeviceGroup: (id: number | string): Promise<void> =>
     apiClient
-      .delete(`${MASTER_DATA_PATHS.base}/iot-device-groups/${id}`)
+      .delete(`${ADMIN_MASTER_DATA_PATHS.base}/iot-device-groups/${id}`)
       .then(() => undefined),
 
   createCertificateIssuer: (payload: CertificateIssuerCreateRequest) =>
     apiClient
       .post<CertificateIssuerRecord>(
-        `${MASTER_DATA_PATHS.base}/certificate-issuers`,
+        `${ADMIN_MASTER_DATA_PATHS.base}/certificate-issuers`,
         payload,
       )
       .then((response) => response.data),
 
   createBusinessLine: (payload: BusinessLineCreateRequest) =>
     apiClient
-      .post<BusinessLineRecord>(MASTER_DATA_PATHS.businessLines, payload)
+      .post<BusinessLineRecord>(ADMIN_MASTER_DATA_PATHS.businessLines, payload)
       .then((response) => response.data),
 
   updateCertificateIssuer: (
@@ -302,7 +303,7 @@ export const masterDataApi = {
   ) =>
     apiClient
       .put<CertificateIssuerRecord>(
-        `${MASTER_DATA_PATHS.base}/certificate-issuers/${id}`,
+        `${ADMIN_MASTER_DATA_PATHS.base}/certificate-issuers/${id}`,
         payload,
       )
       .then((response) => response.data),
@@ -313,19 +314,19 @@ export const masterDataApi = {
   ) =>
     apiClient
       .put<BusinessLineRecord>(
-        `${MASTER_DATA_PATHS.businessLines}/${id}`,
+        `${ADMIN_MASTER_DATA_PATHS.businessLines}/${id}`,
         payload,
       )
       .then((response) => response.data),
 
   deleteCertificateIssuer: (id: number | string): Promise<void> =>
     apiClient
-      .delete(`${MASTER_DATA_PATHS.base}/certificate-issuers/${id}`)
+      .delete(`${ADMIN_MASTER_DATA_PATHS.base}/certificate-issuers/${id}`)
       .then(() => undefined),
 
   deleteBusinessLine: (id: number | string): Promise<void> =>
     apiClient
-      .delete(`${MASTER_DATA_PATHS.businessLines}/${id}`)
+      .delete(`${ADMIN_MASTER_DATA_PATHS.businessLines}/${id}`)
       .then(() => undefined),
 
   listFertilizerGroups: (params?: MasterDataQueryParams) =>
@@ -342,7 +343,7 @@ export const masterDataApi = {
 
   createFertilizerGroup: (payload: FertilizerGroupCreateRequest) =>
     apiClient
-      .post<FertilizerGroupRecord>(MASTER_DATA_PATHS.fertilizerGroups, payload)
+      .post<FertilizerGroupRecord>(ADMIN_MASTER_DATA_PATHS.fertilizerGroups, payload)
       .then((response) => response.data),
 
   updateFertilizerGroup: (
@@ -351,14 +352,14 @@ export const masterDataApi = {
   ) =>
     apiClient
       .put<FertilizerGroupRecord>(
-        `${MASTER_DATA_PATHS.fertilizerGroups}/${id}`,
+        `${ADMIN_MASTER_DATA_PATHS.fertilizerGroups}/${id}`,
         payload,
       )
       .then((response) => response.data),
 
   deleteFertilizerGroup: (id: number | string): Promise<void> =>
     apiClient
-      .delete(`${MASTER_DATA_PATHS.fertilizerGroups}/${id}`)
+      .delete(`${ADMIN_MASTER_DATA_PATHS.fertilizerGroups}/${id}`)
       .then(() => undefined),
 
   listMaterialGroups: (params?: MasterDataQueryParams) =>
@@ -375,7 +376,7 @@ export const masterDataApi = {
 
   createMaterialGroup: (payload: MaterialGroupCreateRequest) =>
     apiClient
-      .post<MaterialGroupRecord>(MASTER_DATA_PATHS.materialGroups, payload)
+      .post<MaterialGroupRecord>(ADMIN_MASTER_DATA_PATHS.materialGroups, payload)
       .then((response) => response.data),
 
   updateMaterialGroup: (
@@ -384,14 +385,14 @@ export const masterDataApi = {
   ) =>
     apiClient
       .put<MaterialGroupRecord>(
-        `${MASTER_DATA_PATHS.materialGroups}/${id}`,
+        `${ADMIN_MASTER_DATA_PATHS.materialGroups}/${id}`,
         payload,
       )
       .then((response) => response.data),
 
   deleteMaterialGroup: (id: number | string): Promise<void> =>
     apiClient
-      .delete(`${MASTER_DATA_PATHS.materialGroups}/${id}`)
+      .delete(`${ADMIN_MASTER_DATA_PATHS.materialGroups}/${id}`)
       .then(() => undefined),
 
   listPesticideGroups: (params?: MasterDataQueryParams) =>
@@ -408,7 +409,7 @@ export const masterDataApi = {
 
   createPesticideGroup: (payload: PesticideGroupCreateRequest) =>
     apiClient
-      .post<PesticideGroupRecord>(MASTER_DATA_PATHS.pesticideGroups, payload)
+      .post<PesticideGroupRecord>(ADMIN_MASTER_DATA_PATHS.pesticideGroups, payload)
       .then((response) => response.data),
 
   updatePesticideGroup: (
@@ -417,14 +418,14 @@ export const masterDataApi = {
   ) =>
     apiClient
       .put<PesticideGroupRecord>(
-        `${MASTER_DATA_PATHS.pesticideGroups}/${id}`,
+        `${ADMIN_MASTER_DATA_PATHS.pesticideGroups}/${id}`,
         payload,
       )
       .then((response) => response.data),
 
   deletePesticideGroup: (id: number | string): Promise<void> =>
     apiClient
-      .delete(`${MASTER_DATA_PATHS.pesticideGroups}/${id}`)
+      .delete(`${ADMIN_MASTER_DATA_PATHS.pesticideGroups}/${id}`)
       .then(() => undefined),
 
   listPesticideOrigins: (params?: MasterDataQueryParams) =>
@@ -441,7 +442,7 @@ export const masterDataApi = {
 
   createPesticideOrigin: (payload: PesticideOriginCreateRequest) =>
     apiClient
-      .post<PesticideOriginRecord>(MASTER_DATA_PATHS.pesticideOrigins, payload)
+      .post<PesticideOriginRecord>(ADMIN_MASTER_DATA_PATHS.pesticideOrigins, payload)
       .then((response) => response.data),
 
   updatePesticideOrigin: (
@@ -450,14 +451,14 @@ export const masterDataApi = {
   ) =>
     apiClient
       .put<PesticideOriginRecord>(
-        `${MASTER_DATA_PATHS.pesticideOrigins}/${id}`,
+        `${ADMIN_MASTER_DATA_PATHS.pesticideOrigins}/${id}`,
         payload,
       )
       .then((response) => response.data),
 
   deletePesticideOrigin: (id: number | string): Promise<void> =>
     apiClient
-      .delete(`${MASTER_DATA_PATHS.pesticideOrigins}/${id}`)
+      .delete(`${ADMIN_MASTER_DATA_PATHS.pesticideOrigins}/${id}`)
       .then(() => undefined),
 
   listPesticideToxicityClasses: (params?: MasterDataQueryParams) =>
@@ -479,7 +480,7 @@ export const masterDataApi = {
   ) =>
     apiClient
       .post<PesticideToxicityClassRecord>(
-        MASTER_DATA_PATHS.pesticideToxicityClasses,
+        ADMIN_MASTER_DATA_PATHS.pesticideToxicityClasses,
         payload,
       )
       .then((response) => response.data),
@@ -490,14 +491,14 @@ export const masterDataApi = {
   ) =>
     apiClient
       .put<PesticideToxicityClassRecord>(
-        `${MASTER_DATA_PATHS.pesticideToxicityClasses}/${id}`,
+        `${ADMIN_MASTER_DATA_PATHS.pesticideToxicityClasses}/${id}`,
         payload,
       )
       .then((response) => response.data),
 
   deletePesticideToxicityClass: (id: number | string): Promise<void> =>
     apiClient
-      .delete(`${MASTER_DATA_PATHS.pesticideToxicityClasses}/${id}`)
+      .delete(`${ADMIN_MASTER_DATA_PATHS.pesticideToxicityClasses}/${id}`)
       .then(() => undefined),
 
   listPlanGroups: (params?: MasterDataQueryParams) =>
@@ -514,17 +515,17 @@ export const masterDataApi = {
 
   createPlanGroup: (payload: PlanGroupCreateRequest) =>
     apiClient
-      .post<PlanGroupRecord>(MASTER_DATA_PATHS.planGroups, payload)
+      .post<PlanGroupRecord>(ADMIN_MASTER_DATA_PATHS.planGroups, payload)
       .then((response) => response.data),
 
   updatePlanGroup: (id: number | string, payload: PlanGroupUpdateRequest) =>
     apiClient
-      .put<PlanGroupRecord>(`${MASTER_DATA_PATHS.planGroups}/${id}`, payload)
+      .put<PlanGroupRecord>(`${ADMIN_MASTER_DATA_PATHS.planGroups}/${id}`, payload)
       .then((response) => response.data),
 
   deletePlanGroup: (id: number | string): Promise<void> =>
     apiClient
-      .delete(`${MASTER_DATA_PATHS.planGroups}/${id}`)
+      .delete(`${ADMIN_MASTER_DATA_PATHS.planGroups}/${id}`)
       .then(() => undefined),
 
   listPlanTypes: (params?: MasterDataQueryParams) =>
@@ -541,17 +542,17 @@ export const masterDataApi = {
 
   createPlanType: (payload: PlanTypeCreateRequest) =>
     apiClient
-      .post<PlanTypeRecord>(MASTER_DATA_PATHS.planTypes, payload)
+      .post<PlanTypeRecord>(ADMIN_MASTER_DATA_PATHS.planTypes, payload)
       .then((response) => response.data),
 
   updatePlanType: (id: number | string, payload: PlanTypeUpdateRequest) =>
     apiClient
-      .put<PlanTypeRecord>(`${MASTER_DATA_PATHS.planTypes}/${id}`, payload)
+      .put<PlanTypeRecord>(`${ADMIN_MASTER_DATA_PATHS.planTypes}/${id}`, payload)
       .then((response) => response.data),
 
   deletePlanType: (id: number | string): Promise<void> =>
     apiClient
-      .delete(`${MASTER_DATA_PATHS.planTypes}/${id}`)
+      .delete(`${ADMIN_MASTER_DATA_PATHS.planTypes}/${id}`)
       .then(() => undefined),
 
   listVsicIndustries: (params?: MasterDataQueryParams) =>
@@ -587,7 +588,7 @@ export const masterDataApi = {
 
   createVsicIndustry: (payload: VsicIndustryCreateRequest) =>
     apiClient
-      .post<VsicIndustryRecord>(MASTER_DATA_PATHS.vsicIndustries, payload)
+      .post<VsicIndustryRecord>(ADMIN_MASTER_DATA_PATHS.vsicIndustries, payload)
       .then((response) => response.data),
 
   updateVsicIndustry: (
@@ -596,7 +597,7 @@ export const masterDataApi = {
   ) =>
     apiClient
       .put<VsicIndustryRecord>(
-        `${MASTER_DATA_PATHS.vsicIndustries}/${id}`,
+        `${ADMIN_MASTER_DATA_PATHS.vsicIndustries}/${id}`,
         payload,
       )
       .then((response) => response.data),
@@ -607,19 +608,19 @@ export const masterDataApi = {
   ) =>
     apiClient
       .put<VsicIndustryRecord>(
-        `${MASTER_DATA_PATHS.vsicIndustries}/${code}`,
+        `${ADMIN_MASTER_DATA_PATHS.vsicIndustries}/${code}`,
         payload,
       )
       .then((response) => response.data),
 
   deleteVsicIndustry: (id: number | string): Promise<void> =>
     apiClient
-      .delete(`${MASTER_DATA_PATHS.vsicIndustries}/${id}`)
+      .delete(`${ADMIN_MASTER_DATA_PATHS.vsicIndustries}/${id}`)
       .then(() => undefined),
 
   deleteVsicIndustryByCode: (code: string): Promise<void> =>
     apiClient
-      .delete(`${MASTER_DATA_PATHS.vsicIndustries}/${code}`)
+      .delete(`${ADMIN_MASTER_DATA_PATHS.vsicIndustries}/${code}`)
       .then(() => undefined),
 
   listCertificateStandards: (params?: MasterDataQueryParams) =>
@@ -639,7 +640,7 @@ export const masterDataApi = {
   createCertificateStandard: (payload: CertificateStandardCreateRequest) =>
     apiClient
       .post<CertificateStandardRecord>(
-        `${MASTER_DATA_PATHS.base}/certificate-standards`,
+        `${ADMIN_MASTER_DATA_PATHS.base}/certificate-standards`,
         payload,
       )
       .then((response) => response.data),
@@ -650,14 +651,14 @@ export const masterDataApi = {
   ) =>
     apiClient
       .put<CertificateStandardRecord>(
-        `${MASTER_DATA_PATHS.base}/certificate-standards/${id}`,
+        `${ADMIN_MASTER_DATA_PATHS.base}/certificate-standards/${id}`,
         payload,
       )
       .then((response) => response.data),
 
   deleteCertificateStandard: (id: number | string): Promise<void> =>
     apiClient
-      .delete(`${MASTER_DATA_PATHS.base}/certificate-standards/${id}`)
+      .delete(`${ADMIN_MASTER_DATA_PATHS.base}/certificate-standards/${id}`)
       .then(() => undefined),
 
   listSeasons: (params?: MasterDataQueryParams) =>
@@ -674,19 +675,19 @@ export const masterDataApi = {
 
   createSeason: (payload: MasterDataSeasonRequest) =>
     apiClient
-      .post<MasterDataSeasonResponse>(`${MASTER_DATA_PATHS.seasons}`, payload)
+      .post<MasterDataSeasonResponse>(`${ADMIN_MASTER_DATA_PATHS.seasons}`, payload)
       .then((response) => response.data),
 
   updateSeason: (id: number | string, payload: MasterDataSeasonRequest) =>
     apiClient
       .put<MasterDataSeasonResponse>(
-        `${MASTER_DATA_PATHS.seasons}/${id}`,
+        `${ADMIN_MASTER_DATA_PATHS.seasons}/${id}`,
         payload,
       )
       .then((response) => response.data),
 
   deleteSeason: (id: number | string): Promise<void> =>
     apiClient
-      .delete(`${MASTER_DATA_PATHS.seasons}/${id}`)
+      .delete(`${ADMIN_MASTER_DATA_PATHS.seasons}/${id}`)
       .then(() => undefined),
 };

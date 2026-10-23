@@ -35,7 +35,7 @@ export const workspaceApi = {
 
   async create(payload: WorkspaceCreateRequest): Promise<WorkspaceRecord> {
     const response = await apiClient.post<WorkspaceRecord>(
-      WORKSPACE_PATH,
+      "/api/admin/workspaces",
       payload,
     );
 
@@ -60,6 +60,6 @@ export const workspaceApi = {
   },
 
   async delete(id: number | string): Promise<void> {
-    await apiClient.delete(`${WORKSPACE_PATH}/${id}`);
+    await apiClient.delete(`/api/admin/workspaces/${id}`);
   },
 };

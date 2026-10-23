@@ -1,6 +1,7 @@
 import { type ReactNode, useEffect, useState } from "react";
 import { AUTH_PATHS } from "../../../shared/constants/auth.constants";
 import { authApi } from "../api/auth.api";
+import { isUserAdmin } from "../hooks/useIsAdmin";
 import { AuthLoadingState } from "./AuthLoadingState";
 
 export function AuthWrapper({ children }: { children: ReactNode }) {
@@ -19,19 +20,41 @@ export function AuthWrapper({ children }: { children: ReactNode }) {
 
       authApi.setToken(tokenFromUrl);
 
+      // Kiểm tra quyền Admin của user đăng nhập/mới đăng ký
+      let isAdmin = isUserAdmin(null, tokenFromUrl);
+      try {
+        const currentUser = await authApi.getCurrentUser(tokenFromUrl);
+        isAdmin = isUserAdmin(currentUser, tokenFromUrl);
+      } catch {
+        // Fallback kiểm tra role từ token JWT
+      }
+
       const searchParams = new URLSearchParams(window.location.search);
       const redirectParam =
         searchParams.get("redirect") || searchParams.get("redirect_url");
       const savedRedirectPath = sessionStorage.getItem("redirect_path");
       sessionStorage.removeItem("redirect_path");
 
-      const targetPath =
+      let candidatePath =
         redirectParam ||
         (savedRedirectPath &&
         savedRedirectPath !== "/" &&
         !savedRedirectPath.startsWith(AUTH_PATHS.callback)
           ? savedRedirectPath
-          : "/enterprise");
+          : null);
+
+      // Chặn người dùng không có quyền Admin điều hướng vào /enterprise
+      if (
+        candidatePath &&
+        candidatePath.startsWith("/enterprise") &&
+        !isAdmin
+      ) {
+        candidatePath = null;
+      }
+
+      // Nếu thuộc nhóm admin -> vào /enterprise (nếu không có redirect cụ thể)
+      // Nếu là user thông thường -> vào / (dashboard hoặc mobile home)
+      const targetPath = candidatePath || (isAdmin ? "/enterprise" : "/");
 
       window.location.replace(targetPath);
       return;

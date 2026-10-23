@@ -2,6 +2,7 @@ import { lazy, useEffect } from "react";
 import { Route, Switch, useLocation, useParams } from "wouter";
 
 import { useFarmPlanById } from "@/features/farm-workflow/hooks";
+import { AdminGuard } from "./features/auth";
 import { useMobileUiMode } from "./shared/hooks/useMobileUiMode";
 import {
   MOBILE_HOME_PATH,
@@ -49,6 +50,26 @@ const EnterpriseDetailPage = lazy(
 );
 const EnterpriseEditPage = lazy(
   () => import("./pages/enterprise/EnterpriseEditPage"),
+);
+const ProtectedEnterprisePage = () => (
+  <AdminGuard fallbackPath="/dashboard">
+    <EnterprisePage />
+  </AdminGuard>
+);
+const ProtectedEnterpriseCreatePage = () => (
+  <AdminGuard fallbackPath="/dashboard">
+    <EnterpriseCreatePage />
+  </AdminGuard>
+);
+const ProtectedEnterpriseDetailPage = () => (
+  <AdminGuard fallbackPath="/dashboard">
+    <EnterpriseDetailPage />
+  </AdminGuard>
+);
+const ProtectedEnterpriseEditPage = () => (
+  <AdminGuard fallbackPath="/dashboard">
+    <EnterpriseEditPage />
+  </AdminGuard>
 );
 const BranchPage = lazy(() => import("./pages/branch/BranchPage"));
 const BranchFormPage = lazy(() => import("./pages/branch/BranchFormPage"));
@@ -1049,10 +1070,19 @@ function Router() {
           path="/enterprise-certificate/:id/edit"
           component={EnterpriseCertificateFormPage}
         />
-        <Route path="/enterprise" component={EnterprisePage} />
-        <Route path="/enterprise/create" component={EnterpriseCreatePage} />
-        <Route path="/enterprise/:id" component={EnterpriseDetailPage} />
-        <Route path="/enterprise/:id/edit" component={EnterpriseEditPage} />
+        <Route path="/enterprise" component={ProtectedEnterprisePage} />
+        <Route
+          path="/enterprise/create"
+          component={ProtectedEnterpriseCreatePage}
+        />
+        <Route
+          path="/enterprise/:id"
+          component={ProtectedEnterpriseDetailPage}
+        />
+        <Route
+          path="/enterprise/:id/edit"
+          component={ProtectedEnterpriseEditPage}
+        />
         <Route path="/branch" component={BranchPage} />
         <Route path="/branch/create" component={BranchFormPage} />
         <Route path="/branch/:id/edit" component={BranchFormPage} />
