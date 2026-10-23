@@ -1,4 +1,5 @@
 import {
+  ADMIN_FOUNDATION_BASE_PATH,
   FOUNDATION_BASE_PATH,
   FOUNDATION_ENDPOINTS,
 } from "@/shared/constants/foundation.constants";
@@ -77,10 +78,10 @@ export const catalogApi = {
     apiClient
       .post<CatalogRecordResponse>(
         catalog === "crop-groups"
-          ? FOUNDATION_ENDPOINTS.cropGroups
+          ? FOUNDATION_ENDPOINTS.adminCropGroups
           : catalog === "farming-methods"
-            ? FOUNDATION_ENDPOINTS.farmingMethods
-            : `${FOUNDATION_BASE_PATH}/${catalog}`,
+            ? FOUNDATION_ENDPOINTS.adminFarmingMethods
+            : `${ADMIN_FOUNDATION_BASE_PATH}/${catalog}`,
         data,
       )
       .then((r) => r.data),
@@ -90,10 +91,10 @@ export const catalogApi = {
       .put<CatalogRecordResponse>(
         `${
           catalog === "crop-groups"
-            ? FOUNDATION_ENDPOINTS.cropGroups
+            ? FOUNDATION_ENDPOINTS.adminCropGroups
             : catalog === "farming-methods"
-              ? FOUNDATION_ENDPOINTS.farmingMethods
-              : `${FOUNDATION_BASE_PATH}/${catalog}`
+              ? FOUNDATION_ENDPOINTS.adminFarmingMethods
+              : `${ADMIN_FOUNDATION_BASE_PATH}/${catalog}`
         }/${id}`,
         data,
       )
@@ -103,10 +104,10 @@ export const catalogApi = {
     apiClient.delete(
       `${
         catalog === "crop-groups"
-          ? FOUNDATION_ENDPOINTS.cropGroups
+          ? FOUNDATION_ENDPOINTS.adminCropGroups
           : catalog === "farming-methods"
-            ? FOUNDATION_ENDPOINTS.farmingMethods
-            : `${FOUNDATION_BASE_PATH}/${catalog}`
+            ? FOUNDATION_ENDPOINTS.adminFarmingMethods
+            : `${ADMIN_FOUNDATION_BASE_PATH}/${catalog}`
       }/${id}`,
     ),
 };
@@ -166,7 +167,7 @@ export const cropVarietyApi = {
   create: (data: FoundationCropVarietyRequest) =>
     apiClient
       .post<FoundationCropVarietyResponse>(
-        FOUNDATION_ENDPOINTS.cropVarieties,
+        FOUNDATION_ENDPOINTS.adminCropVarieties,
         data,
       )
       .then((r) => r.data),
@@ -174,13 +175,13 @@ export const cropVarietyApi = {
   update: (id: number, data: FoundationCropVarietyRequest) =>
     apiClient
       .put<FoundationCropVarietyResponse>(
-        `${FOUNDATION_ENDPOINTS.cropVarieties}/${id}`,
+        `${FOUNDATION_ENDPOINTS.adminCropVarieties}/${id}`,
         data,
       )
       .then((r) => r.data),
 
   delete: (id: number) =>
-    apiClient.delete(`${FOUNDATION_ENDPOINTS.cropVarieties}/${id}`),
+    apiClient.delete(`${FOUNDATION_ENDPOINTS.adminCropVarieties}/${id}`),
 };
 
 // ─── Growth Cycle Template API ────────────────────────────────────────────────
@@ -203,7 +204,7 @@ export const growthCycleTemplateApi = {
   create: (data: FoundationGrowthCycleTemplateRequest) =>
     apiClient
       .post<FoundationGrowthCycleTemplateResponse>(
-        FOUNDATION_ENDPOINTS.growthCycleTemplates,
+        FOUNDATION_ENDPOINTS.adminGrowthCycleTemplates,
         data,
       )
       .then((r) => r.data),
@@ -211,13 +212,13 @@ export const growthCycleTemplateApi = {
   update: (id: number, data: FoundationGrowthCycleTemplateRequest) =>
     apiClient
       .put<FoundationGrowthCycleTemplateResponse>(
-        `${FOUNDATION_ENDPOINTS.growthCycleTemplates}/${id}`,
+        `${FOUNDATION_ENDPOINTS.adminGrowthCycleTemplates}/${id}`,
         data,
       )
       .then((r) => r.data),
 
   delete: (id: number) =>
-    apiClient.delete(`${FOUNDATION_ENDPOINTS.growthCycleTemplates}/${id}`),
+    apiClient.delete(`${FOUNDATION_ENDPOINTS.adminGrowthCycleTemplates}/${id}`),
 };
 
 // ─── Farming Method Crop API ──────────────────────────────────────────────────
@@ -240,7 +241,7 @@ export const farmingMethodCropApi = {
   create: (data: FarmingMethodCropRequest) =>
     apiClient
       .post<FarmingMethodCropResponse>(
-        FOUNDATION_ENDPOINTS.farmingMethodCrops,
+        FOUNDATION_ENDPOINTS.adminFarmingMethodCrops,
         data,
       )
       .then((r) => r.data),
@@ -248,13 +249,13 @@ export const farmingMethodCropApi = {
   update: (id: number, data: FarmingMethodCropRequest) =>
     apiClient
       .put<FarmingMethodCropResponse>(
-        `${FOUNDATION_ENDPOINTS.farmingMethodCrops}/${id}`,
+        `${FOUNDATION_ENDPOINTS.adminFarmingMethodCrops}/${id}`,
         data,
       )
       .then((r) => r.data),
 
   delete: (id: number) =>
-    apiClient.delete(`${FOUNDATION_ENDPOINTS.farmingMethodCrops}/${id}`),
+    apiClient.delete(`${FOUNDATION_ENDPOINTS.adminFarmingMethodCrops}/${id}`),
 };
 
 // ─── Lifecycle Template API ───────────────────────────────────────────────────
@@ -276,19 +277,22 @@ export const lifecycleTemplateApi = {
 
   create: (data: LifecycleTemplate) =>
     apiClient
-      .post<LifecycleTemplate>(FOUNDATION_ENDPOINTS.lifecycleTemplates, data)
+      .post<LifecycleTemplate>(
+        FOUNDATION_ENDPOINTS.adminLifecycleTemplates,
+        data,
+      )
       .then((r) => r.data),
 
   update: (id: number, data: LifecycleTemplate) =>
     apiClient
       .put<LifecycleTemplate>(
-        `${FOUNDATION_ENDPOINTS.lifecycleTemplates}/${id}`,
+        `${FOUNDATION_ENDPOINTS.adminLifecycleTemplates}/${id}`,
         data,
       )
       .then((r) => r.data),
 
   delete: (id: number) =>
-    apiClient.delete(`${FOUNDATION_ENDPOINTS.lifecycleTemplates}/${id}`),
+    apiClient.delete(`${FOUNDATION_ENDPOINTS.adminLifecycleTemplates}/${id}`),
 };
 
 export const userLifecycleTemplateApi = {
@@ -309,7 +313,7 @@ export const userLifecycleTemplateApi = {
   create: (data: LifecycleTemplate) =>
     apiClient
       .post<LifecycleTemplate>(
-        "/api/foundation/production/lifecycle-templates",
+        "/api/admin/foundation/production/lifecycle-templates",
         data,
       )
       .then((r) => r.data),
@@ -317,13 +321,15 @@ export const userLifecycleTemplateApi = {
   update: (id: number, data: LifecycleTemplate) =>
     apiClient
       .put<LifecycleTemplate>(
-        `/api/foundation/production/lifecycle-templates/${id}`,
+        `/api/admin/foundation/production/lifecycle-templates/${id}`,
         data,
       )
       .then((r) => r.data),
 
   delete: (id: number) =>
-    apiClient.delete(`/api/foundation/production/lifecycle-templates/${id}`),
+    apiClient.delete(
+      `/api/admin/foundation/production/lifecycle-templates/${id}`,
+    ),
 };
 
 // ─── Production Subjects & Variants API ───────────────────────────────────────
@@ -526,7 +532,7 @@ export const methodApplicationApi = {
   create: (data: MethodApplication) =>
     apiClient
       .post<MethodApplication>(
-        `${FOUNDATION_BASE_PATH}/production/method-applications`,
+        `${ADMIN_FOUNDATION_BASE_PATH}/production/method-applications`,
         data,
       )
       .then((r) => r.data),
@@ -534,13 +540,13 @@ export const methodApplicationApi = {
   update: (id: number, data: MethodApplication) =>
     apiClient
       .put<MethodApplication>(
-        `${FOUNDATION_BASE_PATH}/production/method-applications/${id}`,
+        `${ADMIN_FOUNDATION_BASE_PATH}/production/method-applications/${id}`,
         data,
       )
       .then((r) => r.data),
 
   delete: (id: number) =>
     apiClient.delete(
-      `${FOUNDATION_BASE_PATH}/production/method-applications/${id}`,
+      `${ADMIN_FOUNDATION_BASE_PATH}/production/method-applications/${id}`,
     ),
 };
