@@ -10,12 +10,12 @@ import type {
   LegalIdentificationUpdateResponse,
 } from "../types/legal-identification.type";
 
-const LEGAL_IDENTIFICATION_PATH = "/api/farm/legal-identifications" as const;
+import { FARM_ENDPOINTS } from "@/shared/constants";
 
 export const legalIdentificationApi = {
   list(params: LegalIdentificationQueryParams = {}) {
     return apiClient
-      .get<LegalIdentificationPageResponse>(LEGAL_IDENTIFICATION_PATH, {
+      .get<LegalIdentificationPageResponse>(FARM_ENDPOINTS.legalIdentifications, {
         params,
       })
       .then((response) => response.data);
@@ -23,14 +23,14 @@ export const legalIdentificationApi = {
 
   getById(id: number | string) {
     return apiClient
-      .get<LegalIdentificationResponse>(`${LEGAL_IDENTIFICATION_PATH}/${id}`)
+      .get<LegalIdentificationResponse>(`${FARM_ENDPOINTS.legalIdentifications}/${id}`)
       .then((response) => response.data);
   },
 
   create(payload: LegalIdentificationCreateRequest) {
     return apiClient
       .post<LegalIdentificationCreateResponse>(
-        LEGAL_IDENTIFICATION_PATH,
+        FARM_ENDPOINTS.legalIdentifications,
         payload,
       )
       .then((response) => response.data);
@@ -39,7 +39,7 @@ export const legalIdentificationApi = {
   update(id: number | string, payload: LegalIdentificationUpdateRequest) {
     return apiClient
       .put<LegalIdentificationUpdateResponse>(
-        `${LEGAL_IDENTIFICATION_PATH}/${id}`,
+        `${FARM_ENDPOINTS.legalIdentifications}/${id}`,
         payload,
       )
       .then((response) => response.data);
@@ -47,7 +47,7 @@ export const legalIdentificationApi = {
 
   delete(id: number | string): Promise<LegalIdentificationDeleteResponse> {
     return apiClient
-      .delete(`${LEGAL_IDENTIFICATION_PATH}/${id}`)
+      .delete(`${FARM_ENDPOINTS.legalIdentifications}/${id}`)
       .then(() => undefined);
   },
 };

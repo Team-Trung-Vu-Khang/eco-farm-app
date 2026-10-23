@@ -1,4 +1,5 @@
 import { apiClient } from "@/shared/lib/axios";
+import { STORAGE_API_PATHS } from "@/shared/constants";
 import type { StorageFileUploadResponse } from "../types/storage-file.type";
 
 export interface StorageFileUploadRequest {
@@ -20,7 +21,7 @@ export const uploadFileApi = async ({
   formData.append("file", file);
 
   const response = await apiClient.post<StorageFileUploadResponse>(
-    "/api/storage/files",
+    STORAGE_API_PATHS.files,
     formData,
     {
       headers: {

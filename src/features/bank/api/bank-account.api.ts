@@ -11,7 +11,7 @@ import type {
   BankAccountUpdateResponse,
 } from "../types/bank-account.type";
 
-const BANK_ACCOUNT_PATH = "/api/farm/bank-accounts" as const;
+import { FARM_ENDPOINTS } from "@/shared/constants";
 
 const withWorkspaceHeader = (workspaceId: number | string) => ({
   headers: {
@@ -33,7 +33,7 @@ export const bankAccountApi = {
     assertWorkspaceId(workspaceId);
 
     const response = await apiClient.get<BankAccountPageResponse<BankAccountRecord>>(
-      BANK_ACCOUNT_PATH,
+      FARM_ENDPOINTS.bankAccounts,
       {
         params,
         ...withWorkspaceHeader(workspaceId),
@@ -50,7 +50,7 @@ export const bankAccountApi = {
     assertWorkspaceId(workspaceId);
 
     const response = await apiClient.get<BankAccountRecord>(
-      `${BANK_ACCOUNT_PATH}/${id}`,
+      `${FARM_ENDPOINTS.bankAccounts}/${id}`,
       withWorkspaceHeader(workspaceId),
     );
 
@@ -64,7 +64,7 @@ export const bankAccountApi = {
     assertWorkspaceId(workspaceId);
 
     const response = await apiClient.post<BankAccountCreateResponse>(
-      BANK_ACCOUNT_PATH,
+      FARM_ENDPOINTS.bankAccounts,
       payload,
       withWorkspaceHeader(workspaceId),
     );
@@ -88,7 +88,7 @@ export const bankAccountApi = {
     };
 
     const response = await apiClient.put<BankAccountUpdateResponse>(
-      `${BANK_ACCOUNT_PATH}/${id}`,
+      `${FARM_ENDPOINTS.bankAccounts}/${id}`,
       requestPayload,
       withWorkspaceHeader(workspaceId),
     );
@@ -102,7 +102,7 @@ export const bankAccountApi = {
     assertWorkspaceId(workspaceId);
 
     await apiClient.delete(
-      `${BANK_ACCOUNT_PATH}/${id}`,
+      `${FARM_ENDPOINTS.bankAccounts}/${id}`,
       withWorkspaceHeader(workspaceId),
     );
   },

@@ -1,4 +1,5 @@
-import { apiClient } from "../../../shared/lib/axios";
+import { apiClient } from "@/shared/lib/axios";
+import { FARM_ENDPOINTS } from "@/shared/constants";
 import type {
   FarmBaseQueryParams,
   FarmPageResponse,
@@ -22,7 +23,6 @@ import type {
   FarmPersonnelResponse,
 } from "../types/farm-master-data.type";
 
-const BASE = "/api/farm";
 
 const getHeaders = (workspaceId?: number) => {
   return workspaceId
@@ -35,7 +35,7 @@ const getHeaders = (workspaceId?: number) => {
 export const farmDepartmentApi = {
   list: (params?: FarmBaseQueryParams, workspaceId?: number) =>
     apiClient
-      .get<FarmPageResponse<FarmDepartmentResponse>>(`${BASE}/departments`, {
+      .get<FarmPageResponse<FarmDepartmentResponse>>(`${FARM_ENDPOINTS.departments}`, {
         params,
         headers: getHeaders(workspaceId),
       })
@@ -43,27 +43,27 @@ export const farmDepartmentApi = {
 
   getById: (id: number, workspaceId?: number) =>
     apiClient
-      .get<FarmDepartmentResponse>(`${BASE}/departments/${id}`, {
+      .get<FarmDepartmentResponse>(`${FARM_ENDPOINTS.departments}/${id}`, {
         headers: getHeaders(workspaceId),
       })
       .then((r) => r.data),
 
   create: (data: FarmDepartmentRequest, workspaceId?: number) =>
     apiClient
-      .post<FarmDepartmentResponse>(`${BASE}/departments`, data, {
+      .post<FarmDepartmentResponse>(`${FARM_ENDPOINTS.departments}`, data, {
         headers: getHeaders(workspaceId),
       })
       .then((r) => r.data),
 
   update: (id: number, data: FarmDepartmentRequest, workspaceId?: number) =>
     apiClient
-      .put<FarmDepartmentResponse>(`${BASE}/departments/${id}`, data, {
+      .put<FarmDepartmentResponse>(`${FARM_ENDPOINTS.departments}/${id}`, data, {
         headers: getHeaders(workspaceId),
       })
       .then((r) => r.data),
 
   delete: (id: number, workspaceId?: number): Promise<FarmDepartmentDeleteResponse> =>
-    apiClient.delete(`${BASE}/departments/${id}`, {
+    apiClient.delete(`${FARM_ENDPOINTS.departments}/${id}`, {
       headers: getHeaders(workspaceId),
     }).then(() => undefined),
 
@@ -72,7 +72,7 @@ export const farmDepartmentApi = {
     workspaceId?: number,
   ) =>
     apiClient
-      .get<FarmPageResponse<DepartmentOptionResponse>>(`${BASE}/departments/options`, {
+      .get<FarmPageResponse<DepartmentOptionResponse>>(`${FARM_ENDPOINTS.departments}/options`, {
         params,
         headers: getHeaders(workspaceId),
       })
@@ -83,7 +83,7 @@ export const farmDepartmentApi = {
     workspaceId?: number,
   ) =>
     apiClient
-      .get<FarmPageResponse<MasterDepartmentResponse>>(`${BASE}/departments/master-data`, {
+      .get<FarmPageResponse<MasterDepartmentResponse>>(`${FARM_ENDPOINTS.departments}/master-data`, {
         params,
         headers: getHeaders(workspaceId),
       })
@@ -95,7 +95,7 @@ export const farmDepartmentApi = {
 export const farmPositionApi = {
   list: (params?: FarmBaseQueryParams, workspaceId?: number) =>
     apiClient
-      .get<FarmPageResponse<FarmPositionResponse>>(`${BASE}/positions`, {
+      .get<FarmPageResponse<FarmPositionResponse>>(`${FARM_ENDPOINTS.positions}`, {
         params,
         headers: getHeaders(workspaceId),
       })
@@ -103,27 +103,27 @@ export const farmPositionApi = {
 
   getById: (id: number, workspaceId?: number) =>
     apiClient
-      .get<FarmPositionResponse>(`${BASE}/positions/${id}`, {
+      .get<FarmPositionResponse>(`${FARM_ENDPOINTS.positions}/${id}`, {
         headers: getHeaders(workspaceId),
       })
       .then((r) => r.data),
 
   create: (data: FarmPositionRequest, workspaceId?: number) =>
     apiClient
-      .post<FarmPositionResponse>(`${BASE}/positions`, data, {
+      .post<FarmPositionResponse>(`${FARM_ENDPOINTS.positions}`, data, {
         headers: getHeaders(workspaceId),
       })
       .then((r) => r.data),
 
   update: (id: number, data: FarmPositionRequest, workspaceId?: number) =>
     apiClient
-      .put<FarmPositionResponse>(`${BASE}/positions/${id}`, data, {
+      .put<FarmPositionResponse>(`${FARM_ENDPOINTS.positions}/${id}`, data, {
         headers: getHeaders(workspaceId),
       })
       .then((r) => r.data),
 
   delete: (id: number, workspaceId?: number) =>
-    apiClient.delete(`${BASE}/positions/${id}`, {
+    apiClient.delete(`${FARM_ENDPOINTS.positions}/${id}`, {
       headers: getHeaders(workspaceId),
     }),
 
@@ -132,7 +132,7 @@ export const farmPositionApi = {
     workspaceId?: number,
   ) =>
     apiClient
-      .get<FarmPageResponse<PositionOptionResponse>>(`${BASE}/positions/options`, {
+      .get<FarmPageResponse<PositionOptionResponse>>(`${FARM_ENDPOINTS.positions}/options`, {
         params,
         headers: getHeaders(workspaceId),
       })
@@ -143,7 +143,7 @@ export const farmPositionApi = {
     workspaceId?: number,
   ) =>
     apiClient
-      .get<FarmPageResponse<MasterPositionResponse>>(`${BASE}/positions/master-data`, {
+      .get<FarmPageResponse<MasterPositionResponse>>(`${FARM_ENDPOINTS.positions}/master-data`, {
         params,
         headers: getHeaders(workspaceId),
       })
@@ -156,7 +156,7 @@ export const farmPositionResponsibilityApi = {
   list: (positionId: number, params?: PositionResponsibilityQueryParams) =>
     apiClient
       .get<FarmPositionResponsibilityResponse[]>(
-        `${BASE}/positions/${positionId}/responsibilities`,
+        `${FARM_ENDPOINTS.positions}/${positionId}/responsibilities`,
         { params }
       )
       .then((r) => r.data),
@@ -164,7 +164,7 @@ export const farmPositionResponsibilityApi = {
   create: (positionId: number, data: FarmPositionResponsibilityRequest) =>
     apiClient
       .post<FarmPositionResponsibilityResponse>(
-        `${BASE}/positions/${positionId}/responsibilities`,
+        `${FARM_ENDPOINTS.positions}/${positionId}/responsibilities`,
         data
       )
       .then((r) => r.data),
@@ -176,14 +176,14 @@ export const farmPositionResponsibilityApi = {
   ) =>
     apiClient
       .put<FarmPositionResponsibilityResponse>(
-        `${BASE}/positions/${positionId}/responsibilities/${responsibilityId}`,
+        `${FARM_ENDPOINTS.positions}/${positionId}/responsibilities/${responsibilityId}`,
         data
       )
       .then((r) => r.data),
 
   delete: (positionId: number, responsibilityId: number) =>
     apiClient.delete(
-      `${BASE}/positions/${positionId}/responsibilities/${responsibilityId}`
+      `${FARM_ENDPOINTS.positions}/${positionId}/responsibilities/${responsibilityId}`
     ),
 };
 
@@ -192,7 +192,7 @@ export const farmPositionResponsibilityApi = {
 export const farmTeamApi = {
   list: (params?: FarmBaseQueryParams, workspaceId?: number) =>
     apiClient
-      .get<FarmPageResponse<FarmTeamResponse>>(`${BASE}/teams`, {
+      .get<FarmPageResponse<FarmTeamResponse>>(`${FARM_ENDPOINTS.teams}`, {
         params,
         headers: getHeaders(workspaceId),
       })
@@ -200,27 +200,27 @@ export const farmTeamApi = {
 
   getById: (id: number, workspaceId?: number) =>
     apiClient
-      .get<FarmTeamResponse>(`${BASE}/teams/${id}`, {
+      .get<FarmTeamResponse>(`${FARM_ENDPOINTS.teams}/${id}`, {
         headers: getHeaders(workspaceId),
       })
       .then((r) => r.data),
 
   create: (data: FarmTeamRequest, workspaceId?: number) =>
     apiClient
-      .post<FarmTeamResponse>(`${BASE}/teams`, data, {
+      .post<FarmTeamResponse>(`${FARM_ENDPOINTS.teams}`, data, {
         headers: getHeaders(workspaceId),
       })
       .then((r) => r.data),
 
   update: (id: number, data: FarmTeamRequest, workspaceId?: number) =>
     apiClient
-      .put<FarmTeamResponse>(`${BASE}/teams/${id}`, data, {
+      .put<FarmTeamResponse>(`${FARM_ENDPOINTS.teams}/${id}`, data, {
         headers: getHeaders(workspaceId),
       })
       .then((r) => r.data),
 
   delete: (id: number, workspaceId?: number) =>
-    apiClient.delete(`${BASE}/teams/${id}`, {
+    apiClient.delete(`${FARM_ENDPOINTS.teams}/${id}`, {
       headers: getHeaders(workspaceId),
     }),
 };
@@ -230,7 +230,7 @@ export const farmTeamApi = {
 export const farmPersonnelApi = {
   list: (params?: FarmPersonnelQueryParams, workspaceId?: number) =>
     apiClient
-      .get<FarmPageResponse<FarmPersonnelResponse>>(`${BASE}/personnel`, {
+      .get<FarmPageResponse<FarmPersonnelResponse>>(`${FARM_ENDPOINTS.personnel}`, {
         params,
         headers: getHeaders(workspaceId),
       })
@@ -239,7 +239,7 @@ export const farmPersonnelApi = {
   /** GET /api/admin/farm/personnel (MEVI_ADMIN / MEVI_FARM_ADMIN / MEVI_SUPER_ADMIN) */
   listAdmin: (params: AdminFarmPersonnelQueryParams) =>
     apiClient
-      .get<FarmPageResponse<FarmPersonnelResponse>>("/api/admin/farm/personnel", {
+      .get<FarmPageResponse<FarmPersonnelResponse>>(FARM_ENDPOINTS.adminPersonnel, {
         params,
         headers: { skipWorkspaceHeader: "true" },
       })
@@ -247,27 +247,27 @@ export const farmPersonnelApi = {
 
   getById: (id: number, workspaceId?: number) =>
     apiClient
-      .get<FarmPersonnelResponse>(`${BASE}/personnel/${id}`, {
+      .get<FarmPersonnelResponse>(`${FARM_ENDPOINTS.personnel}/${id}`, {
         headers: getHeaders(workspaceId),
       })
       .then((r) => r.data),
 
   create: (data: FarmPersonnelRequest, workspaceId?: number) =>
     apiClient
-      .post<FarmPersonnelResponse>(`${BASE}/personnel`, data, {
+      .post<FarmPersonnelResponse>(`${FARM_ENDPOINTS.personnel}`, data, {
         headers: getHeaders(workspaceId),
       })
       .then((r) => r.data),
 
   update: (id: number, data: FarmPersonnelRequest, workspaceId?: number) =>
     apiClient
-      .put<FarmPersonnelResponse>(`${BASE}/personnel/${id}`, data, {
+      .put<FarmPersonnelResponse>(`${FARM_ENDPOINTS.personnel}/${id}`, data, {
         headers: getHeaders(workspaceId),
       })
       .then((r) => r.data),
 
   delete: (id: number, workspaceId?: number) =>
-    apiClient.delete(`${BASE}/personnel/${id}`, {
+    apiClient.delete(`${FARM_ENDPOINTS.personnel}/${id}`, {
       headers: getHeaders(workspaceId),
     }),
 };

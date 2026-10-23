@@ -1,4 +1,5 @@
 import { apiClient } from "@/shared/lib/axios";
+import { FARM_ENDPOINTS } from "@/shared/constants";
 import type {
   AdminDiaryActivitySummaryResponse,
   AdminDiaryWorkspacesPageResponse,
@@ -16,7 +17,7 @@ export const adminDiaryActivityApi = {
   getDiaryActivitySummary: (month?: string): Promise<AdminDiaryActivitySummaryResponse> =>
     apiClient
       .get<AdminDiaryActivitySummaryResponse>(
-        "/api/admin/farm/report/diary-activity/summary",
+        FARM_ENDPOINTS.adminReportDiaryActivitySummary,
         {
           ...SKIP_WORKSPACE_CONFIG,
           params: month ? { month } : undefined,
@@ -30,7 +31,7 @@ export const adminDiaryActivityApi = {
   ): Promise<AdminDiaryWorkspacesPageResponse> =>
     apiClient
       .get<AdminDiaryWorkspacesPageResponse>(
-        "/api/admin/farm/report/diary-activity/workspaces",
+        FARM_ENDPOINTS.adminReportDiaryActivityWorkspaces,
         {
           ...SKIP_WORKSPACE_CONFIG,
           params,

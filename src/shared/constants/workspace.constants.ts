@@ -44,6 +44,12 @@ export function stripAppWorkspaceFeaturePrefix(
   });
 }
 
+export const WORKSPACE_API_PATHS = {
+  center: "/api/center/workspaces",
+  current: "/api/center/workspaces/current",
+  admin: "/api/admin/workspaces",
+} as const;
+
 export {
   DEFAULT_WORKSPACE_FEATURE_PREFIXES,
   formatWorkspaceFeatureName,
@@ -53,3 +59,4 @@ export {
   type WorkspaceFeatureType,
   type FormatWorkspaceFeatureNameOptions,
 };
+

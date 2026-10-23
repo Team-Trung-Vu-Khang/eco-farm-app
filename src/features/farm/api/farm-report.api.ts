@@ -1,4 +1,5 @@
 import { apiClient } from "@/shared/lib/axios";
+import { FARM_ENDPOINTS } from "@/shared/constants";
 import type { PageResponse } from "../../foundation/types/foundation.type";
 import type {
   GeoSummaryResponse,
@@ -29,20 +30,13 @@ const buildHeaders = (workspaceId?: number | string | null) => {
   return { "X-Workspace-Id": String(workspaceId) };
 };
 
-const getEndpoint = (basePath: string, workspaceId?: number | string | null) => {
-  if (isAllWorkspaces(workspaceId)) {
-    return `/api/admin${basePath}`;
-  }
-  return `/api${basePath}`;
-};
-
 export const farmReportApi = {
   // ─── Geo Summary ───────────────────────────────────────────────────────────
   getGeoSummary: (
     workspaceId?: number | string | null,
   ): Promise<GeoSummaryResponse> =>
     apiClient
-      .get<GeoSummaryResponse>("/api/farm/dashboard/geo-summary", {
+      .get<GeoSummaryResponse>(FARM_ENDPOINTS.dashboardGeoSummary, {
         headers: buildHeaders(workspaceId),
       })
       .then((r) => r.data),
@@ -54,7 +48,10 @@ export const farmReportApi = {
   ): Promise<PageResponse<ProductionVariantItem>> =>
     apiClient
       .get<PageResponse<ProductionVariantItem>>(
-        getEndpoint("/farm/report/production-subject-variants", workspaceId),
+        FARM_ENDPOINTS.reportEndpoint(
+          FARM_ENDPOINTS.adminReportProductionVariants,
+          isAllWorkspaces(workspaceId),
+        ),
         {
           params,
           headers: buildHeaders(workspaceId),
@@ -69,7 +66,10 @@ export const farmReportApi = {
   ): Promise<VariantCardResponse> =>
     apiClient
       .get<VariantCardResponse>(
-        getEndpoint("/farm/report/production-subject-variant-cards", workspaceId),
+        FARM_ENDPOINTS.reportEndpoint(
+          FARM_ENDPOINTS.reportVariantCards,
+          isAllWorkspaces(workspaceId),
+        ),
         {
           params,
           headers: buildHeaders(workspaceId),
@@ -84,7 +84,10 @@ export const farmReportApi = {
   ): Promise<SupplyConsumptionResponse> =>
     apiClient
       .get<SupplyConsumptionResponse>(
-        getEndpoint("/farm/report/supply-consumption-stats", workspaceId),
+        FARM_ENDPOINTS.reportEndpoint(
+          FARM_ENDPOINTS.reportSupplyConsumptionStats,
+          isAllWorkspaces(workspaceId),
+        ),
         {
           params,
           headers: buildHeaders(workspaceId),
@@ -99,7 +102,10 @@ export const farmReportApi = {
   ): Promise<ProductionPlanStatsResponse> =>
     apiClient
       .get<ProductionPlanStatsResponse>(
-        getEndpoint("/farm/report/production-plan-stats", workspaceId),
+        FARM_ENDPOINTS.reportEndpoint(
+          FARM_ENDPOINTS.reportProductionPlanStats,
+          isAllWorkspaces(workspaceId),
+        ),
         {
           params,
           headers: buildHeaders(workspaceId),
@@ -114,7 +120,10 @@ export const farmReportApi = {
   ): Promise<TaskNameStatsResponse> =>
     apiClient
       .get<TaskNameStatsResponse>(
-        getEndpoint("/farm/report/task-name-stats", workspaceId),
+        FARM_ENDPOINTS.reportEndpoint(
+          FARM_ENDPOINTS.reportTaskNameStats,
+          isAllWorkspaces(workspaceId),
+        ),
         {
           params,
           headers: buildHeaders(workspaceId),
@@ -129,7 +138,10 @@ export const farmReportApi = {
   ): Promise<TaskNameRankingResponse> =>
     apiClient
       .get<TaskNameRankingResponse>(
-        getEndpoint("/farm/report/task-name-ranking", workspaceId),
+        FARM_ENDPOINTS.reportEndpoint(
+          FARM_ENDPOINTS.reportTaskNameRanking,
+          isAllWorkspaces(workspaceId),
+        ),
         {
           params,
           headers: buildHeaders(workspaceId),

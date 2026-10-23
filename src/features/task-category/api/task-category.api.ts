@@ -9,14 +9,12 @@ import type {
   TaskCategoryLookupResponse,
 } from "../types/task-category.type";
 
-const TASK_CATEGORY_PATH = "/api/master-data/task-categories" as const;
-const ADMIN_TASK_CATEGORY_PATH =
-  "/api/admin/master-data/task-categories" as const;
+import { ADMIN_MASTER_DATA_PATHS, MASTER_DATA_PATHS } from "@/shared/constants";
 
 export const taskCategoryApi = {
   search(params?: TaskCategoryLookupQueryParams) {
     return apiClient
-      .get<PageResponse<TaskCategoryLookupResponse>>(TASK_CATEGORY_PATH, {
+      .get<PageResponse<TaskCategoryLookupResponse>>(MASTER_DATA_PATHS.taskCategories, {
         params,
       })
       .then((response) => response.data);
@@ -25,21 +23,21 @@ export const taskCategoryApi = {
   /** GET /api/admin/master-data/task-categories */
   listAdmin(params?: TaskCategoryLookupQueryParams) {
     return apiClient
-      .get<TaskCategoryPageResponse>(ADMIN_TASK_CATEGORY_PATH, { params })
+      .get<TaskCategoryPageResponse>(ADMIN_MASTER_DATA_PATHS.taskCategories, { params })
       .then((response) => response.data);
   },
 
   /** GET /api/admin/master-data/task-categories/{id} */
   getAdminById(id: number | string) {
     return apiClient
-      .get<TaskCategoryRecord>(`${ADMIN_TASK_CATEGORY_PATH}/${id}`)
+      .get<TaskCategoryRecord>(`${ADMIN_MASTER_DATA_PATHS.taskCategories}/${id}`)
       .then((response) => response.data);
   },
 
   /** POST /api/admin/master-data/task-categories */
   createAdmin(payload: CreateTaskCategoryRequest) {
     return apiClient
-      .post<TaskCategoryRecord>(ADMIN_TASK_CATEGORY_PATH, payload)
+      .post<TaskCategoryRecord>(ADMIN_MASTER_DATA_PATHS.taskCategories, payload)
       .then((response) => response.data);
   },
 
@@ -47,7 +45,7 @@ export const taskCategoryApi = {
   updateAdmin(id: number | string, payload: UpdateTaskCategoryRequest) {
     return apiClient
       .put<TaskCategoryRecord>(
-        `${ADMIN_TASK_CATEGORY_PATH}/${id}`,
+        `${ADMIN_MASTER_DATA_PATHS.taskCategories}/${id}`,
         payload,
       )
       .then((response) => response.data);
@@ -56,7 +54,7 @@ export const taskCategoryApi = {
   /** DELETE /api/admin/master-data/task-categories/{id} (204 No Content) */
   deleteAdmin(id: number | string): Promise<void> {
     return apiClient
-      .delete(`${ADMIN_TASK_CATEGORY_PATH}/${id}`)
+      .delete(`${ADMIN_MASTER_DATA_PATHS.taskCategories}/${id}`)
       .then(() => undefined);
   },
 };

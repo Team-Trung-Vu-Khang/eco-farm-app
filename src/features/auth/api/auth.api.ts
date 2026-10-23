@@ -95,7 +95,7 @@ export const authApi = {
     token = authStorage.getToken(),
   ): Promise<WorkspaceRole[]> {
     if (!token) throw new Error("Missing auth token");
-    const response = await apiClient.get<WorkspaceRole[]>("/api/me/roles", {
+    const response = await apiClient.get<WorkspaceRole[]>(AUTH_PATHS.roles, {
       headers: {
         Authorization: `Bearer ${token}`,
         ...(workspaceId !== null &&

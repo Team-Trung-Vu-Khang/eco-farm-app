@@ -10,8 +10,7 @@ import type {
   ContactLinkRequest,
 } from "../types/contact.type";
 
-const CONTACT_PATH = "/api/farm/contacts" as const;
-const CONTACT_LINK_PATH = "/api/farm/contact-links" as const;
+import { FARM_ENDPOINTS } from "@/shared/constants";
 
 const withWorkspaceHeader = (workspaceId: number | string) => ({
   headers: {
@@ -33,7 +32,7 @@ export const contactApi = {
     assertWorkspaceId(workspaceId);
 
     const response = await apiClient.get<ContactPageResponse<ContactRecord>>(
-      CONTACT_PATH,
+      FARM_ENDPOINTS.contacts,
       {
         params,
         ...withWorkspaceHeader(workspaceId),
@@ -50,7 +49,7 @@ export const contactApi = {
     assertWorkspaceId(workspaceId);
 
     const response = await apiClient.get<ContactRecord>(
-      `${CONTACT_PATH}/${id}`,
+      `${FARM_ENDPOINTS.contacts}/${id}`,
       withWorkspaceHeader(workspaceId),
     );
 
@@ -64,7 +63,7 @@ export const contactApi = {
     assertWorkspaceId(workspaceId);
 
     const response = await apiClient.post<ContactCreateResponse>(
-      CONTACT_PATH,
+      FARM_ENDPOINTS.contacts,
       payload,
       withWorkspaceHeader(workspaceId),
     );
@@ -80,7 +79,7 @@ export const contactApi = {
     assertWorkspaceId(workspaceId);
 
     const response = await apiClient.put<ContactUpdateResponse>(
-      `${CONTACT_PATH}/${id}`,
+      `${FARM_ENDPOINTS.contacts}/${id}`,
       payload,
       withWorkspaceHeader(workspaceId),
     );
@@ -91,7 +90,7 @@ export const contactApi = {
   async delete(id: number | string, workspaceId: number | string): Promise<void> {
     assertWorkspaceId(workspaceId);
 
-    await apiClient.delete(`${CONTACT_PATH}/${id}`, withWorkspaceHeader(workspaceId));
+    await apiClient.delete(`${FARM_ENDPOINTS.contacts}/${id}`, withWorkspaceHeader(workspaceId));
   },
 
   async attachOwner(
@@ -103,7 +102,7 @@ export const contactApi = {
     assertWorkspaceId(workspaceId);
 
     const response = await apiClient.post<ContactRecord>(
-      `${CONTACT_LINK_PATH}/${ownerType}/${ownerId}`,
+      `${FARM_ENDPOINTS.contactLinks}/${ownerType}/${ownerId}`,
       payload,
       withWorkspaceHeader(workspaceId),
     );
@@ -120,7 +119,7 @@ export const contactApi = {
     assertWorkspaceId(workspaceId);
 
     const response = await apiClient.put<ContactRecord[]>(
-      `${CONTACT_LINK_PATH}/${ownerType}/${ownerId}`,
+      `${FARM_ENDPOINTS.contactLinks}/${ownerType}/${ownerId}`,
       payload,
       withWorkspaceHeader(workspaceId),
     );
@@ -137,7 +136,7 @@ export const contactApi = {
     assertWorkspaceId(workspaceId);
 
     await apiClient.delete(
-      `${CONTACT_LINK_PATH}/${ownerType}/${ownerId}/${contactId}`,
+      `${FARM_ENDPOINTS.contactLinks}/${ownerType}/${ownerId}/${contactId}`,
       withWorkspaceHeader(workspaceId),
     );
   },

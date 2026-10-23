@@ -9,19 +9,18 @@ import type {
   PhotoResponse,
 } from "../types/farm-daily-diary.type";
 
-const DAILY_DIARY_PATH = "/api/farm/daily-diary-entries" as const;
-const DIARY_PHOTOS_PATH = "/api/storage/diary-photos" as const;
+import { FARM_ENDPOINTS, STORAGE_API_PATHS } from "@/shared/constants";
 
 export const farmDailyDiaryApi = {
   list(params?: FarmDailyDiaryQueryParams) {
     return apiClient
-      .get<PageResponseFarmDailyDiaryEntryResponse>(DAILY_DIARY_PATH, { params })
+      .get<PageResponseFarmDailyDiaryEntryResponse>(FARM_ENDPOINTS.dailyDiaryEntries, { params })
       .then((response) => response.data);
   },
 
   listGeneral(params: FarmDiaryQueryParams, workspaceId?: number | string) {
     return apiClient
-      .get<PageResponseFarmDailyDiaryEntryResponse>("/api/farm/diary-entries", {
+      .get<PageResponseFarmDailyDiaryEntryResponse>(FARM_ENDPOINTS.diaryEntries, {
         params,
         headers: workspaceId ? { "X-Workspace-Id": String(workspaceId) } : undefined,
       })
@@ -30,26 +29,26 @@ export const farmDailyDiaryApi = {
 
   getStats(params?: FarmDailyDiaryQueryParams) {
     return apiClient
-      .get<FarmDailyDiaryStatsResponse>(`${DAILY_DIARY_PATH}/stats`, { params })
+      .get<FarmDailyDiaryStatsResponse>(`${FARM_ENDPOINTS.dailyDiaryEntries}/stats`, { params })
       .then((response) => response.data);
   },
 
 
   getById(id: string) {
     return apiClient
-      .get<FarmDailyDiaryEntryResponse>(`${DAILY_DIARY_PATH}/${id}`)
+      .get<FarmDailyDiaryEntryResponse>(`${FARM_ENDPOINTS.dailyDiaryEntries}/${id}`)
       .then((response) => response.data);
   },
 
   create(payload: CreateFarmDailyDiaryEntryRequest) {
     return apiClient
-      .post<FarmDailyDiaryEntryResponse>(DAILY_DIARY_PATH, payload)
+      .post<FarmDailyDiaryEntryResponse>(FARM_ENDPOINTS.dailyDiaryEntries, payload)
       .then((response) => response.data);
   },
 
   update(id: string, payload: CreateFarmDailyDiaryEntryRequest) {
     return apiClient
-      .put<FarmDailyDiaryEntryResponse>(`${DAILY_DIARY_PATH}/${id}`, payload)
+      .put<FarmDailyDiaryEntryResponse>(`${FARM_ENDPOINTS.dailyDiaryEntries}/${id}`, payload)
       .then((response) => response.data);
   },
 
@@ -65,7 +64,7 @@ export const farmDailyDiaryApi = {
     }
 
     return apiClient
-      .post<PhotoResponse>(DIARY_PHOTOS_PATH, formData, {
+      .post<PhotoResponse>(STORAGE_API_PATHS.diaryPhotos, formData, {
         params: { generateThumbnail },
         headers,
       })

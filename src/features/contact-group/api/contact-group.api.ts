@@ -9,7 +9,7 @@ import type {
   ContactGroupUpdateRequest,
 } from "../types/contact-group.type";
 
-const CONTACT_GROUP_PATH = "/api/farm/contact-groups" as const;
+import { FARM_ENDPOINTS } from "@/shared/constants";
 
 const withWorkspaceHeader = (workspaceId: number | string) => ({
   headers: {
@@ -32,7 +32,7 @@ export const contactGroupApi = {
 
     const response = await apiClient.get<
       ContactGroupPageResponse<ContactGroupRecord>
-    >(CONTACT_GROUP_PATH, {
+    >(FARM_ENDPOINTS.contactGroups, {
       params,
       ...withWorkspaceHeader(workspaceId),
     });
@@ -47,7 +47,7 @@ export const contactGroupApi = {
     assertWorkspaceId(workspaceId);
 
     const response = await apiClient.get<ContactGroupRecord>(
-      `${CONTACT_GROUP_PATH}/${id}`,
+      `${FARM_ENDPOINTS.contactGroups}/${id}`,
       withWorkspaceHeader(workspaceId),
     );
 
@@ -61,7 +61,7 @@ export const contactGroupApi = {
     assertWorkspaceId(workspaceId);
 
     const response = await apiClient.post<ContactGroupCreateResponse>(
-      CONTACT_GROUP_PATH,
+      FARM_ENDPOINTS.contactGroups,
       payload,
       withWorkspaceHeader(workspaceId),
     );
@@ -77,7 +77,7 @@ export const contactGroupApi = {
     assertWorkspaceId(workspaceId);
 
     const response = await apiClient.put<ContactGroupUpdateResponse>(
-      `${CONTACT_GROUP_PATH}/${id}`,
+      `${FARM_ENDPOINTS.contactGroups}/${id}`,
       payload,
       withWorkspaceHeader(workspaceId),
     );
@@ -92,7 +92,7 @@ export const contactGroupApi = {
     assertWorkspaceId(workspaceId);
 
     await apiClient.delete(
-      `${CONTACT_GROUP_PATH}/${id}`,
+      `${FARM_ENDPOINTS.contactGroups}/${id}`,
       withWorkspaceHeader(workspaceId),
     );
   },

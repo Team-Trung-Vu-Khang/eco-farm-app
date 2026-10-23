@@ -1,4 +1,10 @@
 import { apiClient } from "@/shared/lib/axios";
+import {
+  ADMIN_MASTER_DATA_PATHS,
+  FARM_ENDPOINTS,
+  FOUNDATION_ENDPOINTS,
+  MASTER_DATA_PATHS,
+} from "@/shared/constants";
 import type {
   SupplyType,
   DomainCode,
@@ -22,7 +28,7 @@ const SUPPLY_PATHS: Record<SupplyType, string> = {
 export const farmSupplyApi = {
   listAllSupplies: (params?: SupplyQueryParams) => {
     return apiClient
-      .get<PageResponse<SupplyItemResponse>>("/api/farm/supplies", {
+      .get<PageResponse<SupplyItemResponse>>(FARM_ENDPOINTS.supplies, {
         params,
       })
       .then((r) => r.data);
@@ -36,8 +42,8 @@ export const farmSupplyApi = {
     const path = SUPPLY_PATHS[type];
     const url =
       scope === "admin"
-        ? `/api/admin/master-data/${path}`
-        : `/api/farm/supplies/${path}`;
+        ? `${ADMIN_MASTER_DATA_PATHS.base}/${path}`
+        : `${FARM_ENDPOINTS.supplies}/${path}`;
     return apiClient
       .get<PageResponse<SupplyItemResponse>>(url, {
         params,
@@ -54,10 +60,10 @@ export const farmSupplyApi = {
     const path = SUPPLY_PATHS[type];
     const url =
       scope === "admin"
-        ? `/api/admin/master-data/${path}/${id}`
+        ? `${ADMIN_MASTER_DATA_PATHS.base}/${path}/${id}`
         : source === "MASTER"
-          ? `/api/master-data/${path}/${id}`
-          : `/api/farm/supplies/${path}/${id}`;
+          ? `${MASTER_DATA_PATHS.base}/${path}/${id}`
+          : `${FARM_ENDPOINTS.supplies}/${path}/${id}`;
     return apiClient.get<SupplyItemResponse>(url).then((r) => r.data);
   },
 
@@ -69,8 +75,8 @@ export const farmSupplyApi = {
     const path = SUPPLY_PATHS[type];
     const url =
       scope === "admin"
-        ? `/api/admin/master-data/${path}`
-        : `/api/farm/supplies/${path}`;
+        ? `${ADMIN_MASTER_DATA_PATHS.base}/${path}`
+        : `${FARM_ENDPOINTS.supplies}/${path}`;
     return apiClient.post<SupplyItemResponse>(url, data).then((r) => r.data);
   },
 
@@ -83,8 +89,8 @@ export const farmSupplyApi = {
     const path = SUPPLY_PATHS[type];
     const url =
       scope === "admin"
-        ? `/api/admin/master-data/${path}/${id}`
-        : `/api/farm/supplies/${path}/${id}`;
+        ? `${ADMIN_MASTER_DATA_PATHS.base}/${path}/${id}`
+        : `${FARM_ENDPOINTS.supplies}/${path}/${id}`;
     return apiClient.put<SupplyItemResponse>(url, data).then((r) => r.data);
   },
 
@@ -92,14 +98,14 @@ export const farmSupplyApi = {
     const path = SUPPLY_PATHS[type];
     const url =
       scope === "admin"
-        ? `/api/admin/master-data/${path}/${id}`
-        : `/api/farm/supplies/${path}/${id}`;
+        ? `${ADMIN_MASTER_DATA_PATHS.base}/${path}/${id}`
+        : `${FARM_ENDPOINTS.supplies}/${path}/${id}`;
     return apiClient.delete(url);
   },
 
   listPackagingTypes: () => {
     return apiClient
-      .get<PageResponse<CatalogRef>>("/api/master-data/packaging-types", {
+      .get<PageResponse<CatalogRef>>(MASTER_DATA_PATHS.packagingTypes, {
         params: { status: "active", page: 0, size: 100 },
       })
       .then((r) => r.data?.content ?? []);
@@ -107,7 +113,7 @@ export const farmSupplyApi = {
 
   listBaseUnits: (unitType?: string) => {
     return apiClient
-      .get<PageResponse<CatalogRef>>("/api/master-data/units-base", {
+      .get<PageResponse<CatalogRef>>(MASTER_DATA_PATHS.unitsBase, {
         params: { status: "active", page: 0, size: 100, unitType },
       })
       .then((r) => r.data?.content ?? []);
@@ -115,7 +121,7 @@ export const farmSupplyApi = {
 
   listCertificateStandards: () => {
     return apiClient
-      .get<PageResponse<CatalogRef>>("/api/master-data/certificate-standards", {
+      .get<PageResponse<CatalogRef>>(MASTER_DATA_PATHS.certificateStandards, {
         params: { status: "active", page: 0, size: 100 },
       })
       .then((r) => r.data?.content ?? []);
@@ -135,7 +141,7 @@ export const farmSupplyApi = {
             ? "by-product-groups"
             : `${type}-groups`;
     return apiClient
-      .get<PageResponse<ClassificationGroup>>(`/api/master-data/${catalog}`, {
+      .get<PageResponse<ClassificationGroup>>(`${MASTER_DATA_PATHS.base}/${catalog}`, {
         params: {
           status: "active",
           page: 0,
@@ -149,7 +155,7 @@ export const farmSupplyApi = {
 
   getTargetSubjects: (domainCode: string) => {
     return apiClient
-      .get<PageResponse<any>>("/api/foundation/production/subjects", {
+      .get<PageResponse<any>>(FOUNDATION_ENDPOINTS.crops, {
         params: { status: "active", page: 0, size: 100, domainCode },
       })
       .then((r) => r.data?.content ?? []);

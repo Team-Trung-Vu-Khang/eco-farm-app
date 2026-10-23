@@ -7,7 +7,7 @@ import type {
   BranchUpdateRequest,
 } from "../types/branch.type";
 
-const BRANCH_PATH = "/api/farm/branches" as const;
+import { FARM_ENDPOINTS } from "@/shared/constants";
 
 const withWorkspaceHeader = (workspaceId: number | string) => ({
   headers: {
@@ -29,7 +29,7 @@ export const branchApi = {
     assertWorkspaceId(workspaceId);
 
     const response = await apiClient.get<BranchPageResponse<BranchRecord>>(
-      BRANCH_PATH,
+      FARM_ENDPOINTS.branches,
       {
         params,
         ...withWorkspaceHeader(workspaceId),
@@ -46,7 +46,7 @@ export const branchApi = {
     assertWorkspaceId(workspaceId);
 
     const response = await apiClient.get<BranchRecord>(
-      `${BRANCH_PATH}/${id}`,
+      `${FARM_ENDPOINTS.branches}/${id}`,
       withWorkspaceHeader(workspaceId),
     );
 
@@ -60,7 +60,7 @@ export const branchApi = {
     assertWorkspaceId(workspaceId);
 
     const response = await apiClient.post<BranchRecord>(
-      BRANCH_PATH,
+      FARM_ENDPOINTS.branches,
       payload,
       withWorkspaceHeader(workspaceId),
     );
@@ -76,7 +76,7 @@ export const branchApi = {
     assertWorkspaceId(workspaceId);
 
     const response = await apiClient.put<BranchRecord>(
-      `${BRANCH_PATH}/${id}`,
+      `${FARM_ENDPOINTS.branches}/${id}`,
       payload,
       withWorkspaceHeader(workspaceId),
     );
@@ -91,7 +91,7 @@ export const branchApi = {
     assertWorkspaceId(workspaceId);
 
     await apiClient.delete(
-      `${BRANCH_PATH}/${id}`,
+      `${FARM_ENDPOINTS.branches}/${id}`,
       withWorkspaceHeader(workspaceId),
     );
   },

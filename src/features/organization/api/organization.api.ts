@@ -7,10 +7,7 @@ import type {
   OrganizationUpdateRequest,
 } from "../types/organization.type";
 
-const ORGANIZATION_PATH = "/api/farm/organizations" as const;
-const ORGANIZATION_SEARCH_PATH = `${ORGANIZATION_PATH}/search` as const;
-const SYSTEM_ORGANIZATION_PATH =
-  "/api/admin/master-data/organizations" as const;
+import { ADMIN_MASTER_DATA_PATHS, FARM_ENDPOINTS } from "@/shared/constants";
 
 const withWorkspaceHeader = (workspaceId: number | string) => ({
   headers: {
@@ -30,7 +27,7 @@ export const organizationApi = {
   ): Promise<OrganizationPageResponse<OrganizationRecord>> {
     const response = await apiClient.get<
       OrganizationPageResponse<OrganizationRecord>
-    >(SYSTEM_ORGANIZATION_PATH, { params });
+    >(ADMIN_MASTER_DATA_PATHS.organizations, { params });
     return response.data;
   },
   async list(
@@ -41,7 +38,7 @@ export const organizationApi = {
 
     const response = await apiClient.get<
       OrganizationPageResponse<OrganizationRecord>
-    >(ORGANIZATION_PATH, {
+    >(FARM_ENDPOINTS.organizations, {
       params,
       ...withWorkspaceHeader(workspaceId),
     });
@@ -58,7 +55,7 @@ export const organizationApi = {
 
     const response = await apiClient.get<
       OrganizationPageResponse<OrganizationRecord>
-    >(ORGANIZATION_SEARCH_PATH, {
+    >(FARM_ENDPOINTS.organizationSearch, {
       params,
       signal,
       ...withWorkspaceHeader(workspaceId),
@@ -74,7 +71,7 @@ export const organizationApi = {
     assertWorkspaceId(workspaceId);
 
     const response = await apiClient.get<OrganizationRecord>(
-      `${ORGANIZATION_PATH}/${id}`,
+      `${FARM_ENDPOINTS.organizations}/${id}`,
       withWorkspaceHeader(workspaceId),
     );
 
@@ -88,7 +85,7 @@ export const organizationApi = {
     assertWorkspaceId(workspaceId);
 
     const response = await apiClient.post<OrganizationRecord>(
-      ORGANIZATION_PATH,
+      FARM_ENDPOINTS.organizations,
       payload,
       withWorkspaceHeader(workspaceId),
     );
@@ -104,7 +101,7 @@ export const organizationApi = {
     assertWorkspaceId(workspaceId);
 
     const response = await apiClient.put<OrganizationRecord>(
-      `${ORGANIZATION_PATH}/${id}`,
+      `${FARM_ENDPOINTS.organizations}/${id}`,
       payload,
       withWorkspaceHeader(workspaceId),
     );
@@ -119,7 +116,7 @@ export const organizationApi = {
     assertWorkspaceId(workspaceId);
 
     await apiClient.delete(
-      `${ORGANIZATION_PATH}/${id}`,
+      `${FARM_ENDPOINTS.organizations}/${id}`,
       withWorkspaceHeader(workspaceId),
     );
   },

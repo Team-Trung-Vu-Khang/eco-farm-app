@@ -8,43 +8,43 @@ import type {
   PlanTaskDiaryStatsResponse,
 } from "../types/farm-plan-task-diary.type";
 
-const PLAN_TASK_DIARY_PATH = "/api/farm/plan-task-diary-entries" as const;
+import { FARM_ENDPOINTS } from "@/shared/constants";
 
 export const farmPlanTaskDiaryApi = {
   list(params?: PlanTaskDiaryQueryParams) {
     return apiClient
-      .get<PlanTaskDiaryEntryPageResponse>(PLAN_TASK_DIARY_PATH, { params })
+      .get<PlanTaskDiaryEntryPageResponse>(FARM_ENDPOINTS.planTaskDiaryEntries, { params })
       .then((response) => response.data);
   },
 
   getStats(params?: PlanTaskDiaryQueryParams) {
     return apiClient
-      .get<PlanTaskDiaryStatsResponse>(`${PLAN_TASK_DIARY_PATH}/stats`, { params })
+      .get<PlanTaskDiaryStatsResponse>(`${FARM_ENDPOINTS.planTaskDiaryEntries}/stats`, { params })
       .then((response) => response.data);
   },
 
 
   getById(id: string | number) {
     return apiClient
-      .get<PlanTaskDiaryEntryResponse>(`${PLAN_TASK_DIARY_PATH}/${id}`)
+      .get<PlanTaskDiaryEntryResponse>(`${FARM_ENDPOINTS.planTaskDiaryEntries}/${id}`)
       .then((response) => response.data);
   },
 
   create(payload: CreatePlanTaskDiaryEntryRequest) {
     return apiClient
-      .post<PlanTaskDiaryEntryResponse>(PLAN_TASK_DIARY_PATH, payload)
+      .post<PlanTaskDiaryEntryResponse>(FARM_ENDPOINTS.planTaskDiaryEntries, payload)
       .then((response) => response.data);
   },
 
   update(id: string | number, payload: UpdatePlanTaskDiaryEntryRequest) {
     return apiClient
-      .put<PlanTaskDiaryEntryResponse>(`${PLAN_TASK_DIARY_PATH}/${id}`, payload)
+      .put<PlanTaskDiaryEntryResponse>(`${FARM_ENDPOINTS.planTaskDiaryEntries}/${id}`, payload)
       .then((response) => response.data);
   },
 
   getTaskHistory(taskId: string | number, params?: { page?: number; size?: number }) {
     return apiClient
-      .get<PlanTaskDiaryEntryPageResponse>(`/api/farm/tasks/${taskId}/plan-diary-entries`, { params })
+      .get<PlanTaskDiaryEntryPageResponse>(`${FARM_ENDPOINTS.tasks}/${taskId}/plan-diary-entries`, { params })
       .then((response) => response.data);
   },
 };

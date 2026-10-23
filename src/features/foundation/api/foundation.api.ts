@@ -300,20 +300,20 @@ export const userLifecycleTemplateApi = {
     apiClient
       .get<
         PageResponse<LifecycleTemplate>
-      >("/api/foundation/production/lifecycle-templates", { params })
+      >(FOUNDATION_ENDPOINTS.lifecycleTemplates, { params })
       .then((r) => r.data),
 
   getById: (id: number) =>
     apiClient
       .get<LifecycleTemplate>(
-        `/api/foundation/production/lifecycle-templates/${id}`,
+        `${FOUNDATION_ENDPOINTS.lifecycleTemplates}/${id}`,
       )
       .then((r) => r.data),
 
   create: (data: LifecycleTemplate) =>
     apiClient
       .post<LifecycleTemplate>(
-        "/api/admin/foundation/production/lifecycle-templates",
+        FOUNDATION_ENDPOINTS.adminLifecycleTemplates,
         data,
       )
       .then((r) => r.data),
@@ -321,14 +321,14 @@ export const userLifecycleTemplateApi = {
   update: (id: number, data: LifecycleTemplate) =>
     apiClient
       .put<LifecycleTemplate>(
-        `/api/admin/foundation/production/lifecycle-templates/${id}`,
+        `${FOUNDATION_ENDPOINTS.adminLifecycleTemplates}/${id}`,
         data,
       )
       .then((r) => r.data),
 
   delete: (id: number) =>
     apiClient.delete(
-      `/api/admin/foundation/production/lifecycle-templates/${id}`,
+      `${FOUNDATION_ENDPOINTS.adminLifecycleTemplates}/${id}`,
     ),
 };
 
@@ -339,20 +339,20 @@ export const productionSubjectApi = {
     apiClient
       .get<
         PageResponse<ProductionSubjectResponse>
-      >("/api/foundation/production/subjects", { params })
+      >(FOUNDATION_ENDPOINTS.crops, { params })
       .then((r) => r.data),
 
   getById: (id: number) =>
     apiClient
       .get<ProductionSubjectResponse>(
-        `/api/foundation/production/subjects/${id}`,
+        `${FOUNDATION_ENDPOINTS.crops}/${id}`,
       )
       .then((r) => r.data),
 
   getPublicById: (id: number) =>
     apiClient
       .get<ProductionSubjectResponse>(
-        `/api/foundation/production/subjects/${id}`,
+        `${FOUNDATION_ENDPOINTS.crops}/${id}`,
       )
       .then((r) => r.data),
 
@@ -361,20 +361,20 @@ export const productionSubjectApi = {
     apiClient
       .get<
         PageResponse<ProductionSubjectResponse>
-      >("/api/admin/foundation/production/subjects", { params })
+      >(FOUNDATION_ENDPOINTS.adminCrops, { params })
       .then((r) => r.data),
 
   adminGetById: (id: number) =>
     apiClient
       .get<ProductionSubjectResponse>(
-        `/api/admin/foundation/production/subjects/${id}`,
+        `${FOUNDATION_ENDPOINTS.adminCrops}/${id}`,
       )
       .then((r) => r.data),
 
   adminCreate: (data: ProductionSubjectRequest) =>
     apiClient
       .post<ProductionSubjectResponse>(
-        "/api/admin/foundation/production/subjects",
+        FOUNDATION_ENDPOINTS.adminCrops,
         data,
       )
       .then((r) => r.data),
@@ -382,13 +382,13 @@ export const productionSubjectApi = {
   adminUpdate: (id: number, data: ProductionSubjectRequest) =>
     apiClient
       .put<ProductionSubjectResponse>(
-        `/api/admin/foundation/production/subjects/${id}`,
+        `${FOUNDATION_ENDPOINTS.adminCrops}/${id}`,
         data,
       )
       .then((r) => r.data),
 
   adminDelete: (id: number) =>
-    apiClient.delete(`/api/admin/foundation/production/subjects/${id}`),
+    apiClient.delete(`${FOUNDATION_ENDPOINTS.adminCrops}/${id}`),
 };
 
 export const productionSubjectGroupApi = {
@@ -396,13 +396,13 @@ export const productionSubjectGroupApi = {
     apiClient
       .get<
         PageResponse<ProductionSubjectGroupResponse>
-      >("/api/foundation/production/subject-groups", { params })
+      >(FOUNDATION_ENDPOINTS.cropGroups, { params })
       .then((r) => r.data),
 
   create: (data: ProductionSubjectGroupRequest) =>
     apiClient
       .post<ProductionSubjectGroupResponse>(
-        "/api/admin/foundation/production/subject-groups",
+        FOUNDATION_ENDPOINTS.adminCropGroups,
         data,
       )
       .then((r) => r.data),
@@ -410,14 +410,14 @@ export const productionSubjectGroupApi = {
   update: (id: number, data: ProductionSubjectGroupRequest) =>
     apiClient
       .put<ProductionSubjectGroupResponse>(
-        `/api/admin/foundation/production/subject-groups/${id}`,
+        `${FOUNDATION_ENDPOINTS.adminCropGroups}/${id}`,
         data,
       )
       .then((r) => r.data),
 
   delete: (id: number) =>
     apiClient
-      .delete<void>(`/api/admin/foundation/production/subject-groups/${id}`)
+      .delete<void>(`${FOUNDATION_ENDPOINTS.adminCropGroups}/${id}`)
       .then((r) => r.data),
 };
 
@@ -427,20 +427,20 @@ export const productionSubjectVariantApi = {
     apiClient
       .get<
         PageResponse<ProductionSubjectVariantResponse>
-      >("/api/foundation/production/subject-variants", { params })
+      >(FOUNDATION_ENDPOINTS.cropVarieties, { params })
       .then((r) => r.data),
 
   getById: (id: number) =>
     apiClient
       .get<ProductionSubjectVariantResponse>(
-        `/api/foundation/production/subject-variants/${id}`,
+        `${FOUNDATION_ENDPOINTS.cropVarieties}/${id}`,
       )
       .then((r) => r.data),
 
   getPublicById: (id: number) =>
     apiClient
       .get<ProductionSubjectVariantResponse>(
-        `/api/foundation/production/subject-variants/${id}`,
+        `${FOUNDATION_ENDPOINTS.cropVarieties}/${id}`,
       )
       .then((r) => r.data),
 
@@ -449,20 +449,20 @@ export const productionSubjectVariantApi = {
     apiClient
       .get<
         PageResponse<ProductionSubjectVariantResponse>
-      >("/api/admin/foundation/production/subject-variants", { params })
+      >(FOUNDATION_ENDPOINTS.adminCropVarieties, { params })
       .then((r) => r.data),
 
   adminGetById: (id: number) =>
     apiClient
       .get<ProductionSubjectVariantResponse>(
-        `/api/admin/foundation/production/subject-variants/${id}`,
+        `${FOUNDATION_ENDPOINTS.adminCropVarieties}/${id}`,
       )
       .then((r) => r.data),
 
   adminCreate: (data: ProductionSubjectVariantRequest) =>
     apiClient
       .post<ProductionSubjectVariantResponse>(
-        "/api/admin/foundation/production/subject-variants",
+        FOUNDATION_ENDPOINTS.adminCropVarieties,
         data,
       )
       .then((r) => r.data),
@@ -470,13 +470,13 @@ export const productionSubjectVariantApi = {
   adminUpdate: (id: number, data: ProductionSubjectVariantRequest) =>
     apiClient
       .put<ProductionSubjectVariantResponse>(
-        `/api/admin/foundation/production/subject-variants/${id}`,
+        `${FOUNDATION_ENDPOINTS.adminCropVarieties}/${id}`,
         data,
       )
       .then((r) => r.data),
 
   adminDelete: (id: number) =>
-    apiClient.delete(`/api/admin/foundation/production/subject-variants/${id}`),
+    apiClient.delete(`${FOUNDATION_ENDPOINTS.adminCropVarieties}/${id}`),
 };
 
 export const productionMethodApi = {
@@ -485,19 +485,19 @@ export const productionMethodApi = {
     apiClient
       .get<
         PageResponse<ProductionMethodResponse>
-      >("/api/foundation/production/methods", { params })
+      >(FOUNDATION_ENDPOINTS.farmingMethods, { params })
       .then((r) => r.data),
 
   getById: (id: number) =>
     apiClient
-      .get<ProductionMethodResponse>(`/api/foundation/production/methods/${id}`)
+      .get<ProductionMethodResponse>(`${FOUNDATION_ENDPOINTS.farmingMethods}/${id}`)
       .then((r) => r.data),
 
   // ─── Admin Foundation Management Endpoints ───
   create: (data: ProductionMethodRequest) =>
     apiClient
       .post<ProductionMethodResponse>(
-        "/api/admin/foundation/production/methods",
+        FOUNDATION_ENDPOINTS.adminFarmingMethods,
         data,
       )
       .then((r) => r.data),
@@ -505,13 +505,13 @@ export const productionMethodApi = {
   update: (id: number, data: ProductionMethodRequest) =>
     apiClient
       .put<ProductionMethodResponse>(
-        `/api/admin/foundation/production/methods/${id}`,
+        `${FOUNDATION_ENDPOINTS.adminFarmingMethods}/${id}`,
         data,
       )
       .then((r) => r.data),
 
   delete: (id: number) =>
-    apiClient.delete(`/api/admin/foundation/production/methods/${id}`),
+    apiClient.delete(`${FOUNDATION_ENDPOINTS.adminFarmingMethods}/${id}`),
 };
 
 export const methodApplicationApi = {
@@ -519,20 +519,20 @@ export const methodApplicationApi = {
     apiClient
       .get<
         PageResponse<MethodApplication>
-      >(`${FOUNDATION_BASE_PATH}/production/method-applications`, { params })
+      >(FOUNDATION_ENDPOINTS.farmingMethodCrops, { params })
       .then((r) => r.data),
 
   getById: (id: number) =>
     apiClient
       .get<MethodApplication>(
-        `${FOUNDATION_BASE_PATH}/production/method-applications/${id}`,
+        `${FOUNDATION_ENDPOINTS.farmingMethodCrops}/${id}`,
       )
       .then((r) => r.data),
 
   create: (data: MethodApplication) =>
     apiClient
       .post<MethodApplication>(
-        `${ADMIN_FOUNDATION_BASE_PATH}/production/method-applications`,
+        FOUNDATION_ENDPOINTS.adminFarmingMethodCrops,
         data,
       )
       .then((r) => r.data),
@@ -540,13 +540,13 @@ export const methodApplicationApi = {
   update: (id: number, data: MethodApplication) =>
     apiClient
       .put<MethodApplication>(
-        `${ADMIN_FOUNDATION_BASE_PATH}/production/method-applications/${id}`,
+        `${FOUNDATION_ENDPOINTS.adminFarmingMethodCrops}/${id}`,
         data,
       )
       .then((r) => r.data),
 
   delete: (id: number) =>
     apiClient.delete(
-      `${ADMIN_FOUNDATION_BASE_PATH}/production/method-applications/${id}`,
+      `${FOUNDATION_ENDPOINTS.adminFarmingMethodCrops}/${id}`,
     ),
 };

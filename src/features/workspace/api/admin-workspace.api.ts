@@ -6,7 +6,7 @@ import type {
   WorkspaceRecord,
 } from "../types/workspace.type";
 
-const ADMIN_WORKSPACE_PATH = "/api/admin/workspaces" as const;
+import { WORKSPACE_API_PATHS } from "@/shared/constants";
 
 export const adminWorkspaceApi = {
   async list(
@@ -14,7 +14,7 @@ export const adminWorkspaceApi = {
   ): Promise<WorkspacePageResponse<WorkspaceRecord>> {
     const response = await apiClient.get<
       WorkspacePageResponse<WorkspaceRecord>
-    >(ADMIN_WORKSPACE_PATH, {
+    >(WORKSPACE_API_PATHS.admin, {
       params,
     });
 
@@ -23,7 +23,7 @@ export const adminWorkspaceApi = {
 
   async getById(id: number | string): Promise<WorkspaceRecord> {
     const response = await apiClient.get<WorkspaceRecord>(
-      `${ADMIN_WORKSPACE_PATH}/${id}`,
+      `${WORKSPACE_API_PATHS.admin}/${id}`,
     );
 
     return response.data;
@@ -33,7 +33,7 @@ export const adminWorkspaceApi = {
     payload: WorkspaceCreateRequest,
   ): Promise<WorkspaceRecord> {
     const response = await apiClient.post<WorkspaceRecord>(
-      ADMIN_WORKSPACE_PATH,
+      WORKSPACE_API_PATHS.admin,
       payload,
     );
 
@@ -45,7 +45,7 @@ export const adminWorkspaceApi = {
     payload: WorkspaceCreateRequest,
   ): Promise<WorkspaceRecord> {
     const response = await apiClient.put<WorkspaceRecord>(
-      `${ADMIN_WORKSPACE_PATH}/${id}`,
+      `${WORKSPACE_API_PATHS.admin}/${id}`,
       payload,
     );
 
@@ -53,6 +53,6 @@ export const adminWorkspaceApi = {
   },
 
   async delete(id: number | string): Promise<void> {
-    await apiClient.delete(`${ADMIN_WORKSPACE_PATH}/${id}`);
+    await apiClient.delete(`${WORKSPACE_API_PATHS.admin}/${id}`);
   },
 };

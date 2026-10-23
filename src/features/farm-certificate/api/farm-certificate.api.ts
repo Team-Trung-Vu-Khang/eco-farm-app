@@ -11,14 +11,13 @@ import type {
   FarmCertificateUpdateResponse,
 } from "../types/farm-certificate.type";
 
-const FARM_CERTIFICATE_PATH = "/api/farm/certificates" as const;
-const ADMIN_FARM_CERTIFICATE_PATH = "/api/admin/farm/certificates" as const;
+import { FARM_ENDPOINTS } from "@/shared/constants";
 
 export const farmCertificateApi = {
   list(params: FarmCertificateQueryParams = {}) {
     return apiClient
       .get<FarmCertificatePageResponse<FarmCertificateRecord>>(
-        FARM_CERTIFICATE_PATH,
+        FARM_ENDPOINTS.certificates,
         { params },
       )
       .then((response) => response.data);
@@ -28,7 +27,7 @@ export const farmCertificateApi = {
   listAdmin(params: AdminFarmCertificateQueryParams) {
     return apiClient
       .get<FarmCertificatePageResponse<FarmCertificateRecord>>(
-        ADMIN_FARM_CERTIFICATE_PATH,
+        FARM_ENDPOINTS.adminCertificates,
         { params, headers: { skipWorkspaceHeader: "true" } },
       )
       .then((response) => response.data);
@@ -36,20 +35,20 @@ export const farmCertificateApi = {
 
   create(payload: FarmCertificateCreateRequest) {
     return apiClient
-      .post<FarmCertificateCreateResponse>(FARM_CERTIFICATE_PATH, payload)
+      .post<FarmCertificateCreateResponse>(FARM_ENDPOINTS.certificates, payload)
       .then((response) => response.data);
   },
 
   getById(id: number | string) {
     return apiClient
-      .get<FarmCertificateRecord>(`${FARM_CERTIFICATE_PATH}/${id}`)
+      .get<FarmCertificateRecord>(`${FARM_ENDPOINTS.certificates}/${id}`)
       .then((response) => response.data);
   },
 
   update(id: number | string, payload: FarmCertificateUpdateRequest) {
     return apiClient
       .put<FarmCertificateUpdateResponse>(
-        `${FARM_CERTIFICATE_PATH}/${id}`,
+        `${FARM_ENDPOINTS.certificates}/${id}`,
         payload,
       )
       .then((response) => response.data);
@@ -57,7 +56,7 @@ export const farmCertificateApi = {
 
   delete(id: number | string): Promise<FarmCertificateDeleteResponse> {
     return apiClient
-      .delete(`${FARM_CERTIFICATE_PATH}/${id}`)
+      .delete(`${FARM_ENDPOINTS.certificates}/${id}`)
       .then(() => undefined);
   },
 };

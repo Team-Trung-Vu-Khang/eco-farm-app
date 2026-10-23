@@ -1,4 +1,5 @@
 import { apiClient } from "@/shared/lib/axios";
+import { FARM_ENDPOINTS } from "@/shared/constants";
 import type { PageResponse } from "@/features/foundation/types/foundation.type";
 import type {
   LowStockSuppliesResponse,
@@ -15,7 +16,7 @@ export const farmDashboardApi = {
     size?: number;
   }): Promise<PageResponse<any>> =>
     apiClient
-      .get<PageResponse<any>>("/api/farm/certificates", {
+      .get<PageResponse<any>>(FARM_ENDPOINTS.certificates, {
         params: { status: "expiring_soon", page: 0, size: 20, ...params },
       })
       .then((r) => r.data),
@@ -23,13 +24,13 @@ export const farmDashboardApi = {
   // 2. Low Stock Supplies (GET /api/farm/dashboard/low-stock-supplies)
   getLowStockSupplies: (): Promise<LowStockSuppliesResponse> =>
     apiClient
-      .get<LowStockSuppliesResponse>("/api/farm/dashboard/low-stock-supplies")
+      .get<LowStockSuppliesResponse>(FARM_ENDPOINTS.dashboardLowStockSupplies)
       .then((r) => r.data),
 
   // 3. Expiring Contracts (GET /api/farm/dashboard/expiring-contracts?windowDays=7)
   getExpiringContracts: (windowDays = 7): Promise<ExpiringContractsResponse> =>
     apiClient
-      .get<ExpiringContractsResponse>("/api/farm/dashboard/expiring-contracts", {
+      .get<ExpiringContractsResponse>(FARM_ENDPOINTS.dashboardExpiringContracts, {
         params: { windowDays },
       })
       .then((r) => r.data),
@@ -37,7 +38,7 @@ export const farmDashboardApi = {
   // 4. Production Health (GET /api/farm/dashboard/production-health)
   getProductionHealth: (): Promise<ProductionHealthResponse> =>
     apiClient
-      .get<ProductionHealthResponse>("/api/farm/dashboard/production-health")
+      .get<ProductionHealthResponse>(FARM_ENDPOINTS.dashboardProductionHealth)
       .then((r) => r.data),
 
   // 5. Harvest Production (GET /api/farm/dashboard/harvest-production)
@@ -45,7 +46,7 @@ export const farmDashboardApi = {
     params?: HarvestProductionQueryParams,
   ): Promise<HarvestProductionResponse> =>
     apiClient
-      .get<HarvestProductionResponse>("/api/farm/dashboard/harvest-production", {
+      .get<HarvestProductionResponse>(FARM_ENDPOINTS.dashboardHarvestProduction, {
         params,
       })
       .then((r) => r.data),

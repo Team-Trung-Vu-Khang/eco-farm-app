@@ -575,7 +575,7 @@ export const masterDataApi = {
   listVsicIndustryChildrenByCode: (code: string) =>
     apiClient
       .get<VsicIndustryChildrenRecord>(
-        `/api/master-data/vsic-industries/${code}/children`,
+        `${MASTER_DATA_PATHS.vsicIndustries}/${code}/children`,
       )
       .then((response) => response.data),
 

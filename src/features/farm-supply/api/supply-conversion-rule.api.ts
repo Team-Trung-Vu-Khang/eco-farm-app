@@ -21,8 +21,7 @@ interface PageResponse<T> {
 
 // ─── Path helpers ────────────────────────────────────────────────────────────
 
-const ADMIN_BASE = "/api/admin/master-data/supply-conversion-rules";
-const FARM_BASE = "/api/farm/supplies/conversion-rules";
+import { ADMIN_MASTER_DATA_PATHS, FARM_ENDPOINTS } from "@/shared/constants";
 
 const SUPPLY_PATH_SEGMENTS: Record<SupplyType, string> = {
   medicine: "medicines",
@@ -40,51 +39,51 @@ export const supplyConversionRuleApi = {
 
   adminList: (params?: SupplyConversionRuleQueryParams) =>
     apiClient
-      .get<PageResponse<SupplyConversionRuleResponse>>(ADMIN_BASE, { params })
+      .get<PageResponse<SupplyConversionRuleResponse>>(FARM_ENDPOINTS.adminSupplyConversionRules, { params })
       .then((r) => r.data),
 
   adminGetById: (id: number) =>
     apiClient
-      .get<SupplyConversionRuleResponse>(`${ADMIN_BASE}/${id}`)
+      .get<SupplyConversionRuleResponse>(`${FARM_ENDPOINTS.adminSupplyConversionRules}/${id}`)
       .then((r) => r.data),
 
   adminCreate: (data: SupplyConversionRuleRequest) =>
     apiClient
-      .post<SupplyConversionRuleResponse>(ADMIN_BASE, data)
+      .post<SupplyConversionRuleResponse>(FARM_ENDPOINTS.adminSupplyConversionRules, data)
       .then((r) => r.data),
 
   adminUpdate: (id: number, data: SupplyConversionRuleRequest) =>
     apiClient
-      .put<SupplyConversionRuleResponse>(`${ADMIN_BASE}/${id}`, data)
+      .put<SupplyConversionRuleResponse>(`${FARM_ENDPOINTS.adminSupplyConversionRules}/${id}`, data)
       .then((r) => r.data),
 
   adminDelete: (id: number): Promise<void> =>
-    apiClient.delete(`${ADMIN_BASE}/${id}`).then(() => undefined),
+    apiClient.delete(`${FARM_ENDPOINTS.adminSupplyConversionRules}/${id}`).then(() => undefined),
 
   // ─── Farm Owner (requires X-Workspace-Id, set by axios interceptor) ────────
 
   farmList: (params?: SupplyConversionRuleQueryParams) =>
     apiClient
-      .get<PageResponse<SupplyConversionRuleResponse>>(FARM_BASE, { params })
+      .get<PageResponse<SupplyConversionRuleResponse>>(FARM_ENDPOINTS.supplyConversionRules, { params })
       .then((r) => r.data),
 
   farmGetById: (id: number) =>
     apiClient
-      .get<SupplyConversionRuleResponse>(`${FARM_BASE}/${id}`)
+      .get<SupplyConversionRuleResponse>(`${FARM_ENDPOINTS.supplyConversionRules}/${id}`)
       .then((r) => r.data),
 
   farmCreate: (data: SupplyConversionRuleRequest) =>
     apiClient
-      .post<SupplyConversionRuleResponse>(FARM_BASE, data)
+      .post<SupplyConversionRuleResponse>(FARM_ENDPOINTS.supplyConversionRules, data)
       .then((r) => r.data),
 
   farmUpdate: (id: number, data: SupplyConversionRuleRequest) =>
     apiClient
-      .put<SupplyConversionRuleResponse>(`${FARM_BASE}/${id}`, data)
+      .put<SupplyConversionRuleResponse>(`${FARM_ENDPOINTS.supplyConversionRules}/${id}`, data)
       .then((r) => r.data),
 
   farmDelete: (id: number): Promise<void> =>
-    apiClient.delete(`${FARM_BASE}/${id}`).then(() => undefined),
+    apiClient.delete(`${FARM_ENDPOINTS.supplyConversionRules}/${id}`).then(() => undefined),
 
   // ─── Deletion Impact ───────────────────────────────────────────────────────
   // Used before deleting a supply item to check if any conversion rules reference it.
@@ -102,8 +101,8 @@ export const supplyConversionRuleApi = {
     const segment = SUPPLY_PATH_SEGMENTS[supplyType];
     const basePath =
       scope === "admin"
-        ? `/api/admin/master-data/${segment}`
-        : `/api/farm/supplies/${segment}`;
+        ? `${ADMIN_MASTER_DATA_PATHS.base}/${segment}`
+        : `${FARM_ENDPOINTS.supplies}/${segment}`;
     return apiClient
       .get<DeletionImpactResponse>(`${basePath}/${id}/deletion-impact`, {
         params,

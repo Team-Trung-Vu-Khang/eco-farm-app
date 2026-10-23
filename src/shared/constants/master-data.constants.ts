@@ -26,6 +26,9 @@ export const MASTER_DATA_PATHS = {
   vsicIndustries: `${PUBLIC_MASTER_DATA_BASE_PATH}/vsic-industries`,
   vsicIndustryTree: `${PUBLIC_MASTER_DATA_BASE_PATH}/vsic-industries/tree`,
   seasons: `${PUBLIC_MASTER_DATA_BASE_PATH}/seasons`,
+  taskCategories: `${PUBLIC_MASTER_DATA_BASE_PATH}/task-categories`,
+  organizations: `${PUBLIC_MASTER_DATA_BASE_PATH}/organizations`,
+  supplyConversionRules: `${PUBLIC_MASTER_DATA_BASE_PATH}/supply-conversion-rules`,
 } as const;
 
 export const ADMIN_MASTER_DATA_PATHS = {
@@ -53,6 +56,9 @@ export const ADMIN_MASTER_DATA_PATHS = {
   vsicIndustries: `${MASTER_DATA_BASE_PATH}/vsic-industries`,
   vsicIndustryTree: `${PUBLIC_MASTER_DATA_BASE_PATH}/vsic-industries/tree`,
   seasons: `${MASTER_DATA_BASE_PATH}/seasons`,
+  taskCategories: `${MASTER_DATA_BASE_PATH}/task-categories`,
+  organizations: `${MASTER_DATA_BASE_PATH}/organizations`,
+  supplyConversionRules: `${MASTER_DATA_BASE_PATH}/supply-conversion-rules`,
 } as const;
 
 export const MASTER_DATA_CATALOGS = [

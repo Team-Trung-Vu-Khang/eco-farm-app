@@ -1,4 +1,5 @@
 import { apiClient } from "@/shared/lib/axios";
+import { WORKSPACE_API_PATHS } from "@/shared/constants/workspace.constants";
 import type {
   WorkspaceCreateRequest,
   WorkspacePageResponse,
@@ -7,22 +8,20 @@ import type {
   WorkspaceUpdateRequest,
 } from "../types/workspace.type";
 
-const WORKSPACE_PATH = "/api/center/workspaces";
-
 export const workspaceApi = {
   async list(
     params: WorkspaceQueryParams = {},
   ): Promise<WorkspacePageResponse<WorkspaceRecord>> {
     const response = await apiClient.get<
       WorkspacePageResponse<WorkspaceRecord>
-    >(WORKSPACE_PATH, { params });
+    >(WORKSPACE_API_PATHS.center, { params });
 
     return response.data;
   },
 
   async getById(id: number | string): Promise<WorkspaceRecord> {
     const response = await apiClient.get<WorkspaceRecord>(
-      `${WORKSPACE_PATH}/current`,
+      WORKSPACE_API_PATHS.current,
       {
         headers: {
           "X-Workspace-Id": String(id),
@@ -35,7 +34,7 @@ export const workspaceApi = {
 
   async create(payload: WorkspaceCreateRequest): Promise<WorkspaceRecord> {
     const response = await apiClient.post<WorkspaceRecord>(
-      "/api/admin/workspaces",
+      WORKSPACE_API_PATHS.admin,
       payload,
     );
 
@@ -47,7 +46,7 @@ export const workspaceApi = {
     payload: WorkspaceUpdateRequest,
   ): Promise<WorkspaceRecord> {
     const response = await apiClient.put<WorkspaceRecord>(
-      `${WORKSPACE_PATH}/current`,
+      WORKSPACE_API_PATHS.current,
       payload,
       {
         headers: {
@@ -60,6 +59,6 @@ export const workspaceApi = {
   },
 
   async delete(id: number | string): Promise<void> {
-    await apiClient.delete(`/api/admin/workspaces/${id}`);
+    await apiClient.delete(`${WORKSPACE_API_PATHS.admin}/${id}`);
   },
 };

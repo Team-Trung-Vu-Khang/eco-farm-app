@@ -1,4 +1,5 @@
 import { apiClient } from "@/shared/lib/axios";
+import { FARM_ENDPOINTS } from "@/shared/constants";
 import type {
   AdminWorkspaceStatsResponse,
   ActiveFarmersReportResponse,
@@ -20,7 +21,7 @@ export const adminDashboardApi = {
   getWorkspaceStats: (): Promise<AdminWorkspaceStatsResponse> =>
     apiClient
       .get<AdminWorkspaceStatsResponse>(
-        "/api/admin/dashboard/workspaces",
+        FARM_ENDPOINTS.adminDashboardWorkspaces,
         SKIP_WORKSPACE_CONFIG,
       )
       .then((r) => r.data),
@@ -32,7 +33,7 @@ export const adminDashboardApi = {
   }): Promise<ActiveFarmersReportResponse> =>
     apiClient
       .get<ActiveFarmersReportResponse>(
-        "/api/admin/farm/report/active-farmers",
+        FARM_ENDPOINTS.adminReportActiveFarmers,
         {
           ...SKIP_WORKSPACE_CONFIG,
           params,
@@ -49,7 +50,7 @@ export const adminDashboardApi = {
   }): Promise<ActiveFarmersWorkspacesResponse> =>
     apiClient
       .get<ActiveFarmersWorkspacesResponse>(
-        "/api/admin/farm/report/active-farmers/workspaces",
+        FARM_ENDPOINTS.adminReportActiveFarmersWorkspaces,
         {
           ...SKIP_WORKSPACE_CONFIG,
           params,
@@ -63,7 +64,7 @@ export const adminDashboardApi = {
   ): Promise<ExportJobResponse> =>
     apiClient
       .post<ExportJobResponse>(
-        "/api/admin/farm/report/active-farmers/export-jobs",
+        FARM_ENDPOINTS.adminReportActiveFarmersExportJobs,
         payload,
         SKIP_WORKSPACE_CONFIG,
       )
@@ -72,7 +73,7 @@ export const adminDashboardApi = {
   // 5. Poll Export Job Status (be-mevi-farm)
   getExportJobStatus: (id: string): Promise<ExportJobResponse> =>
     apiClient
-      .get<ExportJobResponse>(`/api/exports/${id}`, SKIP_WORKSPACE_CONFIG)
+      .get<ExportJobResponse>(FARM_ENDPOINTS.adminExports(id), SKIP_WORKSPACE_CONFIG)
       .then((r) => r.data),
 
   // 6. Harvest by Variant — Donut chart + dropdown (be-mevi-farm)
@@ -84,7 +85,7 @@ export const adminDashboardApi = {
   }): Promise<HarvestByVariantResponse> =>
     apiClient
       .get<HarvestByVariantResponse>(
-        "/api/admin/farm/report/harvest-by-variant",
+        FARM_ENDPOINTS.adminReportHarvestByVariant,
         {
           ...SKIP_WORKSPACE_CONFIG,
           params,
@@ -102,7 +103,7 @@ export const adminDashboardApi = {
   }): Promise<HarvestByVariantDetailResponse> =>
     apiClient
       .get<HarvestByVariantDetailResponse>(
-        "/api/admin/farm/report/harvest-by-variant/detail",
+        FARM_ENDPOINTS.adminReportHarvestByVariantDetail,
         {
           ...SKIP_WORKSPACE_CONFIG,
           params,
@@ -119,7 +120,7 @@ export const adminDashboardApi = {
   }): Promise<HarvestByVariantResponse> =>
     apiClient
       .get<HarvestByVariantResponse>(
-        "/api/admin/farm/report/harvest-by-subject",
+        FARM_ENDPOINTS.adminReportHarvestBySubject,
         {
           ...SKIP_WORKSPACE_CONFIG,
           params,

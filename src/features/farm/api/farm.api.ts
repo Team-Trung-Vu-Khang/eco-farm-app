@@ -1,7 +1,4 @@
-import {
-  FARM_BASE_PATH,
-  FARM_ENDPOINTS,
-} from "@/shared/constants/farm.constants";
+import { FARM_ENDPOINTS } from "@/shared/constants/farm.constants";
 import { apiClient } from "../../../shared/lib/axios";
 import type {
   FarmSeedRequest,
@@ -600,7 +597,7 @@ export const productionZoneHarvestApi = {
   ) =>
     apiClient
       .get<FarmZoneHarvestBySubjectResponse>(
-        `${FARM_BASE_PATH}/production-zones/${zoneId}/harvest-by-subject`,
+        FARM_ENDPOINTS.productionZoneHarvestBySubject(zoneId),
         { params },
       )
       .then((r) => r.data),
