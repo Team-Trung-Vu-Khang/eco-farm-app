@@ -26,6 +26,8 @@ export function CreateTreatmentProcessStep({
   onAddStep,
   onRemoveStep,
 }: CreateTreatmentProcessStepProps) {
+  const steps = formData.steps || [];
+
   return (
     <div className="max-w-5xl mx-auto flex flex-col lg:flex-row gap-8">
       <div className="flex-1 space-y-6">
@@ -43,7 +45,7 @@ export function CreateTreatmentProcessStep({
         </div>
 
         <div className="space-y-4">
-          {formData.steps.map((step, idx) => (
+          {steps.map((step, idx) => (
             <Card
               key={step.id}
               className="relative border-2 focus-within:border-primary/50 transition-all"
@@ -56,7 +58,7 @@ export function CreateTreatmentProcessStep({
                     </div>
                     <h4 className="font-bold">Bước {idx + 1}</h4>
                   </div>
-                  {formData.steps.length > 1 && (
+                  {steps.length > 1 && (
                     <Button
                       variant="ghost"
                       size="icon"
@@ -72,7 +74,7 @@ export function CreateTreatmentProcessStep({
                     placeholder="Tên hành động (VD: Phun lần 1)"
                     value={step.title}
                     onChange={(event) => {
-                      const newSteps = [...formData.steps];
+                      const newSteps = [...steps];
                       newSteps[idx].title = event.target.value;
                       setFormData({ ...formData, steps: newSteps });
                     }}
@@ -80,7 +82,7 @@ export function CreateTreatmentProcessStep({
                   <Select
                     value={step.type}
                     onValueChange={(value) => {
-                      const newSteps = [...formData.steps];
+                      const newSteps = [...steps];
                       newSteps[idx].type = value;
                       setFormData({ ...formData, steps: newSteps });
                     }}
@@ -100,7 +102,7 @@ export function CreateTreatmentProcessStep({
                     placeholder="Thời điểm (VD: Ngày 1)"
                     value={step.day}
                     onChange={(event) => {
-                      const newSteps = [...formData.steps];
+                      const newSteps = [...steps];
                       newSteps[idx].day = event.target.value;
                       setFormData({ ...formData, steps: newSteps });
                     }}
@@ -109,7 +111,7 @@ export function CreateTreatmentProcessStep({
                     placeholder="Mô tả kỹ thuật..."
                     value={step.description}
                     onChange={(event) => {
-                      const newSteps = [...formData.steps];
+                      const newSteps = [...steps];
                       newSteps[idx].description = event.target.value;
                       setFormData({ ...formData, steps: newSteps });
                     }}

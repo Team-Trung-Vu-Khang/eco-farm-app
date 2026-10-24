@@ -1,7 +1,7 @@
 import { type FC } from "react";
 import { Badge, Separator } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { Info, CalendarDays, Sprout, Activity, Beaker } from "lucide-react";
-import { Fertilizer } from "../../types/types";
+import type { Fertilizer } from "../../types/types";
 
 interface FertilizerDetailViewProps {
   item: Fertilizer;

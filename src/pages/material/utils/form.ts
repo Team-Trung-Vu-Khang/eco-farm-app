@@ -21,7 +21,7 @@ export const createEmptyMaterialFormData = (): MaterialFormData => ({
 });
 
 const normalizeOrganizationOption = (
-  org?: OrganizationOption | string | null,
+  org?: OrganizationOption | string | string[] | null,
 ): OrganizationOption | null => {
   if (!org) return null;
   if (typeof org === "object" && org !== null && "id" in org) {

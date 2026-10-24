@@ -101,7 +101,7 @@ const AquacultureIdentificationForm = ({
         <Step3Confirmation
           plants={plants as any}
           initialData={initialData}
-          selectedCultivationRegion={selectedCultivationRegion}
+          selectedCultivationRegion={selectedCultivationRegion || null}
           selectedScopeIds={selectedScopeIds}
           geographicalUnits={geographicalUnits}
           manager={managers}

@@ -11,7 +11,7 @@ import type { SeasonDocument, SeasonFormData } from "../types/types";
 
 interface SeasonDocumentsCardProps {
   documents: (File | SeasonDocument)[];
-  onDocumentsChange: (documents: SeasonFormData["documents"]) => void;
+  onDocumentsChange: (documents: (File | SeasonDocument)[]) => void;
   onSubmit: () => void;
   submitLabel: string;
 }

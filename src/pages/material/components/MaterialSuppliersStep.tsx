@@ -107,7 +107,7 @@ export default function MaterialSuppliersStep({
                   variant="secondary"
                   className="bg-primary/5 text-primary border border-primary/20 text-xs font-semibold py-0.5 px-2.5"
                 >
-                  {formData.manufacturerOrigin.name}
+                  {(formData.manufacturerOrigin as any)?.name ?? String(formData.manufacturerOrigin)}
                 </Badge>
               ) : (
                 <span className="text-sm text-slate-400">
@@ -136,11 +136,11 @@ export default function MaterialSuppliersStep({
             <div className="flex-1 min-w-0 flex flex-wrap gap-1.5 items-center">
               {formData.importerRegistrant ? (
                 <Badge
-                  key={formData.importerRegistrant.id}
+                  key={(formData.importerRegistrant as any)?.id ?? 0}
                   variant="secondary"
                   className="bg-primary/5 text-primary border border-primary/20 text-xs font-semibold py-0.5 px-2.5"
                 >
-                  {formData.importerRegistrant.name}
+                  {(formData.importerRegistrant as any)?.name ?? String(formData.importerRegistrant)}
                 </Badge>
               ) : (
                 <span className="text-sm text-slate-400">
@@ -172,11 +172,11 @@ export default function MaterialSuppliersStep({
             <div className="flex-1 min-w-0 flex flex-wrap gap-1.5 items-center">
               {formData.distributor ? (
                 <Badge
-                  key={formData.distributor.id}
+                  key={(formData.distributor as any)?.id ?? 0}
                   variant="secondary"
                   className="bg-primary/5 text-primary border border-primary/20 text-xs font-semibold py-0.5 px-2.5"
                 >
-                  {formData.distributor.name}
+                  {(formData.distributor as any)?.name ?? String(formData.distributor)}
                 </Badge>
               ) : (
                 <span className="text-sm text-slate-400">
@@ -368,7 +368,7 @@ export default function MaterialSuppliersStep({
         isMulti={false}
         returnById
         selectedItems={
-          formData.manufacturerOrigin ? [formData.manufacturerOrigin] : []
+          formData.manufacturerOrigin ? [formData.manufacturerOrigin as any] : []
         }
         onConfirmItems={(items) =>
           onFormFieldChange("manufacturerOrigin", items[0] || null)
@@ -384,7 +384,7 @@ export default function MaterialSuppliersStep({
         isMulti={false}
         returnById
         selectedItems={
-          formData.importerRegistrant ? [formData.importerRegistrant] : []
+          formData.importerRegistrant ? [formData.importerRegistrant as any] : []
         }
         onConfirmItems={(items) =>
           onFormFieldChange("importerRegistrant", items[0] || null)
@@ -397,7 +397,7 @@ export default function MaterialSuppliersStep({
         title="Chọn nhà phân phối"
         isMulti={false}
         returnById
-        selectedItems={formData.distributor ? [formData.distributor] : []}
+        selectedItems={formData.distributor ? [formData.distributor as any] : []}
         onConfirmItems={(items) =>
           onFormFieldChange("distributor", items[0] || null)
         }

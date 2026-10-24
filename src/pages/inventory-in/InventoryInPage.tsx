@@ -17,7 +17,7 @@ import {
   DataTable
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { Download, CheckCircle, Package, History, Printer, X } from "lucide-react";
-import useWarehouseStore, { WarehouseTransaction } from "../../stores/useWarehouseStore";
+import useWarehouseStore, { type WarehouseTransaction } from "../../stores/useWarehouseStore";
 import useMaterialStore from "../../stores/useMaterialStore";
 import usePesticideStore from "../../stores/usePesticideStore";
 import useFertilizerStore from "../../stores/useFertilizerStore";
@@ -51,17 +51,17 @@ export default function InventoryInPage() {
       return [
         ...pesticides.map(p => ({ id: p.id, name: `[Thuốc] ${p.name}`, unit: "Chai", code: p.code })),
         ...fertilizers.map(f => ({ id: f.id, name: `[Phân bón] ${f.name}`, unit: "Bao", code: f.code })),
-        ...materials.filter(m => m.type.includes("Trồng trọt") || m.type.includes("crop")).map(m => ({ id: m.id, name: `[Vật tư] ${m.name}`, unit: "Cái", code: m.code }))
+        ...materials.filter(m => (m.type || "").includes("Trồng trọt") || (m.type || "").includes("crop")).map(m => ({ id: m.id, name: `[Vật tư] ${m.name}`, unit: "Cái", code: m.code }))
       ];
     } else if (sector === "livestock") {
       return [
-        ...pesticides.filter(p => p.group.includes("thú y") || p.group.includes("Vaccine")).map(p => ({ id: p.id, name: `[Thuốc/Vaccine] ${p.name}`, unit: "Lọ", code: p.code })),
-        ...materials.filter(m => m.type.includes("Chăn nuôi") || m.type.includes("livestock") || m.description?.includes("cám") || m.name.includes("Cám")).map(m => ({ id: m.id, name: `[Thức ăn/Vật tư] ${m.name}`, unit: "Bao", code: m.code }))
+        ...pesticides.filter(p => (p.group || "").includes("thú y") || (p.group || "").includes("Vaccine")).map(p => ({ id: p.id, name: `[Thuốc/Vaccine] ${p.name}`, unit: "Lọ", code: p.code })),
+        ...materials.filter(m => (m.type || "").includes("Chăn nuôi") || (m.type || "").includes("livestock") || m.description?.includes("cám") || (m.name || "").includes("Cám")).map(m => ({ id: m.id, name: `[Thức ăn/Vật tư] ${m.name}`, unit: "Bao", code: m.code }))
       ];
     } else {
       return [
-        ...pesticides.filter(p => p.group.includes("Thủy sản")).map(p => ({ id: p.id, name: `[Hóa chất] ${p.name}`, unit: "Thùng", code: p.code })),
-        ...materials.filter(m => m.type.includes("Thủy sản") || m.type.includes("aquaculture")).map(m => ({ id: m.id, name: `[Thức ăn/Dụng cụ] ${m.name}`, unit: "Bao", code: m.code }))
+        ...pesticides.filter(p => (p.group || "").includes("Thủy sản")).map(p => ({ id: p.id, name: `[Hóa chất] ${p.name}`, unit: "Thùng", code: p.code })),
+        ...materials.filter(m => (m.type || "").includes("Thủy sản") || (m.type || "").includes("aquaculture")).map(m => ({ id: m.id, name: `[Thức ăn/Dụng cụ] ${m.name}`, unit: "Bao", code: m.code }))
       ];
     }
   };

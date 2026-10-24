@@ -18,7 +18,7 @@ interface GrowthCycleMultiSelectDialogProps {
 
 const PAGE_SIZE = 20;
 
-function toOption(item: ProductionSubjectGroupResponse | ProductionSubjectResponse | ProductionSubjectVariantResponse): GrowthCycleMultiSelectOption {
+function toOption(item: any): GrowthCycleMultiSelectOption {
   if ("domainCode" in item && "subject" in item) return { id: String(item.id), name: item.name, group: item.subject?.name || item.origin || "", image: item.imageUrl || "", description: item.description || "", code: item.code };
   if ("biological" in item) return { id: String(item.id), name: item.name, group: "", image: "", description: item.description || item.biological || "", code: item.code };
   return { id: String(item.id), name: item.name, group: item.scientificName || "", image: item.imageUrl || "", description: item.scientificName || "", code: item.code };
@@ -58,7 +58,7 @@ export function GrowthCycleMultiSelectDialog({ open, onOpenChange, title, descri
     getNextPageParam: (lastPage) => lastPage.last ? undefined : lastPage.page + 1,
     refetchOnWindowFocus: false,
   });
-  const fetchedOptions = useMemo(() => query.data?.pages.flatMap((page) => page.content).map((item) => toOption(item as ProductionSubjectGroupResponse | ProductionSubjectResponse | ProductionSubjectVariantResponse)).filter((option, index, all) => all.findIndex((item) => item.id === option.id) === index) ?? [], [query.data?.pages]);
+  const fetchedOptions = useMemo(() => (query.data?.pages || []).flatMap((page: any) => page.content || []).map((item: any) => toOption(item)).filter((option, index, all) => all.findIndex((item) => item.id === option.id) === index) ?? [], [query.data?.pages]);
   const totalElements = query.data?.pages[0]?.totalElements ?? fetchedOptions.length;
   const toggleOption = (id: string) => setTempIds((prev) => prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]);
 

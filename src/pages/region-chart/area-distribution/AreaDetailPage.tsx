@@ -325,9 +325,10 @@ const AreaDetailPage = () => {
                     const p = plot as FarmPlotResponse & {
                       coordinates?: CoordinatePoint[];
                     };
+                    const boundaryPoints = p.boundary || p.coordinates;
                     if (
-                      !(p.boundary || p.coordinates) ||
-                      (p.boundary || p.coordinates).length < 3
+                      !boundaryPoints ||
+                      boundaryPoints.length < 3
                     ) {
                       return null;
                     }
@@ -335,7 +336,7 @@ const AreaDetailPage = () => {
                     return (
                       <Polygon
                         key={p.id}
-                        positions={closePath(p.boundary || p.coordinates)}
+                        positions={closePath(boundaryPoints as any)}
                         pathOptions={{
                           color: "#f59e0b",
                           weight: 2,

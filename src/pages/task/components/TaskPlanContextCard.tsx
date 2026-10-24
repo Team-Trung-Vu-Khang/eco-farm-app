@@ -15,7 +15,7 @@ import {
 import type { Plan } from "../../../stores/usePlanStore";
 
 const PURPOSE_META: Record<
-  Plan["purpose"],
+  string,
   { label: string; className: string }
 > = {
   cultivation: {

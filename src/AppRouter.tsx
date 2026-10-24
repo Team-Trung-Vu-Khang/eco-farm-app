@@ -1047,7 +1047,7 @@ function Router() {
         <Route path="/" component={RootRedirect} />
         <Route path="/dashboard" component={DashboardPage} />
         <Route path={MOBILE_HOME_PATH} component={MobileHomePage} />
-        <Route path="/profile" component={ProfilePage} />
+        <Route path="/profile">{() => <ProfilePage />}</Route>
         <Route path="/terrain" component={TerrainPage} />
         <Route path="/land-specs" component={LandSpecsPage} />
         <Route path="/task-category" component={TaskCategoryPage} />

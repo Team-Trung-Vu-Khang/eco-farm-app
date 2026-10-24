@@ -40,7 +40,7 @@ const usePesticideStore = create<PesticideState>()(
                 ...pesticideData,
                 id: Math.max(0, ...state.pesticides.map((p) => p.id)) + 1,
                 createdAt: new Date().toISOString().split("T")[0],
-              };
+              } as any;
               return {
                 pesticides: [newPesticide, ...state.pesticides], // Thêm vào đầu danh sách
               };

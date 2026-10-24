@@ -12,7 +12,7 @@ import {
   Textarea,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { Package, Plus, X } from "lucide-react";
-import type { AmendmentTask } from "../../stores/useAmendmentTaskStore";
+import type { AmendmentTask } from "@/stores/useAmendmentTaskStore";
 import {
   MATERIAL_OPTIONS,
   MATERIAL_TYPES,

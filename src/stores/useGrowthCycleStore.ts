@@ -84,7 +84,7 @@ const useGrowthCycleStore = create<GrowthCycleState>()(
                 numStages: data.stages.length,
                 createdAt: Date.now(),
                 updatedAt: Date.now(),
-              };
+              } as any;
 
               return {
                 growthCycles: [normalizeGrowthCycle(newCycle), ...state.growthCycles],

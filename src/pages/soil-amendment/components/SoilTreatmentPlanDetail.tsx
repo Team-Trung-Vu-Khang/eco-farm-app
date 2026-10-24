@@ -42,7 +42,7 @@ import type {
 
 interface SoilTreatmentPlanDetailProps {
   onDelete: (item: TreatmentPlan) => void;
-  onDuplicate: (item: TreatmentPlan) => void;
+  onDuplicate?: (item: TreatmentPlan) => void;
   onEdit: (item: TreatmentPlan) => void;
   selectedPlan: TreatmentPlan | null;
 }
@@ -156,14 +156,16 @@ export function SoilTreatmentPlanDetail({
           </div>
 
           <div className="flex gap-2">
-            <Button
-              variant="secondary"
-              className="border-white/20 bg-white/10 text-white hover:bg-white/20"
-              onClick={() => onDuplicate(selectedPlan)}
-            >
-              <Copy className="mr-2 h-4 w-4" />
-              Sao chép
-            </Button>
+            {onDuplicate && (
+              <Button
+                variant="secondary"
+                className="border-white/20 bg-white/10 text-white hover:bg-white/20"
+                onClick={() => onDuplicate(selectedPlan)}
+              >
+                <Copy className="mr-2 h-4 w-4" />
+                Sao chép
+              </Button>
+            )}
             <Button
               variant="secondary"
               className="border-white/20 bg-white/10 text-white hover:bg-white/20"

@@ -220,9 +220,9 @@ export function useAqMaterialCreatePage() {
         displayOrder: 10,
         status: "active",
         domainCode: "AQUACULTURE",
-        manufacturerOrganizationId: formData.manufacturerOrigin?.id || null,
-        importerOrganizationId: formData.importerRegistrant?.id || null,
-        distributorOrganizationId: formData.distributor?.id || null,
+        manufacturerOrganizationId: (formData.manufacturerOrigin as any)?.id || null,
+        importerOrganizationId: (formData.importerRegistrant as any)?.id || null,
+        distributorOrganizationId: (formData.distributor as any)?.id || null,
         hashtags: formData.hashtags || [],
         imageUrl: uploadedImageUrl || undefined,
         metadataJson: {

@@ -146,7 +146,7 @@ function UpdateSeasonContent({ id }: { id: number }) {
         stages: (season.stages || []).map((s: any) => {
           let usePdf = false;
           let content = "";
-          let pdfFile = null;
+          let pdfFile: any = null;
 
           const doc = s.documents?.[0];
           if (doc) {

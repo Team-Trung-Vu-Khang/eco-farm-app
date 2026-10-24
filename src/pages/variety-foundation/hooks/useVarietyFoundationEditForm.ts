@@ -43,7 +43,7 @@ function formatDaysToDuration(days: number | undefined): string {
   const months = Math.floor(remaining / 30);
   remaining %= 30;
 
-  const parts = [];
+  const parts: string[] = [];
   if (years > 0) parts.push(`${years} năm`);
   if (months > 0) parts.push(`${months} tháng`);
   if (remaining > 0) parts.push(`${remaining} ngày`);
@@ -204,7 +204,7 @@ export function useVarietyFoundationEditForm() {
         formData.editorContent,
       );
 
-      const documents = [];
+      const documents: any[] = [];
 
       if (formData.contentType === "pdf" && pdfUrl) {
         documents.push({

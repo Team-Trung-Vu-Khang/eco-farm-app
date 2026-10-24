@@ -17,22 +17,22 @@ function getNameById(
   return options.find((option) => option.id === value)?.name || value;
 }
 
-export function getProvinceName(provinceId: string) {
+export function getProvinceName(provinceId?: string) {
   return getNameById(PROVINCES, provinceId);
 }
 
-export function getDistrictName(districtId: string) {
+export function getDistrictName(districtId?: string) {
   return getNameById(DISTRICTS, districtId);
 }
 
-export function getEnterpriseName(enterpriseId: string) {
+export function getEnterpriseName(enterpriseId?: string) {
   return getNameById(ENTERPRISES, enterpriseId);
 }
 
-export function getLandTypeName(landType: string) {
+export function getLandTypeName(landType?: string) {
   return getNameById(LAND_TYPES, landType);
 }
 
-export function getTerrainTypeName(terrain: string) {
+export function getTerrainTypeName(terrain?: string) {
   return getNameById(TERRAIN_TYPES, terrain);
 }

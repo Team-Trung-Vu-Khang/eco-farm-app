@@ -1,7 +1,7 @@
 import { type FC } from "react";
 import { Badge, Separator } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { Info, CalendarDays, Box, Activity, Tags } from "lucide-react";
-import { Material } from "../../types/types";
+import type { Material } from "../../types/types";
 
 interface MaterialDetailViewProps {
   item: Material;

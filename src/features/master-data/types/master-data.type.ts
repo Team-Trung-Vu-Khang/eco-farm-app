@@ -68,6 +68,11 @@ export interface MasterDataAttributesMap {
   "iot-device-groups": Record<string, unknown>;
   "material-groups": Record<string, unknown>;
   "medicine-groups": Record<string, unknown>;
+  "pesticide-groups": Record<string, unknown>;
+  "pesticide-origins": Record<string, unknown>;
+  "pesticide-toxicity-classes": Record<string, unknown>;
+  "packaging-types": Record<string, unknown>;
+  "units-base": Record<string, unknown>;
   "plan-groups": Record<string, unknown>;
   "plan-types": Record<string, unknown>;
   "position-groups": Record<string, unknown>;
@@ -122,6 +127,11 @@ export interface MasterDataRequestExtraFieldsMap {
     domainCode?: "CROP" | "LIVESTOCK" | "AQUACULTURE" | null;
     classification: string;
   };
+  "pesticide-groups": EmptyExtraFields;
+  "pesticide-origins": EmptyExtraFields;
+  "pesticide-toxicity-classes": EmptyExtraFields;
+  "packaging-types": EmptyExtraFields;
+  "units-base": EmptyExtraFields;
   "plan-types": {
     color: string;
     planGroupId?: number | null;
@@ -179,6 +189,14 @@ export interface MasterDataRecordExtraFieldsMap {
     domainCode?: "CROP" | "LIVESTOCK" | "AQUACULTURE";
     classification: string;
   };
+  "pesticide-groups": EmptyExtraFields;
+  "pesticide-origins": EmptyExtraFields;
+  "pesticide-toxicity-classes": {
+    bandColor?: string;
+    whoGroup?: string;
+  };
+  "packaging-types": EmptyExtraFields;
+  "units-base": EmptyExtraFields;
   "plan-types": {
     color: string;
     planGroup?: PlanGroupRecord | null;
@@ -374,10 +392,18 @@ export type RearingMethodRecord = MasterDataRecord<"rearing-methods">;
 export type MaterialGroupRecord = MasterDataRecord<"material-groups">;
 export type MaterialGroupPageResponse =
   MasterDataPageResponse<MaterialGroupRecord>;
-export type MedicineGroupRecord = MasterDataRecord<"medicine-groups">;
-export type PesticideGroupRecord = MedicineGroupRecord;
-export type PesticideOriginRecord = MedicineGroupRecord;
-export type PesticideToxicityClassRecord = MedicineGroupRecord;
+export type MedicineGroupRecord = MasterDataRecord<"medicine-groups"> & {
+  bandColor?: string;
+  whoGroup?: string;
+  [key: string]: any;
+};
+export type PesticideGroupRecord = MasterDataRecord<"pesticide-groups"> & { [key: string]: any };
+export type PesticideOriginRecord = MasterDataRecord<"pesticide-origins"> & { [key: string]: any };
+export type PesticideToxicityClassRecord = MasterDataRecord<"pesticide-toxicity-classes"> & {
+  bandColor?: string;
+  whoGroup?: string;
+  [key: string]: any;
+};
 export type PlanGroupRecord = MasterDataRecord<"plan-groups">;
 export type MedicineGroupCreateRequest =
   MasterDataCreateRequest<"medicine-groups">;

@@ -7,7 +7,7 @@ import {
   DialogTitle,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { Droplets, Tractor } from "lucide-react";
-import type { AmendmentTask } from "../../stores/useAmendmentTaskStore";
+import type { AmendmentTask } from "@/stores/useAmendmentTaskStore";
 import { getPriorityConfig, getStatusConfig } from "../data/amendmentTaskData";
 
 interface AmendmentTaskDetailDialogProps {

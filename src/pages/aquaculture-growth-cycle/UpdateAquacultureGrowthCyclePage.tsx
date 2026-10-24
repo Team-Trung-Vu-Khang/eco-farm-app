@@ -66,8 +66,9 @@ export default function UpdateAquacultureGrowthCyclePage() {
 
   const { watch, reset } = form;
   const watchedScope = watch("scope");
-  const watchedCropId = watch("cropId");
-  const watchedVariety = watch("variety");
+  const watchedGroupIds = watch("groupIds") || [];
+  const watchedCropIds = watch("cropIds") || [];
+  const watchedVarietyIds = watch("varietyIds") || [];
   const watchedStages = watch("stages") || [];
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -76,8 +77,14 @@ export default function UpdateAquacultureGrowthCyclePage() {
   useEffect(() => {
     if (currentCycle && !isLoaded) {
       const metadata: Record<string, unknown> = currentCycle.metadataJson || {};
+      const cropIds = (currentCycle.productionSubjects || []).map((item: { id?: number }) => item.id).filter((id: number | undefined): id is number => id != null).concat(currentCycle.productionSubjectIds || []);
+      const varietyIds = (currentCycle.productionSubjectVariants || []).map((item: { id?: number }) => item.id).filter((id: number | undefined): id is number => id != null).concat(currentCycle.productionSubjectVariantIds || []);
       const cropIdVal = currentCycle.productionSubject?.id;
       const varietyIdVal = currentCycle.productionSubjectVariant?.id;
+      if (cropIds.length === 0 && cropIdVal) cropIds.push(cropIdVal);
+      if (varietyIds.length === 0 && varietyIdVal) varietyIds.push(varietyIdVal);
+      const groupIds = (currentCycle.productionSubjectGroups || []).map((item: { id?: number }) => item.id).filter((id: number | undefined): id is number => id != null).concat(currentCycle.productionSubjectGroupIds || []);
+      const groupIdVal = groupIds[0];
       const totalDaysVal =
         currentCycle.stages?.reduce(
           (sum: number, s: any) => sum + (s.durationDays || 0),
@@ -86,15 +93,16 @@ export default function UpdateAquacultureGrowthCyclePage() {
 
       reset({
         name: currentCycle.name ?? "",
-        cycleType: String(metadata.cycleType || "plant") as any,
-        scope: varietyIdVal ? "variety" : "crop",
-        cropId: cropIdVal ? String(cropIdVal) : "",
-        variety: varietyIdVal ? String(varietyIdVal) : "",
+        cycleType: "animal",
+        scope: groupIdVal ? "group" : varietyIdVal ? "variety" : "crop",
+        groupIds: groupIds.map(String),
+        cropIds: cropIds.map(String),
+        varietyIds: varietyIds.map(String),
         totalDays: totalDaysVal,
         stages: (currentCycle.stages || []).map((s: any) => {
           let usePdf = false;
           let content = "";
-          let pdfFile = null;
+          let pdfFile: any = null;
 
           const doc = s.documents?.[0];
           if (doc) {
@@ -114,7 +122,7 @@ export default function UpdateAquacultureGrowthCyclePage() {
             duration: formatDaysToDuration(s.durationDays || 0),
             usePdf: usePdf,
             content: content,
-            pdfFile: pdfFile as any,
+            pdfFile: pdfFile,
           };
         }),
       });
@@ -131,9 +139,14 @@ export default function UpdateAquacultureGrowthCyclePage() {
     [watchedStages],
   );
 
+  const watchedCropId = watchedCropIds[0] || "";
+  const watchedVariety = watchedVarietyIds[0] || "";
+
   const varietyName =
     cropVarieties.find((variety) => String(variety.id) === watchedVariety)
       ?.name || watchedVariety;
+  const cropName =
+    crops.find((c) => String(c.id) === watchedCropId)?.name || watchedCropId;
 
   const handleComplete = async (values: AnimalGrowthCycleFormValues) => {
     if (!numericId) return;
@@ -195,11 +208,14 @@ export default function UpdateAquacultureGrowthCyclePage() {
 
       const metadataJson = { cycleType: values.cycleType };
 
-      const cropIdVal = Number(values.cropId);
-      const varietyIdVal =
-        values.scope === "variety" && values.variety
-          ? Number(values.variety)
-          : undefined;
+      const cropIds = values.cropIds.map(Number);
+      const varietyIds = values.varietyIds.map(Number);
+      const scopeType =
+        values.scope === "group"
+          ? "SUBJECT_GROUP"
+          : values.scope === "variety"
+            ? "SUBJECT_VARIANT"
+            : "SUBJECT";
 
       await updateTemplate.mutateAsync({
         id: numericId,
@@ -207,8 +223,12 @@ export default function UpdateAquacultureGrowthCyclePage() {
           domainCode: "AQUACULTURE",
           code: currentCycle?.code || undefined,
           name: values.name.trim(),
-          productionSubjectId: cropIdVal,
-          productionSubjectVariantId: varietyIdVal ?? null,
+          scopeType,
+          productionSubjectGroupIds:
+            values.scope === "group" ? values.groupIds.map(Number) : [],
+          productionSubjectIds: values.scope === "crop" ? cropIds : [],
+          productionSubjectVariantIds:
+            values.scope === "variety" ? varietyIds : [],
           description: currentCycle?.description || "Chu kỳ sinh trưởng",
           stages: preparedStages,
           displayOrder: currentCycle?.displayOrder || 1,
@@ -248,7 +268,7 @@ export default function UpdateAquacultureGrowthCyclePage() {
   return (
     <PageWrapper
       title="Cập nhật chu kỳ nuôi trồng thủy sản"
-      description={`Chỉnh sửa thông tin cho ${varietyName || watchedCropId}`}
+      description={`Chỉnh sửa thông tin cho ${watchedScope === "variety" ? varietyName || "-" : cropName || "-"}`}
       actions={[
         <Button
           variant="outline"
@@ -290,15 +310,17 @@ export default function UpdateAquacultureGrowthCyclePage() {
                   <div className="flex justify-between gap-4">
                     <span className="text-muted-foreground">Chu kỳ:</span>
                     <span className="font-medium">
-                      {varietyName || watchedCropId}
+                      {watchedScope === "variety" ? varietyName || "-" : cropName || "-"}
                     </span>
                   </div>
                   <div className="flex justify-between gap-4">
                     <span className="text-muted-foreground">Phạm vi:</span>
                     <span className="font-medium">
-                      {watchedScope === "crop"
-                        ? "Theo loài nuôi"
-                        : "Theo giống"}
+                      {watchedScope === "group"
+                        ? "Theo nhóm loài nuôi"
+                        : watchedScope === "crop"
+                          ? "Theo loài nuôi"
+                          : "Theo giống"}
                     </span>
                   </div>
                   <div className="flex justify-between gap-4">

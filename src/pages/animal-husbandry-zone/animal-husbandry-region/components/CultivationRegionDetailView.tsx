@@ -105,7 +105,7 @@ export const CultivationRegionDetailView = ({ id }: { id?: string }) => {
         if (existing) {
           existing.area = { ...existing.area, ...areaData };
         } else {
-          const regionId = areaData.region?.id ?? areaData.regionId;
+          const regionId = areaData.region?.id ?? (areaData as any).regionId;
           const reg = regionId ? regionById.get(String(regionId)) : null;
           areaById.set(String(areaData.id), { area: areaData, region: reg });
         }
@@ -120,7 +120,7 @@ export const CultivationRegionDetailView = ({ id }: { id?: string }) => {
         if (existing) {
           existing.plot = { ...existing.plot, ...plotData };
         } else {
-          const areaId = plotData.area?.id ?? plotData.areaId;
+          const areaId = plotData.area?.id ?? (plotData as any).areaId;
           const areaInfo = areaId ? areaById.get(String(areaId)) : null;
           plotById.set(String(plotData.id), {
             plot: plotData,

@@ -18,7 +18,7 @@ import { AmendmentPlanGeneralStep } from "./components/AmendmentPlanGeneralStep"
 import { AmendmentPlanProcessStep } from "./components/AmendmentPlanProcessStep";
 import { AmendmentPlanScopeStep } from "./components/AmendmentPlanScopeStep";
 import { PersonnelSelectDialog } from "./components/PersonnelSelectDialog";
-import type { GeographicalSelection } from "./types";
+import type { GeographicalSelection, AmendmentPlanFormData } from "./types";
 import {
   AMENDMENT_PROCESSES,
   buildSelectionsFromPlan,
@@ -76,7 +76,9 @@ export default function AmendmentPlanCreatePage() {
         currentPH: existingPlan.currentPH || "",
         targetPH: existingPlan.targetPH || "",
         targetIssue: existingPlan.target_issue,
-        purpose: existingPlan.processId ? "amendment" : "treatment",
+        purpose: (existingPlan.processId ? "amendment" : "treatment") as
+          | "amendment"
+          | "treatment",
         processId: existingPlan.processId || "",
         regimenId: existingPlan.regimenId || "",
         selectedStages: getSelectedStages(
@@ -101,7 +103,9 @@ export default function AmendmentPlanCreatePage() {
   const [selectedEnterpriseId, setSelectedEnterpriseId] = useState(
     initialEditState.selectedEnterpriseId,
   );
-  const [formData, setFormData] = useState(initialEditState.formData);
+  const [formData, setFormData] = useState<AmendmentPlanFormData>(
+    initialEditState.formData as AmendmentPlanFormData,
+  );
 
   const calculateArea = useCallback(
     () => calculateSelectedArea(regions, formData.selectedPlotIds),
@@ -213,13 +217,13 @@ export default function AmendmentPlanCreatePage() {
     };
 
     if (isEdit && params?.id) {
-      updatePlan(Number(params.id), planData);
+      updatePlan(Number(params.id), planData as any);
       toast({
         title: "Thành công",
         description: "Đã cập nhật kế hoạch cải tạo",
       });
     } else {
-      addPlan(planData);
+      addPlan(planData as any);
       toast({
         title: "Thành công",
         description: "Đã tạo kế hoạch cải tạo",

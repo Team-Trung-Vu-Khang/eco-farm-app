@@ -47,7 +47,7 @@ import type { ActiveFarmerItem } from "@/features/farm/types/admin-dashboard.typ
 import dayjs from "dayjs";
 
 function generateRecentMonthsOptions(count = 12) {
-  const options = [];
+  const options: { value: string; label: string }[] = [];
   let current = dayjs();
   for (let i = 0; i < count; i++) {
     const value = current.format("YYYY-MM");

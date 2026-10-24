@@ -229,9 +229,9 @@ export function useMaterialCreatePage() {
         displayOrder: 10,
         status: "active",
         domainCode: "CROP",
-        manufacturerOrganizationId: formData.manufacturerOrigin?.id || null,
-        importerOrganizationId: formData.importerRegistrant?.id || null,
-        distributorOrganizationId: formData.distributor?.id || null,
+        manufacturerOrganizationId: (typeof formData.manufacturerOrigin === "object" && !Array.isArray(formData.manufacturerOrigin) ? formData.manufacturerOrigin?.id : null) || null,
+        importerOrganizationId: (typeof formData.importerRegistrant === "object" && !Array.isArray(formData.importerRegistrant) ? formData.importerRegistrant?.id : null) || null,
+        distributorOrganizationId: (typeof formData.distributor === "object" && !Array.isArray(formData.distributor) ? formData.distributor?.id : null) || null,
         hashtags: formData.hashtags || [],
         imageUrl: uploadedImageUrl || undefined,
         metadataJson: {

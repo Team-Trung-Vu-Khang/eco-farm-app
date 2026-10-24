@@ -101,7 +101,7 @@ export function EnterpriseBankSelectorDialog({
   );
   const banks = useMemo<BankOption[]>(
     () =>
-      banksQuery.data?.pages.flatMap((page) => page.content).map((bank) => ({
+      banksQuery.data?.pages.flatMap((page) => page.content).map((bank: any) => ({
         id: bank.id,
         code: bank.code,
         bin: bank.bin,

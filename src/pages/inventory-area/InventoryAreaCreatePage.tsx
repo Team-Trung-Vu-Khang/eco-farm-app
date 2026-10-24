@@ -444,7 +444,7 @@ export default function InventoryAreaCreatePage() {
                   Tên phân bổ <span className="text-red-500">*</span>
                 </Label>
                 <Input
-                  size="sm"
+                  className="h-8 text-xs"
                   value={newAlloc.name}
                   onChange={(e) =>
                     setNewAlloc({ ...newAlloc, name: e.target.value })
@@ -482,7 +482,7 @@ export default function InventoryAreaCreatePage() {
             <div className="space-y-1">
               <Label className="text-[11px]">Ghi chú/Mô tả</Label>
               <Input
-                size="sm"
+                className="h-8 text-xs"
                 value={newAlloc.notes}
                 onChange={(e) =>
                   setNewAlloc({ ...newAlloc, notes: e.target.value })

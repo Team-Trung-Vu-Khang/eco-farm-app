@@ -20,6 +20,9 @@ export interface Equipment {
   machineName: string;
   model?: string;
   productImage?: string;
+  imageUrl?: string;
+  type?: string;
+  [key: string]: any;
   manufacturer?: string;
   countryOfOrigin?: string;
   manufactureYear?: number;
@@ -36,11 +39,15 @@ export interface Equipment {
   fuelConsumptionRate?: string;
   maintenanceSchedule?: string;
   mainAccessories?: string;
-  manufacturerOrigin?: OrganizationOption | null;
-  importerRegistrant?: OrganizationOption | null;
-  distributor?: OrganizationOption | null;
+  manufacturerOrigin?: OrganizationOption | string | string[] | null;
+  manufacturerOrganization?: any;
+  importerRegistrant?: OrganizationOption | string | string[] | null;
+  importerOrganization?: any;
+  distributor?: OrganizationOption | string | string[] | null;
+  distributorOrganization?: any;
   referencePrice?: string;
   packagingSpecs?: string[];
+  packagingVariants?: any[];
   hashtags?: string[];
   documents?: {
     id?: number;

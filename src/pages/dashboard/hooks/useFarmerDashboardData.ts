@@ -290,7 +290,7 @@ export function useFarmerDashboardData({
             const scopeRegion = scope.region;
             const scopeArea = scope.area;
 
-            let matchedRegion = null;
+            let matchedRegion: any = null;
             if (scopeRegion?.id && detailedRegionMap.has(scopeRegion.id)) {
               matchedRegion = detailedRegionMap.get(scopeRegion.id);
             } else if (

@@ -31,7 +31,7 @@ export function TreatmentStepCard({
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => onViewMaterial(step.pesticideId)}
+              onClick={() => step.pesticideId && onViewMaterial(step.pesticideId)}
               className="text-xs h-7"
             >
               <Info className="w-3 h-3 mr-1" />
@@ -44,7 +44,7 @@ export function TreatmentStepCard({
             <div>
               <p className="text-muted-foreground">Thuốc BVTV</p>
               <button
-                onClick={() => onViewMaterial(step.pesticideId)}
+                onClick={() => step.pesticideId && onViewMaterial(step.pesticideId)}
                 className="font-medium text-primary hover:underline text-left"
               >
                 {step.pesticide}

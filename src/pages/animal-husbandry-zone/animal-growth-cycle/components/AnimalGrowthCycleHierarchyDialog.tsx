@@ -159,7 +159,7 @@ export function AnimalGrowthCycleHierarchyDialog({
   const apiPrimaryOptions = useMemo(() => primaryQuery.data?.pages.flatMap((page) => page.content).map((item) => {
     if (isGroup) {
       const group = item as ProductionSubjectGroupResponse;
-      return { id: String(group.id), name: group.name, group: "", image: group.imageUrl || "", description: group.description || "", code: group.code };
+      return { id: String(group.id), name: group.name, group: "", image: (group as any).imageUrl || "", description: group.description || "", code: group.code };
     }
     const subject = item as ProductionSubjectResponse;
     return { id: String(subject.id), name: subject.name, group: subject.family || "", image: subject.imageUrl || "", description: subject.origin || "", code: subject.code };

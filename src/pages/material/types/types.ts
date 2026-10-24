@@ -19,9 +19,9 @@ export interface Material {
   valueChainIds?: string[];
 
   // Origin & Supply fields
-  manufacturerOrigin?: OrganizationOption | string | null;
-  importerRegistrant?: OrganizationOption | string | null;
-  distributor?: OrganizationOption | string | null;
+  manufacturerOrigin?: OrganizationOption | string | string[] | null;
+  importerRegistrant?: OrganizationOption | string | string[] | null;
+  distributor?: OrganizationOption | string | string[] | null;
   packagingSpecs?: string[];
   formType?: "basic" | "advanced";
 }
@@ -42,8 +42,8 @@ export interface MaterialFormData {
   valueChainIds: string[];
 
   // Origin & Supply fields
-  manufacturerOrigin: OrganizationOption | null;
-  importerRegistrant: OrganizationOption | null;
-  distributor: OrganizationOption | null;
+  manufacturerOrigin: OrganizationOption | string | string[] | null;
+  importerRegistrant: OrganizationOption | string | string[] | null;
+  distributor: OrganizationOption | string | string[] | null;
   packagingSpecs: string[];
 }

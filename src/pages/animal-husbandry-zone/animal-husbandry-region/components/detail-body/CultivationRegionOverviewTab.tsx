@@ -163,7 +163,7 @@ export const CultivationRegionOverviewTab = ({
 
                       {area.scope !== "region" && (
                         <div className="ml-5 border-l-2 border-slate-100 pl-6 space-y-8">
-                          {Object.values(group.areas).map((areaGroup) => (
+                          {Object.values(group.areas).map((areaGroup: any) => (
                             <div
                               key={areaGroup.area?.id || "none"}
                               className="relative"

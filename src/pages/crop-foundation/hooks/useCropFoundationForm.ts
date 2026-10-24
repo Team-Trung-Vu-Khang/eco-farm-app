@@ -68,7 +68,7 @@ export function useCropFoundationForm() {
       };
 
       // Prepare documents array for API
-      const documents = [];
+      const documents: any[] = [];
       const farmingFile = finalDocs.farmingTechnique.file;
 
       let farmingFileUrl: string | undefined = undefined;

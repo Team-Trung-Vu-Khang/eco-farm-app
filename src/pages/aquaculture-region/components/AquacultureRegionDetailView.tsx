@@ -50,7 +50,7 @@ export const AquacultureRegionDetailView = ({
     }
 
     return { regionById, areaById, plotById };
-  }, [details.region]);
+  }, [details?.region]);
 
   if (loading) {
     return (

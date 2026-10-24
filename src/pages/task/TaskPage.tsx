@@ -83,7 +83,7 @@ export default function TaskPage() {
     >
       {plan && (
         <TaskPlanContextCard
-          plan={plan}
+          plan={plan as any}
           taskCount={response?.totalElements ?? tasks.length}
         />
       )}

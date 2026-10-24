@@ -18,7 +18,7 @@ import {
   Badge
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { Upload, CheckCircle, Package, History, AlertTriangle, FileText, Printer, X } from "lucide-react";
-import useWarehouseStore, { WarehouseTransaction } from "../../stores/useWarehouseStore";
+import useWarehouseStore, { type WarehouseTransaction } from "../../stores/useWarehouseStore";
 import useMaterialStore from "../../stores/useMaterialStore";
 import usePesticideStore from "../../stores/usePesticideStore";
 import useFertilizerStore from "../../stores/useFertilizerStore";

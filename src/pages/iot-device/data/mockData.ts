@@ -74,7 +74,7 @@ export const generateTimeMetrics = (
   variance: number,
   points: number,
 ) => {
-  const data = [];
+  const data: { timestamp: string; value: number }[] = [];
   const now = new Date();
   for (let i = points; i >= 0; i--) {
     const time = new Date(now.getTime() - i * 15 * 60000);

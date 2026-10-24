@@ -13,7 +13,7 @@ import zoneData from "../../../../assets/map/zone.json";
 type GeoFeature = Feature<Geometry, GeoJsonProperties>;
 type GeoCollection = FeatureCollection<Geometry, GeoJsonProperties>;
 
-export const isPointInPolygon = (point: [number, number], vs: [number, number][]) => {
+export const isPointInPolygon = (point: [number, number], vs: [number, number][] | Position[]) => {
   if (!point || !vs || !Array.isArray(vs) || vs.length === 0) return false;
   // ray-casting algorithm
   const x = point[0],
@@ -34,6 +34,7 @@ export const isPointInPolygon = (point: [number, number], vs: [number, number][]
 export const getLocationInfo = (lng: number, lat: number) => {
   const findContainer = (data: GeoCollection) => {
     return data.features.find((feature) => {
+      if (!feature?.geometry) return false;
       if (feature.geometry.type === "Polygon") {
         return isPointInPolygon([lng, lat], feature.geometry.coordinates[0]);
       }
@@ -60,7 +61,7 @@ export const getLocationInfo = (lng: number, lat: number) => {
 export const getPolygonCenter = (
   feature: GeoFeature | null | undefined,
 ): { lat: number; lng: number } | null => {
-  if (!feature.geometry) return null;
+  if (!feature || !feature.geometry) return null;
 
   try {
     // Zones/areas without a surveyed boundary fall back to a Point feature

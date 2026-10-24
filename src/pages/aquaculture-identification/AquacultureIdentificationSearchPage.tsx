@@ -523,30 +523,30 @@ const SearchCropPage = () => {
   const filteredRecords = useMemo(() => {
     return records.filter((record) => {
       const matchesSearch =
-        record.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        record.code.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        record.regionName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        record.areaName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        record.species.toLowerCase().includes(searchQuery.toLowerCase());
+        (record.name || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (record.code || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (record.regionName || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (record.areaName || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (record.species || "").toLowerCase().includes(searchQuery.toLowerCase());
 
       const matchesSpecies =
-        advancedFilters.species?.length > 0
-          ? advancedFilters.species.includes(record.species)
+        (advancedFilters.species?.length ?? 0) > 0
+          ? advancedFilters.species!.includes(record.species)
           : true;
       const matchesStatus =
-        advancedFilters.status?.length > 0
-          ? advancedFilters.status.includes(record.healthStatus)
+        (advancedFilters.status?.length ?? 0) > 0
+          ? advancedFilters.status!.includes(record.healthStatus)
           : true;
       const matchesAge = advancedFilters.age
         ? Math.abs(Number(record.ageValue || 0) - advancedFilters.age) <= 6
         : true;
       const matchesRegion =
         selectedRegionIds.length > 0
-          ? selectedRegionIds.includes(record.cultivationRegionId)
+          ? selectedRegionIds.includes(record.cultivationRegionId || "")
           : true;
       const matchesCertification =
-        advancedFilters.certifications?.length > 0
-          ? record.certifications.some((cert) =>
+        (advancedFilters.certifications?.length ?? 0) > 0
+          ? (record.certifications || []).some((cert) =>
               advancedFilters.certifications?.includes(cert),
             )
           : true;

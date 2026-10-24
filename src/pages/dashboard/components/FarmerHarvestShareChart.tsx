@@ -40,10 +40,12 @@ export function FarmerHarvestShareChart() {
                   ))}
                 </Pie>
                 <Tooltip
-                  formatter={(value: number, _name: string, props: any) => [
-                    `${value}% (${props.payload.yieldTons} tấn)`,
-                    props.payload.name,
-                  ]}
+                  formatter={
+                    ((value: any, _name: any, props: any) => [
+                      `${value}% (${props?.payload?.yieldTons} tấn)`,
+                      props?.payload?.name,
+                    ]) as any
+                  }
                 />
               </PieChart>
             </ResponsiveContainer>

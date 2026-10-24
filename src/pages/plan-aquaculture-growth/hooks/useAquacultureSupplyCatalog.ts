@@ -41,6 +41,7 @@ const DEFAULT_UNITS: Record<AquacultureSupplyType, string[]> = {
   biological: ["kg", "gói", "chai", "lít", "ml"],
   material: ["cái", "bộ", "cuộn", "thùng", "bao"],
   equipment: ["cái", "bộ", "đôi", "chiếc", "máy"],
+  by_product: ["kg", "gói", "tấn"],
 };
 
 function getDefaultUnit(item: SupplyItemResponse, type: AquacultureSupplyType) {
@@ -80,8 +81,10 @@ export function useAquacultureSupplyCatalog(domainCode: DomainCode = "AQUACULTUR
       {
         medicine: [],
         fertilizer: [],
+        biological: [],
         material: [],
         equipment: [],
+        by_product: [],
       } as Record<AquacultureSupplyType, AquacultureSupplyOption[]>,
     );
   }, [queries]);
@@ -103,8 +106,10 @@ export function useAquacultureSupplyCatalog(domainCode: DomainCode = "AQUACULTUR
       {
         medicine: [],
         fertilizer: [],
+        biological: [],
         material: [],
         equipment: [],
+        by_product: [],
       } as Record<AquacultureSupplyType, string[]>,
     );
   }, [queries]);

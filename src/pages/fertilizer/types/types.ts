@@ -57,6 +57,8 @@ export interface Fertilizer {
 
   status: "active" | "inactive";
   createdAt: string;
+  type?: string;
+  [key: string]: any;
 }
 
 export interface FertilizerFormData {
@@ -126,4 +128,6 @@ export interface FertilizerFormData {
   unit?: string;
   packaging?: string;
   formType?: "basic" | "advanced";
+  supplierDetails?: SupplierDetail[];
+  [key: string]: any;
 }

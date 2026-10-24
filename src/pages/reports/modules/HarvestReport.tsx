@@ -123,7 +123,7 @@ export const HarvestReport: React.FC<HarvestReportProps> = ({ domainType }) => {
                     contentStyle={{ borderRadius: "8px", border: "1px solid #f1f5f9" }}
                   />
                   <Bar dataKey="yield" fill="#10b981" radius={[4, 4, 0, 0]}>
-                    <LabelList dataKey="yield" position="top" fill="#6b7280" fontSize={10} formatter={(val: number) => `${formatNumber(val)}`} />
+                    <LabelList dataKey="yield" position="top" fill="#6b7280" fontSize={10} formatter={(val: any) => `${formatNumber(val)}`} />
                   </Bar>
                 </BarChart>
               </ResponsiveContainer>

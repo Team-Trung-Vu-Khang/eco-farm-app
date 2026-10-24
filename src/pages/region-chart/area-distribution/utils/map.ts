@@ -18,12 +18,16 @@ export type PointWarning = {
 export const createLatLngPoints = (tuples: [number, number][]) =>
   tuples.map(([lat, lng]) => L.latLng(lat, lng));
 
-export const getBoundsFromPoints = (points: L.LatLng[]): L.LatLngBounds => {
-  if (points.length === 0) {
+export const getBoundsFromPoints = (
+  points: L.LatLng[],
+  fallback?: L.LatLng[],
+): L.LatLngBounds => {
+  const pts = points.length > 0 ? points : fallback || [];
+  if (pts.length === 0) {
     return L.latLngBounds([0, 0], [0, 0]);
   }
 
-  return L.latLngBounds(points);
+  return L.latLngBounds(pts);
 };
 
 export const formatLatLng = (latlng: L.LatLng) =>

@@ -68,8 +68,8 @@ export default function InventoryLookupPage() {
       groupName = "Phân bón";
     } else if (otherItem) {
       matName = otherItem.name;
-      matCode = otherItem.code;
-      groupName = otherItem.type;
+      matCode = otherItem.code || "";
+      groupName = otherItem.type || "";
     }
 
     const alloc = allocations.find((al) => al.id === inv.allocationId);

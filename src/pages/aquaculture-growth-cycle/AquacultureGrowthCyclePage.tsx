@@ -246,7 +246,7 @@ const AquacultureGrowthCyclePage = () => {
                         </Badge>
                       </div>
 
-                      {stage.usePdf && stage.pdfFile?.url && (
+                      {stage.usePdf && stage.pdfFile && "url" in stage.pdfFile && stage.pdfFile.url && (
                         <div className="mt-2 rounded-xl bg-slate-50 p-3 text-xs border">
                           <span className="text-muted-foreground">
                             Tài liệu kỹ thuật:{" "}

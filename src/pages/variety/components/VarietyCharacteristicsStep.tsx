@@ -46,7 +46,7 @@ export function VarietyCharacteristicsStep({
   const handleGrowthDurationChange = (type: "years" | "months" | "days", value: string) => {
     const cleanValue = value.replace(/\D/g, "");
     const newParts = { years, months, days, [type]: cleanValue };
-    const parts = [];
+    const parts: string[] = [];
     if (newParts.years && parseInt(newParts.years) > 0) parts.push(`${newParts.years} năm`);
     if (newParts.months && parseInt(newParts.months) > 0) parts.push(`${newParts.months} tháng`);
     if (newParts.days && parseInt(newParts.days) > 0) parts.push(`${newParts.days} ngày`);

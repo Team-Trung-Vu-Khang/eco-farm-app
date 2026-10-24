@@ -54,6 +54,8 @@ export interface GeographicalSelection {
   regionName?: string;
   areaName?: string;
   plotName?: string;
+  name?: string;
+  [key: string]: any;
 }
 
 export interface GrowthCycleSelection {

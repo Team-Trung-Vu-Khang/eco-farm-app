@@ -335,8 +335,8 @@ export function useCreateTreatmentPage(id?: string) {
         name: p.name,
         description: p.description || p.detailedInstructions,
         materialId: "",
-        materialName: p.stageMaterials[0]?.name || "",
-        dosage: p.stageMaterials[0]?.dosageMin || "",
+        materialName: p.stageMaterials?.[0]?.name || "",
+        dosage: p.stageMaterials?.[0]?.dosageMin || "",
         timing: p.timing || `Ngày ${p.startDay}`,
         applicationMethod: p.technique,
         dosagePerArea: "",
@@ -485,7 +485,7 @@ export function useCreateTreatmentPage(id?: string) {
         p.id === procedureId
           ? {
               ...p,
-              stageMaterials: p.stageMaterials.filter(
+              stageMaterials: (p.stageMaterials || []).filter(
                 (m) => m.id !== materialId,
               ),
             }
@@ -506,7 +506,7 @@ export function useCreateTreatmentPage(id?: string) {
         p.id === procedureId
           ? {
               ...p,
-              stageMaterials: p.stageMaterials.map((m) =>
+              stageMaterials: (p.stageMaterials || []).map((m) =>
                 m.id === materialId ? { ...m, [key]: value } : m,
               ),
             }

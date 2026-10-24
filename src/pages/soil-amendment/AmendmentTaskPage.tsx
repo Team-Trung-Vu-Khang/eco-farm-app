@@ -105,10 +105,10 @@ export default function AmendmentTaskPage() {
   const handleAddMaterial = () => {
     if (!newMaterial.name || !newMaterial.quantity) return;
 
-    setFormData((current) => ({
+    setFormData((current: any) => ({
       ...current,
       materials: [
-        ...(current.materials || []),
+        ...(current?.materials || []),
         {
           id: Date.now(),
           name: newMaterial.name,
@@ -116,7 +116,7 @@ export default function AmendmentTaskPage() {
           unit: newMaterial.unit,
           type: newMaterial.type,
         },
-      ],
+      ] as any,
     }));
 
     setNewMaterial((current) => ({

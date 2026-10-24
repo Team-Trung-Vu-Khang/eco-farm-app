@@ -101,6 +101,10 @@ export default function UpdateDocsPage() {
       setIllustrationPreview("");
       return;
     }
+    if (typeof formData.illustration === "string") {
+      setIllustrationPreview(formData.illustration);
+      return;
+    }
     const url = URL.createObjectURL(formData.illustration);
     setIllustrationPreview(url);
     return () => URL.revokeObjectURL(url);

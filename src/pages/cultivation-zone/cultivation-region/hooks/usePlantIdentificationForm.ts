@@ -795,7 +795,7 @@ export const usePlantIdentificationForm = ({
   // ---- Auto-validate and snap default plant coordinate to smallest scoped unit ----
   const generateUniqueCoordinate = (
     baseCenter: [number, number],
-    existingPlants: PlantEntry[],
+    existingPlants: any[],
   ) => {
     const isCoordinateTaken = (l: number, g: number) => {
       return existingPlants.some(

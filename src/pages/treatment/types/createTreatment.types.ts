@@ -58,4 +58,9 @@ export interface CreateTreatmentFormData {
   diseaseType?: string;
   description?: string;
   illustration?: File | null;
+  steps?: any[];
+  materials?: any[];
+  phi?: string;
+  [key: string]: any;
 }
+

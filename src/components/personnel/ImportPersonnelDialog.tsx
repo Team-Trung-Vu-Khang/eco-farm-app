@@ -267,7 +267,7 @@ export function ImportPersonnelDialog({
 
         let selectedBankCode = "";
         const selectedBank = banks.find(
-          (b) =>
+          (b: any) =>
             b.code?.toLowerCase() === rowData.bankName?.toLowerCase() ||
             (b.shortName as string)?.toLowerCase() ===
               rowData.bankName?.toLowerCase() ||

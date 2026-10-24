@@ -51,6 +51,9 @@ export interface Pesticide {
   createdAt: string;
   domain?: PesticideDomain; // Phân biệt domain (trồng trọt / chăn nuôi / thủy sản)
   formType?: "basic" | "advanced";
+  hashtags?: string[];
+  note?: string;
+  [key: string]: any;
 }
 
 export interface PesticideFormData {
@@ -90,9 +93,9 @@ export interface PesticideFormData {
   standardsCompliance: string[];
 
   // Bước 4 – Xuất xứ & Cung ứng
-  manufacturerOrigin: OrganizationOption | null;
-  importerRegistrant: OrganizationOption | null;
-  distributor: OrganizationOption | null;
+  manufacturerOrigin: OrganizationOption | string | null;
+  importerRegistrant: OrganizationOption | string | null;
+  distributor: OrganizationOption | string | null;
   referencePrice: string;
   packagingSpecs: string[];
 

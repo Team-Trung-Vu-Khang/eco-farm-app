@@ -95,9 +95,9 @@ export const FertilizerConfirmationStep = ({
                     : formData.fertilizerOriginGroup
                       ? [formData.fertilizerOriginGroup]
                       : []
-                  ).map((group) => (
+                  ).map((group, idx) => (
                     <Badge
-                      key={group}
+                      key={typeof group === "string" ? group : idx}
                       variant="outline"
                       className="text-xs bg-slate-50 max-w-full min-w-0 break-words"
                     >

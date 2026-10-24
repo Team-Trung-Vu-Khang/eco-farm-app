@@ -652,9 +652,9 @@ export default function PlanAnimalGrowthCreateWorkflowPage() {
       });
     };
 
-    const planNodePlans: Plan[] = workflowPlans.map(mapPlanResponseToPlan);
+    const planNodePlans: any[] = workflowPlans.map(mapPlanResponseToPlan);
     if (planNodePlans.length > 0) {
-      applyWorkflow(planNodePlans);
+      applyWorkflow(planNodePlans as any);
       return;
     }
 
@@ -678,7 +678,7 @@ export default function PlanAnimalGrowthCreateWorkflowPage() {
         },
       })
       .then((created) => {
-        applyWorkflow([mapPlanResponseToPlan(created)]);
+        applyWorkflow([mapPlanResponseToPlan(created)] as any);
       })
       .catch(() => {
         seedingWorkflowIdRef.current = null;
@@ -772,7 +772,7 @@ export default function PlanAnimalGrowthCreateWorkflowPage() {
         // append would leave both in the array and `.find()` would then
         // resolve to the stale seed entry instead of the real plan.
         useAnimalGrowthPlanStore.setState((state) => ({
-          plans: [...state.plans.filter((item) => item.id !== plan.id), plan],
+          plans: [...state.plans.filter((item) => item.id !== plan.id), plan as any],
         }));
         attachPlanNode(plan.id, sourceNodeId);
       } catch (error) {

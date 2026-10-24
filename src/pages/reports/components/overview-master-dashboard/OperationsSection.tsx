@@ -189,7 +189,7 @@ const TaskBlock: React.FC = () => {
     inProgressCount,
     isLoading: statsLoading,
   } = useTaskNameStats(
-    { taskName: activeTaskName ?? undefined },
+    { name: activeTaskName ?? undefined },
     {
       enabled: !!activeTaskName,
       workspaceId: selectedWorkspaceId ?? undefined,
@@ -234,7 +234,7 @@ const TaskBlock: React.FC = () => {
                           : "bg-slate-100 text-slate-500"
                       }`}
                     >
-                      {item.count}
+                      {item.totalCount}
                     </span>
                   </button>
                 );

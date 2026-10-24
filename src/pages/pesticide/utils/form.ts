@@ -107,10 +107,7 @@ export const createPesticideFormDataFromItem = (
   selectedSupplierId: "sup1",
   imageFile: null,
   formType: item.formType || "basic",
-  usage: null,
-  packaging: "",
-  quantity: "",
-  unit: "",
+  usage: "",
   ...parsePackagingSpec(item.packagingSpecs?.[0]),
 });
 

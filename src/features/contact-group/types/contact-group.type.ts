@@ -45,3 +45,4 @@ export type ContactGroupUpdateRequest = ContactGroupCommonRequest;
 
 export type ContactGroupCreateResponse = ContactGroupRecord;
 export type ContactGroupUpdateResponse = ContactGroupRecord;
+export type ContactGroup = ContactGroupRecord;

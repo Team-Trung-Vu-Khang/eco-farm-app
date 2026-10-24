@@ -50,7 +50,7 @@ export function CreateTreatmentMaterialsStep({
         </div>
 
         <div className="space-y-4">
-          {formData.materials.map((material, idx) => (
+          {(formData.materials || []).map((material, idx) => (
             <Card key={material.id} className="relative border-none bg-slate-50">
               <CardContent className="p-4 space-y-4">
                 <div className="flex items-center justify-between">
@@ -58,7 +58,7 @@ export function CreateTreatmentMaterialsStep({
                     <Boxes className="w-3 h-3" />
                     Vật tư #{idx + 1}
                   </div>
-                  {formData.materials.length > 1 && (
+                  {(formData.materials?.length || 0) > 1 && (
                     <Button
                       variant="ghost"
                       size="icon"
@@ -73,7 +73,7 @@ export function CreateTreatmentMaterialsStep({
                   <Select
                     value={material.name}
                     onValueChange={(value) => {
-                      const newMaterials = [...formData.materials];
+                      const newMaterials = [...(formData.materials || [])];
                       newMaterials[idx].name = value;
                       setFormData({ ...formData, materials: newMaterials });
                     }}
@@ -94,7 +94,7 @@ export function CreateTreatmentMaterialsStep({
                     className="bg-white"
                     value={material.dosage}
                     onChange={(event) => {
-                      const newMaterials = [...formData.materials];
+                      const newMaterials = [...(formData.materials || [])];
                       newMaterials[idx].dosage = event.target.value;
                       setFormData({ ...formData, materials: newMaterials });
                     }}

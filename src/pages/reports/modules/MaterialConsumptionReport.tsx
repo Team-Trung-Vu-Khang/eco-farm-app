@@ -36,6 +36,7 @@ interface TreeNode {
   standard?: "VietGAP" | "GlobalGAP" | "Organic";
   status?: "Active" | "Inactive";
   size?: number; // size in hectares
+  company?: string;
   consumption: {
     pesticide: {
       total: number;

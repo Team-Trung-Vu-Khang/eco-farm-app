@@ -29,6 +29,8 @@ export const MASTER_DATA_PATHS = {
   taskCategories: `${PUBLIC_MASTER_DATA_BASE_PATH}/task-categories`,
   organizations: `${PUBLIC_MASTER_DATA_BASE_PATH}/organizations`,
   supplyConversionRules: `${PUBLIC_MASTER_DATA_BASE_PATH}/supply-conversion-rules`,
+  packagingTypes: `${PUBLIC_MASTER_DATA_BASE_PATH}/packaging-types`,
+  unitsBase: `${PUBLIC_MASTER_DATA_BASE_PATH}/units-base`,
 } as const;
 
 export const ADMIN_MASTER_DATA_PATHS = {
@@ -59,6 +61,8 @@ export const ADMIN_MASTER_DATA_PATHS = {
   taskCategories: `${MASTER_DATA_BASE_PATH}/task-categories`,
   organizations: `${MASTER_DATA_BASE_PATH}/organizations`,
   supplyConversionRules: `${MASTER_DATA_BASE_PATH}/supply-conversion-rules`,
+  packagingTypes: `${MASTER_DATA_BASE_PATH}/packaging-types`,
+  unitsBase: `${MASTER_DATA_BASE_PATH}/units-base`,
 } as const;
 
 export const MASTER_DATA_CATALOGS = [
@@ -74,6 +78,11 @@ export const MASTER_DATA_CATALOGS = [
   "iot-device-groups",
   "material-groups",
   "medicine-groups",
+  "pesticide-groups",
+  "pesticide-origins",
+  "pesticide-toxicity-classes",
+  "packaging-types",
+  "units-base",
   "plan-groups",
   "plan-types",
   "position-groups",

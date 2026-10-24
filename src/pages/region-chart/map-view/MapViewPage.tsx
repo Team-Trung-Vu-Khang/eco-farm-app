@@ -882,7 +882,7 @@ const MapContent = () => {
               })
             : -1;
 
-        const trail = [];
+        const trail: SelectedEntity[] = [];
         if (zoneIndex >= 0) trail.push(buildNode("zone", zoneIndex)!);
         if (areaIndex >= 0) trail.push(buildNode("area", areaIndex)!);
         trail.push(node);
@@ -929,7 +929,7 @@ const MapContent = () => {
               })
             : -1;
 
-        const trail = [];
+        const trail: SelectedEntity[] = [];
         if (zoneIndex >= 0) trail.push(buildNode("zone", zoneIndex)!);
         if (areaIndex >= 0) trail.push(buildNode("area", areaIndex)!);
         if (plotIndex >= 0) trail.push(buildNode("plot", plotIndex)!);

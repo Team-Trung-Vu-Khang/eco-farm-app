@@ -12,6 +12,8 @@ import { useSelectedWorkspaceId } from "@/features/workspace";
 import { COOPERATIVE_COLUMNS } from "../data/constants";
 import { toCooperativeRow, type CooperativeRow } from "../utils/cooperative.mapper";
 
+export type { CooperativeRow };
+
 const DEFAULT_PAGE_SIZE = 10;
 
 type OrganizationStatusFilter = OrganizationRecord["status"] | "all";

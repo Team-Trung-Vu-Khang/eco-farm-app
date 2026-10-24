@@ -590,10 +590,12 @@ export interface Plant {
   coordinate: Coordinate;
   plotId: string;
   cultivationRegionId?: string; // Link to the cultivation area configuration
+  regionId?: string;
   enterpriseId?: string;
   regionName?: string;
   areaName?: string;
   note?: string; // New field for extra info
+  [key: string]: any;
 }
 
 export const MOCK_PLANTS: Plant[] = [

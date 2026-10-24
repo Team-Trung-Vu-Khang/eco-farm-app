@@ -196,7 +196,7 @@ const VariantCard: React.FC<VariantCardProps> = ({
                 {text.scale}
               </span>
               <span className="text-2xl font-display font-extrabold text-slate-855">
-                {data.cultivationScale.quantity != null
+                {data.cultivationScale?.quantity != null
                   ? `${formatNumber(data.cultivationScale.quantity)}${data.cultivationScale.unit ? ` ${data.cultivationScale.unit}` : ""}`
                   : "—"}
               </span>

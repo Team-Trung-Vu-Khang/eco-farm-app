@@ -781,32 +781,34 @@ export function MaterialConsumptionBlock() {
             </span>
           </div>
 
-          <div className="space-y-6">
-            {renderDetailCard(
-              "Thuốc BVTV",
-              <ShieldAlert className="w-5 h-5 text-rose-500" />,
-              cons.pesticide,
-              "kg",
-            )}
-            {renderDetailCard(
-              "Phân bón",
-              <Leaf className="w-5 h-5 text-emerald-500" />,
-              cons.fertilizer,
-              "kg",
-            )}
-            {renderDetailCard(
-              "Máy móc & thiết bị",
-              <Wrench className="w-5 h-5 text-amber-500" />,
-              cons.equipment,
-              "ngày",
-            )}
-            {renderDetailCard(
-              "Vật tư canh tác khác",
-              <Layers className="w-5 h-5 text-sky-500" />,
-              cons.other,
-              "cuộn/tấm",
-            )}
-          </div>
+          {cons && (
+            <div className="space-y-6">
+              {renderDetailCard(
+                "Thuốc BVTV",
+                <ShieldAlert className="w-5 h-5 text-rose-500" />,
+                cons.pesticide,
+                "kg",
+              )}
+              {renderDetailCard(
+                "Phân bón",
+                <Leaf className="w-5 h-5 text-emerald-500" />,
+                cons.fertilizer,
+                "kg",
+              )}
+              {renderDetailCard(
+                "Máy móc & thiết bị",
+                <Wrench className="w-5 h-5 text-amber-500" />,
+                cons.equipment,
+                "ngày",
+              )}
+              {renderDetailCard(
+                "Vật tư canh tác khác",
+                <Layers className="w-5 h-5 text-sky-500" />,
+                cons.other,
+                "cuộn/tấm",
+              )}
+            </div>
+          )}
         </div>
       </div>
     </div>

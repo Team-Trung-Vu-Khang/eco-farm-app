@@ -101,7 +101,7 @@ export const useHealthDiaryStore = create<HealthDiaryState>()(
             hour: "2-digit",
             minute: "2-digit",
           }),
-          createdBy: data.createdBy || {
+          createdBy: (data as any).createdBy || {
             id: 1,
             name: "Kỹ thuật viên nông hộ",
           },

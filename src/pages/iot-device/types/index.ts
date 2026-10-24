@@ -16,8 +16,9 @@ export interface IoTDevice {
   imei: string;
   mac: string;
   name: string;
-  perceptionLayerId: string;
-  networkLayerId: string;
+  type?: string;
+  perceptionLayerId?: string;
+  networkLayerId?: string;
   firmwareVersion: string;
   manufacturer: string;
   status: DeviceStatus;
@@ -33,10 +34,11 @@ export interface IoTDevice {
   connectionConfig?: DeviceConnectionConfig;
 
   // Hierarchy context
-  partyId: string;
-  farmId: string;
-  fieldId: string;
-  seasonalFieldId: string;
+  partyId?: string;
+  farmId?: string;
+  fieldId?: string;
+  seasonalFieldId?: string;
+  [key: string]: any;
 }
 
 export interface MetricData {

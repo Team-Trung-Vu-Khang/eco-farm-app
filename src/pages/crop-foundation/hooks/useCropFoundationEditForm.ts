@@ -186,7 +186,7 @@ export function useCropFoundationEditForm() {
         },
       };
 
-      const documents = [];
+      const documents: any[] = [];
       const farmingFile = finalDocs.farmingTechnique.file;
 
       let farmingFileUrl: string | undefined = undefined;
@@ -265,7 +265,7 @@ export function useCropFoundationEditForm() {
       };
 
       updateCrop.mutate(
-        { id: parseInt(id, 10), data: payload },
+        { id: parseInt(id, 10), data: payload as any },
         {
           onSuccess: () => {
             setIsSubmitting(false);

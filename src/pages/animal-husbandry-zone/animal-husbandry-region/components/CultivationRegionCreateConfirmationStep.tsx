@@ -36,13 +36,17 @@ type Props = {
     code: string;
     name: string;
   }>;
-  farmingMethodId: string;
-  irrigationMethodId: string;
+  farmingMethodId?: string;
+  irrigationMethodId?: string;
   farmingMethods: Array<{ id: string; name: string }>;
   irrigationSystems: Array<{ id: string; name: string }>;
-  cropSummary: CropSummaryItem[];
+  cropSummary?: CropSummaryItem[];
+  commonConfig?: any;
+  varieties?: any;
+  seeds?: any;
   title?: string;
   description?: string;
+  [key: string]: any;
 };
 
 export const CultivationRegionCreateConfirmationStep = ({
@@ -51,14 +55,25 @@ export const CultivationRegionCreateConfirmationStep = ({
   entities,
   selectedManagers,
   selectedCerts,
-  farmingMethodId,
-  irrigationMethodId,
+  farmingMethodId: explicitFarmingMethodId,
+  irrigationMethodId: explicitIrrigationMethodId,
   farmingMethods,
   irrigationSystems,
-  cropSummary,
+  cropSummary = [],
+  commonConfig,
+  varieties,
+  seeds,
   title = "Xác nhận thông tin",
   description = "Vui lòng kiểm tra kỹ các thông tin dưới đây. Sau khi xác nhận, hệ thống sẽ tiến hành khởi tạo vùng chăn nuôi mới.",
 }: Props) => {
+  const farmingMethodId =
+    explicitFarmingMethodId ??
+    (commonConfig?.farmingMethodId ? String(commonConfig.farmingMethodId) : "");
+  const irrigationMethodId =
+    explicitIrrigationMethodId ??
+    (commonConfig?.irrigationSystemId
+      ? String(commonConfig.irrigationSystemId)
+      : "");
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-500 max-w-4xl mx-auto">
       <div className="bg-green-50 border border-green-100 rounded-2xl p-8 text-center relative overflow-hidden">

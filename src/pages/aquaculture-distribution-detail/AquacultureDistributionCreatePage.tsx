@@ -264,7 +264,10 @@ const AquacultureDistributionCreatePage = () => {
             <Label className="text-base font-semibold text-slate-800">
               Phương thức nuôi
             </Label>
-            <Select value={method} onValueChange={setMethod}>
+            <Select
+              value={method}
+              onValueChange={(val) => setMethod(val as any)}
+            >
               <SelectTrigger className="h-11 bg-white border-slate-200">
                 <SelectValue placeholder="Chọn phương thức nuôi" />
               </SelectTrigger>

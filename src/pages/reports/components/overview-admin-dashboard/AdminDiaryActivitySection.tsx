@@ -48,7 +48,7 @@ import type {
 } from "@/features/farm/types/admin-diary-activity.type";
 
 function generateRecentMonthsOptions(count = 12) {
-  const options = [];
+  const options: { value: string; label: string }[] = [];
   let current = dayjs();
   for (let i = 0; i < count; i++) {
     const value = current.format("YYYY-MM");
@@ -546,8 +546,11 @@ export const AdminDiaryActivitySection: React.FC = () => {
 
         <CardContent className="p-4">
           <DataTable
-            columns={adminDiaryWorkspaceColumns}
-            data={workspacesData?.content || []}
+            columns={adminDiaryWorkspaceColumns as any}
+            data={(workspacesData?.content || []).map((w) => ({
+              ...w,
+              id: w.workspaceId,
+            }))}
             selectable={false}
             loading={isWorkspacesLoading}
             searchable={true}

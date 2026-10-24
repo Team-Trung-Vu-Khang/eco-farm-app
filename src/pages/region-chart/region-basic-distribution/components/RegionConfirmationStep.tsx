@@ -213,8 +213,8 @@ export const RegionConfirmationStep = ({
     terrains.find((t) => String(t.id || t.code) === formValues.terrain)?.name ||
     formValues.terrain;
   const provinceName =
-    provinces.find((p) => p.id === formValues.provinceId)?.name || "";
-  const wardName = wards.find((w) => w.id === formValues.wardId)?.name || "";
+    provinces.find((p: any) => String(p.id || p.code) === String(formValues.provinceId))?.name || "";
+  const wardName = wards.find((w: any) => String(w.id || w.code) === String(formValues.wardId))?.name || "";
 
   // Labels customized based on domainCode
   const domainLabels = useMemo(() => {

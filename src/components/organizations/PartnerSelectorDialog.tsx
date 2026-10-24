@@ -45,6 +45,7 @@ interface PartnerSelectorDialogProps {
   returnById?: boolean;
   selectedItems?: OrganizationOption[];
   onConfirmItems?: (items: OrganizationOption[]) => void;
+  onSelect?: (org: any) => void;
 }
 
 const ORGANIZATION_TYPE_LABELS: Record<
@@ -66,6 +67,7 @@ export function PartnerSelectorDialog({
   returnById = false,
   selectedItems,
   onConfirmItems,
+  onSelect,
 }: PartnerSelectorDialogProps) {
   const workspaceId = useSelectedWorkspaceId();
   const parsedWorkspaceId =
@@ -135,6 +137,9 @@ export function PartnerSelectorDialog({
   };
 
   const handleConfirm = () => {
+    if (onSelect) {
+      onSelect(tempSelectedItems[0] || null);
+    }
     if (returnById && onConfirmItems) {
       onConfirmItems(tempSelectedItems);
     } else if (onConfirm) {

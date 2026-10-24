@@ -4,7 +4,7 @@ import { Link } from "wouter";
 import type {
   FarmCultivationZoneResponse,
   FarmCultivationZoneScopeResponse,
-} from "../../../../features/farm/types/farm.type";
+} from "@/features/farm/types/farm.type";
 
 const SCOPE_TYPE_LABELS: Record<string, string> = {
   REGION: "Vùng trồng",

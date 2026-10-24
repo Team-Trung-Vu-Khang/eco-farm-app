@@ -17,9 +17,9 @@ import type {
 } from "../../../../features/foundation/types/foundation.type";
 
 interface GrowthCycleConfirmStepProps {
-  varieties: FoundationCropVarietyResponse[];
-  crops: FoundationCropResponse[];
-  cropGroups: CatalogRecordResponse[];
+  varieties: any[];
+  crops: any[];
+  cropGroups: any[];
 }
 
 export function GrowthCycleConfirmStep({

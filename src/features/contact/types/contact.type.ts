@@ -82,3 +82,4 @@ export type ContactCreateRequest = ContactCommonRequest;
 export type ContactUpdateRequest = ContactCommonRequest;
 export type ContactCreateResponse = ContactRecord;
 export type ContactUpdateResponse = ContactRecord;
+export type Contact = ContactRecord;

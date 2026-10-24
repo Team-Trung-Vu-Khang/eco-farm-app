@@ -40,7 +40,7 @@ function normalizeStatus(
 }
 
 function normalizeWhoGroup(
-  whoGroup: PesticideToxicityClassRecord["whoGroup"] | null | undefined,
+  whoGroup: string | null | undefined,
 ): PesticideToxicityFormValues["whoGroup"] {
   if (PESTICIDE_WHO_GROUP_OPTIONS.includes(whoGroup as never)) {
     return whoGroup as PesticideToxicityFormValues["whoGroup"];
@@ -56,21 +56,23 @@ export function PesticideToxicityFormDialog({
   onSubmit,
 }: PesticideToxicityFormDialogProps) {
   const defaultValues = useMemo<PesticideToxicityFormInput>(
-    () =>
-      editItem
+    () => {
+      const item = editItem as any;
+      return item
         ? {
-            code: editItem.code ?? "",
-            name: editItem.name ?? "",
-            description: editItem.description ?? "",
-            status: normalizeStatus(editItem.status),
-            whoGroup: normalizeWhoGroup(editItem.whoGroup),
-            bandColor: editItem.bandColor ?? "#3B82F6",
-            ld50Threshold: editItem.ld50Threshold ?? "",
+            code: item.code ?? "",
+            name: item.name ?? "",
+            description: item.description ?? "",
+            status: normalizeStatus(item.status),
+            whoGroup: normalizeWhoGroup(item.whoGroup ?? item.attributes?.whoGroup),
+            bandColor: item.bandColor ?? item.attributes?.bandColor ?? "#3B82F6",
+            ld50Threshold: item.ld50Threshold ?? item.attributes?.ld50Threshold ?? "",
           }
         : {
             ...emptyPesticideToxicityClassFormData,
             status: "active",
-          },
+          };
+    },
     [editItem],
   );
 

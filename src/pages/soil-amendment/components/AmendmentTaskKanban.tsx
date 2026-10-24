@@ -1,6 +1,6 @@
 import { Badge, Card, CardContent } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { Beaker, MapPin, Sprout, Users } from "lucide-react";
-import type { AmendmentTask } from "../../stores/useAmendmentTaskStore";
+import type { AmendmentTask } from "@/stores/useAmendmentTaskStore";
 import { getPriorityConfig, getStatusConfig } from "../data/amendmentTaskData";
 
 interface AmendmentTaskKanbanProps {

@@ -243,7 +243,13 @@ export const ZoneReviewStep = () => {
       selectedCerts={mappedCerts}
       farmingMethodId={String(formValues.farmingMethodId)}
       irrigationMethodId={String(formValues.rearingMethodId ?? "")}
-      healthUpdateMethod={formValues.healthUpdateMethod}
+      healthUpdateMethod={
+        formValues.healthUpdateMethod === "ZONE" || formValues.healthUpdateMethod === "zone" || formValues.healthUpdateMethod === "ZONE_SCOPE"
+          ? "ZONE_SCOPE"
+          : formValues.healthUpdateMethod
+            ? "INDIVIDUAL_PLANT"
+            : undefined
+      }
       farmingMethods={mappedFarmingMethods}
       irrigationSystems={mappedIrrigationSystems}
       cropSummary={cropSummary}

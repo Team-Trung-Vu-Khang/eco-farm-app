@@ -87,7 +87,7 @@ export function HealthUpdateHistoryTable({
       {
         key: "code",
         label: "Mã nhật ký & Thời gian",
-        render: (_val, row, index) => {
+        render: ((_val: any, row: HealthDiaryRecord, index: number = 0) => {
           const pageIdx =
             typeof currentIndex === "number" &&
             !isNaN(currentIndex) &&
@@ -98,7 +98,7 @@ export function HealthUpdateHistoryTable({
             typeof pageSize === "number" && !isNaN(pageSize) && pageSize > 0
               ? pageSize
               : 10;
-          const stt = (pageIdx - 1) * size + index + 1;
+          const stt = (pageIdx - 1) * size + (index || 0) + 1;
           return (
             <div className="space-y-1 py-1">
               <div className="flex items-center gap-2">
@@ -115,7 +115,7 @@ export function HealthUpdateHistoryTable({
               </div>
             </div>
           );
-        },
+        }) as any,
       },
       {
         key: "zoneName",

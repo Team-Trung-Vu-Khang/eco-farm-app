@@ -1045,7 +1045,7 @@ export default function CreateTreatmentPage() {
                                           updateProcedureField(
                                             procedure.id,
                                             "attachments",
-                                            procedure.attachments.filter(
+                                            (procedure.attachments || []).filter(
                                               (a) => a.id !== item.id,
                                             ),
                                           )

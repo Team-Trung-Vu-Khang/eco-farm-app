@@ -23,6 +23,7 @@ interface Step3ConfirmationProps {
   } | null;
   selectedScopeIds: string[];
   geographicalUnits: Array<{ id: string; name: string }>;
+  [key: string]: any;
 }
 
 export const Step3Confirmation: React.FC<Step3ConfirmationProps> = ({

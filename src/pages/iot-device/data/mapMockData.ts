@@ -99,7 +99,7 @@ export const mockIoTDevices: IoTDevice[] = [
 ];
 
 export const generateIoTTelemetry = (base: number, variance: number, points = 24) => {
-  const data = [];
+  const data: { time: string; value: number }[] = [];
   const now = new Date();
   for (let i = points; i >= 0; i--) {
     data.push({

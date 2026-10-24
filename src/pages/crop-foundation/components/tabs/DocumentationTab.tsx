@@ -81,9 +81,11 @@ function formatFileSize(bytes: number): string {
 export function DocumentationTab({ cropFoundation }: DocumentationTabProps) {
   let doc: any = null;
 
+  const metadata: any = cropFoundation.metadataJson || {};
+
   // Format mới: documents lưu trong metadataJson.documents
-  const metaDocs = cropFoundation.metadataJson?.documents;
-  if (metaDocs && metaDocs.length > 0) {
+  const metaDocs = metadata.documents;
+  if (Array.isArray(metaDocs) && metaDocs.length > 0) {
     const farmingDoc = metaDocs.find(
       (d: any) => d.name === "Kỹ thuật canh tác",
     );
@@ -121,8 +123,8 @@ export function DocumentationTab({ cropFoundation }: DocumentationTabProps) {
   // Fallback: docs trong metadataJson (format rất cũ)
   if (!doc) {
     try {
-      if (cropFoundation.metadataJson?.docs) {
-        doc = cropFoundation.metadataJson.docs.farmingTechnique;
+      if (metadata.docs) {
+        doc = metadata.docs.farmingTechnique;
       }
     } catch (error) {
       console.error("Failed to parse metadataJson", error);

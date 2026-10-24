@@ -98,7 +98,7 @@ export function useVarietyFoundationForm() {
         formData.editorContent,
       );
 
-      const documents = [];
+      const documents: any[] = [];
 
       if (formData.contentType === "pdf" && pdfUrl) {
         documents.push({

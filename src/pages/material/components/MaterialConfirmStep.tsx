@@ -8,6 +8,12 @@ interface MaterialConfirmStepProps {
   formData: MaterialFormData;
 }
 
+const getOrgDisplayName = (org: any) => {
+  if (!org) return "";
+  if (typeof org === "object" && !Array.isArray(org)) return org.name || "";
+  return String(org);
+};
+
 export default function MaterialConfirmStep({
   formData,
 }: MaterialConfirmStepProps) {
@@ -140,7 +146,7 @@ export default function MaterialConfirmStep({
                   </span>
                   <div className="flex flex-wrap gap-1 min-w-0">
                     <Badge variant="outline" className="bg-slate-50 max-w-full min-w-0 break-words">
-                      {formData.manufacturerOrigin.name}
+                      {getOrgDisplayName(formData.manufacturerOrigin)}
                     </Badge>
                   </div>
                 </div>
@@ -153,7 +159,7 @@ export default function MaterialConfirmStep({
                   </span>
                   <div className="flex flex-wrap gap-1 min-w-0">
                     <Badge variant="outline" className="bg-slate-50 max-w-full min-w-0 break-words">
-                      {formData.importerRegistrant.name}
+                      {getOrgDisplayName(formData.importerRegistrant)}
                     </Badge>
                   </div>
                 </div>
@@ -166,7 +172,7 @@ export default function MaterialConfirmStep({
                   </span>
                   <div className="flex flex-wrap gap-1 min-w-0">
                     <Badge variant="outline" className="bg-slate-50 max-w-full min-w-0 break-words">
-                      {formData.distributor.name}
+                      {getOrgDisplayName(formData.distributor)}
                     </Badge>
                   </div>
                 </div>

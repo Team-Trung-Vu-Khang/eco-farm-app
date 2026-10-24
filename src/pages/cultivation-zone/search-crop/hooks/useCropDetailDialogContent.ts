@@ -15,7 +15,7 @@ import {
 } from "../utils/mockCropDetail";
 import useTaskStore, { type Task } from "../../../../stores/useTaskStore";
 import { DISTRICTS, PROVINCES } from "../../../region-chart/constants";
-import type { CropDetail } from "../constants";
+import type { CropDetail } from "@/pages/cultivation-zone/constants";
 import { useCultivationRegionDetail } from "../../cultivation-region/useCultivationRegionDetail";
 import type {
   Coordinate,
@@ -359,7 +359,7 @@ export function useCropDetailDialogContent({
         ? String(activeCrop.regionId)
         : null;
 
-    const targetRegionGroup = resolvedRegionId
+    const targetRegionGroup: any = resolvedRegionId
       ? regionGroups.find((group: any) => String(group.region?.id) === resolvedRegionId)
       : regionGroups[0];
 
@@ -380,7 +380,7 @@ export function useCropDetailDialogContent({
       );
 
       if (targetAreaEntry) {
-        const [areaKey, areaGroup] = targetAreaEntry;
+        const [areaKey, areaGroup]: [string, any] = targetAreaEntry;
         const entities = (areaGroup.entities || []).filter((entity: any) => {
           const entityPlotId = entity.plotId ?? entity.id;
           return entity.typeCode === "plot" && String(entityPlotId) === plotId;
@@ -394,7 +394,7 @@ export function useCropDetailDialogContent({
       );
 
       if (targetAreaEntry) {
-        const [areaKey, areaGroup] = targetAreaEntry;
+        const [areaKey, areaGroup]: [string, any] = targetAreaEntry;
         const entities = (areaGroup.entities || []).filter((entity: any) => {
           if (entity.typeCode === "area") {
             const entityAreaId = entity.areaId ?? entity.id;
@@ -546,7 +546,7 @@ export function useCropDetailDialogContent({
         if (region) {
           addRegion(region, explicit);
           if (explicit) explicitRegionIds.add(String(region.id));
-          for (const areaItem of region.subAreas || []) {
+          for (const areaItem of (region as any).subAreas || (region as any).areas || []) {
             addArea(areaItem, false);
             for (const plot of areaItem.plots || []) addPlot(plot, false);
           }
@@ -558,7 +558,7 @@ export function useCropDetailDialogContent({
           addRegion(areaHit.region, false);
           addArea(areaHit.area, explicit);
           if (explicit) explicitAreaIds.add(String(areaHit.area.id));
-          for (const plot of areaHit.area.plots || []) addPlot(plot, false);
+          for (const plot of (areaHit.area as any).plots || []) addPlot(plot, false);
           continue;
         }
 
@@ -637,7 +637,7 @@ export function useCropDetailDialogContent({
       points.length === 1
         ? L.latLngBounds(points[0], points[0])
         : L.latLngBounds(points);
-    const padding = isScopeMapExpanded ? [60, 60] : [40, 40];
+    const padding: [number, number] = isScopeMapExpanded ? [60, 60] : [40, 40];
 
     const flyToRegion = () => {
       targetMap.flyToBounds(bounds, { padding, duration: 0.9 });

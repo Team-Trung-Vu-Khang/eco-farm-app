@@ -1,4 +1,4 @@
-import type { CultivationRegion } from "../../../../stores/useCultivationRegionStore";
+import type { CultivationRegion } from "@/stores/useCultivationRegionStore";
 import type { CultivationRegionDetails } from "../../useCultivationRegionDetail";
 
 export type DetailBodyPrimaryManager = {

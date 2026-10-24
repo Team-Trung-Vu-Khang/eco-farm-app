@@ -9,7 +9,15 @@ import { productionSubjectGroupApi } from "../../../../../features/foundation/ap
 import type { PageResponse, ProductionSubjectGroupResponse } from "../../../../../features/foundation/types/foundation.type";
 import { formatDaysToDuration, parseDurationToDays } from "../../utils/duration";
 
-interface AnimalGrowthCycleConfirmStepProps { varieties: FoundationCropVarietyResponse[]; crops: FoundationCropResponse[]; domainCode?: "LIVESTOCK" | "AQUACULTURE"; subjectLabel?: string; varietyLabel?: string; groupLabel?: string; cycleLabel?: string; }
+interface AnimalGrowthCycleConfirmStepProps {
+  varieties: any[];
+  crops: any[];
+  domainCode?: "LIVESTOCK" | "AQUACULTURE";
+  subjectLabel?: string;
+  varietyLabel?: string;
+  groupLabel?: string;
+  cycleLabel?: string;
+}
 
 export function AnimalGrowthCycleConfirmStep({ varieties, crops, domainCode = "LIVESTOCK", subjectLabel = "Vật nuôi", varietyLabel = "Giống vật nuôi", groupLabel = "Nhóm vật nuôi", cycleLabel = "Vụ nuôi" }: AnimalGrowthCycleConfirmStepProps) {
   const { watch } = useFormContext<AnimalGrowthCycleFormValues>();

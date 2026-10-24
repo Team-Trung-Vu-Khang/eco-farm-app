@@ -330,11 +330,11 @@ function buildTreeModelFromAddItem(
 ): TreeModel {
   switch (item.kind) {
     case "region":
-      return buildRegionModel(item.data as RegionLike, setLocation, parentId);
+      return buildRegionModel(item.data as any, setLocation, parentId);
     case "area":
-      return buildAreaModel(item.data as AreaLike, setLocation, parentId);
+      return buildAreaModel(item.data as any, setLocation, parentId);
     case "plot":
-      return buildPlotModel(item.data as PlotLike, setLocation, parentId);
+      return buildPlotModel(item.data as any, setLocation, parentId);
     default:
       throw new Error("Unsupported add dialog item kind");
   }
@@ -413,9 +413,9 @@ function buildRegionModel(
   setLocation: (path: string) => void,
   parentId: string,
 ): TreeModel {
-  const regionAreas = region.areas ?? region.subAreas ?? [];
+  const regionAreas: any[] = (region as any).areas ?? (region as any).subAreas ?? [];
   const totalPlots = regionAreas.reduce(
-    (sum, area) => sum + (area.plots?.length ?? 0),
+    (sum: number, area: any) => sum + (area.plots?.length ?? 0),
     0,
   );
 
@@ -442,7 +442,7 @@ function buildRegionModel(
       `/region-distribution/detail/${region.id}`,
       `/region-distribution/edit/${region.id}`,
     ),
-    children: regionAreas.map((area) =>
+    children: regionAreas.map((area: any) =>
       buildAreaModel(area, setLocation, `region-${region.id}`),
     ),
   };
@@ -558,16 +558,17 @@ function toGeographicalUnits(
       };
       units.push(areaUnit);
 
-      const areaPlots = (area.plots ?? []).map((plot) => {
+      const areaPlots = (area.plots ?? []).map((plot: any) => {
+        const plotObj = plot as any;
         const plotUnit: GeographicalUnit = {
-          id: String(plot.id),
-          name: plot.name ?? "",
+          id: String(plotObj.id),
+          name: plotObj.name ?? "",
           level: 1,
           type: "plot",
-          area: plot.area,
-          altitude: plot.altitude,
-          contour: plot.contour,
-          coordinates: plot.coordinates,
+          area: plotObj.area ?? plotObj.acreage,
+          altitude: plotObj.altitude ?? plotObj.elevation,
+          contour: plotObj.contour ?? plotObj.contourInterval,
+          coordinates: plotObj.coordinates ?? plotObj.boundary,
         };
         units.push(plotUnit);
         return plotUnit;

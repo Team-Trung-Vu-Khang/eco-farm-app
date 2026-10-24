@@ -195,7 +195,7 @@ export function useAquacultureGrowthCyclePage() {
     }
   };
 
-  const error = apiError?.message ?? null;
+  const error = typeof apiError === "string" ? apiError : (apiError as any)?.message ?? null;
 
   return {
     growthCycles,

@@ -42,7 +42,7 @@ const useFertilizerStore = create<FertilizerState>()(
                 ...fertilizerData,
                 id: Math.max(0, ...state.fertilizers.map((f) => f.id)) + 1,
                 createdAt: new Date().toISOString().split("T")[0],
-              };
+              } as any;
               return {
                 fertilizers: [newFertilizer, ...state.fertilizers], // Thêm vào đầu danh sách
               };

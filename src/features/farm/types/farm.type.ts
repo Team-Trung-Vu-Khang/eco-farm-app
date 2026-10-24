@@ -377,9 +377,12 @@ export interface FarmCultivationZoneRequest {
   certificateIds?: number[];
   personnelIds?: number[];
   /** Phương pháp canh tác (API mới: productionMethodId thay cho farmingMethodId) */
-  productionMethodId: number;
+  productionMethodId?: number;
+  farmingMethodId?: number;
   rearingMethodId?: number;
   irrigationSystemId?: number;
+  seedIds?: number[];
+  [key: string]: any;
   /**
    * Cấu trúc phân cấp mới: Cây trồng -> Giống -> Hạt giống
    */
@@ -448,11 +451,14 @@ export interface CultivationZoneQueryParams {
   status?: FarmCultivationZoneStatus;
   farmingMethodId?: number;
   rearingMethodId?: number;
+  irrigationSystemId?: number;
+  productionMethodId?: number;
   domainCode?: "CROP" | "LIVESTOCK" | "AQUACULTURE";
   productionSubjectId?: number;
   includeDetails?: boolean;
   page?: number;
   size?: number;
+  [key: string]: any;
 }
 
 // ─── Plant Identification ───────────────────────────────────────────────────

@@ -73,8 +73,8 @@ const PesticideOriginPage = () => {
               options: [...PESTICIDE_GROUP_STATUS_OPTIONS],
             },
           ]}
-          onEdit={handleEdit}
-          onDelete={handleDelete}
+          onEdit={handleEdit as any}
+          onDelete={handleDelete as any}
           loading={loading}
         />
       )}

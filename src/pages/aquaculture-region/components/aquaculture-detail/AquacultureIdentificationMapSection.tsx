@@ -16,7 +16,7 @@ import {
   TileLayer,
   useMap,
 } from "react-leaflet";
-import type { Plant } from "../../../../region-chart/constants";
+import type { Plant } from "@/pages/region-chart/constants";
 
 type Props = {
   plant: Plant;

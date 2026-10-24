@@ -354,7 +354,7 @@ export function useAquacultureGrowthForm(
   );
   const workflowSeasonQueries = useQueries({
     queries: isWorkflowContext
-      ? workflowSeasonIds.map((seasonId) => ({
+      ? workflowSeasonIds.map((seasonId: any) => ({
           queryKey: ["workflow-season-detail", seasonId],
           queryFn: async () => {
             try {

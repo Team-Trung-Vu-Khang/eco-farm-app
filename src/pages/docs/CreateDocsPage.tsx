@@ -35,7 +35,7 @@ export default function CreateDocsPage() {
         />
       ),
       isValid:
-        formData.id.trim().length > 0 && formData.cropId.trim().length > 0,
+        Boolean(formData.id?.trim() && formData.cropId?.trim()),
     },
     {
       id: "specs",

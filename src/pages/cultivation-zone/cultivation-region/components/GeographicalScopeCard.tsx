@@ -249,7 +249,7 @@ export const GeographicalScopeCard = ({
         if (!abr[rId].some((item) => item.id === aId)) {
           abr[rId].push({
             id: aId,
-            name: area.name,
+            name: area.name || "",
             level: 2,
             type: "Khu vực",
           });
@@ -259,7 +259,7 @@ export const GeographicalScopeCard = ({
       if (!unitsMap.has(aId)) {
         unitsMap.set(aId, {
           id: aId,
-          name: area.name,
+          name: area.name || "",
           type: "Khu vực",
           level: 2,
           coordinates: area.boundary?.map((b: any) => ({
@@ -308,7 +308,7 @@ export const GeographicalScopeCard = ({
         if (!pba[aId].some((item) => item.id === pId)) {
           pba[aId].push({
             id: pId,
-            name: plot.name,
+            name: plot.name || "",
             level: 1,
             type: "Lô trồng",
           });
@@ -317,7 +317,7 @@ export const GeographicalScopeCard = ({
       if (!unitsMap.has(pId)) {
         unitsMap.set(pId, {
           id: pId,
-          name: plot.name,
+          name: plot.name || "",
           type: "Lô trồng",
           level: 1,
           coordinates: plot.boundary?.map((b: any) => ({

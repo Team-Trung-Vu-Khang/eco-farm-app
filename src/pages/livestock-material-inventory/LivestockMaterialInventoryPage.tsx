@@ -109,7 +109,7 @@ export default function LivestockMaterialInventoryPage() {
         matCode = medItem.code;
       } else if (otherItem) {
         matName = `[Cám/Vật tư] ${otherItem.name}`;
-        matCode = otherItem.code;
+        matCode = otherItem.code || "";
       }
 
       const alloc = allocations.find(al => al.id === inv.allocationId);

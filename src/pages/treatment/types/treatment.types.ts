@@ -33,15 +33,15 @@ export interface TreatmentProcedure {
   dosage: string;
   timing: string;
   technique: string;
-  materials: string[];
-  equipment: string[];
-  stageMaterials: TreatmentMaterialItem[];
-  estimatedDays: number;
-  warnings: any;
-  tips: string[];
-  expectedOutcome: any;
-  qualityCheckpoints: any;
-  attachments: TreatmentAttachment[];
+  materials?: string[];
+  equipment?: string[];
+  stageMaterials?: TreatmentMaterialItem[];
+  estimatedDays?: number;
+  warnings?: any;
+  tips?: string[];
+  expectedOutcome?: any;
+  qualityCheckpoints?: any;
+  attachments?: TreatmentAttachment[];
 }
 
 export interface Treatment {
@@ -98,6 +98,9 @@ export interface Treatment {
   inspectionParameters?: string[];
   qualityChecklist?: string[];
   applicableCropConfigs?: any[];
+  targetSeverity?: string;
+  location?: string | { lat: number; lng: number; address: string; } | any;
+  [key: string]: any;
 }
 
 export interface SearchFilters {
@@ -109,3 +112,24 @@ export interface SearchFilters {
   severity: string;
   status: string;
 }
+
+export interface TreatmentStep {
+  step?: number;
+  stepNumber?: number;
+  name?: string;
+  pesticideId?: string;
+  pesticide?: string;
+  dosage?: string;
+  dosagePerArea?: string;
+  timing?: string;
+  technique?: string;
+  phi?: string;
+  cost?: string;
+  warning?: string[];
+  instructions?: string;
+  targetStage?: string;
+  [key: string]: any;
+}
+export type Material = TreatmentMaterialItem | any;
+
+

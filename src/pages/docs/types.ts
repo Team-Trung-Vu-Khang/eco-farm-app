@@ -1,7 +1,7 @@
 type Docs = {
   id: string;
-  scope: "crop" | "variety" | "category";
-  cropId: string;
+  scope?: "crop" | "variety" | "category";
+  cropId?: string;
   variety: string;
   crop: string; // Keep for backward compatibility or display name
   season: string[];
@@ -10,6 +10,7 @@ type Docs = {
   applyLevel?: number;
   keywords?: string[];
   quickSummary?: string;
+  illustration?: File | null | string;
   attachments?: Array<CreateDocsAttachment>;
   specifications?: Array<CreateDocsSpecification>;
 };

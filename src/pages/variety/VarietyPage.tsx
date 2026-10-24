@@ -103,7 +103,7 @@ const VarietyPage = () => {
       <VarietyDetailModal
         open={detailOpen}
         onOpenChange={setDetailOpen}
-        variety={selectedVariety}
+        variety={selectedVariety || null}
       />
 
       <DeleteDialog

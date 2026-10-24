@@ -1,20 +1,20 @@
 import { create } from "zustand";
 import { devtools, persist } from "zustand/middleware";
 
-import type { FarmPlanPurpose } from "../features/farm-workflow/types";
+import type { FarmPlanPurpose } from "@/features/farm-workflow/types/farm-workflow.type";
 import type { GeographicalSelection } from "../pages/plan/types";
 
 export interface MaterialAllocation {
   id: number;
   name: string;
-  quantity: string;
+  quantity: string | number;
   unit: string;
   type: "fertilizer" | "pesticide" | "other" | "tool";
-  stageId: string;
-  taskId: number;
-  materialCategory: string;
-  materialType: string;
-  materialName: string;
+  stageId?: string;
+  taskId?: number;
+  materialCategory?: string;
+  materialType?: string;
+  materialName?: string;
 }
 
 export interface Task {

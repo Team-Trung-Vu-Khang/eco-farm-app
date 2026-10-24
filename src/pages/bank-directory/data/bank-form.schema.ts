@@ -31,14 +31,13 @@ export const bankFormSchema = z.object({
     )
     .optional(),
   status: z.enum(["active", "inactive", "archived"], {
-    errorMap: () => ({ message: "Vui lòng chọn trạng thái." }),
+    message: "Vui lòng chọn trạng thái.",
   }),
   transferSupported: z.boolean(),
   lookupSupported: z.boolean(),
   displayOrder: z
     .number({
-      invalid_type_error: "Vui lòng nhập display order hợp lệ.",
-      required_error: "Vui lòng nhập display order hợp lệ.",
+      message: "Vui lòng nhập display order hợp lệ.",
     })
     .int("Display order phải là số nguyên.")
     .nonnegative("Display order phải lớn hơn hoặc bằng 0."),

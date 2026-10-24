@@ -12,7 +12,7 @@ export function useAddressOptions(provinceCode?: string) {
       });
       let allProvinces = [...firstPage.content];
       if (firstPage.totalPages > 1) {
-        const promises = [];
+        const promises: Promise<any>[] = [];
         for (let i = 1; i < firstPage.totalPages; i++) {
           promises.push(masterDataApi.listGeoProvinces({ size: 100, page: i }));
         }
@@ -39,7 +39,7 @@ export function useAddressOptions(provinceCode?: string) {
       });
       let allWards = [...firstPage.content];
       if (firstPage.totalPages > 1) {
-        const promises = [];
+        const promises: Promise<any>[] = [];
         for (let i = 1; i < firstPage.totalPages; i++) {
           promises.push(
             masterDataApi.listGeoWards({ provinceCode, size: 100, page: i }),

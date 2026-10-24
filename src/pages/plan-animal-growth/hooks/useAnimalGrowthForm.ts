@@ -175,7 +175,7 @@ function buildPersonnelRequest(
 function syncPlanToLocalStores(plan: Plan) {
   upsertFallbackPlan(plan);
   useAnimalGrowthPlanStore.setState((state) => ({
-    plans: [...state.plans.filter((item) => item.id !== plan.id), plan],
+    plans: [...state.plans.filter((item) => item.id !== plan.id), plan as any],
   }));
 }
 
@@ -324,14 +324,14 @@ export function useAnimalGrowthForm(
         new Set(
           (workflowInfo?.seasonIds || [])
             .map(Number)
-            .filter((id) => Number.isFinite(id)),
+            .filter((id): id is number => Number.isFinite(id)),
         ),
       ),
     [workflowInfo],
   );
   const workflowSeasonQueries = useQueries({
     queries: isWorkflowContext
-      ? workflowSeasonIds.map((seasonId) => ({
+      ? workflowSeasonIds.map((seasonId: any) => ({
           queryKey: ["animal-workflow-season-detail", seasonId],
           queryFn: async () => {
             try {
@@ -413,7 +413,7 @@ export function useAnimalGrowthForm(
   const initialSelectionState = useMemo(
     () =>
       mode === "edit" && plan
-        ? reconstructSelectionsFromPlan(plan, regions)
+        ? reconstructSelectionsFromPlan(plan as any, regions)
         : null,
     [mode, plan, regions],
   );

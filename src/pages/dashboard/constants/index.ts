@@ -235,6 +235,17 @@ export const farmingProgress = {
     inProgress: 42,
     label: "Công việc canh tác",
   },
+  progressSpeed: 94.2,
+  weeklyTasks: 42,
+  weeklyTasksChange: 8,
+  completedTasks: 32,
+  delayedTasks: 3,
+  delayedTasksChange: -1,
+  totalFarmsActive: 28,
+  totalFarmsActiveChange: 4,
+  slaCompliance: 92,
+  planDeviation: 4.8,
+  avgDelayDays: 1.2,
 };
 
 export const hrByDepartment = [

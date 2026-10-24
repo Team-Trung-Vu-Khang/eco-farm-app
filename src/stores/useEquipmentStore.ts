@@ -42,7 +42,7 @@ const useEquipmentStore = create<EquipmentState>()(
                 ...equipmentData,
                 id: Math.max(0, ...state.equipments.map((e) => e.id)) + 1,
                 createdAt: new Date().toISOString().split("T")[0],
-              };
+              } as any;
               return {
                 equipments: [newEquipment, ...state.equipments], // Thêm vào đầu danh sách
               };

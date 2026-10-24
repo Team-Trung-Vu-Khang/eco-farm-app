@@ -14,7 +14,6 @@ import {
   Bell,
   RefreshCw,
   FileSpreadsheet,
-  FilePdf,
 } from "lucide-react";
 import { useReportContext } from "../context/ReportContext";
 import { Link } from "wouter";

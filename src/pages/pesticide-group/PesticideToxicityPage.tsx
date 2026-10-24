@@ -55,7 +55,7 @@ const PesticideToxicityPage = () => {
       ) : (
         <DataTable
           columns={pesticideToxicityColumns}
-          data={data}
+          data={data as any}
           searchable
           searchPlaceholder="Tìm kiếm theo độ độc tính..."
           pageSize={pageSize}

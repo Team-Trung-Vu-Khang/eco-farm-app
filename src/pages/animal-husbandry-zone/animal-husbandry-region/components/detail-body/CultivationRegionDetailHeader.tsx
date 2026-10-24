@@ -1,6 +1,6 @@
 import { Badge, Button } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { CheckCircle, ChevronLeft, Edit } from "lucide-react";
-import type { CultivationRegion } from "../../../../stores/useCultivationRegionStore";
+import type { CultivationRegion } from "@/stores/useCultivationRegionStore";
 
 type Props = {
   area: CultivationRegion;

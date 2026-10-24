@@ -103,7 +103,7 @@ export default function PesticideSuppliersStep({
                   variant="secondary"
                   className="bg-primary/5 text-primary border border-primary/20 text-xs font-semibold py-0.5 px-2.5"
                 >
-                  {formData.manufacturerOrigin.name}
+                  {(formData.manufacturerOrigin as any)?.name ?? String(formData.manufacturerOrigin)}
                 </Badge>
               ) : (
                 <span className="text-sm text-slate-400">
@@ -134,7 +134,7 @@ export default function PesticideSuppliersStep({
                   variant="secondary"
                   className="bg-primary/5 text-primary border border-primary/20 text-xs font-semibold py-0.5 px-2.5"
                 >
-                  {formData.importerRegistrant.name}
+                  {(formData.importerRegistrant as any)?.name ?? String(formData.importerRegistrant)}
                 </Badge>
               ) : (
                 <span className="text-sm text-slate-400">
@@ -168,7 +168,7 @@ export default function PesticideSuppliersStep({
                   variant="secondary"
                   className="bg-primary/5 text-primary border border-primary/20 text-xs font-semibold py-0.5 px-2.5"
                 >
-                  {formData.distributor.name}
+                  {(formData.distributor as any)?.name ?? String(formData.distributor)}
                 </Badge>
               ) : (
                 <span className="text-sm text-slate-400">
@@ -384,7 +384,9 @@ export default function PesticideSuppliersStep({
         isMulti={false}
         returnById
         selectedItems={
-          formData.manufacturerOrigin ? [formData.manufacturerOrigin] : []
+          typeof formData.manufacturerOrigin === "object" && formData.manufacturerOrigin
+            ? [formData.manufacturerOrigin]
+            : []
         }
         onConfirmItems={(items) =>
           onFormFieldChange("manufacturerOrigin", items[0] || null)
@@ -400,7 +402,9 @@ export default function PesticideSuppliersStep({
         isMulti={false}
         returnById
         selectedItems={
-          formData.importerRegistrant ? [formData.importerRegistrant] : []
+          typeof formData.importerRegistrant === "object" && formData.importerRegistrant
+            ? [formData.importerRegistrant]
+            : []
         }
         onConfirmItems={(items) =>
           onFormFieldChange("importerRegistrant", items[0] || null)
@@ -413,7 +417,11 @@ export default function PesticideSuppliersStep({
         title="Chọn nhà phân phối"
         isMulti={false}
         returnById
-        selectedItems={formData.distributor ? [formData.distributor] : []}
+        selectedItems={
+          typeof formData.distributor === "object" && formData.distributor
+            ? [formData.distributor]
+            : []
+        }
         onConfirmItems={(items) =>
           onFormFieldChange("distributor", items[0] || null)
         }

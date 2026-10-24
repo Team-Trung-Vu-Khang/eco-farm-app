@@ -43,6 +43,7 @@ const DEFAULT_UNITS: Record<CropSupplyType, string[]> = {
   biological: ["kg", "gói", "chai", "lít", "ml"],
   material: ["cái", "bộ", "cuộn", "thùng", "bao"],
   equipment: ["cái", "bộ", "đôi", "chiếc", "máy"],
+  by_product: ["kg", "gói", "tấn"],
 };
 
 function getDefaultUnit(item: SupplyItemResponse, type: CropSupplyType) {
@@ -82,8 +83,10 @@ export function useCropSupplyCatalog(domainCode: DomainCode = "CROP"): CropSuppl
       {
         medicine: [],
         fertilizer: [],
+        biological: [],
         material: [],
         equipment: [],
+        by_product: [],
       } as Record<CropSupplyType, CropSupplyOption[]>,
     );
   }, [queries]);
@@ -105,8 +108,10 @@ export function useCropSupplyCatalog(domainCode: DomainCode = "CROP"): CropSuppl
       {
         medicine: [],
         fertilizer: [],
+        biological: [],
         material: [],
         equipment: [],
+        by_product: [],
       } as Record<CropSupplyType, string[]>,
     );
   }, [queries]);

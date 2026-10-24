@@ -1,4 +1,4 @@
-import type { Personnel } from "../../stores/usePersonnelStore";
+import type { Personnel } from "@/stores/usePersonnelStore";
 
 export type PersonnelStatus = Personnel["status"];
 

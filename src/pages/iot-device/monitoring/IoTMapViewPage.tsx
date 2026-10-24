@@ -130,7 +130,7 @@ const ZoomListener = ({ onChange }: { onChange: (zoom: number) => void }) => {
 
 // --- Custom Icons for IoT ---
 
-const getIoTIcon = (type: string, status: string) => {
+const getIoTIcon = (type: string = "", status: string = "") => {
   let color = "#10b981"; // online
   if (status === "offline") color = "#ef4444";
   if (status === "low_battery") color = "#f59e0b";

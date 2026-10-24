@@ -43,6 +43,7 @@ const DEFAULT_UNITS: Record<AnimalSupplyType, string[]> = {
   biological: ["kg", "gói", "chai", "lít", "ml"],
   material: ["cái", "bộ", "cuộn", "thùng", "bao"],
   equipment: ["cái", "bộ", "đôi", "chiếc", "máy"],
+  by_product: ["kg", "gói", "tấn"],
 };
 
 function getDefaultUnit(item: SupplyItemResponse, type: AnimalSupplyType) {
@@ -114,8 +115,10 @@ export function useAnimalSupplyCatalog(): AnimalSupplyCatalog {
       },
       {
         medicine: [],
+        biological: [],
         material: [],
         equipment: [],
+        by_product: [],
       } as Record<AnimalSupplyType, AnimalSupplyOption[]>,
     );
   }, [queries]);
@@ -136,8 +139,10 @@ export function useAnimalSupplyCatalog(): AnimalSupplyCatalog {
       },
       {
         medicine: [],
+        biological: [],
         material: [],
         equipment: [],
+        by_product: [],
       } as Record<AnimalSupplyType, string[]>,
     );
   }, [queries]);

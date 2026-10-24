@@ -145,16 +145,18 @@ export default function PesticideConfirmStep({
                 <div className="flex flex-wrap gap-1 min-w-0">
                   {(formData.groups?.length
                     ? formData.groups
-                    : formData.group
-                      ? [formData.group]
-                      : []
-                  ).map((g) => (
+                    : Array.isArray(formData.group)
+                      ? formData.group
+                      : formData.group
+                        ? [formData.group]
+                        : []
+                  ).map((g: any, idx: number) => (
                     <Badge
-                      key={g}
+                      key={`${g}-${idx}`}
                       variant="outline"
                       className="text-xs bg-slate-50 max-w-full min-w-0 break-words"
                     >
-                      {g}
+                      {String(g)}
                     </Badge>
                   ))}
                   {!formData.groups?.length && !formData.group && (
@@ -429,13 +431,16 @@ export default function PesticideConfirmStep({
             <div className="grid grid-cols-2 gap-x-8 gap-y-3">
               <Row
                 label="Nhà sản xuất"
-                value={formData.manufacturerOrigin?.name}
+                value={typeof formData.manufacturerOrigin === "object" ? formData.manufacturerOrigin?.name : formData.manufacturerOrigin}
               />
               <Row
                 label="Nhà nhập khẩu"
-                value={formData.importerRegistrant?.name}
+                value={typeof formData.importerRegistrant === "object" ? formData.importerRegistrant?.name : formData.importerRegistrant}
               />
-              <Row label="Nhà phân phối" value={formData.distributor?.name} />
+              <Row
+                label="Nhà phân phối"
+                value={typeof formData.distributor === "object" ? formData.distributor?.name : formData.distributor}
+              />
               <Row label="Giá tham khảo" value={formData.referencePrice} />
               {formData.packagingSpecs.length > 0 && (
                 <div className="col-span-2">

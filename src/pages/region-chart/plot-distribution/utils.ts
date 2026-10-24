@@ -42,16 +42,14 @@ export const getNearestPointOnPolygonBoundary = (
   latlng: L.LatLng,
 ) => {
   if (!polyFeature) return null;
-  const lineFeature = polygonToLine(polyFeature);
-  const line = Array.isArray((lineFeature as { features?: unknown[] }).features)
-    ? ((lineFeature as { features: LineFeatureLike[] }).features[0] ?? null)
-    : (lineFeature as LineFeatureLike | null);
+  const lineFeature: any = polygonToLine(polyFeature);
+  const line = Array.isArray(lineFeature?.features)
+    ? (lineFeature.features[0] ?? null)
+    : (lineFeature ?? null);
 
   if (!line) return null;
 
-  const snapped = nearestPointOnLine(line, point([latlng.lng, latlng.lat])) as
-    | PointFeatureLike
-    | null;
+  const snapped: any = nearestPointOnLine(line, point([latlng.lng, latlng.lat]));
 
   if (!snapped) return null;
 

@@ -175,11 +175,11 @@ export function TreatmentCard({
             <div className="flex items-center gap-2">
               <Calendar className="w-4 h-4" />
               <span className="font-medium text-sm">
-                Các bước điều trị ({treatment.steps.length} bước)
+                Các bước điều trị ({treatment.steps?.length ?? 0} bước)
               </span>
             </div>
             <div className="space-y-3">
-              {treatment.steps.map((step) => (
+              {treatment.steps?.map((step) => (
                 <TreatmentStepCard
                   key={step.id}
                   step={step}

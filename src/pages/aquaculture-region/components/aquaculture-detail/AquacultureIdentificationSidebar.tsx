@@ -5,7 +5,7 @@ import {
   CardTitle,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { Ruler, Sprout, User } from "lucide-react";
-import type { Plant } from "../../../../region-chart/constants";
+import type { Plant } from "@/pages/region-chart/constants";
 
 type Props = {
   plant: Plant;

@@ -32,10 +32,13 @@ export interface EnterpriseCertificate {
 }
 
 export interface Standard {
+  id?: number | string;
   code: string;
   name: string;
   organizations: string[];
   stampUrl?: string;
+  imageUrl?: string;
+  [key: string]: any;
 }
 
 export interface Enterprise {

@@ -188,7 +188,7 @@ export const useAquacultureDistributionCreatePage = () => {
         code: `AQU-${String(entryIndex * 10 + index + 1).padStart(3, "0")}`,
         name: `${entry.name} - ${index + 1}`,
         species: entry.species,
-        status: (index % 5 === 0 ? "warning" : "healthy") as const,
+        status: (index % 5 === 0 ? "warning" : "healthy") as "warning" | "healthy",
         weight: entry.averageWeight,
         stockedDate: new Date().toISOString().split("T")[0],
         coordinate: {
