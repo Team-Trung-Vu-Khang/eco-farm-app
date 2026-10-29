@@ -16,4 +16,19 @@ export default defineConfig({
   server: {
     port: 3000,
   },
+  preview: {
+    port: 3000,
+  },
+  build: {
+    sourcemap: false,
+    minify: "terser",
+    terserOptions: {
+      compress: {
+        drop_debugger: true,
+        pure_funcs: ["console.log", "console.info", "console.debug"],
+      },
+      mangle: true,
+      format: { comments: false },
+    },
+  },
 });
