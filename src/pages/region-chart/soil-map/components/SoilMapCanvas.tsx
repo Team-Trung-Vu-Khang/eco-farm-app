@@ -167,10 +167,7 @@ export function SoilMapCanvas({
 
       <LayersControl position="topright">
         <LayersControl.BaseLayer checked name="Bản đồ chuẩn">
-          <TileLayer
-            attribution="&copy; Check"
-            url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
-          />
+          <TileLayer url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}" />
         </LayersControl.BaseLayer>
         <LayersControl.BaseLayer name="Vệ tinh">
           <TileLayer url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}" />

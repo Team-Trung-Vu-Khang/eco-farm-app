@@ -35,10 +35,7 @@ export function RegionChartMapCard({
           className={`w-full ${heightClassName}`}
           scrollWheelZoom
         >
-          <TileLayer
-            attribution="&copy; OpenStreetMap"
-            url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
-          />
+          <TileLayer url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}" />
           <MapController center={center} />
           {children}
         </MapContainer>

@@ -221,10 +221,7 @@ const MapLayout = ({
           zoom={17}
           className="h-full w-full"
         >
-          <TileLayer
-            attribution="&copy; OpenStreetMap"
-            url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
-          />
+          <TileLayer url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}" />
 
           {areaPolygon.length > 0 && (
             <Polygon

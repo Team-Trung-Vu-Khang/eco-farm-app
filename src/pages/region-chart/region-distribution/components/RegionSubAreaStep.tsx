@@ -527,10 +527,7 @@ const SubAreaLayout = ({
             points={subAreaPoints}
             fitTrigger={subAreaMapFitTrigger}
           />
-          <TileLayer
-            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-            url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
-          />
+          <TileLayer url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}" />
 
           <Polygon
             positions={regionPoints}
@@ -660,7 +657,8 @@ const SubAreaLayout = ({
               </div>
               {(() => {
                 const totalSub = (subAreas || []).reduce(
-                  (acc: number, curr: SubArea) => acc + (Number(curr.area) || 0),
+                  (acc: number, curr: SubArea) =>
+                    acc + (Number(curr.area) || 0),
                   0,
                 );
                 const isOver = regionArea > 0 && totalSub > regionArea + 1e-4;

@@ -103,10 +103,7 @@ export const SubAreaEditor = ({
                 zoom={14}
                 className="h-full w-full"
               >
-                <TileLayer
-                  attribution="&copy; OpenStreetMap"
-                  url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
-                />
+                <TileLayer url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}" />
                 {/* Parent Outline */}
                 <Rectangle
                   bounds={currentBounds}

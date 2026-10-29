@@ -135,10 +135,7 @@ export const AllPlantsMapContent = ({
 
   return (
     <>
-      <TileLayer
-        url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
-        attribution="Esri"
-      />
+      <TileLayer url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}" />
       <MapClickHandler />
       {/* Auto-pan to active plant on tab click */}
       {activePlant && (

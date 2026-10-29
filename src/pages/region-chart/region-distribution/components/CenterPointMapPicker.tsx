@@ -194,10 +194,7 @@ const PickerContent = ({
             style={{ height: "100%", width: "100%" }}
           >
             <InvalidateMapSize />
-            <TileLayer
-              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-              url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
-            />
+            <TileLayer url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}" />
             <ChangeView center={markerPosition} />
             <MapEvents onChange={handleMapClick} />
             <Marker

@@ -347,10 +347,7 @@ export default function InventoryAreaCreatePage() {
               zoom={15}
               style={{ height: "100%", width: "100%" }}
             >
-              <TileLayer
-                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
-              />
+              <TileLayer url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}" />
               <Marker
                 position={mapCenter}
                 icon={defaultLeafletIcon}

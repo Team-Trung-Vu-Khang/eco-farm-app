@@ -338,10 +338,7 @@ export default function InventoryAreaPage() {
                         scrollWheelZoom={false}
                         dragging={false}
                       >
-                        <TileLayer
-                          attribution="&copy; OpenStreetMap contributors"
-                          url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
-                        />
+                        <TileLayer url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}" />
                         <Marker
                           position={[
                             selectedArea.latitude,
