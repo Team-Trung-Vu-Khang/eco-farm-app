@@ -66,8 +66,5 @@
     "vite": "^7.2.4",
     "vitest": "3.2.4"
   },
-  "engines": {
-    "node": ">=22"
-  },
   "packageManager": "yarn@1.22.22"
 }
