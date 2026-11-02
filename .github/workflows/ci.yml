@@ -53,5 +53,8 @@ jobs:
             echo "Không có file TS/TSX thay đổi"
           fi
 
+      - name: Test
+        run: yarn test
+
       - name: Build
         run: yarn build
