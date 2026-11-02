@@ -1,4 +1,5 @@
 import PageWrapper from "@/components/PageWrapper";
+import { sanitizeHtml } from "@/shared/lib/sanitize-html";
 import { useDialogBugWorkaround } from "@/shared/hooks/useDialogBugWorkaround";
 import {
   Badge,
@@ -265,7 +266,7 @@ const AquacultureGrowthCyclePage = () => {
                       {!stage.usePdf && stage.content && (
                         <div
                           className="prose prose-sm max-w-none mt-2 text-slate-700 border-t pt-3"
-                          dangerouslySetInnerHTML={{ __html: stage.content }}
+                          dangerouslySetInnerHTML={{ __html: sanitizeHtml(stage.content) }}
                         />
                       )}
                     </div>

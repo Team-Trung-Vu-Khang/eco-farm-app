@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { sanitizeHtml } from "@/shared/lib/sanitize-html";
 import {
   Badge,
   Button,
@@ -357,7 +358,7 @@ export function TreatmentDetail({
                           treatment.soilIssue.includes("<") ? (
                             <div
                               dangerouslySetInnerHTML={{
-                                __html: treatment.soilIssue,
+                                __html: sanitizeHtml(treatment.soilIssue),
                               }}
                               className="rich-text-content"
                             />
@@ -381,7 +382,7 @@ export function TreatmentDetail({
                           treatment.currentSurvey.includes("<") ? (
                             <div
                               dangerouslySetInnerHTML={{
-                                __html: treatment.currentSurvey,
+                                __html: sanitizeHtml(treatment.currentSurvey),
                               }}
                               className="rich-text-content"
                             />
@@ -403,7 +404,7 @@ export function TreatmentDetail({
                           treatment.importantNotes.includes("<") ? (
                             <div
                               dangerouslySetInnerHTML={{
-                                __html: treatment.importantNotes,
+                                __html: sanitizeHtml(treatment.importantNotes),
                               }}
                               className="rich-text-content"
                             />
@@ -439,7 +440,7 @@ export function TreatmentDetail({
                       treatment.expectedOutcomeSummary.includes("<") ? (
                         <div
                           dangerouslySetInnerHTML={{
-                            __html: treatment.expectedOutcomeSummary,
+                            __html: sanitizeHtml(treatment.expectedOutcomeSummary),
                           }}
                           className="rich-text-content"
                         />
@@ -481,7 +482,7 @@ export function TreatmentDetail({
                           procedure.detailedInstructions.includes("<") ? (
                             <div
                               dangerouslySetInnerHTML={{
-                                __html: procedure.detailedInstructions,
+                                __html: sanitizeHtml(procedure.detailedInstructions),
                               }}
                               className="rich-text-content"
                             />
@@ -517,7 +518,7 @@ export function TreatmentDetail({
                               procedure.expectedOutcome.includes("<") ? (
                                 <div
                                   dangerouslySetInnerHTML={{
-                                    __html: procedure.expectedOutcome,
+                                    __html: sanitizeHtml(procedure.expectedOutcome),
                                   }}
                                   className="rich-text-content"
                                 />
@@ -583,7 +584,7 @@ export function TreatmentDetail({
                                   <div
                                     className="text-sm text-slate-600 rich-text-content"
                                     dangerouslySetInnerHTML={{
-                                      __html: procedure.qualityCheckpoints,
+                                      __html: sanitizeHtml(procedure.qualityCheckpoints),
                                     }}
                                   />
                                 )}
@@ -612,7 +613,7 @@ export function TreatmentDetail({
                                   <div
                                     className="text-sm text-rose-700 rich-text-content"
                                     dangerouslySetInnerHTML={{
-                                      __html: procedure.warnings,
+                                      __html: sanitizeHtml(procedure.warnings),
                                     }}
                                   />
                                 )}

@@ -1,4 +1,5 @@
 import PageWrapper from "@/components/PageWrapper";
+import { sanitizeHtml } from "@/shared/lib/sanitize-html";
 import {
   Badge,
   Button,
@@ -64,7 +65,7 @@ function StageCard({
         {stage.description && (
           <div
             className="text-xs text-muted-foreground mt-1 line-clamp-2 prose-xs"
-            dangerouslySetInnerHTML={{ __html: stage.description }}
+            dangerouslySetInnerHTML={{ __html: sanitizeHtml(stage.description) }}
           />
         )}
         <div className="flex items-center gap-3 mt-2">

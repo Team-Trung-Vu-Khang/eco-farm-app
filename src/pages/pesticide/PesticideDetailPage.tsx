@@ -1,4 +1,5 @@
 import PageWrapper from "@/components/PageWrapper";
+import { sanitizeHtml } from "@/shared/lib/sanitize-html";
 import {
   formatPackagingVariantText,
   isBaseUnitOnlyVariant,
@@ -477,7 +478,7 @@ const PesticideDetailPage = () => {
                   </h4>
                   <div
                     className="text-sm bg-slate-50 rounded-lg p-3 border leading-relaxed text-slate-700"
-                    dangerouslySetInnerHTML={{ __html: item.firstAid }}
+                    dangerouslySetInnerHTML={{ __html: sanitizeHtml(item.firstAid) }}
                   />
                 </div>
               )}

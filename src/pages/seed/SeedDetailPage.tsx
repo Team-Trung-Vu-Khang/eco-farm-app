@@ -1,4 +1,5 @@
 import PageWrapper from "@/components/PageWrapper";
+import { sanitizeHtml } from "@/shared/lib/sanitize-html";
 import { useSeedById } from "@/features/farm";
 import { useOrganizationById } from "@/features/organization/hooks/useOrganizationById";
 import { useSelectedWorkspaceId } from "@/features/workspace";
@@ -365,13 +366,13 @@ export default function SeedDetailPage() {
                           ? "mb-6 border-b border-slate-200 pb-6"
                           : ""
                       }
-                      dangerouslySetInnerHTML={{ __html: description }}
+                      dangerouslySetInnerHTML={{ __html: sanitizeHtml(description) }}
                     />
                   )}
 
                   {editorDoc?.content ? (
                     <div
-                      dangerouslySetInnerHTML={{ __html: editorDoc.content }}
+                      dangerouslySetInnerHTML={{ __html: sanitizeHtml(editorDoc.content) }}
                     />
                   ) : (
                     !description && (

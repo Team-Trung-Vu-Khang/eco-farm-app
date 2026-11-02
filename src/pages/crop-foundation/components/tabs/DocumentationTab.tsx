@@ -6,6 +6,7 @@ import {
   CardTitle,
   cn,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import { sanitizeHtml } from "@/shared/lib/sanitize-html";
 import {
   File,
   FileSpreadsheet,
@@ -171,7 +172,7 @@ export function DocumentationTab({ cropFoundation }: DocumentationTabProps) {
           {doc.type === "editor" && typeof doc.content === "string" ? (
             <div
               className="prose prose-sm prose-slate max-w-none prose-headings:font-bold prose-a:text-blue-600"
-              dangerouslySetInnerHTML={{ __html: doc.content }}
+              dangerouslySetInnerHTML={{ __html: sanitizeHtml(doc.content) }}
             />
           ) : doc.type === "editor" ? (
             <p className="text-sm text-slate-500 italic">

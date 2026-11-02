@@ -6,6 +6,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import { sanitizeHtml } from "@/shared/lib/sanitize-html";
 import {
   Archive,
   ArrowLeft,
@@ -222,7 +223,7 @@ export function VarietyDetailContent({
                 <div className="prose prose-slate max-w-none animate-in fade-in duration-700">
                   <div
                     className="bg-white p-8 rounded-2xl border border-slate-100 shadow-sm font-serif text-lg leading-loose text-slate-700 editor-content-preview"
-                    dangerouslySetInnerHTML={{ __html: variety.editorContent }}
+                    dangerouslySetInnerHTML={{ __html: sanitizeHtml(variety.editorContent) }}
                   />
                   <style>{`
                     .editor-content-preview h1 { font-size: 2rem; font-weight: 800; margin-bottom: 1.5rem; color: #0f172a; }

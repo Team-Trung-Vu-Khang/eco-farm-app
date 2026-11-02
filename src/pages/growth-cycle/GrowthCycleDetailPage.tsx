@@ -6,6 +6,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import { sanitizeHtml } from "@/shared/lib/sanitize-html";
 import {
   ArrowLeft,
   Calendar,
@@ -268,7 +269,7 @@ export default function GrowthCycleDetailPage({
                 stage.description && (
                   <div
                     className="prose prose-sm max-w-none mt-2 text-slate-700 border-t pt-3"
-                    dangerouslySetInnerHTML={{ __html: stage.description }}
+                    dangerouslySetInnerHTML={{ __html: sanitizeHtml(stage.description) }}
                   />
                 )}
             </div>

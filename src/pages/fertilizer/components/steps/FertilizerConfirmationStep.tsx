@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { sanitizeHtml } from "@/shared/lib/sanitize-html";
 import { Badge, Card, CardContent } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import {
   CheckCircle2,
@@ -302,7 +303,7 @@ export const FertilizerConfirmationStep = ({
                   </span>
                   <div
                     className="bg-slate-50 p-2.5 rounded-lg border text-xs leading-relaxed text-slate-700 editor-preview-content"
-                    dangerouslySetInnerHTML={{ __html: firstAidHtml }}
+                    dangerouslySetInnerHTML={{ __html: sanitizeHtml(firstAidHtml) }}
                   />
                 </div>
               )}

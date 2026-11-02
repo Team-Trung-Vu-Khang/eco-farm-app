@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { sanitizeHtml } from "@/shared/lib/sanitize-html";
 import { Badge, Card, CardContent } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import {
   AlarmClock,
@@ -394,7 +395,7 @@ export default function PesticideConfirmStep({
                   </span>
                   <div
                     className="mt-1 text-sm bg-slate-50 border p-3 rounded-lg leading-relaxed text-slate-700"
-                    dangerouslySetInnerHTML={{ __html: firstAidHtml }}
+                    dangerouslySetInnerHTML={{ __html: sanitizeHtml(firstAidHtml) }}
                   />
                 </div>
               )}

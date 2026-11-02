@@ -6,6 +6,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import { sanitizeHtml } from "@/shared/lib/sanitize-html";
 import {
   Archive,
   ArrowLeft,
@@ -232,7 +233,7 @@ export function VarietyFoundationDetailContent({
                   <div
                     className="bg-white p-8 rounded-2xl border border-slate-100 shadow-sm font-serif text-lg leading-loose text-slate-700 editor-content-preview"
                     dangerouslySetInnerHTML={{
-                      __html: varietyFoundation.editorContent,
+                      __html: sanitizeHtml(varietyFoundation.editorContent),
                     }}
                   />
                   <style>{`

@@ -1,4 +1,5 @@
 import GenericPage from "@/pages/GenericPage";
+import { sanitizeHtml } from "@/shared/lib/sanitize-html";
 import { useState, useMemo } from "react";
 import { useDebounce } from "@/shared/hooks/useDebounce";
 import { useProductionMethods } from "@/features/foundation/hooks/useProductionMethods";
@@ -23,7 +24,7 @@ const columns = [
       return (
         <div
           className="line-clamp-2"
-          dangerouslySetInnerHTML={{ __html: value as string }}
+          dangerouslySetInnerHTML={{ __html: sanitizeHtml(value as string) }}
         />
       );
     },

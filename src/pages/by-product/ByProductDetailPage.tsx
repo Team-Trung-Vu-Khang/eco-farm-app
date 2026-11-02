@@ -1,4 +1,5 @@
 import PageWrapper from "@/components/PageWrapper";
+import { sanitizeHtml } from "@/shared/lib/sanitize-html";
 import {
   formatPackagingVariantText,
   isBaseUnitOnlyVariant,
@@ -489,7 +490,7 @@ const ByProductDetailPage = () => {
                   <div
                     className="text-xs bg-red-50/50 border border-red-100 rounded-lg p-3 text-slate-700 leading-relaxed"
                     dangerouslySetInnerHTML={{
-                      __html: profile.poisoningTreatment,
+                      __html: sanitizeHtml(profile.poisoningTreatment),
                     }}
                   />
                 </div>

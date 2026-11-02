@@ -6,6 +6,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import { sanitizeHtml } from "@/shared/lib/sanitize-html";
 import { ArrowLeft, Calendar, Edit, FileText, Fish, Layers, PawPrint, Sprout } from "lucide-react";
 import { formatDaysToDuration } from "./utils/duration";
 import { Link, useParams } from "wouter";
@@ -255,7 +256,7 @@ export default function AnimalGrowthCycleDetailPage({
                 stage.description && (
                   <div
                     className="prose prose-sm max-w-none mt-2 text-slate-700 border-t pt-3"
-                    dangerouslySetInnerHTML={{ __html: stage.description }}
+                    dangerouslySetInnerHTML={{ __html: sanitizeHtml(stage.description) }}
                   />
                 )}
             </div>

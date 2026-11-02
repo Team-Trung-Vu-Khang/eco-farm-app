@@ -1,4 +1,5 @@
 import { X } from "lucide-react";
+import { sanitizeHtml } from "@/shared/lib/sanitize-html";
 import { useState, type KeyboardEvent, type ReactNode } from "react";
 import { Badge, Input, Label } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 
@@ -64,7 +65,7 @@ export function SummaryField({
       </p>
       <div className="text-sm text-slate-700">
         {typeof value === "string" && value.includes("<") ? (
-          <div dangerouslySetInnerHTML={{ __html: value }} className="rich-text-content" />
+          <div dangerouslySetInnerHTML={{ __html: sanitizeHtml(value) }} className="rich-text-content" />
         ) : (
           value
         )}

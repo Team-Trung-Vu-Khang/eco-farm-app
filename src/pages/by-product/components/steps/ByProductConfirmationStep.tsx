@@ -1,4 +1,5 @@
 import { safeConvertLexicalToHtml } from "@/utils/commons";
+import { sanitizeHtml } from "@/shared/lib/sanitize-html";
 import { Badge, Card, CardContent } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import {
   Building2,
@@ -214,7 +215,7 @@ export const ByProductConfirmationStep = ({
                   </span>
                   <div
                     className="bg-red-50/50 p-4 rounded-xl border border-red-100 text-xs text-slate-700 prose prose-xs max-w-none"
-                    dangerouslySetInnerHTML={{ __html: firstAidHtml }}
+                    dangerouslySetInnerHTML={{ __html: sanitizeHtml(firstAidHtml) }}
                   />
                 </div>
               )}
