@@ -1,0 +1,57 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: ["main", "feat/full-develop"]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      packages: read
+    env:
+      NODE_AUTH_TOKEN: ${{ secrets.GH_PACKAGES_TOKEN || secrets.GITHUB_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: yarn
+          registry-url: https://npm.pkg.github.com
+          scope: "@Team-Trung-Vu-Khang"
+
+      - name: Dùng token từ secret thay cho .npmrc trong repo
+        run: |
+          cat > .npmrc <<'EOF'
+          @Team-Trung-Vu-Khang:registry=https://npm.pkg.github.com
+          //npm.pkg.github.com/:_authToken=${NODE_AUTH_TOKEN}
+          EOF
+
+      - name: Install
+        run: yarn install --frozen-lockfile
+
+      - name: Typecheck
+        run: yarn typecheck
+
+      - name: Lint (chỉ file thay đổi)
+        if: github.event_name == 'pull_request'
+        run: |
+          FILES=$(git diff --name-only --diff-filter=ACMR origin/${{ github.base_ref }}...HEAD -- '*.ts' '*.tsx')
+          if [ -n "$FILES" ]; then
+            npx eslint $FILES
+          else
+            echo "Không có file TS/TSX thay đổi"
+          fi
+
+      - name: Build
+        run: yarn build

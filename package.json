@@ -8,7 +8,9 @@
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "typecheck:all": "tsc -b"
+    "typecheck:all": "tsc -b",
+    "typecheck": "tsc -b",
+    "lint:fix": "eslint . --fix"
   },
   "dependencies": {
     "@Team-Trung-Vu-Khang/eco-shared-ui": "0.0.26",
@@ -59,5 +61,9 @@
     "typescript": "~5.9.3",
     "typescript-eslint": "^8.46.4",
     "vite": "^7.2.4"
-  }
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "packageManager": "yarn@1.22.22"
 }
