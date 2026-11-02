@@ -28,7 +28,7 @@ const PageWrapper = ({
     <div className={`min-w-0 ${overflowClass} ${className}`}>
       {(title || actions) && (
         <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-          <div>
+          <div className="min-w-0 flex-1">
             {title && (
               <h1
                 className="text-2xl font-display font-bold text-foreground"
